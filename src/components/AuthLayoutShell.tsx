@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
+import Breadcrumb from "@/components/Breadcrumb";
 
 interface AuthLayoutShellProps {
   departments: { id: string; name: string }[];
@@ -98,7 +99,10 @@ export default function AuthLayoutShell({
         </div>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
+        <main className="flex-1 min-w-0 p-4 pb-20 md:p-6 md:pb-6">
+          <Breadcrumb departments={departments} />
+          {children}
+        </main>
       </div>
 
       {footer}

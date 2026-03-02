@@ -35,6 +35,34 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     );
   }
 
+  // Auto-select first department when none is specified
+  if (!selectedDeptId) {
+    const isAdmin = session.user.churchRoles.some(
+      (r) =>
+        r.churchId === currentChurchId &&
+        (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
+    );
+
+    let firstDeptId: string | undefined;
+    if (isAdmin) {
+      const firstDept = await prisma.department.findFirst({
+        where: { ministry: { churchId: currentChurchId } },
+        orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
+        select: { id: true },
+      });
+      firstDeptId = firstDept?.id;
+    } else {
+      const userDepts = session.user.churchRoles
+        .filter((r) => r.churchId === currentChurchId)
+        .flatMap((r) => r.departments);
+      firstDeptId = userDepts[0]?.department?.id;
+    }
+
+    if (firstDeptId) {
+      redirect(`/dashboard?dept=${firstDeptId}${view !== "event" ? `&view=${view}` : ""}`);
+    }
+  }
+
   // Fetch events for the church (needed for event view)
   const events =
     view === "event"
