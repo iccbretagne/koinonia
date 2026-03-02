@@ -22,6 +22,7 @@ export async function GET(
         eventId_departmentId: { eventId, departmentId },
       },
       include: {
+        event: { select: { planningDeadline: true } },
         plannings: {
           include: { member: true },
         },
@@ -46,7 +47,16 @@ export async function GET(
       };
     });
 
-    return successResponse({ eventDepartment: eventDept, members });
+    const deadlinePassed = eventDept.event.planningDeadline
+      ? new Date() > new Date(eventDept.event.planningDeadline)
+      : false;
+
+    return successResponse({
+      eventDepartment: eventDept,
+      members,
+      planningDeadline: eventDept.event.planningDeadline,
+      deadlinePassed,
+    });
   } catch (error) {
     return errorResponse(error);
   }
@@ -70,8 +80,28 @@ export async function PUT(
   }: { params: Promise<{ eventId: string; deptId: string }> }
 ) {
   try {
-    await requirePermission("planning:edit");
+    const session = await requirePermission("planning:edit");
     const { eventId, deptId: departmentId } = await params;
+
+    // Check planning deadline
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { planningDeadline: true },
+    });
+
+    if (event?.planningDeadline && new Date() > new Date(event.planningDeadline)) {
+      // After deadline, only ADMIN and SECRETARY can modify
+      const userRoles = session.user.churchRoles.map((r) => r.role);
+      const canBypass = userRoles.some(
+        (r) => r === "SUPER_ADMIN" || r === "ADMIN" || r === "SECRETARY"
+      );
+      if (!canBypass) {
+        throw new ApiError(
+          403,
+          "La date limite de planification est dépassée"
+        );
+      }
+    }
 
     const body = await request.json();
     const { plannings } = planningSchema.parse(body);

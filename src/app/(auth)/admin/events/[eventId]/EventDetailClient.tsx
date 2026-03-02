@@ -13,12 +13,14 @@ interface Department {
 
 interface Props {
   eventId: string;
+  isRecurring?: boolean;
   departments: Department[];
 }
 
-export default function EventDetailClient({ eventId, departments }: Props) {
+export default function EventDetailClient({ eventId, isRecurring, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
+  const [applyToSeries, setApplyToSeries] = useState(false);
 
   async function toggleDepartment(dept: Department) {
     setLoading(dept.id);
@@ -28,7 +30,10 @@ export default function EventDetailClient({ eventId, departments }: Props) {
       const res = await fetch(`/api/events/${eventId}/departments`, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ departmentId: dept.id }),
+        body: JSON.stringify({
+          departmentId: dept.id,
+          applyToSeries: applyToSeries && isRecurring,
+        }),
       });
 
       if (!res.ok) {
@@ -60,7 +65,7 @@ export default function EventDetailClient({ eventId, departments }: Props) {
 
   return (
     <div>
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex flex-wrap gap-3">
         <Link href="/admin/events">
           <Button variant="secondary">&larr; Retour aux evenements</Button>
         </Link>
@@ -72,6 +77,18 @@ export default function EventDetailClient({ eventId, departments }: Props) {
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
         Départements associés
       </h2>
+
+      {isRecurring && (
+        <label className="flex items-center gap-2 mb-4 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={applyToSeries}
+            onChange={(e) => setApplyToSeries(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+          />
+          Appliquer aux futurs événements de la série
+        </label>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(grouped).map(([ministry, deps]) => (

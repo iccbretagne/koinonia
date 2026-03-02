@@ -49,7 +49,11 @@ export default function PlanningGrid({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [deadlinePassed, setDeadlinePassed] = useState(false);
+  const [planningDeadline, setPlanningDeadline] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const isReadOnly = readOnly || deadlinePassed;
 
   const fetchPlanning = useCallback(async () => {
     setLoading(true);
@@ -60,6 +64,8 @@ export default function PlanningGrid({
       if (!res.ok) throw new Error("Failed to fetch planning");
       const data = await res.json();
       setMembers(data.members);
+      setDeadlinePassed(data.deadlinePassed ?? false);
+      setPlanningDeadline(data.planningDeadline ?? null);
       setDirty(false);
     } catch (error) {
       console.error("Error fetching planning:", error);
@@ -149,19 +155,40 @@ export default function PlanningGrid({
           En service : {enService}/{members.length}
         </span>
         <span className="text-red-700">Indisponibles : {indisponible}</span>
-        {readOnly && (
-          <span className="text-gray-400 italic">Lecture seule</span>
+        {isReadOnly && (
+          <span className="text-gray-400 italic">
+            {deadlinePassed ? "Échéance dépassée" : "Lecture seule"}
+          </span>
         )}
-        {!readOnly && saving && <span className="text-blue-500">Enregistrement...</span>}
-        {!readOnly && dirty && !saving && (
+        {!isReadOnly && saving && <span className="text-blue-500">Enregistrement...</span>}
+        {!isReadOnly && dirty && !saving && (
           <span className="text-orange-500">
             Modifications non sauvegardees
           </span>
         )}
-        {!readOnly && !dirty && !saving && (
+        {!isReadOnly && !dirty && !saving && (
           <span className="text-green-500">Sauvegarde</span>
         )}
       </div>
+
+      {planningDeadline && (
+        <div
+          className={`mb-3 px-3 py-2 text-xs rounded-lg ${
+            deadlinePassed
+              ? "bg-red-50 text-red-700"
+              : "bg-blue-50 text-blue-700"
+          }`}
+        >
+          {deadlinePassed ? "Échéance dépassée — " : "Échéance : "}
+          {new Date(planningDeadline).toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </div>
+      )}
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full">
@@ -187,14 +214,14 @@ export default function PlanningGrid({
                       <button
                         key={option.value || "none"}
                         onClick={() =>
-                          !readOnly && handleStatusChange(member.id, option.value)
+                          !isReadOnly && handleStatusChange(member.id, option.value)
                         }
-                        disabled={readOnly}
+                        disabled={isReadOnly}
                         className={`px-2 py-1 text-xs rounded-md transition-colors ${
                           member.status === option.value
                             ? option.color +
                               " font-semibold ring-2 ring-offset-1 ring-blue-400"
-                            : readOnly
+                            : isReadOnly
                               ? "bg-gray-50 text-gray-300 cursor-not-allowed"
                               : "bg-gray-50 text-gray-400 hover:bg-gray-100"
                         }`}

@@ -38,6 +38,7 @@ const updateSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   type: z.string().min(1, "Le type est requis"),
   date: z.string().min(1, "La date est requise"),
+  planningDeadline: z.string().nullable().optional(),
 });
 
 export async function PUT(
@@ -52,7 +53,17 @@ export async function PUT(
 
     const event = await prisma.event.update({
       where: { id: eventId },
-      data: { ...data, date: new Date(data.date) },
+      data: {
+        title: data.title,
+        type: data.type,
+        date: new Date(data.date),
+        planningDeadline:
+          data.planningDeadline !== undefined
+            ? data.planningDeadline
+              ? new Date(data.planningDeadline)
+              : null
+            : undefined,
+      },
       include: {
         church: { select: { id: true, name: true } },
         eventDepts: {

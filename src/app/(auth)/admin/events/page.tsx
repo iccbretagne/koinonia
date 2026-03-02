@@ -35,6 +35,7 @@ export default async function EventsPage() {
         initialEvents={events.map((e) => ({
           ...e,
           date: e.date.toISOString(),
+          planningDeadline: e.planningDeadline?.toISOString() ?? null,
           createdAt: e.createdAt.toISOString(),
         }))}
         churches={uniqueChurches.map((c) => ({ id: c.id, name: c.name }))}

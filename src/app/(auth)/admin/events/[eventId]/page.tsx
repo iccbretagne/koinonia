@@ -46,6 +46,7 @@ export default async function EventDetailPage({
 
       <EventDetailClient
         eventId={event.id}
+        isRecurring={event.isRecurrenceParent || !!event.seriesId}
         departments={allDepartments.map((d) => ({
           id: d.id,
           name: d.name,

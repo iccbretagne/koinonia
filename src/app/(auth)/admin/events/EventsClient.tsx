@@ -14,6 +14,10 @@ interface EventItem {
   title: string;
   type: string;
   date: string;
+  planningDeadline: string | null;
+  recurrenceRule: string | null;
+  seriesId: string | null;
+  isRecurrenceParent: boolean;
   church: { id: string; name: string };
   eventDepts: { department: { id: string; name: string } }[];
 }
@@ -31,6 +35,9 @@ export default function EventsClient({ initialEvents, churches }: Props) {
   const [type, setType] = useState("");
   const [date, setDate] = useState("");
   const [churchId, setChurchId] = useState(churches[0]?.id || "");
+  const [planningDeadline, setPlanningDeadline] = useState("");
+  const [recurrenceRule, setRecurrenceRule] = useState("");
+  const [recurrenceEnd, setRecurrenceEnd] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -40,6 +47,11 @@ export default function EventsClient({ initialEvents, churches }: Props) {
   const [bulkDate, setBulkDate] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [duplicateSourceId, setDuplicateSourceId] = useState("");
+  const [duplicateTargetId, setDuplicateTargetId] = useState("");
+  const [duplicateLoading, setDuplicateLoading] = useState(false);
+  const [duplicateError, setDuplicateError] = useState("");
 
   function openCreate() {
     setEditing(null);
@@ -47,6 +59,9 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setType("");
     setDate("");
     setChurchId(churches[0]?.id || "");
+    setPlanningDeadline("");
+    setRecurrenceRule("");
+    setRecurrenceEnd("");
     setError("");
     setModalOpen(true);
   }
@@ -57,6 +72,13 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setType(ev.type);
     setDate(ev.date.split("T")[0]);
     setChurchId(ev.church.id);
+    setPlanningDeadline(
+      ev.planningDeadline
+        ? new Date(ev.planningDeadline).toISOString().slice(0, 16)
+        : ""
+    );
+    setRecurrenceRule("");
+    setRecurrenceEnd("");
     setError("");
     setModalOpen(true);
   }
@@ -70,8 +92,21 @@ export default function EventsClient({ initialEvents, churches }: Props) {
       const url = editing ? `/api/events/${editing.id}` : "/api/events";
       const method = editing ? "PUT" : "POST";
       const body = editing
-        ? { title, type, date }
-        : { title, type, date, churchId };
+        ? {
+            title,
+            type,
+            date,
+            planningDeadline: planningDeadline || null,
+          }
+        : {
+            title,
+            type,
+            date,
+            churchId,
+            planningDeadline: planningDeadline || null,
+            recurrenceRule: recurrenceRule || null,
+            recurrenceEnd: recurrenceEnd || null,
+          };
 
       const res = await fetch(url, {
         method,
@@ -90,6 +125,13 @@ export default function EventsClient({ initialEvents, churches }: Props) {
         setEvents((prev) =>
           prev.map((ev) => (ev.id === saved.id ? saved : ev))
         );
+      } else if (saved.childrenCreated) {
+        // Recurrence: reload the full list to get all children
+        const listRes = await fetch("/api/events");
+        if (listRes.ok) {
+          const allEvents = await listRes.json();
+          setEvents(allEvents);
+        }
       } else {
         setEvents((prev) => [saved, ...prev]);
       }
@@ -193,6 +235,46 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     }
   }
 
+  function openDuplicate(ev: EventItem) {
+    setDuplicateSourceId(ev.id);
+    setDuplicateTargetId("");
+    setDuplicateError("");
+    setDuplicateModalOpen(true);
+  }
+
+  async function handleDuplicate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!duplicateTargetId) {
+      setDuplicateError("Sélectionnez un événement cible");
+      return;
+    }
+    setDuplicateLoading(true);
+    setDuplicateError("");
+    try {
+      const res = await fetch(
+        `/api/events/${duplicateSourceId}/duplicate-planning`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetEventId: duplicateTargetId }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erreur");
+      }
+      const result = await res.json();
+      alert(
+        `Planning dupliqué : ${result.copied} affectation(s) copiée(s) sur ${result.departments} département(s)`
+      );
+      setDuplicateModalOpen(false);
+    } catch (err) {
+      setDuplicateError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setDuplicateLoading(false);
+    }
+  }
+
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("fr-FR", {
       day: "2-digit",
@@ -210,7 +292,19 @@ export default function EventsClient({ initialEvents, churches }: Props) {
       <div className="bg-white rounded-lg shadow">
         <DataTable
           columns={[
-            { header: "Titre", accessor: "title" },
+            {
+              header: "Titre",
+              accessor: (ev: EventItem) => (
+                <span>
+                  {ev.title}
+                  {(ev.isRecurrenceParent || ev.seriesId) && (
+                    <span className="ml-1 text-xs text-icc-violet" title="Événement récurrent">
+                      ↻
+                    </span>
+                  )}
+                </span>
+              ),
+            },
             { header: "Type", accessor: "type" },
             {
               header: "Date",
@@ -241,6 +335,9 @@ export default function EventsClient({ initialEvents, churches }: Props) {
               <Link href={`/admin/events/${ev.id}`}>
                 <Button variant="secondary">Dép. en service</Button>
               </Link>
+              <Button variant="secondary" onClick={() => openDuplicate(ev)}>
+                Dupliquer planning
+              </Button>
               <Button variant="secondary" onClick={() => openEdit(ev)}>
                 Modifier
               </Button>
@@ -284,13 +381,41 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             onChange={(e) => setDate(e.target.value)}
             required
           />
+          <Input
+            label="Date limite de planification"
+            type="datetime-local"
+            value={planningDeadline}
+            onChange={(e) => setPlanningDeadline(e.target.value)}
+          />
           {!editing && (
-            <Select
-              label="Église"
-              value={churchId}
-              onChange={(e) => setChurchId(e.target.value)}
-              options={churches.map((c) => ({ value: c.id, label: c.name }))}
-            />
+            <>
+              <Select
+                label="Église"
+                value={churchId}
+                onChange={(e) => setChurchId(e.target.value)}
+                options={churches.map((c) => ({ value: c.id, label: c.name }))}
+              />
+              <Select
+                label="Récurrence"
+                value={recurrenceRule}
+                onChange={(e) => setRecurrenceRule(e.target.value)}
+                options={[
+                  { value: "weekly", label: "Hebdomadaire" },
+                  { value: "biweekly", label: "Bi-hebdomadaire" },
+                  { value: "monthly", label: "Mensuel" },
+                ]}
+                placeholder="Aucune (événement unique)"
+              />
+              {recurrenceRule && (
+                <Input
+                  label="Fin de récurrence"
+                  type="date"
+                  value={recurrenceEnd}
+                  onChange={(e) => setRecurrenceEnd(e.target.value)}
+                  required
+                />
+              )}
+            </>
           )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
@@ -346,6 +471,46 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             </Button>
             <Button type="submit" disabled={bulkLoading}>
               {bulkLoading ? "Enregistrement..." : "Appliquer"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={duplicateModalOpen}
+        onClose={() => setDuplicateModalOpen(false)}
+        title="Dupliquer un planning"
+      >
+        <p className="text-sm text-gray-500 mb-4">
+          Copier les affectations de l&apos;événement source vers un événement cible.
+          Seuls les départements communs seront dupliqués.
+        </p>
+        <form onSubmit={handleDuplicate} className="space-y-4">
+          <Select
+            label="Événement cible"
+            value={duplicateTargetId}
+            onChange={(e) => setDuplicateTargetId(e.target.value)}
+            placeholder="Choisir l'événement cible"
+            options={events
+              .filter((ev) => ev.id !== duplicateSourceId)
+              .map((ev) => ({
+                value: ev.id,
+                label: `${ev.title} (${formatDate(ev.date)})`,
+              }))}
+          />
+          {duplicateError && (
+            <p className="text-sm text-red-600">{duplicateError}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setDuplicateModalOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button type="submit" disabled={duplicateLoading}>
+              {duplicateLoading ? "Duplication..." : "Dupliquer"}
             </Button>
           </div>
         </form>

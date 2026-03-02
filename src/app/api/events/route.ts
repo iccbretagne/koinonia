@@ -82,7 +82,32 @@ const createSchema = z.object({
   type: z.string().min(1, "Le type est requis"),
   date: z.string().min(1, "La date est requise"),
   churchId: z.string().min(1, "L'église est requise"),
+  planningDeadline: z.string().nullable().optional(),
+  recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).nullable().optional(),
+  recurrenceEnd: z.string().nullable().optional(),
 });
+
+function generateRecurrenceDates(
+  startDate: Date,
+  rule: string,
+  endDate: Date
+): Date[] {
+  const dates: Date[] = [];
+  const current = new Date(startDate);
+
+  // Skip the first date (it's the parent)
+  while (true) {
+    if (rule === "weekly") current.setDate(current.getDate() + 7);
+    else if (rule === "biweekly") current.setDate(current.getDate() + 14);
+    else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
+    else break;
+
+    if (current > endDate) break;
+    dates.push(new Date(current));
+  }
+
+  return dates;
+}
 
 export async function POST(request: Request) {
   try {
@@ -90,10 +115,75 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
+    const deadline = data.planningDeadline
+      ? new Date(data.planningDeadline)
+      : null;
+
+    // If recurrence is set, create parent + children in a transaction
+    if (data.recurrenceRule && data.recurrenceEnd) {
+      const startDate = new Date(data.date);
+      const endDate = new Date(data.recurrenceEnd);
+      const childDates = generateRecurrenceDates(
+        startDate,
+        data.recurrenceRule,
+        endDate
+      );
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Create parent event
+        const parent = await tx.event.create({
+          data: {
+            title: data.title,
+            type: data.type,
+            date: startDate,
+            churchId: data.churchId,
+            planningDeadline: deadline,
+            recurrenceRule: data.recurrenceRule,
+            isRecurrenceParent: true,
+          },
+        });
+
+        // Create child events linked by seriesId
+        for (const childDate of childDates) {
+          await tx.event.create({
+            data: {
+              title: data.title,
+              type: data.type,
+              date: childDate,
+              churchId: data.churchId,
+              planningDeadline: deadline,
+              recurrenceRule: data.recurrenceRule,
+              seriesId: parent.id,
+            },
+          });
+        }
+
+        // Return parent with includes
+        return tx.event.findUnique({
+          where: { id: parent.id },
+          include: {
+            church: { select: { id: true, name: true } },
+            eventDepts: {
+              include: { department: { select: { id: true, name: true } } },
+            },
+          },
+        });
+      });
+
+      return successResponse(
+        { ...result, childrenCreated: childDates.length },
+        201
+      );
+    }
+
+    // Single event creation
     const event = await prisma.event.create({
       data: {
-        ...data,
+        title: data.title,
+        type: data.type,
         date: new Date(data.date),
+        churchId: data.churchId,
+        planningDeadline: deadline,
       },
       include: {
         church: { select: { id: true, name: true } },
