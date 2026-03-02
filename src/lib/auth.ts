@@ -21,6 +21,7 @@ declare module "next-auth" {
       name: string | null;
       displayName: string | null;
       image: string | null;
+      isSuperAdmin: boolean;
       churchRoles: {
         id: string;
         churchId: string;
@@ -51,6 +52,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user.email || !user.id) return true;
 
       if (isSuperAdmin(user.email)) {
+        // Set global flag
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isSuperAdmin: true },
+        });
+
         const churches = await prisma.church.findMany();
         for (const church of churches) {
           await prisma.userChurchRole.upsert({
@@ -78,9 +85,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       const dbUser = await prisma.user.findUnique({
         where: { id: user.id },
-        select: { displayName: true },
+        select: { displayName: true, isSuperAdmin: true },
       });
       session.user.displayName = dbUser?.displayName ?? null;
+      session.user.isSuperAdmin = dbUser?.isSuperAdmin ?? false;
 
       const churchRoles = await prisma.userChurchRole.findMany({
         where: { userId: user.id },
@@ -141,6 +149,9 @@ export async function requireAuth() {
 export async function requirePermission(permission: string, churchId?: string) {
   const session = await requireAuth();
 
+  // Global super admin bypasses all permissions
+  if (session.user.isSuperAdmin) return session;
+
   const roles = session.user.churchRoles.filter(
     (r) => !churchId || r.churchId === churchId
   );
@@ -159,6 +170,9 @@ export async function requirePermission(permission: string, churchId?: string) {
 
 export async function requireAnyPermission(...permissions: string[]) {
   const session = await requireAuth();
+
+  // Global super admin bypasses all permissions
+  if (session.user.isSuperAdmin) return session;
 
   const { hasPermission } = await import("./permissions");
   const userPermissions = new Set(

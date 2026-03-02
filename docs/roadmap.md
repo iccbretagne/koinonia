@@ -27,7 +27,7 @@
 ## Administration
 
 - [x] Page Super Admin : liste des eglises, creation, suppression
-- [ ] Onboarding nouvelle eglise (creation + invitation admin)
+- [x] Onboarding nouvelle eglise (creation + invitation admin)
 - [x] Gestion des utilisateurs : attribution des roles depuis l'interface
 - [x] Affectation ministere/departements aux roles MINISTER et DEPARTMENT_HEAD
 - [x] Gestion des ministeres et departements (CRUD)
@@ -35,7 +35,7 @@
 - [x] Gestion des membres (ajout, modification, suppression, transfert entre departements)
 - [x] Gestion des evenements (creation, modification, suppression, types personnalises)
 - [x] Association departements-evenements depuis l'interface
-- [ ] Schema dedie Super Admin (role global independant des eglises)
+- [x] Schema dedie Super Admin (role global independant des eglises)
 - [x] Utilisateurs : permettre aux admins, secretaires et utilisateurs de modifier leur nom d'affichage
 - [x] Utilisateurs : recherche par nom ou email + navigation alphabetique dans la liste
 

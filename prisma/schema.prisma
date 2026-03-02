@@ -80,6 +80,7 @@ model User {
   displayName   String?
   image         String?
   emailVerified DateTime?
+  isSuperAdmin  Boolean          @default(false)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   churchRoles   UserChurchRole[]
