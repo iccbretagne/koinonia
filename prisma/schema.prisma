@@ -86,6 +86,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   auditLogs     AuditLog[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -145,6 +146,8 @@ model Member {
   id              String           @id @default(cuid())
   firstName       String
   lastName        String
+  email           String?
+  phone           String?
   departmentId    String
   department      Department       @relation(fields: [departmentId], references: [id])
   plannings       Planning[]
@@ -243,4 +246,19 @@ model AuditLog {
   @@index([churchId, createdAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // PLANNING_REMINDER, PLANNING_UPDATED, etc.
+  title     String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
 }

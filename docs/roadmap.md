@@ -55,9 +55,9 @@
 
 ## Notifications
 
-- [ ] Notifications email pour rappels de service (J-3, J-1)
+- [x] Notifications email pour rappels de service (J-3, J-1)
 - [ ] Integration WhatsApp (API Business)
-- [ ] Notifications in-app (badge, toast)
+- [x] Notifications in-app (badge, toast)
 
 ## Statistiques
 
