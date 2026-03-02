@@ -30,7 +30,7 @@ export default function Select({
       </label>
       <select
         id={selectId}
-        className={`block w-full px-3 py-2 border-2 rounded-lg shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
+        className={`block w-full px-3 py-2.5 md:py-2 border-2 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
           error ? "border-red-500" : "border-gray-300"
         } ${className}`}
         {...props}
