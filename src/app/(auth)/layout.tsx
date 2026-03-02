@@ -125,6 +125,7 @@ export default async function AuthLayout({
     <AuthLayoutShell
       departments={allDepartments}
       adminLinks={visibleAdminLinks}
+      hasAdminAccess={visibleAdminLinks.length > 0}
       header={headerContent}
       footer={footerContent}
     >

@@ -1,0 +1,22 @@
+{
+  "name": "PlanningCenter",
+  "short_name": "Planning",
+  "description": "Gestion des plannings de service",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#5E17EB",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
