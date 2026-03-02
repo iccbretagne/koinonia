@@ -144,7 +144,7 @@ export default function PlanningGrid({
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-4 text-sm">
+      <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 text-sm">
         <span className="text-green-700">
           En service : {enService}/{members.length}
         </span>
@@ -163,7 +163,42 @@ export default function PlanningGrid({
         )}
       </div>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      {/* Mobile: card view */}
+      <div className="md:hidden space-y-2">
+        {members.map((member) => {
+          const current = STATUS_OPTIONS.find((o) => o.value === member.status) || STATUS_OPTIONS[0];
+          return (
+            <div
+              key={member.id}
+              className={`flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 ${current.color}`}
+            >
+              <span className="text-sm font-medium truncate">
+                {member.firstName} {member.lastName}
+              </span>
+              {readOnly ? (
+                <span className="text-xs font-semibold shrink-0">{current.label}</span>
+              ) : (
+                <select
+                  value={member.status || ""}
+                  onChange={(e) =>
+                    handleStatusChange(member.id, e.target.value || null)
+                  }
+                  className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white shrink-0"
+                >
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value || "none"} value={option.value || ""}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: table view */}
+      <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50">

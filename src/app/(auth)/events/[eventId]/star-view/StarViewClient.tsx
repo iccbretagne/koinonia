@@ -148,10 +148,10 @@ export default function StarViewClient({ eventId }: Props) {
   return (
     <div>
       {/* Action bar - hidden on print */}
-      <div className="mb-6 flex items-center gap-3 print:hidden">
+      <div className="mb-6 flex flex-wrap items-center gap-2 md:gap-3 print:hidden">
         <button
           onClick={() => router.back()}
-          className="p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors mr-1"
+          className="p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
           title="Retour"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,13 +168,13 @@ export default function StarViewClient({ eventId }: Props) {
       </div>
 
       {/* Printable zone */}
-      <div ref={printRef} className="bg-white rounded-lg shadow p-6 print:shadow-none">
+      <div ref={printRef} className="bg-white rounded-lg shadow p-4 md:p-6 print:shadow-none">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-6 pb-4 border-b border-gray-200">
           <div className="text-sm text-gray-600 capitalize">
             {formatDate(data.event.date)}
           </div>
-          <h1 className="text-xl font-bold text-icc-violet uppercase tracking-wider">
+          <h1 className="text-lg md:text-xl font-bold text-icc-violet uppercase tracking-wider">
             STAR EN SERVICE
           </h1>
           <div className="text-lg font-bold text-icc-violet">
@@ -191,7 +191,7 @@ export default function StarViewClient({ eventId }: Props) {
         </div>
 
         {/* Department grid */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 md:gap-4">
           {data.departments.map((dept) => (
             <div
               key={dept.id}
