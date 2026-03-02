@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import TaskPanel from "./TaskPanel";
 
 interface MemberPlanning {
   id: string;
@@ -236,6 +237,17 @@ export default function PlanningGrid({
           </tbody>
         </table>
       </div>
+
+      <TaskPanel
+        eventId={eventId}
+        departmentId={departmentId}
+        members={members.map((m) => ({
+          id: m.id,
+          firstName: m.firstName,
+          lastName: m.lastName,
+        }))}
+        readOnly={isReadOnly}
+      />
     </div>
   );
 }

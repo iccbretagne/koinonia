@@ -44,12 +44,12 @@
 - [x] Section planification des departements : filtre par mois pour les evenements
 - [x] Section planification des departements : export du planning mensuel en PDF ou image
 - [x] Vue planning des departements : selecteur de mois
-- [ ] Notion de tache/affectation : permettre aux responsables de departements d'affecter leurs STAR a une activite (visible dans la vue planning des departements, non visible dans la vue planning des STAR)
+- [x] Notion de tache/affectation : permettre aux responsables de departements d'affecter leurs STAR a une activite (visible dans la vue planning des departements, non visible dans la vue planning des STAR)
 - [x] Creation d'evenements avec recurrence (hebdomadaire, mensuel, etc.)
 - [x] Gestion facilitee des departements en service pour les evenements recurrents
-- [ ] Vue calendrier des evenements
+- [x] Vue calendrier des evenements
 - [x] Duplication d'un planning d'un evenement a un autre
-- [ ] Historique des modifications (audit log)
+- [x] Historique des modifications (audit log)
 - [x] Date/heure limite de planification par evenement : avant echeance, seuls les responsables de departement, leurs ministres et les admins peuvent modifier le planning ; apres echeance, seuls les admins et secretaires conservent la main
 - [x] Export PDF du planning par evenement / departement
 

@@ -136,14 +136,37 @@ export default function Sidebar({
       </AccordionSection>
 
       {/* Evenements */}
-      <Link
-        href="/events"
-        onClick={onClose}
-        className={`${sectionHeaderBase} ${isEventsActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+      <AccordionSection
+        title="Evenements"
+        icon={<IconCalendar className="w-4 h-4" />}
+        isActive={isEventsActive}
+        defaultOpen={isEventsActive}
       >
-        <IconCalendar className="w-4 h-4" />
-        Evenements
-      </Link>
+        <nav className="space-y-0.5 pl-6">
+          <Link
+            href="/events"
+            onClick={onClose}
+            className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+              pathname === "/events"
+                ? "bg-icc-violet-light text-icc-violet font-medium"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            Liste
+          </Link>
+          <Link
+            href="/events/calendar"
+            onClick={onClose}
+            className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+              pathname === "/events/calendar"
+                ? "bg-icc-violet-light text-icc-violet font-medium"
+                : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            Calendrier
+          </Link>
+        </nav>
+      </AccordionSection>
 
       {/* Administration */}
       {adminLinks.length > 0 && (

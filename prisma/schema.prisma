@@ -60,6 +60,7 @@ model Church {
   users      UserChurchRole[]
   ministries Ministry[]
   events     Event[]
+  auditLogs  AuditLog[]
 
   @@map("churches")
 }
@@ -84,6 +85,7 @@ model User {
   churchRoles   UserChurchRole[]
   accounts      Account[]
   sessions      Session[]
+  auditLogs     AuditLog[]
 
   @@map("users")
 }
@@ -224,4 +226,21 @@ model TaskAssignment {
 
   @@unique([taskId, memberId])
   @@map("task_assignments")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  churchId   String?
+  action     String   // CREATE, UPDATE, DELETE
+  entityType String   // Event, Planning, Member, etc.
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  church     Church?  @relation(fields: [churchId], references: [id])
+
+  @@index([churchId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
 }

@@ -5,6 +5,7 @@ import {
   errorResponse,
   ApiError,
 } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(
@@ -148,6 +149,14 @@ export async function PUT(
         })
       )
     );
+
+    await logAudit({
+      userId: session.user.id,
+      action: "UPDATE",
+      entityType: "Planning",
+      entityId: eventDept!.id,
+      details: { eventId, departmentId, count: plannings.length },
+    });
 
     return successResponse(results);
   } catch (error) {

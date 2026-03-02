@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -111,7 +112,7 @@ function generateRecurrenceDates(
 
 export async function POST(request: Request) {
   try {
-    await requirePermission("events:manage");
+    const session = await requirePermission("events:manage");
     const body = await request.json();
     const data = createSchema.parse(body);
 
@@ -170,6 +171,15 @@ export async function POST(request: Request) {
         });
       });
 
+      await logAudit({
+        userId: session.user.id,
+        churchId: data.churchId,
+        action: "CREATE",
+        entityType: "Event",
+        entityId: result!.id,
+        details: { recurrence: data.recurrenceRule, children: childDates.length },
+      });
+
       return successResponse(
         { ...result, childrenCreated: childDates.length },
         201
@@ -191,6 +201,15 @@ export async function POST(request: Request) {
           include: { department: { select: { id: true, name: true } } },
         },
       },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId: data.churchId,
+      action: "CREATE",
+      entityType: "Event",
+      entityId: event.id,
+      details: { title: data.title },
     });
 
     return successResponse(event, 201);
