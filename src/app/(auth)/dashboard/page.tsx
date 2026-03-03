@@ -79,12 +79,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 md:mb-6">
         <DashboardActions />
       </div>
 
       {view === "event" && (
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6">
           <EventSelector
             events={events.map((e) => ({
               id: e.id,

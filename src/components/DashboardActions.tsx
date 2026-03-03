@@ -16,10 +16,10 @@ export default function DashboardActions() {
   }
 
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-wrap gap-2 md:gap-3">
       <Link
         href={buildHref("event")}
-        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
           currentView === "event"
             ? "bg-icc-violet text-white border-icc-violet"
             : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
@@ -32,7 +32,7 @@ export default function DashboardActions() {
       </Link>
       <Link
         href={buildHref("month")}
-        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
           currentView === "month"
             ? "bg-icc-violet text-white border-icc-violet"
             : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"

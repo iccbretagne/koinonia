@@ -48,7 +48,7 @@ export default function EventSelector({
       <select
         value={selectedEventId || ""}
         onChange={(e) => handleChange(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2.5 md:py-2 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
       >
         <option value="" disabled>
           Choisir un evenement
