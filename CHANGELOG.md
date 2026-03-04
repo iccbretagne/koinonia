@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.5.0] - 2026-03-04
+
+### Ajoute
+
+- Infrastructure de tests Vitest avec couverture V8
+- Tests unitaires : permissions RBAC (10 tests), helpers API (9 tests)
+- Tests API : departments (9 tests), events (8 tests), planning (8 tests)
+- Mocks reutilisables pour Prisma et sessions d'authentification
+- Migrations Prisma : migration baseline `0_init` (remplace `db push`)
+- Scripts npm : `test`, `test:watch`, `test:coverage`, `db:migrate`, `db:migrate:deploy`, `db:reset`
+- CI GitHub Actions : execution des tests apres le typecheck
+
+### Ameliore
+
+- Documentation base de donnees : workflow migrations dev/production
+- Roadmap : items responsive (R1-R4) marques comme implementes
+
 ## [v0.4.0] - 2026-03-03
 
 ### Ajoute
