@@ -212,6 +212,54 @@ Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials
 https://votre-domaine.com/api/auth/callback/google
 ```
 
+## Deploiement automatise (CD)
+
+Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le workflow de deploiement apres validation du CI.
+
+### Prerequis serveur
+
+1. **Cle SSH dediee** : generer une paire Ed25519 pour l'utilisateur `planning` :
+
+```bash
+sudo -u planning ssh-keygen -t ed25519 -C "deploy@planningcenter" -f /home/planning/.ssh/id_deploy
+```
+
+2. **Autoriser la cle** : ajouter la cle publique dans `/home/planning/.ssh/authorized_keys` :
+
+```bash
+sudo -u planning bash -c 'cat /home/planning/.ssh/id_deploy.pub >> /home/planning/.ssh/authorized_keys'
+```
+
+3. **Sudo restreint** : creer `/etc/sudoers.d/planning` :
+
+```
+planning ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart planning
+```
+
+### GitHub Secrets a configurer
+
+| Secret | Description |
+|--------|-------------|
+| `DEPLOY_SSH_KEY` | Cle privee Ed25519 (`/home/planning/.ssh/id_deploy`) |
+| `DEPLOY_HOST` | Adresse IP ou domaine du serveur |
+| `DEPLOY_PORT` | Port SSH personnalise |
+| `DEPLOY_USER` | `planning` |
+| `DEPLOY_PATH` | `/opt/planning` |
+
+### Fonctionnement
+
+1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
+2. Le CI s'execute (typecheck, tests, verification version)
+3. Si le CI passe, le workflow deploy se connecte en SSH au serveur
+4. Le script telecharge la release, installe les dependances, construit, migre la BDD, bascule le symlink et redemarre le service
+5. Les anciennes releases sont nettoyees (3 dernieres conservees)
+
+Un script `scripts/deploy.sh` est egalement disponible pour les deploiements manuels depuis le serveur :
+
+```bash
+DEPLOY_PATH=/opt/planning bash scripts/deploy.sh 0.6.0
+```
+
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
