@@ -3,6 +3,12 @@ name: Deploy
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a deployer (ex: 0.5.0)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -16,9 +22,14 @@ jobs:
     needs: ci
     timeout-minutes: 10
     steps:
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
