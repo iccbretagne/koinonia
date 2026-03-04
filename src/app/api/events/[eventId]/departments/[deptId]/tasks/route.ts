@@ -16,13 +16,14 @@ export async function GET(
     });
 
     if (!eventDept) {
-      throw new ApiError(404, "Event-department link not found");
+      throw new ApiError(404, "Ce département n'est pas lié à cet événement");
     }
 
     const tasks = await prisma.task.findMany({
-      where: { eventDepartmentId: eventDept.id },
+      where: { departmentId },
       include: {
         assignments: {
+          where: { eventId },
           include: {
             member: { select: { id: true, firstName: true, lastName: true } },
           },
@@ -37,13 +38,12 @@ export async function GET(
   }
 }
 
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  description: z.string().optional(),
-  memberIds: z.array(z.string()).optional(),
+const assignSchema = z.object({
+  taskId: z.string(),
+  memberIds: z.array(z.string()),
 });
 
-export async function POST(
+export async function PUT(
   request: Request,
   { params }: { params: Promise<{ eventId: string; deptId: string }> }
 ) {
@@ -51,32 +51,66 @@ export async function POST(
     await requirePermission("planning:edit");
     const { eventId, deptId: departmentId } = await params;
     const body = await request.json();
-    const { name, description, memberIds } = createSchema.parse(body);
+    const { taskId, memberIds } = assignSchema.parse(body);
 
-    // Find or create event-department link
-    let eventDept = await prisma.eventDepartment.findUnique({
+    // Verify the task belongs to this department
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!task || task.departmentId !== departmentId) {
+      throw new ApiError(404, "Tâche introuvable dans ce département");
+    }
+
+    // Verify EventDepartment exists
+    const eventDept = await prisma.eventDepartment.findUnique({
       where: { eventId_departmentId: { eventId, departmentId } },
     });
 
     if (!eventDept) {
-      eventDept = await prisma.eventDepartment.create({
-        data: { eventId, departmentId },
-      });
+      throw new ApiError(404, "Ce département n'est pas lié à cet événement");
     }
 
-    const task = await prisma.task.create({
-      data: {
-        eventDepartmentId: eventDept.id,
-        name,
-        description: description || null,
-        assignments: memberIds?.length
-          ? {
-              create: memberIds.map((memberId) => ({ memberId })),
-            }
-          : undefined,
-      },
+    // Verify each member is in service for this event
+    if (memberIds.length > 0) {
+      const plannings = await prisma.planning.findMany({
+        where: {
+          eventDepartmentId: eventDept.id,
+          memberId: { in: memberIds },
+          status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] },
+        },
+        select: { memberId: true },
+      });
+
+      const inServiceMemberIds = new Set(plannings.map((p) => p.memberId));
+      const notInService = memberIds.filter((id) => !inServiceMemberIds.has(id));
+
+      if (notInService.length > 0) {
+        throw new ApiError(
+          400,
+          "Ce STAR n'est pas en service pour cet événement"
+        );
+      }
+    }
+
+    // Sync assignments: delete old, create new
+    await prisma.$transaction([
+      prisma.taskAssignment.deleteMany({
+        where: { taskId, eventId },
+      }),
+      ...memberIds.map((memberId) =>
+        prisma.taskAssignment.create({
+          data: { taskId, memberId, eventId },
+        })
+      ),
+    ]);
+
+    // Return updated task with assignments for this event
+    const updatedTask = await prisma.task.findUnique({
+      where: { id: taskId },
       include: {
         assignments: {
+          where: { eventId },
           include: {
             member: { select: { id: true, firstName: true, lastName: true } },
           },
@@ -84,26 +118,7 @@ export async function POST(
       },
     });
 
-    return successResponse(task, 201);
-  } catch (error) {
-    return errorResponse(error);
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ eventId: string; deptId: string }> }
-) {
-  try {
-    await requirePermission("planning:edit");
-    await params;
-    const body = await request.json();
-    const { taskId } = z.object({ taskId: z.string() }).parse(body);
-
-    await prisma.taskAssignment.deleteMany({ where: { taskId } });
-    await prisma.task.delete({ where: { id: taskId } });
-
-    return successResponse({ success: true });
+    return successResponse(updatedTask);
   } catch (error) {
     return errorResponse(error);
   }

@@ -276,11 +276,9 @@ export default function PlanningGrid({
       <TaskPanel
         eventId={eventId}
         departmentId={departmentId}
-        members={members.map((m) => ({
-          id: m.id,
-          firstName: m.firstName,
-          lastName: m.lastName,
-        }))}
+        eligibleMembers={members
+          .filter((m) => m.status === "EN_SERVICE" || m.status === "EN_SERVICE_DEBRIEF")
+          .map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))}
         readOnly={isReadOnly}
       />
     </div>

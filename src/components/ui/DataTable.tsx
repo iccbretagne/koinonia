@@ -101,8 +101,8 @@ export default function DataTable<T extends { id: string }>({
       </div>
 
       {/* Desktop: table view */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="hidden md:block">
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               {selectable && (
@@ -149,7 +149,7 @@ export default function DataTable<T extends { id: string }>({
                 {columns.map((col, i) => (
                   <td
                     key={i}
-                    className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap"
+                    className="px-4 py-3 text-sm text-gray-900"
                   >
                     {getCellValue(row, col.accessor)}
                   </td>

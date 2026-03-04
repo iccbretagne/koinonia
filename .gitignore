@@ -17,6 +17,9 @@ prisma/generated/
 *.swp
 *.swo
 
+# Build
+tsconfig.tsbuildinfo
+
 # OS
 .DS_Store
 Thumbs.db

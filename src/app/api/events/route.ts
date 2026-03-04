@@ -84,9 +84,27 @@ const createSchema = z.object({
   date: z.string().min(1, "La date est requise"),
   churchId: z.string().min(1, "L'église est requise"),
   planningDeadline: z.string().nullable().optional(),
+  deadlineOffset: z.string().nullable().optional(),
   recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).nullable().optional(),
   recurrenceEnd: z.string().nullable().optional(),
 });
+
+function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
+  const result = new Date(eventDate);
+  const match = offset.match(/^(\d+)(h|d)$/);
+  if (!match) return result;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+
+  if (unit === "h") {
+    result.setHours(result.getHours() - value);
+  } else if (unit === "d") {
+    result.setDate(result.getDate() - value);
+  }
+
+  return result;
+}
 
 function generateRecurrenceDates(
   startDate: Date,
@@ -116,9 +134,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const deadline = data.planningDeadline
-      ? new Date(data.planningDeadline)
-      : null;
+    const useOffset = data.deadlineOffset && !data.planningDeadline;
+    const deadline = useOffset
+      ? computeDeadlineFromOffset(new Date(data.date), data.deadlineOffset!)
+      : data.planningDeadline
+        ? new Date(data.planningDeadline)
+        : null;
 
     // If recurrence is set, create parent + children in a transaction
     if (data.recurrenceRule && data.recurrenceEnd) {
@@ -146,13 +167,17 @@ export async function POST(request: Request) {
 
         // Create child events linked by seriesId
         for (const childDate of childDates) {
+          const childDeadline = useOffset
+            ? computeDeadlineFromOffset(childDate, data.deadlineOffset!)
+            : deadline;
+
           await tx.event.create({
             data: {
               title: data.title,
               type: data.type,
               date: childDate,
               churchId: data.churchId,
-              planningDeadline: deadline,
+              planningDeadline: childDeadline,
               recurrenceRule: data.recurrenceRule,
               seriesId: parent.id,
             },

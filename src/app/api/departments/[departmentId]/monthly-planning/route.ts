@@ -51,6 +51,27 @@ export async function GET(
       },
     });
 
+    // Fetch task assignments for all events in the month
+    const eventIds = eventDepartments.map((ed) => ed.event.id);
+    const taskAssignments = await prisma.taskAssignment.findMany({
+      where: {
+        eventId: { in: eventIds },
+        task: { departmentId },
+      },
+      include: {
+        task: { select: { name: true } },
+      },
+    });
+
+    // Build a map: eventId -> memberId -> task names
+    const taskMap = new Map<string, Map<string, string[]>>();
+    for (const ta of taskAssignments) {
+      if (!taskMap.has(ta.eventId)) taskMap.set(ta.eventId, new Map());
+      const memberTasks = taskMap.get(ta.eventId)!;
+      if (!memberTasks.has(ta.memberId)) memberTasks.set(ta.memberId, []);
+      memberTasks.get(ta.memberId)!.push(ta.task.name);
+    }
+
     const events = eventDepartments.map((ed) => ({
       id: ed.event.id,
       title: ed.event.title,
@@ -60,6 +81,7 @@ export async function GET(
         firstName: p.member.firstName,
         lastName: p.member.lastName,
         status: p.status,
+        tasks: taskMap.get(ed.event.id)?.get(p.member.id) ?? [],
       })),
     }));
 

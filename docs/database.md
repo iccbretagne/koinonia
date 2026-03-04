@@ -194,9 +194,35 @@ Le script `prisma/seed.ts` cree :
 - **4 cultes hebdomadaires** + **1 soiree de priere**
 - **Tous les departements** lies au premier evenement
 
-## Commandes
+## Migrations
+
+Depuis v0.5.0, le projet utilise **Prisma Migrate** pour gerer les evolutions du schema.
+
+### Workflow developpement
 
 ```bash
-npm run db:push    # appliquer le schema en base (sans migration)
-npm run db:seed    # charger les donnees initiales
+npm run db:migrate         # creer et appliquer une migration (dev)
+npm run db:push            # appliquer le schema directement (prototypage rapide)
+npm run db:seed            # charger les donnees initiales
+npm run db:reset           # reinitialiser la base + re-appliquer les migrations + seed
 ```
+
+### Workflow production
+
+```bash
+npm run db:migrate:deploy  # appliquer les migrations en production (non-interactif)
+```
+
+### Migration baseline
+
+La migration `0_init` contient le schema complet initial. Pour une base existante (pre-v0.5.0), marquer cette migration comme deja appliquee :
+
+```bash
+npx prisma migrate resolve --applied 0_init
+```
+
+### Ajouter une migration
+
+1. Modifier `prisma/schema.prisma`
+2. Lancer `npm run db:migrate` — Prisma genere le SQL et l'applique
+3. Committer le dossier `prisma/migrations/` avec le code

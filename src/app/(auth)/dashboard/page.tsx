@@ -6,6 +6,7 @@ import EventSelector from "@/components/EventSelector";
 import PlanningGrid from "@/components/PlanningGrid";
 import DashboardActions from "@/components/DashboardActions";
 import MonthlyPlanningView from "@/components/MonthlyPlanningView";
+import DepartmentTasksView from "@/components/DepartmentTasksView";
 
 interface DashboardProps {
   searchParams: Promise<{ dept?: string; event?: string; view?: string }>;
@@ -63,9 +64,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     }
   }
 
-  // Fetch department name (for month view PDF export)
+  // Fetch department name (for month view and tasks view)
   const selectedDepartment =
-    view === "month" && selectedDeptId
+    (view === "month" || view === "tasks") && selectedDeptId
       ? await prisma.department.findUnique({
           where: { id: selectedDeptId },
           select: { name: true },
@@ -107,7 +108,19 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         </div>
       )}
 
-      {view === "month" ? (
+      {view === "tasks" ? (
+        selectedDeptId ? (
+          <DepartmentTasksView
+            departmentId={selectedDeptId}
+            departmentName={selectedDepartment?.name}
+            readOnly={!canEditPlanning}
+          />
+        ) : (
+          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+            Sélectionnez un département dans la barre latérale
+          </div>
+        )
+      ) : view === "month" ? (
         selectedDeptId ? (
           <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} />
         ) : (

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 
 interface MemberItem {
   id: string;
   firstName: string;
   lastName: string;
   status: "EN_SERVICE" | "EN_SERVICE_DEBRIEF";
+  tasks: string[];
 }
 
 interface EventItem {
@@ -28,7 +30,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
   );
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -74,11 +76,78 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
     });
   }
 
+  function getExportFileName() {
+    const label = formatMonthLabel(currentMonth);
+    const name = departmentName || "planning";
+    return `Planning-${name}-${label}`;
+  }
+
+  async function copyImage() {
+    if (!printRef.current || exporting) return;
+    setExporting("copy");
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
+
+      try {
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error("toBlob failed"));
+          }, "image/png");
+        });
+
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob }),
+        ]);
+        alert("Image copiée dans le presse-papier");
+      } catch {
+        const dataUrl = canvas.toDataURL("image/png");
+        const w = window.open();
+        if (w) {
+          w.document.write(`<img src="${dataUrl}" />`);
+          w.document.title = "Planning - copier l'image";
+        } else {
+          alert("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
+        }
+      }
+    } catch {
+      // ignore export errors
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function downloadImage() {
+    if (!printRef.current || exporting) return;
+    setExporting("image");
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `${getExportFileName()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // ignore export errors
+    } finally {
+      setExporting(null);
+    }
+  }
+
   async function exportPdf() {
     if (!printRef.current || exporting) return;
-    setExporting(true);
+    setExporting("pdf");
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const html2canvas = (await import("html2canvas-pro")).default;
       const { jsPDF } = await import("jspdf");
 
       const canvas = await html2canvas(printRef.current, {
@@ -102,14 +171,11 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
 
       const offsetX = (pdfWidth - renderWidth) / 2;
       pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
-
-      const label = formatMonthLabel(currentMonth);
-      const name = departmentName || "planning";
-      pdf.save(`Planning-${name}-${label}.pdf`);
+      pdf.save(`${getExportFileName()}.pdf`);
     } catch {
       // ignore export errors
     } finally {
-      setExporting(false);
+      setExporting(null);
     }
   }
 
@@ -143,16 +209,36 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
       </div>
 
       {!loading && events.length > 0 && (
-        <div className="flex justify-end mb-4">
+        <div className="flex flex-wrap justify-end gap-2 mb-4">
+          <button
+            onClick={copyImage}
+            disabled={!!exporting}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+            {exporting === "copy" ? "Copie..." : "Copier image"}
+          </button>
+          <button
+            onClick={downloadImage}
+            disabled={!!exporting}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {exporting === "image" ? "Export..." : "Télécharger PNG"}
+          </button>
           <button
             onClick={exportPdf}
-            disabled={exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50"
+            disabled={!!exporting}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            {exporting ? "Export..." : "Export PDF"}
+            {exporting === "pdf" ? "Export..." : "Export PDF"}
           </button>
         </div>
       )}
@@ -175,7 +261,12 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
                   <span className="text-sm font-medium text-icc-violet capitalize">
                     {formatEventDate(event.date)}
                   </span>
-                  <span className="text-sm text-gray-500">{event.title}</span>
+                  <Link
+                    href={`/dashboard?dept=${departmentId}&event=${event.id}&view=event`}
+                    className="text-sm text-gray-500 hover:text-icc-violet hover:underline transition-colors"
+                  >
+                    {event.title}
+                  </Link>
                 </div>
                 {event.members.length === 0 ? (
                   <p className="text-sm text-gray-400 italic">
@@ -191,6 +282,11 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
                           </svg>
                         )}
                         {member.firstName} {member.lastName}
+                        {member.tasks.length > 0 && (
+                          <span className="ml-1.5 text-xs text-icc-violet">
+                            ({member.tasks.join(", ")})
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>

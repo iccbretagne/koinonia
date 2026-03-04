@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
@@ -12,12 +12,15 @@ export const metadata: Metadata = {
   title: "PlanningCenter",
   description: "Gestion des plannings de service",
   manifest: "/manifest.json",
-  themeColor: "#5E17EB",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "PlanningCenter",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#5E17EB",
 };
 
 export default function RootLayout({

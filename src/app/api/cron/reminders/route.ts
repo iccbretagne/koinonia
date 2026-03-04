@@ -55,19 +55,6 @@ export async function POST(request: Request) {
           for (const planning of eventDept.plannings) {
             const member = planning.member;
 
-            // Create in-app notification
-            // Find the user linked to this member via email match (best effort)
-            const user = await prisma.user.findFirst({
-              where: {
-                email: { not: undefined },
-                churchRoles: { some: {} },
-              },
-              // In a real app, Member should have a userId field
-              // For now, we send to all users who have the same name
-            });
-
-            // Create in-app notification for all users with planning:view
-            // (simplified: create for users with churchRoles in the same church)
             const memberName = `${member.firstName} ${member.lastName}`;
             const { subject, html } = buildReminderEmail({
               memberName,

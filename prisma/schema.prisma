@@ -138,6 +138,7 @@ model Department {
   members    Member[]
   eventDepts EventDepartment[]
   userDepts  UserDepartment[]
+  tasks      Task[]
   createdAt  DateTime          @default(now())
 
   @@map("departments")
@@ -166,6 +167,7 @@ model Event {
   churchId           String
   church             Church            @relation(fields: [churchId], references: [id])
   eventDepts         EventDepartment[]
+  taskAssignments    TaskAssignment[]
   planningDeadline   DateTime?
   recurrenceRule     String?
   seriesId           String?
@@ -182,7 +184,6 @@ model EventDepartment {
   event        Event      @relation(fields: [eventId], references: [id])
   department   Department @relation(fields: [departmentId], references: [id])
   plannings    Planning[]
-  tasks        Task[]
 
   @@unique([eventId, departmentId])
   @@map("event_departments")
@@ -209,14 +210,15 @@ model Planning {
 }
 
 model Task {
-  id                String           @id @default(cuid())
-  eventDepartmentId String
-  name              String
-  description       String?          @db.Text
-  eventDepartment   EventDepartment  @relation(fields: [eventDepartmentId], references: [id])
-  assignments       TaskAssignment[]
-  createdAt         DateTime         @default(now())
+  id           String           @id @default(cuid())
+  departmentId String
+  name         String
+  description  String?          @db.Text
+  department   Department       @relation(fields: [departmentId], references: [id])
+  assignments  TaskAssignment[]
+  createdAt    DateTime         @default(now())
 
+  @@unique([departmentId, name])
   @@map("tasks")
 }
 
@@ -224,11 +226,13 @@ model TaskAssignment {
   id         String   @id @default(cuid())
   taskId     String
   memberId   String
-  task       Task     @relation(fields: [taskId], references: [id])
+  eventId    String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   member     Member   @relation(fields: [memberId], references: [id])
+  event      Event    @relation(fields: [eventId], references: [id])
   assignedAt DateTime @default(now())
 
-  @@unique([taskId, memberId])
+  @@unique([taskId, eventId, memberId])
   @@map("task_assignments")
 }
 

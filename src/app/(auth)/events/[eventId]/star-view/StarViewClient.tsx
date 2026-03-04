@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Button from "@/components/ui/Button";
 
 interface MemberItem {
   id: string;
@@ -37,6 +36,7 @@ export default function StarViewClient({ eventId }: Props) {
   const router = useRouter();
   const [data, setData] = useState<StarViewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -56,72 +56,104 @@ export default function StarViewClient({ eventId }: Props) {
     fetchData();
   }, [fetchData]);
 
-  async function exportPdf() {
-    if (!printRef.current) return;
-    const html2canvas = (await import("html2canvas")).default;
-    const { jsPDF } = await import("jspdf");
-
-    const canvas = await html2canvas(printRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("landscape", "mm", "a4");
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgRatio = canvas.height / canvas.width;
-
-    let renderWidth = pdfWidth;
-    let renderHeight = pdfWidth * imgRatio;
-
-    // If content is taller than one page, scale down to fit
-    if (renderHeight > pdfHeight) {
-      renderHeight = pdfHeight;
-      renderWidth = pdfHeight / imgRatio;
-    }
-
-    // Center horizontally if scaled down
-    const offsetX = (pdfWidth - renderWidth) / 2;
-    pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
-    pdf.save(`STAR-${data?.event.title || "export"}.pdf`);
+  function getExportFileName() {
+    return `STAR-${data?.event.title || "export"}`;
   }
 
   async function copyImage() {
-    if (!printRef.current) return;
-    const html2canvas = (await import("html2canvas")).default;
-
-    const canvas = await html2canvas(printRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
-
+    if (!printRef.current || exporting) return;
+    setExporting("copy");
     try {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("toBlob failed"));
-        }, "image/png");
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
       });
 
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
-      ]);
-      alert("Image copiée dans le presse-papier");
-    } catch {
-      // Fallback: open image in new tab so user can copy manually
-      const dataUrl = canvas.toDataURL("image/png");
-      const w = window.open();
-      if (w) {
-        w.document.write(`<img src="${dataUrl}" />`);
-        w.document.title = "STAR - copier l'image";
-      } else {
-        alert("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
+      try {
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error("toBlob failed"));
+          }, "image/png");
+        });
+
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob }),
+        ]);
+        alert("Image copiée dans le presse-papier");
+      } catch {
+        const dataUrl = canvas.toDataURL("image/png");
+        const w = window.open();
+        if (w) {
+          w.document.write(`<img src="${dataUrl}" />`);
+          w.document.title = "STAR - copier l'image";
+        } else {
+          alert("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
+        }
       }
+    } catch {
+      // ignore export errors
+    } finally {
+      setExporting(null);
     }
   }
 
-  function handlePrint() {
-    window.print();
+  async function downloadImage() {
+    if (!printRef.current || exporting) return;
+    setExporting("image");
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `${getExportFileName()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      // ignore export errors
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function exportPdf() {
+    if (!printRef.current || exporting) return;
+    setExporting("pdf");
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("landscape", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgRatio = canvas.height / canvas.width;
+
+      let renderWidth = pdfWidth;
+      let renderHeight = pdfWidth * imgRatio;
+
+      if (renderHeight > pdfHeight) {
+        renderHeight = pdfHeight;
+        renderWidth = pdfHeight / imgRatio;
+      }
+
+      const offsetX = (pdfWidth - renderWidth) / 2;
+      pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
+      pdf.save(`${getExportFileName()}.pdf`);
+    } catch {
+      // ignore export errors
+    } finally {
+      setExporting(null);
+    }
   }
 
   function formatDate(iso: string) {
@@ -158,13 +190,36 @@ export default function StarViewClient({ eventId }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <Button onClick={exportPdf}>Exporter PDF</Button>
-        <Button variant="secondary" onClick={copyImage}>
-          Copier image
-        </Button>
-        <Button variant="secondary" onClick={handlePrint}>
-          Imprimer
-        </Button>
+        <button
+          onClick={copyImage}
+          disabled={!!exporting}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+          {exporting === "copy" ? "Copie..." : "Copier image"}
+        </button>
+        <button
+          onClick={downloadImage}
+          disabled={!!exporting}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {exporting === "image" ? "Export..." : "Télécharger PNG"}
+        </button>
+        <button
+          onClick={exportPdf}
+          disabled={!!exporting}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {exporting === "pdf" ? "Export..." : "Export PDF"}
+        </button>
       </div>
 
       {/* Printable zone */}
