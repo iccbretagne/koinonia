@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.7.2] - 2026-03-06
+
+### Ameliore
+
+- Checkbox serie : bandeau violet avec icone de recurrence pour meilleure visibilite
+
 ## [v0.7.1] - 2026-03-06
 
 ### Corrige
