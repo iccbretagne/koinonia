@@ -79,15 +79,18 @@ export default function EventDetailClient({ eventId, isRecurring, departments }:
       </h2>
 
       {isRecurring && (
-        <label className="flex items-center gap-2 mb-4 text-sm text-gray-700">
-          <input
-            type="checkbox"
-            checked={applyToSeries}
-            onChange={(e) => setApplyToSeries(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
-          />
-          Appliquer aux futurs événements de la série
-        </label>
+        <div className="mb-4 flex items-center gap-3 p-3 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
+          <span className="text-icc-violet text-lg">↻</span>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={applyToSeries}
+              onChange={(e) => setApplyToSeries(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+            />
+            Appliquer aux futurs événements de la série
+          </label>
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
