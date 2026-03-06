@@ -63,6 +63,13 @@
 - [x] Nombre de services par membre sur une periode
 - [x] Dashboard avec graphiques de tendances
 
+## Guide utilisateur
+
+- [x] Page guide des fonctionnalites par role (onglets, badges d'acces, placeholders)
+- [x] Icone guide dans le header (lien vers /guide)
+- [ ] Remplacer les placeholders par de vraies captures d'ecran annotees
+- [ ] Tutoriel interactif (onboarding guide pas-a-pas pour les nouveaux utilisateurs)
+
 ## Technique
 
 - [x] Tests unitaires (Vitest)
