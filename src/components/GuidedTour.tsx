@@ -363,6 +363,7 @@ function GuidedTourInner({ userRole }: GuidedTourProps) {
   const [active, setActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
@@ -370,7 +371,7 @@ function GuidedTourInner({ userRole }: GuidedTourProps) {
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || finishedRef.current) return;
     if (searchParams.get("tour") === "1") {
       const timer = setTimeout(() => setActive(true), 800);
       return () => clearTimeout(timer);
@@ -378,6 +379,7 @@ function GuidedTourInner({ userRole }: GuidedTourProps) {
   }, [searchParams, mounted]);
 
   const handleFinish = useCallback(() => {
+    finishedRef.current = true;
     setActive(false);
     // Mark tour as seen (fire-and-forget)
     fetch("/api/user/tour-seen", { method: "PATCH" }).catch(() => {});

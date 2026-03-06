@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.7.3] - 2026-03-06
+
+### Ajoute
+
+- Guide : zoom plein ecran au clic sur les captures d'ecran (modale avec fond sombre)
+
+### Corrige
+
+- Tour guide : correction du bouton "Terminer" qui ne desactivait pas le tour au premier clic
+
 ## [v0.7.2] - 2026-03-06
 
 ### Ameliore
