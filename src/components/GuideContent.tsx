@@ -129,6 +129,7 @@ function AccessBadge({ level }: { level: AccessLevel }) {
 
 export default function GuideContent({ defaultRole }: GuideContentProps) {
   const [activeRole, setActiveRole] = useState<RoleKey>(defaultRole);
+  const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
   const router = useRouter();
 
   const visibleFeatures = FEATURES.filter((f) => f.access[activeRole] !== "none");
@@ -197,20 +198,49 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
                     <AccessBadge level={feature.access[activeRole]} />
                   </div>
                   <p className="text-xs text-gray-500">{feature.description}</p>
-                  <div className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setZoomedImage({ src: `${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`, alt: feature.screenshotTitle })}
+                    className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden cursor-zoom-in group"
+                  >
                     <img
                       src={`${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`}
                       alt={feature.screenshotTitle}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain transition-transform group-hover:scale-105"
                       loading="lazy"
                     />
-                  </div>
+                  </button>
                 </div>
               ))}
             </div>
           </section>
         ))}
       </div>
+
+      {/* Modale zoom image */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 cursor-zoom-out p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setZoomedImage(null)}
+            className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/70 rounded-full p-2 transition-colors"
+            aria-label="Fermer"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={zoomedImage.src}
+            alt={zoomedImage.alt}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
