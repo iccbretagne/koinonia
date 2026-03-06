@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.6.0] - 2026-03-06
+
+### Ajoute
+
+- Page Guide des fonctionnalites par role (`/guide`) avec onglets, badges d'acces et captures
+- Conteneur images 16:9 (`aspect-video` + `object-contain`) sans deformation
+- Descriptions d'actions pour chaque fonctionnalite du guide
+- Filtrage par role : masquage des fonctionnalites inaccessibles
+- Deploiement automatise via SSH sur push de tag v* (workflow CD)
+- Declenchement manuel du workflow deploy
+- Script de deploiement manuel `scripts/deploy.sh`
+
+### Corrige
+
+- Symlink `.env` force lors du deploiement
+- Utilisation de `prisma migrate deploy` en production
+
 ## [v0.5.0] - 2026-03-04
 
 ### Ajoute
