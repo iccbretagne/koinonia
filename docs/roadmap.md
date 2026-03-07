@@ -67,8 +67,8 @@
 
 - [x] Page guide des fonctionnalites par role (onglets, badges d'acces, placeholders)
 - [x] Icone guide dans le header (lien vers /guide)
-- [ ] Remplacer les placeholders par de vraies captures d'ecran annotees
-- [ ] Tutoriel interactif (onboarding guide pas-a-pas pour les nouveaux utilisateurs)
+- [x] Remplacer les placeholders par de vraies captures d'ecran annotees
+- [x] Tutoriel interactif (onboarding guide pas-a-pas pour les nouveaux utilisateurs)
 
 ## Technique
 
@@ -77,7 +77,7 @@
 - [x] CI/CD (GitHub Actions : typecheck, version check)
 - [x] Dependabot (mises a jour automatiques des dependances)
 - [x] Affichage de la version dans le footer
-- [ ] Deploiement production (Docker multi-stage + reverse proxy)
+- [x] Deploiement production (Docker multi-stage + reverse proxy)
 - [x] Migrations Prisma (remplacer `db push` par `prisma migrate`)
 - [x] PWA (manifest, service worker, installation mobile)
 - [x] Rate limiting sur les API routes
