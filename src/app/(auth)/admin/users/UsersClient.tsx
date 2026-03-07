@@ -392,26 +392,26 @@ export default function UsersClient({
       <div className="space-y-4">
         {filteredUsers.map((user) => (
           <div key={user.id} className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-3 min-w-0">
                 {user.image && (
                   <img
                     src={user.image}
                     alt=""
-                    className="w-8 h-8 rounded-full"
+                    className="w-8 h-8 rounded-full shrink-0"
                   />
                 )}
-                <div>
-                  <p className="font-medium text-gray-900">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 truncate">
                     {user.displayName || user.name || "Sans nom"}
                     {user.displayName && user.name && user.displayName !== user.name && (
                       <span className="text-sm text-gray-400 ml-1">({user.name})</span>
                     )}
                   </p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
+                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {canManageRoles && (
                   <>
                     <Button variant="secondary" onClick={() => openEditDisplayName(user)}>

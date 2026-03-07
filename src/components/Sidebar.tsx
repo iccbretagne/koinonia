@@ -208,7 +208,7 @@ export default function Sidebar({
   const isAdminActive = pathname.startsWith("/admin");
 
   return (
-    <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 space-y-1 overflow-y-auto">
+    <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
       {/* Départements */}
       <AccordionSection
         title="Départements"
