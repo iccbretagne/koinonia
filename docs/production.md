@@ -260,6 +260,42 @@ Un script `scripts/deploy.sh` est egalement disponible pour les deploiements man
 DEPLOY_PATH=/opt/planning bash scripts/deploy.sh 0.6.0
 ```
 
+## Webcron — rappels de service
+
+La route `POST /api/cron/reminders` envoie les rappels J-3 et J-1 (email + notification in-app). Elle doit être appelée **une fois par jour** par un service externe.
+
+### Variables d'environnement requises
+
+Ajouter dans `shared/.env` :
+
+```bash
+CRON_SECRET=GENERER_AVEC_OPENSSL   # openssl rand -base64 32
+```
+
+### Option 1 — crontab système (recommandé)
+
+```bash
+# Editer la crontab de l'utilisateur planning
+sudo -u planning crontab -e
+```
+
+Ajouter la ligne suivante (exécution chaque jour à 7h00) :
+
+```
+0 7 * * * curl -s -X POST https://votre-domaine.com/api/cron/reminders \
+  -H "Authorization: Bearer VOTRE_CRON_SECRET" \
+  >> /opt/planning/logs/cron.log 2>&1
+```
+
+### Option 2 — service webcron externe
+
+Configurer un service type [cron-job.org](https://cron-job.org) ou EasyCron :
+
+- **URL** : `https://votre-domaine.com/api/cron/reminders`
+- **Méthode** : `POST`
+- **Header** : `Authorization: Bearer VOTRE_CRON_SECRET`
+- **Fréquence** : 1 fois par jour (ex : 7h00)
+
 ## Captures du guide utilisateur
 
 Les captures d'ecran de la page `/guide` sont hebergees sur une **release GitHub dediee** (`guide-assets`) et non dans le code source. Elles sont chargees depuis :
@@ -301,6 +337,8 @@ gh release upload guide-assets guide-*.png
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
 - [ ] `NEXTAUTH_SECRET` genere avec `openssl rand -base64 32`
+- [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
+- [ ] Webcron configure (crontab ou service externe) pour appeler `/api/cron/reminders` quotidiennement
 - [ ] `AUTH_TRUST_HOST=true` present
 - [ ] `NEXTAUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie
