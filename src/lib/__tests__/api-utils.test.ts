@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { ApiError, successResponse, errorResponse } from "../api-utils";
-import { z } from "zod";
 
 describe("ApiError", () => {
   it("creates an error with statusCode and message", () => {

@@ -140,7 +140,7 @@ function MinistryGroupedDepartments({
           <div key={ministry}>
             <Link
               href={`/dashboard?dept=${depts[0].id}`}
-              onClick={(e) => {
+              onClick={() => {
                 if (isOpen && !hasActiveDept) {
                   // Already open, just navigate
                 } else if (!isOpen) {

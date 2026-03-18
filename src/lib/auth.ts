@@ -119,7 +119,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       session.user.churchRoles = churchRoles.map((cr) => {
         const extraDepts = ministerDeptMap.get(cr.id);
-        let departments = cr.departments.map((d) => ({ department: d.department }));
+        const departments = cr.departments.map((d) => ({ department: d.department }));
         if (extraDepts) {
           const existingIds = new Set(departments.map((d) => d.department.id));
           for (const dept of extraDepts) {

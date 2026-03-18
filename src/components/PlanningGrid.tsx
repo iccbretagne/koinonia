@@ -50,6 +50,8 @@ export default function PlanningGrid({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [deadlinePassed, setDeadlinePassed] = useState(false);
   const [planningDeadline, setPlanningDeadline] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -58,6 +60,7 @@ export default function PlanningGrid({
 
   const fetchPlanning = useCallback(async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch(
         `/api/events/${eventId}/departments/${departmentId}/planning`
@@ -68,8 +71,8 @@ export default function PlanningGrid({
       setDeadlinePassed(data.deadlinePassed ?? false);
       setPlanningDeadline(data.planningDeadline ?? null);
       setDirty(false);
-    } catch (error) {
-      console.error("Error fetching planning:", error);
+    } catch {
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -98,8 +101,9 @@ export default function PlanningGrid({
         );
         if (!res.ok) throw new Error("Failed to save planning");
         setDirty(false);
-      } catch (error) {
-        console.error("Error saving planning:", error);
+        setSaveError(false);
+      } catch {
+        setSaveError(true);
       } finally {
         setSaving(false);
       }
@@ -134,6 +138,15 @@ export default function PlanningGrid({
     );
   }
 
+  if (fetchError) {
+    return (
+      <div className="p-4 text-icc-rouge text-sm">
+        Erreur lors du chargement du planning.{" "}
+        <button onClick={fetchPlanning} className="underline">Réessayer</button>
+      </div>
+    );
+  }
+
   if (members.length === 0) {
     return (
       <div className="p-4 text-gray-500">
@@ -161,6 +174,7 @@ export default function PlanningGrid({
             {deadlinePassed ? "Échéance dépassée" : "Lecture seule"}
           </span>
         )}
+        {saveError && <span className="text-icc-rouge">Erreur d&apos;enregistrement</span>}
         {!isReadOnly && saving && <span className="text-blue-500">Enregistrement...</span>}
         {!isReadOnly && dirty && !saving && (
           <span className="text-orange-500">
