@@ -21,6 +21,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 - Annulation en cascade niveau 1 : annuler une `Announcement` annule automatiquement toutes ses `ServiceRequest` liees
 - Annulation en cascade niveau 2 : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liee
+- Synchronisation automatique du statut de l'annonce quand une SR parente change de statut (EN_COURS / TRAITEE / ANNULEE)
 
 ### Ameliore
 

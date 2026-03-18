@@ -74,6 +74,8 @@ export async function PATCH(
         submittedById: true,
         assignedDeptId: true,
         churchId: true,
+        type: true,
+        announcementId: true,
       },
     });
     if (!serviceRequest) throw new ApiError(404, "Demande introuvable");
@@ -144,6 +146,40 @@ export async function PATCH(
         await tx.serviceRequest.updateMany({
           where: { parentRequestId: id },
           data: { status: "ANNULE" },
+        });
+      }
+
+      // Sync announcement status when a parent SR (not VISUEL) changes status
+      if (
+        data.status !== undefined &&
+        serviceRequest.announcementId &&
+        (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
+      ) {
+        const siblingStatuses = await tx.serviceRequest.findMany({
+          where: {
+            announcementId: serviceRequest.announcementId,
+            parentRequestId: null,
+            id: { not: id },
+          },
+          select: { status: true },
+        });
+
+        const allStatuses = [data.status, ...siblingStatuses.map((s) => s.status)];
+
+        let announcementStatus: "EN_ATTENTE" | "EN_COURS" | "TRAITEE" | "ANNULEE";
+        if (allStatuses.every((s) => s === "ANNULE")) {
+          announcementStatus = "ANNULEE";
+        } else if (allStatuses.every((s) => s === "LIVRE" || s === "ANNULE")) {
+          announcementStatus = "TRAITEE";
+        } else if (allStatuses.some((s) => s === "EN_COURS" || s === "LIVRE")) {
+          announcementStatus = "EN_COURS";
+        } else {
+          announcementStatus = "EN_ATTENTE";
+        }
+
+        await tx.announcement.update({
+          where: { id: serviceRequest.announcementId },
+          data: { status: announcementStatus },
         });
       }
 
