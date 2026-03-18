@@ -101,7 +101,11 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
-    const isStatusChange = data.status !== undefined;
+    // Owner can only read — status changes restricted to dept members and managers
+    if (data.status !== undefined && !canManage && !isAssignedDeptMember) {
+      throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
+    }
+
     const isDelivery = data.status === "LIVRE";
 
     if (isDelivery && !data.deliveryLink && !isAssignedDeptMember && !canManage) {
@@ -123,7 +127,7 @@ export async function PATCH(
         ...(data.deadline !== undefined && {
           deadline: data.deadline ? new Date(data.deadline) : null,
         }),
-        ...(isStatusChange && {
+        ...(data.status !== undefined && {
           reviewedById: session.user.id,
           reviewedAt: new Date(),
         }),

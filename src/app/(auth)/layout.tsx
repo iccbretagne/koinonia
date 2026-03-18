@@ -78,7 +78,22 @@ export default async function AuthLayout({
     serviceLinks.push({ href: "/media/requests", label: "Visuels" });
     serviceLinks.push({ href: "/communication/requests", label: "Communication" });
   }
-  if (userPermissions.has("events:manage")) {
+
+  // Secrétariat link: events:manage OR member of the secretariat department
+  let canSeeSecretariat = userPermissions.has("events:manage");
+  if (!canSeeSecretariat && currentChurchId) {
+    const secretariatDept = await prisma.department.findFirst({
+      where: { function: "SECRETARIAT", ministry: { churchId: currentChurchId } },
+      select: { id: true },
+    });
+    if (secretariatDept) {
+      const userDeptIds = churchRoles
+        .filter((r) => r.churchId === currentChurchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id));
+      canSeeSecretariat = userDeptIds.includes(secretariatDept.id);
+    }
+  }
+  if (canSeeSecretariat) {
     serviceLinks.splice(1, 0, { href: "/secretariat/announcements", label: "Secrétariat" });
   }
 
