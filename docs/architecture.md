@@ -204,6 +204,25 @@ Les demandes `VISUEL` sont liees a leur demande parente (`DIFFUSION_INTERNE` ou 
 
 Les deux cascades s'executent dans des transactions Prisma atomiques.
 
+**Motif de refus** : le champ `reviewNotes` de chaque `ServiceRequest` est visible par le demandeur dans `/announcements` (vue "Mes annonces"), sous le badge de statut `ANNULE`.
+
+### Synchronisation du statut d'annonce
+
+Le statut de l'`Announcement` est recalcule automatiquement apres chaque changement de statut d'une SR parente :
+
+| Statuts des SR parentes | Statut annonce |
+|---|---|
+| Toutes `ANNULE` | `ANNULEE` |
+| Toutes `LIVRE` ou (`LIVRE` + `ANNULE`) | `TRAITEE` |
+| Au moins une `EN_COURS` ou `LIVRE` | `EN_COURS` |
+| Sinon | `EN_ATTENTE` |
+
+### Qualite du code
+
+- **ESLint** : configure via `eslint.config.mjs` (`eslint-config-next`), script `npm run lint`
+- **TypeScript strict** : `noUnusedLocals` + `noUnusedParameters` actives dans `tsconfig.json`
+- **CI** : typecheck + lint + tests sur chaque PR
+
 ## Multi-tenant
 
 Chaque eglise (`Church`) est un tenant isole. Les donnees (ministeres, departements, membres, evenements, annonces) sont rattachees a une eglise via `churchId`.
