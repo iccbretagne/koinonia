@@ -7,6 +7,7 @@ import { useSearchParams, usePathname } from "next/navigation";
 interface SidebarProps {
   departments: { id: string; name: string; ministryName?: string }[];
   adminLinks: { href: string; label: string }[];
+  serviceLinks: { href: string; label: string }[];
   onClose?: () => void;
 }
 
@@ -194,9 +195,18 @@ function MinistryGroupedDepartments({
 
 /* ── Sidebar ────────────────────────────────────────────── */
 
+function IconMegaphone({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+    </svg>
+  );
+}
+
 export default function Sidebar({
   departments,
   adminLinks,
+  serviceLinks,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -205,6 +215,7 @@ export default function Sidebar({
 
   const isDashboardActive = pathname === "/dashboard";
   const isEventsActive = pathname.startsWith("/events");
+  const isServiceActive = pathname.startsWith("/announcements") || pathname.startsWith("/secretariat") || pathname.startsWith("/media") || pathname.startsWith("/communication");
   const isAdminActive = pathname.startsWith("/admin");
 
   return (
@@ -280,6 +291,33 @@ export default function Sidebar({
           </Link>
         </nav>
       </AccordionSection>
+
+      {/* Annonces & Demandes */}
+      {serviceLinks.length > 0 && (
+        <AccordionSection
+          title="Annonces"
+          icon={<IconMegaphone className="w-4 h-4" />}
+          isActive={isServiceActive}
+          defaultOpen={isServiceActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            {serviceLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={onClose}
+                className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  pathname.startsWith(link.href)
+                    ? "bg-icc-violet-light text-icc-violet font-medium"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </AccordionSection>
+      )}
 
       {/* Administration */}
       {adminLinks.length > 0 && (

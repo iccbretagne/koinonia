@@ -71,6 +71,17 @@ export default async function AuthLayout({
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
 
+  // Compute service links (annonces & demandes)
+  const serviceLinks: { href: string; label: string }[] = [];
+  if (userPermissions.has("planning:view")) {
+    serviceLinks.push({ href: "/announcements", label: "Mes annonces" });
+    serviceLinks.push({ href: "/media/requests", label: "Visuels" });
+    serviceLinks.push({ href: "/communication/requests", label: "Communication" });
+  }
+  if (userPermissions.has("events:manage")) {
+    serviceLinks.splice(1, 0, { href: "/secretariat/announcements", label: "Secrétariat" });
+  }
+
   const headerContent = (
     <>
       <div className="min-w-0">
@@ -137,6 +148,7 @@ export default async function AuthLayout({
     <AuthLayoutShell
       departments={allDepartments}
       adminLinks={visibleAdminLinks}
+      serviceLinks={serviceLinks}
       hasAdminAccess={visibleAdminLinks.length > 0}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD"}
       header={headerContent}
