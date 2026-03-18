@@ -59,18 +59,25 @@ const SR_TYPE_LABEL: Record<ServiceRequestType, string> = {
   VISUEL: "Visuel",
 };
 
-const SR_STATUS_ICON: Record<ServiceRequestStatus, string> = {
-  EN_ATTENTE: "⏳",
-  EN_COURS: "●",
-  LIVRE: "✓",
-  ANNULE: "✗",
+const SR_STATUS_BADGE: Record<ServiceRequestStatus, string> = {
+  EN_ATTENTE: "bg-amber-100 text-amber-800 border border-amber-200",
+  EN_COURS:   "bg-blue-100 text-blue-800 border border-blue-200",
+  LIVRE:      "bg-green-100 text-green-800 border border-green-200",
+  ANNULE:     "bg-gray-100 text-gray-500 border border-gray-200",
 };
 
-const SR_STATUS_COLOR: Record<ServiceRequestStatus, string> = {
-  EN_ATTENTE: "text-amber-600",
-  EN_COURS: "text-blue-600",
-  LIVRE: "text-green-600",
-  ANNULE: "text-gray-400",
+const SR_STATUS_LABEL: Record<ServiceRequestStatus, string> = {
+  EN_ATTENTE: "En attente",
+  EN_COURS:   "En cours",
+  LIVRE:      "Livré",
+  ANNULE:     "Annulé",
+};
+
+const SR_STATUS_DOT: Record<ServiceRequestStatus, string> = {
+  EN_ATTENTE: "●",
+  EN_COURS:   "●",
+  LIVRE:      "✓",
+  ANNULE:     "✗",
 };
 
 export default function AnnouncementsList({ announcements }: Props) {
@@ -137,37 +144,37 @@ export default function AnnouncementsList({ announcements }: Props) {
           )}
 
           {ann.serviceRequests.length > 0 && (
-            <div className="border-t border-gray-100 pt-3 mt-1 space-y-1.5">
+            <div className="border-t border-gray-100 pt-3 mt-1 space-y-2">
               {ann.serviceRequests.map((sr) => (
                 <div key={sr.id}>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={SR_STATUS_COLOR[sr.status]}>
-                      {SR_STATUS_ICON[sr.status]}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[sr.status]}`}>
+                      {SR_STATUS_DOT[sr.status]} {SR_STATUS_LABEL[sr.status]}
                     </span>
-                    <span className="font-medium text-gray-700">
+                    <span className="text-xs font-medium text-gray-700">
                       {SR_TYPE_LABEL[sr.type]}
                     </span>
                     {sr.assignedDept && (
-                      <span className="text-gray-400">→ {sr.assignedDept.name}</span>
+                      <span className="text-xs text-gray-400">→ {sr.assignedDept.name}</span>
                     )}
                   </div>
                   {sr.childRequests.map((child) => (
-                    <div key={child.id} className="flex items-center gap-2 text-xs pl-4 mt-0.5">
-                      <span className={SR_STATUS_COLOR[child.status]}>
-                        {SR_STATUS_ICON[child.status]}
+                    <div key={child.id} className="flex items-center gap-2 flex-wrap pl-4 mt-1">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[child.status]}`}>
+                        {SR_STATUS_DOT[child.status]} {SR_STATUS_LABEL[child.status]}
                       </span>
-                      <span className="text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
+                      <span className="text-xs text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
                       {child.assignedDept && (
-                        <span className="text-gray-400">→ {child.assignedDept.name}</span>
+                        <span className="text-xs text-gray-400">→ {child.assignedDept.name}</span>
                       )}
                       {child.deliveryLink && child.status === "LIVRE" && (
                         <a
                           href={child.deliveryLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-icc-violet underline"
+                          className="text-xs text-icc-violet underline font-medium"
                         >
-                          Voir le visuel
+                          Voir le visuel →
                         </a>
                       )}
                     </div>

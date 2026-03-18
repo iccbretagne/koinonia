@@ -1,11 +1,12 @@
 import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
 import { DepartmentFunction } from "@prisma/client";
+import { notFound } from "next/navigation";
 import SecretariatDashboard from "./SecretariatDashboard";
 
 export default async function SecretariatAnnouncementsPage() {
-  const session = await requirePermission("events:manage");
+  const session = await requirePermission("planning:view");
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
 
@@ -13,6 +14,19 @@ export default async function SecretariatAnnouncementsPage() {
     where: { function: DepartmentFunction.SECRETARIAT, ministry: { churchId } },
     select: { id: true, name: true },
   });
+
+  // Allow: events:manage (Admin, Secrétaire) OR member/minister of the secretariat dept
+  if (secretariatDept) {
+    const userPermissions = new Set(
+      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    );
+    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    const userDeptIds = session.user.churchRoles.flatMap((r) =>
+      r.departments.map((d) => d.department.id)
+    );
+    const isDeptMember = userDeptIds.includes(secretariatDept.id);
+    if (!canManage && !isDeptMember) return notFound();
+  }
 
   if (!secretariatDept) {
     return (

@@ -137,9 +137,19 @@ export default function AnnouncementForm({ churchId, targetEvents, sourceOptions
         />
       </div>
 
-      {sourceOptions.length > 1 && (
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Source</label>
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">
+          Département demandeur
+        </label>
+        {sourceOptions.length === 0 ? (
+          <p className="text-sm text-gray-500 italic px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+            Aucun département associé — l&apos;annonce sera soumise en votre nom sans département.
+          </p>
+        ) : sourceOptions.length === 1 ? (
+          <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+            {sourceOptions[0].label}
+          </p>
+        ) : (
           <select
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
@@ -151,8 +161,8 @@ export default function AnnouncementForm({ churchId, targetEvents, sourceOptions
               </option>
             ))}
           </select>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
