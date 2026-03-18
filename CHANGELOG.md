@@ -6,6 +6,26 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Ajoute
+
+- Module Annonces et Demandes de service :
+  - Soumission d'annonces par les referents (`/announcements/new`) avec canaux Interne et/ou Externe
+  - Generation automatique de `ServiceRequest` en transaction lors de la soumission (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL)
+  - Dashboards operationnels dedies : Secretariat (`/secretariat/announcements`), Production Media (`/media/requests`), Communication (`/communication/requests`)
+  - Demandes de visuels standalone (`/media/requests/new`)
+  - Configuration des fonctions departementales (`/admin/departments/functions`)
+  - Badge de notification dans la sidebar pour les demandes en attente
+  - Lien parent-enfant `parentRequestId` entre demande VISUEL et son canal (DIFFUSION_INTERNE ou RESEAUX_SOCIAUX)
+
+### Corrige
+
+- Annulation en cascade : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liee
+
+### Ameliore
+
+- Statuts des demandes de service : badges colores (amber/blue/green/gray) a la place de simples icones
+- Formulaire annonce : champ "Source" renomme en "Departement demandeur"
+
 ## [v0.7.3] - 2026-03-06
 
 ### Ajoute

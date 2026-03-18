@@ -394,6 +394,8 @@ Valeurs possibles pour `status` : `"EN_ATTENTE"`, `"EN_COURS"`, `"LIVRE"`, `"ANN
 
 Lors d'un changement de statut, `reviewedById` et `reviewedAt` sont automatiquement renseignes.
 
+**Annulation en cascade** : si `status` = `"ANNULE"` et que la demande est de type `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`, la demande `VISUEL` enfant (liee via `parentRequestId`) est automatiquement annulee dans la meme transaction.
+
 ---
 
 ## Evenements (complement)

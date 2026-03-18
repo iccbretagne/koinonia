@@ -198,6 +198,8 @@ La configuration se fait via `/admin/departments/functions` (permission `events:
 
 Les demandes `VISUEL` sont liees a leur demande parente (`DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`) via `parentRequestId`. Ce lien contextualise le format attendu (Slide vs Story/Post).
 
+**Annulation en cascade** : quand une demande parente passe au statut `ANNULE`, toutes les demandes `VISUEL` enfants (`parentRequestId = id`) sont automatiquement annulees dans la meme transaction Prisma (`PATCH /api/service-requests/[id]`).
+
 ## Multi-tenant
 
 Chaque eglise (`Church`) est un tenant isole. Les donnees (ministeres, departements, membres, evenements, annonces) sont rattachees a une eglise via `churchId`.
