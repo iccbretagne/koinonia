@@ -27,6 +27,7 @@ export default async function AnnouncementsPage() {
               type: true,
               status: true,
               deliveryLink: true,
+              reviewNotes: true,
               assignedDept: { select: { id: true, name: true } },
             },
           },

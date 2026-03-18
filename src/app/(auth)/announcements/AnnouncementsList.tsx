@@ -8,6 +8,7 @@ interface ChildRequest {
   type: ServiceRequestType;
   status: ServiceRequestStatus;
   deliveryLink: string | null;
+  reviewNotes: string | null;
   assignedDept: { id: string; name: string } | null;
 }
 
@@ -15,6 +16,7 @@ interface ServiceRequest {
   id: string;
   type: ServiceRequestType;
   status: ServiceRequestStatus;
+  reviewNotes: string | null;
   assignedDept: { id: string; name: string } | null;
   childRequests: ChildRequest[];
 }
@@ -196,24 +198,36 @@ export default function AnnouncementsList({ announcements: initial }: Props) {
                       <span className="text-xs text-gray-400">→ {sr.assignedDept.name}</span>
                     )}
                   </div>
+                  {sr.status === "ANNULE" && sr.reviewNotes && (
+                    <p className="mt-1 text-xs text-gray-500 italic pl-1">
+                      Motif : {sr.reviewNotes}
+                    </p>
+                  )}
                   {sr.childRequests.map((child) => (
-                    <div key={child.id} className="flex items-center gap-2 flex-wrap pl-4 mt-1">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[child.status]}`}>
-                        {SR_STATUS_DOT[child.status]} {SR_STATUS_LABEL[child.status]}
-                      </span>
-                      <span className="text-xs text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
-                      {child.assignedDept && (
-                        <span className="text-xs text-gray-400">→ {child.assignedDept.name}</span>
-                      )}
-                      {child.deliveryLink && child.status === "LIVRE" && (
-                        <a
-                          href={child.deliveryLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-icc-violet underline font-medium"
-                        >
-                          Voir le visuel →
-                        </a>
+                    <div key={child.id} className="pl-4 mt-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[child.status]}`}>
+                          {SR_STATUS_DOT[child.status]} {SR_STATUS_LABEL[child.status]}
+                        </span>
+                        <span className="text-xs text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
+                        {child.assignedDept && (
+                          <span className="text-xs text-gray-400">→ {child.assignedDept.name}</span>
+                        )}
+                        {child.deliveryLink && child.status === "LIVRE" && (
+                          <a
+                            href={child.deliveryLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-icc-violet underline font-medium"
+                          >
+                            Voir le visuel →
+                          </a>
+                        )}
+                      </div>
+                      {child.status === "ANNULE" && child.reviewNotes && (
+                        <p className="mt-1 text-xs text-gray-500 italic">
+                          Motif : {child.reviewNotes}
+                        </p>
                       )}
                     </div>
                   ))}
