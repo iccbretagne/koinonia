@@ -91,14 +91,26 @@ export async function PATCH(
       throw new ApiError(403, "Modification du statut réservée aux gestionnaires");
     }
 
-    const updated = await prisma.announcement.update({
-      where: { id },
-      data: {
-        ...(data.status && { status: data.status }),
-        ...(data.title && { title: data.title }),
-        ...(data.content && { content: data.content }),
-        ...(data.isUrgent !== undefined && { isUrgent: data.isUrgent }),
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.announcement.update({
+        where: { id },
+        data: {
+          ...(data.status && { status: data.status }),
+          ...(data.title && { title: data.title }),
+          ...(data.content && { content: data.content }),
+          ...(data.isUrgent !== undefined && { isUrgent: data.isUrgent }),
+        },
+      });
+
+      // Cascade cancellation: annuler toutes les ServiceRequest liees
+      if (data.status === "ANNULEE") {
+        await tx.serviceRequest.updateMany({
+          where: { announcementId: id },
+          data: { status: "ANNULE" },
+        });
+      }
+
+      return result;
     });
 
     return successResponse(updated);

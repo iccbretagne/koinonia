@@ -19,7 +19,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrige
 
-- Annulation en cascade : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liee
+- Annulation en cascade niveau 1 : annuler une `Announcement` annule automatiquement toutes ses `ServiceRequest` liees
+- Annulation en cascade niveau 2 : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liee
 
 ### Ameliore
 

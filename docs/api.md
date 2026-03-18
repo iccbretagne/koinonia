@@ -322,6 +322,8 @@ Met a jour une annonce (statut, titre, contenu, urgence).
 
 Valeurs possibles pour `status` : `"EN_ATTENTE"`, `"EN_COURS"`, `"TRAITEE"`, `"ANNULEE"`.
 
+**Annulation en cascade** : si `status` = `"ANNULEE"`, toutes les `ServiceRequest` liees a l'annonce (`announcementId`) sont automatiquement annulees dans la meme transaction (y compris les demandes VISUEL enfants).
+
 ### `DELETE /api/announcements/[id]`
 
 Supprime une annonce. Autorise pour les gestionnaires ou le proprietaire.
