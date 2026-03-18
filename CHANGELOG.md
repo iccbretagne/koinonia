@@ -6,6 +6,21 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.8.1] - 2026-03-18
+
+### Corrige
+
+- Motif de refus (`reviewNotes`) desormais visible par le demandeur dans "Mes annonces"
+- `tsconfig.tsbuildinfo` desindexe de git (etait deja dans `.gitignore`)
+
+### Ameliore
+
+- ESLint configure (`eslint-config-next`) avec script `npm run lint`
+- TypeScript : activation `noUnusedLocals` + `noUnusedParameters`
+- `PlanningGrid` : etats d'erreur visibles (`fetchError` / `saveError`) en remplacement des `console.error` silencieux
+- CI : `npm run lint` ajoute dans le pipeline
+- Dependances : `@types/node` 25.3.5 → 25.5.0, `vitest` + `@vitest/coverage-v8` 4.0.18 → 4.1.0
+
 ## [v0.8.0] - 2026-03-18
 
 ### Ajoute
