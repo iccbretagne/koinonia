@@ -86,9 +86,14 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
-    // Status changes restricted to managers
-    if (data.status && !canManage && !isOwner) {
-      throw new ApiError(403, "Modification du statut réservée aux gestionnaires");
+    // Status changes: managers can set any status, owners can only cancel
+    if (data.status !== undefined) {
+      if (!canManage && !isOwner) {
+        throw new ApiError(403, "Modification du statut réservée aux gestionnaires");
+      }
+      if (!canManage && isOwner && data.status !== "ANNULEE") {
+        throw new ApiError(403, "Vous pouvez uniquement annuler votre propre annonce");
+      }
     }
 
     const updated = await prisma.$transaction(async (tx) => {

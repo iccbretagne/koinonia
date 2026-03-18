@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { AnnouncementStatus, ServiceRequestType, ServiceRequestStatus } from "@prisma/client";
 
 interface ChildRequest {
@@ -80,7 +81,34 @@ const SR_STATUS_DOT: Record<ServiceRequestStatus, string> = {
   ANNULE:     "✗",
 };
 
-export default function AnnouncementsList({ announcements }: Props) {
+export default function AnnouncementsList({ announcements: initial }: Props) {
+  const [announcements, setAnnouncements] = useState(initial);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+
+  async function cancelAnnouncement(id: string) {
+    if (!confirm("Annuler cette demande ? Les demandes de service liées seront également annulées.")) return;
+    setCancelling(id);
+    try {
+      const res = await fetch(`/api/announcements/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ANNULEE" }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur");
+        return;
+      }
+      setAnnouncements((prev) =>
+        prev.map((ann) => ann.id === id ? { ...ann, status: "ANNULEE" as AnnouncementStatus } : ann)
+      );
+    } catch {
+      alert("Erreur");
+    } finally {
+      setCancelling(null);
+    }
+  }
+
   if (announcements.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400">
@@ -118,11 +146,21 @@ export default function AnnouncementsList({ announcements }: Props) {
                 })}
               </p>
             </div>
-            <span
-              className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLOR[ann.status]}`}
-            >
-              {STATUS_LABEL[ann.status]}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLOR[ann.status]}`}>
+                {STATUS_LABEL[ann.status]}
+              </span>
+              {(ann.status === "EN_ATTENTE" || ann.status === "EN_COURS") && (
+                <button
+                  onClick={() => cancelAnnouncement(ann.id)}
+                  disabled={cancelling === ann.id}
+                  className="text-xs text-gray-400 hover:text-icc-rouge transition-colors disabled:opacity-50"
+                  title="Annuler la demande"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
 
           <p className="text-sm text-gray-600 line-clamp-2 mb-3">{ann.content}</p>
