@@ -112,26 +112,42 @@ export async function PATCH(
       throw new ApiError(400, "Un lien de livraison est requis pour marquer comme livré");
     }
 
-    const updated = await prisma.serviceRequest.update({
-      where: { id },
-      data: {
-        ...(data.status && { status: data.status }),
-        ...(data.deliveryLink !== undefined && {
-          deliveryLink: data.deliveryLink,
-        }),
-        ...(data.reviewNotes !== undefined && {
-          reviewNotes: data.reviewNotes,
-        }),
-        ...(data.format !== undefined && { format: data.format }),
-        ...(data.brief !== undefined && { brief: data.brief }),
-        ...(data.deadline !== undefined && {
-          deadline: data.deadline ? new Date(data.deadline) : null,
-        }),
-        ...(data.status !== undefined && {
-          reviewedById: session.user.id,
-          reviewedAt: new Date(),
-        }),
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.serviceRequest.update({
+        where: { id },
+        data: {
+          ...(data.status && { status: data.status }),
+          ...(data.deliveryLink !== undefined && {
+            deliveryLink: data.deliveryLink,
+          }),
+          ...(data.reviewNotes !== undefined && {
+            reviewNotes: data.reviewNotes,
+          }),
+          ...(data.format !== undefined && { format: data.format }),
+          ...(data.brief !== undefined && { brief: data.brief }),
+          ...(data.deadline !== undefined && {
+            deadline: data.deadline ? new Date(data.deadline) : null,
+          }),
+          ...(data.status !== undefined && {
+            reviewedById: session.user.id,
+            reviewedAt: new Date(),
+          }),
+        },
+        select: { id: true, type: true, status: true },
+      });
+
+      // Cascade cancellation: when a parent request is refused, cancel its VISUEL child
+      if (
+        data.status === "ANNULE" &&
+        (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
+      ) {
+        await tx.serviceRequest.updateMany({
+          where: { parentRequestId: id },
+          data: { status: "ANNULE" },
+        });
+      }
+
+      return result;
     });
 
     return successResponse(updated);
