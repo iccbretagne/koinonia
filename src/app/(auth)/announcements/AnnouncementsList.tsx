@@ -154,10 +154,10 @@ export default function AnnouncementsList({ announcements: initial }: Props) {
                 <button
                   onClick={() => cancelAnnouncement(ann.id)}
                   disabled={cancelling === ann.id}
-                  className="text-xs text-gray-400 hover:text-icc-rouge transition-colors disabled:opacity-50"
+                  className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-50 text-icc-rouge border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
                   title="Annuler la demande"
                 >
-                  ✕
+                  Annuler
                 </button>
               )}
             </div>
