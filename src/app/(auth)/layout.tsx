@@ -14,6 +14,7 @@ const adminLinks = [
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
   { href: "/admin/members", label: "STAR", permissions: ["members:manage", "members:view"] },
   { href: "/admin/events", label: "Événements", permissions: ["events:manage"] },
+  { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
 ];
 

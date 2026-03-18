@@ -14,13 +14,37 @@ interface Department {
 interface Props {
   eventId: string;
   isRecurring?: boolean;
+  allowAnnouncements: boolean;
   departments: Department[];
 }
 
-export default function EventDetailClient({ eventId, isRecurring, departments }: Props) {
+export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
   const [applyToSeries, setApplyToSeries] = useState(false);
+  const [allowAnnouncements, setAllowAnnouncements] = useState(initialAllowAnnouncements);
+  const [savingAnnouncements, setSavingAnnouncements] = useState(false);
+
+  async function toggleAllowAnnouncements() {
+    setSavingAnnouncements(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ allowAnnouncements: !allowAnnouncements }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur");
+        return;
+      }
+      setAllowAnnouncements((v) => !v);
+    } catch {
+      alert("Erreur");
+    } finally {
+      setSavingAnnouncements(false);
+    }
+  }
 
   async function toggleDepartment(dept: Department) {
     setLoading(dept.id);
@@ -72,6 +96,41 @@ export default function EventDetailClient({ eventId, isRecurring, departments }:
         <Link href={`/events/${eventId}/star-view`}>
           <Button>Voir planning des STAR</Button>
         </Link>
+      </div>
+
+      <div className="mb-6 p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Annonces
+        </h2>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <button
+            role="switch"
+            aria-checked={allowAnnouncements}
+            onClick={toggleAllowAnnouncements}
+            disabled={savingAnnouncements}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
+              allowAnnouncements ? "bg-icc-violet" : "bg-gray-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                allowAnnouncements ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <span className="text-sm font-medium text-gray-700">
+            Accepter les demandes d&apos;annonces
+          </span>
+          {allowAnnouncements && (
+            <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+              Actif
+            </span>
+          )}
+        </label>
+        <p className="mt-2 text-xs text-gray-500">
+          Si activé, cet événement apparaîtra dans le sélecteur lors de la
+          soumission d&apos;une annonce.
+        </p>
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4">

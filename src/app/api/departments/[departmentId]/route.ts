@@ -61,6 +61,50 @@ export async function PUT(
   }
 }
 
+const patchFunctionSchema = z.object({
+  function: z.enum(["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"]).nullable(),
+});
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ departmentId: string }> }
+) {
+  try {
+    await requirePermission("events:manage");
+    const { departmentId } = await params;
+    const body = await request.json();
+    const data = patchFunctionSchema.parse(body);
+
+    const dept = await prisma.department.findUnique({
+      where: { id: departmentId },
+      select: { id: true, ministry: { select: { churchId: true } } },
+    });
+    if (!dept) throw new ApiError(404, "Département introuvable");
+
+    // Clear existing dept with same function in the same church before assigning
+    if (data.function !== null) {
+      await prisma.department.updateMany({
+        where: {
+          function: data.function,
+          ministry: { churchId: dept.ministry.churchId },
+          NOT: { id: departmentId },
+        },
+        data: { function: null },
+      });
+    }
+
+    const updated = await prisma.department.update({
+      where: { id: departmentId },
+      data: { function: data.function },
+      select: { id: true, name: true, function: true },
+    });
+
+    return successResponse(updated);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ departmentId: string }> }

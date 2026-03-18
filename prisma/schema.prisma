@@ -52,15 +52,17 @@ model VerificationToken {
 // ─── Domain models ─────────────────────────────────────────────────
 
 model Church {
-  id         String           @id @default(cuid())
-  name       String
-  slug       String           @unique
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  users      UserChurchRole[]
-  ministries Ministry[]
-  events     Event[]
-  auditLogs  AuditLog[]
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  users           UserChurchRole[]
+  ministries      Ministry[]
+  events          Event[]
+  auditLogs       AuditLog[]
+  announcements   Announcement[]
+  serviceRequests ServiceRequest[]
 
   @@map("churches")
 }
@@ -74,21 +76,24 @@ enum Role {
 }
 
 model User {
-  id            String           @id @default(cuid())
-  email         String           @unique
-  name          String?
-  displayName   String?
-  image         String?
-  emailVerified DateTime?
-  isSuperAdmin  Boolean          @default(false)
-  hasSeenTour   Boolean          @default(false)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  churchRoles   UserChurchRole[]
-  accounts      Account[]
-  sessions      Session[]
-  auditLogs     AuditLog[]
-  notifications Notification[]
+  id                      String           @id @default(cuid())
+  email                   String           @unique
+  name                    String?
+  displayName             String?
+  image                   String?
+  emailVerified           DateTime?
+  isSuperAdmin            Boolean          @default(false)
+  hasSeenTour             Boolean          @default(false)
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  churchRoles             UserChurchRole[]
+  accounts                Account[]
+  sessions                Session[]
+  auditLogs               AuditLog[]
+  notifications           Notification[]
+  submittedAnnouncements  Announcement[]   @relation("AnnouncementSubmittedBy")
+  submittedServiceRequests ServiceRequest[] @relation("ServiceRequestSubmittedBy")
+  reviewedServiceRequests ServiceRequest[] @relation("ServiceRequestReviewedBy")
 
   @@map("users")
 }
@@ -120,27 +125,39 @@ model UserDepartment {
 }
 
 model Ministry {
-  id          String           @id @default(cuid())
-  name        String
-  churchId    String
-  church      Church           @relation(fields: [churchId], references: [id])
-  departments Department[]
-  userRoles   UserChurchRole[]
-  createdAt   DateTime         @default(now())
+  id              String           @id @default(cuid())
+  name            String
+  churchId        String
+  church          Church           @relation(fields: [churchId], references: [id])
+  departments     Department[]
+  userRoles       UserChurchRole[]
+  createdAt       DateTime         @default(now())
+  announcements   Announcement[]   @relation("AnnouncementMinistry")
+  serviceRequests ServiceRequest[] @relation("ServiceRequestMinistry")
 
   @@map("ministries")
 }
 
+enum DepartmentFunction {
+  SECRETARIAT
+  COMMUNICATION
+  PRODUCTION_MEDIA
+}
+
 model Department {
-  id         String            @id @default(cuid())
-  name       String
-  ministryId String
-  ministry   Ministry          @relation(fields: [ministryId], references: [id])
-  members    Member[]
-  eventDepts EventDepartment[]
-  userDepts  UserDepartment[]
-  tasks      Task[]
-  createdAt  DateTime          @default(now())
+  id                      String             @id @default(cuid())
+  name                    String
+  ministryId              String
+  function                DepartmentFunction?
+  ministry                Ministry           @relation(fields: [ministryId], references: [id])
+  members                 Member[]
+  eventDepts              EventDepartment[]
+  userDepts               UserDepartment[]
+  tasks                   Task[]
+  createdAt               DateTime           @default(now())
+  announcements           Announcement[]     @relation("AnnouncementDepartment")
+  submittedServiceRequests ServiceRequest[]  @relation("ServiceRequestDepartment")
+  assignedServiceRequests ServiceRequest[]   @relation("ServiceRequestAssigned")
 
   @@map("departments")
 }
@@ -161,19 +178,21 @@ model Member {
 }
 
 model Event {
-  id                 String            @id @default(cuid())
+  id                 String              @id @default(cuid())
   title              String
   type               String
   date               DateTime
   churchId           String
-  church             Church            @relation(fields: [churchId], references: [id])
+  church             Church              @relation(fields: [churchId], references: [id])
   eventDepts         EventDepartment[]
   taskAssignments    TaskAssignment[]
   planningDeadline   DateTime?
   recurrenceRule     String?
   seriesId           String?
-  isRecurrenceParent Boolean           @default(false)
-  createdAt          DateTime          @default(now())
+  isRecurrenceParent Boolean             @default(false)
+  allowAnnouncements Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  announcementTargets AnnouncementEvent[]
 
   @@map("events")
 }
@@ -267,4 +286,101 @@ model Notification {
 
   @@index([userId, read, createdAt])
   @@map("notifications")
+}
+
+// ─── Announcements & Service Requests ──────────────────────────────
+
+enum AnnouncementStatus {
+  EN_ATTENTE
+  EN_COURS
+  TRAITEE
+  ANNULEE
+}
+
+model Announcement {
+  id              String             @id @default(cuid())
+  churchId        String
+  submittedById   String
+  departmentId    String?
+  ministryId      String?
+  title           String
+  content         String             @db.Text
+  eventDate       DateTime?
+  isSaveTheDate   Boolean            @default(false)
+  isUrgent        Boolean            @default(false)
+  channelInterne  Boolean            @default(false)
+  channelExterne  Boolean            @default(false)
+  status          AnnouncementStatus @default(EN_ATTENTE)
+  submittedAt     DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  church          Church             @relation(fields: [churchId], references: [id])
+  submittedBy     User               @relation("AnnouncementSubmittedBy", fields: [submittedById], references: [id])
+  department      Department?        @relation("AnnouncementDepartment", fields: [departmentId], references: [id])
+  ministry        Ministry?          @relation("AnnouncementMinistry", fields: [ministryId], references: [id])
+  targetEvents    AnnouncementEvent[]
+  serviceRequests ServiceRequest[]
+
+  @@index([churchId, status])
+  @@map("announcements")
+}
+
+model AnnouncementEvent {
+  announcementId String
+  eventId        String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  event          Event        @relation(fields: [eventId], references: [id])
+
+  @@id([announcementId, eventId])
+  @@map("announcement_events")
+}
+
+enum ServiceRequestType {
+  VISUEL
+  DIFFUSION_INTERNE
+  RESEAUX_SOCIAUX
+}
+
+enum ServiceRequestStatus {
+  EN_ATTENTE
+  EN_COURS
+  LIVRE
+  ANNULE
+}
+
+model ServiceRequest {
+  id              String               @id @default(cuid())
+  churchId        String
+  type            ServiceRequestType
+  submittedById   String
+  departmentId    String?
+  ministryId      String?
+  assignedDeptId  String?
+  announcementId  String?
+  parentRequestId String?
+  title           String
+  brief           String?              @db.Text
+  format          String?
+  deadline        DateTime?
+  status          ServiceRequestStatus @default(EN_ATTENTE)
+  deliveryLink    String?
+  reviewNotes     String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  submittedAt     DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  church          Church               @relation(fields: [churchId], references: [id])
+  submittedBy     User                 @relation("ServiceRequestSubmittedBy", fields: [submittedById], references: [id])
+  department      Department?          @relation("ServiceRequestDepartment", fields: [departmentId], references: [id])
+  ministry        Ministry?            @relation("ServiceRequestMinistry", fields: [ministryId], references: [id])
+  assignedDept    Department?          @relation("ServiceRequestAssigned", fields: [assignedDeptId], references: [id])
+  announcement    Announcement?        @relation(fields: [announcementId], references: [id])
+  parentRequest   ServiceRequest?      @relation("SRChildren", fields: [parentRequestId], references: [id])
+  childRequests   ServiceRequest[]     @relation("SRChildren")
+  reviewedBy      User?                @relation("ServiceRequestReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([churchId, type, status])
+  @@index([assignedDeptId, status])
+  @@map("service_requests")
 }
