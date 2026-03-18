@@ -72,29 +72,41 @@ export default async function AuthLayout({
     .map(({ href, label }) => ({ href, label }));
 
   // Compute service links (annonces & demandes)
+  // Dashboards opérationnels restreints aux membres du département concerné + events:manage
   const serviceLinks: { href: string; label: string }[] = [];
+
   if (userPermissions.has("planning:view")) {
     serviceLinks.push({ href: "/announcements", label: "Mes annonces" });
-    serviceLinks.push({ href: "/media/requests", label: "Visuels" });
-    serviceLinks.push({ href: "/communication/requests", label: "Communication" });
   }
 
-  // Secrétariat link: events:manage OR member of the secretariat department
-  let canSeeSecretariat = userPermissions.has("events:manage");
-  if (!canSeeSecretariat && currentChurchId) {
-    const secretariatDept = await prisma.department.findFirst({
-      where: { function: "SECRETARIAT", ministry: { churchId: currentChurchId } },
-      select: { id: true },
+  if (currentChurchId && userPermissions.has("planning:view")) {
+    const isGlobalManager = userPermissions.has("events:manage");
+
+    // One query for all 3 department functions
+    const serviceDepts = await prisma.department.findMany({
+      where: {
+        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"] },
+        ministry: { churchId: currentChurchId },
+      },
+      select: { id: true, function: true },
     });
-    if (secretariatDept) {
-      const userDeptIds = churchRoles
+
+    const userDeptIds = new Set(
+      churchRoles
         .filter((r) => r.churchId === currentChurchId)
-        .flatMap((r) => r.departments.map((d) => d.department.id));
-      canSeeSecretariat = userDeptIds.includes(secretariatDept.id);
-    }
-  }
-  if (canSeeSecretariat) {
-    serviceLinks.splice(1, 0, { href: "/secretariat/announcements", label: "Secrétariat" });
+        .flatMap((r) => r.departments.map((d) => d.department.id))
+    );
+
+    const isMemberOf = (fn: string) =>
+      isGlobalManager ||
+      serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
+
+    if (isMemberOf("SECRETARIAT"))
+      serviceLinks.push({ href: "/secretariat/announcements", label: "Secrétariat" });
+    if (isMemberOf("PRODUCTION_MEDIA"))
+      serviceLinks.push({ href: "/media/requests", label: "Visuels" });
+    if (isMemberOf("COMMUNICATION"))
+      serviceLinks.push({ href: "/communication/requests", label: "Communication" });
   }
 
   const headerContent = (

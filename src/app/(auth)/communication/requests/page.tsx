@@ -1,6 +1,8 @@
 import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { DepartmentFunction } from "@prisma/client";
+import { notFound } from "next/navigation";
 import CommunicationDashboard from "./CommunicationDashboard";
 
 export default async function CommunicationRequestsPage() {
@@ -12,6 +14,17 @@ export default async function CommunicationRequestsPage() {
     where: { function: DepartmentFunction.COMMUNICATION, ministry: { churchId } },
     select: { id: true, name: true },
   });
+
+  if (commDept) {
+    const userPermissions = new Set(
+      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    );
+    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    const userDeptIds = session.user.churchRoles.flatMap((r) =>
+      r.departments.map((d) => d.department.id)
+    );
+    if (!canManage && !userDeptIds.includes(commDept.id)) return notFound();
+  }
 
   if (!commDept) {
     return (

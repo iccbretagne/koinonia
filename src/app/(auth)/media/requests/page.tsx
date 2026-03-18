@@ -1,8 +1,10 @@
 import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { DepartmentFunction } from "@prisma/client";
+import { notFound } from "next/navigation";
 import MediaDashboard from "./MediaDashboard";
 
 export default async function MediaRequestsPage() {
@@ -14,6 +16,17 @@ export default async function MediaRequestsPage() {
     where: { function: DepartmentFunction.PRODUCTION_MEDIA, ministry: { churchId } },
     select: { id: true, name: true },
   });
+
+  if (mediaDept) {
+    const userPermissions = new Set(
+      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    );
+    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    const userDeptIds = session.user.churchRoles.flatMap((r) =>
+      r.departments.map((d) => d.department.id)
+    );
+    if (!canManage && !userDeptIds.includes(mediaDept.id)) return notFound();
+  }
 
   if (!mediaDept) {
     return (
