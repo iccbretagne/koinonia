@@ -308,7 +308,9 @@ Detail d'une annonce avec ses `serviceRequests` (avec enfants VISUEL).
 
 Met a jour une annonce (statut, titre, contenu, urgence).
 
-**Autorisation** : gestionnaires (`events:manage`) ou proprietaire de l'annonce.
+**Autorisation** :
+- Gestionnaires (`events:manage`) : peuvent modifier tous les champs et tous les statuts
+- Proprietaire de l'annonce : peut uniquement passer le statut a `"ANNULEE"` (annulation)
 
 **Body** (tous les champs sont optionnels) :
 ```json
@@ -321,6 +323,7 @@ Met a jour une annonce (statut, titre, contenu, urgence).
 ```
 
 Valeurs possibles pour `status` : `"EN_ATTENTE"`, `"EN_COURS"`, `"TRAITEE"`, `"ANNULEE"`.
+Le proprietaire est restreint a `"ANNULEE"` uniquement.
 
 **Annulation en cascade** : si `status` = `"ANNULEE"`, toutes les `ServiceRequest` liees a l'annonce (`announcementId`) sont automatiquement annulees dans la meme transaction (y compris les demandes VISUEL enfants).
 
