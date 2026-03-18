@@ -27,7 +27,12 @@ Tous les IDs sont des `String @default(cuid())`.
 │     │                       │                                        │
 │     │                       ├──► members ──► plannings               │
 │     │                       │                    ▲                    │
-│     └──► events ──► event_departments ───► plannings                │
+│     ├──► events ──► event_departments ───► plannings                │
+│     │        │                                                       │
+│     │        └──► announcement_events ◄── announcements             │
+│     │                                          │                     │
+│     ├──► announcements ──► service_requests ───┘                    │
+│     └──► service_requests                                            │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -110,6 +115,7 @@ Departements d'un ministere (Choristes, Musiciens, Son...).
 |---|---|---|
 | `name` | String | Nom du departement |
 | `ministryId` | String | Ref vers `ministries` |
+| `function` | DepartmentFunction? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA` (nullable) |
 
 #### `members`
 
@@ -131,6 +137,11 @@ Evenements d'une eglise.
 | `type` | String | `CULTE`, `PRIERE`, `PARLONS_PAROLE`, `CONFERENCE` |
 | `date` | DateTime | Date et heure |
 | `churchId` | String | Ref vers `churches` |
+| `allowAnnouncements` | Boolean | Autorise la soumission d'annonces pour cet evenement (default: false) |
+| `planningDeadline` | DateTime? | Date limite de modification du planning |
+| `recurrenceRule` | String? | Regle de recurrence (format iCal RRULE) |
+| `seriesId` | String? | ID de l'evenement parent de la serie |
+| `isRecurrenceParent` | Boolean | Indique si cet evenement est le parent d'une serie |
 
 #### `event_departments`
 
@@ -156,6 +167,70 @@ Statut d'un membre pour un departement a un evenement donne.
 
 Contrainte unique : `[eventDepartmentId, memberId]`
 
+#### `announcements`
+
+Annonces soumises par les referents des departements ou ministeres.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `submittedById` | String | Ref vers `users` (soumetteur) |
+| `departmentId` | String? | Ref vers `departments` (optionnel) |
+| `ministryId` | String? | Ref vers `ministries` (optionnel) |
+| `title` | String | Titre de l'annonce |
+| `content` | String (Text) | Contenu de l'annonce |
+| `eventDate` | DateTime? | Date de l'evenement concerne (optionnel) |
+| `isSaveTheDate` | Boolean | Calcule auto : true si `eventDate` > 21 jours |
+| `isUrgent` | Boolean | Marquee comme urgente |
+| `channelInterne` | Boolean | Canal de diffusion interne |
+| `channelExterne` | Boolean | Canal de diffusion externe (reseaux sociaux) |
+| `status` | AnnouncementStatus | Statut : `EN_ATTENTE`, `EN_COURS`, `TRAITEE`, `ANNULEE` |
+| `submittedAt` | DateTime | Date de soumission |
+| `updatedAt` | DateTime | Derniere modification |
+
+Index : `[churchId, status]`
+
+#### `announcement_events`
+
+Table de jointure Announcement ↔ Event (evenements cibles par l'annonce).
+
+| Champ | Type | Description |
+|---|---|---|
+| `announcementId` | String | Ref vers `announcements` (cascade delete) |
+| `eventId` | String | Ref vers `events` |
+
+Cle primaire composite : `[announcementId, eventId]`
+
+#### `service_requests`
+
+Demandes de service generees automatiquement lors de la soumission d'une annonce, ou creees manuellement (visuels standalone).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `type` | ServiceRequestType | `VISUEL`, `DIFFUSION_INTERNE`, `RESEAUX_SOCIAUX` |
+| `submittedById` | String | Ref vers `users` (soumetteur) |
+| `departmentId` | String? | Departement soumetteur (optionnel) |
+| `ministryId` | String? | Ministere soumetteur (optionnel) |
+| `assignedDeptId` | String? | Departement traitant (resolu via `DepartmentFunction`) |
+| `announcementId` | String? | Ref vers `announcements` (si generee depuis une annonce) |
+| `parentRequestId` | String? | Ref vers `service_requests` (auto-referentiel : lie un VISUEL a son canal parent) |
+| `title` | String | Titre |
+| `brief` | String? (Text) | Description / brief |
+| `format` | String? | Format attendu (ex: Slide/Affiche, Story/Post) |
+| `deadline` | DateTime? | Echeance |
+| `status` | ServiceRequestStatus | `EN_ATTENTE`, `EN_COURS`, `LIVRE`, `ANNULE` |
+| `deliveryLink` | String? | Lien de livraison |
+| `reviewNotes` | String? | Notes de revue |
+| `reviewedById` | String? | Ref vers `users` (revieweur) |
+| `reviewedAt` | DateTime? | Date de revue |
+| `submittedAt` | DateTime | Date de soumission |
+| `updatedAt` | DateTime | Derniere modification |
+
+Index : `[churchId, type, status]`, `[assignedDeptId, status]`
+
 ### Enums
 
 #### `Role`
@@ -175,6 +250,42 @@ EN_SERVICE          # Present et en service
 EN_SERVICE_DEBRIEF  # En service + animateur du debrief (max 1 par dept/event)
 INDISPONIBLE        # Absent
 REMPLACANT          # Remplace un membre indisponible
+```
+
+#### `DepartmentFunction`
+
+```
+SECRETARIAT       # Departement traitant les diffusions internes
+COMMUNICATION     # Departement traitant les publications reseaux sociaux
+PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
+```
+
+Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`.
+
+#### `AnnouncementStatus`
+
+```
+EN_ATTENTE  # Annonce soumise, en attente de traitement
+EN_COURS    # En cours de traitement
+TRAITEE     # Traitement termine
+ANNULEE     # Annulee
+```
+
+#### `ServiceRequestType`
+
+```
+VISUEL             # Creation d'un visuel (Production Media)
+DIFFUSION_INTERNE  # Diffusion interne (Secretariat)
+RESEAUX_SOCIAUX    # Publication reseaux sociaux (Communication)
+```
+
+#### `ServiceRequestStatus`
+
+```
+EN_ATTENTE  # Demande recue, en attente
+EN_COURS    # En cours de traitement
+LIVRE       # Livre (avec lien de livraison)
+ANNULE      # Annulee
 ```
 
 ## Seed (donnees initiales)

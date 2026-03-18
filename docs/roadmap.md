@@ -1,5 +1,18 @@
 # Roadmap
 
+## Annonces et production media
+
+- [x] Module annonces : soumission par les referents (`/announcements/new`)
+- [x] Liste des annonces du referent (`/announcements`)
+- [x] Generation automatique des ServiceRequests selon les canaux (INTERNE/EXTERNE)
+- [x] Dashboard Secretariat (`/secretariat/announcements`) — traitement des DIFFUSION_INTERNE
+- [x] Dashboard Production Media (`/media/requests`) — traitement des VISUEL
+- [x] Dashboard Communication (`/communication/requests`) — traitement des RESEAUX_SOCIAUX
+- [x] Demande visuel standalone sans annonce (`/media/requests/new`)
+- [x] Configuration des fonctions departementales (`/admin/departments/functions`)
+- [x] Flag `allowAnnouncements` sur les evenements
+- [x] Relation auto-referentielle VISUEL → canal parent (format contextualise)
+
 ## Interface utilisateur
 
 - [x] Composants UI partages (Button, Card, Input, Modal, Select, DataTable, CheckboxGroup)

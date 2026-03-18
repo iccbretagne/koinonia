@@ -32,16 +32,30 @@ planningcenter/
 │   │   │   ├── layout.tsx         # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/         # Vue planning par departement
 │   │   │   ├── events/            # Gestion des evenements
+│   │   │   ├── announcements/     # Soumission et suivi des annonces
+│   │   │   │   ├── page.tsx       # Liste des annonces du referent
+│   │   │   │   └── new/           # Formulaire de soumission d'annonce
+│   │   │   ├── secretariat/
+│   │   │   │   └── announcements/ # Dashboard Secretariat (DIFFUSION_INTERNE)
+│   │   │   ├── media/
+│   │   │   │   └── requests/      # Dashboard Production Media (VISUEL)
+│   │   │   │       └── new/       # Formulaire demande visuel standalone
+│   │   │   ├── communication/
+│   │   │   │   └── requests/      # Dashboard Communication (RESEAUX_SOCIAUX)
+│   │   │   ├── guide/             # Guide utilisateur par role
 │   │   │   └── admin/             # Section administration
 │   │   │       ├── layout.tsx     # Guard multi-permissions
 │   │   │       ├── churches/      # CRUD eglises
 │   │   │       ├── users/         # Gestion utilisateurs et roles
 │   │   │       ├── ministries/    # CRUD ministeres
 │   │   │       ├── departments/   # CRUD departements
+│   │   │       │   └── functions/ # Config fonctions departementales
 │   │   │       ├── members/       # CRUD membres
 │   │   │       └── events/        # CRUD evenements
 │   │   └── api/                   # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
+│   │       ├── announcements/     # GET/POST + [id] GET/PATCH/DELETE
+│   │       ├── service-requests/  # GET/POST + [id] GET/PATCH
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── events/
@@ -156,9 +170,37 @@ Un indicateur visuel affiche l'etat : sauvegarde en cours, modifications non sau
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth | |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) | `admin@example.com,other@example.com` |
 
+## Module Annonces et Demandes de service
+
+Le module d'annonces permet aux referents (tous les utilisateurs authentifies) de soumettre des annonces destinees a etre diffusees en interne ou sur les reseaux sociaux.
+
+### Flux de soumission
+
+1. Le referent soumet une annonce via `/announcements/new` avec les canaux cibles
+2. L'API `POST /api/announcements` cree l'annonce **et** les `ServiceRequest` correspondants en transaction :
+   - Canal INTERNE → `DIFFUSION_INTERNE` (Secretariat) + `VISUEL` (Production Media, Slide/Affiche)
+   - Canal EXTERNE → `RESEAUX_SOCIAUX` (Communication) + `VISUEL` (Production Media, Story/Post)
+3. Chaque departement fonctionnel traite ses demandes via son dashboard dedie
+
+### Fonctions departementales
+
+Un departement peut se voir assigner une `DepartmentFunction` qui le designe comme responsable d'un type de traitement :
+
+| Fonction | Type de ServiceRequest | Dashboard |
+|---|---|---|
+| `SECRETARIAT` | `DIFFUSION_INTERNE` | `/secretariat/announcements` |
+| `COMMUNICATION` | `RESEAUX_SOCIAUX` | `/communication/requests` |
+| `PRODUCTION_MEDIA` | `VISUEL` | `/media/requests` |
+
+La configuration se fait via `/admin/departments/functions` (permission `events:manage`).
+
+### Relation VISUEL → canal parent
+
+Les demandes `VISUEL` sont liees a leur demande parente (`DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`) via `parentRequestId`. Ce lien contextualise le format attendu (Slide vs Story/Post).
+
 ## Multi-tenant
 
-Chaque eglise (`Church`) est un tenant isole. Les donnees (ministeres, departements, membres, evenements) sont rattachees a une eglise via `churchId`.
+Chaque eglise (`Church`) est un tenant isole. Les donnees (ministeres, departements, membres, evenements, annonces) sont rattachees a une eglise via `churchId`.
 
 ```
 Super Admin
