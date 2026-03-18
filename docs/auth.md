@@ -113,6 +113,10 @@ export async function DELETE(request, { params }) {
 }
 ```
 
+### Cas particulier : PATCH departments/[id] (function)
+
+L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une `DepartmentFunction` est protege par `events:manage` (et non `departments:manage`). Ce choix reflète le fait que la configuration des fonctions departementales est liee au workflow des annonces et evenements, non a la gestion structurelle des departements.
+
 ### Visibilite des departements
 
 - **Super Admin / Admin / Secrétaire** : voient tous les départements de leur église (lecture globale)

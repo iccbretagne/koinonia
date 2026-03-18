@@ -157,6 +157,32 @@ export async function PUT(
   }
 }
 
+const patchSchema = z.object({
+  allowAnnouncements: z.boolean(),
+});
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ eventId: string }> }
+) {
+  try {
+    await requirePermission("events:manage");
+    const { eventId } = await params;
+    const body = await request.json();
+    const data = patchSchema.parse(body);
+
+    const event = await prisma.event.update({
+      where: { id: eventId },
+      data: { allowAnnouncements: data.allowAnnouncements },
+      select: { id: true, allowAnnouncements: true },
+    });
+
+    return successResponse(event);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ eventId: string }> }

@@ -12,6 +12,7 @@ type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
   adminLinks: { href: string; label: string }[];
+  serviceLinks: { href: string; label: string }[];
   hasAdminAccess: boolean;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -38,6 +39,7 @@ function IconClose({ className }: { className?: string }) {
 export default function AuthLayoutShell({
   departments,
   adminLinks,
+  serviceLinks,
   hasAdminAccess,
   userRole,
   header,
@@ -98,6 +100,7 @@ export default function AuthLayoutShell({
             <Sidebar
               departments={departments}
               adminLinks={adminLinks}
+              serviceLinks={serviceLinks}
               onClose={closeSidebar}
             />
           </div>

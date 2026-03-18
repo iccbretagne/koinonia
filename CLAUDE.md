@@ -55,16 +55,29 @@ planningcenter/
 │   │   │   ├── layout.tsx       # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/       # Vue planning par departement
 │   │   │   ├── events/          # Gestion des evenements (liste, detail)
+│   │   │   ├── announcements/   # Soumission et suivi des annonces
+│   │   │   │   └── new/         # Formulaire soumission annonce
+│   │   │   ├── secretariat/
+│   │   │   │   └── announcements/ # Dashboard Secretariat (DIFFUSION_INTERNE)
+│   │   │   ├── media/
+│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL)
+│   │   │   │       └── new/     # Demande visuel standalone
+│   │   │   ├── communication/
+│   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
+│   │   │   ├── guide/           # Guide utilisateur par role
 │   │   │   └── admin/           # Section administration
 │   │   │       ├── layout.tsx   # Guard multi-permissions (requireAnyPermission)
 │   │   │       ├── churches/    # CRUD eglises
 │   │   │       ├── users/       # Gestion utilisateurs et roles
 │   │   │       ├── ministries/  # CRUD ministeres
 │   │   │       ├── departments/ # CRUD departements
+│   │   │       │   └── functions/ # Config fonctions departementales
 │   │   │       ├── members/     # CRUD membres (STAR)
 │   │   │       └── events/      # CRUD evenements
 │   │   └── api/                 # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
+│   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
+│   │       ├── service-requests/ # GET/POST + [id] GET/PATCH
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── events/

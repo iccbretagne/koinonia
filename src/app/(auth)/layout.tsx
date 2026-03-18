@@ -14,6 +14,7 @@ const adminLinks = [
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
   { href: "/admin/members", label: "STAR", permissions: ["members:manage", "members:view"] },
   { href: "/admin/events", label: "Événements", permissions: ["events:manage"] },
+  { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
 ];
 
@@ -69,6 +70,44 @@ export default async function AuthLayout({
   const visibleAdminLinks = adminLinks
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
+
+  // Compute service links (annonces & demandes)
+  // Dashboards opérationnels restreints aux membres du département concerné + events:manage
+  const serviceLinks: { href: string; label: string }[] = [];
+
+  if (userPermissions.has("planning:view")) {
+    serviceLinks.push({ href: "/announcements", label: "Mes annonces" });
+  }
+
+  if (currentChurchId && userPermissions.has("planning:view")) {
+    const isGlobalManager = userPermissions.has("events:manage");
+
+    // One query for all 3 department functions
+    const serviceDepts = await prisma.department.findMany({
+      where: {
+        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"] },
+        ministry: { churchId: currentChurchId },
+      },
+      select: { id: true, function: true },
+    });
+
+    const userDeptIds = new Set(
+      churchRoles
+        .filter((r) => r.churchId === currentChurchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id))
+    );
+
+    const isMemberOf = (fn: string) =>
+      isGlobalManager ||
+      serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
+
+    if (isMemberOf("SECRETARIAT"))
+      serviceLinks.push({ href: "/secretariat/announcements", label: "Secrétariat" });
+    if (isMemberOf("PRODUCTION_MEDIA"))
+      serviceLinks.push({ href: "/media/requests", label: "Visuels" });
+    if (isMemberOf("COMMUNICATION"))
+      serviceLinks.push({ href: "/communication/requests", label: "Communication" });
+  }
 
   const headerContent = (
     <>
@@ -136,6 +175,7 @@ export default async function AuthLayout({
     <AuthLayoutShell
       departments={allDepartments}
       adminLinks={visibleAdminLinks}
+      serviceLinks={serviceLinks}
       hasAdminAccess={visibleAdminLinks.length > 0}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD"}
       header={headerContent}
