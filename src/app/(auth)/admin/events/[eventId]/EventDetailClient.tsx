@@ -15,15 +15,18 @@ interface Props {
   eventId: string;
   isRecurring?: boolean;
   allowAnnouncements: boolean;
+  trackedForDiscipleship: boolean;
   departments: Department[];
 }
 
-export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, departments }: Props) {
+export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
   const [applyToSeries, setApplyToSeries] = useState(false);
   const [allowAnnouncements, setAllowAnnouncements] = useState(initialAllowAnnouncements);
   const [savingAnnouncements, setSavingAnnouncements] = useState(false);
+  const [trackedForDiscipleship, setTrackedForDiscipleship] = useState(initialTrackedForDiscipleship);
+  const [savingDiscipleship, setSavingDiscipleship] = useState(false);
 
   async function toggleAllowAnnouncements() {
     setSavingAnnouncements(true);
@@ -31,7 +34,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
       const res = await fetch(`/api/events/${eventId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowAnnouncements: !allowAnnouncements }),
+        body: JSON.stringify({ allowAnnouncements: !allowAnnouncements, applyToSeries: applyToSeries && isRecurring }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -43,6 +46,27 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
       alert("Erreur");
     } finally {
       setSavingAnnouncements(false);
+    }
+  }
+
+  async function toggleTrackedForDiscipleship() {
+    setSavingDiscipleship(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackedForDiscipleship: !trackedForDiscipleship, applyToSeries: applyToSeries && isRecurring }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur");
+        return;
+      }
+      setTrackedForDiscipleship((v) => !v);
+    } catch {
+      alert("Erreur");
+    } finally {
+      setSavingDiscipleship(false);
     }
   }
 
@@ -98,6 +122,21 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         </Link>
       </div>
 
+      {isRecurring && (
+        <div className="mb-6 flex items-center gap-3 p-3 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
+          <span className="text-icc-violet text-lg">↻</span>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={applyToSeries}
+              onChange={(e) => setApplyToSeries(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+            />
+            Appliquer aux futurs événements de la série
+          </label>
+        </div>
+      )}
+
       <div className="mb-6 p-4 bg-white rounded-lg shadow">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Annonces
@@ -133,24 +172,44 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         </p>
       </div>
 
+      <div className="mb-6 p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          Discipolat
+        </h2>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <button
+            role="switch"
+            aria-checked={trackedForDiscipleship}
+            onClick={toggleTrackedForDiscipleship}
+            disabled={savingDiscipleship}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
+              trackedForDiscipleship ? "bg-icc-violet" : "bg-gray-200"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                trackedForDiscipleship ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+          <span className="text-sm font-medium text-gray-700">
+            Suivre les présences pour le discipolat
+          </span>
+          {trackedForDiscipleship && (
+            <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+              Actif
+            </span>
+          )}
+        </label>
+        <p className="mt-2 text-xs text-gray-500">
+          Si activé, cet événement apparaîtra dans le module discipolat pour
+          l&apos;enregistrement des présences des disciples.
+        </p>
+      </div>
+
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
         Départements associés
       </h2>
-
-      {isRecurring && (
-        <div className="mb-4 flex items-center gap-3 p-3 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
-          <span className="text-icc-violet text-lg">↻</span>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={applyToSeries}
-              onChange={(e) => setApplyToSeries(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
-            />
-            Appliquer aux futurs événements de la série
-          </label>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(grouped).map(([ministry, deps]) => (

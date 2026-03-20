@@ -7,12 +7,13 @@ import BottomNav from "@/components/BottomNav";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD";
+type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER";
 
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
   adminLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
+  hasDiscipleship: boolean;
   hasAdminAccess: boolean;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -40,6 +41,7 @@ export default function AuthLayoutShell({
   departments,
   adminLinks,
   serviceLinks,
+  hasDiscipleship,
   hasAdminAccess,
   userRole,
   header,
@@ -102,6 +104,7 @@ export default function AuthLayoutShell({
               departments={departments}
               adminLinks={adminLinks}
               serviceLinks={serviceLinks}
+              hasDiscipleship={hasDiscipleship}
               onClose={closeSidebar}
             />
           </div>

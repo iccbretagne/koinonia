@@ -48,6 +48,7 @@ export default async function EventDetailPage({
         eventId={event.id}
         isRecurring={event.isRecurrenceParent || !!event.seriesId}
         allowAnnouncements={event.allowAnnouncements}
+        trackedForDiscipleship={event.trackedForDiscipleship}
         departments={allDepartments.map((d) => ({
           id: d.id,
           name: d.name,

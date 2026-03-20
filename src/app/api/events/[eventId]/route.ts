@@ -158,7 +158,9 @@ export async function PUT(
 }
 
 const patchSchema = z.object({
-  allowAnnouncements: z.boolean(),
+  allowAnnouncements: z.boolean().optional(),
+  trackedForDiscipleship: z.boolean().optional(),
+  applyToSeries: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -169,12 +171,37 @@ export async function PATCH(
     await requirePermission("events:manage");
     const { eventId } = await params;
     const body = await request.json();
-    const data = patchSchema.parse(body);
+    const { applyToSeries, ...rest } = patchSchema.parse(body);
+
+    const updateData = {
+      ...(rest.allowAnnouncements !== undefined && { allowAnnouncements: rest.allowAnnouncements }),
+      ...(rest.trackedForDiscipleship !== undefined && { trackedForDiscipleship: rest.trackedForDiscipleship }),
+    };
+
+    if (applyToSeries) {
+      const current = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { id: true, seriesId: true, isRecurrenceParent: true, date: true },
+      });
+      if (!current) throw new ApiError(404, "Événement introuvable");
+
+      const parentId = current.isRecurrenceParent ? current.id : current.seriesId;
+      if (parentId) {
+        await prisma.event.updateMany({
+          where: {
+            OR: [{ id: parentId }, { seriesId: parentId }],
+            date: { gte: current.date },
+          },
+          data: updateData,
+        });
+        return successResponse({ applied: true });
+      }
+    }
 
     const event = await prisma.event.update({
       where: { id: eventId },
-      data: { allowAnnouncements: data.allowAnnouncements },
-      select: { id: true, allowAnnouncements: true },
+      data: updateData,
+      select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true },
     });
 
     return successResponse(event);

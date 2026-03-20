@@ -10,15 +10,22 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
 
+    const trackedOnly = searchParams.get("trackedForDiscipleship") === "true";
+    const from = searchParams.get("from");
+
     const events = await prisma.event.findMany({
-      where: churchId ? { churchId } : undefined,
+      where: {
+        ...(churchId ? { churchId } : {}),
+        ...(trackedOnly ? { trackedForDiscipleship: true } : {}),
+        ...(from ? { date: { gte: new Date(from) } } : {}),
+      },
       include: {
         church: { select: { id: true, name: true } },
         eventDepts: {
           include: { department: { select: { id: true, name: true } } },
         },
       },
-      orderBy: { date: "desc" },
+      orderBy: { date: trackedOnly ? "asc" : "desc" },
     });
 
     return successResponse(events);

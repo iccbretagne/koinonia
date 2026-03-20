@@ -33,17 +33,6 @@ interface StatRow {
   stats: { totalEvents: number; present: number; absent: number; rate: number | null };
 }
 
-interface TreeRow {
-  id: string;
-  discipleId: string;
-  discipleMakerId: string;
-  firstMakerId: string;
-  depth: number;
-  path: string;
-  disciple: { id: string; firstName: string; lastName: string };
-  discipleMaker: { id: string; firstName: string; lastName: string };
-  firstMaker: { id: string; firstName: string; lastName: string };
-}
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -76,13 +65,19 @@ function firstDayOfMonthISO() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DiscipleshipClient({ churchId, members, canManage, canExport }: Props) {
-  const [activeTab, setActiveTab] = useState<"relations" | "stats" | "tree">("relations");
+  const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
+
+  const TAB_LABELS: Record<typeof activeTab, string> = {
+    relations: "Relations",
+    appel: "Appel",
+    stats: "Statistiques",
+  };
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b-2 border-gray-200">
-        {(["relations", "stats", "tree"] as const).map((tab) => (
+        {(["relations", "appel", "stats"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -92,7 +87,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
                 : "text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5"
             }`}
           >
-            {tab === "relations" ? "Relations" : tab === "stats" ? "Statistiques" : "Arbre"}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>
@@ -100,11 +95,11 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
       {activeTab === "relations" && (
         <RelationsTab churchId={churchId} members={members} canManage={canManage} />
       )}
+      {activeTab === "appel" && (
+        <AppelTab churchId={churchId} canManage={canManage} />
+      )}
       {activeTab === "stats" && (
         <StatsTab churchId={churchId} canExport={canExport} />
-      )}
-      {activeTab === "tree" && (
-        <TreeTab churchId={churchId} />
       )}
     </div>
   );
@@ -342,6 +337,209 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
   );
 }
 
+// ─── Tab: Appel ───────────────────────────────────────────────────────────────
+
+interface TrackedEvent {
+  id: string;
+  title: string;
+  date: string;
+}
+
+function AppelTab({ churchId, canManage }: { churchId: string; canManage: boolean }) {
+  const [events, setEvents] = useState<TrackedEvent[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [discipleships, setDiscipleships] = useState<DiscipleshipRow[]>([]);
+  const [presentIds, setPresentIds] = useState<Set<string>>(new Set());
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch tracked events
+  useEffect(() => {
+    async function fetchEvents() {
+      setLoadingEvents(true);
+      try {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const from = oneMonthAgo.toISOString().slice(0, 10);
+        const res = await fetch(`/api/events?churchId=${churchId}&trackedForDiscipleship=true&from=${from}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Erreur");
+        const list: TrackedEvent[] = (Array.isArray(json) ? json : []).map(
+          (e: TrackedEvent) => ({ id: e.id, title: e.title, date: e.date })
+        );
+        setEvents(list);
+        if (list.length > 0) {
+          const now = Date.now();
+          // Pick the closest event to today (prefer upcoming, fallback to most recent past)
+          const closest = list.reduce((best, ev) => {
+            const distBest = Math.abs(new Date(best.date).getTime() - now);
+            const distEv = Math.abs(new Date(ev.date).getTime() - now);
+            return distEv < distBest ? ev : best;
+          });
+          setSelectedEventId(closest.id);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erreur");
+      } finally {
+        setLoadingEvents(false);
+      }
+    }
+    fetchEvents();
+  }, [churchId]);
+
+  // Fetch disciples + existing attendance when event changes
+  useEffect(() => {
+    if (!selectedEventId) return;
+    setLoadingAttendance(true);
+    setError(null);
+    setSaved(false);
+
+    Promise.all([
+      fetch(`/api/discipleships?churchId=${churchId}`).then((r) => r.json()),
+      fetch(`/api/discipleships/attendance?eventId=${selectedEventId}`).then((r) => r.json()),
+    ])
+      .then(([discipleshipsJson, attendanceJson]) => {
+        const rows: DiscipleshipRow[] = Array.isArray(discipleshipsJson) ? discipleshipsJson : [];
+        setDiscipleships(rows);
+        const att: { memberId: string; present: boolean }[] = Array.isArray(attendanceJson) ? attendanceJson : [];
+        const presentSet = new Set(att.filter((a) => a.present).map((a) => a.memberId));
+        // If no attendance recorded yet, default all present
+        setPresentIds(att.length === 0 ? new Set(rows.map((d) => d.discipleId)) : presentSet);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Erreur"))
+      .finally(() => setLoadingAttendance(false));
+  }, [selectedEventId, churchId]);
+
+  function togglePresence(memberId: string) {
+    setPresentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    if (!selectedEventId) return;
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    try {
+      const res = await fetch("/api/discipleships/attendance", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: selectedEventId, presentMemberIds: Array.from(presentIds) }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Group disciples by discipleMaker
+  const grouped = discipleships.reduce((acc, d) => {
+    const key = d.discipleMakerId;
+    if (!acc[key]) acc[key] = { maker: d.discipleMaker, disciples: [] };
+    acc[key].disciples.push(d);
+    return acc;
+  }, {} as Record<string, { maker: { id: string; firstName: string; lastName: string }; disciples: DiscipleshipRow[] }>);
+
+  if (loadingEvents) return <p className="text-sm text-gray-400">Chargement des événements...</p>;
+  if (events.length === 0) return (
+    <p className="text-sm text-gray-500">
+      Aucun événement suivi pour le discipolat.{" "}
+      <span className="text-gray-400">Activez le suivi discipolat sur un événement depuis Administration → Événements → Configurer.</span>
+    </p>
+  );
+
+  return (
+    <div>
+      {/* Event selector */}
+      <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-white border-2 border-gray-100 rounded-lg">
+        <div className="flex-1 min-w-48">
+          <label className="block text-xs font-medium text-gray-600 mb-1">Événement</label>
+          <select
+            value={selectedEventId}
+            onChange={(e) => setSelectedEventId(e.target.value)}
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+          >
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev.title} — {new Date(ev.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+              </option>
+            ))}
+          </select>
+        </div>
+        {canManage && (
+          <Button onClick={handleSave} disabled={saving || loadingAttendance}>
+            {saving ? "Enregistrement..." : "Enregistrer l'appel"}
+          </Button>
+        )}
+        {saved && <span className="text-sm text-green-600 font-medium">Appel enregistré ✓</span>}
+      </div>
+
+      {error && <p className="text-sm text-icc-rouge mb-4">{error}</p>}
+
+      {loadingAttendance ? (
+        <p className="text-sm text-gray-400">Chargement...</p>
+      ) : discipleships.length === 0 ? (
+        <p className="text-sm text-gray-400">Aucun disciple enregistré.</p>
+      ) : (
+        <div className="space-y-4">
+          {Object.values(grouped).map(({ maker, disciples }) => (
+            <div key={maker.id} className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                <span className="text-sm font-semibold text-gray-700">
+                  FD : {fullName(maker)}
+                </span>
+                <span className="ml-3 text-xs text-gray-400">
+                  {disciples.filter((d) => presentIds.has(d.discipleId)).length} / {disciples.length} présent{disciples.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {disciples.map((d) => {
+                  const present = presentIds.has(d.discipleId);
+                  return (
+                    <label
+                      key={d.id}
+                      className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                        present ? "bg-green-50" : "hover:bg-gray-50"
+                      } ${!canManage ? "pointer-events-none" : ""}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={present}
+                        onChange={() => canManage && togglePresence(d.discipleId)}
+                        disabled={!canManage}
+                        className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                      />
+                      <span className="text-sm font-medium text-gray-900">{fullName(d.disciple)}</span>
+                      <span className="text-xs text-gray-400">
+                        {d.disciple.department.ministry.name} / {d.disciple.department.name}
+                      </span>
+                      <span className={`ml-auto text-xs font-medium ${present ? "text-green-600" : "text-gray-400"}`}>
+                        {present ? "Présent" : "Absent"}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Tab: Statistiques ────────────────────────────────────────────────────────
 
 function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolean }) {
@@ -493,75 +691,3 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
   );
 }
 
-// ─── Tab: Arbre ───────────────────────────────────────────────────────────────
-
-function TreeTab({ churchId }: { churchId: string }) {
-  const [rows, setRows] = useState<TreeRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchTree() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/discipleships/tree?churchId=${churchId}`);
-        const json = await res.json();
-        if (!res.ok) throw new Error((json as { error?: string }).error ?? "Erreur");
-        setRows(Array.isArray(json) ? json : []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erreur");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchTree();
-  }, [churchId]);
-
-  if (loading) return <p className="text-sm text-gray-400">Chargement...</p>;
-  if (error) return <p className="text-sm text-icc-rouge">{error}</p>;
-  if (rows.length === 0) return <p className="text-sm text-gray-400">Aucune relation de discipolat.</p>;
-
-  return (
-    <div className="bg-white rounded-lg shadow border-2 border-gray-100 p-4">
-      <p className="text-xs text-gray-400 mb-4">
-        Arbre de lignée complet — {rows.length} relation{rows.length > 1 ? "s" : ""}
-      </p>
-      <ul className="space-y-1">
-        {rows.map((row) => (
-          <li
-            key={row.id}
-            style={{ paddingLeft: `${row.depth * 24}px` }}
-            className="flex items-center gap-2"
-          >
-            {/* Depth indicator */}
-            {row.depth > 0 && (
-              <span className="text-gray-300 text-xs select-none">{"└"}</span>
-            )}
-
-            {/* Disciple name */}
-            <span
-              className={`text-sm font-medium ${
-                row.depth === 0 ? "text-icc-violet" : "text-gray-800"
-              }`}
-            >
-              {fullName(row.disciple)}
-            </span>
-
-            {/* FD name */}
-            <span className="text-xs text-gray-400">
-              ← {fullName(row.discipleMaker)}
-            </span>
-
-            {/* Depth badge */}
-            {row.depth === 0 && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-icc-violet/10 text-icc-violet">
-                disciple direct
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
