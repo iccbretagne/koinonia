@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -395,10 +396,12 @@ export default function UsersClient({
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-3 min-w-0">
                 {user.image && (
-                  <img
+                  <Image
                     src={user.image}
                     alt=""
-                    className="w-8 h-8 rounded-full shrink-0"
+                    width={32}
+                    height={32}
+                    className="rounded-full shrink-0"
                   />
                 )}
                 <div className="min-w-0">

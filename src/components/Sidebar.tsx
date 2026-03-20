@@ -127,6 +127,7 @@ function MinistryGroupedDepartments({
   // Open the ministry containing the active department when it changes
   useEffect(() => {
     if (activeMinistry !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpenMinistry(activeMinistry);
     }
   }, [activeMinistry]);
