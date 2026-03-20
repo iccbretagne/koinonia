@@ -194,6 +194,34 @@ type DepartmentScope =
 
 const GLOBAL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
 
+export type DiscipleshipScope =
+  | { scoped: false }
+  | { scoped: true; memberId: string | null };
+
+/**
+ * Retourne la portée discipolat de l'utilisateur connecté pour une église donnée.
+ * - DISCIPLE_MAKER → scoped : ne voit que ses propres disciples (filtre discipleMakerId)
+ * - Tous les autres rôles → non scoped : vue complète de l'église
+ */
+export async function getDiscipleshipScope(
+  session: Session,
+  churchId: string
+): Promise<DiscipleshipScope> {
+  if (session.user.isSuperAdmin) return { scoped: false };
+
+  const hasGlobalRole = session.user.churchRoles.some(
+    (r) => r.churchId === churchId && (r.role as Role) !== "DISCIPLE_MAKER"
+  );
+  if (hasGlobalRole) return { scoped: false };
+
+  // DISCIPLE_MAKER : résoudre le membre lié au compte
+  const link = await prisma.memberUserLink.findUnique({
+    where: { userId_churchId: { userId: session.user.id, churchId } },
+    select: { memberId: true },
+  });
+  return { scoped: true, memberId: link?.memberId ?? null };
+}
+
 export function getUserDepartmentScope(session: Session): DepartmentScope {
   const hasGlobalRole = session.user.churchRoles.some((r) =>
     GLOBAL_ROLES.includes(r.role)

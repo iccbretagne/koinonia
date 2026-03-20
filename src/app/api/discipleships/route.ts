@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -12,14 +12,19 @@ const createSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("discipleship:view");
+    const session = await requirePermission("discipleship:view");
 
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
+    const scope = await getDiscipleshipScope(session, churchId);
+    const whereScope = scope.scoped
+      ? { discipleMakerId: scope.memberId ?? "" }
+      : {};
+
     const discipleships = await prisma.discipleship.findMany({
-      where: { churchId },
+      where: { churchId, ...whereScope },
       include: {
         disciple: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
         discipleMaker: { select: { id: true, firstName: true, lastName: true } },
@@ -42,6 +47,12 @@ export async function POST(request: Request) {
 
     if (discipleId === discipleMakerId) {
       throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
+    }
+
+    // DISCIPLE_MAKER ne peut créer que des relations dont il est le FD
+    const scope = await getDiscipleshipScope(session, churchId);
+    if (scope.scoped && discipleMakerId !== scope.memberId) {
+      throw new ApiError(403, "Vous ne pouvez créer des relations que pour vous-même");
     }
 
     // Vérifier qu'il n'y a pas déjà un lien de discipolat dans cette église
