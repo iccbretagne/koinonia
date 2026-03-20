@@ -44,8 +44,8 @@ Creer le fichier `/opt/planning/shared/.env` :
 
 ```bash
 DATABASE_URL=mysql://planning:MOT_DE_PASSE@localhost:3306/planning
-NEXTAUTH_SECRET=GENERER_AVEC_OPENSSL
-NEXTAUTH_URL=https://votre-domaine.com
+AUTH_SECRET=GENERER_AVEC_OPENSSL
+AUTH_URL=https://votre-domaine.com
 AUTH_TRUST_HOST=true
 PORT=3000
 GOOGLE_CLIENT_ID=votre-google-client-id
@@ -336,11 +336,11 @@ gh release upload guide-assets guide-*.png
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
-- [ ] `NEXTAUTH_SECRET` genere avec `openssl rand -base64 32`
+- [ ] `AUTH_SECRET` genere avec `openssl rand -base64 32`
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Webcron configure (crontab ou service externe) pour appeler `/api/cron/reminders` quotidiennement
 - [ ] `AUTH_TRUST_HOST=true` present
-- [ ] `NEXTAUTH_URL` pointe vers le domaine de production (HTTPS)
+- [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie
 - [ ] Schema applique (`npm run db:push`)
 - [ ] Application construite (`npm run build`)

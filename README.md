@@ -8,7 +8,7 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 ```bash
 git clone https://github.com/iccbretagne/planningcenter.git
 cd planningcenter
-cp .env.example .env          # configurer Google OAuth + NEXTAUTH_SECRET
+cp .env.example .env          # configurer Google OAuth + AUTH_SECRET
 docker-compose up -d           # MariaDB
 npm install
 npm run db:push                # schema
