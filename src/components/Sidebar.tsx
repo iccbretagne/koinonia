@@ -49,24 +49,24 @@ const sectionHeaderActive = "bg-icc-violet-light text-icc-violet";
 function AccordionSection({
   title,
   icon,
-  defaultOpen = false,
+  open,
+  onToggle,
   isActive = false,
   dataTour,
   children,
 }: {
   title: string;
   icon: React.ReactNode;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
   isActive?: boolean;
   dataTour?: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
-
   return (
     <div data-tour={dataTour}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
         className={`${sectionHeaderBase} ${isActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
       >
         {icon}
@@ -230,13 +230,35 @@ export default function Sidebar({
   const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
   const isAdminActive = pathname.startsWith("/admin") && !isDiscipleshipActive;
 
+  // Détermine la section active selon la route courante
+  function activeSection() {
+    if (isEventsActive) return "events";
+    if (isServiceActive) return "service";
+    if (isDiscipleshipActive) return "discipleship";
+    if (isAdminActive) return "admin";
+    return "departments";
+  }
+
+  const [openSection, setOpenSection] = useState<string>(activeSection);
+
+  // Synchronise l'ouverture quand la route change (navigation)
+  useEffect(() => {
+    setOpenSection(activeSection());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  function toggle(section: string) {
+    setOpenSection((prev) => (prev === section ? "" : section));
+  }
+
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
       {/* Départements */}
       <AccordionSection
         title="Départements"
         icon={<IconDepartments className="w-4 h-4" />}
-        defaultOpen
+        open={openSection === "departments"}
+        onToggle={() => toggle("departments")}
         isActive={isDashboardActive}
         dataTour="sidebar-departments"
       >
@@ -274,8 +296,9 @@ export default function Sidebar({
       <AccordionSection
         title="Evenements"
         icon={<IconCalendar className="w-4 h-4" />}
+        open={openSection === "events"}
+        onToggle={() => toggle("events")}
         isActive={isEventsActive}
-        defaultOpen={isEventsActive}
         dataTour="sidebar-events"
       >
         <nav className="space-y-0.5 pl-6">
@@ -309,8 +332,9 @@ export default function Sidebar({
         <AccordionSection
           title="Annonces"
           icon={<IconMegaphone className="w-4 h-4" />}
+          open={openSection === "service"}
+          onToggle={() => toggle("service")}
           isActive={isServiceActive}
-          defaultOpen={isServiceActive}
         >
           <nav className="space-y-0.5 pl-6">
             {serviceLinks.map((link) => (
@@ -336,8 +360,9 @@ export default function Sidebar({
         <AccordionSection
           title="Discipolat"
           icon={<IconDiscipleship className="w-4 h-4" />}
+          open={openSection === "discipleship"}
+          onToggle={() => toggle("discipleship")}
           isActive={isDiscipleshipActive}
-          defaultOpen={isDiscipleshipActive}
         >
           <nav className="space-y-0.5 pl-6">
             <Link
@@ -360,6 +385,8 @@ export default function Sidebar({
         <AccordionSection
           title="Administration"
           icon={<IconAdmin className="w-4 h-4" />}
+          open={openSection === "admin"}
+          onToggle={() => toggle("admin")}
           isActive={isAdminActive}
           dataTour="sidebar-admin"
         >
