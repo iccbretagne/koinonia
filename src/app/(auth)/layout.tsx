@@ -17,6 +17,7 @@ const adminLinks = [
   { href: "/admin/events", label: "Événements", permissions: ["events:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
+  { href: "/admin/discipleship", label: "Discipolat", permissions: ["discipleship:view"] },
 ];
 
 export default async function AuthLayout({

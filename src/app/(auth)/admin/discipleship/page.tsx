@@ -1,0 +1,48 @@
+import { requireAnyPermission, getCurrentChurchId } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+import DiscipleshipClient from "./DiscipleshipClient";
+
+export default async function DiscipleshipPage() {
+  const session = await requireAnyPermission("discipleship:view");
+
+  const userPermissions = new Set(
+    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+  );
+
+  const canManage = userPermissions.has("discipleship:manage");
+  const canExport = userPermissions.has("discipleship:export");
+
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Discipolat</h1>
+        <p className="text-gray-500">Aucune église sélectionnée.</p>
+      </div>
+    );
+  }
+
+  const members = await prisma.member.findMany({
+    where: { department: { ministry: { churchId } } },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      department: { select: { name: true, ministry: { select: { name: true } } } },
+    },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Discipolat</h1>
+      <DiscipleshipClient
+        churchId={churchId}
+        members={members}
+        canManage={canManage}
+        canExport={canExport}
+      />
+    </div>
+  );
+}

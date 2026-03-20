@@ -63,8 +63,9 @@ model Church {
   auditLogs         AuditLog[]
   announcements     Announcement[]
   serviceRequests   ServiceRequest[]
-  memberUserLinks   MemberUserLink[]
+  memberUserLinks    MemberUserLink[]
   memberLinkRequests MemberLinkRequest[]
+  discipleships      Discipleship[]
 
   @@map("churches")
 }
@@ -75,6 +76,7 @@ enum Role {
   SECRETARY
   MINISTER
   DEPARTMENT_HEAD
+  DISCIPLE_MAKER
 }
 
 model User {
@@ -182,6 +184,12 @@ model Member {
   userLink        MemberUserLink?
   linkRequests    MemberLinkRequest[]
 
+  // Discipolat (un seul enregistrement actif par église grâce au @@unique du modèle)
+  discipleships       Discipleship[] @relation("DiscipleOf")
+  disciplesMade       Discipleship[] @relation("DiscipleMakerOf")
+  firstDisciples      Discipleship[] @relation("FirstDiscipleMaker")
+  attendances         DiscipleshipAttendance[]
+
   @@map("members")
 }
 
@@ -230,6 +238,38 @@ model MemberLinkRequest {
   @@map("member_link_requests")
 }
 
+// ─── Discipolat ───────────────────────────────────────────────────────────────
+
+model Discipleship {
+  id              String   @id @default(cuid())
+  discipleId      String
+  discipleMakerId String
+  firstMakerId    String   // premier FD — ne change jamais, sert pour la lignée
+  churchId        String
+  startedAt       DateTime @default(now())
+
+  disciple      Member @relation("DiscipleOf",        fields: [discipleId],      references: [id])
+  discipleMaker Member @relation("DiscipleMakerOf",   fields: [discipleMakerId], references: [id])
+  firstMaker    Member @relation("FirstDiscipleMaker", fields: [firstMakerId],    references: [id])
+  church        Church @relation(fields: [churchId],  references: [id])
+
+  @@unique([discipleId, churchId]) // un seul FD courant par disciple par église
+  @@map("discipleships")
+}
+
+model DiscipleshipAttendance {
+  id       String  @id @default(cuid())
+  memberId String
+  eventId  String
+  present  Boolean @default(true)
+
+  member Member @relation(fields: [memberId], references: [id])
+  event  Event  @relation(fields: [eventId],  references: [id])
+
+  @@unique([memberId, eventId])
+  @@map("discipleship_attendances")
+}
+
 model Event {
   id                 String              @id @default(cuid())
   title              String
@@ -245,7 +285,9 @@ model Event {
   isRecurrenceParent Boolean             @default(false)
   allowAnnouncements Boolean             @default(false)
   createdAt          DateTime            @default(now())
-  announcementTargets AnnouncementEvent[]
+  announcementTargets        AnnouncementEvent[]
+  trackedForDiscipleship     Boolean                  @default(false)
+  discipleshipAttendances    DiscipleshipAttendance[]
 
   @@map("events")
 }
