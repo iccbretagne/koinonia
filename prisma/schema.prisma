@@ -136,6 +136,7 @@ model Ministry {
   id              String           @id @default(cuid())
   name            String
   churchId        String
+  isSystem        Boolean          @default(false)
   church          Church           @relation(fields: [churchId], references: [id])
   departments     Department[]
   userRoles       UserChurchRole[]
@@ -156,6 +157,7 @@ model Department {
   id                      String             @id @default(cuid())
   name                    String
   ministryId              String
+  isSystem                Boolean            @default(false)
   function                DepartmentFunction?
   ministry                Ministry           @relation(fields: [ministryId], references: [id])
   members                 Member[]

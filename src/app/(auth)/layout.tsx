@@ -63,7 +63,7 @@ export default async function AuthLayout({
   let allDepartments = departments;
   if (isAdmin && currentChurchId) {
     const depts = await prisma.department.findMany({
-      where: { ministry: { churchId: currentChurchId } },
+      where: { ministry: { churchId: currentChurchId }, isSystem: false },
       include: { ministry: true },
       orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
     });

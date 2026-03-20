@@ -3,12 +3,23 @@ import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
-const createSchema = z.object({
-  discipleId: z.string(),
-  discipleMakerId: z.string(),
-  churchId: z.string(),
-  firstMakerId: z.string().optional(), // si omis, = discipleMakerId
-});
+const createSchema = z.union([
+  z.object({
+    discipleId: z.string(),
+    discipleMakerId: z.string(),
+    churchId: z.string(),
+    firstMakerId: z.string().optional(),
+  }),
+  z.object({
+    newMember: z.object({
+      firstName: z.string().min(1, "Le prénom est requis"),
+      lastName: z.string().min(1, "Le nom est requis"),
+    }),
+    discipleMakerId: z.string(),
+    churchId: z.string(),
+    firstMakerId: z.string().optional(),
+  }),
+]);
 
 export async function GET(request: Request) {
   try {
@@ -43,16 +54,35 @@ export async function POST(request: Request) {
   try {
     const session = await requirePermission("discipleship:manage");
     const body = await request.json();
-    const { discipleId, discipleMakerId, churchId, firstMakerId } = createSchema.parse(body);
+    const parsed = createSchema.parse(body);
 
-    if (discipleId === discipleMakerId) {
-      throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
-    }
+    const { discipleMakerId, churchId, firstMakerId } = parsed;
 
     // DISCIPLE_MAKER ne peut créer que des relations dont il est le FD
     const scope = await getDiscipleshipScope(session, churchId);
     if (scope.scoped && discipleMakerId !== scope.memberId) {
       throw new ApiError(403, "Vous ne pouvez créer des relations que pour vous-même");
+    }
+
+    // Résoudre ou créer le disciple
+    let discipleId: string;
+    if ("newMember" in parsed) {
+      const sysDept = await prisma.department.findFirst({
+        where: { isSystem: true, ministry: { churchId } },
+        select: { id: true },
+      });
+      if (!sysDept) throw new ApiError(500, "Département système introuvable pour cette église");
+
+      const created = await prisma.member.create({
+        data: { firstName: parsed.newMember.firstName, lastName: parsed.newMember.lastName, departmentId: sysDept.id },
+      });
+      discipleId = created.id;
+    } else {
+      discipleId = parsed.discipleId;
+    }
+
+    if (discipleId === discipleMakerId) {
+      throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
     }
 
     // Vérifier qu'il n'y a pas déjà un lien de discipolat dans cette église

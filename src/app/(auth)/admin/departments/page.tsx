@@ -52,6 +52,7 @@ export default async function DepartmentsPage() {
           name: m.name,
           churchName: m.church.name,
         }))}
+        isSuperAdmin={isSuperAdmin}
       />
     </div>
   );

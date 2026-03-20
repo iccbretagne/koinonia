@@ -11,6 +11,7 @@ import BulkActionBar from "@/components/ui/BulkActionBar";
 interface Department {
   id: string;
   name: string;
+  isSystem: boolean;
   ministry: { id: string; name: string; churchId: string };
   _count: { members: number };
 }
@@ -18,11 +19,13 @@ interface Department {
 interface Props {
   initialDepartments: Department[];
   ministries: { id: string; name: string; churchName: string }[];
+  isSuperAdmin?: boolean;
 }
 
 export default function DepartmentsClient({
   initialDepartments,
   ministries,
+  isSuperAdmin,
 }: Props) {
   const [departments, setDepartments] = useState(initialDepartments);
   const [modalOpen, setModalOpen] = useState(false);
@@ -213,16 +216,26 @@ export default function DepartmentsClient({
           selectable
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
-          actions={(d) => (
-            <div className="flex gap-2 justify-end">
-              <Button variant="secondary" onClick={() => openEdit(d)}>
-                Modifier
-              </Button>
-              <Button variant="danger" onClick={() => handleDelete(d)}>
-                Supprimer
-              </Button>
-            </div>
-          )}
+          actions={(d) => {
+            const locked = d.isSystem && !isSuperAdmin;
+            return (
+              <div className="flex items-center gap-2 justify-end">
+                {d.isSystem && (
+                  <span title="Département système" className="text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </span>
+                )}
+                <Button variant="secondary" onClick={() => openEdit(d)} disabled={locked}>
+                  Modifier
+                </Button>
+                <Button variant="danger" onClick={() => handleDelete(d)} disabled={locked}>
+                  Supprimer
+                </Button>
+              </div>
+            );
+          }}
         />
       </div>
 

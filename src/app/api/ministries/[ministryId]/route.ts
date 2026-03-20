@@ -12,8 +12,15 @@ export async function PUT(
   { params }: { params: Promise<{ ministryId: string }> }
 ) {
   try {
-    await requirePermission("departments:manage");
+    const session = await requirePermission("departments:manage");
     const { ministryId } = await params;
+
+    const existing = await prisma.ministry.findUnique({ where: { id: ministryId }, select: { isSystem: true } });
+    if (!existing) throw new ApiError(404, "Ministère introuvable");
+    if (existing.isSystem && !session.user.isSuperAdmin) {
+      throw new ApiError(403, "Ce ministère système ne peut pas être modifié");
+    }
+
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -34,7 +41,7 @@ export async function DELETE(
   { params }: { params: Promise<{ ministryId: string }> }
 ) {
   try {
-    await requirePermission("departments:manage");
+    const session = await requirePermission("departments:manage");
     const { ministryId } = await params;
 
     const ministry = await prisma.ministry.findUnique({
@@ -44,6 +51,10 @@ export async function DELETE(
 
     if (!ministry) {
       throw new ApiError(404, "Ministère introuvable");
+    }
+
+    if (ministry.isSystem && !session.user.isSuperAdmin) {
+      throw new ApiError(403, "Ce ministère système ne peut pas être supprimé");
     }
 
     if (ministry.departments.length > 0) {

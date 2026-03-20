@@ -34,6 +34,7 @@ export default async function MinistriesPage() {
         initialMinistries={ministries}
         churches={uniqueChurches.map((c) => ({ id: c.id, name: c.name }))}
         readOnly={isMinisterOnly}
+        isSuperAdmin={isSuperAdmin}
       />
     </div>
   );
