@@ -39,6 +39,7 @@ interface StatRow {
 interface Props {
   churchId: string;
   members: MemberOption[];
+  allAssignedDiscipleIds: string[];
   canManage: boolean;
   canExport: boolean;
   isFD?: boolean;
@@ -66,7 +67,7 @@ function firstDayOfMonthISO() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DiscipleshipClient({ churchId, members, canManage, canExport, isFD = false, linkedMemberId = null }: Props) {
+export default function DiscipleshipClient({ churchId, members, allAssignedDiscipleIds, canManage, canExport, isFD = false, linkedMemberId = null }: Props) {
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
@@ -95,7 +96,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
       </div>
 
       {activeTab === "relations" && (
-        <RelationsTab churchId={churchId} members={members} canManage={canManage} isFD={isFD} linkedMemberId={linkedMemberId} />
+        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} isFD={isFD} linkedMemberId={linkedMemberId} />
       )}
       {activeTab === "appel" && (
         <AppelTab churchId={churchId} canManage={canManage} />
@@ -109,7 +110,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
 
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, canManage, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; canManage: boolean; isFD: boolean; linkedMemberId: string | null }) {
+function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; isFD: boolean; linkedMemberId: string | null }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,8 +145,11 @@ function RelationsTab({ churchId, members, canManage, isFD, linkedMemberId }: { 
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
-  // Membres déjà pris comme disciple (pour filtrer le sélecteur)
-  const assignedDiscipleIds = new Set(rows.map((r) => r.discipleId));
+  // Membres déjà pris comme disciple (liste complète de l'église + nouvelles relations ajoutées en session)
+  const assignedDiscipleIds = new Set([
+    ...allAssignedDiscipleIds,
+    ...rows.map((r) => r.discipleId),
+  ]);
   const availableDisciples = members.filter((m) => !assignedDiscipleIds.has(m.id));
 
   async function handleCreate(e: React.FormEvent) {
