@@ -8,6 +8,7 @@ interface SidebarProps {
   departments: { id: string; name: string; ministryName?: string }[];
   adminLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
+  hasDiscipleship?: boolean;
   onClose?: () => void;
 }
 
@@ -204,10 +205,19 @@ function IconMegaphone({ className }: { className?: string }) {
   );
 }
 
+function IconDiscipleship({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+
 export default function Sidebar({
   departments,
   adminLinks,
   serviceLinks,
+  hasDiscipleship = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -217,7 +227,8 @@ export default function Sidebar({
   const isDashboardActive = pathname === "/dashboard";
   const isEventsActive = pathname.startsWith("/events");
   const isServiceActive = pathname.startsWith("/announcements") || pathname.startsWith("/secretariat") || pathname.startsWith("/media") || pathname.startsWith("/communication");
-  const isAdminActive = pathname.startsWith("/admin");
+  const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
+  const isAdminActive = pathname.startsWith("/admin") && !isDiscipleshipActive;
 
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -316,6 +327,30 @@ export default function Sidebar({
                 {link.label}
               </Link>
             ))}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* Discipolat */}
+      {hasDiscipleship && (
+        <AccordionSection
+          title="Discipolat"
+          icon={<IconDiscipleship className="w-4 h-4" />}
+          isActive={isDiscipleshipActive}
+          defaultOpen={isDiscipleshipActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            <Link
+              href="/admin/discipleship"
+              onClick={onClose}
+              className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                pathname === "/admin/discipleship"
+                  ? "bg-icc-violet-light text-icc-violet font-medium"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Tableau de bord
+            </Link>
           </nav>
         </AccordionSection>
       )}

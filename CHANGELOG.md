@@ -6,6 +6,30 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.9.0] - 2026-03-20
+
+### Ajoute
+
+- Module Discipolat :
+  - Role `DISCIPLE_MAKER` avec permissions `discipleship:view`, `discipleship:manage`, `discipleship:export`
+  - Modeles `Discipleship` et `DiscipleshipAttendance` (schema Prisma)
+  - Champ `trackedForDiscipleship` sur les evenements
+  - API REST : `/api/discipleships` (CRUD), `/api/discipleships/attendance` (appel), `/api/discipleships/stats`, `/api/discipleships/export` (Excel)
+  - Tableau de bord `/admin/discipleship` avec 3 onglets : Relations, Appel, Statistiques
+  - Section "Discipolat" dans la sidebar, visible uniquement aux utilisateurs ayant `discipleship:view`
+  - Onglet Appel : selection d'evenement (mois glissant, tri chronologique, selection automatique sur l'evenement le plus proche), presences groupees par FD, sauvegarde via PUT
+  - Export Excel : feuille statistiques + feuille detail presences
+- Configuration evenement : toggle "Suivre les presences pour le discipolat" sur la page de detail
+- Bouton "Configurer" (renomme depuis "Dep. service") sur la liste des evenements admin
+- Option "Appliquer aux futurs evenements de la serie" remontee en tete de page, s'applique desormais aux toggles annonces et discipolat en plus des departements
+
+### Ameliore
+
+- Liaison compte utilisateur / membre STAR desormais independante de l'attribution de role
+- Interface admin membres : colonne "Compte" et bouton "Lier" pour liaison directe sans flux de demande
+- Page profil `/profile` : visualisation et demande de liaison STAR pour l'utilisateur connecte
+- Recherche membres et utilisateurs insensible a la casse
+
 ## [v0.8.1] - 2026-03-18
 
 ### Corrige

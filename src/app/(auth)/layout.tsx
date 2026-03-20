@@ -178,6 +178,8 @@ export default async function AuthLayout({
     </footer>
   );
 
+  const hasDiscipleship = userPermissions.has("discipleship:view");
+
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
 
@@ -186,8 +188,9 @@ export default async function AuthLayout({
       departments={allDepartments}
       adminLinks={visibleAdminLinks}
       serviceLinks={serviceLinks}
+      hasDiscipleship={hasDiscipleship}
       hasAdminAccess={visibleAdminLinks.length > 0}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD"}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER"}
       header={headerContent}
       footer={footerContent}
     >
