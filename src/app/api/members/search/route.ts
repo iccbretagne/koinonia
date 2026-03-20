@@ -15,19 +15,23 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
     if (q.length < 2) return successResponse([]);
 
-    const members = await prisma.member.findMany({
+    const matches = await prisma.member.findMany({
       where: {
         department: { ministry: { churchId } },
-        userLink: null, // uniquement les STAR sans compte lié
         OR: [
           { firstName: { contains: q } },
           { lastName: { contains: q } },
         ],
       },
-      select: { id: true, firstName: true, lastName: true },
-      take: 10,
+      select: { id: true, firstName: true, lastName: true, userLink: { select: { id: true } } },
+      take: 20,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });
+
+    const members = matches
+      .filter((m) => !m.userLink)
+      .slice(0, 10)
+      .map(({ userLink: _, ...m }) => m);
 
     return successResponse(members);
   } catch (error) {

@@ -24,13 +24,6 @@ interface LinkRequest {
   createdAt: string;
 }
 
-const ROLES = [
-  { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
-  { value: "MINISTER", label: "Ministre" },
-  { value: "SECRETARY", label: "Secrétaire" },
-  { value: "ADMIN", label: "Administrateur" },
-];
-
 export default function LinkRequestsClient({
   initialRequests,
   departments,
@@ -41,7 +34,6 @@ export default function LinkRequestsClient({
   const [requests, setRequests] = useState(initialRequests);
   const [processing, setProcessing] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<LinkRequest | null>(null);
-  const [role, setRole] = useState("DEPARTMENT_HEAD");
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
   const [rejectModal, setRejectModal] = useState<LinkRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -160,17 +152,16 @@ export default function LinkRequestsClient({
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Attribuer un rôle à{" "}
+            Lier le compte de{" "}
             <strong>{approveModal?.user.name ?? approveModal?.user.email}</strong>
+            {" "}à{" "}
+            <strong>
+              {approveModal?.member
+                ? `${approveModal.member.firstName} ${approveModal.member.lastName}`
+                : `${approveModal?.firstName} ${approveModal?.lastName}`}
+            </strong>
             {" "}dans <strong>{approveModal?.church.name}</strong>.
           </p>
-
-          <Select
-            label="Rôle"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            options={ROLES}
-          />
 
           {!approveModal?.member && (
             <Select
@@ -193,7 +184,6 @@ export default function LinkRequestsClient({
             <Button
               onClick={() =>
                 handleAction(approveModal!.id, "approve", {
-                  role,
                   departmentId: approveModal?.member ? undefined : departmentId,
                 })
               }

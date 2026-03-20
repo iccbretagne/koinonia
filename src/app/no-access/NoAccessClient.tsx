@@ -43,7 +43,7 @@ export default function NoAccessClient({
           `/api/members/search?q=${encodeURIComponent(query)}&churchId=${churchId}`
         );
         const json = await res.json();
-        setResults(json.data ?? []);
+        setResults(Array.isArray(json) ? json : []);
       } finally {
         setSearching(false);
       }

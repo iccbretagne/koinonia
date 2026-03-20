@@ -3,9 +3,8 @@ import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
-const approveSchema = z.object({
+const schema = z.object({
   action: z.enum(["approve", "reject"]),
-  role: z.enum(["ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"]).optional(),
   rejectReason: z.string().optional(),
   departmentId: z.string().optional(), // requis si création d'un nouveau STAR
 });
@@ -18,7 +17,7 @@ export async function PATCH(
     const session = await requirePermission("members:manage");
     const { id } = await params;
     const body = await request.json();
-    const { action, role, rejectReason, departmentId } = approveSchema.parse(body);
+    const { action, rejectReason, departmentId } = schema.parse(body);
 
     const linkRequest = await prisma.memberLinkRequest.findUnique({
       where: { id },
@@ -43,10 +42,11 @@ export async function PATCH(
     }
 
     // Approbation
-    if (!role) throw new ApiError(400, "Le rôle est requis pour approuver");
-
     await prisma.$transaction(async (tx) => {
       let memberId = linkRequest.memberId;
+      let memberName = linkRequest.member
+        ? { firstName: linkRequest.member.firstName, lastName: linkRequest.member.lastName }
+        : null;
 
       // Créer le Member si nouvelle demande
       if (!memberId) {
@@ -60,12 +60,13 @@ export async function PATCH(
           },
         });
         memberId = newMember.id;
+        memberName = { firstName: newMember.firstName, lastName: newMember.lastName };
       }
 
       // Créer le lien MemberUserLink
       await tx.memberUserLink.create({
         data: {
-          memberId,
+          memberId: memberId!,
           userId: linkRequest.userId,
           churchId: linkRequest.churchId,
           validatedAt: new Date(),
@@ -73,29 +74,20 @@ export async function PATCH(
         },
       });
 
-      // Attribuer le rôle
-      await tx.userChurchRole.upsert({
-        where: {
-          userId_churchId_role: {
-            userId: linkRequest.userId,
-            churchId: linkRequest.churchId,
-            role,
-          },
-        },
-        update: {},
-        create: {
-          userId: linkRequest.userId,
-          churchId: linkRequest.churchId,
-          role,
-        },
-      });
+      // Mettre à jour le nom d'affichage de l'utilisateur avec le nom du STAR
+      if (memberName) {
+        await tx.user.update({
+          where: { id: linkRequest.userId },
+          data: { displayName: `${memberName.firstName} ${memberName.lastName}` },
+        });
+      }
 
       // Mettre à jour la demande
       await tx.memberLinkRequest.update({
         where: { id },
         data: {
           status: "APPROVED",
-          memberId,
+          memberId: memberId!,
           reviewedAt: new Date(),
           reviewedById: session.user.id,
         },

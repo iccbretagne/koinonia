@@ -50,8 +50,11 @@ export default async function MembersPage() {
         select: {
           id: true,
           name: true,
-          ministry: { select: { id: true, name: true } },
+          ministry: { select: { id: true, name: true, churchId: true } },
         },
+      },
+      userLink: {
+        select: { userId: true, user: { select: { name: true, email: true } } },
       },
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -90,7 +93,13 @@ export default async function MembersPage() {
       )}
 
       <MembersClient
-        initialMembers={members}
+        initialMembers={members.map((m) => ({
+          ...m,
+          userLink: m.userLink
+            ? { userId: m.userLink.userId, userName: m.userLink.user.name, userEmail: m.userLink.user.email }
+            : null,
+          churchId: m.department.ministry.churchId,
+        }))}
         departments={departments.map((d) => ({
           id: d.id,
           name: d.name,
