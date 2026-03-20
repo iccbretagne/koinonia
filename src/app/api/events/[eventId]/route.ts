@@ -160,6 +160,8 @@ export async function PUT(
 const patchSchema = z.object({
   allowAnnouncements: z.boolean().optional(),
   trackedForDiscipleship: z.boolean().optional(),
+  reportEnabled: z.boolean().optional(),
+  statsEnabled: z.boolean().optional(),
   applyToSeries: z.boolean().optional(),
 });
 
@@ -176,6 +178,8 @@ export async function PATCH(
     const updateData = {
       ...(rest.allowAnnouncements !== undefined && { allowAnnouncements: rest.allowAnnouncements }),
       ...(rest.trackedForDiscipleship !== undefined && { trackedForDiscipleship: rest.trackedForDiscipleship }),
+      ...(rest.reportEnabled !== undefined && { reportEnabled: rest.reportEnabled }),
+      ...(rest.statsEnabled !== undefined && { statsEnabled: rest.statsEnabled }),
     };
 
     if (applyToSeries) {
@@ -201,7 +205,7 @@ export async function PATCH(
     const event = await prisma.event.update({
       where: { id: eventId },
       data: updateData,
-      select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true },
+      select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true, reportEnabled: true, statsEnabled: true },
     });
 
     return successResponse(event);

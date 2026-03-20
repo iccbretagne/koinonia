@@ -66,6 +66,7 @@ model Church {
   memberUserLinks    MemberUserLink[]
   memberLinkRequests MemberLinkRequest[]
   discipleships      Discipleship[]
+  eventReports       EventReport[]
 
   @@map("churches")
 }
@@ -102,6 +103,7 @@ model User {
   validatedLinks          MemberUserLink[]    @relation("LinkValidator")
   memberLinkRequests      MemberLinkRequest[] @relation("LinkRequester")
   reviewedLinkRequests    MemberLinkRequest[] @relation("LinkRequestReviewer")
+  eventReports            EventReport[]       @relation("ReportAuthor")
 
   @@map("users")
 }
@@ -165,9 +167,10 @@ model Department {
   userDepts               UserDepartment[]
   tasks                   Task[]
   createdAt               DateTime           @default(now())
-  announcements           Announcement[]     @relation("AnnouncementDepartment")
-  submittedServiceRequests ServiceRequest[]  @relation("ServiceRequestDepartment")
-  assignedServiceRequests ServiceRequest[]   @relation("ServiceRequestAssigned")
+  announcements            Announcement[]     @relation("AnnouncementDepartment")
+  submittedServiceRequests ServiceRequest[]   @relation("ServiceRequestDepartment")
+  assignedServiceRequests  ServiceRequest[]   @relation("ServiceRequestAssigned")
+  reportSections           EventReportSection[]
 
   @@map("departments")
 }
@@ -289,9 +292,47 @@ model Event {
   createdAt          DateTime            @default(now())
   announcementTargets        AnnouncementEvent[]
   trackedForDiscipleship     Boolean                  @default(false)
+  reportEnabled              Boolean                  @default(false)
+  statsEnabled               Boolean                  @default(false)
   discipleshipAttendances    DiscipleshipAttendance[]
+  report                     EventReport?
 
   @@map("events")
+}
+
+model EventReport {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  churchId  String
+  notes     String?  @db.Text
+  decisions String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String?
+
+  event    Event                @relation(fields: [eventId],   references: [id])
+  church   Church               @relation(fields: [churchId],  references: [id])
+  author   User?                @relation("ReportAuthor", fields: [authorId],  references: [id])
+  sections EventReportSection[]
+
+  @@map("event_reports")
+}
+
+model EventReportSection {
+  id           String  @id @default(cuid())
+  reportId     String
+  departmentId String?
+  label        String
+  position     Int     @default(0)
+  present      Int?
+  absent       Int?
+  newcomers    Int?
+  notes        String? @db.Text
+
+  report     EventReport @relation(fields: [reportId],     references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("event_report_sections")
 }
 
 model EventDepartment {

@@ -16,10 +16,12 @@ interface Props {
   isRecurring?: boolean;
   allowAnnouncements: boolean;
   trackedForDiscipleship: boolean;
+  reportEnabled: boolean;
+  statsEnabled: boolean;
   departments: Department[];
 }
 
-export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, departments }: Props) {
+export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, reportEnabled: initialReportEnabled, statsEnabled: initialStatsEnabled, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
   const [applyToSeries, setApplyToSeries] = useState(false);
@@ -27,6 +29,10 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
   const [savingAnnouncements, setSavingAnnouncements] = useState(false);
   const [trackedForDiscipleship, setTrackedForDiscipleship] = useState(initialTrackedForDiscipleship);
   const [savingDiscipleship, setSavingDiscipleship] = useState(false);
+  const [reportEnabled, setReportEnabled] = useState(initialReportEnabled);
+  const [savingReport, setSavingReport] = useState(false);
+  const [statsEnabled, setStatsEnabled] = useState(initialStatsEnabled);
+  const [savingStats, setSavingStats] = useState(false);
 
   async function toggleAllowAnnouncements() {
     setSavingAnnouncements(true);
@@ -68,6 +74,32 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     } finally {
       setSavingDiscipleship(false);
     }
+  }
+
+  async function toggleReportEnabled() {
+    setSavingReport(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportEnabled: !reportEnabled }),
+      });
+      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      setReportEnabled((v) => !v);
+    } catch { alert("Erreur"); } finally { setSavingReport(false); }
+  }
+
+  async function toggleStatsEnabled() {
+    setSavingStats(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statsEnabled: !statsEnabled }),
+      });
+      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      setStatsEnabled((v) => !v);
+    } catch { alert("Erreur"); } finally { setSavingStats(false); }
   }
 
   async function toggleDepartment(dept: Department) {
@@ -205,6 +237,51 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
           Si activé, cet événement apparaîtra dans le module discipolat pour
           l&apos;enregistrement des présences des disciples.
         </p>
+      </div>
+
+      <div className="mb-6 p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Compte rendu</h2>
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              role="switch"
+              aria-checked={reportEnabled}
+              onClick={toggleReportEnabled}
+              disabled={savingReport}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${reportEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reportEnabled ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+            <span className="text-sm font-medium text-gray-700">Activer le compte rendu</span>
+            {reportEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              role="switch"
+              aria-checked={statsEnabled}
+              onClick={toggleStatsEnabled}
+              disabled={savingStats}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${statsEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${statsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+            <span className="text-sm font-medium text-gray-700">Activer les statistiques</span>
+            {statsEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+          </label>
+        </div>
+        {reportEnabled && (
+          <div className="mt-4">
+            <Link
+              href={`/admin/events/${eventId}/report`}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Saisir / voir le compte rendu
+            </Link>
+          </div>
+        )}
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4">

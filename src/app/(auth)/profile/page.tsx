@@ -90,6 +90,11 @@ export default async function ProfilePage() {
                   <p className="text-xs text-gray-500">
                     {l.member.department.ministry.name} / {l.member.department.name}
                   </p>
+                  {l.member.department.name === "Sans département" && (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      Profil incomplet — contactez un administrateur pour être rattaché à un département.
+                    </p>
+                  )}
                 </div>
                 <span className="text-xs text-gray-400">{l.church.name}</span>
               </div>
