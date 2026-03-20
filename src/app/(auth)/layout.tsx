@@ -30,6 +30,11 @@ export default async function AuthLayout({
   }
 
   const churchRoles = session.user.churchRoles;
+
+  if (!session.user.isSuperAdmin && churchRoles.length === 0) {
+    redirect("/no-access");
+  }
+
   const currentChurchId = await getCurrentChurchId(session);
   const currentChurch = churchRoles.find((r) => r.churchId === currentChurchId);
   const churchName = currentChurch?.church?.name || "Église";

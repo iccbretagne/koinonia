@@ -164,8 +164,8 @@ Un indicateur visuel affiche l'etat : sauvegarde en cours, modifications non sau
 | Variable | Description | Exemple |
 |---|---|---|
 | `DATABASE_URL` | URL de connexion MariaDB | `mysql://planningcenter:planningcenter@localhost:3306/planningcenter` |
-| `NEXTAUTH_SECRET` | Secret de chiffrement des sessions | `openssl rand -base64 32` |
-| `NEXTAUTH_URL` | URL publique de l'application | `http://localhost:3000` |
+| `AUTH_SECRET` | Secret de chiffrement des sessions | `openssl rand -base64 32` |
+| `AUTH_URL` | URL publique de l'application | `http://localhost:3000` |
 | `GOOGLE_CLIENT_ID` | Client ID Google OAuth | |
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth | |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) | `admin@example.com,other@example.com` |
