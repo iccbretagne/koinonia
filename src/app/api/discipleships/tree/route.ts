@@ -1,20 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 // Arbre de lignée récursif à profondeur illimitée via WITH RECURSIVE
 export async function GET(request: Request) {
   try {
-    await requirePermission("discipleship:view");
+    const session = await requirePermission("discipleship:view");
 
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
-    const rootId = searchParams.get("rootId");
     // mode: "primary" = traversal via firstMakerId (lignée d'origine)
     //       "current"  = traversal via discipleMakerId (structure actuelle)
     const mode = searchParams.get("mode") === "current" ? "current" : "primary";
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+
+    // DISCIPLE_MAKER : l'arbre est ancré sur son propre nœud (ignore rootId du client)
+    const scope = await getDiscipleshipScope(session, churchId);
+    const rootId = scope.scoped ? scope.memberId : searchParams.get("rootId");
 
     type TreeRow = {
       id: string;

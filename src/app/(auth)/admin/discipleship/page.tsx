@@ -12,6 +12,7 @@ export default async function DiscipleshipPage() {
 
   const canManage = userPermissions.has("discipleship:manage");
   const canExport = userPermissions.has("discipleship:export");
+  const isFD = session.user.churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
 
   const churchId = await getCurrentChurchId(session);
   if (!churchId) {
@@ -23,16 +24,31 @@ export default async function DiscipleshipPage() {
     );
   }
 
-  const members = await prisma.member.findMany({
-    where: { department: { ministry: { churchId } } },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      department: { select: { name: true, ministry: { select: { name: true } } } },
-    },
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-  });
+  // Pour un FD, résoudre le membre lié pour pré-remplir le formulaire
+  const linkedMemberId = isFD
+    ? (await prisma.memberUserLink.findUnique({
+        where: { userId_churchId: { userId: session.user.id, churchId } },
+        select: { memberId: true },
+      }))?.memberId ?? null
+    : null;
+
+  const [members, allAssignedDiscipleIds] = await Promise.all([
+    prisma.member.findMany({
+      where: { department: { ministry: { churchId } } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        department: { select: { name: true, ministry: { select: { name: true } } } },
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
+    // Tous les disciples déjà assignés dans l'église (toutes relations confondues)
+    prisma.discipleship.findMany({
+      where: { churchId },
+      select: { discipleId: true },
+    }).then((rows) => rows.map((r) => r.discipleId)),
+  ]);
 
   return (
     <div>
@@ -40,8 +56,11 @@ export default async function DiscipleshipPage() {
       <DiscipleshipClient
         churchId={churchId}
         members={members}
+        allAssignedDiscipleIds={allAssignedDiscipleIds}
         canManage={canManage}
         canExport={canExport}
+        isFD={isFD}
+        linkedMemberId={linkedMemberId}
       />
     </div>
   );

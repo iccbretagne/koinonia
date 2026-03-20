@@ -1,25 +1,41 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
-const createSchema = z.object({
-  discipleId: z.string(),
-  discipleMakerId: z.string(),
-  churchId: z.string(),
-  firstMakerId: z.string().optional(), // si omis, = discipleMakerId
-});
+const createSchema = z.union([
+  z.object({
+    discipleId: z.string(),
+    discipleMakerId: z.string(),
+    churchId: z.string(),
+    firstMakerId: z.string().optional(),
+  }),
+  z.object({
+    newMember: z.object({
+      firstName: z.string().min(1, "Le prénom est requis"),
+      lastName: z.string().min(1, "Le nom est requis"),
+    }),
+    discipleMakerId: z.string(),
+    churchId: z.string(),
+    firstMakerId: z.string().optional(),
+  }),
+]);
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("discipleship:view");
+    const session = await requirePermission("discipleship:view");
 
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
+    const scope = await getDiscipleshipScope(session, churchId);
+    const whereScope = scope.scoped
+      ? { discipleMakerId: scope.memberId ?? "" }
+      : {};
+
     const discipleships = await prisma.discipleship.findMany({
-      where: { churchId },
+      where: { churchId, ...whereScope },
       include: {
         disciple: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
         discipleMaker: { select: { id: true, firstName: true, lastName: true } },
@@ -38,7 +54,32 @@ export async function POST(request: Request) {
   try {
     const session = await requirePermission("discipleship:manage");
     const body = await request.json();
-    const { discipleId, discipleMakerId, churchId, firstMakerId } = createSchema.parse(body);
+    const parsed = createSchema.parse(body);
+
+    const { discipleMakerId, churchId, firstMakerId } = parsed;
+
+    // DISCIPLE_MAKER ne peut créer que des relations dont il est le FD
+    const scope = await getDiscipleshipScope(session, churchId);
+    if (scope.scoped && discipleMakerId !== scope.memberId) {
+      throw new ApiError(403, "Vous ne pouvez créer des relations que pour vous-même");
+    }
+
+    // Résoudre ou créer le disciple
+    let discipleId: string;
+    if ("newMember" in parsed) {
+      const sysDept = await prisma.department.findFirst({
+        where: { isSystem: true, ministry: { churchId } },
+        select: { id: true },
+      });
+      if (!sysDept) throw new ApiError(500, "Département système introuvable pour cette église");
+
+      const created = await prisma.member.create({
+        data: { firstName: parsed.newMember.firstName, lastName: parsed.newMember.lastName, departmentId: sysDept.id },
+      });
+      discipleId = created.id;
+    } else {
+      discipleId = parsed.discipleId;
+    }
 
     if (discipleId === discipleMakerId) {
       throw new ApiError(400, "Un STAR ne peut pas être son propre FD");

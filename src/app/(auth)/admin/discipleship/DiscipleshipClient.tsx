@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
@@ -39,8 +39,11 @@ interface StatRow {
 interface Props {
   churchId: string;
   members: MemberOption[];
+  allAssignedDiscipleIds: string[];
   canManage: boolean;
   canExport: boolean;
+  isFD?: boolean;
+  linkedMemberId?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -64,7 +67,7 @@ function firstDayOfMonthISO() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DiscipleshipClient({ churchId, members, canManage, canExport }: Props) {
+export default function DiscipleshipClient({ churchId, members, allAssignedDiscipleIds, canManage, canExport, isFD = false, linkedMemberId = null }: Props) {
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
@@ -93,7 +96,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
       </div>
 
       {activeTab === "relations" && (
-        <RelationsTab churchId={churchId} members={members} canManage={canManage} />
+        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} isFD={isFD} linkedMemberId={linkedMemberId} />
       )}
       {activeTab === "appel" && (
         <AppelTab churchId={churchId} canManage={canManage} />
@@ -105,17 +108,166 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
   );
 }
 
+// ─── Combobox disciple ────────────────────────────────────────────────────────
+
+function DiscipleCombobox({
+  options,
+  value,
+  onChange,
+}: {
+  options: MemberOption[];
+  value: string | { firstName: string; lastName: string } | null;
+  onChange: (v: string | { firstName: string; lastName: string } | null) => void;
+}) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const isSelected = value !== null;
+  const selectedMember = typeof value === "string" ? options.find((o) => o.id === value) : null;
+  const isNew = value !== null && typeof value === "object";
+
+  function norm(s: string) {
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
+  // Filter by both fields, accent-insensitive
+  const qFirst = norm(firstName);
+  const qLast = norm(lastName);
+  const hasInput = firstName.trim().length > 0 || lastName.trim().length > 0;
+  const filtered = hasInput
+    ? options.filter((m) => {
+        const mFirst = norm(m.firstName);
+        const mLast = norm(m.lastName);
+        // both fields filled → must match both
+        if (qFirst && qLast) return mFirst.includes(qFirst) && mLast.includes(qLast);
+        // single field → match either first or last name
+        const q = qFirst || qLast;
+        return mFirst.includes(q) || mLast.includes(q) ||
+          `${mFirst} ${mLast}`.includes(q) || `${mLast} ${mFirst}`.includes(q);
+      })
+    : options;
+
+  const noMatch = hasInput && filtered.length === 0;
+
+  function selectMember(m: MemberOption) {
+    onChange(m.id);
+    setFirstName(m.firstName);
+    setLastName(m.lastName);
+  }
+
+  function confirmNew() {
+    onChange({ firstName: firstName.trim(), lastName: lastName.trim() });
+  }
+
+  function handleClear() {
+    onChange(null);
+    setFirstName("");
+    setLastName("");
+  }
+
+  function handleFieldChange(field: "firstName" | "lastName", val: string) {
+    if (field === "firstName") setFirstName(val);
+    else setLastName(val);
+    if (value !== null) onChange(null); // reset on edit
+  }
+
+  return (
+    <div ref={containerRef} className="space-y-2">
+      {/* Selected chip */}
+      {isSelected && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-icc-violet/10 border-2 border-icc-violet/30 rounded-lg text-sm">
+          <svg className="w-4 h-4 text-icc-violet shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="flex-1 font-medium text-gray-900">
+            {isNew
+              ? `${(value as {firstName:string;lastName:string}).firstName} ${(value as {firstName:string;lastName:string}).lastName}`.trim()
+              : `${selectedMember?.firstName} ${selectedMember?.lastName}`}
+          </span>
+          {selectedMember && (
+            <span className="text-xs text-gray-400">{selectedMember.department.ministry.name} / {selectedMember.department.name}</span>
+          )}
+          {isNew && <span className="text-xs text-icc-violet">nouveau</span>}
+          <button type="button" onClick={handleClear} className="text-gray-400 hover:text-gray-600 ml-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Input fields */}
+      {!isSelected && (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => handleFieldChange("firstName", e.target.value)}
+              placeholder="Prénom"
+              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => handleFieldChange("lastName", e.target.value)}
+              placeholder="Nom"
+              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+
+          {/* Suggestions */}
+          {hasInput && filtered.length > 0 && (
+            <ul className="border-2 border-gray-200 rounded-lg overflow-hidden text-sm max-h-48 overflow-y-auto">
+              {filtered.map((m) => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); selectMember(m); }}
+                    className="w-full text-left px-3 py-2 hover:bg-icc-violet/5 transition-colors border-b border-gray-100 last:border-0"
+                  >
+                    <span className="font-medium text-gray-900">{m.firstName} {m.lastName}</span>
+                    <span className="ml-2 text-xs text-gray-400">{m.department.ministry.name} / {m.department.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Create option */}
+          {noMatch && (
+            <div className="flex items-center gap-3 px-3 py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm">
+              <span className="flex-1 text-gray-500">
+                Aucun résultat pour «&nbsp;{[firstName, lastName].filter(Boolean).join(" ")}&nbsp;»
+              </span>
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); confirmNew(); }}
+                className="text-icc-violet font-medium hover:underline whitespace-nowrap"
+              >
+                + Créer ce membre
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, canManage }: { churchId: string; members: MemberOption[]; canManage: boolean }) {
+function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; isFD: boolean; linkedMemberId: string | null }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
-  const [newDiscipleId, setNewDiscipleId] = useState(members[0]?.id ?? "");
-  const [newMakerId, setNewMakerId] = useState(members[0]?.id ?? "");
+  // discipleSelection: existing member id OR { firstName, lastName } for a new member
+  const [discipleSelection, setDiscipleSelection] = useState<string | { firstName: string; lastName: string } | null>(null);
+  const [newMakerId, setNewMakerId] = useState(linkedMemberId ?? members[0]?.id ?? "");
   const [createError, setCreateError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -142,19 +294,27 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
+  // Membres déjà pris comme disciple (liste complète de l'église + nouvelles relations ajoutées en session)
+  const assignedDiscipleIds = new Set([
+    ...allAssignedDiscipleIds,
+    ...rows.map((r) => r.discipleId),
+  ]);
+  const availableDisciples = members.filter((m) => !assignedDiscipleIds.has(m.id));
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (newDiscipleId === newMakerId) {
-      setCreateError("Un STAR ne peut pas être son propre FD");
-      return;
-    }
+    if (!discipleSelection) { setCreateError("Sélectionnez ou créez un disciple"); return; }
+    const makerId = isFD ? (linkedMemberId ?? newMakerId) : newMakerId;
     setCreateLoading(true);
     setCreateError(null);
     try {
+      const body = typeof discipleSelection === "string"
+        ? { discipleId: discipleSelection, discipleMakerId: makerId, churchId }
+        : { newMember: discipleSelection, discipleMakerId: makerId, churchId };
       const res = await fetch("/api/discipleships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ discipleId: newDiscipleId, discipleMakerId: newMakerId, churchId }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
@@ -218,7 +378,7 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
     <>
       {canManage && (
         <div className="mb-4">
-          <Button onClick={() => { setCreateModal(true); setCreateError(null); setNewDiscipleId(members[0]?.id ?? ""); setNewMakerId(members[0]?.id ?? ""); }}>
+          <Button onClick={() => { setCreateModal(true); setCreateError(null); setDiscipleSelection(null); setNewMakerId(linkedMemberId ?? members[0]?.id ?? ""); }}>
             Nouvelle relation
           </Button>
         </div>
@@ -260,11 +420,13 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
                       {canManage && (
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-end">
-                            <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
-                              Changer FD
-                            </Button>
+                            {!isFD && (
+                              <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
+                                Changer FD
+                              </Button>
+                            )}
                             <Button variant="danger" size="sm" onClick={() => handleDelete(row)}>
-                              Supprimer
+                              {isFD ? "Détacher" : "Supprimer"}
                             </Button>
                           </div>
                         </td>
@@ -281,24 +443,34 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
       {/* Modal: nouvelle relation */}
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="Nouvelle relation de discipolat">
         <form onSubmit={handleCreate} className="space-y-4">
-          <Select
-            label="Disciple"
-            value={newDiscipleId}
-            onChange={(e) => setNewDiscipleId(e.target.value)}
-            options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
-          />
-          <Select
-            label="Faiseur de disciples (FD)"
-            value={newMakerId}
-            onChange={(e) => setNewMakerId(e.target.value)}
-            options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Disciple</label>
+            <DiscipleCombobox
+              options={availableDisciples}
+              value={discipleSelection}
+              onChange={setDiscipleSelection}
+            />
+            {discipleSelection && typeof discipleSelection === "object" && (
+              <p className="mt-1 text-xs text-gray-400">
+                Nouveau membre — sera ajouté dans «&nbsp;Sans département&nbsp;».
+              </p>
+            )}
+          </div>
+
+          {!isFD && (
+            <Select
+              label="Faiseur de disciples (FD)"
+              value={newMakerId}
+              onChange={(e) => setNewMakerId(e.target.value)}
+              options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+            />
+          )}
           {createError && <p className="text-sm text-icc-rouge">{createError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setCreateModal(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={createLoading}>
+            <Button type="submit" disabled={createLoading || !discipleSelection}>
               {createLoading ? "Enregistrement..." : "Créer"}
             </Button>
           </div>

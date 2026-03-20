@@ -35,6 +35,22 @@ async function main() {
 
   console.log(`Church created: ${church.name}`);
 
+  // Create system ministry + department (non-modifiable, non-deletable except by superAdmin)
+  const systemMinistry = await prisma.ministry.create({
+    data: {
+      name: "Système",
+      churchId: church.id,
+      isSystem: true,
+      departments: {
+        create: {
+          name: "Sans département",
+          isSystem: true,
+        },
+      },
+    },
+  });
+  console.log(`  System ministry: ${systemMinistry.name}`);
+
   for (const [ministryName, departments] of Object.entries(
     MINISTRIES_AND_DEPARTMENTS
   )) {

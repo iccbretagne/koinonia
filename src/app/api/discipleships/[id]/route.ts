@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -59,6 +59,12 @@ export async function DELETE(
 
     const existing = await prisma.discipleship.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Relation de discipolat introuvable");
+
+    // DISCIPLE_MAKER ne peut détacher que ses propres disciples
+    const scope = await getDiscipleshipScope(session, existing.churchId);
+    if (scope.scoped && existing.discipleMakerId !== scope.memberId) {
+      throw new ApiError(403, "Vous ne pouvez détacher que vos propres disciples");
+    }
 
     await prisma.discipleship.delete({ where: { id } });
 

@@ -63,7 +63,7 @@ export default async function AuthLayout({
   let allDepartments = departments;
   if (isAdmin && currentChurchId) {
     const depts = await prisma.department.findMany({
-      where: { ministry: { churchId: currentChurchId } },
+      where: { ministry: { churchId: currentChurchId }, isSystem: false },
       include: { ministry: true },
       orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
     });
@@ -179,6 +179,8 @@ export default async function AuthLayout({
   );
 
   const hasDiscipleship = userPermissions.has("discipleship:view");
+  const hasEventsAccess = userPermissions.has("events:view");
+  const hasPlanningAccess = userPermissions.has("planning:view");
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
@@ -189,6 +191,8 @@ export default async function AuthLayout({
       adminLinks={visibleAdminLinks}
       serviceLinks={serviceLinks}
       hasDiscipleship={hasDiscipleship}
+      hasEventsAccess={hasEventsAccess}
+      hasPlanningAccess={hasPlanningAccess}
       hasAdminAccess={visibleAdminLinks.length > 0}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER"}
       header={headerContent}

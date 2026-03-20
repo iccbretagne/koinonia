@@ -9,6 +9,8 @@ interface SidebarProps {
   adminLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
   hasDiscipleship?: boolean;
+  hasEventsAccess?: boolean;
+  hasPlanningAccess?: boolean;
   onClose?: () => void;
 }
 
@@ -218,6 +220,8 @@ export default function Sidebar({
   adminLinks,
   serviceLinks,
   hasDiscipleship = false,
+  hasEventsAccess = true,
+  hasPlanningAccess = true,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -254,7 +258,7 @@ export default function Sidebar({
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
       {/* Départements */}
-      <AccordionSection
+      {hasPlanningAccess && <AccordionSection
         title="Départements"
         icon={<IconDepartments className="w-4 h-4" />}
         open={openSection === "departments"}
@@ -290,10 +294,10 @@ export default function Sidebar({
             ))}
           </nav>
         )}
-      </AccordionSection>
+      </AccordionSection>}
 
       {/* Evenements */}
-      <AccordionSection
+      {hasEventsAccess && <AccordionSection
         title="Evenements"
         icon={<IconCalendar className="w-4 h-4" />}
         open={openSection === "events"}
@@ -325,7 +329,7 @@ export default function Sidebar({
             Calendrier
           </Link>
         </nav>
-      </AccordionSection>
+      </AccordionSection>}
 
       {/* Annonces & Demandes */}
       {serviceLinks.length > 0 && (

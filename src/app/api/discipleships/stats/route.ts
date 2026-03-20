@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 // Stats de participation aux événements trackés sur une période glissante
 export async function GET(request: Request) {
   try {
-    await requirePermission("discipleship:view");
+    const session = await requirePermission("discipleship:view");
 
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
@@ -20,6 +20,11 @@ export async function GET(request: Request) {
     const from = searchParams.get("from") ? new Date(searchParams.get("from")!) : defaultFrom;
     const to = searchParams.get("to") ? new Date(searchParams.get("to")!) : defaultTo;
 
+    const scope = await getDiscipleshipScope(session, churchId);
+    const whereScope = scope.scoped
+      ? { discipleMakerId: scope.memberId ?? "" }
+      : {};
+
     // Événements trackés sur la période
     const trackedEvents = await prisma.event.findMany({
       where: {
@@ -33,9 +38,9 @@ export async function GET(request: Request) {
 
     const eventIds = trackedEvents.map((e) => e.id);
 
-    // Tous les disciples de l'église
+    // Disciples selon la portée
     const discipleships = await prisma.discipleship.findMany({
-      where: { churchId },
+      where: { churchId, ...whereScope },
       select: {
         id: true,
         discipleId: true,

@@ -57,9 +57,6 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "discipleship:view",
   ],
   DISCIPLE_MAKER: [
-    "planning:view",
-    "members:view",
-    "events:view",
     "discipleship:view",
     "discipleship:manage",
   ],

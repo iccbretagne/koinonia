@@ -38,6 +38,13 @@ export async function PUT(
   try {
     const session = await requirePermission("departments:manage");
     const { departmentId } = await params;
+
+    const deptCheck = await prisma.department.findUnique({ where: { id: departmentId }, select: { isSystem: true } });
+    if (!deptCheck) throw new ApiError(404, "Département introuvable");
+    if (deptCheck.isSystem && !session.user.isSuperAdmin) {
+      throw new ApiError(403, "Ce département système ne peut pas être modifié");
+    }
+
     await checkDepartmentScope(session, departmentId);
     const body = await request.json();
     const data = updateSchema.parse(body);
@@ -70,16 +77,19 @@ export async function PATCH(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
+    const session = await requirePermission("events:manage");
     const { departmentId } = await params;
     const body = await request.json();
     const data = patchFunctionSchema.parse(body);
 
     const dept = await prisma.department.findUnique({
       where: { id: departmentId },
-      select: { id: true, ministry: { select: { churchId: true } } },
+      select: { id: true, isSystem: true, ministry: { select: { churchId: true } } },
     });
     if (!dept) throw new ApiError(404, "Département introuvable");
+    if (dept.isSystem && !session.user.isSuperAdmin) {
+      throw new ApiError(403, "Ce département système ne peut pas être modifié");
+    }
 
     // Clear existing dept with same function in the same church before assigning
     if (data.function !== null) {
@@ -121,6 +131,10 @@ export async function DELETE(
 
     if (!department) {
       throw new ApiError(404, "Département introuvable");
+    }
+
+    if (department.isSystem && !session.user.isSuperAdmin) {
+      throw new ApiError(403, "Ce département système ne peut pas être supprimé");
     }
 
     if (department.members.length > 0) {
