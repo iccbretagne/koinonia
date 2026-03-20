@@ -1,5 +1,6 @@
 import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/permissions";
@@ -132,10 +133,12 @@ export default async function AuthLayout({
         </a>
         <NotificationBell />
         {session.user.image && (
-          <img
+          <Image
             src={session.user.image}
             alt={session.user.name || ""}
-            className="w-8 h-8 rounded-full"
+            width={32}
+            height={32}
+            className="rounded-full"
           />
         )}
         <span className="hidden sm:inline text-sm text-white">{session.user.name}</span>

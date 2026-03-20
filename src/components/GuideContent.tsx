@@ -203,6 +203,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
                     onClick={() => setZoomedImage({ src: `${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`, alt: feature.screenshotTitle })}
                     className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden cursor-zoom-in group"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`}
                       alt={feature.screenshotTitle}
@@ -233,6 +234,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={zoomedImage.src}
             alt={zoomedImage.alt}

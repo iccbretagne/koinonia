@@ -66,6 +66,7 @@ function TourOverlay({
   // Find and measure target element
   useEffect(() => {
     if (!step || isCentered) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTargetRect(null);
       return;
     }
@@ -97,6 +98,7 @@ function TourOverlay({
   // Position tooltip
   useEffect(() => {
     if (isCentered || !targetRect || !tooltipRef.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTooltipPos(null);
       return;
     }
@@ -366,6 +368,7 @@ function GuidedTourInner({ userRole }: GuidedTourProps) {
   const finishedRef = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(window.innerWidth < 768);
     setMounted(true);
   }, []);
