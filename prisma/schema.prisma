@@ -52,17 +52,19 @@ model VerificationToken {
 // ─── Domain models ─────────────────────────────────────────────────
 
 model Church {
-  id              String           @id @default(cuid())
-  name            String
-  slug            String           @unique
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  users           UserChurchRole[]
-  ministries      Ministry[]
-  events          Event[]
-  auditLogs       AuditLog[]
-  announcements   Announcement[]
-  serviceRequests ServiceRequest[]
+  id                String              @id @default(cuid())
+  name              String
+  slug              String              @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  users             UserChurchRole[]
+  ministries        Ministry[]
+  events            Event[]
+  auditLogs         AuditLog[]
+  announcements     Announcement[]
+  serviceRequests   ServiceRequest[]
+  memberUserLinks   MemberUserLink[]
+  memberLinkRequests MemberLinkRequest[]
 
   @@map("churches")
 }
@@ -76,24 +78,28 @@ enum Role {
 }
 
 model User {
-  id                      String           @id @default(cuid())
-  email                   String           @unique
+  id                      String              @id @default(cuid())
+  email                   String              @unique
   name                    String?
   displayName             String?
   image                   String?
   emailVerified           DateTime?
-  isSuperAdmin            Boolean          @default(false)
-  hasSeenTour             Boolean          @default(false)
-  createdAt               DateTime         @default(now())
-  updatedAt               DateTime         @updatedAt
+  isSuperAdmin            Boolean             @default(false)
+  hasSeenTour             Boolean             @default(false)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
   churchRoles             UserChurchRole[]
   accounts                Account[]
   sessions                Session[]
   auditLogs               AuditLog[]
   notifications           Notification[]
-  submittedAnnouncements  Announcement[]   @relation("AnnouncementSubmittedBy")
-  submittedServiceRequests ServiceRequest[] @relation("ServiceRequestSubmittedBy")
-  reviewedServiceRequests ServiceRequest[] @relation("ServiceRequestReviewedBy")
+  submittedAnnouncements  Announcement[]      @relation("AnnouncementSubmittedBy")
+  submittedServiceRequests ServiceRequest[]   @relation("ServiceRequestSubmittedBy")
+  reviewedServiceRequests ServiceRequest[]    @relation("ServiceRequestReviewedBy")
+  memberLinks             MemberUserLink[]    @relation("UserMemberLink")
+  validatedLinks          MemberUserLink[]    @relation("LinkValidator")
+  memberLinkRequests      MemberLinkRequest[] @relation("LinkRequester")
+  reviewedLinkRequests    MemberLinkRequest[] @relation("LinkRequestReviewer")
 
   @@map("users")
 }
@@ -163,18 +169,65 @@ model Department {
 }
 
 model Member {
-  id              String           @id @default(cuid())
+  id              String              @id @default(cuid())
   firstName       String
   lastName        String
   email           String?
   phone           String?
   departmentId    String
-  department      Department       @relation(fields: [departmentId], references: [id])
+  department      Department          @relation(fields: [departmentId], references: [id])
   plannings       Planning[]
   taskAssignments TaskAssignment[]
-  createdAt       DateTime         @default(now())
+  createdAt       DateTime            @default(now())
+  userLink        MemberUserLink?
+  linkRequests    MemberLinkRequest[]
 
   @@map("members")
+}
+
+model MemberUserLink {
+  id            String    @id @default(cuid())
+  memberId      String    @unique
+  userId        String
+  churchId      String
+  validatedAt   DateTime?
+  validatedById String?
+
+  member      Member  @relation(fields: [memberId],      references: [id], onDelete: Cascade)
+  user        User    @relation("UserMemberLink",        fields: [userId],  references: [id])
+  church      Church  @relation(fields: [churchId],      references: [id])
+  validatedBy User?   @relation("LinkValidator",         fields: [validatedById], references: [id])
+
+  @@unique([userId, churchId])
+  @@map("member_user_links")
+}
+
+enum MemberLinkRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model MemberLinkRequest {
+  id           String                  @id @default(cuid())
+  userId       String
+  memberId     String?
+  firstName    String?
+  lastName     String?
+  phone        String?
+  churchId     String
+  status       MemberLinkRequestStatus @default(PENDING)
+  rejectReason String?
+  createdAt    DateTime                @default(now())
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  user       User    @relation("LinkRequester",      fields: [userId],       references: [id])
+  member     Member? @relation(fields: [memberId],   references: [id])
+  church     Church  @relation(fields: [churchId],   references: [id])
+  reviewedBy User?   @relation("LinkRequestReviewer", fields: [reviewedById], references: [id])
+
+  @@map("member_link_requests")
 }
 
 model Event {

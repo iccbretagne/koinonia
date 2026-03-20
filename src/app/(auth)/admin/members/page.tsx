@@ -2,6 +2,7 @@ import { requireAnyPermission, getUserDepartmentScope } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import MembersClient from "./MembersClient";
+import LinkRequestsClient from "./LinkRequestsClient";
 
 export default async function MembersPage() {
   const session = await requireAnyPermission("members:manage", "members:view");
@@ -27,6 +28,21 @@ export default async function MembersPage() {
       ? { ministry: { churchId: { in: churchIds } } }
       : undefined;
 
+  const pendingRequests = canManage
+    ? await prisma.memberLinkRequest.findMany({
+        where: {
+          status: "PENDING",
+          ...(churchIds.length > 0 ? { churchId: { in: churchIds } } : {}),
+        },
+        include: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+          member: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+          church: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      })
+    : [];
+
   const members = await prisma.member.findMany({
     where: membersWhere,
     include: {
@@ -34,8 +50,11 @@ export default async function MembersPage() {
         select: {
           id: true,
           name: true,
-          ministry: { select: { id: true, name: true } },
+          ministry: { select: { id: true, name: true, churchId: true } },
         },
+      },
+      userLink: {
+        select: { userId: true, user: { select: { name: true, email: true } } },
       },
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -50,8 +69,37 @@ export default async function MembersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">STAR</h1>
+
+      {pendingRequests.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            Demandes d&apos;accès en attente
+            <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-icc-violet rounded-full">
+              {pendingRequests.length}
+            </span>
+          </h2>
+          <LinkRequestsClient
+            initialRequests={pendingRequests.map((r) => ({
+              ...r,
+              createdAt: r.createdAt.toISOString(),
+            }))}
+            departments={departments.map((d) => ({
+              id: d.id,
+              name: d.name,
+              ministryName: d.ministry.name,
+            }))}
+          />
+        </div>
+      )}
+
       <MembersClient
-        initialMembers={members}
+        initialMembers={members.map((m) => ({
+          ...m,
+          userLink: m.userLink
+            ? { userId: m.userLink.userId, userName: m.userLink.user.name, userEmail: m.userLink.user.email }
+            : null,
+          churchId: m.department.ministry.churchId,
+        }))}
         departments={departments.map((d) => ({
           id: d.id,
           name: d.name,

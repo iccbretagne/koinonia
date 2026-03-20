@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -8,15 +8,19 @@ import Modal from "@/components/ui/Modal";
 import DataTable from "@/components/ui/DataTable";
 import BulkActionBar from "@/components/ui/BulkActionBar";
 
+type UserResult = { id: string; name: string | null; email: string; displayName: string | null; image: string | null };
+
 interface Member {
   id: string;
   firstName: string;
   lastName: string;
+  churchId: string;
   department: {
     id: string;
     name: string;
     ministry: { id: string; name: string };
   };
+  userLink: { userId: string; userName: string | null; userEmail: string } | null;
 }
 
 interface Props {
@@ -42,6 +46,56 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [bulkDepartmentId, setBulkDepartmentId] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Link user modal
+  const [linkModal, setLinkModal] = useState<Member | null>(null);
+  const [userQuery, setUserQuery] = useState("");
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserResult | null>(null);
+  const [userSearching, setUserSearching] = useState(false);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const userSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!linkModal || userQuery.length < 2) { setUserResults([]); return; }
+    if (userSearchTimer.current) clearTimeout(userSearchTimer.current);
+    userSearchTimer.current = setTimeout(async () => {
+      setUserSearching(true);
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(userQuery)}&churchId=${linkModal.churchId}`);
+        const json = await res.json();
+        setUserResults(Array.isArray(json) ? json : []);
+      } finally {
+        setUserSearching(false);
+      }
+    }, 300);
+  }, [userQuery, linkModal]);
+
+  async function handleLink() {
+    if (!linkModal || !selectedUser) return;
+    setLinkError(null);
+    setLinkLoading(true);
+    try {
+      const res = await fetch("/api/member-user-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: linkModal.id, userId: selectedUser.id, churchId: linkModal.churchId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      setMembers((prev) => prev.map((m) =>
+        m.id === linkModal.id
+          ? { ...m, userLink: { userId: selectedUser.id, userName: selectedUser.name, userEmail: selectedUser.email } }
+          : m
+      ));
+      setLinkModal(null);
+    } catch (e) {
+      setLinkError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setLinkLoading(false);
+    }
+  }
 
   function openCreate() {
     setEditing(null);
@@ -230,6 +284,17 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               header: "Ministère",
               accessor: (m: Member) => m.department.ministry.name,
             },
+            {
+              header: "Compte",
+              accessor: (m: Member) =>
+                m.userLink ? (
+                  <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                    {m.userLink.userName ?? m.userLink.userEmail}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400">—</span>
+                ),
+            },
           ]}
           data={filtered}
           emptyMessage="Aucun STAR."
@@ -238,6 +303,15 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           onSelectionChange={setSelectedIds}
           actions={readOnly ? undefined : (m) => (
             <div className="flex gap-2 justify-end">
+              {!m.userLink && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
+                >
+                  Lier
+                </Button>
+              )}
               <Button variant="secondary" onClick={() => openEdit(m)}>
                 Modifier
               </Button>
@@ -297,6 +371,54 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal lien compte */}
+      <Modal
+        open={!!linkModal}
+        onClose={() => setLinkModal(null)}
+        title={`Lier un compte à ${linkModal?.firstName} ${linkModal?.lastName}`}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Recherchez l&apos;utilisateur à lier à ce STAR.
+          </p>
+          <div>
+            <Input
+              label="Rechercher un utilisateur"
+              value={userQuery}
+              onChange={(e) => { setUserQuery(e.target.value); setSelectedUser(null); }}
+              placeholder="Nom ou email..."
+            />
+            {userSearching && <p className="text-xs text-gray-400 mt-1">Recherche...</p>}
+            {userResults.length > 0 && !selectedUser && (
+              <ul className="mt-1 border-2 border-gray-200 rounded-lg overflow-hidden">
+                {userResults.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedUser(u); setUserQuery(u.displayName ?? u.name ?? u.email); setUserResults([]); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-icc-violet/5 transition-colors"
+                    >
+                      <span className="font-medium">{u.displayName ?? u.name ?? u.email}</span>
+                      {(u.displayName ?? u.name) && <span className="text-gray-400 ml-1 text-xs">{u.email}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {userQuery.length >= 2 && !userSearching && userResults.length === 0 && !selectedUser && (
+              <p className="text-xs text-gray-400 mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
+            )}
+          </div>
+          {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
+          <div className="flex gap-3 justify-end">
+            <Button variant="secondary" onClick={() => setLinkModal(null)}>Annuler</Button>
+            <Button onClick={handleLink} disabled={!selectedUser || linkLoading}>
+              {linkLoading ? "En cours..." : "Lier"}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <Modal

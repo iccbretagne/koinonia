@@ -132,16 +132,18 @@ export default async function AuthLayout({
           </svg>
         </a>
         <NotificationBell />
-        {session.user.image && (
-          <Image
-            src={session.user.image}
-            alt={session.user.name || ""}
-            width={32}
-            height={32}
-            className="rounded-full"
-          />
-        )}
-        <span className="hidden sm:inline text-sm text-white">{session.user.name}</span>
+        <a href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          {session.user.image && (
+            <Image
+              src={session.user.image}
+              alt={session.user.name || ""}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+          )}
+          <span className="hidden sm:inline text-sm text-white">{session.user.name}</span>
+        </a>
         <form
           action={async () => {
             "use server";
