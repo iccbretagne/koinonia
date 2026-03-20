@@ -41,6 +41,8 @@ interface Props {
   members: MemberOption[];
   canManage: boolean;
   canExport: boolean;
+  isFD?: boolean;
+  linkedMemberId?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -64,7 +66,7 @@ function firstDayOfMonthISO() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DiscipleshipClient({ churchId, members, canManage, canExport }: Props) {
+export default function DiscipleshipClient({ churchId, members, canManage, canExport, isFD = false, linkedMemberId = null }: Props) {
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
@@ -93,7 +95,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
       </div>
 
       {activeTab === "relations" && (
-        <RelationsTab churchId={churchId} members={members} canManage={canManage} />
+        <RelationsTab churchId={churchId} members={members} canManage={canManage} isFD={isFD} linkedMemberId={linkedMemberId} />
       )}
       {activeTab === "appel" && (
         <AppelTab churchId={churchId} canManage={canManage} />
@@ -107,7 +109,7 @@ export default function DiscipleshipClient({ churchId, members, canManage, canEx
 
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, canManage }: { churchId: string; members: MemberOption[]; canManage: boolean }) {
+function RelationsTab({ churchId, members, canManage, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; canManage: boolean; isFD: boolean; linkedMemberId: string | null }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +117,7 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
   const [newDiscipleId, setNewDiscipleId] = useState(members[0]?.id ?? "");
-  const [newMakerId, setNewMakerId] = useState(members[0]?.id ?? "");
+  const [newMakerId, setNewMakerId] = useState(linkedMemberId ?? members[0]?.id ?? "");
   const [createError, setCreateError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
 
@@ -142,9 +144,14 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
+  // Membres déjà pris comme disciple (pour filtrer le sélecteur)
+  const assignedDiscipleIds = new Set(rows.map((r) => r.discipleId));
+  const availableDisciples = members.filter((m) => !assignedDiscipleIds.has(m.id));
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (newDiscipleId === newMakerId) {
+    const makerId = isFD ? (linkedMemberId ?? newMakerId) : newMakerId;
+    if (newDiscipleId === makerId) {
       setCreateError("Un STAR ne peut pas être son propre FD");
       return;
     }
@@ -154,7 +161,7 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
       const res = await fetch("/api/discipleships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ discipleId: newDiscipleId, discipleMakerId: newMakerId, churchId }),
+        body: JSON.stringify({ discipleId: newDiscipleId, discipleMakerId: makerId, churchId }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
@@ -260,11 +267,13 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
                       {canManage && (
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-end">
-                            <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
-                              Changer FD
-                            </Button>
+                            {!isFD && (
+                              <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
+                                Changer FD
+                              </Button>
+                            )}
                             <Button variant="danger" size="sm" onClick={() => handleDelete(row)}>
-                              Supprimer
+                              {isFD ? "Détacher" : "Supprimer"}
                             </Button>
                           </div>
                         </td>
@@ -285,14 +294,16 @@ function RelationsTab({ churchId, members, canManage }: { churchId: string; memb
             label="Disciple"
             value={newDiscipleId}
             onChange={(e) => setNewDiscipleId(e.target.value)}
-            options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+            options={availableDisciples.map((m) => ({ value: m.id, label: memberLabel(m) }))}
           />
-          <Select
-            label="Faiseur de disciples (FD)"
-            value={newMakerId}
-            onChange={(e) => setNewMakerId(e.target.value)}
-            options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
-          />
+          {!isFD && (
+            <Select
+              label="Faiseur de disciples (FD)"
+              value={newMakerId}
+              onChange={(e) => setNewMakerId(e.target.value)}
+              options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+            />
+          )}
           {createError && <p className="text-sm text-icc-rouge">{createError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setCreateModal(false)}>

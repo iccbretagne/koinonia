@@ -9,6 +9,7 @@ interface SidebarProps {
   adminLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
   hasDiscipleship?: boolean;
+  hasEventsAccess?: boolean;
   onClose?: () => void;
 }
 
@@ -218,6 +219,7 @@ export default function Sidebar({
   adminLinks,
   serviceLinks,
   hasDiscipleship = false,
+  hasEventsAccess = true,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -271,7 +273,7 @@ export default function Sidebar({
       </AccordionSection>
 
       {/* Evenements */}
-      <AccordionSection
+      {hasEventsAccess && <AccordionSection
         title="Evenements"
         icon={<IconCalendar className="w-4 h-4" />}
         isActive={isEventsActive}
@@ -302,7 +304,7 @@ export default function Sidebar({
             Calendrier
           </Link>
         </nav>
-      </AccordionSection>
+      </AccordionSection>}
 
       {/* Annonces & Demandes */}
       {serviceLinks.length > 0 && (

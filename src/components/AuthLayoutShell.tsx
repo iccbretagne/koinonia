@@ -14,6 +14,7 @@ interface AuthLayoutShellProps {
   adminLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
   hasDiscipleship: boolean;
+  hasEventsAccess: boolean;
   hasAdminAccess: boolean;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -42,6 +43,7 @@ export default function AuthLayoutShell({
   adminLinks,
   serviceLinks,
   hasDiscipleship,
+  hasEventsAccess,
   hasAdminAccess,
   userRole,
   header,
@@ -105,6 +107,7 @@ export default function AuthLayoutShell({
               adminLinks={adminLinks}
               serviceLinks={serviceLinks}
               hasDiscipleship={hasDiscipleship}
+              hasEventsAccess={hasEventsAccess}
               onClose={closeSidebar}
             />
           </div>
