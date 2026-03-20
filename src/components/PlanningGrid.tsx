@@ -214,7 +214,7 @@ export default function PlanningGrid({
               key={member.id}
               className={`flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 ${current.color}`}
             >
-              <span className="text-sm font-medium truncate">
+              <span className="text-sm font-medium truncate min-w-0">
                 {member.firstName} {member.lastName}
               </span>
               {isReadOnly ? (
