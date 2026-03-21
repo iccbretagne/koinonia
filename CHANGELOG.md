@@ -6,6 +6,26 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.11.0] - 2026-03-22
+
+### Securite
+
+- Autorisation multi-tenant scopee par eglise sur toutes les routes API (requireChurchPermission + resolveChurchId)
+- Server components scopes a l'eglise active via getCurrentChurchId (19 pages)
+- Rate limiting active sur les routes d'authentification et de mutation (3 presets : AUTH, MUTATION, SENSITIVE)
+- Tests de securite : 36 tests couvrant l'isolation multi-tenant, le rate limiting, et le rejet cross-tenant
+
+### Ajoute
+
+- Audit logging systematique sur tous les endpoints de mutation (~50 operations, 25 fichiers)
+- Standardisation des actions d'audit : CREATE, UPDATE, DELETE
+- churchId ajoute aux logs d'audit du planning
+
+### Corrige
+
+- Suppression d'evenements : resolution de la contrainte FK en supprimant les enregistrements dependants dans l'ordre correct
+- Routes discipolat : migration de prisma.auditLog.create direct vers le helper logAudit
+
 ## [v0.10.0] - 2026-03-21
 
 ### Modifie
