@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireAnyPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
 const roleSchema = z.object({
@@ -31,16 +31,24 @@ const roleInclude = {
   },
 } as const;
 
+const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    const session = await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { churchId, role, ministryId, departmentIds } =
       roleSchema.parse(body);
+
+    // Les ADMIN ne peuvent assigner que MINISTER et DEPARTMENT_HEAD
+    if (!session.user.isSuperAdmin && PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+      const hasUsersManage = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
+      if (!hasUsersManage) throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
+    }
 
     const userRole = await prisma.userChurchRole.create({
       data: {
@@ -74,7 +82,7 @@ export async function PATCH(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { roleId, ministryId, departmentIds } = patchSchema.parse(body);
@@ -130,7 +138,7 @@ export async function DELETE(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { churchId, role } = roleSchema.parse(body);
