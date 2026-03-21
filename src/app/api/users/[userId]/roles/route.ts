@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireAnyPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
-const deptEntrySchema = z.object({
-  id: z.string(),
+// { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
+const deptAssignmentSchema = z.object({
+  id: z.string().min(1),
   isDeputy: z.boolean().optional().default(false),
 });
 
@@ -20,25 +21,17 @@ const roleSchema = z.object({
     "REPORTER",
   ]),
   ministryId: z.string().optional(),
-  departments: z.array(deptEntrySchema).optional(),
-  departmentIds: z.array(z.string()).optional(), // legacy
+  // Supporte les deux formats : string[] (legacy) ou { id, isDeputy }[]
+  departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptAssignmentSchema).optional(),
 });
 
 const patchSchema = z.object({
   roleId: z.string().min(1),
   ministryId: z.string().nullable().optional(),
-  departments: z.array(deptEntrySchema).optional(),
-  departmentIds: z.array(z.string()).optional(), // legacy
+  departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptAssignmentSchema).optional(),
 });
-
-function normalizeDepts(
-  departments?: { id: string; isDeputy?: boolean }[],
-  departmentIds?: string[]
-): { id: string; isDeputy: boolean }[] | undefined {
-  if (departments) return departments.map((d) => ({ id: d.id, isDeputy: d.isDeputy ?? false }));
-  if (departmentIds) return departmentIds.map((id) => ({ id, isDeputy: false }));
-  return undefined;
-}
 
 const roleInclude = {
   church: { select: { id: true, name: true } },
@@ -48,16 +41,34 @@ const roleInclude = {
   },
 } as const;
 
+const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
+
+// Normalise les deux formats d'entrée vers { id, isDeputy }[]
+function normalizeDepts(
+  departments?: { id: string; isDeputy?: boolean }[],
+  departmentIds?: string[]
+): { id: string; isDeputy: boolean }[] | undefined {
+  if (departments?.length) return departments.map((d) => ({ id: d.id, isDeputy: d.isDeputy ?? false }));
+  if (departmentIds?.length) return departmentIds.map((id) => ({ id, isDeputy: false }));
+  return undefined;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    const session = await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { churchId, role, ministryId, departments, departmentIds } =
-      roleSchema.parse(body);
+    const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
+
+    // Les ADMIN ne peuvent assigner que MINISTER et DEPARTMENT_HEAD
+    if (!session.user.isSuperAdmin && PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+      const hasUsersManage = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
+      if (!hasUsersManage) throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
+    }
+
     const depts = normalizeDepts(departments, departmentIds);
 
     const userRole = await prisma.userChurchRole.create({
@@ -69,10 +80,7 @@ export async function POST(
         ...(role === "DEPARTMENT_HEAD" && depts?.length
           ? {
               departments: {
-                create: depts.map((d) => ({
-                  departmentId: d.id,
-                  isDeputy: d.isDeputy,
-                })),
+                create: depts.map(({ id: departmentId, isDeputy }) => ({ departmentId, isDeputy })),
               },
             }
           : {}),
@@ -91,13 +99,11 @@ export async function PATCH(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { roleId, ministryId, departments, departmentIds } = patchSchema.parse(body);
-    const depts = normalizeDepts(departments, departmentIds);
+    const { roleId, ministryId, departmentIds, departments } = patchSchema.parse(body);
 
-    // Verify the role belongs to this user
     const existing = await prisma.userChurchRole.findFirst({
       where: { id: roleId, userId },
     });
@@ -106,8 +112,9 @@ export async function PATCH(
       return Response.json({ error: "Rôle introuvable" }, { status: 404 });
     }
 
+    const depts = normalizeDepts(departments, departmentIds);
+
     const updated = await prisma.$transaction(async (tx) => {
-      // Update ministryId
       if (ministryId !== undefined) {
         await tx.userChurchRole.update({
           where: { id: roleId },
@@ -115,18 +122,15 @@ export async function PATCH(
         });
       }
 
-      // Replace departments
       if (depts !== undefined) {
-        await tx.userDepartment.deleteMany({
-          where: { userChurchRoleId: roleId },
-        });
+        await tx.userDepartment.deleteMany({ where: { userChurchRoleId: roleId } });
 
         if (depts.length > 0) {
           await tx.userDepartment.createMany({
-            data: depts.map((d) => ({
+            data: depts.map(({ id: departmentId, isDeputy }) => ({
               userChurchRoleId: roleId,
-              departmentId: d.id,
-              isDeputy: d.isDeputy,
+              departmentId,
+              isDeputy,
             })),
           });
         }
@@ -149,7 +153,7 @@ export async function DELETE(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requirePermission("users:manage");
+    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { churchId, role } = roleSchema.parse(body);
@@ -159,18 +163,10 @@ export async function DELETE(
         where: { userId_churchId_role: { userId, churchId, role } },
       });
 
-      if (!existing) {
-        throw new Error("Rôle introuvable");
-      }
+      if (!existing) throw new Error("Rôle introuvable");
 
-      // Delete associated UserDepartment records first (FK constraint)
-      await tx.userDepartment.deleteMany({
-        where: { userChurchRoleId: existing.id },
-      });
-
-      await tx.userChurchRole.delete({
-        where: { id: existing.id },
-      });
+      await tx.userDepartment.deleteMany({ where: { userChurchRoleId: existing.id } });
+      await tx.userChurchRole.delete({ where: { id: existing.id } });
     });
 
     return successResponse({ success: true });

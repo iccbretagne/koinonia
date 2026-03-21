@@ -125,12 +125,12 @@ model UserChurchRole {
 }
 
 model UserDepartment {
-  id              String         @id @default(cuid())
+  id               String         @id @default(cuid())
   userChurchRoleId String
-  departmentId    String
-  isDeputy        Boolean        @default(false)
-  userChurchRole  UserChurchRole @relation(fields: [userChurchRoleId], references: [id])
-  department      Department     @relation(fields: [departmentId], references: [id])
+  departmentId     String
+  isDeputy         Boolean        @default(false)
+  userChurchRole   UserChurchRole @relation(fields: [userChurchRoleId], references: [id])
+  department       Department     @relation(fields: [departmentId], references: [id])
 
   @@unique([userChurchRoleId, departmentId])
   @@map("user_departments")
