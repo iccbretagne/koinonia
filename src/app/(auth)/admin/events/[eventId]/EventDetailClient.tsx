@@ -11,6 +11,13 @@ interface Department {
   linked: boolean;
 }
 
+type PendingAction =
+  | { type: "allowAnnouncements" }
+  | { type: "trackedForDiscipleship" }
+  | { type: "reportEnabled" }
+  | { type: "statsEnabled" }
+  | { type: "department"; dept: Department };
+
 interface Props {
   eventId: string;
   isRecurring?: boolean;
@@ -24,7 +31,6 @@ interface Props {
 export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, reportEnabled: initialReportEnabled, statsEnabled: initialStatsEnabled, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
-  const [applyToSeries, setApplyToSeries] = useState(false);
   const [allowAnnouncements, setAllowAnnouncements] = useState(initialAllowAnnouncements);
   const [savingAnnouncements, setSavingAnnouncements] = useState(false);
   const [trackedForDiscipleship, setTrackedForDiscipleship] = useState(initialTrackedForDiscipleship);
@@ -34,103 +40,78 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
   const [statsEnabled, setStatsEnabled] = useState(initialStatsEnabled);
   const [savingStats, setSavingStats] = useState(false);
 
-  async function toggleAllowAnnouncements() {
-    setSavingAnnouncements(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ allowAnnouncements: !allowAnnouncements, applyToSeries: applyToSeries && isRecurring }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Erreur");
-        return;
-      }
-      setAllowAnnouncements((v) => !v);
-    } catch {
-      alert("Erreur");
-    } finally {
-      setSavingAnnouncements(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [seriesScope, setSeriesScope] = useState<"single" | "future">("single");
+
+  function requestAction(action: PendingAction) {
+    if (!isRecurring) {
+      executeAction(action, false);
+    } else {
+      setSeriesScope("single");
+      setPendingAction(action);
     }
   }
 
-  async function toggleTrackedForDiscipleship() {
-    setSavingDiscipleship(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackedForDiscipleship: !trackedForDiscipleship, applyToSeries: applyToSeries && isRecurring }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Erreur");
-        return;
-      }
-      setTrackedForDiscipleship((v) => !v);
-    } catch {
-      alert("Erreur");
-    } finally {
-      setSavingDiscipleship(false);
-    }
-  }
+  async function executeAction(action: PendingAction, applyToSeries: boolean) {
+    setPendingAction(null);
 
-  async function toggleReportEnabled() {
-    setSavingReport(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportEnabled: !reportEnabled }),
-      });
-      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-      setReportEnabled((v) => !v);
-    } catch { alert("Erreur"); } finally { setSavingReport(false); }
-  }
-
-  async function toggleStatsEnabled() {
-    setSavingStats(true);
-    try {
-      const res = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statsEnabled: !statsEnabled }),
-      });
-      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-      setStatsEnabled((v) => !v);
-    } catch { alert("Erreur"); } finally { setSavingStats(false); }
-  }
-
-  async function toggleDepartment(dept: Department) {
-    setLoading(dept.id);
-
-    try {
-      const method = dept.linked ? "DELETE" : "POST";
-      const res = await fetch(`/api/events/${eventId}/departments`, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          departmentId: dept.id,
-          applyToSeries: applyToSeries && isRecurring,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Erreur");
-        return;
-      }
-
-      setDepts((prev) =>
-        prev.map((d) =>
-          d.id === dept.id ? { ...d, linked: !d.linked } : d
-        )
-      );
-    } catch {
-      alert("Erreur");
-    } finally {
-      setLoading(null);
+    if (action.type === "allowAnnouncements") {
+      setSavingAnnouncements(true);
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ allowAnnouncements: !allowAnnouncements, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setAllowAnnouncements((v) => !v);
+      } catch { alert("Erreur"); } finally { setSavingAnnouncements(false); }
+    } else if (action.type === "trackedForDiscipleship") {
+      setSavingDiscipleship(true);
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ trackedForDiscipleship: !trackedForDiscipleship, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setTrackedForDiscipleship((v) => !v);
+      } catch { alert("Erreur"); } finally { setSavingDiscipleship(false); }
+    } else if (action.type === "reportEnabled") {
+      setSavingReport(true);
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reportEnabled: !reportEnabled, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setReportEnabled((v) => !v);
+      } catch { alert("Erreur"); } finally { setSavingReport(false); }
+    } else if (action.type === "statsEnabled") {
+      setSavingStats(true);
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ statsEnabled: !statsEnabled, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setStatsEnabled((v) => !v);
+      } catch { alert("Erreur"); } finally { setSavingStats(false); }
+    } else if (action.type === "department") {
+      const dept = action.dept;
+      setLoading(dept.id);
+      try {
+        const method = dept.linked ? "DELETE" : "POST";
+        const res = await fetch(`/api/events/${eventId}/departments`, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ departmentId: dept.id, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setDepts((prev) => prev.map((d) => d.id === dept.id ? { ...d, linked: !d.linked } : d));
+      } catch { alert("Erreur"); } finally { setLoading(null); }
     }
   }
 
@@ -143,6 +124,15 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     {} as Record<string, Department[]>
   );
 
+  function actionLabel(action: PendingAction): string {
+    if (action.type === "allowAnnouncements") return allowAnnouncements ? "désactiver les annonces" : "activer les annonces";
+    if (action.type === "trackedForDiscipleship") return trackedForDiscipleship ? "désactiver le suivi discipolat" : "activer le suivi discipolat";
+    if (action.type === "reportEnabled") return reportEnabled ? "désactiver le compte rendu" : "activer le compte rendu";
+    if (action.type === "statsEnabled") return statsEnabled ? "désactiver les statistiques" : "activer les statistiques";
+    if (action.type === "department") return action.dept.linked ? `retirer le département «\u00a0${action.dept.name}\u00a0»` : `ajouter le département «\u00a0${action.dept.name}\u00a0»`;
+    return "";
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap gap-3">
@@ -154,18 +144,43 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         </Link>
       </div>
 
-      {isRecurring && (
-        <div className="mb-6 flex items-center gap-3 p-3 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
-          <span className="text-icc-violet text-lg">↻</span>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={applyToSeries}
-              onChange={(e) => setApplyToSeries(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
-            />
-            Appliquer aux futurs événements de la série
-          </label>
+      {/* Modale de confirmation série */}
+      {pendingAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Modifier la série</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Vous souhaitez <span className="font-medium text-gray-700">{actionLabel(pendingAction)}</span>. Appliquer à :
+            </p>
+            <div className="space-y-3 mb-5">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="seriesScope"
+                  value="single"
+                  checked={seriesScope === "single"}
+                  onChange={() => setSeriesScope("single")}
+                  className="h-4 w-4 text-icc-violet border-gray-300 focus:ring-icc-violet"
+                />
+                <span className="text-sm text-gray-700">Cet événement uniquement</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="seriesScope"
+                  value="future"
+                  checked={seriesScope === "future"}
+                  onChange={() => setSeriesScope("future")}
+                  className="h-4 w-4 text-icc-violet border-gray-300 focus:ring-icc-violet"
+                />
+                <span className="text-sm text-gray-700">Cet événement et les suivants de la série</span>
+              </label>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="secondary" onClick={() => setPendingAction(null)}>Annuler</Button>
+              <Button onClick={() => executeAction(pendingAction, seriesScope === "future")}>Confirmer</Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -177,7 +192,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
           <button
             role="switch"
             aria-checked={allowAnnouncements}
-            onClick={toggleAllowAnnouncements}
+            onClick={() => requestAction({ type: "allowAnnouncements" })}
             disabled={savingAnnouncements}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
               allowAnnouncements ? "bg-icc-violet" : "bg-gray-200"
@@ -212,7 +227,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
           <button
             role="switch"
             aria-checked={trackedForDiscipleship}
-            onClick={toggleTrackedForDiscipleship}
+            onClick={() => requestAction({ type: "trackedForDiscipleship" })}
             disabled={savingDiscipleship}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
               trackedForDiscipleship ? "bg-icc-violet" : "bg-gray-200"
@@ -246,7 +261,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
             <button
               role="switch"
               aria-checked={reportEnabled}
-              onClick={toggleReportEnabled}
+              onClick={() => requestAction({ type: "reportEnabled" })}
               disabled={savingReport}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${reportEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
             >
@@ -259,7 +274,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
             <button
               role="switch"
               aria-checked={statsEnabled}
-              onClick={toggleStatsEnabled}
+              onClick={() => requestAction({ type: "statsEnabled" })}
               disabled={savingStats}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${statsEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
             >
@@ -303,7 +318,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
                   <input
                     type="checkbox"
                     checked={d.linked}
-                    onChange={() => toggleDepartment(d)}
+                    onChange={() => requestAction({ type: "department", dept: d })}
                     disabled={loading === d.id}
                     className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
                   />
