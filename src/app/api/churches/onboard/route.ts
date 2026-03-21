@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const onboardSchema = z.object({
@@ -16,6 +17,7 @@ const onboardSchema = z.object({
 export async function POST(request: Request) {
   try {
     const session = await requirePermission("church:manage");
+    requireRateLimit(request, { prefix: `onboard:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
     const body = await request.json();
     const { name, slug, adminEmail } = onboardSchema.parse(body);
 

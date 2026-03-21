@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const createSchema = z.union([
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
 
     const { discipleMakerId, churchId, firstMakerId } = parsed;
     const session = await requireChurchPermission("discipleship:manage", churchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     // DISCIPLE_MAKER ne peut créer que des relations dont il est le FD
     const scope = await getDiscipleshipScope(session, churchId);

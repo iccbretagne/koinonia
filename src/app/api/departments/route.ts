@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 import type { Session } from "next-auth";
 
@@ -123,6 +124,7 @@ export async function POST(request: Request) {
     const { resolveChurchId } = await import("@/lib/auth");
     const ministryChurchId = await resolveChurchId("ministry", data.ministryId);
     const session = await requireChurchPermission("departments:manage", ministryChurchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const allowedMinistries = getMinisterMinistryIds(session, ministryChurchId);
     if (allowedMinistries !== null && !allowedMinistries.includes(data.ministryId)) {

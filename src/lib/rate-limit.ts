@@ -1,3 +1,5 @@
+import { ApiError } from "./api-utils";
+
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 interface RateLimitOptions {
@@ -26,6 +28,34 @@ export function rateLimit(
   }
 
   return { success: true, remaining: max - entry.count };
+}
+
+// Presets for different route types
+export const RATE_LIMIT_AUTH: RateLimitOptions = { windowMs: 60_000, max: 10 };
+export const RATE_LIMIT_MUTATION: RateLimitOptions = { windowMs: 60_000, max: 30 };
+export const RATE_LIMIT_SENSITIVE: RateLimitOptions = { windowMs: 60_000, max: 10 };
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+  return "unknown";
+}
+
+/**
+ * Throws ApiError(429) if the rate limit is exceeded.
+ * Use `prefix` to namespace the key (e.g., "auth", "mut:userId").
+ * When no prefix is given, keys by IP (for unauthenticated routes).
+ */
+export function requireRateLimit(
+  request: Request,
+  options: RateLimitOptions & { prefix?: string } = {}
+) {
+  const { prefix, ...rateLimitOpts } = options;
+  const key = prefix ?? `ip:${getClientIp(request)}`;
+  const result = rateLimit(key, rateLimitOpts);
+  if (!result.success) {
+    throw new ApiError(429, "Trop de requêtes. Réessayez plus tard.");
+  }
 }
 
 // Cleanup stale entries periodically (every 5 minutes)

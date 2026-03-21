@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
     const session = await requireChurchPermission("events:manage", data.churchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const useOffset = data.deadlineOffset && !data.planningDeadline;
     const deadline = useOffset

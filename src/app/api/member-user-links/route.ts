@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { memberId, userId, churchId } = schema.parse(body);
     const session = await requireChurchPermission("members:manage", churchId);
+    requireRateLimit(request, { prefix: `link:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Vérifier que le member et l'user appartiennent bien à l'église concernée
     const member = await prisma.member.findFirst({
