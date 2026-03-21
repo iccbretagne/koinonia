@@ -51,7 +51,7 @@ export async function PUT(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    const session = await requireAnyPermission("events:manage", "reports:view");
+    const session = await requireAnyPermission("events:manage", "reports:edit");
     const { eventId } = await params;
 
     const event = await prisma.event.findUnique({
