@@ -72,12 +72,50 @@ type Tab = "list" | "stats";
 export default function ReportsClient({ events }: Props) {
   const [tab, setTab] = useState<Tab>("list");
   const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [listMonthFilter, setListMonthFilter] = useState<string>(() => {
+    // Default to current month
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    // Use current month if events exist for it, otherwise "all"
+    return events.some((e) => e.date.startsWith(currentMonth)) ? currentMonth : "all";
+  });
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Mois disponibles (YYYY-MM)
   const availableMonths = useMemo(() => {
     const months = new Set(events.map((e) => e.date.slice(0, 7)));
     return Array.from(months).sort().reverse();
   }, [events]);
+
+  // Types d'événements disponibles
+  const availableTypes = useMemo(() => {
+    const types = new Set(events.map((e) => e.type));
+    return Array.from(types).sort();
+  }, [events]);
+
+  // Événements filtrés (onglet liste)
+  const filteredListEvents = useMemo(() => {
+    let filtered = events;
+    if (listMonthFilter !== "all") {
+      filtered = filtered.filter((e) => e.date.startsWith(listMonthFilter));
+    }
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((e) => e.type === typeFilter);
+    }
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((e) => {
+        const status = !e.report ? "none" : e.report.hasContent ? "done" : "empty";
+        return status === statusFilter;
+      });
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((e) => e.title.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [events, listMonthFilter, typeFilter, statusFilter, searchQuery]);
 
   // Événements filtrés (onglet stats)
   const filteredEvents = useMemo(() => {
@@ -139,61 +177,117 @@ export default function ReportsClient({ events }: Props) {
 
       {/* ── Onglet Liste ──────────────────────────────────────────────────── */}
       {tab === "list" && (
-        <div className="space-y-3">
-          {events.length === 0 && (
-            <p className="text-center text-gray-400 py-12">
-              Aucun événement avec compte rendu activé.
-            </p>
-          )}
-          {events.map((event) => {
-            const status = !event.report
-              ? "none"
-              : event.report.hasContent
-              ? "done"
-              : "empty";
+        <div className="space-y-4">
+          {/* Filtres */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un événement..."
+                className="w-full pl-9 pr-3 py-1.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              />
+            </div>
+            <select
+              value={listMonthFilter}
+              onChange={(e) => setListMonthFilter(e.target.value)}
+              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            >
+              <option value="all">Tous les mois</option>
+              {availableMonths.map((m) => (
+                <option key={m} value={m}>
+                  {new Date(m + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                </option>
+              ))}
+            </select>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            >
+              <option value="all">Tous les types</option>
+              {availableTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="done">Complété</option>
+              <option value="empty">Vide</option>
+              <option value="none">Aucun CR</option>
+            </select>
+            <span className="text-xs text-gray-400 ml-auto">
+              {filteredListEvents.length}/{events.length} événement{events.length > 1 ? "s" : ""}
+            </span>
+          </div>
 
-            const accueil = event.report ? getAccueilStats(event.report.sections) : null;
+          {/* Liste */}
+          <div className="space-y-3">
+            {filteredListEvents.map((event) => {
+              const status = !event.report
+                ? "none"
+                : event.report.hasContent
+                ? "done"
+                : "empty";
 
-            return (
-              <div key={event.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4 flex-wrap">
-                {/* Statut */}
-                <span className={`shrink-0 w-2 h-2 rounded-full ${status === "done" ? "bg-green-500" : status === "empty" ? "bg-amber-400" : "bg-gray-200"}`} />
+              const accueil = event.report ? getAccueilStats(event.report.sections) : null;
 
-                {/* Infos événement */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{event.title}</p>
-                  <p className="text-xs text-gray-400">
-                    {fmtDate(event.date)} · {event.type}
-                    {event.report && (
-                      <span className="ml-2 text-gray-300">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
-                    )}
-                  </p>
-                </div>
+              return (
+                <div key={event.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4 flex-wrap">
+                  {/* Statut */}
+                  <span className={`shrink-0 w-2 h-2 rounded-full ${status === "done" ? "bg-green-500" : status === "empty" ? "bg-amber-400" : "bg-gray-200"}`} />
 
-                {/* Mini stats Accueil si disponibles */}
-                {accueil && (
-                  <div className="flex gap-3 text-xs text-gray-500 shrink-0">
-                    <span className="text-blue-600 font-medium">{accueil.hommes}H</span>
-                    <span className="text-pink-600 font-medium">{accueil.femmes}F</span>
-                    <span className="font-semibold text-gray-700">{accueil.total} total</span>
+                  {/* Infos événement */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{event.title}</p>
+                    <p className="text-xs text-gray-400">
+                      {fmtDate(event.date)} · {event.type}
+                      {event.report && (
+                        <span className="ml-2 text-gray-300">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
+                      )}
+                    </p>
                   </div>
-                )}
 
-                {/* Badge + action */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {status === "done" && <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">Complété</span>}
-                  {status === "empty" && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">Vide</span>}
-                  {status === "none" && <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium">Aucun CR</span>}
-                  <Link
-                    href={`/admin/events/${event.id}/report`}
-                    className="text-xs font-medium text-icc-violet hover:underline"
-                  >
-                    {status === "none" ? "Saisir →" : "Voir / Modifier →"}
-                  </Link>
+                  {/* Mini stats Accueil si disponibles */}
+                  {accueil && (
+                    <div className="flex gap-3 text-xs text-gray-500 shrink-0">
+                      <span className="text-blue-600 font-medium">{accueil.hommes}H</span>
+                      <span className="text-pink-600 font-medium">{accueil.femmes}F</span>
+                      <span className="font-semibold text-gray-700">{accueil.total} total</span>
+                    </div>
+                  )}
+
+                  {/* Badge + action */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {status === "done" && <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">Complété</span>}
+                    {status === "empty" && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">Vide</span>}
+                    {status === "none" && <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium">Aucun CR</span>}
+                    <Link
+                      href={`/admin/events/${event.id}/report`}
+                      className="text-xs font-medium text-icc-violet hover:underline"
+                    >
+                      {status === "none" ? "Saisir →" : "Voir / Modifier →"}
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+            {filteredListEvents.length === 0 && (
+              <p className="text-center text-gray-400 py-12">
+                {events.length === 0
+                  ? "Aucun événement avec compte rendu activé."
+                  : "Aucun événement ne correspond aux filtres sélectionnés."}
+              </p>
+            )}
+          </div>
         </div>
       )}
 

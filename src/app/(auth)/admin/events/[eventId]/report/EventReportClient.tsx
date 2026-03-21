@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import Button from "@/components/ui/Button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
 
 interface Dept { id: string; name: string; ministryName: string }
 
@@ -33,6 +33,9 @@ interface ExistingReport {
 
 interface Props {
   eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  eventType: string;
   statsEnabled: boolean;
   existingReport: ExistingReport | null;
   eventDepts: Dept[];
@@ -113,7 +116,7 @@ function SaveIndicator({ status, error }: { status: SaveStatus; error: string | 
 
 const AUTOSAVE_DELAY = 1500; // ms
 
-export default function EventReportClient({ eventId, statsEnabled, existingReport, eventDepts }: Props) {
+export default function EventReportClient({ eventId, eventTitle, eventDate, eventType, statsEnabled, existingReport, eventDepts }: Props) {
   const params = useParams<{ eventId: string }>();
   const id = params?.eventId ?? eventId;
 
@@ -129,6 +132,7 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
   const [sections, setSections] = useState<Section[]>(initSections);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Refs pour accéder aux valeurs les plus récentes dans le callback debounced
   const notesRef = useRef(notes);
@@ -221,6 +225,33 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
     scheduleSave();
   }
 
+  // ── Export helpers ─────────────────────────────────────────────────────────
+  function buildExportData(): ReportExportData {
+    return {
+      event: { title: eventTitle, date: eventDate, type: eventType },
+      notes: notes || null,
+      decisions: decisions || null,
+      sections: sections.map((s) => ({
+        label: s.label,
+        position: s.position,
+        stats: s.stats,
+        notes: s.notes,
+      })),
+      author: existingReport?.author?.name ?? null,
+    };
+  }
+
+  async function handleCopyWhatsApp() {
+    const text = formatReportWhatsApp(buildExportData());
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  function handleExportPDF() {
+    generateReportPDF(buildExportData());
+  }
+
   // Stats globales Accueil
   const accueilSection = sections.find((s) => getDeptType(s.label) === "accueil");
   const totalAdultes = accueilSection
@@ -250,11 +281,51 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
         </div>
       )}
 
+      {/* Navigation + export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Link href="/admin/reports" className="mr-auto">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour
+          </button>
+        </Link>
+        <button
+          type="button"
+          onClick={handleExportPDF}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          PDF
+        </button>
+        <button
+          type="button"
+          onClick={handleCopyWhatsApp}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors ${
+            copied
+              ? "text-green-700 bg-green-50 border-green-200"
+              : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {copied ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            )}
+          </svg>
+          {copied ? "Copié !" : "WhatsApp"}
+        </button>
+      </div>
+
       {/* Sections */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Sections</h2>
-          <Button variant="secondary" onClick={addSection}>+ Section libre</Button>
+          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">+ Section libre</button>
         </div>
 
         {sections.map((section, i) => {
@@ -355,16 +426,21 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
       {/* Barre de bas de page : statut + sauvegarde manuelle + retour */}
       <div className="flex items-center gap-4 py-2">
         <SaveIndicator status={saveStatus} error={saveError} />
-        <Button
-          variant="secondary"
+        <button
+          type="button"
           onClick={performSave}
           disabled={saveStatus === "saving"}
-          className="ml-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors disabled:opacity-50 ml-auto"
         >
           {saveStatus === "saving" ? "Sauvegarde…" : "Enregistrer maintenant"}
-        </Button>
-        <Link href={`/admin/events/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
-          ← Événement
+        </button>
+        <Link href="/admin/reports">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Retour
+          </button>
         </Link>
       </div>
     </div>
