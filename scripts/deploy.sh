@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DEPLOY_PATH="${DEPLOY_PATH:-/opt/planning}"
+DEPLOY_PATH="${DEPLOY_PATH:-/opt/koinonia}"
 VERSION="$1"
 
 if [ -z "$VERSION" ]; then
@@ -34,7 +34,7 @@ npm run build
 ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
 
 # 6. Redemarrer le service
-sudo systemctl restart planning
+sudo systemctl restart koinonia
 
 # 7. Nettoyage : garder les 3 dernieres releases
 cd "$DEPLOY_PATH/releases"

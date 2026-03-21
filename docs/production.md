@@ -14,7 +14,7 @@ Guide de deploiement de Koinonia sur un serveur Debian avec Traefik, MariaDB et 
 Creer un utilisateur dedie :
 
 ```bash
-sudo useradd -r -m -d /opt/planning -s /bin/bash planning
+sudo useradd -r -m -d /opt/koinonia -s /bin/bash koinonia
 ```
 
 ## Structure des dossiers
@@ -22,7 +22,7 @@ sudo useradd -r -m -d /opt/planning -s /bin/bash planning
 L'application utilise une structure Capistrano-like :
 
 ```
-/opt/planning/
+/opt/koinonia/
 ├── current -> releases/koinonia-0.1.0   # symlink vers la release active
 ├── releases/
 │   ├── koinonia-0.1.0/
@@ -35,15 +35,15 @@ L'application utilise une structure Capistrano-like :
 Creer la structure :
 
 ```bash
-sudo -u planning mkdir -p /opt/planning/{releases,shared}
+sudo -u koinonia mkdir -p /opt/koinonia/{releases,shared}
 ```
 
 ## Variables d'environnement
 
-Creer le fichier `/opt/planning/shared/.env` :
+Creer le fichier `/opt/koinonia/shared/.env` :
 
 ```bash
-DATABASE_URL=mysql://planning:MOT_DE_PASSE@localhost:3306/planning
+DATABASE_URL=mysql://koinonia:MOT_DE_PASSE@localhost:3306/koinonia
 AUTH_SECRET=GENERER_AVEC_OPENSSL
 AUTH_URL=https://votre-domaine.com
 AUTH_TRUST_HOST=true
@@ -66,9 +66,9 @@ openssl rand -base64 32
 Creer la base et l'utilisateur MariaDB :
 
 ```sql
-CREATE DATABASE planning CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'planning'@'localhost' IDENTIFIED BY 'MOT_DE_PASSE';
-GRANT ALL PRIVILEGES ON planning.* TO 'planning'@'localhost';
+CREATE DATABASE koinonia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'koinonia'@'localhost' IDENTIFIED BY 'MOT_DE_PASSE';
+GRANT ALL PRIVILEGES ON koinonia.* TO 'koinonia'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -78,7 +78,7 @@ FLUSH PRIVILEGES;
 
 ```bash
 # 1. Telecharger la release depuis GitHub
-cd /opt/planning/releases
+cd /opt/koinonia/releases
 VERSION=0.1.0
 curl -L -o koinonia-${VERSION}.tar.gz \
   https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
@@ -88,10 +88,10 @@ tar xzf koinonia-${VERSION}.tar.gz
 rm koinonia-${VERSION}.tar.gz
 
 # 3. Lier le fichier .env
-ln -s /opt/planning/shared/.env /opt/planning/releases/koinonia-${VERSION}/.env
+ln -s /opt/koinonia/shared/.env /opt/koinonia/releases/koinonia-${VERSION}/.env
 
 # 4. Installer les dependances et construire
-cd /opt/planning/releases/koinonia-${VERSION}
+cd /opt/koinonia/releases/koinonia-${VERSION}
 npm install --production=false
 npm run build
 
@@ -100,36 +100,36 @@ npm run db:push
 npm run db:seed    # optionnel : charge les donnees de demo ICC Rennes
 
 # 6. Activer la release
-ln -sfn /opt/planning/releases/koinonia-${VERSION} /opt/planning/current
+ln -sfn /opt/koinonia/releases/koinonia-${VERSION} /opt/koinonia/current
 
 # 7. Demarrer le service (voir section systemd ci-dessous)
-sudo systemctl start planning
+sudo systemctl start koinonia
 ```
 
 ### Mises a jour
 
 ```bash
-cd /opt/planning/releases
+cd /opt/koinonia/releases
 VERSION=X.Y.Z
 curl -L -o koinonia-${VERSION}.tar.gz \
   https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
 tar xzf koinonia-${VERSION}.tar.gz
 rm koinonia-${VERSION}.tar.gz
 
-ln -s /opt/planning/shared/.env /opt/planning/releases/koinonia-${VERSION}/.env
+ln -s /opt/koinonia/shared/.env /opt/koinonia/releases/koinonia-${VERSION}/.env
 
-cd /opt/planning/releases/koinonia-${VERSION}
+cd /opt/koinonia/releases/koinonia-${VERSION}
 npm install --production=false
 npm run build
 npm run db:push
 
-ln -sfn /opt/planning/releases/koinonia-${VERSION} /opt/planning/current
-sudo systemctl restart planning
+ln -sfn /opt/koinonia/releases/koinonia-${VERSION} /opt/koinonia/current
+sudo systemctl restart koinonia
 ```
 
 ## Service systemd
 
-Creer `/etc/systemd/system/planning.service` :
+Creer `/etc/systemd/system/koinonia.service` :
 
 ```ini
 [Unit]
@@ -138,11 +138,11 @@ After=network.target mariadb.service
 
 [Service]
 Type=simple
-User=planning
-Group=planning
-WorkingDirectory=/opt/planning/current
-EnvironmentFile=/opt/planning/shared/.env
-ExecStart=/usr/bin/node /opt/planning/current/node_modules/.bin/next start -p 3000
+User=koinonia
+Group=koinonia
+WorkingDirectory=/opt/koinonia/current
+EnvironmentFile=/opt/koinonia/shared/.env
+ExecStart=/usr/bin/node /opt/koinonia/current/node_modules/.bin/next start -p 3000
 Restart=on-failure
 RestartSec=5
 
@@ -154,34 +154,34 @@ Activer et demarrer :
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable planning
-sudo systemctl start planning
+sudo systemctl enable koinonia
+sudo systemctl start koinonia
 ```
 
 Commandes utiles :
 
 ```bash
-sudo systemctl status planning    # statut
-sudo journalctl -u planning -f    # logs en temps reel
+sudo systemctl status koinonia    # statut
+sudo journalctl -u koinonia -f    # logs en temps reel
 ```
 
 ## Configuration Traefik
 
-Ajouter un fichier de configuration dynamique (ex: `/etc/traefik/dynamic/planning.yml`) :
+Ajouter un fichier de configuration dynamique (ex: `/etc/traefik/dynamic/koinonia.yml`) :
 
 ```yaml
 http:
   routers:
-    planning:
+    koinonia:
       rule: "Host(`votre-domaine.com`)"
       entryPoints:
         - websecure
-      service: planning
+      service: koinonia
       tls:
         certResolver: letsencrypt
 
   services:
-    planning:
+    koinonia:
       loadBalancer:
         servers:
           - url: "http://127.0.0.1:3000"
@@ -195,13 +195,13 @@ Pour revenir a une release precedente :
 
 ```bash
 # Lister les releases disponibles
-ls /opt/planning/releases/
+ls /opt/koinonia/releases/
 
 # Repointer le symlink
-ln -sfn /opt/planning/releases/koinonia-VERSION_PRECEDENTE /opt/planning/current
+ln -sfn /opt/koinonia/releases/koinonia-VERSION_PRECEDENTE /opt/koinonia/current
 
 # Redemarrer
-sudo systemctl restart planning
+sudo systemctl restart koinonia
 ```
 
 ## OAuth Google en production
@@ -218,33 +218,33 @@ Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche 
 
 ### Prerequis serveur
 
-1. **Cle SSH dediee** : generer une paire Ed25519 pour l'utilisateur `planning` :
+1. **Cle SSH dediee** : generer une paire Ed25519 pour l'utilisateur `koinonia` :
 
 ```bash
-sudo -u planning ssh-keygen -t ed25519 -C "deploy@koinonia" -f /home/planning/.ssh/id_deploy
+sudo -u koinonia ssh-keygen -t ed25519 -C "deploy@koinonia" -f /home/koinonia/.ssh/id_deploy
 ```
 
-2. **Autoriser la cle** : ajouter la cle publique dans `/home/planning/.ssh/authorized_keys` :
+2. **Autoriser la cle** : ajouter la cle publique dans `/home/koinonia/.ssh/authorized_keys` :
 
 ```bash
-sudo -u planning bash -c 'cat /home/planning/.ssh/id_deploy.pub >> /home/planning/.ssh/authorized_keys'
+sudo -u koinonia bash -c 'cat /home/koinonia/.ssh/id_deploy.pub >> /home/koinonia/.ssh/authorized_keys'
 ```
 
-3. **Sudo restreint** : creer `/etc/sudoers.d/planning` :
+3. **Sudo restreint** : creer `/etc/sudoers.d/koinonia` :
 
 ```
-planning ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart planning
+koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 ```
 
 ### GitHub Secrets a configurer
 
 | Secret | Description |
 |--------|-------------|
-| `DEPLOY_SSH_KEY` | Cle privee Ed25519 (`/home/planning/.ssh/id_deploy`) |
+| `DEPLOY_SSH_KEY` | Cle privee Ed25519 (`/home/koinonia/.ssh/id_deploy`) |
 | `DEPLOY_HOST` | Adresse IP ou domaine du serveur |
 | `DEPLOY_PORT` | Port SSH personnalise |
-| `DEPLOY_USER` | `planning` |
-| `DEPLOY_PATH` | `/opt/planning` |
+| `DEPLOY_USER` | `koinonia` |
+| `DEPLOY_PATH` | `/opt/koinonia` |
 
 ### Fonctionnement
 
@@ -257,7 +257,7 @@ planning ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart planning
 Un script `scripts/deploy.sh` est egalement disponible pour les deploiements manuels depuis le serveur :
 
 ```bash
-DEPLOY_PATH=/opt/planning bash scripts/deploy.sh 0.6.0
+DEPLOY_PATH=/opt/koinonia bash scripts/deploy.sh 0.6.0
 ```
 
 ## Webcron — rappels de service
@@ -275,8 +275,8 @@ CRON_SECRET=GENERER_AVEC_OPENSSL   # openssl rand -base64 32
 ### Option 1 — crontab système (recommandé)
 
 ```bash
-# Editer la crontab de l'utilisateur planning
-sudo -u planning crontab -e
+# Editer la crontab de l'utilisateur koinonia
+sudo -u koinonia crontab -e
 ```
 
 Ajouter la ligne suivante (exécution chaque jour à 7h00) :
@@ -284,7 +284,7 @@ Ajouter la ligne suivante (exécution chaque jour à 7h00) :
 ```
 0 7 * * * curl -s -X POST https://votre-domaine.com/api/cron/reminders \
   -H "Authorization: Bearer VOTRE_CRON_SECRET" \
-  >> /opt/planning/logs/cron.log 2>&1
+  >> /opt/koinonia/logs/cron.log 2>&1
 ```
 
 ### Option 2 — service webcron externe
