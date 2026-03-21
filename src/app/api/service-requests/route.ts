@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { hasPermission } from "@/lib/permissions";
 import { DepartmentFunction } from "@prisma/client";
@@ -17,13 +17,13 @@ const createSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("planning:view");
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     const type = searchParams.get("type");
     const assignedDeptId = searchParams.get("assignedDeptId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+    const session = await requireChurchPermission("planning:view", churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles.flatMap((r) => hasPermission(r.role))
@@ -75,9 +75,9 @@ export async function GET(request: Request) {
 // Standalone visual request (no announcement)
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("planning:view");
     const body = await request.json();
     const data = createSchema.parse(body);
+    const session = await requireChurchPermission("planning:view", data.churchId);
 
     const productionDept = await prisma.department.findFirst({
       where: {

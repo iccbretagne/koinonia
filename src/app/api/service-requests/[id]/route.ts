@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { hasPermission } from "@/lib/permissions";
 import { z } from "zod";
@@ -18,8 +18,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requirePermission("planning:view");
     const { id } = await params;
+    const churchId = await resolveChurchId("serviceRequest", id);
+    await requireChurchPermission("planning:view", churchId);
 
     const serviceRequest = await prisma.serviceRequest.findUnique({
       where: { id },
@@ -64,7 +65,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("planning:view");
     const { id } = await params;
 
     const serviceRequest = await prisma.serviceRequest.findUnique({
@@ -80,8 +80,13 @@ export async function PATCH(
     });
     if (!serviceRequest) throw new ApiError(404, "Demande introuvable");
 
+    // Vérifier permission dans l'église de la demande
+    const session = await requireChurchPermission("planning:view", serviceRequest.churchId);
+
     const userPermissions = new Set(
-      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+      session.user.churchRoles
+        .filter((r) => r.churchId === serviceRequest.churchId)
+        .flatMap((r) => hasPermission(r.role))
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");

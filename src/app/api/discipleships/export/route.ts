@@ -1,16 +1,33 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { errorResponse, ApiError } from "@/lib/api-utils";
 import * as XLSX from "xlsx";
 
+/**
+ * Neutralise les valeurs pouvant être interprétées comme des formules Excel.
+ * Préfixe avec une apostrophe les chaînes commençant par =, +, -, @ ou tab/CR.
+ */
+function sanitizeExcelValue(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
+  return value;
+}
+
+function sanitizeRow<T extends Record<string, unknown>>(row: T): T {
+  const sanitized = {} as Record<string, unknown>;
+  for (const [key, value] of Object.entries(row)) {
+    sanitized[key] = sanitizeExcelValue(value);
+  }
+  return sanitized as T;
+}
+
 export async function GET(request: Request) {
   try {
-    await requirePermission("discipleship:export");
-
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("discipleship:export", churchId);
 
     const now = new Date();
     const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -83,9 +100,9 @@ export async function GET(request: Request) {
     }
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsRows), "Statistiques");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsRows.map(sanitizeRow)), "Statistiques");
     if (detailRows.length > 0) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows), "Détail présences");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows.map(sanitizeRow)), "Détail présences");
     }
 
     const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });

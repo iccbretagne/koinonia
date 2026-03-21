@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(
@@ -7,8 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requireAuth();
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("planning:view", churchId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import {
   successResponse,
   errorResponse,
@@ -15,8 +15,9 @@ export async function GET(
   }: { params: Promise<{ eventId: string; deptId: string }> }
 ) {
   try {
-    await requireAuth();
     const { eventId, deptId: departmentId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("planning:view", churchId);
 
     const eventDept = await prisma.eventDepartment.findUnique({
       where: {
@@ -109,8 +110,9 @@ export async function PUT(
   }: { params: Promise<{ eventId: string; deptId: string }> }
 ) {
   try {
-    const session = await requirePermission("planning:edit");
     const { eventId, deptId: departmentId } = await params;
+    const eventChurchId = await resolveChurchId("event", eventId);
+    const session = await requireChurchPermission("planning:edit", eventChurchId);
 
     // Check planning deadline
     const event = await prisma.event.findUnique({

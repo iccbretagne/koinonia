@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 
 export async function GET(
@@ -7,8 +7,8 @@ export async function GET(
   { params }: { params: Promise<{ churchId: string }> }
 ) {
   try {
-    await requireAuth();
     const { churchId } = await params;
+    await requireChurchPermission("events:view", churchId);
 
     const url = new URL(request.url);
     const month = url.searchParams.get("month"); // format: YYYY-MM

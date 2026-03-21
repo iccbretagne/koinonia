@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -8,8 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requireAuth();
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:view", churchId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -47,8 +48,9 @@ export async function PUT(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -170,8 +172,9 @@ export async function PATCH(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const { applyToSeries, ...rest } = patchSchema.parse(body);
 
@@ -219,8 +222,9 @@ export async function DELETE(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:manage", churchId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },

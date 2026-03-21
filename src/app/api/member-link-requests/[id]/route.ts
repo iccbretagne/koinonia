@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -14,8 +14,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("members:manage");
     const { id } = await params;
+
+    // Résoudre l'église de la demande et vérifier la permission
+    const churchId = await resolveChurchId("memberLinkRequest", id);
+    const session = await requireChurchPermission("members:manage", churchId);
+
     const body = await request.json();
     const { action, rejectReason, departmentId } = schema.parse(body);
 
@@ -51,6 +55,16 @@ export async function PATCH(
       // Créer le Member si nouvelle demande
       if (!memberId) {
         if (!departmentId) throw new ApiError(400, "Le département est requis pour créer un STAR");
+
+        // Vérifier que le département appartient à l'église de la demande
+        const dept = await tx.department.findUnique({
+          where: { id: departmentId },
+          include: { ministry: { select: { churchId: true } } },
+        });
+        if (!dept || dept.ministry.churchId !== linkRequest.churchId) {
+          throw new ApiError(400, "Ce département n'appartient pas à cette église");
+        }
+
         const newMember = await tx.member.create({
           data: {
             firstName: linkRequest.firstName!,

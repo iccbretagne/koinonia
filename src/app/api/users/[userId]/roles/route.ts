@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAnyPermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -58,18 +58,48 @@ export async function POST(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const session = await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
-    // Les ADMIN ne peuvent assigner que MINISTER et DEPARTMENT_HEAD
-    if (!session.user.isSuperAdmin && PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
-      const hasUsersManage = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
-      if (!hasUsersManage) throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
+    // Vérifier permission dans l'église ciblée
+    const session = await requireChurchPermission("departments:manage", churchId);
+
+    // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
+    if (PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+      if (!session.user.isSuperAdmin) {
+        throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
+      }
+    }
+
+    // Vérifier que le ministryId appartient à cette église
+    if (ministryId) {
+      const ministry = await prisma.ministry.findUnique({
+        where: { id: ministryId },
+        select: { churchId: true },
+      });
+      if (!ministry || ministry.churchId !== churchId) {
+        throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
+      }
     }
 
     const depts = normalizeDepts(departments, departmentIds);
+
+    // Vérifier que les départements appartiennent à cette église
+    if (depts?.length) {
+      const deptRecords = await prisma.department.findMany({
+        where: { id: { in: depts.map((d) => d.id) } },
+        include: { ministry: { select: { churchId: true } } },
+      });
+      for (const dept of deptRecords) {
+        if (dept.ministry.churchId !== churchId) {
+          throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
+        }
+      }
+      if (deptRecords.length !== depts.length) {
+        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
+      }
+    }
 
     const userRole = await prisma.userChurchRole.create({
       data: {
@@ -99,11 +129,11 @@ export async function PATCH(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { roleId, ministryId, departmentIds, departments } = patchSchema.parse(body);
 
+    // Trouver le rôle et vérifier qu'il appartient bien à cet utilisateur
     const existing = await prisma.userChurchRole.findFirst({
       where: { id: roleId, userId },
     });
@@ -112,7 +142,37 @@ export async function PATCH(
       return Response.json({ error: "Rôle introuvable" }, { status: 404 });
     }
 
+    // Vérifier permission dans l'église du rôle existant
+    await requireChurchPermission("departments:manage", existing.churchId);
+
+    // Vérifier que le ministryId appartient à cette église
+    if (ministryId) {
+      const ministry = await prisma.ministry.findUnique({
+        where: { id: ministryId },
+        select: { churchId: true },
+      });
+      if (!ministry || ministry.churchId !== existing.churchId) {
+        throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
+      }
+    }
+
     const depts = normalizeDepts(departments, departmentIds);
+
+    // Vérifier que les départements appartiennent à cette église
+    if (depts?.length) {
+      const deptRecords = await prisma.department.findMany({
+        where: { id: { in: depts.map((d) => d.id) } },
+        include: { ministry: { select: { churchId: true } } },
+      });
+      for (const dept of deptRecords) {
+        if (dept.ministry.churchId !== existing.churchId) {
+          throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
+        }
+      }
+      if (deptRecords.length !== depts.length) {
+        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
+      }
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       if (ministryId !== undefined) {
@@ -153,10 +213,12 @@ export async function DELETE(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
     const { churchId, role } = roleSchema.parse(body);
+
+    // Vérifier permission dans l'église ciblée
+    await requireChurchPermission("departments:manage", churchId);
 
     await prisma.$transaction(async (tx) => {
       const existing = await tx.userChurchRole.findUnique({

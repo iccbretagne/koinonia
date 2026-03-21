@@ -1,19 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireChurchPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("members:manage");
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
 
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("members:manage", churchId);
+
     const users = await prisma.user.findMany({
-      where: churchId
-        ? { churchRoles: { some: { churchId } } }
-        : undefined,
+      where: { churchRoles: { some: { churchId } } },
       include: {
         churchRoles: {
+          where: { churchId },
           include: {
             church: { select: { id: true, name: true } },
           },

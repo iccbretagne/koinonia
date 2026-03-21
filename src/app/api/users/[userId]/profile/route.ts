@@ -15,14 +15,27 @@ export async function PATCH(
     const session = await requireAuth();
     const { userId } = await params;
 
-    // User can edit own profile, or admin/super_admin/secretary can edit any
+    // User can edit own profile
     const isSelf = session.user.id === userId;
-    const isAdmin = session.user.churchRoles.some((r) =>
-      ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-    );
 
-    if (!isSelf && !isAdmin) {
-      throw new ApiError(403, "Non autorisé");
+    if (!isSelf) {
+      // Admin/secretary can edit profile of users who share at least one church
+      const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { churchRoles: { select: { churchId: true } } },
+      });
+      if (!targetUser) throw new ApiError(404, "Utilisateur introuvable");
+
+      const targetChurchIds = new Set(targetUser.churchRoles.map((r) => r.churchId));
+      const hasSharedChurchAdmin = session.user.churchRoles.some(
+        (r) =>
+          ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role) &&
+          targetChurchIds.has(r.churchId)
+      );
+
+      if (!hasSharedChurchAdmin) {
+        throw new ApiError(403, "Non autorisé");
+      }
     }
 
     const data = updateProfileSchema.parse(await request.json());

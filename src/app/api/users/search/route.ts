@@ -1,17 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 // Recherche d'utilisateurs non liés à un STAR dans une église donnée
 export async function GET(request: Request) {
   try {
-    await requirePermission("members:manage");
-
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("members:manage", churchId);
     if (q.length < 2) return successResponse([]);
 
     const matches = await prisma.user.findMany({

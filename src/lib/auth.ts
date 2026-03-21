@@ -242,6 +242,115 @@ export function getUserDepartmentScope(session: Session): DepartmentScope {
   return { scoped: true, departmentIds };
 }
 
+/**
+ * Vérifie qu'un utilisateur possède une permission donnée **dans une église précise**.
+ * Contrairement à requirePermission, le churchId est obligatoire.
+ */
+export async function requireChurchPermission(
+  permission: string,
+  churchId: string
+) {
+  const session = await requireAuth();
+
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter(
+    (r) => r.churchId === churchId
+  );
+
+  if (roles.length === 0) {
+    throw new Error("FORBIDDEN");
+  }
+
+  const { hasPermission } = await import("./permissions");
+  const userPermissions = new Set(
+    roles.flatMap((r) => hasPermission(r.role))
+  );
+
+  if (!userPermissions.has(permission)) {
+    throw new Error("FORBIDDEN");
+  }
+
+  return session;
+}
+
+/**
+ * Vérifie que l'utilisateur a au moins un rôle dans l'église donnée (sans vérifier de permission précise).
+ */
+export async function requireChurchAccess(churchId: string) {
+  const session = await requireAuth();
+
+  if (session.user.isSuperAdmin) return session;
+
+  const hasAccess = session.user.churchRoles.some(
+    (r) => r.churchId === churchId
+  );
+
+  if (!hasAccess) {
+    throw new Error("FORBIDDEN");
+  }
+
+  return session;
+}
+
+/**
+ * Résout le churchId d'une ressource à partir de son type et de son identifiant.
+ * Lève une ApiError 404 si la ressource n'existe pas.
+ */
+export async function resolveChurchId(
+  resourceType: "event" | "department" | "member" | "serviceRequest" | "memberLinkRequest",
+  resourceId: string
+): Promise<string> {
+  const { ApiError } = await import("./api-utils");
+
+  switch (resourceType) {
+    case "event": {
+      const event = await prisma.event.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!event) throw new ApiError(404, "Événement introuvable");
+      return event.churchId;
+    }
+    case "department": {
+      const dept = await prisma.department.findUnique({
+        where: { id: resourceId },
+        include: { ministry: { select: { churchId: true } } },
+      });
+      if (!dept) throw new ApiError(404, "Département introuvable");
+      return dept.ministry.churchId;
+    }
+    case "member": {
+      const member = await prisma.member.findUnique({
+        where: { id: resourceId },
+        include: {
+          department: {
+            include: { ministry: { select: { churchId: true } } },
+          },
+        },
+      });
+      if (!member) throw new ApiError(404, "Membre introuvable");
+      return member.department.ministry.churchId;
+    }
+    case "serviceRequest": {
+      const sr = await prisma.serviceRequest.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!sr) throw new ApiError(404, "Demande de service introuvable");
+      return sr.churchId;
+    }
+    case "memberLinkRequest": {
+      const mlr = await prisma.memberLinkRequest.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!mlr) throw new ApiError(404, "Demande de liaison introuvable");
+      return mlr.churchId;
+    }
+  }
+}
+
 export async function getCurrentChurchId(
   session: Session
 ): Promise<string | undefined> {

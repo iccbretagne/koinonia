@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth, requirePermission } from "@/lib/auth";
+import { auth, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -46,10 +46,18 @@ export async function POST(request: Request) {
       // Vérifier que le Member existe et n'est pas déjà lié
       const member = await prisma.member.findUnique({
         where: { id: data.memberId },
-        include: { userLink: true },
+        include: {
+          userLink: true,
+          department: { include: { ministry: { select: { churchId: true } } } },
+        },
       });
       if (!member) throw new ApiError(404, "STAR introuvable");
       if (member.userLink) throw new ApiError(409, "Ce STAR est déjà lié à un compte");
+
+      // Vérifier que le membre appartient bien à l'église indiquée
+      if (member.department.ministry.churchId !== data.churchId) {
+        throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
+      }
 
       const req = await prisma.memberLinkRequest.create({
         data: {
@@ -78,14 +86,16 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("members:manage");
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     const status = searchParams.get("status") ?? "PENDING";
 
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("members:manage", churchId);
+
     const requests = await prisma.memberLinkRequest.findMany({
       where: {
-        ...(churchId ? { churchId } : {}),
+        churchId,
         status: status as "PENDING" | "APPROVED" | "REJECTED",
       },
       include: {
