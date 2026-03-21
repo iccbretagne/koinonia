@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth";
+import { requireAnyPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import EventReportClient from "./EventReportClient";
@@ -8,7 +8,7 @@ export default async function EventReportPage({
 }: {
   params: Promise<{ eventId: string }>;
 }) {
-  await requirePermission("events:manage");
+  await requireAnyPermission("events:manage", "reports:view");
   const { eventId } = await params;
 
   const event = await prisma.event.findUnique({

@@ -8,15 +8,14 @@ import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
 
-const adminLinks = [
-  { href: "/admin/churches", label: "Églises", permissions: ["church:manage"] },
+// Liens de la section Configuration (paramétrage — pas les outils quotidiens)
+const configLinksDef = [
   { href: "/admin/users", label: "Utilisateurs", permissions: ["members:manage"] },
-  { href: "/admin/access", label: "Droits d'accès", permissions: ["departments:manage"] },
+  { href: "/admin/access", label: "Accès & rôles", permissions: ["departments:manage"] },
   { href: "/admin/ministries", label: "Ministères", permissions: ["departments:manage"] },
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
-  { href: "/admin/members", label: "STAR", permissions: ["members:manage", "members:view"] },
-  { href: "/admin/events", label: "Événements", permissions: ["events:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
+  { href: "/admin/churches", label: "Églises", permissions: ["church:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
 ];
 
@@ -71,10 +70,10 @@ export default async function AuthLayout({
     allDepartments = depts.map((d) => ({ id: d.id, name: d.name, ministryName: d.ministry.name }));
   }
 
-  // Compute visible admin links
+  // Compute visible config links
   const userRoles = churchRoles.map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));
-  const visibleAdminLinks = adminLinks
+  const visibleConfigLinks = configLinksDef
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
 
@@ -181,7 +180,10 @@ export default async function AuthLayout({
 
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasEventsAccess = userPermissions.has("events:view");
+  const hasEventsManage = userPermissions.has("events:manage");
   const hasPlanningAccess = userPermissions.has("planning:view");
+  const hasMembersAccess = userPermissions.has("members:view");
+  const hasReports = userPermissions.has("reports:view");
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
@@ -189,13 +191,15 @@ export default async function AuthLayout({
   return (
     <AuthLayoutShell
       departments={allDepartments}
-      adminLinks={visibleAdminLinks}
+      configLinks={visibleConfigLinks}
       serviceLinks={serviceLinks}
       hasDiscipleship={hasDiscipleship}
       hasEventsAccess={hasEventsAccess}
+      hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
-      hasAdminAccess={visibleAdminLinks.length > 0}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER"}
+      hasMembersAccess={hasMembersAccess}
+      hasReports={hasReports}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER"}
       header={headerContent}
       footer={footerContent}
     >

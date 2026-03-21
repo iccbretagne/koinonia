@@ -12,7 +12,8 @@ export default async function AdminLayout({
     "users:manage",
     "departments:manage",
     "events:manage",
-    "discipleship:view"
+    "discipleship:view",
+    "reports:view"
   );
 
   return <div className="p-6">{children}</div>;

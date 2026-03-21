@@ -78,6 +78,7 @@ enum Role {
   MINISTER
   DEPARTMENT_HEAD
   DISCIPLE_MAKER
+  REPORTER
 }
 
 model User {
