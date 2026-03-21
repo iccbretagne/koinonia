@@ -66,30 +66,30 @@ jobs:
             cd "$DEPLOY_PATH/releases"
 
             # 1. Telecharger la release
-            curl -L -o "planningcenter-${VERSION}.tar.gz" \
-              "https://github.com/iccbretagne/planningcenter/archive/refs/tags/v${VERSION}.tar.gz"
+            curl -L -o "koinonia-${VERSION}.tar.gz" \
+              "https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz"
 
             # 2. Decompresser
-            tar xzf "planningcenter-${VERSION}.tar.gz"
-            rm "planningcenter-${VERSION}.tar.gz"
+            tar xzf "koinonia-${VERSION}.tar.gz"
+            rm "koinonia-${VERSION}.tar.gz"
 
             # 3. Lier le fichier .env
-            ln -sf "$DEPLOY_PATH/shared/.env" "$DEPLOY_PATH/releases/planningcenter-${VERSION}/.env"
+            ln -sf "$DEPLOY_PATH/shared/.env" "$DEPLOY_PATH/releases/koinonia-${VERSION}/.env"
 
             # 4. Installer les dependances et construire
-            cd "$DEPLOY_PATH/releases/planningcenter-${VERSION}"
+            cd "$DEPLOY_PATH/releases/koinonia-${VERSION}"
             npm install --production=false
             npx prisma migrate deploy
             npm run build
 
             # 5. Activer la release
-            ln -sfn "$DEPLOY_PATH/releases/planningcenter-${VERSION}" "$DEPLOY_PATH/current"
+            ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
 
             # 6. Redemarrer le service
             sudo systemctl restart planning
 
             # 7. Nettoyage : garder les 3 dernieres releases
             cd "$DEPLOY_PATH/releases"
-            ls -1dt planningcenter-*/ | tail -n +4 | xargs rm -rf || true
+            ls -1dt koinonia-*/ | tail -n +4 | xargs rm -rf || true
 
             echo "Deploy v${VERSION} OK"

@@ -9,13 +9,13 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "PlanningCenter",
+  title: "Koinonia",
   description: "Gestion des plannings de service",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PlanningCenter",
+    title: "Koinonia",
   },
 };
 

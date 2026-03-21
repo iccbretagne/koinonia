@@ -12,7 +12,7 @@ export default async function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-icc-violet/35 via-white to-icc-jaune/30">
       <div className="w-full max-w-md p-8 bg-white/90 backdrop-blur rounded-2xl shadow-xl border-2 border-icc-violet/20">
         <h1 className="mb-2 text-3xl font-bold text-center text-icc-violet">
-          PlanningCenter
+          Koinonia
         </h1>
         <p className="mb-8 text-center text-gray-500">
           Gestion des plannings de service

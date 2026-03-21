@@ -1,4 +1,4 @@
-# PlanningCenter
+# Koinonia
 
 Application web de gestion des plannings de service pour eglises.
 Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et departements.
@@ -6,8 +6,8 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 ## Quick start
 
 ```bash
-git clone https://github.com/iccbretagne/planningcenter.git
-cd planningcenter
+git clone https://github.com/iccbretagne/koinonia.git
+cd koinonia
 cp .env.example .env          # configurer Google OAuth + AUTH_SECRET
 docker-compose up -d           # MariaDB
 npm install

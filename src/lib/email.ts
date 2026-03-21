@@ -19,7 +19,7 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
-  const from = process.env.SMTP_FROM || "PlanningCenter <noreply@planningcenter.local>";
+  const from = process.env.SMTP_FROM || "Koinonia <noreply@koinonia.local>";
 
   await transporter.sendMail({
     from,
@@ -48,7 +48,7 @@ export function buildReminderEmail(params: {
     html: `
       <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-          <h1 style="margin: 0; font-size: 20px;">PlanningCenter</h1>
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
         </div>
         <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
           <p>Bonjour <strong>${params.memberName}</strong>,</p>

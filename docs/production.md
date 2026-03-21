@@ -1,6 +1,6 @@
 # Deploiement en production
 
-Guide de deploiement de PlanningCenter sur un serveur Debian avec Traefik, MariaDB et systemd.
+Guide de deploiement de Koinonia sur un serveur Debian avec Traefik, MariaDB et systemd.
 
 ## Prerequis
 
@@ -23,10 +23,10 @@ L'application utilise une structure Capistrano-like :
 
 ```
 /opt/planning/
-├── current -> releases/planningcenter-0.1.0   # symlink vers la release active
+├── current -> releases/koinonia-0.1.0   # symlink vers la release active
 ├── releases/
-│   ├── planningcenter-0.1.0/
-│   ├── planningcenter-0.0.9/
+│   ├── koinonia-0.1.0/
+│   ├── koinonia-0.0.9/
 │   └── ...
 └── shared/
     └── .env               # variables d'environnement (persistant)
@@ -80,18 +80,18 @@ FLUSH PRIVILEGES;
 # 1. Telecharger la release depuis GitHub
 cd /opt/planning/releases
 VERSION=0.1.0
-curl -L -o planningcenter-${VERSION}.tar.gz \
-  https://github.com/iccbretagne/planningcenter/archive/refs/tags/v${VERSION}.tar.gz
+curl -L -o koinonia-${VERSION}.tar.gz \
+  https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
 
 # 2. Decompresser
-tar xzf planningcenter-${VERSION}.tar.gz
-rm planningcenter-${VERSION}.tar.gz
+tar xzf koinonia-${VERSION}.tar.gz
+rm koinonia-${VERSION}.tar.gz
 
 # 3. Lier le fichier .env
-ln -s /opt/planning/shared/.env /opt/planning/releases/planningcenter-${VERSION}/.env
+ln -s /opt/planning/shared/.env /opt/planning/releases/koinonia-${VERSION}/.env
 
 # 4. Installer les dependances et construire
-cd /opt/planning/releases/planningcenter-${VERSION}
+cd /opt/planning/releases/koinonia-${VERSION}
 npm install --production=false
 npm run build
 
@@ -100,7 +100,7 @@ npm run db:push
 npm run db:seed    # optionnel : charge les donnees de demo ICC Rennes
 
 # 6. Activer la release
-ln -sfn /opt/planning/releases/planningcenter-${VERSION} /opt/planning/current
+ln -sfn /opt/planning/releases/koinonia-${VERSION} /opt/planning/current
 
 # 7. Demarrer le service (voir section systemd ci-dessous)
 sudo systemctl start planning
@@ -111,19 +111,19 @@ sudo systemctl start planning
 ```bash
 cd /opt/planning/releases
 VERSION=X.Y.Z
-curl -L -o planningcenter-${VERSION}.tar.gz \
-  https://github.com/iccbretagne/planningcenter/archive/refs/tags/v${VERSION}.tar.gz
-tar xzf planningcenter-${VERSION}.tar.gz
-rm planningcenter-${VERSION}.tar.gz
+curl -L -o koinonia-${VERSION}.tar.gz \
+  https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
+tar xzf koinonia-${VERSION}.tar.gz
+rm koinonia-${VERSION}.tar.gz
 
-ln -s /opt/planning/shared/.env /opt/planning/releases/planningcenter-${VERSION}/.env
+ln -s /opt/planning/shared/.env /opt/planning/releases/koinonia-${VERSION}/.env
 
-cd /opt/planning/releases/planningcenter-${VERSION}
+cd /opt/planning/releases/koinonia-${VERSION}
 npm install --production=false
 npm run build
 npm run db:push
 
-ln -sfn /opt/planning/releases/planningcenter-${VERSION} /opt/planning/current
+ln -sfn /opt/planning/releases/koinonia-${VERSION} /opt/planning/current
 sudo systemctl restart planning
 ```
 
@@ -133,7 +133,7 @@ Creer `/etc/systemd/system/planning.service` :
 
 ```ini
 [Unit]
-Description=PlanningCenter
+Description=Koinonia
 After=network.target mariadb.service
 
 [Service]
@@ -198,7 +198,7 @@ Pour revenir a une release precedente :
 ls /opt/planning/releases/
 
 # Repointer le symlink
-ln -sfn /opt/planning/releases/planningcenter-VERSION_PRECEDENTE /opt/planning/current
+ln -sfn /opt/planning/releases/koinonia-VERSION_PRECEDENTE /opt/planning/current
 
 # Redemarrer
 sudo systemctl restart planning
@@ -221,7 +221,7 @@ Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche 
 1. **Cle SSH dediee** : generer une paire Ed25519 pour l'utilisateur `planning` :
 
 ```bash
-sudo -u planning ssh-keygen -t ed25519 -C "deploy@planningcenter" -f /home/planning/.ssh/id_deploy
+sudo -u planning ssh-keygen -t ed25519 -C "deploy@koinonia" -f /home/planning/.ssh/id_deploy
 ```
 
 2. **Autoriser la cle** : ajouter la cle publique dans `/home/planning/.ssh/authorized_keys` :
@@ -301,7 +301,7 @@ Configurer un service type [cron-job.org](https://cron-job.org) ou EasyCron :
 Les captures d'ecran de la page `/guide` sont hebergees sur une **release GitHub dediee** (`guide-assets`) et non dans le code source. Elles sont chargees depuis :
 
 ```
-https://github.com/iccbretagne/planningcenter/releases/download/guide-assets/<fichier>.png
+https://github.com/iccbretagne/koinonia/releases/download/guide-assets/<fichier>.png
 ```
 
 ### Mettre a jour les captures
