@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 
 export default async function AdminPage() {
-  const session = await requirePermission("members:manage");
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (churchId) await requireChurchPermission("members:manage", churchId);
 
   const userRoles = session.user.churchRoles.map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));

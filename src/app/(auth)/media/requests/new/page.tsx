@@ -1,10 +1,11 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import StandaloneVisualForm from "./StandaloneVisualForm";
 
 export default async function NewStandaloneVisualPage() {
-  const session = await requirePermission("planning:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("planning:view", churchId);
 
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const sourceOptions: { type: "department" | "ministry"; id: string; label: string }[] = [];

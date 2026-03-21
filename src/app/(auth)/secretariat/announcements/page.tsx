@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { DepartmentFunction } from "@prisma/client";
@@ -6,9 +6,10 @@ import { notFound } from "next/navigation";
 import SecretariatDashboard from "./SecretariatDashboard";
 
 export default async function SecretariatAnnouncementsPage() {
-  const session = await requirePermission("planning:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("planning:view", churchId);
 
   const secretariatDept = await prisma.department.findFirst({
     where: { function: DepartmentFunction.SECRETARIAT, ministry: { churchId } },

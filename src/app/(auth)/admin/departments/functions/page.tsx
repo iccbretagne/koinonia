@@ -1,15 +1,15 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DeptFunctionsClient from "./DeptFunctionsClient";
 
 export default async function DeptFunctionsPage() {
-  const session = await requirePermission("events:manage");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("events:manage", churchId);
 
   const departments = await prisma.department.findMany({
-    where: churchId
-      ? { ministry: { churchId } }
-      : { ministry: { churchId: session.user.churchRoles[0]?.churchId } },
+    where: { ministry: { churchId } },
     include: { ministry: { select: { name: true } } },
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });

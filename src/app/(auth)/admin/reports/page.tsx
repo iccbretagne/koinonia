@@ -1,12 +1,12 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ReportsClient from "./ReportsClient";
 
 export default async function ReportsPage() {
-  const session = await requirePermission("reports:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("reports:view", churchId);
 
   const events = await prisma.event.findMany({
     where: { churchId, reportEnabled: true },

@@ -1,12 +1,12 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AccessClient from "./AccessClient";
 
 export default async function AccessPage() {
-  const session = await requirePermission("departments:manage");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("departments:manage", churchId);
 
   // All users in this church with their roles
   const users = await prisma.user.findMany({

@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -8,9 +8,10 @@ import { notFound } from "next/navigation";
 import MediaDashboard from "./MediaDashboard";
 
 export default async function MediaRequestsPage() {
-  const session = await requirePermission("planning:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("planning:view", churchId);
 
   const mediaDept = await prisma.department.findFirst({
     where: { function: DepartmentFunction.PRODUCTION_MEDIA, ministry: { churchId } },

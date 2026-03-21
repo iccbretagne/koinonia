@@ -1,20 +1,13 @@
-import { requireAnyPermission } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchAccess } from "@/lib/auth";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireAnyPermission(
-    "members:manage",
-    "members:view",
-    "church:manage",
-    "users:manage",
-    "departments:manage",
-    "events:manage",
-    "discipleship:view",
-    "reports:view"
-  );
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (churchId) await requireChurchAccess(churchId);
 
   return <div className="p-6">{children}</div>;
 }

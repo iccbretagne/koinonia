@@ -1,11 +1,12 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AnnouncementForm from "./AnnouncementForm";
 
 export default async function NewAnnouncementPage() {
-  const session = await requirePermission("planning:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("planning:view", churchId);
 
   const targetEvents = await prisma.event.findMany({
     where: { churchId, allowAnnouncements: true, date: { gte: new Date() } },
