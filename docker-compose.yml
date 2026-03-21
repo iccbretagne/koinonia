@@ -4,9 +4,9 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: planningcenter
-      MYSQL_USER: planningcenter
-      MYSQL_PASSWORD: planningcenter
+      MYSQL_DATABASE: koinonia
+      MYSQL_USER: koinonia
+      MYSQL_PASSWORD: koinonia
     ports:
       - "3306:3306"
     volumes:

@@ -1,6 +1,6 @@
 {
-  "name": "PlanningCenter",
-  "short_name": "Planning",
+  "name": "Koinonia",
+  "short_name": "Koinonia",
   "description": "Gestion des plannings de service",
   "start_url": "/dashboard",
   "display": "standalone",

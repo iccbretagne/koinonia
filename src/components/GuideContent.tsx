@@ -32,7 +32,7 @@ const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
 type AccessLevel = "edit" | "read" | "none";
 
 const GUIDE_ASSETS_BASE =
-  "https://github.com/iccbretagne/planningcenter/releases/download/guide-assets";
+  "https://github.com/iccbretagne/koinonia/releases/download/guide-assets";
 
 interface Feature {
   name: string;

@@ -1,13 +1,13 @@
-# CLAUDE.md — PlanningCenter
+# CLAUDE.md — Koinonia
 
 Contexte pour les agents IA travaillant sur ce projet.
 
 ## Projet
 
-**PlanningCenter** est une application web de gestion des plannings de service pour eglises.
+**Koinonia** est une application web de gestion des plannings de service pour eglises.
 Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et departements.
 
-- **Repository** : https://github.com/iccbretagne/planningcenter
+- **Repository** : https://github.com/iccbretagne/koinonia
 - **Version** : voir `package.json`
 - **Licence** : Apache License 2.0
 
@@ -39,7 +39,7 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 ## Structure du projet
 
 ```
-planningcenter/
+koinonia/
 ├── .github/
 │   ├── workflows/ci.yml         # CI : typecheck + version check
 │   └── dependabot.yml           # Mises a jour automatiques des dependances

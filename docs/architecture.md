@@ -16,7 +16,7 @@
 ## Structure du projet
 
 ```
-planningcenter/
+koinonia/
 ├── .github/
 │   ├── workflows/ci.yml           # CI : typecheck + version check
 │   └── dependabot.yml             # Mises a jour automatiques des dependances
@@ -187,7 +187,7 @@ Un indicateur visuel affiche l'etat : sauvegarde en cours, modifications non sau
 
 | Variable | Description | Exemple |
 |---|---|---|
-| `DATABASE_URL` | URL de connexion MariaDB | `mysql://planningcenter:planningcenter@localhost:3306/planningcenter` |
+| `DATABASE_URL` | URL de connexion MariaDB | `mysql://koinonia:koinonia@localhost:3306/koinonia` |
 | `AUTH_SECRET` | Secret de chiffrement des sessions | `openssl rand -base64 32` |
 | `AUTH_URL` | URL publique de l'application | `http://localhost:3000` |
 | `GOOGLE_CLIENT_ID` | Client ID Google OAuth | |

@@ -18,7 +18,7 @@ const ALL_STEPS: TourStep[] = [
     target: "center",
     title: "Bienvenue !",
     content:
-      "Bienvenue dans PlanningCenter ! Ce tour vous guide a travers les principales fonctionnalites.",
+      "Bienvenue dans Koinonia ! Ce tour vous guide a travers les principales fonctionnalites.",
   },
   {
     target: '[data-tour="sidebar-departments"]',

@@ -1,4 +1,4 @@
-const CACHE_NAME = "planningcenter-v1";
+const CACHE_NAME = "koinonia-v1";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",

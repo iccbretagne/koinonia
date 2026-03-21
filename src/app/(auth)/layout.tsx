@@ -118,7 +118,7 @@ export default async function AuthLayout({
   const headerContent = (
     <>
       <div className="min-w-0">
-        <h1 className="text-lg md:text-xl font-bold text-white truncate">PlanningCenter</h1>
+        <h1 className="text-lg md:text-xl font-bold text-white truncate">Koinonia</h1>
         {currentChurchId && churches.length > 1 ? (
           <ChurchSwitcher churches={churches} currentChurchId={currentChurchId} />
         ) : (
@@ -167,12 +167,12 @@ export default async function AuthLayout({
   const footerContent = (
     <footer className="py-4 text-center text-xs text-gray-400">
       <a
-        href="https://github.com/iccbretagne/planningcenter"
+        href="https://github.com/iccbretagne/koinonia"
         target="_blank"
         rel="noopener noreferrer"
         className="hover:text-gray-600 transition-colors"
       >
-        PlanningCenter
+        Koinonia
       </a>{" "}
       <span>v{pkg.version}</span>
     </footer>
