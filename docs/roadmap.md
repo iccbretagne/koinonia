@@ -69,12 +69,52 @@
 - [x] Notifications email pour rappels de service (J-3, J-1)
 - [ ] Integration WhatsApp (API Business)
 - [x] Notifications in-app (badge, toast)
+- [ ] Notifications push (Web Push API)
 
 ## Statistiques
 
 - [x] Taux de presence par membre et departement
 - [x] Nombre de services par membre sur une periode
 - [x] Dashboard avec graphiques de tendances
+
+## Discipolat
+
+- [x] Modele Discipleship : relation disciple/faiseur de disciples avec lignee (firstMakerId)
+- [x] Modele DiscipleshipAttendance : suivi des presences par evenement
+- [x] Role DISCIPLE_MAKER avec permissions discipleship:view et discipleship:manage
+- [x] Flag trackedForDiscipleship sur les evenements
+- [x] API REST : CRUD, attendance, stats, tree (lignee recursive), export Excel
+- [x] Dashboard /admin/discipleship : 3 onglets (Relations, Appel, Statistiques)
+- [x] Export Excel : feuille statistiques + feuille detail presences
+- [ ] Notifications rappel de suivi pour les faiseurs de disciples
+
+## Comptes rendus
+
+- [x] Modeles EventReport et EventReportSection (schema Prisma)
+- [x] Flags reportEnabled et statsEnabled sur les evenements
+- [x] API REST : GET/PUT /api/events/[eventId]/report
+- [x] Page de saisie avec sauvegarde auto (debounce)
+- [x] Statistiques par departement (Accueil, Integration, Sainte-Cene)
+- [x] Dashboard /admin/reports : liste + statistiques agregees par mois
+- [x] Role REPORTER : acces lecture/ecriture aux CR sans droits admin
+- [x] Permission reports:edit separee de reports:view
+- [ ] Export PDF des comptes rendus
+- [ ] Historique des modifications d'un CR
+
+## Gestion des acces
+
+- [x] Page /admin/access : attribution des ministres et responsables de departement
+- [x] Distinction principal/adjoint (isDeputy) sur les responsables de departement
+- [x] Onglet Comptes rendus : toggle REPORTER par utilisateur
+- [x] Reorganisation du menu sidebar en 6 sections (Planning, Evenements, Membres, Annonces, Discipolat, Configuration)
+
+## Liaison compte STAR
+
+- [x] Modeles MemberUserLink et MemberLinkRequest
+- [x] Page profil /profile : visualisation et demande de liaison
+- [x] Interface admin : colonne Compte et bouton Lier sur la page membres
+- [x] Liaison independante de l'attribution de role
+- [ ] Notification au responsable lors d'une nouvelle demande de liaison
 
 ## Guide utilisateur
 
@@ -95,3 +135,6 @@
 - [x] PWA (manifest, service worker, installation mobile)
 - [x] Rate limiting sur les API routes
 - [x] Logs structures (pino ou similaire)
+- [x] Migrations Prisma correctrices (rattrapage db push → migrate)
+- [ ] Tests E2E (Playwright ou Cypress)
+- [ ] Monitoring applicatif (healthcheck, metriques)
