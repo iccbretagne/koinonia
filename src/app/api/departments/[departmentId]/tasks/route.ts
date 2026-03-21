@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(
@@ -43,7 +44,7 @@ export async function POST(
   try {
     const { departmentId } = await params;
     const postChurchId = await resolveChurchId("department", departmentId);
-    await requireChurchPermission("planning:edit", postChurchId);
+    const postSession = await requireChurchPermission("planning:edit", postChurchId);
     const body = await request.json();
     const { name, description } = createSchema.parse(body);
 
@@ -71,6 +72,8 @@ export async function POST(
       },
     });
 
+    await logAudit({ userId: postSession.user.id, churchId: postChurchId, action: "CREATE", entityType: "Task", entityId: task.id, details: { name, departmentId } });
+
     return successResponse(task, 201);
   } catch (error) {
     return errorResponse(error);
@@ -84,7 +87,7 @@ export async function DELETE(
   try {
     const { departmentId } = await params;
     const delChurchId = await resolveChurchId("department", departmentId);
-    await requireChurchPermission("planning:edit", delChurchId);
+    const delSession = await requireChurchPermission("planning:edit", delChurchId);
     const body = await request.json();
     const { taskId } = z.object({ taskId: z.string() }).parse(body);
 
@@ -97,6 +100,8 @@ export async function DELETE(
     }
 
     await prisma.task.delete({ where: { id: taskId } });
+
+    await logAudit({ userId: delSession.user.id, churchId: delChurchId, action: "DELETE", entityType: "Task", entityId: taskId, details: { name: task.name, departmentId } });
 
     return successResponse({ success: true });
   } catch (error) {

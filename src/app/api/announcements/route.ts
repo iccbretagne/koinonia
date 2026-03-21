@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { DepartmentFunction } from "@prisma/client";
@@ -204,6 +205,8 @@ export async function POST(request: Request) {
 
       return ann;
     });
+
+    await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Announcement", entityId: announcement.id, details: { title: data.title } });
 
     return successResponse(announcement, 201);
   } catch (error) {

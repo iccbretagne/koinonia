@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 import type { Session } from "next-auth";
@@ -92,6 +93,9 @@ export async function PATCH(request: Request) {
         await tx.userDepartment.deleteMany({ where: { departmentId: { in: ids } } });
         await tx.department.deleteMany({ where: { id: { in: ids } } });
       });
+      for (const id of ids) {
+        await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "DELETE", entityType: "Department", entityId: id });
+      }
       return successResponse({ deleted: ids.length });
     }
 
@@ -104,6 +108,9 @@ export async function PATCH(request: Request) {
       data,
     });
 
+    for (const id of ids) {
+      await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "UPDATE", entityType: "Department", entityId: id, details: data });
+    }
     return successResponse({ updated: ids.length });
   } catch (error) {
     return errorResponse(error);
@@ -137,6 +144,8 @@ export async function POST(request: Request) {
         ministry: { select: { id: true, name: true, churchId: true } },
       },
     });
+
+    await logAudit({ userId: session.user.id, churchId: ministryChurchId, action: "CREATE", entityType: "Department", entityId: department.id, details: { name: data.name } });
 
     return successResponse(department, 201);
   } catch (error) {

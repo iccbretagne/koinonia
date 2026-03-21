@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(
@@ -50,7 +51,7 @@ export async function PUT(
   try {
     const { eventId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("events:manage", churchId);
+    const putSession = await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -129,6 +130,8 @@ export async function PUT(
         },
       });
 
+      await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title, seriesUpdated: seriesEvents.length } });
+
       return successResponse({ ...event, seriesUpdated: seriesEvents.length });
     }
 
@@ -153,6 +156,8 @@ export async function PUT(
       },
     });
 
+    await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title } });
+
     return successResponse(event);
   } catch (error) {
     return errorResponse(error);
@@ -174,7 +179,7 @@ export async function PATCH(
   try {
     const { eventId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("events:manage", churchId);
+    const patchSession = await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const { applyToSeries, ...rest } = patchSchema.parse(body);
 
@@ -201,6 +206,7 @@ export async function PATCH(
           },
           data: updateData,
         });
+        await logAudit({ userId: patchSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { ...updateData, appliedToSeries: true } });
         return successResponse({ applied: true });
       }
     }
@@ -210,6 +216,8 @@ export async function PATCH(
       data: updateData,
       select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true, reportEnabled: true, statsEnabled: true },
     });
+
+    await logAudit({ userId: patchSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: updateData });
 
     return successResponse(event);
   } catch (error) {
@@ -224,7 +232,7 @@ export async function DELETE(
   try {
     const { eventId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("events:manage", churchId);
+    const delSession = await requireChurchPermission("events:manage", churchId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -252,6 +260,8 @@ export async function DELETE(
       prisma.eventDepartment.deleteMany({ where: { eventId } }),
       prisma.event.delete({ where: { id: eventId } }),
     ]);
+
+    await logAudit({ userId: delSession.user.id, churchId, action: "DELETE", entityType: "Event", entityId: eventId, details: { title: event.title } });
 
     return successResponse({ success: true });
   } catch (error) {

@@ -182,6 +182,7 @@ export async function PUT(
 
     await logAudit({
       userId: session.user.id,
+      churchId: eventChurchId,
       action: "UPDATE",
       entityType: "Planning",
       entityId: eventDept!.id,

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { z } from "zod";
 
@@ -122,6 +123,8 @@ export async function PATCH(
       return result;
     });
 
+    await logAudit({ userId: session.user.id, churchId: announcement.churchId, action: "UPDATE", entityType: "Announcement", entityId: id, details: data });
+
     return successResponse(updated);
   } catch (error) {
     return errorResponse(error);
@@ -155,6 +158,8 @@ export async function DELETE(
     if (!canManage && !isOwner) throw new ApiError(403, "Accès refusé");
 
     await prisma.announcement.delete({ where: { id } });
+
+    await logAudit({ userId: session.user.id, churchId: announcement.churchId, action: "DELETE", entityType: "Announcement", entityId: id });
 
     return successResponse({ deleted: id });
   } catch (error) {

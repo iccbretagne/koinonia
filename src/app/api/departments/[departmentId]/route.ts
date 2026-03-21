@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 import type { Session } from "next-auth";
 
@@ -64,6 +65,8 @@ export async function PUT(
       },
     });
 
+    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Department", entityId: departmentId, details: data });
+
     return successResponse(department);
   } catch (error) {
     return errorResponse(error);
@@ -81,7 +84,7 @@ export async function PATCH(
   try {
     const { departmentId } = await params;
     const patchChurchId = await resolveChurchId("department", departmentId);
-    const session = await requireChurchPermission("events:manage", patchChurchId);
+    const patchSession = await requireChurchPermission("events:manage", patchChurchId);
     const body = await request.json();
     const data = patchFunctionSchema.parse(body);
 
@@ -90,7 +93,7 @@ export async function PATCH(
       select: { id: true, isSystem: true, ministry: { select: { churchId: true } } },
     });
     if (!dept) throw new ApiError(404, "Département introuvable");
-    if (dept.isSystem && !session.user.isSuperAdmin) {
+    if (dept.isSystem && !patchSession.user.isSuperAdmin) {
       throw new ApiError(403, "Ce département système ne peut pas être modifié");
     }
 
@@ -111,6 +114,8 @@ export async function PATCH(
       data: { function: data.function },
       select: { id: true, name: true, function: true },
     });
+
+    await logAudit({ userId: patchSession.user.id, churchId: patchChurchId, action: "UPDATE", entityType: "Department", entityId: departmentId, details: { function: data.function } });
 
     return successResponse(updated);
   } catch (error) {
@@ -149,6 +154,8 @@ export async function DELETE(
     }
 
     await prisma.department.delete({ where: { id: departmentId } });
+
+    await logAudit({ userId: session.user.id, churchId: delChurchId, action: "DELETE", entityType: "Department", entityId: departmentId, details: { name: department.name } });
 
     return successResponse({ success: true });
   } catch (error) {

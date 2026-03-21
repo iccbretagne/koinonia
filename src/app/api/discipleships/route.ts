@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -106,16 +107,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "CREATE_DISCIPLESHIP",
-        entityType: "Discipleship",
-        entityId: discipleship.id,
-        churchId,
-      },
-    });
+    await logAudit({ userId: session.user.id, churchId, action: "CREATE", entityType: "Discipleship", entityId: discipleship.id });
 
     return successResponse(discipleship, 201);
   } catch (error) {

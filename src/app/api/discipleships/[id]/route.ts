@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -34,15 +35,7 @@ export async function PATCH(
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "UPDATE_DISCIPLESHIP",
-        entityType: "Discipleship",
-        entityId: id,
-        churchId: existing.churchId,
-      },
-    });
+    await logAudit({ userId: session.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "Discipleship", entityId: id, details: { discipleMakerId } });
 
     return successResponse(updated);
   } catch (error) {
@@ -70,15 +63,7 @@ export async function DELETE(
 
     await prisma.discipleship.delete({ where: { id } });
 
-    await prisma.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "DELETE_DISCIPLESHIP",
-        entityType: "Discipleship",
-        entityId: id,
-        churchId: existing.churchId,
-      },
-    });
+    await logAudit({ userId: session.user.id, churchId: existing.churchId, action: "DELETE", entityType: "Discipleship", entityId: id });
 
     return successResponse({ deleted: true });
   } catch (error) {

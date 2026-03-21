@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -14,7 +15,7 @@ export async function PUT(
 ) {
   try {
     const { churchId } = await params;
-    await requireChurchPermission("church:manage", churchId);
+    const session = await requireChurchPermission("church:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -22,6 +23,8 @@ export async function PUT(
       where: { id: churchId },
       data,
     });
+
+    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Church", entityId: churchId, details: data });
 
     return successResponse(church);
   } catch (error) {
@@ -35,7 +38,7 @@ export async function DELETE(
 ) {
   try {
     const { churchId } = await params;
-    await requireChurchPermission("church:manage", churchId);
+    const delSession = await requireChurchPermission("church:manage", churchId);
 
     const church = await prisma.church.findUnique({
       where: { id: churchId },
@@ -54,6 +57,8 @@ export async function DELETE(
     }
 
     await prisma.church.delete({ where: { id: churchId } });
+
+    await logAudit({ userId: delSession.user.id, churchId, action: "DELETE", entityType: "Church", entityId: churchId, details: { name: church.name } });
 
     return successResponse({ success: true });
   } catch (error) {

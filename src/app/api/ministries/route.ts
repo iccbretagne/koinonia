@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -41,7 +42,7 @@ export async function PATCH(request: Request) {
     if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
     const { resolveChurchId } = await import("@/lib/auth");
     const minChurchId = await resolveChurchId("ministry", ids[0]);
-    await requireChurchPermission("departments:manage", minChurchId);
+    const session = await requireChurchPermission("departments:manage", minChurchId);
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
@@ -68,6 +69,9 @@ export async function PATCH(request: Request) {
         await tx.userChurchRole.updateMany({ where: { ministryId: { in: ids } }, data: { ministryId: null } });
         await tx.ministry.deleteMany({ where: { id: { in: ids } } });
       });
+      for (const id of ids) {
+        await logAudit({ userId: session.user.id, churchId: minChurchId, action: "DELETE", entityType: "Ministry", entityId: id });
+      }
       return successResponse({ deleted: ids.length });
     }
 
@@ -80,6 +84,9 @@ export async function PATCH(request: Request) {
       data,
     });
 
+    for (const id of ids) {
+      await logAudit({ userId: session.user.id, churchId: minChurchId, action: "UPDATE", entityType: "Ministry", entityId: id, details: data });
+    }
     return successResponse({ updated: ids.length });
   } catch (error) {
     return errorResponse(error);
@@ -102,6 +109,8 @@ export async function POST(request: Request) {
       data,
       include: { church: { select: { id: true, name: true } } },
     });
+
+    await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Ministry", entityId: ministry.id, details: { name: data.name } });
 
     return successResponse(ministry, 201);
   } catch (error) {

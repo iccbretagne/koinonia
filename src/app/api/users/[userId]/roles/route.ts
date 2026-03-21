@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -120,6 +121,8 @@ export async function POST(
       include: roleInclude,
     });
 
+    await logAudit({ userId: session.user.id, churchId, action: "CREATE", entityType: "UserRole", entityId: userRole.id, details: { targetUserId: userId, role } });
+
     return successResponse(userRole, 201);
   } catch (error) {
     return errorResponse(error);
@@ -205,6 +208,8 @@ export async function PATCH(
       });
     });
 
+    await logAudit({ userId: patchSession.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "UserRole", entityId: roleId, details: { targetUserId: userId, ministryId } });
+
     return successResponse(updated);
   } catch (error) {
     return errorResponse(error);
@@ -234,6 +239,8 @@ export async function DELETE(
       await tx.userDepartment.deleteMany({ where: { userChurchRoleId: existing.id } });
       await tx.userChurchRole.delete({ where: { id: existing.id } });
     });
+
+    await logAudit({ userId: delSession.user.id, churchId, action: "DELETE", entityType: "UserRole", entityId: `${userId}:${role}`, details: { targetUserId: userId, role } });
 
     return successResponse({ success: true });
   } catch (error) {
