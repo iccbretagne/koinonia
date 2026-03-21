@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("church:manage");
+    const session = await requireAuth();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
 
     const churchId = await getCurrentChurchId(session);
+    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    await requireChurchPermission("church:manage", churchId);
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({

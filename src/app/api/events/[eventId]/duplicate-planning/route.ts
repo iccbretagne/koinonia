@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -12,8 +12,9 @@ export async function POST(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("planning:edit");
     const { eventId: sourceEventId } = await params;
+    const churchId = await resolveChurchId("event", sourceEventId);
+    await requireChurchPermission("planning:edit", churchId);
     const body = await request.json();
     const { targetEventId } = schema.parse(body);
 

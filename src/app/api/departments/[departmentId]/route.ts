@@ -1,21 +1,22 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 import type { Session } from "next-auth";
 
-function getMinisterMinistryIds(session: Session): string[] | null {
-  const isGlobal = session.user.churchRoles.some((r) =>
+function getMinisterMinistryIds(session: Session, churchId: string): string[] | null {
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const isGlobal = session.user.isSuperAdmin || churchRoles.some((r) =>
     ["SUPER_ADMIN", "ADMIN"].includes(r.role)
   );
   if (isGlobal) return null;
-  return session.user.churchRoles
+  return churchRoles
     .filter((r) => r.role === "MINISTER" && r.ministryId)
     .map((r) => r.ministryId as string);
 }
 
-async function checkDepartmentScope(session: Session, departmentId: string) {
-  const allowedMinistries = getMinisterMinistryIds(session);
+async function checkDepartmentScope(session: Session, departmentId: string, churchId: string) {
+  const allowedMinistries = getMinisterMinistryIds(session, churchId);
   if (allowedMinistries === null) return;
   const dept = await prisma.department.findUnique({
     where: { id: departmentId },
@@ -36,8 +37,9 @@ export async function PUT(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    const session = await requirePermission("departments:manage");
     const { departmentId } = await params;
+    const churchId = await resolveChurchId("department", departmentId);
+    const session = await requireChurchPermission("departments:manage", churchId);
 
     const deptCheck = await prisma.department.findUnique({ where: { id: departmentId }, select: { isSystem: true } });
     if (!deptCheck) throw new ApiError(404, "Département introuvable");
@@ -45,11 +47,11 @@ export async function PUT(
       throw new ApiError(403, "Ce département système ne peut pas être modifié");
     }
 
-    await checkDepartmentScope(session, departmentId);
+    await checkDepartmentScope(session, departmentId, churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
-    const allowedMinistries = getMinisterMinistryIds(session);
+    const allowedMinistries = getMinisterMinistryIds(session, churchId);
     if (allowedMinistries !== null && !allowedMinistries.includes(data.ministryId)) {
       throw new ApiError(403, "Vous ne pouvez déplacer un département que vers votre ministère");
     }
@@ -77,8 +79,9 @@ export async function PATCH(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    const session = await requirePermission("events:manage");
     const { departmentId } = await params;
+    const patchChurchId = await resolveChurchId("department", departmentId);
+    const session = await requireChurchPermission("events:manage", patchChurchId);
     const body = await request.json();
     const data = patchFunctionSchema.parse(body);
 
@@ -120,9 +123,10 @@ export async function DELETE(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    const session = await requirePermission("departments:manage");
     const { departmentId } = await params;
-    await checkDepartmentScope(session, departmentId);
+    const delChurchId = await resolveChurchId("department", departmentId);
+    const session = await requireChurchPermission("departments:manage", delChurchId);
+    await checkDepartmentScope(session, departmentId, delChurchId);
 
     const department = await prisma.department.findUnique({
       where: { id: departmentId },

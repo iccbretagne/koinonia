@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getUserDepartmentScope } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -11,18 +11,28 @@ const updateSchema = z.object({
   phone: z.string().nullable().optional(),
 });
 
+function getChurchDeptScope(session: { user: { isSuperAdmin: boolean; churchRoles: { churchId: string; role: string; departments: { department: { id: string } }[] }[] } }, churchId: string) {
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
+  const hasGlobalRole = session.user.isSuperAdmin || churchRoles.some((r) => GLOBAL_ROLES.includes(r.role));
+  return hasGlobalRole
+    ? null
+    : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const session = await requirePermission("members:manage");
-    const scope = getUserDepartmentScope(session);
     const { memberId } = await params;
+    const churchId = await resolveChurchId("member", memberId);
+    const session = await requireChurchPermission("members:manage", churchId);
+    const scopedDeptIds = getChurchDeptScope(session, churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
-    if (scope.scoped) {
+    if (scopedDeptIds) {
       const existing = await prisma.member.findUnique({
         where: { id: memberId },
         select: { departmentId: true },
@@ -32,11 +42,11 @@ export async function PUT(
         throw new ApiError(404, "STAR introuvable");
       }
 
-      if (!scope.departmentIds.includes(existing.departmentId)) {
+      if (!scopedDeptIds.includes(existing.departmentId)) {
         throw new ApiError(403, "Ce STAR est hors de votre périmètre");
       }
 
-      if (!scope.departmentIds.includes(data.departmentId)) {
+      if (!scopedDeptIds.includes(data.departmentId)) {
         throw new ApiError(403, "Département cible non autorisé");
       }
     }
@@ -66,9 +76,10 @@ export async function DELETE(
   { params }: { params: Promise<{ memberId: string }> }
 ) {
   try {
-    const session = await requirePermission("members:manage");
-    const scope = getUserDepartmentScope(session);
     const { memberId } = await params;
+    const churchId = await resolveChurchId("member", memberId);
+    const session = await requireChurchPermission("members:manage", churchId);
+    const scopedDeptIds = getChurchDeptScope(session, churchId);
 
     const member = await prisma.member.findUnique({
       where: { id: memberId },
@@ -79,7 +90,7 @@ export async function DELETE(
       throw new ApiError(404, "STAR introuvable");
     }
 
-    if (scope.scoped && !scope.departmentIds.includes(member.departmentId)) {
+    if (scopedDeptIds && !scopedDeptIds.includes(member.departmentId)) {
       throw new ApiError(403, "Ce STAR est hors de votre périmètre");
     }
 

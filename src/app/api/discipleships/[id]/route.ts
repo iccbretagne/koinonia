@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
+import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -12,12 +12,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("discipleship:manage");
     const { id } = await params;
     const { discipleMakerId } = updateSchema.parse(await request.json());
 
     const existing = await prisma.discipleship.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Relation de discipolat introuvable");
+
+    const session = await requireChurchPermission("discipleship:manage", existing.churchId);
 
     if (existing.discipleId === discipleMakerId) {
       throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
@@ -54,11 +55,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("discipleship:manage");
     const { id } = await params;
 
     const existing = await prisma.discipleship.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, "Relation de discipolat introuvable");
+
+    const session = await requireChurchPermission("discipleship:manage", existing.churchId);
 
     // DISCIPLE_MAKER ne peut détacher que ses propres disciples
     const scope = await getDiscipleshipScope(session, existing.churchId);

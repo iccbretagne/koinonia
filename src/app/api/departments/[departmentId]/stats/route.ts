@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(
@@ -7,8 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    await requirePermission("planning:view");
     const { departmentId } = await params;
+    const churchId = await resolveChurchId("department", departmentId);
+    await requireChurchPermission("planning:view", churchId);
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get("months") || "6");
 

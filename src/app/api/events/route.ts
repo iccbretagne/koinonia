@@ -1,21 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireChurchPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("events:view");
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
+
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("events:view", churchId);
 
     const trackedOnly = searchParams.get("trackedForDiscipleship") === "true";
     const from = searchParams.get("from");
 
     const events = await prisma.event.findMany({
       where: {
-        ...(churchId ? { churchId } : {}),
+        churchId,
         ...(trackedOnly ? { trackedForDiscipleship: true } : {}),
         ...(from ? { date: { gte: new Date(from) } } : {}),
       },
@@ -46,9 +48,13 @@ const bulkSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
-    await requirePermission("events:manage");
     const body = await request.json();
     const { ids, action, data } = bulkSchema.parse(body);
+
+    if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
+    const { resolveChurchId } = await import("@/lib/auth");
+    const evtChurchId = await resolveChurchId("event", ids[0]);
+    await requireChurchPermission("events:manage", evtChurchId);
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
@@ -137,9 +143,9 @@ function generateRecurrenceDates(
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("events:manage");
     const body = await request.json();
     const data = createSchema.parse(body);
+    const session = await requireChurchPermission("events:manage", data.churchId);
 
     const useOffset = data.deadlineOffset && !data.planningDeadline;
     const deadline = useOffset

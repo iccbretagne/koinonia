@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -11,10 +11,9 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("members:manage");
-
     const body = await request.json();
     const { memberId, userId, churchId } = schema.parse(body);
+    const session = await requireChurchPermission("members:manage", churchId);
 
     // Vérifier que le member et l'user appartiennent bien à l'église concernée
     const member = await prisma.member.findFirst({

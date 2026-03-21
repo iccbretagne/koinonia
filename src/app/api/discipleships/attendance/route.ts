@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
+import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -12,8 +12,6 @@ const schema = z.object({
 // Enregistre la liste des présents pour un événement
 export async function PUT(request: Request) {
   try {
-    const session = await requirePermission("discipleship:manage");
-
     const { eventId, presentMemberIds } = schema.parse(await request.json());
 
     const event = await prisma.event.findUnique({
@@ -23,6 +21,7 @@ export async function PUT(request: Request) {
     if (!event) throw new ApiError(404, "Événement introuvable");
     if (!event.trackedForDiscipleship) throw new ApiError(400, "Cet événement n'est pas suivi pour le discipolat");
 
+    const session = await requireChurchPermission("discipleship:manage", event.churchId);
     const scope = await getDiscipleshipScope(session, event.churchId);
 
     if (scope.scoped) {
@@ -71,8 +70,6 @@ export async function PUT(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("discipleship:view");
-
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
     if (!eventId) throw new ApiError(400, "eventId requis");
@@ -84,6 +81,7 @@ export async function GET(request: Request) {
     });
     if (!event) throw new ApiError(404, "Événement introuvable");
 
+    const session = await requireChurchPermission("discipleship:view", event.churchId);
     const scope = await getDiscipleshipScope(session, event.churchId);
 
     let whereScope = {};

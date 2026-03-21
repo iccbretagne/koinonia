@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -8,8 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    await requirePermission("planning:view");
     const { departmentId } = await params;
+    const churchId = await resolveChurchId("department", departmentId);
+    await requireChurchPermission("planning:view", churchId);
 
     const department = await prisma.department.findUnique({
       where: { id: departmentId },
@@ -40,8 +41,9 @@ export async function POST(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    await requirePermission("planning:edit");
     const { departmentId } = await params;
+    const postChurchId = await resolveChurchId("department", departmentId);
+    await requireChurchPermission("planning:edit", postChurchId);
     const body = await request.json();
     const { name, description } = createSchema.parse(body);
 
@@ -80,8 +82,9 @@ export async function DELETE(
   { params }: { params: Promise<{ departmentId: string }> }
 ) {
   try {
-    await requirePermission("planning:edit");
     const { departmentId } = await params;
+    const delChurchId = await resolveChurchId("department", departmentId);
+    await requireChurchPermission("planning:edit", delChurchId);
     const body = await request.json();
     const { taskId } = z.object({ taskId: z.string() }).parse(body);
 

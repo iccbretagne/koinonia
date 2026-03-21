@@ -1,18 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireChurchAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 // Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete
 export async function GET(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user) throw new ApiError(401, "Non authentifié");
-
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchAccess(churchId);
     if (q.length < 2) return successResponse([]);
 
     const matches = await prisma.member.findMany({

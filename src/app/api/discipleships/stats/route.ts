@@ -1,16 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
+import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 // Stats de participation aux événements trackés sur une période glissante
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("discipleship:view");
-
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
+    const session = await requireChurchPermission("discipleship:view", churchId);
 
     // Période glissante : mois calendaire courant par défaut
     const now = new Date();

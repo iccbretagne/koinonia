@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
+import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -18,7 +18,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("discipleship:manage");
     const { id } = await params;
 
     const discipleship = await prisma.discipleship.findUnique({
@@ -26,6 +25,8 @@ export async function PATCH(
       select: { discipleId: true, discipleMakerId: true, churchId: true },
     });
     if (!discipleship) throw new ApiError(404, "Relation de discipolat introuvable");
+
+    const session = await requireChurchPermission("discipleship:manage", discipleship.churchId);
 
     // DISCIPLE_MAKER ne peut modifier que ses propres disciples
     const scope = await getDiscipleshipScope(session, discipleship.churchId);

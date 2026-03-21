@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -13,8 +13,8 @@ export async function PUT(
   { params }: { params: Promise<{ churchId: string }> }
 ) {
   try {
-    await requirePermission("church:manage");
     const { churchId } = await params;
+    await requireChurchPermission("church:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -34,8 +34,8 @@ export async function DELETE(
   { params }: { params: Promise<{ churchId: string }> }
 ) {
   try {
-    await requirePermission("church:manage");
     const { churchId } = await params;
+    await requireChurchPermission("church:manage", churchId);
 
     const church = await prisma.church.findUnique({
       where: { id: churchId },

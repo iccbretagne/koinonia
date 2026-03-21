@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getDiscipleshipScope } from "@/lib/auth";
+import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -23,11 +23,11 @@ const createSchema = z.union([
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("discipleship:view");
-
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
+
+    const session = await requireChurchPermission("discipleship:view", churchId);
 
     const scope = await getDiscipleshipScope(session, churchId);
     const whereScope = scope.scoped
@@ -52,11 +52,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("discipleship:manage");
     const body = await request.json();
     const parsed = createSchema.parse(body);
 
     const { discipleMakerId, churchId, firstMakerId } = parsed;
+    const session = await requireChurchPermission("discipleship:manage", churchId);
 
     // DISCIPLE_MAKER ne peut créer que des relations dont il est le FD
     const scope = await getDiscipleshipScope(session, churchId);

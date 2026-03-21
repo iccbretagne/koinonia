@@ -1,30 +1,33 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 import type { Session } from "next-auth";
 
-function getMinisterMinistryIds(session: Session): string[] | null {
-  const isGlobal = session.user.churchRoles.some((r) =>
+function getMinisterMinistryIds(session: Session, churchId: string): string[] | null {
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const isGlobal = session.user.isSuperAdmin || churchRoles.some((r) =>
     ["SUPER_ADMIN", "ADMIN"].includes(r.role)
   );
   if (isGlobal) return null; // no restriction
-  return session.user.churchRoles
+  return churchRoles
     .filter((r) => r.role === "MINISTER" && r.ministryId)
     .map((r) => r.ministryId as string);
 }
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("departments:view");
     const { searchParams } = new URL(request.url);
     const ministryId = searchParams.get("ministryId");
     const churchId = searchParams.get("churchId");
 
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("departments:view", churchId);
+
     const departments = await prisma.department.findMany({
       where: {
+        ministry: { churchId },
         ...(ministryId ? { ministryId } : {}),
-        ...(churchId ? { ministry: { churchId } } : {}),
       },
       include: {
         ministry: { select: { id: true, name: true, churchId: true } },
@@ -49,11 +52,16 @@ const bulkSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
-    const session = await requirePermission("departments:manage");
     const body = await request.json();
     const { ids, action, data } = bulkSchema.parse(body);
 
-    const allowedMinistries = getMinisterMinistryIds(session);
+    // Résoudre l'église à partir du premier département
+    if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
+    const { resolveChurchId } = await import("@/lib/auth");
+    const deptChurchId = await resolveChurchId("department", ids[0]);
+    const session = await requireChurchPermission("departments:manage", deptChurchId);
+
+    const allowedMinistries = getMinisterMinistryIds(session, deptChurchId);
     if (allowedMinistries !== null) {
       const targetDepts = await prisma.department.findMany({
         where: { id: { in: ids } },
@@ -108,11 +116,15 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("departments:manage");
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const allowedMinistries = getMinisterMinistryIds(session);
+    // Résoudre l'église du ministère cible
+    const { resolveChurchId } = await import("@/lib/auth");
+    const ministryChurchId = await resolveChurchId("ministry", data.ministryId);
+    const session = await requireChurchPermission("departments:manage", ministryChurchId);
+
+    const allowedMinistries = getMinisterMinistryIds(session, ministryChurchId);
     if (allowedMinistries !== null && !allowedMinistries.includes(data.ministryId)) {
       throw new ApiError(403, "Vous ne pouvez créer un département que dans votre ministère");
     }

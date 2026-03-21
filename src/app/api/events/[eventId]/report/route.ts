@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAnyPermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -25,8 +25,18 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requireAnyPermission("events:manage", "reports:view");
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    // reports:view OR events:manage — try both, fail if neither
+    let authorized = false;
+    for (const perm of ["reports:view", "events:manage"] as const) {
+      try {
+        await requireChurchPermission(perm, churchId);
+        authorized = true;
+        break;
+      } catch { /* try next */ }
+    }
+    if (!authorized) throw new ApiError(403, "Accès refusé");
 
     const report = await prisma.eventReport.findUnique({
       where: { eventId },
@@ -51,14 +61,25 @@ export async function PUT(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    const session = await requireAnyPermission("events:manage", "reports:edit");
     const { eventId } = await params;
-
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: { id: true, churchId: true, reportEnabled: true },
     });
     if (!event) throw new ApiError(404, "Événement introuvable");
+
+    // reports:edit OR events:manage — try both, fail if neither
+    let session;
+    let putAuthorized = false;
+    for (const perm of ["reports:edit", "events:manage"] as const) {
+      try {
+        session = await requireChurchPermission(perm, event.churchId);
+        putAuthorized = true;
+        break;
+      } catch { /* try next */ }
+    }
+    if (!putAuthorized || !session) throw new ApiError(403, "Accès refusé");
+
     if (!event.reportEnabled) throw new ApiError(403, "Les comptes rendus ne sont pas activés pour cet événement");
 
     const { notes, decisions, sections } = upsertSchema.parse(await request.json());

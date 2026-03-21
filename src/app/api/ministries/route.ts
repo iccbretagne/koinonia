@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireChurchPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
 export async function GET(request: Request) {
   try {
-    await requirePermission("departments:view");
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
 
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    await requireChurchPermission("departments:view", churchId);
+
     const ministries = await prisma.ministry.findMany({
-      where: churchId ? { churchId } : undefined,
+      where: { churchId },
       include: { church: { select: { id: true, name: true } } },
       orderBy: { name: "asc" },
     });
@@ -32,9 +34,13 @@ const bulkSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
-    await requirePermission("departments:manage");
     const body = await request.json();
     const { ids, action, data } = bulkSchema.parse(body);
+
+    if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
+    const { resolveChurchId } = await import("@/lib/auth");
+    const minChurchId = await resolveChurchId("ministry", ids[0]);
+    await requireChurchPermission("departments:manage", minChurchId);
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
@@ -86,9 +92,9 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    await requirePermission("departments:manage");
     const body = await request.json();
     const data = createSchema.parse(body);
+    await requireChurchPermission("departments:manage", data.churchId);
 
     const ministry = await prisma.ministry.create({
       data,

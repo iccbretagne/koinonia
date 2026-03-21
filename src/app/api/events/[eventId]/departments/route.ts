@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -38,8 +38,9 @@ export async function POST(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
     const { eventId } = await params;
+    const churchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
 
@@ -73,8 +74,9 @@ export async function DELETE(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:manage");
     const { eventId } = await params;
+    const delChurchId = await resolveChurchId("event", eventId);
+    await requireChurchPermission("events:manage", delChurchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
 

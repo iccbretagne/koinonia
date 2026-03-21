@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -12,8 +12,9 @@ export async function PUT(
   { params }: { params: Promise<{ ministryId: string }> }
 ) {
   try {
-    const session = await requirePermission("departments:manage");
     const { ministryId } = await params;
+    const churchId = await resolveChurchId("ministry", ministryId);
+    const session = await requireChurchPermission("departments:manage", churchId);
 
     const existing = await prisma.ministry.findUnique({ where: { id: ministryId }, select: { isSystem: true } });
     if (!existing) throw new ApiError(404, "Ministère introuvable");
@@ -41,8 +42,9 @@ export async function DELETE(
   { params }: { params: Promise<{ ministryId: string }> }
 ) {
   try {
-    const session = await requirePermission("departments:manage");
     const { ministryId } = await params;
+    const delChurchId = await resolveChurchId("ministry", ministryId);
+    const session = await requireChurchPermission("departments:manage", delChurchId);
 
     const ministry = await prisma.ministry.findUnique({
       where: { id: ministryId },
