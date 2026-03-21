@@ -26,13 +26,27 @@ Tous les IDs sont des `String @default(cuid())`.
 │     ├──► ministries ──► departments ◄────┘                          │
 │     │                       │                                        │
 │     │                       ├──► members ──► plannings               │
-│     │                       │                    ▲                    │
+│     │                       │        │           ▲                   │
+│     │                       │        ├──► member_user_links          │
+│     │                       │        ├──► member_link_requests       │
+│     │                       │        ├──► discipleships              │
+│     │                       │        └──► discipleship_attendances   │
+│     │                       ├──► tasks ──► task_assignments          │
+│     │                       └──► event_report_sections               │
+│     │                                    ▲                           │
 │     ├──► events ──► event_departments ───► plannings                │
-│     │        │                                                       │
-│     │        └──► announcement_events ◄── announcements             │
+│     │        │           │                                           │
+│     │        │           └──► task_assignments                       │
+│     │        ├──► announcement_events ◄── announcements             │
+│     │        ├──► discipleship_attendances                          │
+│     │        └──► event_reports ──► event_report_sections           │
 │     │                                          │                     │
 │     ├──► announcements ──► service_requests ───┘                    │
-│     └──► service_requests                                            │
+│     ├──► service_requests                                            │
+│     ├──► member_user_links                                           │
+│     ├──► member_link_requests                                        │
+│     ├──► discipleships                                               │
+│     └──► event_reports                                               │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -69,9 +83,14 @@ Utilisateurs de l'application. Crees automatiquement a la premiere connexion Goo
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `email` | String (unique) | Adresse email |
-| `name` | String? | Nom affiche |
+| `name` | String? | Nom affiche (fourni par Google) |
+| `displayName` | String? | Nom d'affichage personnalise (defini par l'utilisateur) |
 | `image` | String? | URL avatar Google |
 | `emailVerified` | DateTime? | Date de verification (NextAuth) |
+| `isSuperAdmin` | Boolean | Super administrateur global (default: false) |
+| `hasSeenTour` | Boolean | Indique si l'utilisateur a vu la visite guidee (default: false) |
+| `createdAt` | DateTime | Date de creation |
+| `updatedAt` | DateTime | Derniere modification |
 
 #### `user_church_roles`
 
@@ -82,7 +101,7 @@ Association utilisateur-eglise-role. Un utilisateur peut avoir plusieurs roles d
 | `id` | String (cuid) | Identifiant unique |
 | `userId` | String | Ref vers `users` |
 | `churchId` | String | Ref vers `churches` |
-| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD` |
+| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD`, `DISCIPLE_MAKER`, `REPORTER` |
 | `ministryId` | String? | Ref vers `ministries` (pour MINISTER) |
 
 Contrainte unique : `[userId, churchId, role]`
@@ -93,8 +112,10 @@ Departements assignes a un role utilisateur-eglise.
 
 | Champ | Type | Description |
 |---|---|---|
+| `id` | String (cuid) | Identifiant unique |
 | `userChurchRoleId` | String | Ref vers `user_church_roles` |
 | `departmentId` | String | Ref vers `departments` |
+| `isDeputy` | Boolean | `true` = responsable adjoint, `false` = responsable principal (default: false) |
 
 Contrainte unique : `[userChurchRoleId, departmentId]`
 
@@ -119,13 +140,51 @@ Departements d'un ministere (Choristes, Musiciens, Son...).
 
 #### `members`
 
-Membres d'un departement (les personnes planifiees).
+Membres d'un departement (les personnes planifiees). Appeles **STAR** (Serviteur Travaillant Activement pour le Royaume).
 
 | Champ | Type | Description |
 |---|---|---|
+| `id` | String (cuid) | Identifiant unique |
 | `firstName` | String | Prenom |
 | `lastName` | String | Nom |
+| `email` | String? | Adresse email (optionnel) |
+| `phone` | String? | Numero de telephone (optionnel) |
 | `departmentId` | String | Ref vers `departments` |
+| `createdAt` | DateTime | Date de creation |
+
+#### `member_user_links`
+
+Liaison entre un membre (STAR) et un compte utilisateur. Permet au membre de se connecter et d'acceder a son planning personnel.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `memberId` | String (unique) | Ref vers `members` (un membre ne peut avoir qu'un seul lien) |
+| `userId` | String | Ref vers `users` |
+| `churchId` | String | Ref vers `churches` |
+| `validatedAt` | DateTime? | Date de validation de la liaison (null = en attente) |
+| `validatedById` | String? | Ref vers `users` (administrateur validateur) |
+
+Contraintes : `memberId` unique ; `[userId, churchId]` unique (un utilisateur ne peut etre lie qu'a un seul membre par eglise).
+
+#### `member_link_requests`
+
+Demandes de liaison entre un compte utilisateur et un profil membre. Soumises par l'utilisateur, validees par un administrateur.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `userId` | String | Ref vers `users` (demandeur) |
+| `memberId` | String? | Ref vers `members` (membre selectionne, nullable si inconnu) |
+| `firstName` | String? | Prenom saisi manuellement (si memberId absent) |
+| `lastName` | String? | Nom saisi manuellement (si memberId absent) |
+| `phone` | String? | Telephone saisi manuellement (si memberId absent) |
+| `churchId` | String | Ref vers `churches` |
+| `status` | MemberLinkRequestStatus | `PENDING`, `APPROVED`, `REJECTED` (default: `PENDING`) |
+| `rejectReason` | String? | Motif de rejet (renseigné si `REJECTED`) |
+| `createdAt` | DateTime | Date de soumission |
+| `reviewedAt` | DateTime? | Date de traitement |
+| `reviewedById` | String? | Ref vers `users` (administrateur traitant) |
 
 #### `events`
 
@@ -142,6 +201,9 @@ Evenements d'une eglise.
 | `recurrenceRule` | String? | Regle de recurrence (format iCal RRULE) |
 | `seriesId` | String? | ID de l'evenement parent de la serie |
 | `isRecurrenceParent` | Boolean | Indique si cet evenement est le parent d'une serie |
+| `trackedForDiscipleship` | Boolean | Evenement suivi pour la presences discipolat (default: false) |
+| `reportEnabled` | Boolean | Activation du compte-rendu pour cet evenement (default: false) |
+| `statsEnabled` | Boolean | Activation des stats departementales dans le CR (default: false) |
 
 #### `event_departments`
 
@@ -166,6 +228,91 @@ Statut d'un membre pour un departement a un evenement donne.
 | `updatedAt` | DateTime | Derniere modification |
 
 Contrainte unique : `[eventDepartmentId, memberId]`
+
+#### `tasks`
+
+Taches definies par departement (ex : "Animation debrief", "Accueil enfants"). Servent a structurer les responsabilites lors d'un evenement.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `departmentId` | String | Ref vers `departments` |
+| `name` | String | Nom de la tache |
+| `description` | String? (Text) | Description detaillee (optionnel) |
+| `createdAt` | DateTime | Date de creation |
+
+Contrainte unique : `[departmentId, name]`
+
+#### `task_assignments`
+
+Affectation d'un membre a une tache pour un evenement donne.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `taskId` | String | Ref vers `tasks` (cascade delete) |
+| `memberId` | String | Ref vers `members` |
+| `eventId` | String | Ref vers `events` |
+| `assignedAt` | DateTime | Date d'affectation |
+
+Contrainte unique : `[taskId, eventId, memberId]`
+
+#### `discipleships`
+
+Relation de discipolat entre deux membres (disciple et faiseur de disciples). Un seul enregistrement actif par disciple par eglise.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `discipleId` | String | Ref vers `members` (le disciple) |
+| `discipleMakerId` | String | Ref vers `members` (le faiseur de disciples courant) |
+| `firstMakerId` | String | Ref vers `members` (premier faiseur de disciples — ne change jamais, sert pour la lignee) |
+| `churchId` | String | Ref vers `churches` |
+| `startedAt` | DateTime | Date de debut de la relation (default: now) |
+
+Contrainte unique : `[discipleId, churchId]` — un seul FD courant par disciple par eglise.
+
+#### `discipleship_attendances`
+
+Presences des membres suivis pour le discipolat lors des evenements traces (`trackedForDiscipleship = true`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `memberId` | String | Ref vers `members` |
+| `eventId` | String | Ref vers `events` |
+| `present` | Boolean | Presence effective (default: true) |
+
+Contrainte unique : `[memberId, eventId]`
+
+#### `event_reports`
+
+Compte-rendu d'un evenement. Un seul CR par evenement.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `eventId` | String (unique) | Ref vers `events` (un seul CR par evenement) |
+| `churchId` | String | Ref vers `churches` |
+| `notes` | String? (Text) | Notes generales du CR |
+| `decisions` | String? (Text) | Decisions prises lors de l'evenement |
+| `authorId` | String? | Ref vers `users` (auteur du CR, nullable) |
+| `createdAt` | DateTime | Date de creation |
+| `updatedAt` | DateTime | Derniere modification |
+
+#### `event_report_sections`
+
+Sections d'un compte-rendu, organisees par departement ou libres. Chaque section peut contenir des statistiques JSON et des notes texte.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `reportId` | String | Ref vers `event_reports` (cascade delete) |
+| `departmentId` | String? | Ref vers `departments` (null = section libre) |
+| `label` | String | Libelle de la section |
+| `position` | Int | Ordre d'affichage (default: 0) |
+| `stats` | Json? | Statistiques specifiques au departement (structure libre) |
+| `notes` | String? (Text) | Notes texte de la section |
 
 #### `announcements`
 
@@ -241,6 +388,8 @@ ADMIN            # Admin d'une eglise
 SECRETARY        # Secretariat d'une eglise
 MINISTER         # Responsable d'un ministere
 DEPARTMENT_HEAD  # Responsable d'un ou plusieurs departements
+DISCIPLE_MAKER   # Faiseur de disciples (acces aux fonctionnalites de discipolat)
+REPORTER         # Rapporteur (acces a la saisie des comptes-rendus)
 ```
 
 #### `ServiceStatus`
@@ -261,6 +410,14 @@ PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
 ```
 
 Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`.
+
+#### `MemberLinkRequestStatus`
+
+```
+PENDING   # Demande en attente de traitement
+APPROVED  # Demande approuvee — lien cree
+REJECTED  # Demande rejetee (motif dans rejectReason)
+```
 
 #### `AnnouncementStatus`
 
