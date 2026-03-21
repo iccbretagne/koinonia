@@ -11,6 +11,7 @@ import NotificationBell from "@/components/NotificationBell";
 const adminLinks = [
   { href: "/admin/churches", label: "Églises", permissions: ["church:manage"] },
   { href: "/admin/users", label: "Utilisateurs", permissions: ["members:manage"] },
+  { href: "/admin/access", label: "Droits d'accès", permissions: ["departments:manage"] },
   { href: "/admin/ministries", label: "Ministères", permissions: ["departments:manage"] },
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
   { href: "/admin/members", label: "STAR", permissions: ["members:manage", "members:view"] },
