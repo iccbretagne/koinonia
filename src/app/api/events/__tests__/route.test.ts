@@ -3,8 +3,11 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequirePermission = vi.fn();
+const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
+  resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -37,7 +40,7 @@ describe("GET /api/events", () => {
     ];
     prismaMock.event.findMany.mockResolvedValue(events);
 
-    const request = new Request("http://localhost/api/events");
+    const request = new Request("http://localhost/api/events?churchId=church-1");
     const res = await GET(request);
 
     expect(res.status).toBe(200);
@@ -62,7 +65,7 @@ describe("GET /api/events", () => {
   it("returns 401 when not authenticated", async () => {
     mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
 
-    const request = new Request("http://localhost/api/events");
+    const request = new Request("http://localhost/api/events?churchId=church-1");
     const res = await GET(request);
 
     expect(res.status).toBe(401);
