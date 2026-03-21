@@ -234,7 +234,24 @@ export async function DELETE(
       throw new ApiError(404, "Événement introuvable");
     }
 
-    await prisma.event.delete({ where: { id: eventId } });
+    // Delete related records in correct order to avoid FK violations
+    const eventDeptIds = await prisma.eventDepartment.findMany({
+      where: { eventId },
+      select: { id: true },
+    });
+    const edIds = eventDeptIds.map((ed) => ed.id);
+
+    await prisma.$transaction([
+      prisma.discipleshipAttendance.deleteMany({ where: { eventId } }),
+      prisma.announcementEvent.deleteMany({ where: { eventId } }),
+      prisma.taskAssignment.deleteMany({ where: { eventId } }),
+      ...(edIds.length > 0
+        ? [prisma.planning.deleteMany({ where: { eventDepartmentId: { in: edIds } } })]
+        : []),
+      prisma.eventReport.deleteMany({ where: { eventId } }),
+      prisma.eventDepartment.deleteMany({ where: { eventId } }),
+      prisma.event.delete({ where: { id: eventId } }),
+    ]);
 
     return successResponse({ success: true });
   } catch (error) {
