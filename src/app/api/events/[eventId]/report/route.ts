@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireAnyPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -25,7 +25,7 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    await requirePermission("events:view");
+    await requireAnyPermission("events:manage", "reports:view");
     const { eventId } = await params;
 
     const report = await prisma.eventReport.findUnique({
@@ -51,7 +51,7 @@ export async function PUT(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    const session = await requirePermission("events:manage");
+    const session = await requireAnyPermission("events:manage", "reports:view");
     const { eventId } = await params;
 
     const event = await prisma.event.findUnique({
