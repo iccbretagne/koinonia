@@ -11,6 +11,7 @@ interface SidebarProps {
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
   hasPlanningAccess?: boolean;
+  hasReports?: boolean;
   onClose?: () => void;
 }
 
@@ -215,6 +216,14 @@ function IconDiscipleship({ className }: { className?: string }) {
   );
 }
 
+function IconReports({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+}
+
 export default function Sidebar({
   departments,
   adminLinks,
@@ -222,6 +231,7 @@ export default function Sidebar({
   hasDiscipleship = false,
   hasEventsAccess = true,
   hasPlanningAccess = true,
+  hasReports = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -232,13 +242,15 @@ export default function Sidebar({
   const isEventsActive = pathname.startsWith("/events");
   const isServiceActive = pathname.startsWith("/announcements") || pathname.startsWith("/secretariat") || pathname.startsWith("/media") || pathname.startsWith("/communication");
   const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
-  const isAdminActive = pathname.startsWith("/admin") && !isDiscipleshipActive;
+  const isReportsActive = pathname.startsWith("/admin/reports");
+  const isAdminActive = pathname.startsWith("/admin") && !isDiscipleshipActive && !isReportsActive;
 
   // Détermine la section active selon la route courante
   function activeSection() {
     if (isEventsActive) return "events";
     if (isServiceActive) return "service";
     if (isDiscipleshipActive) return "discipleship";
+    if (isReportsActive) return "reports";
     if (isAdminActive) return "admin";
     return "departments";
   }
@@ -382,6 +394,18 @@ export default function Sidebar({
             </Link>
           </nav>
         </AccordionSection>
+      )}
+
+      {/* Comptes rendus */}
+      {hasReports && (
+        <Link
+          href="/admin/reports"
+          onClick={onClose}
+          className={`${sectionHeaderBase} ${isReportsActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+        >
+          <IconReports className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Comptes rendus</span>
+        </Link>
       )}
 
       {/* Administration */}

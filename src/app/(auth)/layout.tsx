@@ -15,7 +15,7 @@ const adminLinks = [
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
   { href: "/admin/members", label: "STAR", permissions: ["members:manage", "members:view"] },
   { href: "/admin/events", label: "Événements", permissions: ["events:manage"] },
-  { href: "/admin/reports", label: "Comptes rendus", permissions: ["events:manage"] },
+  { href: "/admin/access", label: "Accès & rôles", permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
 ];
@@ -182,6 +182,7 @@ export default async function AuthLayout({
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasPlanningAccess = userPermissions.has("planning:view");
+  const hasReports = userPermissions.has("reports:view");
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
@@ -195,7 +196,8 @@ export default async function AuthLayout({
       hasEventsAccess={hasEventsAccess}
       hasPlanningAccess={hasPlanningAccess}
       hasAdminAccess={visibleAdminLinks.length > 0}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER"}
+      hasReports={hasReports}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER"}
       header={headerContent}
       footer={footerContent}
     >

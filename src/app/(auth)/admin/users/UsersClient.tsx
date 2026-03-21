@@ -15,6 +15,7 @@ const ROLES = [
   { value: "MINISTER", label: "Ministre" },
   { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
   { value: "DISCIPLE_MAKER", label: "Faiseur de Disciples" },
+  { value: "REPORTER", label: "Reporter (Comptes rendus)" },
 ];
 
 const ROLE_LABELS: Record<string, string> = Object.fromEntries(
@@ -40,32 +41,20 @@ interface UserItem {
 
 interface Props {
   initialUsers: UserItem[];
-  churches: { id: string; name: string }[];
   ministries: { id: string; name: string; churchId: string }[];
   departments: { id: string; name: string; churchId: string }[];
   canManageRoles: boolean;
-  isSuperAdmin: boolean;
 }
 
 export default function UsersClient({
   initialUsers,
-  churches,
   ministries,
   departments,
   canManageRoles,
-  isSuperAdmin,
 }: Props) {
   const [users, setUsers] = useState(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
-  const [newRole, setNewRole] = useState(ROLES[1].value);
-  const [newChurchId, setNewChurchId] = useState(churches[0]?.id || "");
-  const [newMinistryId, setNewMinistryId] = useState("");
-  const [newDepartmentIds, setNewDepartmentIds] = useState<string[]>([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   // DisplayName edit state
   const [displayNameModalOpen, setDisplayNameModalOpen] = useState(false);
@@ -82,27 +71,6 @@ export default function UsersClient({
   const [editDepartmentIds, setEditDepartmentIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
   const [editLoading, setEditLoading] = useState(false);
-
-  const availableRoles = isSuperAdmin
-    ? ROLES
-    : ROLES.filter((r) => r.value !== "SUPER_ADMIN");
-
-  const filteredMinistries = ministries.filter(
-    (m) => m.churchId === newChurchId
-  );
-  const filteredDepartments = departments.filter(
-    (d) => d.churchId === newChurchId
-  );
-
-  function openAddRole(user: UserItem) {
-    setSelectedUser(user);
-    setNewRole(availableRoles[0]?.value || "ADMIN");
-    setNewChurchId(churches[0]?.id || "");
-    setNewMinistryId("");
-    setNewDepartmentIds([]);
-    setError("");
-    setModalOpen(true);
-  }
 
   function openEditDisplayName(user: UserItem) {
     setDisplayNameUserId(user.id);
@@ -153,68 +121,6 @@ export default function UsersClient({
     setEditDepartmentIds(role.departments.map((d) => d.id));
     setEditError("");
     setEditModalOpen(true);
-  }
-
-  async function handleAddRole(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedUser) return;
-    setLoading(true);
-    setError("");
-
-    try {
-      const payload: Record<string, unknown> = {
-        churchId: newChurchId,
-        role: newRole,
-      };
-      if (newRole === "MINISTER" && newMinistryId) {
-        payload.ministryId = newMinistryId;
-      }
-      if (newRole === "DEPARTMENT_HEAD" && newDepartmentIds.length > 0) {
-        payload.departmentIds = newDepartmentIds;
-      }
-
-      const res = await fetch(`/api/users/${selectedUser.id}/roles`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erreur");
-      }
-
-      const saved = await res.json();
-
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === selectedUser.id
-            ? {
-                ...u,
-                churchRoles: [
-                  ...u.churchRoles,
-                  {
-                    id: saved.id,
-                    role: saved.role,
-                    church: saved.church,
-                    ministry: saved.ministry || null,
-                    departments: (saved.departments || []).map(
-                      (d: { department: { id: string; name: string } }) =>
-                        d.department
-                    ),
-                  },
-                ],
-              }
-            : u
-        )
-      );
-
-      setModalOpen(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function handleEditAssignment(e: React.FormEvent) {
@@ -417,14 +323,9 @@ export default function UsersClient({
               </div>
               <div className="flex flex-wrap gap-2">
                 {canManageRoles && (
-                  <>
-                    <Button variant="secondary" onClick={() => openEditDisplayName(user)}>
-                      Nom d&apos;affichage
-                    </Button>
-                    <Button variant="secondary" onClick={() => openAddRole(user)}>
-                      Ajouter un rôle
-                    </Button>
-                  </>
+                  <Button variant="secondary" onClick={() => openEditDisplayName(user)}>
+                    Nom d&apos;affichage
+                  </Button>
                 )}
               </div>
             </div>
@@ -478,75 +379,6 @@ export default function UsersClient({
           </p>
         )}
       </div>
-
-      {/* Add role modal */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={`Ajouter un rôle à ${selectedUser?.name || selectedUser?.email}`}
-      >
-        <form onSubmit={handleAddRole} className="space-y-4">
-          <Select
-            label="Rôle"
-            value={newRole}
-            onChange={(e) => {
-              setNewRole(e.target.value);
-              setNewMinistryId("");
-              setNewDepartmentIds([]);
-            }}
-            options={availableRoles}
-          />
-          <Select
-            label="Église"
-            value={newChurchId}
-            onChange={(e) => {
-              setNewChurchId(e.target.value);
-              setNewMinistryId("");
-              setNewDepartmentIds([]);
-            }}
-            options={churches.map((c) => ({ value: c.id, label: c.name }))}
-          />
-
-          {newRole === "MINISTER" && (
-            <Select
-              label="Ministère"
-              value={newMinistryId}
-              onChange={(e) => setNewMinistryId(e.target.value)}
-              options={filteredMinistries.map((m) => ({
-                value: m.id,
-                label: m.name,
-              }))}
-              placeholder="-- Sélectionner un ministère --"
-            />
-          )}
-
-          {newRole === "DEPARTMENT_HEAD" && (
-            <CheckboxGroup
-              label="Départements"
-              options={filteredDepartments.map((d) => ({
-                value: d.id,
-                label: d.name,
-              }))}
-              selected={newDepartmentIds}
-              onChange={setNewDepartmentIds}
-            />
-          )}
-
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setModalOpen(false)}
-            >
-              Annuler
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Enregistrement..." : "Ajouter"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Edit displayName modal */}
       <Modal

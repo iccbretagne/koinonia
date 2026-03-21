@@ -3,6 +3,11 @@ import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { z } from "zod";
 
+const deptEntrySchema = z.object({
+  id: z.string(),
+  isDeputy: z.boolean().optional().default(false),
+});
+
 const roleSchema = z.object({
   churchId: z.string().min(1),
   role: z.enum([
@@ -12,16 +17,28 @@ const roleSchema = z.object({
     "MINISTER",
     "DEPARTMENT_HEAD",
     "DISCIPLE_MAKER",
+    "REPORTER",
   ]),
   ministryId: z.string().optional(),
-  departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptEntrySchema).optional(),
+  departmentIds: z.array(z.string()).optional(), // legacy
 });
 
 const patchSchema = z.object({
   roleId: z.string().min(1),
   ministryId: z.string().nullable().optional(),
-  departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptEntrySchema).optional(),
+  departmentIds: z.array(z.string()).optional(), // legacy
 });
+
+function normalizeDepts(
+  departments?: { id: string; isDeputy?: boolean }[],
+  departmentIds?: string[]
+): { id: string; isDeputy: boolean }[] | undefined {
+  if (departments) return departments.map((d) => ({ id: d.id, isDeputy: d.isDeputy ?? false }));
+  if (departmentIds) return departmentIds.map((id) => ({ id, isDeputy: false }));
+  return undefined;
+}
 
 const roleInclude = {
   church: { select: { id: true, name: true } },
@@ -39,22 +56,22 @@ export async function POST(
     await requirePermission("users:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { churchId, role, ministryId, departmentIds } =
+    const { churchId, role, ministryId, departments, departmentIds } =
       roleSchema.parse(body);
+    const depts = normalizeDepts(departments, departmentIds);
 
     const userRole = await prisma.userChurchRole.create({
       data: {
         userId,
         churchId,
         role,
-        ...(role === "MINISTER" && ministryId
-          ? { ministryId }
-          : {}),
-        ...(role === "DEPARTMENT_HEAD" && departmentIds?.length
+        ...(role === "MINISTER" && ministryId ? { ministryId } : {}),
+        ...(role === "DEPARTMENT_HEAD" && depts?.length
           ? {
               departments: {
-                create: departmentIds.map((departmentId) => ({
-                  departmentId,
+                create: depts.map((d) => ({
+                  departmentId: d.id,
+                  isDeputy: d.isDeputy,
                 })),
               },
             }
@@ -77,7 +94,8 @@ export async function PATCH(
     await requirePermission("users:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { roleId, ministryId, departmentIds } = patchSchema.parse(body);
+    const { roleId, ministryId, departments, departmentIds } = patchSchema.parse(body);
+    const depts = normalizeDepts(departments, departmentIds);
 
     // Verify the role belongs to this user
     const existing = await prisma.userChurchRole.findFirst({
@@ -98,16 +116,17 @@ export async function PATCH(
       }
 
       // Replace departments
-      if (departmentIds !== undefined) {
+      if (depts !== undefined) {
         await tx.userDepartment.deleteMany({
           where: { userChurchRoleId: roleId },
         });
 
-        if (departmentIds.length > 0) {
+        if (depts.length > 0) {
           await tx.userDepartment.createMany({
-            data: departmentIds.map((departmentId) => ({
+            data: depts.map((d) => ({
               userChurchRoleId: roleId,
-              departmentId,
+              departmentId: d.id,
+              isDeputy: d.isDeputy,
             })),
           });
         }

@@ -78,6 +78,7 @@ enum Role {
   MINISTER
   DEPARTMENT_HEAD
   DISCIPLE_MAKER
+  REPORTER
 }
 
 model User {
@@ -127,6 +128,7 @@ model UserDepartment {
   id              String         @id @default(cuid())
   userChurchRoleId String
   departmentId    String
+  isDeputy        Boolean        @default(false)
   userChurchRole  UserChurchRole @relation(fields: [userChurchRoleId], references: [id])
   department      Department     @relation(fields: [departmentId], references: [id])
 

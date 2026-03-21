@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import ReportsClient from "./ReportsClient";
 
 export default async function ReportsPage() {
-  const session = await requirePermission("events:manage");
+  const session = await requirePermission("reports:view");
   const churchId = await getCurrentChurchId(session);
 
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
