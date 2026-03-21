@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { DepartmentFunction } from "@prisma/client";
@@ -6,9 +6,10 @@ import { notFound } from "next/navigation";
 import CommunicationDashboard from "./CommunicationDashboard";
 
 export default async function CommunicationRequestsPage() {
-  const session = await requirePermission("planning:view");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("planning:view", churchId);
 
   const commDept = await prisma.department.findFirst({
     where: { function: DepartmentFunction.COMMUNICATION, ministry: { churchId } },

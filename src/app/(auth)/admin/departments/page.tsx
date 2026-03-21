@@ -1,9 +1,11 @@
-import { requirePermission, getUserDepartmentScope } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth, getUserDepartmentScope } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DepartmentsClient from "./DepartmentsClient";
 
 export default async function DepartmentsPage() {
-  const session = await requirePermission("departments:manage");
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (churchId) await requireChurchPermission("departments:manage", churchId);
 
   const scope = getUserDepartmentScope(session);
   const churchRoles = session.user.churchRoles;

@@ -1,19 +1,10 @@
-import { requireAnyPermission, getCurrentChurchId } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import DiscipleshipClient from "./DiscipleshipClient";
 
 export default async function DiscipleshipPage() {
-  const session = await requireAnyPermission("discipleship:view");
-
-  const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
-  );
-
-  const canManage = userPermissions.has("discipleship:manage");
-  const canExport = userPermissions.has("discipleship:export");
-  const isFD = session.user.churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
-
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) {
     return (
@@ -23,6 +14,16 @@ export default async function DiscipleshipPage() {
       </div>
     );
   }
+  await requireChurchPermission("discipleship:view", churchId);
+
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const userPermissions = new Set(
+    churchRoles.flatMap((r) => hasPermission(r.role))
+  );
+
+  const canManage = userPermissions.has("discipleship:manage");
+  const canExport = userPermissions.has("discipleship:export");
+  const isFD = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
 
   // Pour un FD, résoudre le membre lié pour pré-remplir le formulaire
   const linkedMemberId = isFD

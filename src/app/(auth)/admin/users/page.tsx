@@ -1,9 +1,11 @@
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import UsersClient from "./UsersClient";
 
 export default async function UsersPage() {
-  const session = await requirePermission("members:manage");
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (churchId) await requireChurchPermission("members:manage", churchId);
 
   const churchRoles = session.user.churchRoles;
   const isSuperAdmin = churchRoles.some((r) => r.role === "SUPER_ADMIN");
