@@ -6,11 +6,9 @@ export default async function GuidePage() {
   const session = await requireAuth();
   const currentChurchId = await getCurrentChurchId(session);
 
-  const rawRole: Role = session.user.churchRoles.find(
+  const currentRole: Role = session.user.churchRoles.find(
     (r) => r.churchId === currentChurchId
   )?.role ?? "DEPARTMENT_HEAD";
-  // REPORTER has no dedicated guide tab — fall back to DEPARTMENT_HEAD
-  const currentRole = rawRole === "REPORTER" ? "DEPARTMENT_HEAD" : rawRole;
 
   return (
     <div className="max-w-5xl mx-auto">

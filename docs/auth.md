@@ -64,6 +64,8 @@ session.user.churchRoles = [
 | Secretariat | `SECRETARY` | Une eglise |
 | Ministre | `MINISTER` | Un ministere d'une eglise |
 | Responsable departement | `DEPARTMENT_HEAD` | Un ou plusieurs departements |
+| Accompagnateur discipolat | `DISCIPLE_MAKER` | Suivi des relations de discipolat et gestion des presences |
+| Rapporteur | `REPORTER` | Acces en lecture/ecriture aux comptes rendus d'evenements |
 
 Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la table `user_church_roles`.
 
@@ -71,6 +73,7 @@ Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la 
 
 - **Super Admin** : automatique a la premiere connexion si l'email est dans `SUPER_ADMIN_EMAILS`
 - **Autres roles** : via l'interface admin (`/admin/users`), avec affectation optionnelle de ministere (MINISTER) ou departements (DEPARTMENT_HEAD)
+- **isDeputy** : la table `user_departments` (liaison `DEPARTMENT_HEAD` ↔ departements) dispose d'un flag `isDeputy` pour distinguer le responsable principal du responsable adjoint (deputy)
 
 ---
 
@@ -78,24 +81,35 @@ Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la 
 
 Matrice role-permissions definie dans `src/lib/permissions.ts` :
 
-| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département |
-|---|---|---|---|---|---|
-| `planning:view` | x | x | x | x | x |
-| `planning:edit` | x | x | | x | x |
-| `members:view` | x | x | x | x | x |
-| `members:manage` | x | x | | x | x |
-| `events:view` | x | x | x | x | x |
-| `events:manage` | x | x | x | | |
-| `departments:view` | x | x | x | x | x |
-| `departments:manage` | x | x | | | |
-| `church:manage` | x | | | | |
-| `users:manage` | x | | | | |
+| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Disciple Maker | Reporter |
+|---|---|---|---|---|---|---|---|
+| `planning:view` | x | x | x | x | x | | |
+| `planning:edit` | x | x | | x | x | | |
+| `members:view` | x | x | x | x | x | | |
+| `members:manage` | x | x | | x | x | | |
+| `events:view` | x | x | x | x | x | | x |
+| `events:manage` | x | x | x | | | | |
+| `departments:view` | x | x | x | x | x | | |
+| `departments:manage` | x | x | | | | | |
+| `church:manage` | x | | | | | | |
+| `users:manage` | x | | | | | | |
+| `discipleship:view` | x | x | x | | x | x | |
+| `discipleship:manage` | x | x | | | | x | |
+| `discipleship:export` | x | | x | | | | |
+| `reports:view` | x | x | x | | | | x |
+| `reports:edit` | x | x | x | | | | x |
 
 **Spécificités du Secrétaire** :
 - Voit tous les départements de son église (même périmètre que Admin)
 - Planning en lecture seule (pas de `planning:edit`)
 - Membres en lecture seule dans l'admin (pas de `members:manage`)
 - Peut gérer les événements (`events:manage`)
+- Peut exporter les données discipolat (`discipleship:export`)
+- Accès en lecture/écriture aux comptes rendus (`reports:view` + `reports:edit`)
+
+**Spécificités du Reporter** :
+- Accès aux événements en lecture (`events:view`) et aux comptes rendus (`reports:view` + `reports:edit`)
+- Pas d'accès au planning, aux membres, au discipolat ni à la section admin
 
 ### Utilisation dans le code
 
@@ -122,5 +136,7 @@ L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une `DepartmentFu
 - **Super Admin / Admin / Secrétaire** : voient tous les départements de leur église (lecture globale)
 - **Ministre** : voit les départements du ministère qui lui est assigné
 - **Responsable de département** : voit uniquement les départements qui lui sont assignés via `user_departments`
+- **Disciple Maker** : pas d'accès au planning ni à la grille des départements ; périmètre limité au module discipolat
+- **Reporter** : pas d'accès au planning, aux membres ni à la section admin ; voit uniquement les événements et les comptes rendus qui lui sont accessibles
 
 Cette logique est implémentée dans `src/app/(auth)/layout.tsx` et `getUserDepartmentScope()` dans `src/lib/auth.ts`.

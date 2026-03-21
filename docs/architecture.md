@@ -31,7 +31,11 @@ planningcenter/
 │   │   ├── (auth)/                # Route group : pages authentifiees
 │   │   │   ├── layout.tsx         # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/         # Vue planning par departement
+│   │   │   │   └── stats/         # Statistiques par departement
 │   │   │   ├── events/            # Gestion des evenements
+│   │   │   │   ├── calendar/      # Vue calendrier des evenements
+│   │   │   │   └── [eventId]/     # Detail evenement
+│   │   │   ├── profile/           # Profil utilisateur et liaison compte STAR
 │   │   │   ├── announcements/     # Soumission et suivi des annonces
 │   │   │   │   ├── page.tsx       # Liste des annonces du referent
 │   │   │   │   └── new/           # Formulaire de soumission d'annonce
@@ -47,28 +51,48 @@ planningcenter/
 │   │   │       ├── layout.tsx     # Guard multi-permissions
 │   │   │       ├── churches/      # CRUD eglises
 │   │   │       ├── users/         # Gestion utilisateurs et roles
+│   │   │       ├── access/        # Gestion des acces et roles (AccessClient.tsx)
 │   │   │       ├── ministries/    # CRUD ministeres
 │   │   │       ├── departments/   # CRUD departements
 │   │   │       │   └── functions/ # Config fonctions departementales
 │   │   │       ├── members/       # CRUD membres
-│   │   │       └── events/        # CRUD evenements
+│   │   │       ├── events/        # CRUD evenements
+│   │   │       │   └── [eventId]/
+│   │   │       │       └── report/ # Edition du CR d'evenement (EventReportClient.tsx)
+│   │   │       ├── reports/       # Dashboard rapports (ReportsClient.tsx)
+│   │   │       ├── discipleship/  # Dashboard discipolat (DiscipleshipClient.tsx)
+│   │   │       └── audit-logs/    # Journal des actions
 │   │   └── api/                   # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/     # GET/POST + [id] GET/PATCH/DELETE
 │   │       ├── service-requests/  # GET/POST + [id] GET/PATCH
 │   │       ├── churches/
 │   │       ├── departments/
+│   │       ├── discipleships/     # GET/POST + gestion discipolat
 │   │       ├── events/
+│   │       │   └── [eventId]/
+│   │       │       └── report/    # GET/PATCH CR d'evenement
+│   │       ├── member-link-requests/ # Demandes de liaison membre-utilisateur
+│   │       ├── member-user-links/ # Liaisons membre-compte utilisateur
 │   │       ├── members/
 │   │       ├── ministries/
+│   │       ├── notifications/
 │   │       └── users/
 │   ├── components/
-│   │   ├── Sidebar.tsx            # Sidebar unifiee (3 sections accordion)
+│   │   ├── AuthLayoutShell.tsx    # Shell layout authentifie (header, sidebar)
+│   │   ├── BottomNav.tsx          # Navigation mobile bas d'ecran
+│   │   ├── Sidebar.tsx            # Sidebar unifiee (6 sections : Planning, Événements (Liste, Calendrier, Gestion, CR), Membres, Annonces, Discipolat, Configuration)
 │   │   ├── PlanningGrid.tsx       # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx      # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
 │   │   ├── ViewToggle.tsx
 │   │   ├── DashboardActions.tsx
+│   │   ├── NotificationBell.tsx   # Cloche de notifications
+│   │   ├── ChurchSwitcher.tsx     # Selecteur d'eglise multi-tenant
+│   │   ├── EventReportClient.tsx  # Edition du CR d'evenement
+│   │   ├── ReportsClient.tsx      # Dashboard rapports
+│   │   ├── AccessClient.tsx       # Gestion des acces et roles
+│   │   ├── DiscipleshipClient.tsx # Dashboard discipolat
 │   │   └── ui/                    # Composants UI reutilisables
 │   │       ├── Button.tsx
 │   │       ├── Input.tsx
@@ -81,7 +105,7 @@ planningcenter/
 │   │   ├── prisma.ts              # Singleton Prisma (globalThis pattern)
 │   │   ├── auth.ts                # Config NextAuth + helpers
 │   │   ├── api-utils.ts           # ApiError, successResponse, errorResponse
-│   │   └── permissions.ts         # Matrice roles-permissions RBAC
+│   │   └── permissions.ts         # Matrice roles-permissions RBAC (7 roles : SUPER_ADMIN, ADMIN, SECRETARY, MINISTER, DEPARTMENT_HEAD, DISCIPLE_MAKER, REPORTER)
 │   └── middleware.ts              # Edge middleware (protection routes)
 ├── docker-compose.yml             # MariaDB locale
 ├── next.config.ts

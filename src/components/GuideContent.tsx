@@ -21,10 +21,10 @@ const ROLE_LABELS: Record<RoleKey, string> = {
 
 const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   SUPER_ADMIN: "Accès complet à toutes les fonctionnalités et toutes les églises.",
-  ADMIN: "Gestion complète d'une église : planning, membres, départements et événements.",
-  SECRETARY: "Vision globale en lecture avec gestion des événements.",
+  ADMIN: "Gestion complète d'une église : planning, membres, événements, discipolat et comptes rendus.",
+  SECRETARY: "Vision globale en lecture avec gestion des événements, discipolat et comptes rendus.",
   MINISTER: "Gestion du planning et des membres pour les départements de son ministère.",
-  DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés.",
+  DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés. Accès au discipolat.",
   DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",
   REPORTER: "Accès en lecture et écriture aux comptes rendus d'événements et statistiques.",
 };
@@ -90,7 +90,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Gestion des événements",
     screenshotFile: "guide-events-manage.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "read" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
   },
   {
     name: "Gérer les départements",
@@ -115,6 +115,38 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Gestion des utilisateurs",
     screenshotFile: "guide-admin-users.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+  },
+  {
+    name: "Comptes rendus",
+    description: "Saisie et consultation des comptes rendus d'événements avec statistiques par département.",
+    category: "Événements",
+    screenshotTitle: "Comptes rendus",
+    screenshotFile: "guide-reports.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "edit" },
+  },
+  {
+    name: "Annonces",
+    description: "Soumission d'annonces et suivi des demandes de service (secrétariat, visuels, communication).",
+    category: "Annonces",
+    screenshotTitle: "Mes annonces",
+    screenshotFile: "guide-announcements.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+  },
+  {
+    name: "Discipolat",
+    description: "Suivi des relations de discipolat, appel de présence et statistiques.",
+    category: "Discipolat",
+    screenshotTitle: "Tableau de bord discipolat",
+    screenshotFile: "guide-discipleship.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none" },
+  },
+  {
+    name: "Accès & rôles",
+    description: "Attribution des ministres, responsables de département (principal/adjoint) et accès aux comptes rendus.",
+    category: "Administration",
+    screenshotTitle: "Accès & rôles",
+    screenshotFile: "guide-access-roles.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
   },
 ];
 
