@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.10.0] - 2026-03-21
+
+### Modifie
+
+- Renommage de l'application PlanningCenter en **Koinonia** (grec : communion, partage)
+- Repo GitHub renomme en `iccbretagne/koinonia`
+- Mise a jour de tous les fichiers : package.json, metadata, UI, PWA, emails, deploiement, documentation
+- Utilisateur systeme et dossier de deploiement renommes (`planning` → `koinonia`)
+- README reecrit pour refleter la vision elargie de l'application
+
 ## [v0.9.0] - 2026-03-21
 
 ### Ajoute
