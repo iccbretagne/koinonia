@@ -324,9 +324,7 @@ model EventReportSection {
   departmentId String?
   label        String
   position     Int     @default(0)
-  present      Int?
-  absent       Int?
-  newcomers    Int?
+  stats        Json?
   notes        String? @db.Text
 
   report     EventReport @relation(fields: [reportId],     references: [id], onDelete: Cascade)

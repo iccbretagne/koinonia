@@ -1,16 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const sectionSchema = z.object({
-  id: z.string().optional(),          // présent si mise à jour d'une section existante
+  id: z.string().optional(),
   departmentId: z.string().nullable().optional(),
   label: z.string().min(1),
   position: z.number().int().default(0),
-  present: z.number().int().nullable().optional(),
-  absent: z.number().int().nullable().optional(),
-  newcomers: z.number().int().nullable().optional(),
+  stats: z.record(z.string(), z.number().int().nullable()).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -64,6 +63,14 @@ export async function PUT(
 
     const { notes, decisions, sections } = upsertSchema.parse(await request.json());
 
+    const sectionData = sections.map((s, i) => ({
+      departmentId: s.departmentId ?? null,
+      label: s.label,
+      position: s.position ?? i,
+      stats: (s.stats as Prisma.InputJsonValue) ?? Prisma.DbNull,
+      notes: s.notes ?? null,
+    }));
+
     const report = await prisma.eventReport.upsert({
       where: { eventId },
       create: {
@@ -72,32 +79,14 @@ export async function PUT(
         authorId: session.user.id,
         notes: notes ?? null,
         decisions: decisions ?? null,
-        sections: {
-          create: sections.map((s, i) => ({
-            departmentId: s.departmentId ?? null,
-            label: s.label,
-            position: s.position ?? i,
-            present: s.present ?? null,
-            absent: s.absent ?? null,
-            newcomers: s.newcomers ?? null,
-            notes: s.notes ?? null,
-          })),
-        },
+        sections: { create: sectionData },
       },
       update: {
         notes: notes ?? null,
         decisions: decisions ?? null,
         sections: {
           deleteMany: {},
-          create: sections.map((s, i) => ({
-            departmentId: s.departmentId ?? null,
-            label: s.label,
-            position: s.position ?? i,
-            present: s.present ?? null,
-            absent: s.absent ?? null,
-            newcomers: s.newcomers ?? null,
-            notes: s.notes ?? null,
-          })),
+          create: sectionData,
         },
       },
       include: {

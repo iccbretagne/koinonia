@@ -12,18 +12,21 @@ interface Section {
   departmentId: string | null;
   label: string;
   position: number;
-  present: number | null;
-  absent: number | null;
-  newcomers: number | null;
+  stats: Record<string, number | null> | null;
   notes: string | null;
   department?: { id: string; name: string; ministry: { name: string } } | null;
+}
+
+// Section telle que reçue du serveur (stats est JsonValue de Prisma, typé unknown)
+interface SectionData extends Omit<Section, "stats"> {
+  stats: unknown;
 }
 
 interface ExistingReport {
   id: string;
   notes: string | null;
   decisions: string | null;
-  sections: Section[];
+  sections: SectionData[];
   author: { id: string; name: string | null } | null;
   updatedAt?: string | Date;
 }
@@ -35,9 +38,54 @@ interface Props {
   eventDepts: Dept[];
 }
 
-function emptySection(dept: Dept, position: number): Section {
-  return { departmentId: dept.id, label: dept.name, position, present: null, absent: null, newcomers: null, notes: "" };
+// ─── Configuration des champs par type de département ───────────────────────
+
+type FieldConfig = { key: string; label: string; color: string };
+
+type DeptType = "accueil" | "sainte-cene" | "integration" | null;
+
+function norm(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
+
+function getDeptType(label: string): DeptType {
+  const n = norm(label);
+  if (n === "accueil") return "accueil";
+  if (n.includes("sainte") && n.includes("cene")) return "sainte-cene";
+  if (n === "integration" || n.startsWith("integration")) return "integration";
+  return null;
+}
+
+const DEPT_FIELDS: Record<Exclude<DeptType, null>, FieldConfig[]> = {
+  accueil: [
+    { key: "hommes",  label: "Hommes",  color: "border-blue-200 focus:border-blue-400" },
+    { key: "femmes",  label: "Femmes",  color: "border-pink-200 focus:border-pink-400" },
+    { key: "enfants", label: "Enfants", color: "border-yellow-200 focus:border-yellow-400" },
+  ],
+  "sainte-cene": [
+    { key: "supportsUtilises",  label: "Supports utilisés",  color: "border-gray-200 focus:border-gray-400" },
+    { key: "supportsRestants",  label: "Supports restants",  color: "border-gray-200 focus:border-gray-400" },
+  ],
+  integration: [
+    { key: "hommes",   label: "Nouveaux arrivants (H)",  color: "border-blue-200 focus:border-blue-400" },
+    { key: "femmes",   label: "Nouveaux arrivants (F)",  color: "border-pink-200 focus:border-pink-400" },
+    { key: "passage",  label: "De passage",              color: "border-gray-200 focus:border-gray-400" },
+    { key: "convertis",label: "Nouveaux convertis",      color: "border-green-200 focus:border-green-400" },
+    { key: "voeux",    label: "Renouvellement de vœux",  color: "border-icc-violet/40 focus:border-icc-violet" },
+  ],
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function emptySection(dept: Dept, position: number): Section {
+  return { departmentId: dept.id, label: dept.name, position, stats: null, notes: "" };
+}
+
+function statVal(stats: Record<string, number | null> | null, key: string): number | null {
+  return stats?.[key] ?? null;
+}
+
+// ─── Composant ───────────────────────────────────────────────────────────────
 
 export default function EventReportClient({ eventId, statsEnabled, existingReport, eventDepts }: Props) {
   const params = useParams<{ eventId: string }>();
@@ -45,9 +93,8 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
 
   const initSections = (): Section[] => {
     if (existingReport?.sections.length) {
-      return existingReport.sections.map((s) => ({ ...s }));
+      return existingReport.sections.map((s) => ({ ...s, stats: (s.stats as Record<string, number | null> | null) ?? null }));
     }
-    // Pré-remplir avec les départements liés
     return eventDepts.map((d, i) => emptySection(d, i));
   };
 
@@ -58,7 +105,7 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function updateSection(index: number, field: keyof Section, value: string | number | null) {
+  function updateSectionField(index: number, field: keyof Omit<Section, "stats">, value: string | number | null) {
     setSections((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
@@ -67,10 +114,20 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
     setSaved(false);
   }
 
+  function updateStat(index: number, key: string, value: number | null) {
+    setSections((prev) => {
+      const next = [...prev];
+      const current = next[index].stats ?? {};
+      next[index] = { ...next[index], stats: { ...current, [key]: value } };
+      return next;
+    });
+    setSaved(false);
+  }
+
   function addSection() {
     setSections((prev) => [
       ...prev,
-      { departmentId: null, label: "Section libre", position: prev.length, present: null, absent: null, newcomers: null, notes: "" },
+      { departmentId: null, label: "Section libre", position: prev.length, stats: null, notes: "" },
     ]);
   }
 
@@ -99,18 +156,26 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
     }
   }
 
-  const totalPresent = statsEnabled ? sections.reduce((s, r) => s + (r.present ?? 0), 0) : null;
-  const totalAbsent = statsEnabled ? sections.reduce((s, r) => s + (r.absent ?? 0), 0) : null;
+  // Stats globales Accueil (si présentes)
+  const accueilSection = sections.find((s) => getDeptType(s.label) === "accueil");
+  const totalAdultes = accueilSection
+    ? (statVal(accueilSection.stats, "hommes") ?? 0) + (statVal(accueilSection.stats, "femmes") ?? 0)
+    : null;
+  const totalGeneral = totalAdultes !== null
+    ? totalAdultes + (statVal(accueilSection!.stats, "enfants") ?? 0)
+    : null;
+  const showGlobalRecap = statsEnabled && accueilSection && totalGeneral !== null && totalGeneral > 0;
 
   return (
     <div className="space-y-6">
-      {/* Récap stats globales */}
-      {statsEnabled && (totalPresent !== null || totalAbsent !== null) && (
-        <div className="grid grid-cols-3 gap-4">
+      {/* Récap présence globale (depuis section Accueil) */}
+      {showGlobalRecap && (
+        <div className="grid grid-cols-4 gap-4">
           {[
-            { label: "Présents", value: totalPresent, color: "text-green-600 bg-green-50" },
-            { label: "Absents", value: totalAbsent, color: "text-red-600 bg-red-50" },
-            { label: "Taux de présence", value: (totalPresent ?? 0) + (totalAbsent ?? 0) > 0 ? `${Math.round(((totalPresent ?? 0) / ((totalPresent ?? 0) + (totalAbsent ?? 0))) * 100)}%` : "—", color: "text-icc-violet bg-icc-violet/5" },
+            { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes"),  color: "text-blue-600 bg-blue-50" },
+            { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes"),  color: "text-pink-600 bg-pink-50" },
+            { label: "Total adultes", value: totalAdultes,                              color: "text-icc-violet bg-icc-violet/5" },
+            { label: "Total général", value: totalGeneral,                              color: "text-gray-700 bg-gray-50" },
           ].map((stat) => (
             <div key={stat.label} className={`rounded-lg border-2 border-gray-100 p-4 text-center ${stat.color}`}>
               <div className="text-2xl font-bold">{stat.value ?? 0}</div>
@@ -120,71 +185,93 @@ export default function EventReportClient({ eventId, statsEnabled, existingRepor
         </div>
       )}
 
-      {/* Sections par département */}
+      {/* Sections */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Sections</h2>
           <Button variant="secondary" onClick={addSection}>+ Section libre</Button>
         </div>
 
-        {sections.map((section, i) => (
-          <div key={i} className="bg-white rounded-lg border-2 border-gray-100 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <input
-                type="text"
-                value={section.label}
-                onChange={(e) => updateSection(i, "label", e.target.value)}
-                className="flex-1 text-sm font-semibold text-gray-800 border-0 border-b-2 border-gray-200 focus:border-icc-violet focus:outline-none bg-transparent pb-1"
-              />
-              {section.department && (
-                <span className="text-xs text-gray-400">{section.department.ministry.name}</span>
-              )}
-              <button
-                type="button"
-                onClick={() => removeSection(i)}
-                className="text-gray-300 hover:text-icc-rouge transition-colors"
-                title="Supprimer la section"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+        {sections.map((section, i) => {
+          const deptType = getDeptType(section.label);
+          const fields = deptType ? DEPT_FIELDS[deptType] : null;
 
-            {statsEnabled && (
-              <div className="grid grid-cols-3 gap-3 mb-3">
-                {[
-                  { field: "present" as const, label: "Présents", color: "border-green-200 focus:border-green-400" },
-                  { field: "absent" as const, label: "Absents", color: "border-red-200 focus:border-red-400" },
-                  { field: "newcomers" as const, label: "Visiteurs", color: "border-icc-bleu/40 focus:border-icc-bleu" },
-                ].map(({ field, label, color }) => (
-                  <div key={field}>
-                    <label className="block text-xs text-gray-500 mb-1">{label}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={section[field] ?? ""}
-                      onChange={(e) => updateSection(i, field, e.target.value === "" ? null : parseInt(e.target.value, 10))}
-                      placeholder="—"
-                      className={`w-full border-2 ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
-                    />
-                  </div>
-                ))}
+          return (
+            <div key={i} className="bg-white rounded-lg border-2 border-gray-100 p-4">
+              {/* En-tête section */}
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="text"
+                  value={section.label}
+                  onChange={(e) => updateSectionField(i, "label", e.target.value)}
+                  className="flex-1 text-sm font-semibold text-gray-800 border-0 border-b-2 border-gray-200 focus:border-icc-violet focus:outline-none bg-transparent pb-1"
+                />
+                {section.department && (
+                  <span className="text-xs text-gray-400">{section.department.ministry.name}</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeSection(i)}
+                  className="text-gray-300 hover:text-icc-rouge transition-colors"
+                  title="Supprimer la section"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            )}
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Observations</label>
-              <textarea
-                value={section.notes ?? ""}
-                onChange={(e) => updateSection(i, "notes", e.target.value || null)}
-                rows={2}
-                placeholder="Remarques, points de vigilance..."
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
-              />
+              {/* Champs numériques spécifiques au département */}
+              {statsEnabled && fields && (
+                <div className={`grid gap-3 mb-3 ${fields.length <= 2 ? "grid-cols-2" : fields.length <= 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3"}`}>
+                  {fields.map(({ key, label, color }) => (
+                    <div key={key}>
+                      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={statVal(section.stats, key) ?? ""}
+                        onChange={(e) => updateStat(i, key, e.target.value === "" ? null : parseInt(e.target.value, 10))}
+                        placeholder="—"
+                        className={`w-full border-2 ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Totaux calculés pour Accueil */}
+                  {deptType === "accueil" && (
+                    <>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Total adultes</label>
+                        <div className="w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 bg-gray-50">
+                          {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0)}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Total adultes + enfants</label>
+                        <div className="w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 bg-gray-50">
+                          {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0) + (statVal(section.stats, "enfants") ?? 0)}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Observations */}
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Observations</label>
+                <textarea
+                  value={section.notes ?? ""}
+                  onChange={(e) => updateSectionField(i, "notes", e.target.value || null)}
+                  rows={2}
+                  placeholder="Remarques, points de vigilance..."
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Champs globaux */}
