@@ -59,6 +59,9 @@ export default async function EventReportPage({
 
       <EventReportClient
         eventId={event.id}
+        eventTitle={event.title}
+        eventDate={event.date.toISOString()}
+        eventType={event.type}
         statsEnabled={event.statsEnabled}
         existingReport={event.report}
         eventDepts={eventDepts.map((ed) => ({
