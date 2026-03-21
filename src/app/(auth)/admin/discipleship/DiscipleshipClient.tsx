@@ -19,7 +19,7 @@ interface DiscipleshipRow {
   discipleId: string;
   discipleMakerId: string;
   firstMakerId: string;
-  disciple: { id: string; firstName: string; lastName: string; department: { name: string; ministry: { name: string } } };
+  disciple: { id: string; firstName: string; lastName: string; email?: string | null; phone?: string | null; department: { name: string; ministry: { name: string } } };
   discipleMaker: { id: string; firstName: string; lastName: string };
   firstMaker: { id: string; firstName: string; lastName: string };
   startedAt?: string;
@@ -271,6 +271,15 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
   const [createError, setCreateError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
 
+  // Modal: éditer profil disciple
+  const [editProfileRow, setEditProfileRow] = useState<DiscipleshipRow | null>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editProfileError, setEditProfileError] = useState<string | null>(null);
+  const [editProfileLoading, setEditProfileLoading] = useState(false);
+
   // Modal: changer FD
   const [changeFDRow, setChangeFDRow] = useState<DiscipleshipRow | null>(null);
   const [newFDId, setNewFDId] = useState("");
@@ -324,6 +333,47 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
       setCreateError(e instanceof Error ? e.message : "Erreur");
     } finally {
       setCreateLoading(false);
+    }
+  }
+
+  function openEditProfile(row: DiscipleshipRow) {
+    setEditProfileRow(row);
+    setEditFirstName(row.disciple.firstName);
+    setEditLastName(row.disciple.lastName);
+    setEditEmail(row.disciple.email ?? "");
+    setEditPhone(row.disciple.phone ?? "");
+    setEditProfileError(null);
+  }
+
+  async function handleEditProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editProfileRow) return;
+    setEditProfileLoading(true);
+    setEditProfileError(null);
+    try {
+      const res = await fetch(`/api/discipleships/${editProfileRow.id}/member`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: editFirstName.trim(),
+          lastName: editLastName.trim(),
+          email: editEmail.trim() || null,
+          phone: editPhone.trim() || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      // Mettre à jour la ligne localement
+      setRows((prev) => prev.map((r) =>
+        r.id === editProfileRow.id
+          ? { ...r, disciple: { ...r.disciple, firstName: json.firstName, lastName: json.lastName } }
+          : r
+      ));
+      setEditProfileRow(null);
+    } catch (e) {
+      setEditProfileError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setEditProfileLoading(false);
     }
   }
 
@@ -420,6 +470,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                       {canManage && (
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-end">
+                            <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
+                              Éditer
+                            </Button>
                             {!isFD && (
                               <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
                                 Changer FD
@@ -475,6 +528,65 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: éditer profil disciple */}
+      <Modal open={!!editProfileRow} onClose={() => setEditProfileRow(null)} title="Modifier le profil du disciple">
+        {editProfileRow && (
+          <form onSubmit={handleEditProfile} className="space-y-4">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                <input
+                  type="text"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  required
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <input
+                  type="text"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  required
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-gray-400 font-normal">(optionnel)</span></label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="prenom.nom@email.com"
+                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-gray-400 font-normal">(optionnel)</span></label>
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="+33 6 00 00 00 00"
+                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              />
+            </div>
+            {editProfileError && <p className="text-sm text-icc-rouge">{editProfileError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" type="button" onClick={() => setEditProfileRow(null)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={editProfileLoading}>
+                {editProfileLoading ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       {/* Modal: changer FD */}

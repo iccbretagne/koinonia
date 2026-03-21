@@ -7,6 +7,8 @@ const updateSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
   departmentId: z.string().min(1, "Le département est requis"),
+  email: z.string().email("Email invalide").nullable().optional(),
+  phone: z.string().nullable().optional(),
 });
 
 export async function PUT(
