@@ -7,8 +7,11 @@ import {
 
 // Mock auth before importing route handlers
 const mockRequirePermission = vi.fn();
+const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
+  resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
 // Mock prisma
@@ -32,7 +35,7 @@ describe("GET /api/departments", () => {
     ];
     prismaMock.department.findMany.mockResolvedValue(departments);
 
-    const request = new Request("http://localhost/api/departments");
+    const request = new Request("http://localhost/api/departments?churchId=church-1");
     const res = await GET(request);
 
     expect(res.status).toBe(200);
@@ -44,7 +47,7 @@ describe("GET /api/departments", () => {
   it("filters by ministryId", async () => {
     prismaMock.department.findMany.mockResolvedValue([]);
 
-    const request = new Request("http://localhost/api/departments?ministryId=min-1");
+    const request = new Request("http://localhost/api/departments?churchId=church-1&ministryId=min-1");
     await GET(request);
 
     expect(prismaMock.department.findMany).toHaveBeenCalledWith(
@@ -72,7 +75,7 @@ describe("GET /api/departments", () => {
   it("returns 401 when not authenticated", async () => {
     mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
 
-    const request = new Request("http://localhost/api/departments");
+    const request = new Request("http://localhost/api/departments?churchId=church-1");
     const res = await GET(request);
 
     expect(res.status).toBe(401);

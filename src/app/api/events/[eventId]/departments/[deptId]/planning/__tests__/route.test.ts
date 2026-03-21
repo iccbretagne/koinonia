@@ -7,9 +7,12 @@ import {
 
 const mockRequireAuth = vi.fn();
 const mockRequirePermission = vi.fn();
+const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
   requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
+  resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({
