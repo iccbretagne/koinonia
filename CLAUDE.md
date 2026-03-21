@@ -54,7 +54,10 @@ planningcenter/
 │   │   ├── (auth)/              # Route group : pages authentifiees
 │   │   │   ├── layout.tsx       # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/       # Vue planning par departement
-│   │   │   ├── events/          # Gestion des evenements (liste, detail)
+│   │   │   │   └── stats/       # Statistiques par departement
+│   │   │   ├── events/          # Liste et calendrier des evenements
+│   │   │   │   └── calendar/    # Vue calendrier
+│   │   │   ├── profile/         # Profil utilisateur et liaison compte STAR
 │   │   │   ├── announcements/   # Soumission et suivi des annonces
 │   │   │   │   └── new/         # Formulaire soumission annonce
 │   │   │   ├── secretariat/
@@ -67,28 +70,42 @@ planningcenter/
 │   │   │   ├── guide/           # Guide utilisateur par role
 │   │   │   └── admin/           # Section administration
 │   │   │       ├── layout.tsx   # Guard multi-permissions (requireAnyPermission)
-│   │   │       ├── churches/    # CRUD eglises
-│   │   │       ├── users/       # Gestion utilisateurs et roles
+│   │   │       ├── churches/    # CRUD eglises + onboarding
+│   │   │       ├── users/       # Gestion utilisateurs
+│   │   │       ├── access/      # Gestion des acces et roles (ministres, resp. dept, reporters)
 │   │   │       ├── ministries/  # CRUD ministeres
 │   │   │       ├── departments/ # CRUD departements
 │   │   │       │   └── functions/ # Config fonctions departementales
 │   │   │       ├── members/     # CRUD membres (STAR)
-│   │   │       └── events/      # CRUD evenements
+│   │   │       ├── events/      # CRUD evenements
+│   │   │       │   └── [eventId]/report/ # Saisie compte rendu
+│   │   │       ├── reports/     # Dashboard comptes rendus et statistiques
+│   │   │       ├── discipleship/ # Dashboard discipolat (relations, appel, stats)
+│   │   │       └── audit-logs/  # Historique des modifications
 │   │   └── api/                 # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
 │   │       ├── service-requests/ # GET/POST + [id] GET/PATCH
 │   │       ├── churches/
 │   │       ├── departments/
-│   │       ├── events/
+│   │       ├── discipleships/   # CRUD, attendance, stats, tree, export
+│   │       ├── events/          # CRUD + [eventId]/report GET/PUT
+│   │       ├── member-user-links/
+│   │       ├── member-link-requests/
 │   │       ├── members/
 │   │       ├── ministries/
-│   │       └── users/
+│   │       ├── notifications/
+│   │       └── users/           # CRUD + [userId]/roles POST/PATCH/DELETE
 │   ├── components/
-│   │   ├── Sidebar.tsx          # Sidebar unifiee (3 sections accordion)
+│   │   ├── Sidebar.tsx          # Sidebar (6 sections : Planning, Evenements, Membres, Annonces, Discipolat, Configuration)
+│   │   ├── AuthLayoutShell.tsx  # Shell layout authentifie (sidebar + bottom nav + contenu)
+│   │   ├── BottomNav.tsx        # Navigation mobile fixe en bas
+│   │   ├── NotificationBell.tsx # Cloche de notifications avec badge
+│   │   ├── ChurchSwitcher.tsx   # Selecteur d'eglise (multi-tenant)
 │   │   ├── PlanningGrid.tsx     # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx    # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
+│   │   ├── GuideContent.tsx     # Contenu du guide par role (13 features, 7 roles)
 │   │   ├── ViewToggle.tsx
 │   │   ├── DashboardActions.tsx
 │   │   └── ui/                  # Composants UI reutilisables
@@ -103,7 +120,7 @@ planningcenter/
 │   │   ├── prisma.ts            # Singleton Prisma (globalThis pattern)
 │   │   ├── auth.ts              # Config NextAuth + helpers
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
-│   │   └── permissions.ts       # Matrice roles-permissions RBAC
+│   │   └── permissions.ts       # Matrice roles-permissions RBAC (7 roles)
 │   └── middleware.ts            # Edge middleware (protection routes)
 ├── docs/                        # Documentation detaillee
 ├── docker-compose.yml           # MariaDB locale
@@ -119,6 +136,8 @@ npm run start            # Serveur de production
 npm run typecheck        # Verification TypeScript (tsc --noEmit)
 npm run db:push          # Appliquer le schema Prisma
 npm run db:seed          # Charger les donnees ICC Rennes
+npm run db:migrate         # Creer une migration (dev)
+npm run db:migrate:deploy  # Appliquer les migrations (production)
 ```
 
 ## Patterns et conventions
@@ -185,29 +204,41 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 
 ## Roles et permissions
 
-| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département |
-|---|---|---|---|---|---|
-| `planning:view` | x | x | x | x | x |
-| `planning:edit` | x | x | | x | x |
-| `members:view` | x | x | x | x | x |
-| `members:manage` | x | x | | x | x |
-| `events:view` | x | x | x | x | x |
-| `events:manage` | x | x | x | | |
-| `departments:view` | x | x | x | x | x |
-| `departments:manage` | x | x | | | |
-| `church:manage` | x | | | | |
-| `users:manage` | x | | | | |
+| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Faiseur de Disciples | Reporter |
+|---|---|---|---|---|---|---|---|
+| `planning:view` | x | x | x | x | x | | |
+| `planning:edit` | x | x | | x | x | | |
+| `members:view` | x | x | x | x | x | | |
+| `members:manage` | x | x | | x | x | | |
+| `events:view` | x | x | x | x | x | | x |
+| `events:manage` | x | x | x | | | | |
+| `departments:view` | x | x | x | x | x | | |
+| `departments:manage` | x | x | | | | | |
+| `church:manage` | x | | | | | | |
+| `users:manage` | x | | | | | | |
+| `discipleship:view` | x | x | x | | x | x | |
+| `discipleship:manage` | x | x | | | | x | |
+| `discipleship:export` | x | | x | | | | |
+| `reports:view` | x | x | x | | | | x |
+| `reports:edit` | x | x | x | | | | x |
 
 **Visibilite des departements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
 - Ministre : départements du ministère assigné
-- Responsable de département : départements assignés via `user_departments`
+- Responsable de département : départements assignés via `user_departments` (principal ou adjoint via `isDeputy`)
 
 **Spécificités du Secrétaire** :
 - Voit tous les départements de son église (même périmètre que Admin)
 - Planning en lecture seule (pas de `planning:edit`)
 - Membres en lecture seule dans l'admin (pas de `members:manage`)
 - Peut gérer les événements (`events:manage`)
+- Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
+- Export discipolat (`discipleship:export`)
+
+**Spécificités du Reporter** :
+- Accès en lecture aux événements (`events:view`)
+- Accès en lecture/écriture aux comptes rendus (`reports:view` + `reports:edit`)
+- Pas d'accès au planning, membres, ou administration
 
 ## Multi-tenant
 
@@ -246,3 +277,4 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 6. **Pas de sur-ingenierie** : faire le minimum necessaire pour la fonctionnalite demandee
 7. **Erreurs** : utiliser `ApiError` pour les erreurs metier, Zod pour la validation
 8. **Permissions** : toujours proteger les routes API avec `requireAuth()` ou `requirePermission()`
+9. **Migrations** : toujours creer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schema
