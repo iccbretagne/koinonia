@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 export async function GET(
@@ -51,7 +52,7 @@ export async function PUT(
   try {
     const { eventId, deptId: departmentId } = await params;
     const putChurchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("planning:edit", putChurchId);
+    const putSession = await requireChurchPermission("planning:edit", putChurchId);
     const body = await request.json();
     const { taskId, memberIds } = assignSchema.parse(body);
 
@@ -119,6 +120,8 @@ export async function PUT(
         },
       },
     });
+
+    await logAudit({ userId: putSession.user.id, churchId: putChurchId, action: "UPDATE", entityType: "TaskAssignment", entityId: taskId, details: { eventId, departmentId, memberIds } });
 
     return successResponse(updatedTask);
   } catch (error) {

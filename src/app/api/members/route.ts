@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -107,6 +108,9 @@ export async function PATCH(request: Request) {
         prisma.planning.deleteMany({ where: { memberId: { in: ids } } }),
         prisma.member.deleteMany({ where: { id: { in: ids } } }),
       ]);
+      for (const id of ids) {
+        await logAudit({ userId: session.user.id, churchId: firstMemberChurchId, action: "DELETE", entityType: "Member", entityId: id });
+      }
       return successResponse({ deleted: ids.length });
     }
 
@@ -119,6 +123,9 @@ export async function PATCH(request: Request) {
       data,
     });
 
+    for (const id of ids) {
+      await logAudit({ userId: session.user.id, churchId: firstMemberChurchId, action: "UPDATE", entityType: "Member", entityId: id, details: data });
+    }
     return successResponse({ updated: ids.length });
   } catch (error) {
     return errorResponse(error);
@@ -166,6 +173,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "CREATE", entityType: "Member", entityId: member.id, details: { firstName: data.firstName, lastName: data.lastName } });
 
     return successResponse(member, 201);
   } catch (error) {

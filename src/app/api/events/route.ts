@@ -55,7 +55,7 @@ export async function PATCH(request: Request) {
     if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
     const { resolveChurchId } = await import("@/lib/auth");
     const evtChurchId = await resolveChurchId("event", ids[0]);
-    await requireChurchPermission("events:manage", evtChurchId);
+    const patchSession = await requireChurchPermission("events:manage", evtChurchId);
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
@@ -69,6 +69,9 @@ export async function PATCH(request: Request) {
         await tx.eventDepartment.deleteMany({ where: { eventId: { in: ids } } });
         await tx.event.deleteMany({ where: { id: { in: ids } } });
       });
+      for (const id of ids) {
+        await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "DELETE", entityType: "Event", entityId: id });
+      }
       return successResponse({ deleted: ids.length });
     }
 
@@ -86,6 +89,9 @@ export async function PATCH(request: Request) {
       data: updateData,
     });
 
+    for (const id of ids) {
+      await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "UPDATE", entityType: "Event", entityId: id, details: data });
+    }
     return successResponse({ updated: ids.length });
   } catch (error) {
     return errorResponse(error);

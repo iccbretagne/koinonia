@@ -2,6 +2,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(100),
@@ -45,6 +46,8 @@ export async function PATCH(
       data: { displayName: data.displayName },
       select: { id: true, displayName: true },
     });
+
+    await logAudit({ userId: session.user.id, action: "UPDATE", entityType: "UserProfile", entityId: userId, details: { displayName: data.displayName } });
 
     return successResponse(user);
   } catch (error) {

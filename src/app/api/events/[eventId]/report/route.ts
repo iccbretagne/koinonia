@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
@@ -118,6 +119,8 @@ export async function PUT(
         author: { select: { id: true, name: true } },
       },
     });
+
+    await logAudit({ userId: session.user.id, churchId: event.churchId, action: "UPDATE", entityType: "EventReport", entityId: report.id, details: { eventId } });
 
     return successResponse(report);
   } catch (error) {

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -42,6 +43,7 @@ export async function PATCH(
           reviewedById: session.user.id,
         },
       });
+      await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reject" } });
       return successResponse(updated);
     }
 
@@ -107,6 +109,8 @@ export async function PATCH(
         },
       });
     });
+
+    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action } });
 
     return successResponse({ approved: true });
   } catch (error) {

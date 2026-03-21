@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -30,6 +31,8 @@ export async function PUT(
       data,
       include: { church: { select: { id: true, name: true } } },
     });
+
+    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Ministry", entityId: ministryId, details: data });
 
     return successResponse(ministry);
   } catch (error) {
@@ -67,6 +70,8 @@ export async function DELETE(
     }
 
     await prisma.ministry.delete({ where: { id: ministryId } });
+
+    await logAudit({ userId: session.user.id, churchId: delChurchId, action: "DELETE", entityType: "Ministry", entityId: ministryId });
 
     return successResponse({ success: true });
   } catch (error) {

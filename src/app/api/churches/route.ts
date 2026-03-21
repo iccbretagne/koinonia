@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePermission, isSuperAdmin } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 async function requireChurchManageOrSuperAdmin() {
@@ -38,7 +39,7 @@ const bulkSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
-    await requireChurchManageOrSuperAdmin();
+    const patchSession = await requireChurchManageOrSuperAdmin();
     const body = await request.json();
     const { ids, action, data } = bulkSchema.parse(body);
 
@@ -88,6 +89,9 @@ export async function PATCH(request: Request) {
         await tx.userChurchRole.deleteMany({ where: { churchId: { in: ids } } });
         await tx.church.deleteMany({ where: { id: { in: ids } } });
       });
+      for (const id of ids) {
+        await logAudit({ userId: patchSession.user.id, action: "DELETE", entityType: "Church", entityId: id });
+      }
       return successResponse({ deleted: ids.length });
     }
 
@@ -100,6 +104,9 @@ export async function PATCH(request: Request) {
       data,
     });
 
+    for (const id of ids) {
+      await logAudit({ userId: patchSession.user.id, action: "UPDATE", entityType: "Church", entityId: id, details: data });
+    }
     return successResponse({ updated: ids.length });
   } catch (error) {
     return errorResponse(error);
@@ -122,7 +129,7 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    await requireChurchManageOrSuperAdmin();
+    const postSession = await requireChurchManageOrSuperAdmin();
     const body = await request.json();
     const parsed = createSchema.parse(body);
     const slug = parsed.slug || generateSlug(parsed.name);
@@ -166,6 +173,8 @@ export async function POST(request: Request) {
         },
       });
     }
+
+    await logAudit({ userId: postSession.user.id, churchId: church.id, action: "CREATE", entityType: "Church", entityId: church.id, details: { name: parsed.name, slug } });
 
     return successResponse(church, 201);
   } catch (error) {

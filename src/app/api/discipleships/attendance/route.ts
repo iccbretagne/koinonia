@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -61,6 +62,8 @@ export async function PUT(request: Request) {
         }),
       ]);
     }
+
+    await logAudit({ userId: session.user.id, churchId: event.churchId, action: "UPDATE", entityType: "DiscipleshipAttendance", entityId: eventId, details: { presentCount: presentMemberIds.length } });
 
     return successResponse({ saved: true });
   } catch (error) {

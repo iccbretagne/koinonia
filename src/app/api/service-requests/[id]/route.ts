@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { z } from "zod";
 
@@ -190,6 +191,8 @@ export async function PATCH(
 
       return result;
     });
+
+    await logAudit({ userId: session.user.id, churchId: serviceRequest.churchId, action: "UPDATE", entityType: "ServiceRequest", entityId: id, details: { status: data.status, type: serviceRequest.type } });
 
     return successResponse(updated);
   } catch (error) {
