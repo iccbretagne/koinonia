@@ -3,6 +3,12 @@ import { requireAnyPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
+// { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
+const deptAssignmentSchema = z.object({
+  id: z.string().min(1),
+  isDeputy: z.boolean().optional().default(false),
+});
+
 const roleSchema = z.object({
   churchId: z.string().min(1),
   role: z.enum([
@@ -14,13 +20,16 @@ const roleSchema = z.object({
     "DISCIPLE_MAKER",
   ]),
   ministryId: z.string().optional(),
+  // Supporte les deux formats : string[] (legacy) ou { id, isDeputy }[]
   departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptAssignmentSchema).optional(),
 });
 
 const patchSchema = z.object({
   roleId: z.string().min(1),
   ministryId: z.string().nullable().optional(),
   departmentIds: z.array(z.string()).optional(),
+  departments: z.array(deptAssignmentSchema).optional(),
 });
 
 const roleInclude = {
@@ -33,6 +42,16 @@ const roleInclude = {
 
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
 
+// Normalise les deux formats d'entrée vers { id, isDeputy }[]
+function normalizeDepts(
+  departments?: { id: string; isDeputy?: boolean }[],
+  departmentIds?: string[]
+): { id: string; isDeputy: boolean }[] | undefined {
+  if (departments?.length) return departments.map((d) => ({ id: d.id, isDeputy: d.isDeputy ?? false }));
+  if (departmentIds?.length) return departmentIds.map((id) => ({ id, isDeputy: false }));
+  return undefined;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
@@ -41,8 +60,7 @@ export async function POST(
     const session = await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { churchId, role, ministryId, departmentIds } =
-      roleSchema.parse(body);
+    const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
     // Les ADMIN ne peuvent assigner que MINISTER et DEPARTMENT_HEAD
     if (!session.user.isSuperAdmin && PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
@@ -50,20 +68,18 @@ export async function POST(
       if (!hasUsersManage) throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
     }
 
+    const depts = normalizeDepts(departments, departmentIds);
+
     const userRole = await prisma.userChurchRole.create({
       data: {
         userId,
         churchId,
         role,
-        ...(role === "MINISTER" && ministryId
-          ? { ministryId }
-          : {}),
-        ...(role === "DEPARTMENT_HEAD" && departmentIds?.length
+        ...(role === "MINISTER" && ministryId ? { ministryId } : {}),
+        ...(role === "DEPARTMENT_HEAD" && depts?.length
           ? {
               departments: {
-                create: departmentIds.map((departmentId) => ({
-                  departmentId,
-                })),
+                create: depts.map(({ id: departmentId, isDeputy }) => ({ departmentId, isDeputy })),
               },
             }
           : {}),
@@ -85,9 +101,8 @@ export async function PATCH(
     await requireAnyPermission("users:manage", "departments:manage");
     const { userId } = await params;
     const body = await request.json();
-    const { roleId, ministryId, departmentIds } = patchSchema.parse(body);
+    const { roleId, ministryId, departmentIds, departments } = patchSchema.parse(body);
 
-    // Verify the role belongs to this user
     const existing = await prisma.userChurchRole.findFirst({
       where: { id: roleId, userId },
     });
@@ -96,8 +111,9 @@ export async function PATCH(
       return Response.json({ error: "Rôle introuvable" }, { status: 404 });
     }
 
+    const depts = normalizeDepts(departments, departmentIds);
+
     const updated = await prisma.$transaction(async (tx) => {
-      // Update ministryId
       if (ministryId !== undefined) {
         await tx.userChurchRole.update({
           where: { id: roleId },
@@ -105,17 +121,15 @@ export async function PATCH(
         });
       }
 
-      // Replace departments
-      if (departmentIds !== undefined) {
-        await tx.userDepartment.deleteMany({
-          where: { userChurchRoleId: roleId },
-        });
+      if (depts !== undefined) {
+        await tx.userDepartment.deleteMany({ where: { userChurchRoleId: roleId } });
 
-        if (departmentIds.length > 0) {
+        if (depts.length > 0) {
           await tx.userDepartment.createMany({
-            data: departmentIds.map((departmentId) => ({
+            data: depts.map(({ id: departmentId, isDeputy }) => ({
               userChurchRoleId: roleId,
               departmentId,
+              isDeputy,
             })),
           });
         }
@@ -148,18 +162,10 @@ export async function DELETE(
         where: { userId_churchId_role: { userId, churchId, role } },
       });
 
-      if (!existing) {
-        throw new Error("Rôle introuvable");
-      }
+      if (!existing) throw new Error("Rôle introuvable");
 
-      // Delete associated UserDepartment records first (FK constraint)
-      await tx.userDepartment.deleteMany({
-        where: { userChurchRoleId: existing.id },
-      });
-
-      await tx.userChurchRole.delete({
-        where: { id: existing.id },
-      });
+      await tx.userDepartment.deleteMany({ where: { userChurchRoleId: existing.id } });
+      await tx.userChurchRole.delete({ where: { id: existing.id } });
     });
 
     return successResponse({ success: true });

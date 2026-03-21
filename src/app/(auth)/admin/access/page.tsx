@@ -32,7 +32,7 @@ export default async function AccessPage() {
                 userChurchRole: {
                   include: {
                     user: { select: { id: true, name: true, displayName: true, email: true, image: true } },
-                    departments: { select: { departmentId: true } },
+                    departments: { select: { departmentId: true, isDeputy: true } },
                   },
                 },
               },
@@ -69,6 +69,8 @@ export default async function AccessPage() {
           ministers: m.userRoles.map((r) => ({
             roleId: r.id,
             user: r.user,
+            isDeputy: false,
+            allDepartments: [],
           })),
           departments: m.departments.map((d) => ({
             id: d.id,
@@ -76,7 +78,11 @@ export default async function AccessPage() {
             heads: d.userDepts.map((ud) => ({
               roleId: ud.userChurchRole.id,
               user: ud.userChurchRole.user,
-              allDepartmentIds: ud.userChurchRole.departments.map((x) => x.departmentId),
+              isDeputy: ud.isDeputy,
+              allDepartments: ud.userChurchRole.departments.map((x) => ({
+                id: x.departmentId,
+                isDeputy: x.isDeputy,
+              })),
             })),
           })),
         }))}
