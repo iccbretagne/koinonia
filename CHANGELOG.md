@@ -42,9 +42,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - Configuration evenement : toggles "Compte rendu" et "Statistiques" sur la page de detail
 - Bouton "Configurer" (renomme depuis "Dep. service") sur la liste des evenements admin
 - Modale contextuelle par action (remplace la checkbox serie globale)
+- Export des comptes rendus :
+  - Export PDF (jsPDF) avec stats par departement, pagination et footer auteur
+  - Copie message WhatsApp formate (gras, emojis, stats typees par departement)
+- Filtres sur la liste des comptes rendus : mois, type d'evenement, statut, recherche textuelle
 
 ### Ameliore
 
+- Boutons Retour en haut/bas de la page CR, coherence couleurs charte ICC
 - Liaison compte utilisateur / membre STAR desormais independante de l'attribution de role
 - Interface admin membres : colonne "Compte" et bouton "Lier" pour liaison directe sans flux de demande
 - Page profil `/profile` : visualisation et demande de liaison STAR pour l'utilisateur connecte
