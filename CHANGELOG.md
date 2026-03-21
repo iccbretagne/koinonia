@@ -6,7 +6,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
-## [v0.9.0] - 2026-03-20
+## [v0.9.0] - 2026-03-21
 
 ### Ajoute
 
@@ -19,9 +19,29 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   - Section "Discipolat" dans la sidebar, visible uniquement aux utilisateurs ayant `discipleship:view`
   - Onglet Appel : selection d'evenement (mois glissant, tri chronologique, selection automatique sur l'evenement le plus proche), presences groupees par FD, sauvegarde via PUT
   - Export Excel : feuille statistiques + feuille detail presences
+- Comptes rendus d'evenements :
+  - Modeles `EventReport` et `EventReportSection` (schema Prisma)
+  - Flags `reportEnabled` et `statsEnabled` sur les evenements
+  - API REST : `/api/events/[eventId]/report` (GET/PUT)
+  - Page de saisie `/admin/events/[eventId]/report` avec sauvegarde auto (debounce)
+  - Statistiques par departement (Accueil, Integration, Sainte-Cene) avec champs configurables
+  - Tableau de bord `/admin/reports` avec liste et onglet statistiques agregees par mois
+- Role `REPORTER` :
+  - Permissions `events:view`, `reports:view`, `reports:edit`
+  - Acces en lecture/ecriture aux comptes rendus sans droits d'administration
+  - Toggle d'attribution dans la page Acces & roles
+- Page Acces & roles (`/admin/access`) :
+  - Onglet "Roles" : attribution des ministres et responsables de departement (principal/adjoint via `isDeputy`)
+  - Onglet "Comptes rendus" : toggle REPORTER par utilisateur
+  - Remplacement du bouton "Ajouter un role" de la page Utilisateurs
+- Reorganisation du menu sidebar :
+  - 6 sections : Planning, Evenements (Liste, Calendrier, Gestion, CR), Membres, Annonces, Discipolat, Configuration
+  - Visibilite conditionnelle par permissions (REPORTER ne voit pas Planning)
+  - BottomNav mobile adapte (Planning, Evenements, Membres)
 - Configuration evenement : toggle "Suivre les presences pour le discipolat" sur la page de detail
+- Configuration evenement : toggles "Compte rendu" et "Statistiques" sur la page de detail
 - Bouton "Configurer" (renomme depuis "Dep. service") sur la liste des evenements admin
-- Option "Appliquer aux futurs evenements de la serie" remontee en tete de page, s'applique desormais aux toggles annonces et discipolat en plus des departements
+- Modale contextuelle par action (remplace la checkbox serie globale)
 
 ### Ameliore
 
@@ -29,6 +49,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - Interface admin membres : colonne "Compte" et bouton "Lier" pour liaison directe sans flux de demande
 - Page profil `/profile` : visualisation et demande de liaison STAR pour l'utilisateur connecte
 - Recherche membres et utilisateurs insensible a la casse
+- Guide utilisateur : ajout de l'onglet REPORTER avec matrice d'acces
+
+### Corrige
+
+- Guards de permission manquants sur `/admin/audit-logs` et `/admin/churches/onboard`
+- Permission `reports:edit` separee de `reports:view` pour securiser l'ecriture des CR
 
 ## [v0.8.1] - 2026-03-18
 
