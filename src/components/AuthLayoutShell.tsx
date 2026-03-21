@@ -11,13 +11,14 @@ type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_
 
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
-  adminLinks: { href: string; label: string }[];
+  configLinks: { href: string; label: string }[];
   serviceLinks: { href: string; label: string }[];
   hasDiscipleship: boolean;
   hasEventsAccess: boolean;
+  hasEventsManage: boolean;
   hasPlanningAccess: boolean;
-  hasAdminAccess: boolean;
-  hasReports?: boolean;
+  hasMembersAccess: boolean;
+  hasReports: boolean;
   userRole: RoleKey;
   header: React.ReactNode;
   children: React.ReactNode;
@@ -42,12 +43,13 @@ function IconClose({ className }: { className?: string }) {
 
 export default function AuthLayoutShell({
   departments,
-  adminLinks,
+  configLinks,
   serviceLinks,
   hasDiscipleship,
   hasEventsAccess,
+  hasEventsManage,
   hasPlanningAccess,
-  hasAdminAccess,
+  hasMembersAccess,
   hasReports,
   userRole,
   header,
@@ -108,11 +110,13 @@ export default function AuthLayoutShell({
           <div className="h-full pt-[57px] md:pt-0">
             <Sidebar
               departments={departments}
-              adminLinks={adminLinks}
+              configLinks={configLinks}
               serviceLinks={serviceLinks}
               hasDiscipleship={hasDiscipleship}
               hasEventsAccess={hasEventsAccess}
+              hasEventsManage={hasEventsManage}
               hasPlanningAccess={hasPlanningAccess}
+              hasMembersAccess={hasMembersAccess}
               hasReports={hasReports}
               onClose={closeSidebar}
             />
@@ -129,7 +133,7 @@ export default function AuthLayoutShell({
       {footer}
 
       {/* Bottom navigation (mobile only) */}
-      <BottomNav hasAdminAccess={hasAdminAccess} />
+      <BottomNav hasPlanningAccess={hasPlanningAccess} hasMembersAccess={hasMembersAccess} />
 
       {/* Interactive guided tour */}
       <GuidedTour userRole={userRole} />

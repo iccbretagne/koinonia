@@ -64,7 +64,6 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "discipleship:manage",
   ],
   REPORTER: [
-    "planning:view",
     "events:view",
     "reports:view",
   ],
