@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const createSchema = z.discriminatedUnion("type", [
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user) throw new ApiError(401, "Non authentifié");
+    requireRateLimit(request, { prefix: `linkreq:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     const body = await request.json();
     const data = createSchema.parse(body);

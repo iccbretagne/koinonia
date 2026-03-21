@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { hasPermission } from "@/lib/permissions";
+import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { DepartmentFunction } from "@prisma/client";
 import { z } from "zod";
 
@@ -78,6 +79,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
     const session = await requireChurchPermission("planning:view", data.churchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const productionDept = await prisma.department.findFirst({
       where: {

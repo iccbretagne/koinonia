@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
 // { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
@@ -64,6 +65,7 @@ export async function POST(
 
     // Vérifier permission dans l'église ciblée
     const session = await requireChurchPermission("departments:manage", churchId);
+    requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
     if (PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
@@ -143,7 +145,8 @@ export async function PATCH(
     }
 
     // Vérifier permission dans l'église du rôle existant
-    await requireChurchPermission("departments:manage", existing.churchId);
+    const patchSession = await requireChurchPermission("departments:manage", existing.churchId);
+    requireRateLimit(request, { prefix: `roles:${patchSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Vérifier que le ministryId appartient à cette église
     if (ministryId) {
@@ -218,7 +221,8 @@ export async function DELETE(
     const { churchId, role } = roleSchema.parse(body);
 
     // Vérifier permission dans l'église ciblée
-    await requireChurchPermission("departments:manage", churchId);
+    const delSession = await requireChurchPermission("departments:manage", churchId);
+    requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     await prisma.$transaction(async (tx) => {
       const existing = await tx.userChurchRole.findUnique({

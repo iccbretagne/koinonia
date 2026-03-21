@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -73,6 +74,7 @@ export async function PATCH(request: Request) {
       return resolveChurchId("member", ids[0]);
     })();
     const session = await requireChurchPermission("members:manage", firstMemberChurchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     // Scope par département dans cette église
     const churchRoles = session.user.churchRoles.filter((r) => r.churchId === firstMemberChurchId);
@@ -138,6 +140,7 @@ export async function POST(request: Request) {
     const { resolveChurchId } = await import("@/lib/auth");
     const deptChurchId = await resolveChurchId("department", data.departmentId);
     const session = await requireChurchPermission("members:manage", deptChurchId);
+    requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     // Scope par département dans cette église
     const churchRoles = session.user.churchRoles.filter((r) => r.churchId === deptChurchId);
