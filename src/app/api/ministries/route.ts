@@ -88,6 +88,11 @@ export async function PATCH(request: Request) {
       return errorResponse(new Error("Aucune donnée à mettre à jour"));
     }
 
+    // Block cross-tenant destination: churchId must match source church
+    if (data.churchId && data.churchId !== minChurchId) {
+      throw new ApiError(403, "Impossible de déplacer un ministère vers une autre église");
+    }
+
     await prisma.ministry.updateMany({
       where: { id: { in: ids } },
       data,

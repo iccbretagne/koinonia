@@ -125,6 +125,17 @@ export async function PATCH(request: Request) {
       return errorResponse(new Error("Aucune donnée à mettre à jour"));
     }
 
+    // Block cross-tenant destination: departmentId must belong to same church
+    if (data.departmentId) {
+      const targetDept = await prisma.department.findUnique({
+        where: { id: data.departmentId },
+        include: { ministry: { select: { churchId: true } } },
+      });
+      if (!targetDept || targetDept.ministry.churchId !== firstMemberChurchId) {
+        throw new ApiError(403, "Le département cible n'appartient pas à la même église");
+      }
+    }
+
     await prisma.member.updateMany({
       where: { id: { in: ids } },
       data,

@@ -172,6 +172,18 @@ export async function PUT(
       });
     }
 
+    // Validate: all members must belong to this department
+    const memberIds = plannings.map((p) => p.memberId);
+    if (memberIds.length > 0) {
+      const validMembers = await prisma.member.findMany({
+        where: { id: { in: memberIds }, departmentId },
+        select: { id: true },
+      });
+      if (validMembers.length !== memberIds.length) {
+        throw new ApiError(400, "Un ou plusieurs membres n'appartiennent pas à ce département");
+      }
+    }
+
     // Validate: only one EN_SERVICE_DEBRIEF per department per event
     const debriefCount = plannings.filter(
       (p) => p.status === "EN_SERVICE_DEBRIEF"
