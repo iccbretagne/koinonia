@@ -84,6 +84,26 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("planning:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
+    // Validate cross-tenant references
+    if (data.departmentId) {
+      const dept = await prisma.department.findUnique({
+        where: { id: data.departmentId },
+        select: { ministry: { select: { churchId: true } } },
+      });
+      if (!dept || dept.ministry.churchId !== data.churchId) {
+        throw new ApiError(400, "Le département n'appartient pas à cette église");
+      }
+    }
+    if (data.ministryId) {
+      const ministry = await prisma.ministry.findUnique({
+        where: { id: data.ministryId },
+        select: { churchId: true },
+      });
+      if (!ministry || ministry.churchId !== data.churchId) {
+        throw new ApiError(400, "Le ministère n'appartient pas à cette église");
+      }
+    }
+
     const productionDept = await prisma.department.findFirst({
       where: {
         function: DepartmentFunction.PRODUCTION_MEDIA,

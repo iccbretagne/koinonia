@@ -111,6 +111,11 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
+    // Mock member validation: return members matching the requested IDs
+    prismaMock.member.findMany.mockImplementation((args: { where?: { id?: { in?: string[] } } }) => {
+      const ids = args?.where?.id?.in ?? [];
+      return Promise.resolve(ids.map((id: string) => ({ id })));
+    });
   });
 
   it("upserts planning statuses", async () => {

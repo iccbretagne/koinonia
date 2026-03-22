@@ -109,7 +109,12 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
-    // Owner can only read — status changes restricted to dept members and managers
+    // Owner can only read — all modifications restricted to dept members and managers
+    if (isOwner && !canManage && !isAssignedDeptMember) {
+      throw new ApiError(403, "Le demandeur ne peut pas modifier sa propre demande");
+    }
+
+    // Status changes restricted to dept members and managers
     if (data.status !== undefined && !canManage && !isAssignedDeptMember) {
       throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
     }
