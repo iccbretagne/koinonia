@@ -57,6 +57,15 @@ export async function PUT(
       throw new ApiError(403, "Vous ne pouvez déplacer un département que vers votre ministère");
     }
 
+    // Block cross-tenant destination: ministryId must belong to same church
+    const targetMinistry = await prisma.ministry.findUnique({
+      where: { id: data.ministryId },
+      select: { churchId: true },
+    });
+    if (!targetMinistry || targetMinistry.churchId !== churchId) {
+      throw new ApiError(403, "Le ministère cible n'appartient pas à la même église");
+    }
+
     const department = await prisma.department.update({
       where: { id: departmentId },
       data,

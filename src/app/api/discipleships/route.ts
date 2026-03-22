@@ -88,6 +88,16 @@ export async function POST(request: Request) {
       throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
     }
 
+    // Validate all member references belong to the specified church
+    const memberIdsToCheck = [discipleId, discipleMakerId, ...(firstMakerId ? [firstMakerId] : [])];
+    const validMembers = await prisma.member.findMany({
+      where: { id: { in: memberIdsToCheck }, department: { ministry: { churchId } } },
+      select: { id: true },
+    });
+    if (validMembers.length !== new Set(memberIdsToCheck).size) {
+      throw new ApiError(400, "Un ou plusieurs membres n'appartiennent pas à cette église");
+    }
+
     // Vérifier qu'il n'y a pas déjà un lien de discipolat dans cette église
     const existing = await prisma.discipleship.findUnique({
       where: { discipleId_churchId: { discipleId, churchId } },

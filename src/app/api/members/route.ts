@@ -111,10 +111,15 @@ export async function PATCH(request: Request) {
     }
 
     if (action === "delete") {
-      await prisma.$transaction([
-        prisma.planning.deleteMany({ where: { memberId: { in: ids } } }),
-        prisma.member.deleteMany({ where: { id: { in: ids } } }),
-      ]);
+      await prisma.$transaction(async (tx) => {
+        await tx.planning.deleteMany({ where: { memberId: { in: ids } } });
+        await tx.taskAssignment.deleteMany({ where: { memberId: { in: ids } } });
+        await tx.discipleshipAttendance.deleteMany({ where: { memberId: { in: ids } } });
+        await tx.memberUserLink.deleteMany({ where: { memberId: { in: ids } } });
+        await tx.memberLinkRequest.updateMany({ where: { memberId: { in: ids } }, data: { memberId: null } });
+        await tx.discipleship.deleteMany({ where: { OR: [{ discipleId: { in: ids } }, { discipleMakerId: { in: ids } }, { firstMakerId: { in: ids } }] } });
+        await tx.member.deleteMany({ where: { id: { in: ids } } });
+      });
       for (const id of ids) {
         await logAudit({ userId: session.user.id, churchId: firstMemberChurchId, action: "DELETE", entityType: "Member", entityId: id });
       }

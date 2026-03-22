@@ -85,6 +85,18 @@ export async function PUT(
 
     const { notes, decisions, sections } = upsertSchema.parse(await request.json());
 
+    // Validate all departmentIds belong to the event's church
+    const deptIds = sections.map((s) => s.departmentId).filter((id): id is string => id !== null && id !== undefined);
+    if (deptIds.length > 0) {
+      const validDepts = await prisma.department.findMany({
+        where: { id: { in: deptIds }, ministry: { churchId: event.churchId } },
+        select: { id: true },
+      });
+      if (validDepts.length !== new Set(deptIds).size) {
+        throw new ApiError(400, "Un ou plusieurs départements n'appartiennent pas à cette église");
+      }
+    }
+
     const sectionData = sections.map((s, i) => ({
       departmentId: s.departmentId ?? null,
       label: s.label,

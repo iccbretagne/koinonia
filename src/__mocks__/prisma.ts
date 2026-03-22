@@ -36,6 +36,7 @@ export const prismaMock = {
   announcement: createModelMock(),
   taskAssignment: createModelMock(),
   eventReport: createModelMock(),
+  discipleship: createModelMock(),
   discipleshipAttendance: createModelMock(),
   announcementEvent: createModelMock(),
   $transaction: vi.fn((fn: (tx: typeof prismaMock) => Promise<unknown>) =>

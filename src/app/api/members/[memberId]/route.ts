@@ -52,6 +52,15 @@ export async function PUT(
       }
     }
 
+    // Block cross-tenant destination: departmentId must belong to same church
+    const targetDept = await prisma.department.findUnique({
+      where: { id: data.departmentId },
+      include: { ministry: { select: { churchId: true } } },
+    });
+    if (!targetDept || targetDept.ministry.churchId !== churchId) {
+      throw new ApiError(403, "Le département cible n'appartient pas à la même église");
+    }
+
     const member = await prisma.member.update({
       where: { id: memberId },
       data,
@@ -97,7 +106,16 @@ export async function DELETE(
       throw new ApiError(403, "Ce STAR est hors de votre périmètre");
     }
 
-    await prisma.member.delete({ where: { id: memberId } });
+    // Delete dependent records before member to avoid FK constraint errors
+    await prisma.$transaction(async (tx) => {
+      await tx.planning.deleteMany({ where: { memberId } });
+      await tx.taskAssignment.deleteMany({ where: { memberId } });
+      await tx.discipleshipAttendance.deleteMany({ where: { memberId } });
+      await tx.memberUserLink.deleteMany({ where: { memberId } });
+      await tx.memberLinkRequest.updateMany({ where: { memberId }, data: { memberId: null } });
+      await tx.discipleship.deleteMany({ where: { OR: [{ discipleId: memberId }, { discipleMakerId: memberId }, { firstMakerId: memberId }] } });
+      await tx.member.delete({ where: { id: memberId } });
+    });
 
     await logAudit({ userId: session.user.id, churchId, action: "DELETE", entityType: "Member", entityId: memberId });
 
