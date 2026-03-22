@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.1] - 2026-03-22
+
+### Documentation
+
+- Tour guide : ajout des etapes Membres, Annonces, Discipolat, Comptes rendus
+- Tour guide : visibilite par role (REPORTER voit les CR, DISCIPLE_MAKER voit le discipolat)
+- Tour guide : renommage Administration→Configuration, Departements→Planning
+- Guide utilisateur : description enrichie des comptes rendus (orateur, export Excel)
+- API docs : champs speaker/messageTitle + endpoint export Excel
+- Database docs : colonnes speaker et messageTitle sur event_reports
+- Roadmap : items export Excel et champs orateur/titre coches
+
 ## [v0.12.0] - 2026-03-22
 
 ### Ajouts
