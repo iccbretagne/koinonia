@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.11.2] - 2026-03-22
+
+### Securite
+
+- Bulk PATCH destination : validation que les champs churchId/ministryId/departmentId cibles appartiennent a la meme eglise (ministeres, departements, membres)
+- Planning PUT : verification que tous les memberIds appartiennent au departement cible
+- Service requests POST : validation des references departmentId et ministryId contre l'eglise specifiee
+- Service requests PATCH : application stricte du owner read-only (blocage de toute modification, pas seulement le statut)
+
 ## [v0.11.1] - 2026-03-22
 
 ### Securite
