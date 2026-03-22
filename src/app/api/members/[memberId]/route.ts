@@ -113,6 +113,7 @@ export async function DELETE(
       await tx.discipleshipAttendance.deleteMany({ where: { memberId } });
       await tx.memberUserLink.deleteMany({ where: { memberId } });
       await tx.memberLinkRequest.updateMany({ where: { memberId }, data: { memberId: null } });
+      await tx.discipleship.deleteMany({ where: { OR: [{ discipleId: memberId }, { discipleMakerId: memberId }, { firstMakerId: memberId }] } });
       await tx.member.delete({ where: { id: memberId } });
     });
 

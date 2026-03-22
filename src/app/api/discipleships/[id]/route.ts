@@ -21,8 +21,23 @@ export async function PATCH(
 
     const session = await requireChurchPermission("discipleship:manage", existing.churchId);
 
+    // DISCIPLE_MAKER ne peut modifier que ses propres disciples
+    const scope = await getDiscipleshipScope(session, existing.churchId);
+    if (scope.scoped && existing.discipleMakerId !== scope.memberId) {
+      throw new ApiError(403, "Vous ne pouvez modifier que vos propres disciples");
+    }
+
     if (existing.discipleId === discipleMakerId) {
       throw new ApiError(400, "Un STAR ne peut pas être son propre FD");
+    }
+
+    // Validate new discipleMakerId belongs to same church
+    const newMaker = await prisma.member.findFirst({
+      where: { id: discipleMakerId, department: { ministry: { churchId: existing.churchId } } },
+      select: { id: true },
+    });
+    if (!newMaker) {
+      throw new ApiError(400, "Le FD cible n'appartient pas à cette église");
     }
 
     // Changer le FD courant en conservant le firstMakerId d'origine
