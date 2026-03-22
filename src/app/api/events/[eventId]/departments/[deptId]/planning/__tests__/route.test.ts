@@ -28,10 +28,14 @@ const { GET, PUT } = await import("../route");
 const makeParams = (eventId: string, deptId: string) =>
   Promise.resolve({ eventId, deptId });
 
+// Mock department church verification (cross-tenant check)
+const mockDeptChurchCheck = { ministry: { churchId: "church-1" } };
+
 describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
   });
 
   it("returns planning data with members and statuses", async () => {
@@ -63,13 +67,24 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     expect(body.deadlinePassed).toBe(false);
   });
 
-  it("returns 404 when event-department link not found", async () => {
+  it("returns members with no statuses when event-department link not found", async () => {
     prismaMock.eventDepartment.findUnique.mockResolvedValue(null);
+    // Second department.findUnique call (with members include) in the fallback path
+    prismaMock.department.findUnique
+      .mockResolvedValueOnce(mockDeptChurchCheck as never) // cross-tenant check
+      .mockResolvedValueOnce({
+        id: "dept-1",
+        members: [{ id: "m-1", firstName: "Jean", lastName: "Dupont" }],
+      } as never); // fallback path
+    prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", planningDeadline: null } as never);
 
     const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");
     const res = await GET(request, { params: makeParams("evt-1", "dept-1") });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.members).toHaveLength(1);
+    expect(body.members[0].status).toBeNull();
   });
 
   it("detects deadline passed", async () => {
@@ -95,6 +110,7 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
+    prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
   });
 
   it("upserts planning statuses", async () => {
