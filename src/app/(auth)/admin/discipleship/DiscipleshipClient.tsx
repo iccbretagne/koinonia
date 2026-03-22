@@ -84,7 +84,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-4 py-3 sm:py-2 text-sm font-medium rounded-t-lg transition-colors ${
               activeTab === tab
                 ? "bg-icc-violet text-white"
                 : "text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5"
@@ -442,7 +442,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
           {rows.length === 0 ? (
             <p className="text-sm text-gray-400 p-6">Aucune relation de discipolat.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-100 bg-gray-50">
@@ -489,6 +491,48 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {rows.map((row) => (
+                <div key={row.id} className="p-4 space-y-2">
+                  <div>
+                    <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
+                    <div className="text-xs text-gray-400">{row.disciple.department.ministry.name} / {row.disciple.department.name}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <div>
+                      <span className="text-xs text-gray-400">FD actuel</span>
+                      <div className="text-gray-700">{fullName(row.discipleMaker)}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400">Premier FD</span>
+                      <div className="text-gray-500">{fullName(row.firstMaker)}</div>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-xs text-gray-400">Depuis</span>
+                      <div className="text-gray-500 text-xs">{row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}</div>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <div className="flex gap-2 pt-1">
+                      <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
+                        Éditer
+                      </Button>
+                      {!isFD && (
+                        <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
+                          Changer FD
+                        </Button>
+                      )}
+                      <Button variant="danger" size="sm" onClick={() => handleDelete(row)}>
+                        {isFD ? "Détacher" : "Supprimer"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            </>
           )}
         </div>
       )}
@@ -877,33 +921,37 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
   return (
     <div>
       {/* Period selector */}
-      <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-white border-2 border-gray-100 rounded-lg">
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Du</label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
-          />
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4 mb-6 p-4 bg-white border-2 border-gray-100 rounded-lg">
+        <div className="flex gap-3 flex-1">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Du</label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Au</label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Au</label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
-          />
-        </div>
-        <Button onClick={fetchStats} disabled={loading}>
-          {loading ? "Chargement..." : "Actualiser"}
-        </Button>
-        {canExport && (
-          <Button variant="secondary" onClick={handleExport} disabled={exporting}>
-            {exporting ? "Export..." : "Exporter Excel"}
+        <div className="flex gap-2">
+          <Button onClick={fetchStats} disabled={loading}>
+            {loading ? "Chargement..." : "Actualiser"}
           </Button>
-        )}
+          {canExport && (
+            <Button variant="secondary" onClick={handleExport} disabled={exporting}>
+              {exporting ? "Export..." : "Exporter Excel"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-sm text-icc-rouge mb-4">{error}</p>}
@@ -921,7 +969,9 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
                 {data.stats.length === 0 ? (
                   <p className="text-sm text-gray-400 p-6">Aucun disciple enregistré.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b-2 border-gray-100 bg-gray-50">
@@ -965,6 +1015,42 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Mobile cards */}
+                  <div className="md:hidden divide-y divide-gray-100">
+                    {data.stats.map((row) => (
+                      <div key={row.discipleshipId} className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
+                            <div className="text-xs text-gray-400">FD : {fullName(row.discipleMaker)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-700">{row.stats.present}/{row.stats.totalEvents}</div>
+                            <div className="text-xs text-gray-400">présences</div>
+                          </div>
+                        </div>
+                        {row.stats.rate !== null && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  row.stats.rate >= 80
+                                    ? "bg-green-500"
+                                    : row.stats.rate >= 50
+                                    ? "bg-icc-jaune"
+                                    : "bg-icc-rouge"
+                                }`}
+                                style={{ width: `${row.stats.rate}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-bold text-gray-700 w-10 text-right">{row.stats.rate}%</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  </>
                 )}
               </div>
             </>
