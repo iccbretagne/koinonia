@@ -61,6 +61,15 @@ export async function PATCH(request: Request) {
     if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
     const { resolveChurchId } = await import("@/lib/auth");
     const deptChurchId = await resolveChurchId("department", ids[0]);
+
+    // Verify ALL ids belong to the same church
+    if (ids.length > 1) {
+      const allChurchIds = await Promise.all(ids.map((id) => resolveChurchId("department", id)));
+      if (allChurchIds.some((cid) => cid !== deptChurchId)) {
+        throw new ApiError(400, "Tous les départements doivent appartenir à la même église");
+      }
+    }
+
     const session = await requireChurchPermission("departments:manage", deptChurchId);
 
     const allowedMinistries = getMinisterMinistryIds(session, deptChurchId);

@@ -1,7 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
+
+async function verifyDepartmentChurch(departmentId: string, expectedChurchId: string) {
+  const dept = await prisma.department.findUnique({
+    where: { id: departmentId },
+    select: { ministry: { select: { churchId: true } } },
+  });
+  if (!dept) throw new ApiError(404, "Département introuvable");
+  if (dept.ministry.churchId !== expectedChurchId) {
+    throw new ApiError(403, "Ce département n'appartient pas à l'église de cet événement");
+  }
+}
 
 const schema = z.object({
   departmentId: z.string().min(1, "Le département est requis"),
@@ -43,6 +54,7 @@ export async function POST(
     await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
+    await verifyDepartmentChurch(departmentId, churchId);
 
     if (applyToSeries) {
       const eventIds = await getSeriesEventIds(eventId);
@@ -79,6 +91,7 @@ export async function DELETE(
     await requireChurchPermission("events:manage", delChurchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
+    await verifyDepartmentChurch(departmentId, delChurchId);
 
     if (applyToSeries) {
       const eventIds = await getSeriesEventIds(eventId);

@@ -19,6 +19,16 @@ export async function GET(
     const churchId = await resolveChurchId("event", eventId);
     await requireChurchPermission("planning:view", churchId);
 
+    // Verify department belongs to same church as event
+    const deptCheck = await prisma.department.findUnique({
+      where: { id: departmentId },
+      select: { ministry: { select: { churchId: true } } },
+    });
+    if (!deptCheck) throw new ApiError(404, "Département introuvable");
+    if (deptCheck.ministry.churchId !== churchId) {
+      throw new ApiError(403, "Ce département n'appartient pas à l'église de cet événement");
+    }
+
     const eventDept = await prisma.eventDepartment.findUnique({
       where: {
         eventId_departmentId: { eventId, departmentId },
@@ -121,9 +131,11 @@ export async function PUT(
     });
 
     if (event?.planningDeadline && new Date() > new Date(event.planningDeadline)) {
-      // After deadline, only ADMIN and SECRETARY can modify
-      const userRoles = session.user.churchRoles.map((r) => r.role);
-      const canBypass = userRoles.some(
+      // After deadline, only ADMIN and SECRETARY in this church can modify
+      const churchRoles = session.user.churchRoles
+        .filter((r) => r.churchId === eventChurchId)
+        .map((r) => r.role);
+      const canBypass = churchRoles.some(
         (r) => r === "SUPER_ADMIN" || r === "ADMIN" || r === "SECRETARY"
       );
       if (!canBypass) {
@@ -136,6 +148,16 @@ export async function PUT(
 
     const body = await request.json();
     const { plannings } = planningSchema.parse(body);
+
+    // Verify department belongs to same church as event
+    const planDeptCheck = await prisma.department.findUnique({
+      where: { id: departmentId },
+      select: { ministry: { select: { churchId: true } } },
+    });
+    if (!planDeptCheck) throw new ApiError(404, "Département introuvable");
+    if (planDeptCheck.ministry.churchId !== eventChurchId) {
+      throw new ApiError(403, "Ce département n'appartient pas à l'église de cet événement");
+    }
 
     // Find or create event-department link
     let eventDept = await prisma.eventDepartment.findUnique({
