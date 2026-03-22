@@ -294,6 +294,8 @@ Compte-rendu d'un evenement. Un seul CR par evenement.
 | `id` | String (cuid) | Identifiant unique |
 | `eventId` | String (unique) | Ref vers `events` (un seul CR par evenement) |
 | `churchId` | String | Ref vers `churches` |
+| `speaker` | String? | Nom de l'orateur |
+| `messageTitle` | String? | Titre du message |
 | `notes` | String? (Text) | Notes generales du CR |
 | `decisions` | String? (Text) | Decisions prises lors de l'evenement |
 | `authorId` | String? | Ref vers `users` (auteur du CR, nullable) |

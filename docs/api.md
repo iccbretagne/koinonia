@@ -378,6 +378,8 @@ Recupere le compte rendu d'un evenement. Retourne `null` si aucun CR n'existe en
   "id": "clx...",
   "eventId": "clx...",
   "churchId": "clx...",
+  "speaker": "Pasteur Martin",
+  "messageTitle": "La foi en action",
   "notes": "Bonne participation generale.",
   "decisions": "Revoir la disposition des chaises.",
   "author": { "id": "clx...", "name": "Jean Dupont" },
@@ -406,6 +408,8 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
 **Body** (valide par Zod) :
 ```json
 {
+  "speaker": "Pasteur Martin",
+  "messageTitle": "La foi en action",
   "notes": "Bonne participation generale.",
   "decisions": "Revoir la disposition des chaises.",
   "sections": [
@@ -420,6 +424,8 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
 }
 ```
 
+- `speaker` : nom de l'orateur (optionnel)
+- `messageTitle` : titre du message (optionnel)
 - `notes` : notes generales du CR (optionnel)
 - `decisions` : decisions prises lors de l'evenement (optionnel)
 - `sections` : tableau de sections (peut etre vide)
@@ -434,6 +440,26 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
 **Erreurs** :
 - `404` si l'evenement est introuvable
 - `403` si les comptes rendus ne sont pas actives pour cet evenement
+
+### `GET /api/events/reports/export`
+
+Exporte les statistiques hebdomadaires des cultes au format Excel (.xlsx) sur une periode donnee.
+
+**Permission requise** : `reports:view`
+
+**Parametres** (query string) :
+- `churchId` (requis) : ID de l'eglise
+- `from` (optionnel) : date de debut (`YYYY-MM-DD`, defaut : 1er jour du mois courant)
+- `to` (optionnel) : date de fin (`YYYY-MM-DD`, defaut : dernier jour du mois courant)
+
+**Reponse** : fichier Excel (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) avec les colonnes :
+- Date du culte, Eglise, Orateur, Titre du message
+- Hommes, Femmes, Enfants, Total adultes, Total general
+- Nouveaux arrivants (H), Nouveaux arrivants (F), De passage, Nouveaux convertis
+
+**Erreurs** :
+- `400` si `churchId` est manquant
+- `403` si l'utilisateur n'a pas la permission `reports:view`
 
 ---
 
