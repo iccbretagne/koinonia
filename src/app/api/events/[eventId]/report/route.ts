@@ -15,6 +15,8 @@ const sectionSchema = z.object({
 });
 
 const upsertSchema = z.object({
+  speaker: z.string().nullable().optional(),
+  messageTitle: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   decisions: z.string().nullable().optional(),
   sections: z.array(sectionSchema),
@@ -83,7 +85,7 @@ export async function PUT(
 
     if (!event.reportEnabled) throw new ApiError(403, "Les comptes rendus ne sont pas activés pour cet événement");
 
-    const { notes, decisions, sections } = upsertSchema.parse(await request.json());
+    const { speaker, messageTitle, notes, decisions, sections } = upsertSchema.parse(await request.json());
 
     // Validate all departmentIds belong to the event's church
     const deptIds = sections.map((s) => s.departmentId).filter((id): id is string => id !== null && id !== undefined);
@@ -111,11 +113,15 @@ export async function PUT(
         eventId,
         churchId: event.churchId,
         authorId: session.user.id,
+        speaker: speaker ?? null,
+        messageTitle: messageTitle ?? null,
         notes: notes ?? null,
         decisions: decisions ?? null,
         sections: { create: sectionData },
       },
       update: {
+        speaker: speaker ?? null,
+        messageTitle: messageTitle ?? null,
         notes: notes ?? null,
         decisions: decisions ?? null,
         sections: {

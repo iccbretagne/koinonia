@@ -24,6 +24,8 @@ interface SectionData extends Omit<Section, "stats"> {
 
 interface ExistingReport {
   id: string;
+  speaker: string | null;
+  messageTitle: string | null;
   notes: string | null;
   decisions: string | null;
   sections: SectionData[];
@@ -127,6 +129,8 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
     return eventDepts.map((d, i) => emptySection(d, i));
   };
 
+  const [speaker, setSpeaker] = useState(existingReport?.speaker ?? "");
+  const [messageTitle, setMessageTitle] = useState(existingReport?.messageTitle ?? "");
   const [notes, setNotes] = useState(existingReport?.notes ?? "");
   const [decisions, setDecisions] = useState(existingReport?.decisions ?? "");
   const [sections, setSections] = useState<Section[]>(initSections);
@@ -135,11 +139,15 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   const [copied, setCopied] = useState(false);
 
   // Refs pour accéder aux valeurs les plus récentes dans le callback debounced
+  const speakerRef = useRef(speaker);
+  const messageTitleRef = useRef(messageTitle);
   const notesRef = useRef(notes);
   const decisionsRef = useRef(decisions);
   const sectionsRef = useRef(sections);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  speakerRef.current = speaker;
+  messageTitleRef.current = messageTitle;
   notesRef.current = notes;
   decisionsRef.current = decisions;
   sectionsRef.current = sections;
@@ -164,6 +172,8 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          speaker: speakerRef.current || null,
+          messageTitle: messageTitleRef.current || null,
           notes: notesRef.current || null,
           decisions: decisionsRef.current || null,
           sections: sectionsRef.current,
@@ -319,6 +329,32 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           </svg>
           {copied ? "Copié !" : "WhatsApp"}
         </button>
+      </div>
+
+      {/* Orateur et titre du message */}
+      <div className="bg-white rounded-lg border-2 border-gray-100 p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Orateur</label>
+            <input
+              type="text"
+              value={speaker}
+              onChange={(e) => { setSpeaker(e.target.value); scheduleSave(); }}
+              placeholder="Nom de l'orateur"
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Titre du message</label>
+            <input
+              type="text"
+              value={messageTitle}
+              onChange={(e) => { setMessageTitle(e.target.value); scheduleSave(); }}
+              placeholder="Titre du message"
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Sections */}
