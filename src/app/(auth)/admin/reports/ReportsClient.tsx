@@ -28,6 +28,7 @@ interface EventItem {
 
 interface Props {
   events: EventItem[];
+  churchId: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,9 +70,19 @@ function fmtDateTime(iso: string) {
 
 type Tab = "list" | "stats";
 
-export default function ReportsClient({ events }: Props) {
+export default function ReportsClient({ events, churchId }: Props) {
   const [tab, setTab] = useState<Tab>("list");
   const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [exportFrom, setExportFrom] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [exportTo, setExportTo] = useState<string>(() => {
+    const now = new Date();
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
+  });
+  const [exporting, setExporting] = useState(false);
   const [listMonthFilter, setListMonthFilter] = useState<string>(() => {
     // Default to current month
     const now = new Date();
@@ -312,6 +323,56 @@ export default function ReportsClient({ events }: Props) {
             <span className="text-xs text-gray-400">
               {withReport}/{totalEvents} événements avec CR · {pending} en attente
             </span>
+          </div>
+
+          {/* Export Excel */}
+          <div className="flex flex-wrap items-end gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Du</label>
+              <input
+                type="date"
+                value={exportFrom}
+                onChange={(e) => setExportFrom(e.target.value)}
+                className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Au</label>
+              <input
+                type="date"
+                value={exportTo}
+                onChange={(e) => setExportTo(e.target.value)}
+                className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              />
+            </div>
+            <button
+              disabled={exporting}
+              onClick={async () => {
+                setExporting(true);
+                try {
+                  const params = new URLSearchParams({ churchId, from: exportFrom, to: exportTo });
+                  const res = await fetch(`/api/events/reports/export?${params}`);
+                  if (!res.ok) throw new Error("Erreur lors de l'export");
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "export.xlsx";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                } catch {
+                  alert("Erreur lors de l'export Excel.");
+                } finally {
+                  setExporting(false);
+                }
+              }}
+              className="inline-flex items-center gap-2 bg-icc-violet text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {exporting ? "Export en cours..." : "Exporter en Excel"}
+            </button>
           </div>
 
           {/* Bloc Présence (Accueil) */}

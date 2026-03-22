@@ -42,6 +42,7 @@ export default async function ReportsPage() {
       </div>
 
       <ReportsClient
+        churchId={churchId}
         events={events.map((e) => ({
           id: e.id,
           title: e.title,
