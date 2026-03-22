@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.0] - 2026-03-22
+
+### Ajouts
+
+- Export Excel des statistiques hebdomadaires des cultes avec selection de periode
+- Champs orateur et titre du message dans les comptes rendus d'evenements
+- Endpoint API `GET /api/events/reports/export` avec protection contre l'injection de formules Excel
+
 ## [v0.11.3] - 2026-03-22
 
 ### Securite
