@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.11.3] - 2026-03-22
+
+### Securite
+
+- Routes unitaires membres/departements : validation cross-tenant sur departmentId et ministryId cibles
+- Comptes rendus : validation des departmentIds de section contre l'eglise de l'evenement
+- Duplication de planning : verification que l'evenement cible appartient a la meme eglise
+- Discipolat PATCH : enforcement du scope DISCIPLE_MAKER + validation cross-tenant du nouveau FD
+- Discipolat POST : validation de tous les memberIds (disciple, FD, firstMaker) contre l'eglise
+- Suppression membre : cascade complete incluant discipleship (unitaire et bulk)
+- Middleware : exception /api/cron/* pour authentification par bearer token
+
+### Tests
+
+- 25 nouveaux tests de securite multi-tenant (105 total)
+- Couverture : bulk ops, routes unitaires, discipolat, rapports, duplication planning
+
 ## [v0.11.2] - 2026-03-22
 
 ### Securite
