@@ -22,6 +22,12 @@ export async function POST(
       throw new ApiError(400, "L'événement source et cible doivent être différents");
     }
 
+    // Verify target event belongs to the same church
+    const targetChurchId = await resolveChurchId("event", targetEventId);
+    if (targetChurchId !== churchId) {
+      throw new ApiError(403, "L'événement cible n'appartient pas à la même église");
+    }
+
     // Get source event-departments with plannings
     const sourceEDs = await prisma.eventDepartment.findMany({
       where: { eventId: sourceEventId },

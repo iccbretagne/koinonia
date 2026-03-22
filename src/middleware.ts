@@ -7,6 +7,10 @@ export function middleware(request: NextRequest) {
     request.cookies.get("__Secure-authjs.session-token")?.value;
 
   if (!sessionToken) {
+    // Allow cron routes to pass through (authenticated by bearer token in route handler)
+    if (request.nextUrl.pathname.startsWith("/api/cron/")) {
+      return NextResponse.next();
+    }
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
