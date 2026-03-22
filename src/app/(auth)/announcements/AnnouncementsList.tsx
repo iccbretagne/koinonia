@@ -127,7 +127,7 @@ export default function AnnouncementsList({ announcements: initial }: Props) {
           <div className="flex items-start justify-between gap-4 mb-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="font-semibold text-gray-900">{ann.title}</h2>
+                <h2 className="font-semibold text-gray-900 line-clamp-1">{ann.title}</h2>
                 {ann.isSaveTheDate && (
                   <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
                     Save the Date
