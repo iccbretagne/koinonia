@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.11.1] - 2026-03-22
+
+### Securite
+
+- Coherence cross-tenant event↔departement : verification que le departement appartient a la meme eglise que l'evenement (planning GET/PUT, event-departments POST/DELETE)
+- Operations bulk : validation que TOUS les IDs appartiennent a la meme eglise (events, departments, members, ministries PATCH)
+- Suppression de roles privilegies : blocage pour les non-super-admins (SUPER_ADMIN, ADMIN, SECRETARY)
+- Service-requests canManage : scope du calcul de permissions a l'eglise demandee
+- Bypass deadline planning : scope de la verification des roles a l'eglise de l'evenement
+
 ## [v0.11.0] - 2026-03-22
 
 ### Securite
