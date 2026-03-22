@@ -175,7 +175,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-3 sm:py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === t
                 ? "border-icc-violet text-icc-violet"
                 : "border-transparent text-gray-500 hover:text-gray-700"
@@ -326,24 +326,26 @@ export default function ReportsClient({ events, churchId }: Props) {
           </div>
 
           {/* Export Excel */}
-          <div className="flex flex-wrap items-end gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Du</label>
-              <input
-                type="date"
-                value={exportFrom}
-                onChange={(e) => setExportFrom(e.target.value)}
-                className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Au</label>
-              <input
-                type="date"
-                value={exportTo}
-                onChange={(e) => setExportTo(e.target.value)}
-                className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
-              />
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex gap-3 flex-1">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Du</label>
+                <input
+                  type="date"
+                  value={exportFrom}
+                  onChange={(e) => setExportFrom(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Au</label>
+                <input
+                  type="date"
+                  value={exportTo}
+                  onChange={(e) => setExportTo(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                />
+              </div>
             </div>
             <button
               disabled={exporting}
@@ -366,7 +368,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                   setExporting(false);
                 }
               }}
-              className="inline-flex items-center gap-2 bg-icc-violet text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-icc-violet text-white px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -407,7 +409,7 @@ export default function ReportsClient({ events, churchId }: Props) {
               <div className="px-5 py-3 bg-green-50 border-b border-green-100">
                 <h3 className="text-sm font-semibold text-green-800">Intégration</h3>
               </div>
-              <div className="p-5 grid grid-cols-2 sm:grid-cols-5 gap-4">
+              <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
                   { label: "Nouveaux (H)", value: integrationAgg.hommes,    color: "text-blue-600" },
                   { label: "Nouveaux (F)", value: integrationAgg.femmes,    color: "text-pink-600" },
@@ -433,7 +435,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                 <h3 className="text-sm font-semibold text-gray-700">Détail par événement</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left font-medium">Événement</th>

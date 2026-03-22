@@ -276,7 +276,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
     <div className="space-y-6">
       {/* Récap présence globale */}
       {showGlobalRecap && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes"), color: "text-blue-600 bg-blue-50" },
             { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes"), color: "text-pink-600 bg-pink-50" },
@@ -294,7 +294,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       {/* Navigation + export */}
       <div className="flex items-center gap-2 flex-wrap">
         <Link href="/admin/reports" className="mr-auto">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -304,7 +304,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         <button
           type="button"
           onClick={handleExportPDF}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -314,7 +314,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         <button
           type="button"
           onClick={handleCopyWhatsApp}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border-2 transition-colors ${
             copied
               ? "text-green-700 bg-green-50 border-green-200"
               : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
@@ -361,7 +361,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Sections</h2>
-          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">+ Section libre</button>
+          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">+ Section libre</button>
         </div>
 
         {sections.map((section, i) => {
@@ -471,7 +471,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           {saveStatus === "saving" ? "Sauvegarde…" : "Enregistrer maintenant"}
         </button>
         <Link href="/admin/reports">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>

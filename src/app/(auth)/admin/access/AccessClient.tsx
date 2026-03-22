@@ -498,8 +498,8 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
 
       {/* ── Modale Assigner un ministre ───────────────────────────────────── */}
       {ministerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50">
+          <div className="bg-white rounded-t-xl sm:rounded-xl shadow-xl w-full sm:max-w-md p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-1">Assigner un ministre</h2>
             <p className="text-sm text-gray-500 mb-4">{ministerModal.ministryName}</p>
 
@@ -538,8 +538,8 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
 
       {/* ── Modale Ajouter un responsable ─────────────────────────────────── */}
       {deptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50">
+          <div className="bg-white rounded-t-xl sm:rounded-xl shadow-xl w-full sm:max-w-md p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-1">Ajouter un responsable</h2>
             <p className="text-sm text-gray-500 mb-4">{deptModal.deptName}</p>
 

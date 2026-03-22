@@ -179,7 +179,7 @@ function MinistryGroupedDepartments({
                 }
                 onClose?.();
               }}
-              className={`flex items-center gap-1.5 w-full px-2 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 w-full px-2 py-2.5 md:py-1.5 rounded-md text-sm font-medium transition-colors ${
                 hasActiveDept
                   ? "text-icc-violet"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -206,7 +206,7 @@ function MinistryGroupedDepartments({
                     key={dept.id}
                     href={`/dashboard?dept=${dept.id}`}
                     onClick={onClose}
-                    className={`block w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors ${
+                    className={`block w-full text-left px-2 py-2.5 md:py-1.5 rounded-md text-sm transition-colors ${
                       activeDept === dept.id
                         ? "bg-icc-violet-light text-icc-violet font-medium"
                         : "text-gray-600 hover:bg-gray-50"
@@ -241,7 +241,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onClose}
-      className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+      className={`block w-full text-left px-3 py-2.5 md:py-1.5 rounded-md text-sm transition-colors ${
         active
           ? "bg-icc-violet-light text-icc-violet font-medium"
           : "text-gray-600 hover:bg-gray-50"
@@ -339,7 +339,7 @@ export default function Sidebar({
                   key={dept.id}
                   href={`/dashboard?dept=${dept.id}`}
                   onClick={onClose}
-                  className={`block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  className={`block w-full text-left px-3 py-2.5 md:py-1.5 rounded-md text-sm transition-colors ${
                     activeDept === dept.id
                       ? "bg-icc-violet-light text-icc-violet font-medium"
                       : "text-gray-600 hover:bg-gray-50"
