@@ -89,7 +89,7 @@ koinonia/
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── discipleships/   # CRUD, attendance, stats, tree, export
-│   │       ├── events/          # CRUD + [eventId]/report GET/PUT
+│   │       ├── events/          # CRUD + [eventId]/report GET/PUT + reports/export
 │   │       ├── member-user-links/
 │   │       ├── member-link-requests/
 │   │       ├── members/

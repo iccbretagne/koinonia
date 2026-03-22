@@ -98,6 +98,8 @@
 - [x] Dashboard /admin/reports : liste + statistiques agregees par mois
 - [x] Role REPORTER : acces lecture/ecriture aux CR sans droits admin
 - [x] Permission reports:edit separee de reports:view
+- [x] Champs orateur et titre du message dans les comptes rendus
+- [x] Export Excel des statistiques hebdomadaires des cultes avec selection de periode
 - [ ] Export PDF des comptes rendus
 - [ ] Historique des modifications d'un CR
 

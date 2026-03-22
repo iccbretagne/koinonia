@@ -118,7 +118,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Comptes rendus",
-    description: "Saisie et consultation des comptes rendus d'événements avec statistiques par département.",
+    description: "Saisie des comptes rendus (orateur, titre du message, statistiques par département) et export Excel des statistiques hebdomadaires sur une période.",
     category: "Événements",
     screenshotTitle: "Comptes rendus",
     screenshotFile: "guide-reports.png",

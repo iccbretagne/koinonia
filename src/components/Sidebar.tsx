@@ -320,7 +320,7 @@ export default function Sidebar({
           open={openSection === "planning"}
           onToggle={() => toggle("planning")}
           isActive={isDashboardActive}
-          dataTour="sidebar-departments"
+          dataTour="sidebar-planning"
         >
           {departments.length === 0 ? (
             <p className="px-3 text-sm text-gray-400">
@@ -376,9 +376,11 @@ export default function Sidebar({
               </NavLink>
             )}
             {hasReports && (
-              <NavLink href="/admin/reports" active={pathname.startsWith("/admin/reports")} onClose={onClose}>
-                Comptes rendus
-              </NavLink>
+              <span data-tour="sidebar-reports">
+                <NavLink href="/admin/reports" active={pathname.startsWith("/admin/reports")} onClose={onClose}>
+                  Comptes rendus
+                </NavLink>
+              </span>
             )}
           </nav>
         </AccordionSection>
@@ -389,6 +391,7 @@ export default function Sidebar({
         <Link
           href="/admin/members"
           onClick={onClose}
+          data-tour="sidebar-members"
           className={`${sectionHeaderBase} ${isMembersActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
         >
           <IconMembers className="w-4 h-4 shrink-0" />
@@ -404,6 +407,7 @@ export default function Sidebar({
           open={openSection === "service"}
           onToggle={() => toggle("service")}
           isActive={isServiceActive}
+          dataTour="sidebar-service"
         >
           <nav className="space-y-0.5 pl-6">
             {serviceLinks.map((link) => (
@@ -423,6 +427,7 @@ export default function Sidebar({
           open={openSection === "discipleship"}
           onToggle={() => toggle("discipleship")}
           isActive={isDiscipleshipActive}
+          dataTour="sidebar-discipleship"
         >
           <nav className="space-y-0.5 pl-6">
             <NavLink href="/admin/discipleship" active={pathname === "/admin/discipleship"} onClose={onClose}>
@@ -440,7 +445,7 @@ export default function Sidebar({
           open={openSection === "config"}
           onToggle={() => toggle("config")}
           isActive={isConfigActive}
-          dataTour="sidebar-admin"
+          dataTour="sidebar-config"
         >
           <nav className="space-y-0.5 pl-6">
             {configLinks.map((link) => (
