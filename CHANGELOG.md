@@ -6,6 +6,19 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.2] - 2026-03-22
+
+### Corrections
+
+- Mobile : touch targets agrandis sur la sidebar, les tabs et les boutons d'action
+- Mobile : labels bottom nav passes de 10px a 11px, padding bas ajuste
+- Mobile : grilles stats responsive (presence, integration) sur les comptes rendus
+- Mobile : export Excel layout vertical avec inputs pleine largeur
+- Mobile : modales de la page Acces en bottom-sheet
+- Mobile : titres d'annonces tronques (line-clamp)
+- Mobile : vue cartes pour les tables Relations et Statistiques du discipolat
+- Mobile : selecteur de periode discipolat en layout vertical
+
 ## [v0.12.1] - 2026-03-22
 
 ### Documentation
