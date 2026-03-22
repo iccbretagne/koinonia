@@ -70,10 +70,17 @@ export async function PATCH(request: Request) {
 
     // Résoudre l'église à partir du premier membre
     if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
-    const firstMemberChurchId = await (async () => {
-      const { resolveChurchId } = await import("@/lib/auth");
-      return resolveChurchId("member", ids[0]);
-    })();
+    const { resolveChurchId } = await import("@/lib/auth");
+    const firstMemberChurchId = await resolveChurchId("member", ids[0]);
+
+    // Verify ALL ids belong to the same church
+    if (ids.length > 1) {
+      const allChurchIds = await Promise.all(ids.map((id) => resolveChurchId("member", id)));
+      if (allChurchIds.some((cid) => cid !== firstMemberChurchId)) {
+        throw new ApiError(400, "Tous les STAR doivent appartenir à la même église");
+      }
+    }
+
     const session = await requireChurchPermission("members:manage", firstMemberChurchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 

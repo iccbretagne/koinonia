@@ -229,6 +229,13 @@ export async function DELETE(
     const delSession = await requireChurchPermission("departments:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
+    // Block deletion of privileged roles by non-super-admins
+    if (PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+      if (!delSession.user.isSuperAdmin) {
+        throw new ApiError(403, "Droits insuffisants pour supprimer ce rôle");
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       const existing = await tx.userChurchRole.findUnique({
         where: { userId_churchId_role: { userId, churchId, role } },

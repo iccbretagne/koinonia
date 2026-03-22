@@ -27,11 +27,13 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
     const session = await requireChurchPermission("planning:view", churchId);
 
-    const userPermissions = new Set(
-      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    const churchPermissions = new Set(
+      session.user.churchRoles
+        .filter((r) => r.churchId === churchId)
+        .flatMap((r) => hasPermission(r.role))
     );
     const canManage =
-      session.user.isSuperAdmin || userPermissions.has("events:manage");
+      session.user.isSuperAdmin || churchPermissions.has("events:manage");
 
     const serviceRequests = await prisma.serviceRequest.findMany({
       where: {

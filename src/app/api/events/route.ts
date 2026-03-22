@@ -55,6 +55,15 @@ export async function PATCH(request: Request) {
     if (ids.length === 0) throw new ApiError(400, "Au moins un ID requis");
     const { resolveChurchId } = await import("@/lib/auth");
     const evtChurchId = await resolveChurchId("event", ids[0]);
+
+    // Verify ALL ids belong to the same church
+    if (ids.length > 1) {
+      const allChurchIds = await Promise.all(ids.map((id) => resolveChurchId("event", id)));
+      if (allChurchIds.some((cid) => cid !== evtChurchId)) {
+        throw new ApiError(400, "Tous les événements doivent appartenir à la même église");
+      }
+    }
+
     const patchSession = await requireChurchPermission("events:manage", evtChurchId);
 
     if (action === "delete") {
