@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const discipleships = await prisma.discipleship.findMany({
       where: { churchId, ...whereScope },
       include: {
-        disciple: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+        disciple: { select: { id: true, firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } } },
         discipleMaker: { select: { id: true, firstName: true, lastName: true } },
         firstMaker: { select: { id: true, firstName: true, lastName: true } },
       },
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     // Validate all member references belong to the specified church
     const memberIdsToCheck = [discipleId, discipleMakerId, ...(firstMakerId ? [firstMakerId] : [])];
     const validMembers = await prisma.member.findMany({
-      where: { id: { in: memberIdsToCheck }, department: { ministry: { churchId } } },
+      where: { id: { in: memberIdsToCheck }, departments: { some: { department: { ministry: { churchId } } } } },
       select: { id: true },
     });
     if (validMembers.length !== new Set(memberIdsToCheck).size) {

@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     const discipleships = await prisma.discipleship.findMany({
       where: { churchId },
       include: {
-        disciple: { select: { firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+        disciple: { select: { firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } } },
         discipleMaker: { select: { firstName: true, lastName: true } },
         firstMaker: { select: { firstName: true, lastName: true } },
       },
@@ -73,8 +73,8 @@ export async function GET(request: Request) {
       return {
         "Disciple (Nom)": d.disciple.lastName,
         "Disciple (Prénom)": d.disciple.firstName,
-        "Ministère": d.disciple.department.ministry.name,
-        "Département": d.disciple.department.name,
+        "Ministère": d.disciple.departments[0]?.department?.ministry?.name ?? "",
+        "Département": d.disciple.departments[0]?.department?.name ?? "",
         "FD actuel": `${d.discipleMaker.firstName} ${d.discipleMaker.lastName}`,
         "Premier FD": `${d.firstMaker.firstName} ${d.firstMaker.lastName}`,
         "Présences": present,

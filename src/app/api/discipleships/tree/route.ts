@@ -111,7 +111,7 @@ export async function GET(request: Request) {
 
     const members = await prisma.member.findMany({
       where: { id: { in: Array.from(memberIds) } },
-      select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } },
+      select: { id: true, firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } },
     });
     const memberMap = Object.fromEntries(members.map((m) => [m.id, m]));
 

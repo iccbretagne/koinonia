@@ -27,7 +27,7 @@ export default async function DepartmentsPage() {
     where: departmentWhere,
     include: {
       ministry: { select: { id: true, name: true, churchId: true } },
-      _count: { select: { members: true } },
+      _count: { select: { memberDepts: true } },
     },
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
