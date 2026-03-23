@@ -50,7 +50,7 @@ export async function PATCH(
         lastName: true,
         email: true,
         phone: true,
-        department: { select: { name: true, ministry: { select: { name: true } } } },
+        departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } },
       },
     });
 

@@ -38,11 +38,7 @@ export async function POST(request: Request) {
                   status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] },
                 },
                 include: {
-                  member: {
-                    include: {
-                      department: true,
-                    },
-                  },
+                  member: true,
                 },
               },
             },

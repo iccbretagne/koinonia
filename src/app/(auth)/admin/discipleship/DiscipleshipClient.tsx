@@ -7,11 +7,17 @@ import Modal from "@/components/ui/Modal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+type DeptInfo = Array<{ department: { name: string; ministry: { name: string } } }>;
+
+function getDept(departments: DeptInfo) {
+  return departments[0]?.department;
+}
+
 interface MemberOption {
   id: string;
   firstName: string;
   lastName: string;
-  department: { name: string; ministry: { name: string } };
+  departments: DeptInfo;
 }
 
 interface DiscipleshipRow {
@@ -19,7 +25,7 @@ interface DiscipleshipRow {
   discipleId: string;
   discipleMakerId: string;
   firstMakerId: string;
-  disciple: { id: string; firstName: string; lastName: string; email?: string | null; phone?: string | null; department: { name: string; ministry: { name: string } } };
+  disciple: { id: string; firstName: string; lastName: string; email?: string | null; phone?: string | null; departments: DeptInfo };
   discipleMaker: { id: string; firstName: string; lastName: string };
   firstMaker: { id: string; firstName: string; lastName: string };
   startedAt?: string;
@@ -49,7 +55,8 @@ interface Props {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function memberLabel(m: MemberOption) {
-  return `${m.lastName} ${m.firstName} — ${m.department.ministry.name} / ${m.department.name}`;
+  const dept = getDept(m.departments);
+  return `${m.lastName} ${m.firstName} — ${dept?.ministry?.name ?? "??"}/ ${dept?.name ?? "??"}`;
 }
 
 function fullName(m: { firstName: string; lastName: string }) {
@@ -186,7 +193,7 @@ function DiscipleCombobox({
               : `${selectedMember?.firstName} ${selectedMember?.lastName}`}
           </span>
           {selectedMember && (
-            <span className="text-xs text-gray-400">{selectedMember.department.ministry.name} / {selectedMember.department.name}</span>
+            <span className="text-xs text-gray-400">{getDept(selectedMember.departments)?.ministry?.name ?? "??"} / {getDept(selectedMember.departments)?.name ?? "??"}</span>
           )}
           {isNew && <span className="text-xs text-icc-violet">nouveau</span>}
           <button type="button" onClick={handleClear} className="text-gray-400 hover:text-gray-600 ml-1">
@@ -228,7 +235,7 @@ function DiscipleCombobox({
                     className="w-full text-left px-3 py-2 hover:bg-icc-violet/5 transition-colors border-b border-gray-100 last:border-0"
                   >
                     <span className="font-medium text-gray-900">{m.firstName} {m.lastName}</span>
-                    <span className="ml-2 text-xs text-gray-400">{m.department.ministry.name} / {m.department.name}</span>
+                    <span className="ml-2 text-xs text-gray-400">{getDept(m.departments)?.ministry?.name ?? "??"} / {getDept(m.departments)?.name ?? "??"}</span>
                   </button>
                 </li>
               ))}
@@ -461,7 +468,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
                         <div className="text-xs text-gray-400">
-                          {row.disciple.department.ministry.name} / {row.disciple.department.name}
+                          {getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{fullName(row.discipleMaker)}</td>
@@ -498,7 +505,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                 <div key={row.id} className="p-4 space-y-2">
                   <div>
                     <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
-                    <div className="text-xs text-gray-400">{row.disciple.department.ministry.name} / {row.disciple.department.name}</div>
+                    <div className="text-xs text-gray-400">{getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     <div>
@@ -851,7 +858,7 @@ function AppelTab({ churchId, canManage }: { churchId: string; canManage: boolea
                       />
                       <span className="text-sm font-medium text-gray-900">{fullName(d.disciple)}</span>
                       <span className="text-xs text-gray-400">
-                        {d.disciple.department.ministry.name} / {d.disciple.department.name}
+                        {getDept(d.disciple.departments)?.ministry?.name ?? "??"} / {getDept(d.disciple.departments)?.name ?? "??"}
                       </span>
                       <span className={`ml-auto text-xs font-medium ${present ? "text-green-600" : "text-gray-400"}`}>
                         {present ? "Présent" : "Absent"}

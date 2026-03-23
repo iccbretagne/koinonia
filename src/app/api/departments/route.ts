@@ -96,9 +96,8 @@ export async function PATCH(request: Request) {
           })
         ).map((ed) => ed.id);
         await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-        await tx.planning.deleteMany({ where: { member: { departmentId: { in: ids } } } });
+        await tx.memberDepartment.deleteMany({ where: { departmentId: { in: ids } } });
         await tx.eventDepartment.deleteMany({ where: { departmentId: { in: ids } } });
-        await tx.member.deleteMany({ where: { departmentId: { in: ids } } });
         await tx.userDepartment.deleteMany({ where: { departmentId: { in: ids } } });
         await tx.department.deleteMany({ where: { id: { in: ids } } });
       });

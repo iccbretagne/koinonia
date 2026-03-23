@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         discipleId: true,
         discipleMakerId: true,
         firstMakerId: true,
-        disciple: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+        disciple: { select: { id: true, firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } } },
         discipleMaker: { select: { id: true, firstName: true, lastName: true } },
         firstMaker: { select: { id: true, firstName: true, lastName: true } },
       },

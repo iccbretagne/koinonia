@@ -35,12 +35,12 @@ export default async function DiscipleshipPage() {
 
   const [members, allAssignedDiscipleIds] = await Promise.all([
     prisma.member.findMany({
-      where: { department: { ministry: { churchId } } },
+      where: { departments: { some: { department: { ministry: { churchId } } } } },
       select: {
         id: true,
         firstName: true,
         lastName: true,
-        department: { select: { name: true, ministry: { select: { name: true } } } },
+        departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } },
       },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),

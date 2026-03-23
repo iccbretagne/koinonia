@@ -56,9 +56,8 @@ export async function PATCH(request: Request) {
             await tx.eventDepartment.findMany({ where: { departmentId: { in: deptIds } }, select: { id: true } })
           ).map((ed) => ed.id);
           await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-          await tx.planning.deleteMany({ where: { member: { departmentId: { in: deptIds } } } });
+          await tx.memberDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
           await tx.eventDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
-          await tx.member.deleteMany({ where: { departmentId: { in: deptIds } } });
           await tx.userDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
         }
         // Also delete event departments linked via events of these churches

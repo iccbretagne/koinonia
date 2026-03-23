@@ -33,7 +33,7 @@ export async function PATCH(
 
     // Validate new discipleMakerId belongs to same church
     const newMaker = await prisma.member.findFirst({
-      where: { id: discipleMakerId, department: { ministry: { churchId: existing.churchId } } },
+      where: { id: discipleMakerId, departments: { some: { department: { ministry: { churchId: existing.churchId } } } } },
       select: { id: true },
     });
     if (!newMaker) {

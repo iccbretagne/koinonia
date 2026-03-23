@@ -106,7 +106,7 @@ export async function GET(request: Request) {
       },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },
-        member: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+        member: { select: { id: true, firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } } },
         church: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },

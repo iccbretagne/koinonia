@@ -13,7 +13,7 @@ interface Department {
   name: string;
   isSystem: boolean;
   ministry: { id: string; name: string; churchId: string };
-  _count: { members: number };
+  _count: { memberDepts: number };
 }
 
 interface Props {
@@ -89,7 +89,7 @@ export default function DepartmentsClient({
           )
         );
       } else {
-        setDepartments((prev) => [...prev, { ...saved, _count: { members: 0 } }]);
+        setDepartments((prev) => [...prev, { ...saved, _count: { memberDepts: 0 } }]);
       }
 
       setModalOpen(false);
@@ -208,7 +208,7 @@ export default function DepartmentsClient({
             },
             {
               header: "STAR",
-              accessor: (d: Department) => d._count.members,
+              accessor: (d: Department) => d._count.memberDepts,
             },
           ]}
           data={departments}

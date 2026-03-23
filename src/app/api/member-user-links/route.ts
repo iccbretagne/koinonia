@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // Vérifier que le member et l'user appartiennent bien à l'église concernée
     const member = await prisma.member.findFirst({
-      where: { id: memberId, department: { ministry: { churchId } } },
+      where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
     });
     if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
 

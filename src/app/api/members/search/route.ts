@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
     const matches = await prisma.member.findMany({
       where: {
-        department: { ministry: { churchId } },
+        departments: { some: { department: { ministry: { churchId } } } },
         OR: [
           { firstName: { contains: q } },
           { lastName: { contains: q } },

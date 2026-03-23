@@ -25,6 +25,7 @@ export const prismaMock = {
   ministry: createModelMock(),
   department: createModelMock(),
   member: createModelMock(),
+  memberDepartment: createModelMock(),
   event: createModelMock(),
   eventDepartment: createModelMock(),
   planning: createModelMock(),
