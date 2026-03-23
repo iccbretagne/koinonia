@@ -142,9 +142,8 @@ describe("PATCH /api/departments (bulk)", () => {
 
   it("deletes departments in bulk", async () => {
     prismaMock.eventDepartment.findMany.mockResolvedValue([]);
-    prismaMock.planning.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.memberDepartment.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.eventDepartment.deleteMany.mockResolvedValue({ count: 0 });
-    prismaMock.member.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.userDepartment.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.department.deleteMany.mockResolvedValue({ count: 2 });
 

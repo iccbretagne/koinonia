@@ -157,7 +157,7 @@ describe("resolveChurchId", () => {
 
   it("resolves churchId from member via department.ministry", async () => {
     prismaMock.member.findUnique.mockResolvedValue({
-      department: { ministry: { churchId: "church-3" } },
+      departments: [{ department: { ministry: { churchId: "church-3" } } }],
     });
 
     const churchId = await resolveChurchId("member", "member-1");
@@ -228,7 +228,7 @@ describe("multi-tenant isolation scenarios", () => {
     mockAuth.mockResolvedValue(createAdminSession("church-1"));
 
     prismaMock.member.findUnique.mockResolvedValue({
-      department: { ministry: { churchId: "church-2" } },
+      departments: [{ department: { ministry: { churchId: "church-2" } } }],
     });
 
     const churchId = await resolveChurchId("member", "member-church2");

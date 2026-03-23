@@ -24,10 +24,10 @@ describe("PUT /api/members/[memberId] — cross-tenant isolation", () => {
 
   it("rejects update with cross-church departmentId", async () => {
     // Target department belongs to church-2
-    prismaMock.department.findUnique.mockResolvedValue({
+    prismaMock.department.findMany.mockResolvedValue([{
       id: "dept-other",
       ministry: { churchId: "church-2" },
-    });
+    }]);
 
     const request = new Request("http://localhost/api/members/m-1", {
       method: "PUT",
@@ -45,16 +45,18 @@ describe("PUT /api/members/[memberId] — cross-tenant isolation", () => {
   });
 
   it("allows update with same-church departmentId", async () => {
-    prismaMock.department.findUnique.mockResolvedValue({
+    prismaMock.department.findMany.mockResolvedValue([{
       id: "dept-1",
       ministry: { churchId: "church-1" },
-    });
-    prismaMock.member.update.mockResolvedValue({
+    }]);
+    prismaMock.member.update.mockResolvedValue({ id: "m-1" });
+    prismaMock.memberDepartment.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.memberDepartment.upsert.mockResolvedValue({});
+    prismaMock.member.findUnique.mockResolvedValue({
       id: "m-1",
       firstName: "Jean",
       lastName: "Dupont",
-      departmentId: "dept-1",
-      department: { id: "dept-1", name: "Son", ministry: { id: "min-1", name: "Louange" } },
+      departments: [{ departmentId: "dept-1", isPrimary: true, department: { id: "dept-1", name: "Son", ministry: { id: "min-1", name: "Louange" } } }],
     });
 
     const request = new Request("http://localhost/api/members/m-1", {
@@ -80,7 +82,7 @@ describe("DELETE /api/members/[memberId] — cascade", () => {
   it("deletes member and all dependent records in transaction", async () => {
     prismaMock.member.findUnique.mockResolvedValue({
       id: "m-1",
-      departmentId: "dept-1",
+      departments: [{ departmentId: "dept-1", isPrimary: true }],
     });
     prismaMock.planning.deleteMany.mockResolvedValue({ count: 2 });
     prismaMock.taskAssignment.deleteMany.mockResolvedValue({ count: 1 });
