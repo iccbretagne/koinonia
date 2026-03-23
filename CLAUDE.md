@@ -217,7 +217,7 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 | `church:manage` | x | | | | | | |
 | `users:manage` | x | | | | | | |
 | `discipleship:view` | x | x | x | | x | x | |
-| `discipleship:manage` | x | x | | | | x | |
+| `discipleship:manage` | x | x | x | | | x | |
 | `discipleship:export` | x | | x | | | | |
 | `reports:view` | x | x | x | | | | x |
 | `reports:edit` | x | x | x | | | | x |
@@ -233,7 +233,7 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Membres en lecture seule dans l'admin (pas de `members:manage`)
 - Peut gérer les événements (`events:manage`)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
-- Export discipolat (`discipleship:export`)
+- Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
 
 **Spécificités du Reporter** :
 - Accès en lecture aux événements (`events:view`)

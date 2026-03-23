@@ -24,6 +24,8 @@ export default async function DiscipleshipPage() {
   const canManage = userPermissions.has("discipleship:manage");
   const canExport = userPermissions.has("discipleship:export");
   const isFD = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
+  // Un admin/secrétariat (non-FD avec canManage) peut éditer FD et premier FD
+  const canEditRelation = canManage && !isFD;
 
   // Pour un FD, résoudre le membre lié pour pré-remplir le formulaire
   const linkedMemberId = isFD
@@ -60,6 +62,7 @@ export default async function DiscipleshipPage() {
         allAssignedDiscipleIds={allAssignedDiscipleIds}
         canManage={canManage}
         canExport={canExport}
+        canEditRelation={canEditRelation}
         isFD={isFD}
         linkedMemberId={linkedMemberId}
       />
