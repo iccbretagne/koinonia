@@ -270,6 +270,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Filtre "Mes disciples" : visible si l'utilisateur est aussi FD (canManage + linkedMemberId)
+  const showMineFilter = canManage && !!linkedMemberId;
+  const [filterMine, setFilterMine] = useState(false);
 
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
@@ -472,22 +475,39 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     }
   }
 
+  const displayedRows = filterMine && linkedMemberId
+    ? rows.filter((r) => r.discipleMakerId === linkedMemberId)
+    : rows;
+
   return (
     <>
-      {canManage && (
-        <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {canManage && (
           <Button onClick={() => { setCreateModal(true); setCreateError(null); setDiscipleSelection(null); setNewMakerId(linkedMemberId ?? members[0]?.id ?? ""); }}>
             Nouvelle relation
           </Button>
-        </div>
-      )}
+        )}
+        {showMineFilter && (
+          <button
+            type="button"
+            onClick={() => setFilterMine((v) => !v)}
+            className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-colors ${
+              filterMine
+                ? "bg-icc-violet text-white border-icc-violet"
+                : "text-gray-600 border-gray-200 hover:border-icc-violet hover:text-icc-violet"
+            }`}
+          >
+            Mes disciples
+          </button>
+        )}
+      </div>
 
       {loading && <p className="text-sm text-gray-400">Chargement...</p>}
       {error && <p className="text-sm text-icc-rouge">{error}</p>}
 
       {!loading && !error && (
         <div className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
-          {rows.length === 0 ? (
+          {displayedRows.length === 0 ? (
             <p className="text-sm text-gray-400 p-6">Aucune relation de discipolat.</p>
           ) : (
             <>
@@ -504,7 +524,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {displayedRows.map((row) => (
                     <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
@@ -547,7 +567,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
 
             {/* Mobile cards */}
             <div className="md:hidden divide-y divide-gray-100">
-              {rows.map((row) => (
+              {displayedRows.map((row) => (
                 <div key={row.id} className="p-4 space-y-2">
                   <div>
                     <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
