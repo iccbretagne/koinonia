@@ -39,7 +39,12 @@ export async function GET(
           include: { member: true },
         },
         department: {
-          include: { members: { orderBy: { lastName: "asc" } } },
+          include: {
+            memberDepts: {
+              include: { member: true },
+              orderBy: { member: { lastName: "asc" } },
+            },
+          },
         },
       },
     });
@@ -48,7 +53,12 @@ export async function GET(
     if (!eventDept) {
       const department = await prisma.department.findUnique({
         where: { id: departmentId },
-        include: { members: { orderBy: { lastName: "asc" } } },
+        include: {
+          memberDepts: {
+            include: { member: true },
+            orderBy: { member: { lastName: "asc" } },
+          },
+        },
       });
 
       if (!department) {
@@ -66,7 +76,7 @@ export async function GET(
 
       return successResponse({
         eventDepartment: null,
-        members: department.members.map((m) => ({
+        members: department.memberDepts.map(({ member: m }) => ({
           ...m,
           status: null,
           planningId: null,
@@ -76,7 +86,7 @@ export async function GET(
       });
     }
 
-    const members = eventDept.department.members.map((member) => {
+    const members = eventDept.department.memberDepts.map(({ member }) => {
       const planning = eventDept.plannings.find(
         (p) => p.memberId === member.id
       );
@@ -176,7 +186,7 @@ export async function PUT(
     const memberIds = plannings.map((p) => p.memberId);
     if (memberIds.length > 0) {
       const validMembers = await prisma.member.findMany({
-        where: { id: { in: memberIds }, departmentId },
+        where: { id: { in: memberIds }, departments: { some: { departmentId } } },
         select: { id: true },
       });
       if (validMembers.length !== memberIds.length) {

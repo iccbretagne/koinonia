@@ -22,9 +22,9 @@ export default async function MembersPage() {
   );
 
   const membersWhere = scope.scoped
-    ? { departmentId: { in: scope.departmentIds } }
+    ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }
     : churchIds.length > 0
-      ? { department: { ministry: { churchId: { in: churchIds } } } }
+      ? { departments: { some: { department: { ministry: { churchId: { in: churchIds } } } } } }
       : undefined;
 
   const departmentsWhere = scope.scoped
@@ -41,7 +41,17 @@ export default async function MembersPage() {
         },
         include: {
           user: { select: { id: true, name: true, email: true, image: true } },
-          member: { select: { id: true, firstName: true, lastName: true, department: { select: { name: true, ministry: { select: { name: true } } } } } },
+          member: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              departments: {
+                where: { isPrimary: true },
+                include: { department: { select: { name: true, ministry: { select: { name: true } } } } },
+              },
+            },
+          },
           church: { select: { id: true, name: true } },
         },
         orderBy: { createdAt: "asc" },
@@ -51,12 +61,13 @@ export default async function MembersPage() {
   const members = await prisma.member.findMany({
     where: membersWhere,
     include: {
-      department: {
-        select: {
-          id: true,
-          name: true,
-          ministry: { select: { id: true, name: true, churchId: true } },
+      departments: {
+        include: {
+          department: {
+            select: { id: true, name: true, ministry: { select: { id: true, name: true, churchId: true } } },
+          },
         },
+        orderBy: { isPrimary: "desc" },
       },
       userLink: {
         select: { userId: true, user: { select: { name: true, email: true } } },
@@ -98,13 +109,25 @@ export default async function MembersPage() {
       )}
 
       <MembersClient
-        initialMembers={members.map((m) => ({
-          ...m,
-          userLink: m.userLink
-            ? { userId: m.userLink.userId, userName: m.userLink.user.name, userEmail: m.userLink.user.email }
-            : null,
-          churchId: m.department.ministry.churchId,
-        }))}
+        initialMembers={members.map((m) => {
+          const primaryDept = m.departments.find((d) => d.isPrimary) ?? m.departments[0];
+          return {
+            ...m,
+            primaryDepartment: primaryDept
+              ? { id: primaryDept.department.id, name: primaryDept.department.name, ministry: { id: primaryDept.department.ministry.id, name: primaryDept.department.ministry.name } }
+              : null,
+            allDepartments: m.departments.map((d) => ({
+              id: d.department.id,
+              name: d.department.name,
+              isPrimary: d.isPrimary,
+              ministry: { id: d.department.ministry.id, name: d.department.ministry.name },
+            })),
+            userLink: m.userLink
+              ? { userId: m.userLink.userId, userName: m.userLink.user.name, userEmail: m.userLink.user.email }
+              : null,
+            churchId: primaryDept?.department.ministry.churchId ?? "",
+          };
+        })}
         departments={departments.map((d) => ({
           id: d.id,
           name: d.name,

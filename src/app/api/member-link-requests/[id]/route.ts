@@ -72,7 +72,7 @@ export async function PATCH(
             firstName: linkRequest.firstName!,
             lastName: linkRequest.lastName!,
             phone: linkRequest.phone ?? undefined,
-            departmentId,
+            departments: { create: { departmentId, isPrimary: true } },
           },
         });
         memberId = newMember.id;

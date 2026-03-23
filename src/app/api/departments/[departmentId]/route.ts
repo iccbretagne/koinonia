@@ -144,7 +144,7 @@ export async function DELETE(
 
     const department = await prisma.department.findUnique({
       where: { id: departmentId },
-      include: { members: true },
+      include: { memberDepts: true },
     });
 
     if (!department) {
@@ -155,7 +155,7 @@ export async function DELETE(
       throw new ApiError(403, "Ce département système ne peut pas être supprimé");
     }
 
-    if (department.members.length > 0) {
+    if (department.memberDepts.length > 0) {
       throw new ApiError(
         400,
         "Impossible de supprimer un département qui contient des STAR"

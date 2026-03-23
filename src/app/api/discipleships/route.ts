@@ -77,7 +77,11 @@ export async function POST(request: Request) {
       if (!sysDept) throw new ApiError(500, "Département système introuvable pour cette église");
 
       const created = await prisma.member.create({
-        data: { firstName: parsed.newMember.firstName, lastName: parsed.newMember.lastName, departmentId: sysDept.id },
+        data: {
+          firstName: parsed.newMember.firstName,
+          lastName: parsed.newMember.lastName,
+          departments: { create: { departmentId: sysDept.id, isPrimary: true } },
+        },
       });
       discipleId = created.id;
     } else {

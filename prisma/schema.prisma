@@ -164,7 +164,7 @@ model Department {
   isSystem                Boolean            @default(false)
   function                DepartmentFunction?
   ministry                Ministry           @relation(fields: [ministryId], references: [id])
-  members                 Member[]
+  memberDepts             MemberDepartment[]
   eventDepts              EventDepartment[]
   userDepts               UserDepartment[]
   tasks                   Task[]
@@ -183,8 +183,7 @@ model Member {
   lastName        String
   email           String?
   phone           String?
-  departmentId    String
-  department      Department          @relation(fields: [departmentId], references: [id])
+  departments     MemberDepartment[]
   plannings       Planning[]
   taskAssignments TaskAssignment[]
   createdAt       DateTime            @default(now())
@@ -198,6 +197,19 @@ model Member {
   attendances         DiscipleshipAttendance[]
 
   @@map("members")
+}
+
+model MemberDepartment {
+  id           String     @id @default(cuid())
+  memberId     String
+  departmentId String
+  isPrimary    Boolean    @default(false)
+
+  member     Member     @relation(fields: [memberId],     references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([memberId, departmentId])
+  @@map("member_departments")
 }
 
 model MemberUserLink {

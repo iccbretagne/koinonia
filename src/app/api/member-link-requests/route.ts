@@ -50,14 +50,18 @@ export async function POST(request: Request) {
         where: { id: data.memberId },
         include: {
           userLink: true,
-          department: { include: { ministry: { select: { churchId: true } } } },
+          departments: {
+            where: { isPrimary: true },
+            include: { department: { include: { ministry: { select: { churchId: true } } } } },
+          },
         },
       });
       if (!member) throw new ApiError(404, "STAR introuvable");
       if (member.userLink) throw new ApiError(409, "Ce STAR est déjà lié à un compte");
 
       // Vérifier que le membre appartient bien à l'église indiquée
-      if (member.department.ministry.churchId !== data.churchId) {
+      const primaryChurchId = member.departments[0]?.department.ministry.churchId;
+      if (primaryChurchId !== data.churchId) {
         throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
       }
 

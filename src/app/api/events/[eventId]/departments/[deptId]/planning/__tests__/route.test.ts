@@ -48,9 +48,9 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
         { id: "p-1", memberId: "m-1", status: "EN_SERVICE" },
       ],
       department: {
-        members: [
-          { id: "m-1", firstName: "Jean", lastName: "Dupont" },
-          { id: "m-2", firstName: "Marie", lastName: "Martin" },
+        memberDepts: [
+          { member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } },
+          { member: { id: "m-2", firstName: "Marie", lastName: "Martin" } },
         ],
       },
     };
@@ -74,7 +74,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
       .mockResolvedValueOnce(mockDeptChurchCheck as never) // cross-tenant check
       .mockResolvedValueOnce({
         id: "dept-1",
-        members: [{ id: "m-1", firstName: "Jean", lastName: "Dupont" }],
+        memberDepts: [{ member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } }],
       } as never); // fallback path
     prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", planningDeadline: null } as never);
 
@@ -95,7 +95,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
       departmentId: "dept-1",
       event: { planningDeadline: pastDate },
       plannings: [],
-      department: { members: [] },
+      department: { memberDepts: [] },
     });
 
     const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");

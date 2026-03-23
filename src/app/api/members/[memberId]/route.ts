@@ -4,10 +4,23 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
+// Helper : inclure les départements d'un membre (principal en premier)
+const memberDepartmentsInclude = {
+  departments: {
+    include: {
+      department: {
+        select: { id: true, name: true, ministry: { select: { id: true, name: true } } },
+      },
+    },
+    orderBy: { isPrimary: "desc" as const },
+  },
+};
+
 const updateSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
-  departmentId: z.string().min(1, "Le département est requis"),
+  departmentId: z.string().min(1, "Le département principal est requis"),
+  additionalDepartmentIds: z.array(z.string()).optional(),
   email: z.string().email("Email invalide").nullable().optional(),
   phone: z.string().nullable().optional(),
 });
@@ -31,51 +44,58 @@ export async function PUT(
     const session = await requireChurchPermission("members:manage", churchId);
     const scopedDeptIds = getChurchDeptScope(session, churchId);
     const body = await request.json();
-    const data = updateSchema.parse(body);
+    const { departmentId, additionalDepartmentIds = [], ...memberData } = updateSchema.parse(body);
 
     if (scopedDeptIds) {
       const existing = await prisma.member.findUnique({
         where: { id: memberId },
-        select: { departmentId: true },
+        include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
       });
 
-      if (!existing) {
-        throw new ApiError(404, "STAR introuvable");
-      }
+      if (!existing) throw new ApiError(404, "STAR introuvable");
 
-      if (!scopedDeptIds.includes(existing.departmentId)) {
+      const primaryDeptId = existing.departments[0]?.departmentId;
+      if (!primaryDeptId || !scopedDeptIds.includes(primaryDeptId)) {
         throw new ApiError(403, "Ce STAR est hors de votre périmètre");
       }
 
-      if (!scopedDeptIds.includes(data.departmentId)) {
+      if (!scopedDeptIds.includes(departmentId)) {
         throw new ApiError(403, "Département cible non autorisé");
       }
     }
 
-    // Block cross-tenant destination: departmentId must belong to same church
-    const targetDept = await prisma.department.findUnique({
-      where: { id: data.departmentId },
+    // Valider que tous les départements appartiennent à la même église
+    const allDeptIds = [departmentId, ...additionalDepartmentIds.filter((id) => id !== departmentId)];
+    const depts = await prisma.department.findMany({
+      where: { id: { in: allDeptIds } },
       include: { ministry: { select: { churchId: true } } },
     });
-    if (!targetDept || targetDept.ministry.churchId !== churchId) {
-      throw new ApiError(403, "Le département cible n'appartient pas à la même église");
+    if (depts.length !== allDeptIds.length || depts.some((d) => d.ministry.churchId !== churchId)) {
+      throw new ApiError(403, "Tous les départements doivent appartenir à la même église");
     }
 
-    const member = await prisma.member.update({
-      where: { id: memberId },
-      data,
-      include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-            ministry: { select: { id: true, name: true } },
-          },
-        },
-      },
+    const member = await prisma.$transaction(async (tx) => {
+      // Mettre à jour les champs scalaires
+      await tx.member.update({ where: { id: memberId }, data: memberData });
+
+      // Reconstruire les affiliations départementales
+      // 1. Retirer les affiliations qui ne sont plus dans la liste
+      await tx.memberDepartment.deleteMany({
+        where: { memberId, departmentId: { notIn: allDeptIds } },
+      });
+      // 2. Upsert chaque département avec le bon flag isPrimary
+      for (const deptId of allDeptIds) {
+        await tx.memberDepartment.upsert({
+          where: { memberId_departmentId: { memberId, departmentId: deptId } },
+          update: { isPrimary: deptId === departmentId },
+          create: { memberId, departmentId: deptId, isPrimary: deptId === departmentId },
+        });
+      }
+
+      return tx.member.findUnique({ where: { id: memberId }, include: memberDepartmentsInclude });
     });
 
-    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Member", entityId: memberId, details: { firstName: data.firstName, lastName: data.lastName } });
+    await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Member", entityId: memberId, details: { firstName: memberData.firstName, lastName: memberData.lastName } });
 
     return successResponse(member);
   } catch (error) {
@@ -95,14 +115,13 @@ export async function DELETE(
 
     const member = await prisma.member.findUnique({
       where: { id: memberId },
-      select: { id: true, departmentId: true },
+      include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
     });
 
-    if (!member) {
-      throw new ApiError(404, "STAR introuvable");
-    }
+    if (!member) throw new ApiError(404, "STAR introuvable");
 
-    if (scopedDeptIds && !scopedDeptIds.includes(member.departmentId)) {
+    const primaryDeptId = member.departments[0]?.departmentId;
+    if (scopedDeptIds && (!primaryDeptId || !scopedDeptIds.includes(primaryDeptId))) {
       throw new ApiError(403, "Ce STAR est hors de votre périmètre");
     }
 

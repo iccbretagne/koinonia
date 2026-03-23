@@ -324,13 +324,16 @@ export async function resolveChurchId(
       const member = await prisma.member.findUnique({
         where: { id: resourceId },
         include: {
-          department: {
-            include: { ministry: { select: { churchId: true } } },
+          departments: {
+            where: { isPrimary: true },
+            include: { department: { include: { ministry: { select: { churchId: true } } } } },
           },
         },
       });
       if (!member) throw new ApiError(404, "Membre introuvable");
-      return member.department.ministry.churchId;
+      const primary = member.departments[0];
+      if (!primary) throw new ApiError(404, "Membre sans département principal");
+      return primary.department.ministry.churchId;
     }
     case "serviceRequest": {
       const sr = await prisma.serviceRequest.findUnique({

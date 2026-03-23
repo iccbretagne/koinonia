@@ -86,7 +86,7 @@ async function main() {
           data: {
             firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
             lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
-            departmentId: dept.id,
+            departments: { create: { departmentId: dept.id, isPrimary: true } },
           },
         });
       }

@@ -12,7 +12,7 @@ export async function GET(
     await requireChurchPermission("members:view", churchId);
 
     const members = await prisma.member.findMany({
-      where: { departmentId },
+      where: { departments: { some: { departmentId } } },
       orderBy: { lastName: "asc" },
     });
 
