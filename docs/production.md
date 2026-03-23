@@ -333,12 +333,72 @@ gh release upload guide-assets guide-*.png
 
 > Les captures doivent etre prises en **1280x800** pour un ratio 16:9 coherent.
 
+## Sauvegardes S3
+
+Koinonia peut sauvegarder automatiquement la base de donnees vers un stockage S3-compatible (AWS S3, MinIO, Scaleway, OVH, Backblaze B2...).
+
+### Configuration
+
+Ajouter les variables suivantes dans `shared/.env` :
+
+```bash
+S3_ENDPOINT=https://s3.fr-par.scw.cloud    # endpoint S3-compatible
+S3_REGION=fr-par                             # region
+S3_BUCKET=koinonia-backups                   # bucket (doit exister)
+S3_ACCESS_KEY_ID=SCWXXXXXXXXX                # cle d'acces
+S3_SECRET_ACCESS_KEY=xxxxxxxx                # secret
+BACKUP_RETENTION_DAYS=30                     # retention en jours (defaut: 30)
+```
+
+### Crontab
+
+Ajouter une entree crontab pour un backup quotidien a 2h du matin :
+
+```bash
+0 2 * * * curl -sf -X POST https://votre-domaine.com/api/cron/backup \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  >> /opt/koinonia/logs/backup.log 2>&1
+```
+
+### Endpoints
+
+| Methode | URL | Auth | Description |
+|---------|-----|------|-------------|
+| `POST` | `/api/cron/backup` | Bearer token (`CRON_SECRET`) | Backup automatique + nettoyage retention |
+| `GET` | `/api/admin/backups` | Session (SUPER_ADMIN) | Lister les backups disponibles |
+| `POST` | `/api/admin/backups` | Session (SUPER_ADMIN) | Declencher un backup manuel |
+| `POST` | `/api/admin/backups/restore` | Session (SUPER_ADMIN) | Restaurer un backup (`{"key":"backups/..."}`) |
+
+### Exemples curl
+
+```bash
+# Backup manuel
+curl -X POST https://votre-domaine.com/api/admin/backups \
+  -H "Cookie: authjs.session-token=..."
+
+# Lister les backups
+curl https://votre-domaine.com/api/admin/backups \
+  -H "Cookie: authjs.session-token=..."
+
+# Restaurer un backup (ATTENTION: operation destructive)
+curl -X POST https://votre-domaine.com/api/admin/backups/restore \
+  -H "Content-Type: application/json" \
+  -H "Cookie: authjs.session-token=..." \
+  -d '{"key":"backups/2026-03-22T02-00-00Z/db.sql.gz"}'
+```
+
+### Convention de nommage
+
+Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. Le dump est compresse en gzip.
+
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
 - [ ] `AUTH_SECRET` genere avec `openssl rand -base64 32`
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Webcron configure (crontab ou service externe) pour appeler `/api/cron/reminders` quotidiennement
+- [ ] Variables S3 configurees pour les backups (optionnel)
+- [ ] Crontab backup configure pour appeler `/api/cron/backup` quotidiennement (optionnel)
 - [ ] `AUTH_TRUST_HOST=true` present
 - [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie
