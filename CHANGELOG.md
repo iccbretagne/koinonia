@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.3] - 2026-03-23
+
+### Corrections
+
+- TypeScript : correction des erreurs de lint apres la migration N-N membres/departements (#99)
+- Remplacement de toutes les references `member.department` par `member.departments` dans les routes API et composants
+- Mise a jour des mocks de tests pour reflechir le nouveau schema N-N
+
 ## [v0.12.2] - 2026-03-22
 
 ### Corrections
