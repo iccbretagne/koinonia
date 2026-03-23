@@ -20,7 +20,10 @@ export default async function ProfilePage() {
           id: true,
           firstName: true,
           lastName: true,
-          department: { select: { name: true, ministry: { select: { name: true } } } },
+          departments: {
+            where: { isPrimary: true },
+            include: { department: { select: { name: true, ministry: { select: { name: true } } } } },
+          },
         },
       },
       church: { select: { id: true, name: true } },
@@ -88,9 +91,9 @@ export default async function ProfilePage() {
                 <div>
                   <p className="font-medium text-gray-900">{l.member.firstName} {l.member.lastName}</p>
                   <p className="text-xs text-gray-500">
-                    {l.member.department.ministry.name} / {l.member.department.name}
+                    {l.member.departments[0]?.department.ministry.name} / {l.member.departments[0]?.department.name}
                   </p>
-                  {l.member.department.name === "Sans département" && (
+                  {l.member.departments[0]?.department.name === "Sans département" && (
                     <p className="text-xs text-amber-600 mt-0.5">
                       Profil incomplet — contactez un administrateur pour être rattaché à un département.
                     </p>

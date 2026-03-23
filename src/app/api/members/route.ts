@@ -5,6 +5,18 @@ import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
 
+// Helper : inclure les départements d'un membre (principal en premier)
+const memberDepartmentsInclude = {
+  departments: {
+    include: {
+      department: {
+        select: { id: true, name: true, ministry: { select: { id: true, name: true } } },
+      },
+    },
+    orderBy: { isPrimary: "desc" as const },
+  },
+};
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -28,22 +40,15 @@ export async function GET(request: Request) {
 
     const members = await prisma.member.findMany({
       where: {
-        department: { ministry: { churchId } },
-        ...(departmentId
-          ? { departmentId }
-          : scopedDeptIds
-            ? { departmentId: { in: scopedDeptIds } }
-            : {}),
-      },
-      include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-            ministry: { select: { id: true, name: true } },
-          },
+        departments: {
+          some: departmentId
+            ? { departmentId }
+            : scopedDeptIds
+              ? { departmentId: { in: scopedDeptIds } }
+              : { department: { ministry: { churchId } } },
         },
       },
+      include: memberDepartmentsInclude,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });
 
@@ -59,7 +64,7 @@ const bulkSchema = z.object({
   data: z.object({
     firstName: z.string().min(1).optional(),
     lastName: z.string().min(1).optional(),
-    departmentId: z.string().min(1).optional(),
+    primaryDepartmentId: z.string().min(1).optional(),
   }).optional(),
 });
 
@@ -95,17 +100,18 @@ export async function PATCH(request: Request) {
     if (scopedDeptIds) {
       const members = await prisma.member.findMany({
         where: { id: { in: ids } },
-        select: { departmentId: true },
+        include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
       });
 
-      const allInScope = members.every((m) =>
-        scopedDeptIds.includes(m.departmentId)
-      );
+      const allInScope = members.every((m) => {
+        const primaryDeptId = m.departments[0]?.departmentId;
+        return primaryDeptId ? scopedDeptIds.includes(primaryDeptId) : false;
+      });
       if (!allInScope) {
         throw new ApiError(403, "Certains STAR sont hors de votre périmètre");
       }
 
-      if (action === "update" && data?.departmentId && !scopedDeptIds.includes(data.departmentId)) {
+      if (action === "update" && data?.primaryDepartmentId && !scopedDeptIds.includes(data.primaryDepartmentId)) {
         throw new ApiError(403, "Département cible non autorisé");
       }
     }
@@ -130,10 +136,12 @@ export async function PATCH(request: Request) {
       return errorResponse(new Error("Aucune donnée à mettre à jour"));
     }
 
-    // Block cross-tenant destination: departmentId must belong to same church
-    if (data.departmentId) {
+    const { primaryDepartmentId, ...scalarData } = data;
+
+    // Block cross-tenant destination
+    if (primaryDepartmentId) {
       const targetDept = await prisma.department.findUnique({
-        where: { id: data.departmentId },
+        where: { id: primaryDepartmentId },
         include: { ministry: { select: { churchId: true } } },
       });
       if (!targetDept || targetDept.ministry.churchId !== firstMemberChurchId) {
@@ -141,9 +149,25 @@ export async function PATCH(request: Request) {
       }
     }
 
-    await prisma.member.updateMany({
-      where: { id: { in: ids } },
-      data,
+    await prisma.$transaction(async (tx) => {
+      if (Object.keys(scalarData).length > 0) {
+        await tx.member.updateMany({ where: { id: { in: ids } }, data: scalarData });
+      }
+      if (primaryDepartmentId) {
+        for (const memberId of ids) {
+          // Retirer le flag isPrimary de l'ancien département principal
+          await tx.memberDepartment.updateMany({
+            where: { memberId, isPrimary: true },
+            data: { isPrimary: false },
+          });
+          // Upsert le nouveau département principal
+          await tx.memberDepartment.upsert({
+            where: { memberId_departmentId: { memberId, departmentId: primaryDepartmentId } },
+            update: { isPrimary: true },
+            create: { memberId, departmentId: primaryDepartmentId, isPrimary: true },
+          });
+        }
+      }
     });
 
     for (const id of ids) {
@@ -158,17 +182,18 @@ export async function PATCH(request: Request) {
 const createSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
-  departmentId: z.string().min(1, "Le département est requis"),
+  departmentId: z.string().min(1, "Le département principal est requis"),
+  additionalDepartmentIds: z.array(z.string()).optional(),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const data = createSchema.parse(body);
+    const { departmentId, additionalDepartmentIds = [], ...memberData } = createSchema.parse(body);
 
     // Résoudre l'église du département cible
     const { resolveChurchId } = await import("@/lib/auth");
-    const deptChurchId = await resolveChurchId("department", data.departmentId);
+    const deptChurchId = await resolveChurchId("department", departmentId);
     const session = await requireChurchPermission("members:manage", deptChurchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
@@ -180,24 +205,34 @@ export async function POST(request: Request) {
       ? null
       : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
 
-    if (scopedDeptIds && !scopedDeptIds.includes(data.departmentId)) {
+    if (scopedDeptIds && !scopedDeptIds.includes(departmentId)) {
       throw new ApiError(403, "Vous ne pouvez pas créer un STAR dans ce département");
     }
 
+    // Valider que tous les départements supplémentaires appartiennent à la même église
+    const allDeptIds = [departmentId, ...additionalDepartmentIds.filter((id) => id !== departmentId)];
+    if (additionalDepartmentIds.length > 0) {
+      const depts = await prisma.department.findMany({
+        where: { id: { in: allDeptIds } },
+        include: { ministry: { select: { churchId: true } } },
+      });
+      const wrongChurch = depts.some((d) => d.ministry.churchId !== deptChurchId);
+      if (wrongChurch || depts.length !== allDeptIds.length) {
+        throw new ApiError(400, "Tous les départements doivent appartenir à la même église");
+      }
+    }
+
     const member = await prisma.member.create({
-      data,
-      include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-            ministry: { select: { id: true, name: true } },
-          },
+      data: {
+        ...memberData,
+        departments: {
+          create: allDeptIds.map((id) => ({ departmentId: id, isPrimary: id === departmentId })),
         },
       },
+      include: memberDepartmentsInclude,
     });
 
-    await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "CREATE", entityType: "Member", entityId: member.id, details: { firstName: data.firstName, lastName: data.lastName } });
+    await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "CREATE", entityType: "Member", entityId: member.id, details: { firstName: memberData.firstName, lastName: memberData.lastName } });
 
     return successResponse(member, 201);
   } catch (error) {

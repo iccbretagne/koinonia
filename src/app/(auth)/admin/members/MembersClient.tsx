@@ -10,16 +10,20 @@ import BulkActionBar from "@/components/ui/BulkActionBar";
 
 type UserResult = { id: string; name: string | null; email: string; displayName: string | null; image: string | null };
 
+interface DeptRef {
+  id: string;
+  name: string;
+  isPrimary: boolean;
+  ministry: { id: string; name: string };
+}
+
 interface Member {
   id: string;
   firstName: string;
   lastName: string;
   churchId: string;
-  department: {
-    id: string;
-    name: string;
-    ministry: { id: string; name: string };
-  };
+  primaryDepartment: { id: string; name: string; ministry: { id: string; name: string } } | null;
+  allDepartments: DeptRef[];
   userLink: { userId: string; userName: string | null; userEmail: string } | null;
 }
 
@@ -36,6 +40,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [departmentId, setDepartmentId] = useState(departments[0]?.id || "");
+  const [additionalDeptIds, setAdditionalDeptIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterDept, setFilterDept] = useState("");
@@ -97,11 +102,18 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     }
   }
 
+  function toggleAdditionalDept(deptId: string) {
+    setAdditionalDeptIds((prev) =>
+      prev.includes(deptId) ? prev.filter((id) => id !== deptId) : [...prev, deptId]
+    );
+  }
+
   function openCreate() {
     setEditing(null);
     setFirstName("");
     setLastName("");
     setDepartmentId(departments[0]?.id || "");
+    setAdditionalDeptIds([]);
     setError("");
     setModalOpen(true);
   }
@@ -110,7 +122,9 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setEditing(m);
     setFirstName(m.firstName);
     setLastName(m.lastName);
-    setDepartmentId(m.department.id);
+    const primaryId = m.primaryDepartment?.id ?? m.allDepartments[0]?.id ?? departments[0]?.id ?? "";
+    setDepartmentId(primaryId);
+    setAdditionalDeptIds(m.allDepartments.filter((d) => !d.isPrimary).map((d) => d.id));
     setError("");
     setModalOpen(true);
   }
@@ -127,7 +141,12 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, departmentId }),
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          departmentId,
+          additionalDepartmentIds: additionalDeptIds.filter((id) => id !== departmentId),
+        }),
       });
 
       if (!res.ok) {
@@ -137,10 +156,13 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
       const saved = await res.json();
 
+      // Normaliser la réponse API en format Member
+      const normalizedMember = normalizeMember(saved);
+
       if (editing) {
-        setMembers((prev) => prev.map((m) => (m.id === saved.id ? saved : m)));
+        setMembers((prev) => prev.map((m) => (m.id === normalizedMember.id ? normalizedMember : m)));
       } else {
-        setMembers((prev) => [...prev, saved]);
+        setMembers((prev) => [...prev, normalizedMember]);
       }
 
       setModalOpen(false);
@@ -149,6 +171,41 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     } finally {
       setLoading(false);
     }
+  }
+
+  // Normaliser la réponse API (departments[]) vers le format Member du client
+  function normalizeMember(raw: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    departments?: { isPrimary: boolean; department: { id: string; name: string; ministry: { id: string; name: string; churchId?: string } } }[];
+    userLink?: { userId: string; userName?: string | null; userEmail?: string; user?: { name: string | null; email: string } } | null;
+    churchId?: string;
+  }): Member {
+    const depts = raw.departments ?? [];
+    const primaryDept = depts.find((d) => d.isPrimary) ?? depts[0];
+    return {
+      id: raw.id,
+      firstName: raw.firstName,
+      lastName: raw.lastName,
+      churchId: raw.churchId ?? primaryDept?.department.ministry.churchId ?? "",
+      primaryDepartment: primaryDept
+        ? { id: primaryDept.department.id, name: primaryDept.department.name, ministry: primaryDept.department.ministry }
+        : null,
+      allDepartments: depts.map((d) => ({
+        id: d.department.id,
+        name: d.department.name,
+        isPrimary: d.isPrimary,
+        ministry: d.department.ministry,
+      })),
+      userLink: raw.userLink
+        ? {
+            userId: raw.userLink.userId,
+            userName: raw.userLink.userName ?? raw.userLink.user?.name ?? null,
+            userEmail: raw.userLink.userEmail ?? raw.userLink.user?.email ?? "",
+          }
+        : null,
+    };
   }
 
   async function handleDelete(m: Member) {
@@ -201,7 +258,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     const data: Record<string, string> = {};
     if (bulkFirstName) data.firstName = bulkFirstName;
     if (bulkLastName) data.lastName = bulkLastName;
-    if (bulkDepartmentId) data.departmentId = bulkDepartmentId;
+    if (bulkDepartmentId) data.primaryDepartmentId = bulkDepartmentId;
 
     if (Object.keys(data).length === 0) {
       setBulkError("Remplissez au moins un champ");
@@ -226,15 +283,24 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       setMembers((prev) =>
         prev.map((m) => {
           if (!selectedIds.has(m.id)) return m;
-          const updated = { ...m, ...data };
-          if (data.departmentId) {
-            const dept = departments.find((d) => d.id === data.departmentId);
+          const updated = { ...m };
+          if (data.firstName) updated.firstName = data.firstName;
+          if (data.lastName) updated.lastName = data.lastName;
+          if (data.primaryDepartmentId) {
+            const dept = departments.find((d) => d.id === data.primaryDepartmentId);
             if (dept) {
-              updated.department = {
-                id: dept.id,
-                name: dept.name,
-                ministry: m.department.ministry,
-              };
+              updated.primaryDepartment = { id: dept.id, name: dept.name, ministry: m.primaryDepartment?.ministry ?? { id: "", name: dept.ministryName } };
+              updated.allDepartments = updated.allDepartments.map((d) => ({
+                ...d,
+                isPrimary: d.id === data.primaryDepartmentId,
+              }));
+              // Si le nouveau dept principal n'est pas encore dans la liste, l'ajouter
+              if (!updated.allDepartments.find((d) => d.id === data.primaryDepartmentId)) {
+                updated.allDepartments = [
+                  { id: dept.id, name: dept.name, isPrimary: true, ministry: { id: "", name: dept.ministryName } },
+                  ...updated.allDepartments,
+                ];
+              }
             }
           }
           return updated;
@@ -250,7 +316,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   }
 
   const filtered = filterDept
-    ? members.filter((m) => m.department.id === filterDept)
+    ? members.filter((m) => m.allDepartments.some((d) => d.id === filterDept))
     : members;
 
   return (
@@ -277,12 +343,28 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             { header: "Nom", accessor: "lastName" },
             { header: "Prénom", accessor: "firstName" },
             {
-              header: "Département",
-              accessor: (m: Member) => m.department.name,
+              header: "Département principal",
+              accessor: (m: Member) => m.primaryDepartment?.name ?? "—",
+            },
+            {
+              header: "Autres départements",
+              accessor: (m: Member) => {
+                const secondary = m.allDepartments.filter((d) => !d.isPrimary);
+                if (secondary.length === 0) return <span className="text-xs text-gray-400">—</span>;
+                return (
+                  <div className="flex flex-wrap gap-1">
+                    {secondary.map((d) => (
+                      <span key={d.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                        {d.name}
+                      </span>
+                    ))}
+                  </div>
+                );
+              },
             },
             {
               header: "Ministère",
-              accessor: (m: Member) => m.department.ministry.name,
+              accessor: (m: Member) => m.primaryDepartment?.ministry.name ?? "—",
             },
             {
               header: "Compte",
@@ -349,14 +431,39 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             required
           />
           <Select
-            label="Département"
+            label="Département principal"
             value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
+            onChange={(e) => {
+              const newPrimary = e.target.value;
+              setDepartmentId(newPrimary);
+              // Retirer le nouveau dept principal des départements supplémentaires s'il y était
+              setAdditionalDeptIds((prev) => prev.filter((id) => id !== newPrimary));
+            }}
             options={departments.map((d) => ({
               value: d.id,
               label: `${d.name} (${d.ministryName})`,
             }))}
           />
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Départements supplémentaires</p>
+            <div className="space-y-1 max-h-40 overflow-y-auto border-2 border-gray-200 rounded-lg p-2">
+              {departments
+                .filter((d) => d.id !== departmentId)
+                .map((d) => (
+                  <label key={d.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                    <input
+                      type="checkbox"
+                      checked={additionalDeptIds.includes(d.id)}
+                      onChange={() => toggleAdditionalDept(d.id)}
+                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {d.name} <span className="text-gray-400 text-xs">({d.ministryName})</span>
+                    </span>
+                  </label>
+                ))}
+            </div>
+          </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button
@@ -443,7 +550,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             placeholder="Laisser vide pour ne pas modifier"
           />
           <Select
-            label="Département"
+            label="Département principal"
             value={bulkDepartmentId}
             onChange={(e) => setBulkDepartmentId(e.target.value)}
             placeholder="Ne pas modifier"

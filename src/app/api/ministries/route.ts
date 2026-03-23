@@ -69,9 +69,21 @@ export async function PATCH(request: Request) {
             })
           ).map((ed) => ed.id);
           await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-          await tx.planning.deleteMany({ where: { member: { departmentId: { in: deptIds } } } });
+          // Membres dont le seul département est dans cette liste (via MemberDepartment)
+          const memberIdsToDelete = (
+            await tx.member.findMany({
+              where: { departments: { every: { departmentId: { in: deptIds } } } },
+              select: { id: true },
+            })
+          ).map((m) => m.id);
+          if (memberIdsToDelete.length > 0) {
+            await tx.planning.deleteMany({ where: { memberId: { in: memberIdsToDelete } } });
+          }
+          await tx.memberDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
           await tx.eventDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
-          await tx.member.deleteMany({ where: { departmentId: { in: deptIds } } });
+          if (memberIdsToDelete.length > 0) {
+            await tx.member.deleteMany({ where: { id: { in: memberIdsToDelete } } });
+          }
           await tx.userDepartment.deleteMany({ where: { departmentId: { in: deptIds } } });
         }
         await tx.department.deleteMany({ where: { ministryId: { in: ids } } });

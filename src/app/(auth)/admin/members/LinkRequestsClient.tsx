@@ -15,7 +15,7 @@ interface LinkRequest {
     id: string;
     firstName: string;
     lastName: string;
-    department: { name: string; ministry: { name: string } };
+    departments: { isPrimary: boolean; department: { name: string; ministry: { name: string } } }[];
   } | null;
   firstName: string | null;
   lastName: string | null;
@@ -109,7 +109,7 @@ export default function LinkRequestsClient({
                 <p className="text-gray-600">
                   Revendique la fiche :{" "}
                   <strong>{req.member.firstName} {req.member.lastName}</strong>
-                  <span className="text-gray-400"> · {req.member.department.ministry.name} / {req.member.department.name}</span>
+                  {(() => { const pd = req.member.departments.find((d) => d.isPrimary) ?? req.member.departments[0]; return pd ? <span className="text-gray-400"> · {pd.department.ministry.name} / {pd.department.name}</span> : null; })()}
                 </p>
               ) : (
                 <p className="text-gray-600">
