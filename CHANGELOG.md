@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.5] - 2026-03-23
+
+### Corrections
+
+- Accès : les nouveaux utilisateurs sans rôle apparaissent dans la page "Accès & rôles" (#101)
+
 ## [v0.12.4] - 2026-03-23
 
 ### Nouveautes
