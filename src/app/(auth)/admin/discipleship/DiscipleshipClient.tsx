@@ -48,6 +48,7 @@ interface Props {
   allAssignedDiscipleIds: string[];
   canManage: boolean;
   canExport: boolean;
+  canEditRelation?: boolean;
   isFD?: boolean;
   linkedMemberId?: string | null;
 }
@@ -74,7 +75,7 @@ function firstDayOfMonthISO() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function DiscipleshipClient({ churchId, members, allAssignedDiscipleIds, canManage, canExport, isFD = false, linkedMemberId = null }: Props) {
+export default function DiscipleshipClient({ churchId, members, allAssignedDiscipleIds, canManage, canExport, canEditRelation = false, isFD = false, linkedMemberId = null }: Props) {
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
@@ -103,7 +104,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
       </div>
 
       {activeTab === "relations" && (
-        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} isFD={isFD} linkedMemberId={linkedMemberId} />
+        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} canEditRelation={canEditRelation} isFD={isFD} linkedMemberId={linkedMemberId} />
       )}
       {activeTab === "appel" && (
         <AppelTab churchId={churchId} canManage={canManage} />
@@ -265,10 +266,13 @@ function DiscipleCombobox({
 
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; isFD: boolean; linkedMemberId: string | null }) {
+function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; canEditRelation: boolean; isFD: boolean; linkedMemberId: string | null }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Filtre "Mes disciples" : visible si l'utilisateur est aussi FD (canManage + linkedMemberId)
+  const showMineFilter = canManage && !!linkedMemberId;
+  const [filterMine, setFilterMine] = useState(false);
 
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
@@ -287,11 +291,18 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
   const [editProfileError, setEditProfileError] = useState<string | null>(null);
   const [editProfileLoading, setEditProfileLoading] = useState(false);
 
-  // Modal: changer FD
+  // Modal: changer FD (pour les FD — scope limité)
   const [changeFDRow, setChangeFDRow] = useState<DiscipleshipRow | null>(null);
   const [newFDId, setNewFDId] = useState("");
   const [changeFDError, setChangeFDError] = useState<string | null>(null);
   const [changeFDLoading, setChangeFDLoading] = useState(false);
+
+  // Modal: modifier la relation (admin/secrétariat — FD + premier FD)
+  const [editRelationRow, setEditRelationRow] = useState<DiscipleshipRow | null>(null);
+  const [editRelationFDId, setEditRelationFDId] = useState("");
+  const [editRelationFirstMakerId, setEditRelationFirstMakerId] = useState("");
+  const [editRelationError, setEditRelationError] = useState<string | null>(null);
+  const [editRelationLoading, setEditRelationLoading] = useState(false);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -431,22 +442,72 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
     }
   }
 
+  function openEditRelation(row: DiscipleshipRow) {
+    setEditRelationRow(row);
+    setEditRelationFDId(row.discipleMakerId);
+    setEditRelationFirstMakerId(row.firstMakerId);
+    setEditRelationError(null);
+  }
+
+  async function handleEditRelation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editRelationRow) return;
+    setEditRelationLoading(true);
+    setEditRelationError(null);
+    try {
+      const body: Record<string, string> = { discipleMakerId: editRelationFDId };
+      if (editRelationFirstMakerId !== editRelationRow.firstMakerId) {
+        body.firstMakerId = editRelationFirstMakerId;
+      }
+      const res = await fetch(`/api/discipleships/${editRelationRow.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      setEditRelationRow(null);
+      fetchRows();
+    } catch (e) {
+      setEditRelationError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setEditRelationLoading(false);
+    }
+  }
+
+  const displayedRows = filterMine && linkedMemberId
+    ? rows.filter((r) => r.discipleMakerId === linkedMemberId)
+    : rows;
+
   return (
     <>
-      {canManage && (
-        <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {canManage && (
           <Button onClick={() => { setCreateModal(true); setCreateError(null); setDiscipleSelection(null); setNewMakerId(linkedMemberId ?? members[0]?.id ?? ""); }}>
             Nouvelle relation
           </Button>
-        </div>
-      )}
+        )}
+        {showMineFilter && (
+          <button
+            type="button"
+            onClick={() => setFilterMine((v) => !v)}
+            className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-colors ${
+              filterMine
+                ? "bg-icc-violet text-white border-icc-violet"
+                : "text-gray-600 border-gray-200 hover:border-icc-violet hover:text-icc-violet"
+            }`}
+          >
+            Mes disciples
+          </button>
+        )}
+      </div>
 
       {loading && <p className="text-sm text-gray-400">Chargement...</p>}
       {error && <p className="text-sm text-icc-rouge">{error}</p>}
 
       {!loading && !error && (
         <div className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
-          {rows.length === 0 ? (
+          {displayedRows.length === 0 ? (
             <p className="text-sm text-gray-400 p-6">Aucune relation de discipolat.</p>
           ) : (
             <>
@@ -463,7 +524,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => (
+                  {displayedRows.map((row) => (
                     <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
@@ -482,7 +543,12 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                             <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
                               Éditer
                             </Button>
-                            {!isFD && (
+                            {canEditRelation && (
+                              <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
+                                Modifier relation
+                              </Button>
+                            )}
+                            {isFD && (
                               <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
                                 Changer FD
                               </Button>
@@ -501,7 +567,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
 
             {/* Mobile cards */}
             <div className="md:hidden divide-y divide-gray-100">
-              {rows.map((row) => (
+              {displayedRows.map((row) => (
                 <div key={row.id} className="p-4 space-y-2">
                   <div>
                     <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
@@ -522,11 +588,16 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
                     </div>
                   </div>
                   {canManage && (
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <Button variant="secondary" size="sm" onClick={() => openEditProfile(row)}>
                         Éditer
                       </Button>
-                      {!isFD && (
+                      {canEditRelation && (
+                        <Button variant="secondary" size="sm" onClick={() => openEditRelation(row)}>
+                          Modifier relation
+                        </Button>
+                      )}
+                      {isFD && (
                         <Button variant="secondary" size="sm" onClick={() => openChangeFD(row)}>
                           Changer FD
                         </Button>
@@ -663,6 +734,42 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, is
               </Button>
               <Button type="submit" disabled={changeFDLoading}>
                 {changeFDLoading ? "Enregistrement..." : "Confirmer"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Modal: modifier la relation (admin/secrétariat) */}
+      <Modal open={!!editRelationRow} onClose={() => setEditRelationRow(null)} title="Modifier la relation de discipolat">
+        {editRelationRow && (
+          <form onSubmit={handleEditRelation} className="space-y-4">
+            <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
+              <span className="text-gray-500">Disciple : </span>
+              <strong className="text-gray-900">{fullName(editRelationRow.disciple)}</strong>
+              <span className="ml-2 text-xs text-gray-400">
+                {getDept(editRelationRow.disciple.departments)?.ministry?.name ?? "??"} / {getDept(editRelationRow.disciple.departments)?.name ?? "??"}
+              </span>
+            </div>
+            <Select
+              label="Faiseur de disciples actuel"
+              value={editRelationFDId}
+              onChange={(e) => setEditRelationFDId(e.target.value)}
+              options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+            />
+            <Select
+              label="Premier faiseur de disciples (lignée d'origine)"
+              value={editRelationFirstMakerId}
+              onChange={(e) => setEditRelationFirstMakerId(e.target.value)}
+              options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
+            />
+            {editRelationError && <p className="text-sm text-icc-rouge">{editRelationError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" type="button" onClick={() => setEditRelationRow(null)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={editRelationLoading}>
+                {editRelationLoading ? "Enregistrement..." : "Enregistrer"}
               </Button>
             </div>
           </form>

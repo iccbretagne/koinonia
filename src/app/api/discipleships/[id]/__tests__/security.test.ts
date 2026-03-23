@@ -33,12 +33,13 @@ describe("PATCH /api/discipleships/[id] — scope enforcement", () => {
   it("allows admin to reassign any discipleship", async () => {
     mockRequirePermission.mockResolvedValue(createAdminSession());
     mockGetDiscipleshipScope.mockResolvedValue({ scoped: false });
-    prismaMock.member.findFirst.mockResolvedValue({ id: "m-maker-2" });
+    prismaMock.member.findMany.mockResolvedValue([{ id: "m-maker-2" }]);
     prismaMock.discipleship.update.mockResolvedValue({
       ...existingDiscipleship,
       discipleMakerId: "m-maker-2",
       disciple: { id: "m-disciple", firstName: "Jean", lastName: "A" },
       discipleMaker: { id: "m-maker-2", firstName: "Paul", lastName: "B" },
+      firstMaker: { id: "m-maker-1", firstName: "Pierre", lastName: "C" },
     });
 
     const request = new Request("http://localhost/api/discipleships/ds-1", {
@@ -89,12 +90,13 @@ describe("PATCH /api/discipleships/[id] — scope enforcement", () => {
     });
     mockRequirePermission.mockResolvedValue(session);
     mockGetDiscipleshipScope.mockResolvedValue({ scoped: true, memberId: "m-maker-1" });
-    prismaMock.member.findFirst.mockResolvedValue({ id: "m-maker-2" });
+    prismaMock.member.findMany.mockResolvedValue([{ id: "m-maker-2" }]);
     prismaMock.discipleship.update.mockResolvedValue({
       ...existingDiscipleship,
       discipleMakerId: "m-maker-2",
       disciple: { id: "m-disciple", firstName: "Jean", lastName: "A" },
       discipleMaker: { id: "m-maker-2", firstName: "Paul", lastName: "B" },
+      firstMaker: { id: "m-maker-1", firstName: "Pierre", lastName: "C" },
     });
 
     const request = new Request("http://localhost/api/discipleships/ds-1", {
@@ -110,7 +112,7 @@ describe("PATCH /api/discipleships/[id] — scope enforcement", () => {
     mockRequirePermission.mockResolvedValue(createAdminSession());
     mockGetDiscipleshipScope.mockResolvedValue({ scoped: false });
     // New maker not found in same church
-    prismaMock.member.findFirst.mockResolvedValue(null);
+    prismaMock.member.findMany.mockResolvedValue([]);
 
     const request = new Request("http://localhost/api/discipleships/ds-1", {
       method: "PATCH",

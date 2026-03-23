@@ -23,10 +23,16 @@ export default async function DiscipleshipPage() {
 
   const canManage = userPermissions.has("discipleship:manage");
   const canExport = userPermissions.has("discipleship:export");
-  const isFD = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
+  // isFD = vrai uniquement si le seul rôle discipolat est DISCIPLE_MAKER (pas admin/secrétariat)
+  // Un admin/secrétariat qui est aussi FD garde la vue admin complète
+  const isFD = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin && !canManage;
+  // Un admin/secrétariat peut éditer FD et premier FD
+  const canEditRelation = canManage;
 
-  // Pour un FD, résoudre le membre lié pour pré-remplir le formulaire
-  const linkedMemberId = isFD
+  // Résoudre le membre lié si l'utilisateur a le rôle DISCIPLE_MAKER
+  // (même s'il est aussi admin/secrétariat — pour le filtre "Mes disciples")
+  const hasFDRole = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
+  const linkedMemberId = hasFDRole
     ? (await prisma.memberUserLink.findUnique({
         where: { userId_churchId: { userId: session.user.id, churchId } },
         select: { memberId: true },
@@ -60,6 +66,7 @@ export default async function DiscipleshipPage() {
         allAssignedDiscipleIds={allAssignedDiscipleIds}
         canManage={canManage}
         canExport={canExport}
+        canEditRelation={canEditRelation}
         isFD={isFD}
         linkedMemberId={linkedMemberId}
       />
