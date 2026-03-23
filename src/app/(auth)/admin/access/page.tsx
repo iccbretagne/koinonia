@@ -8,9 +8,14 @@ export default async function AccessPage() {
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
   await requireChurchPermission("departments:manage", churchId);
 
-  // All users in this church with their roles
+  // All users in this church (with roles) + new users (no roles yet)
   const users = await prisma.user.findMany({
-    where: { churchRoles: { some: { churchId } } },
+    where: {
+      OR: [
+        { churchRoles: { some: { churchId } } },
+        { churchRoles: { none: {} } },
+      ],
+    },
     select: {
       id: true,
       name: true,
