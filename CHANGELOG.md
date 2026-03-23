@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.4] - 2026-03-23
+
+### Nouveautes
+
+- Discipolat : gestion complete pour admins et secretariat — acces a toutes les lignees, modification du FD actuel et du premier FD (#100)
+- Discipolat : le secretariat obtient la permission `discipleship:manage`
+- Discipolat : filtre "Mes disciples" pour les admins/secretaires cumulant le role FD
+- Discipolat : un admin/secretaire avec le role FD conserve la vue admin complete
+
 ## [v0.12.3] - 2026-03-23
 
 ### Corrections
