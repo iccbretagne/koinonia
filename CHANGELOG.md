@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.12.6] - 2026-03-24
+
+### Corrections
+
+- Deploy : ajout de `prisma generate` manquant dans le workflow de déploiement — corrige le crash de création d'événements après migration N-N (#102)
+
 ## [v0.12.5] - 2026-03-23
 
 ### Corrections
