@@ -5,16 +5,21 @@ import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
-const schema = z.object({
+const createSchema = z.object({
   memberId: z.string(),
   userId: z.string(),
+  churchId: z.string(),
+});
+
+const deleteSchema = z.object({
+  memberId: z.string(),
   churchId: z.string(),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { memberId, userId, churchId } = schema.parse(body);
+    const { memberId, userId, churchId } = createSchema.parse(body);
     const session = await requireChurchPermission("members:manage", churchId);
     requireRateLimit(request, { prefix: `link:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
@@ -60,6 +65,29 @@ export async function POST(request: Request) {
     await logAudit({ userId: session.user.id, churchId, action: "CREATE", entityType: "MemberUserLink", entityId: link.id, details: { memberId, userId } });
 
     return successResponse(link, 201);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { memberId, churchId } = deleteSchema.parse(body);
+    const session = await requireChurchPermission("members:manage", churchId);
+    requireRateLimit(request, { prefix: `unlink:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
+
+    const link = await prisma.memberUserLink.findUnique({
+      where: { memberId },
+    });
+    if (!link) throw new ApiError(404, "Ce STAR n'est lié à aucun compte");
+    if (link.churchId !== churchId) throw new ApiError(403, "Ce lien n'appartient pas à cette église");
+
+    await prisma.memberUserLink.delete({ where: { id: link.id } });
+
+    await logAudit({ userId: session.user.id, churchId, action: "DELETE", entityType: "MemberUserLink", entityId: link.id, details: { memberId, unlinkedUserId: link.userId } });
+
+    return successResponse({ deleted: true });
   } catch (error) {
     return errorResponse(error);
   }

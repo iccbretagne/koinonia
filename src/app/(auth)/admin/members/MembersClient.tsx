@@ -209,6 +209,25 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     };
   }
 
+  async function handleUnlink(m: Member) {
+    if (!confirm(`Délier le compte de ${m.firstName} ${m.lastName} ?`)) return;
+    try {
+      const res = await fetch("/api/member-user-links", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: m.id, churchId: m.churchId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur lors de la déliaison");
+        return;
+      }
+      setMembers((prev) => prev.map((x) => x.id === m.id ? { ...x, userLink: null } : x));
+    } catch {
+      alert("Erreur lors de la déliaison");
+    }
+  }
+
   async function handleDelete(m: Member) {
     if (!confirm(`Supprimer ${m.firstName} ${m.lastName} ?`)) return;
 
@@ -407,7 +426,15 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           onSelectionChange={setSelectedIds}
           actions={readOnly ? undefined : (m) => (
             <div className="flex gap-2 justify-end">
-              {!m.userLink && (
+              {m.userLink ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleUnlink(m)}
+                >
+                  Délier
+                </Button>
+              ) : (
                 <Button
                   variant="secondary"
                   size="sm"
