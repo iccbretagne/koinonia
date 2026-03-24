@@ -44,6 +44,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [filterDept, setFilterDept] = useState("");
+  const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkFirstName, setBulkFirstName] = useState("");
@@ -315,15 +316,30 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     }
   }
 
-  const filtered = filterDept
-    ? members.filter((m) => m.allDepartments.some((d) => d.id === filterDept))
-    : members;
+  const filtered = members.filter((m) => {
+    if (filterDept && !m.allDepartments.some((d) => d.id === filterDept)) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+      if (!fullName.includes(q) && !`${m.lastName} ${m.firstName}`.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <>
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {!readOnly && <Button onClick={openCreate}>Nouveau STAR</Button>}
-        <div className="w-64">
+        <div className="flex-1 min-w-0">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un STAR..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+          />
+        </div>
+        <div className="w-full sm:w-64">
           <Select
             label=""
             value={filterDept}
@@ -336,6 +352,12 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           />
         </div>
       </div>
+
+      {(search || filterDept) && (
+        <p className="text-sm text-gray-500 mb-2">
+          {filtered.length} STAR{filtered.length > 1 ? "s" : ""} sur {members.length}
+        </p>
+      )}
 
       <div className="bg-white rounded-lg shadow">
         <DataTable
