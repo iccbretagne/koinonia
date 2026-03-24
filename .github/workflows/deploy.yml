@@ -79,6 +79,7 @@ jobs:
             # 4. Installer les dependances et construire
             cd "$DEPLOY_PATH/releases/koinonia-${VERSION}"
             npm install --production=false
+            npx prisma generate
             npx prisma migrate deploy
             npm run build
 
