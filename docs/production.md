@@ -350,12 +350,85 @@ S3_SECRET_ACCESS_KEY=xxxxxxxx                # secret
 BACKUP_RETENTION_DAYS=30                     # retention en jours (defaut: 30)
 ```
 
-### Crontab
+### Planification — timer systemd (recommande)
 
-Ajouter une entree crontab pour un backup quotidien a 2h du matin :
+Le backup est declenche via un appel HTTP a l'API Koinonia. Un timer systemd est plus fiable qu'un crontab (journalisation, gestion des echecs, persistance apres reboot).
+
+**1. Creer le service** `/etc/systemd/system/koinonia-backup.service` :
+
+```ini
+[Unit]
+Description=Koinonia — backup BDD vers S3
+After=network-online.target koinonia.service
+Wants=network-online.target
+Requires=koinonia.service
+
+[Service]
+Type=oneshot
+User=koinonia
+EnvironmentFile=/opt/koinonia/shared/.env
+ExecStart=/usr/bin/curl -sf -X POST http://127.0.0.1:3000/api/cron/backup \
+  -H "Authorization: Bearer ${CRON_SECRET}"
+
+# Journalisation
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=koinonia-backup
+```
+
+> On appelle `127.0.0.1:3000` en local plutot que le domaine public pour eviter de passer par Traefik/TLS.
+
+**2. Creer le timer** `/etc/systemd/system/koinonia-backup.timer` :
+
+```ini
+[Unit]
+Description=Backup quotidien Koinonia a 2h00
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+```
+
+- `Persistent=true` : si le serveur etait eteint a 2h00, le backup sera execute au prochain demarrage.
+- `RandomizedDelaySec=300` : delai aleatoire de 0 a 5 min pour eviter les pics de charge.
+
+**3. Activer le timer** :
 
 ```bash
-0 2 * * * curl -sf -X POST https://votre-domaine.com/api/cron/backup \
+sudo systemctl daemon-reload
+sudo systemctl enable --now koinonia-backup.timer
+```
+
+**4. Verifier** :
+
+```bash
+# Etat du timer
+sudo systemctl status koinonia-backup.timer
+
+# Prochaine execution
+sudo systemctl list-timers koinonia-backup.timer
+
+# Lancer manuellement pour tester
+sudo systemctl start koinonia-backup.service
+
+# Consulter les logs
+sudo journalctl -u koinonia-backup -n 20
+```
+
+### Alternative — crontab
+
+Si vous preferez crontab :
+
+```bash
+sudo -u koinonia crontab -e
+```
+
+```
+0 2 * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:3000/api/cron/backup \
   -H "Authorization: Bearer $CRON_SECRET" \
   >> /opt/koinonia/logs/backup.log 2>&1
 ```
@@ -369,27 +442,138 @@ Ajouter une entree crontab pour un backup quotidien a 2h du matin :
 | `POST` | `/api/admin/backups` | Session (SUPER_ADMIN) | Declencher un backup manuel |
 | `POST` | `/api/admin/backups/restore` | Session (SUPER_ADMIN) | Restaurer un backup (`{"key":"backups/..."}`) |
 
-### Exemples curl
+### Convention de nommage
+
+Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. Le dump est compresse en gzip (mysqldump `--single-transaction --quick --routines --triggers`).
+
+### Procedure de restauration
+
+> **ATTENTION** : la restauration ecrase integralement la base de donnees. Toutes les donnees inserees depuis le backup seront perdues.
+
+#### Prerequis
+
+- Acces SSH au serveur (ou role SUPER_ADMIN dans l'interface)
+- `mysqldump` et `mysql` installes sur le serveur
+- Acces au bucket S3 configure
+
+#### Etape 1 — Identifier le backup a restaurer
+
+**Via l'API** :
 
 ```bash
-# Backup manuel
-curl -X POST https://votre-domaine.com/api/admin/backups \
-  -H "Cookie: authjs.session-token=..."
+# Lister les backups disponibles (du plus recent au plus ancien)
+curl -s https://votre-domaine.com/api/admin/backups \
+  -H "Cookie: authjs.session-token=..." | jq '.[] | {key, lastModified, sizeMB: (.sizeBytes/1048576 | round)}'
+```
 
-# Lister les backups
-curl https://votre-domaine.com/api/admin/backups \
-  -H "Cookie: authjs.session-token=..."
+**Via la CLI S3** (si vous avez `aws` ou `mc` configure) :
 
-# Restaurer un backup (ATTENTION: operation destructive)
+```bash
+aws --endpoint-url https://s3.fr-par.scw.cloud s3 ls s3://koinonia-backups/backups/ --recursive
+```
+
+Notez la cle du backup souhaite, par exemple : `backups/2026-03-24T02-00-00Z/db.sql.gz`
+
+#### Etape 2 — Arreter l'application
+
+```bash
+sudo systemctl stop koinonia
+```
+
+Cela empeche les ecritures en base pendant la restauration.
+
+#### Etape 3 — Creer un backup de securite
+
+Avant de restaurer, sauvegardez l'etat actuel au cas ou :
+
+```bash
+sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
+  MYSQL_PWD=$(echo $DATABASE_URL | sed "s|.*://[^:]*:\([^@]*\)@.*|\1|") \
+  mysqldump --single-transaction --quick \
+    -u $(echo $DATABASE_URL | sed "s|.*://\([^:]*\):.*|\1|") \
+    $(echo $DATABASE_URL | sed "s|.*/||") | gzip > /opt/koinonia/shared/pre-restore-backup.sql.gz'
+```
+
+#### Etape 4 — Restaurer
+
+**Option A — Via l'API** (recommande) :
+
+```bash
 curl -X POST https://votre-domaine.com/api/admin/backups/restore \
   -H "Content-Type: application/json" \
   -H "Cookie: authjs.session-token=..." \
-  -d '{"key":"backups/2026-03-22T02-00-00Z/db.sql.gz"}'
+  -d '{"key":"backups/2026-03-24T02-00-00Z/db.sql.gz"}'
 ```
 
-### Convention de nommage
+> Note : l'application doit etre demarree pour cette option. Si vous l'avez arretee, redemarrez-la temporairement (`sudo systemctl start koinonia`), lancez la restauration, puis passez a l'etape 5.
 
-Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. Le dump est compresse en gzip.
+**Option B — En ligne de commande** (si l'application est inaccessible) :
+
+```bash
+# 1. Telecharger le backup depuis S3
+aws --endpoint-url https://s3.fr-par.scw.cloud \
+  s3 cp s3://koinonia-backups/backups/2026-03-24T02-00-00Z/db.sql.gz /tmp/restore.sql.gz
+
+# 2. Decompresser et injecter dans MySQL
+sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
+  DB_USER=$(echo $DATABASE_URL | sed "s|.*://\([^:]*\):.*|\1|") && \
+  DB_PASS=$(echo $DATABASE_URL | sed "s|.*://[^:]*:\([^@]*\)@.*|\1|") && \
+  DB_NAME=$(echo $DATABASE_URL | sed "s|.*/||") && \
+  MYSQL_PWD=$DB_PASS gunzip -c /tmp/restore.sql.gz | mysql -u $DB_USER $DB_NAME'
+
+# 3. Nettoyer
+rm /tmp/restore.sql.gz
+```
+
+**Option C — Avec MinIO Client** (`mc`) :
+
+```bash
+# Configurer mc (une seule fois)
+mc alias set koinonia https://s3.fr-par.scw.cloud VOTRE_ACCESS_KEY VOTRE_SECRET_KEY
+
+# Telecharger et restaurer
+mc cp koinonia/koinonia-backups/backups/2026-03-24T02-00-00Z/db.sql.gz /tmp/restore.sql.gz
+# Puis suivre l'etape 2 de l'option B
+```
+
+#### Etape 5 — Redemarrer l'application
+
+```bash
+sudo systemctl start koinonia
+```
+
+#### Etape 6 — Verifier
+
+1. Acceder a l'application et verifier que les donnees sont coherentes
+2. Controler les logs :
+
+```bash
+sudo journalctl -u koinonia -n 50 --no-pager
+```
+
+3. Si la restauration est mauvaise, restaurer le backup de securite de l'etape 3 :
+
+```bash
+sudo systemctl stop koinonia
+sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
+  DB_USER=$(echo $DATABASE_URL | sed "s|.*://\([^:]*\):.*|\1|") && \
+  DB_PASS=$(echo $DATABASE_URL | sed "s|.*://[^:]*:\([^@]*\)@.*|\1|") && \
+  DB_NAME=$(echo $DATABASE_URL | sed "s|.*/||") && \
+  MYSQL_PWD=$DB_PASS gunzip -c /opt/koinonia/shared/pre-restore-backup.sql.gz | mysql -u $DB_USER $DB_NAME'
+sudo systemctl start koinonia
+```
+
+### Troubleshooting
+
+| Symptome | Cause probable | Solution |
+|----------|----------------|----------|
+| Timer n'execute pas | Timer pas active | `sudo systemctl enable --now koinonia-backup.timer` |
+| `curl: (7) Failed to connect` | Koinonia pas demarre | Verifier `systemctl status koinonia` |
+| `mysqldump: command not found` | mariadb-client manquant | `sudo apt install mariadb-client` |
+| `Access denied for user` | Mot de passe incorrect dans DATABASE_URL | Verifier `/opt/koinonia/shared/.env` |
+| Backup vide (0 octets) | Base inaccessible | Verifier `systemctl status mariadb` |
+| Restore echoue `ERROR 1049` | Base inexistante | Recreer la base (voir section BDD) |
+| S3 `AccessDenied` | Cle S3 invalide ou bucket inexistant | Verifier les variables `S3_*` et creer le bucket |
 
 ## Checklist de production
 
@@ -398,7 +582,9 @@ Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. L
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Webcron configure (crontab ou service externe) pour appeler `/api/cron/reminders` quotidiennement
 - [ ] Variables S3 configurees pour les backups (optionnel)
-- [ ] Crontab backup configure pour appeler `/api/cron/backup` quotidiennement (optionnel)
+- [ ] Timer systemd `koinonia-backup.timer` active (ou crontab) pour backup quotidien (optionnel)
+- [ ] Backup teste : declencher manuellement et verifier la presence dans S3
+- [ ] Restore teste : restaurer un backup sur un environnement de test
 - [ ] `AUTH_TRUST_HOST=true` present
 - [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie
