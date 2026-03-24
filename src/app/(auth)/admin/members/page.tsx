@@ -7,37 +7,28 @@ import LinkRequestsClient from "./LinkRequestsClient";
 export default async function MembersPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (churchId) await requireChurchPermission("members:view", churchId);
-  const churchRoles = churchId
-    ? session.user.churchRoles.filter((r) => r.churchId === churchId)
-    : session.user.churchRoles;
+  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("members:view", churchId);
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const userPermissions = new Set(
     churchRoles.flatMap((r) => hasPermission(r.role))
   );
   const canManage = userPermissions.has("members:manage");
   const scope = getUserDepartmentScope(session);
 
-  const churchIds = Array.from(
-    new Set(session.user.churchRoles.map((r) => r.churchId))
-  );
-
   const membersWhere = scope.scoped
     ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }
-    : churchIds.length > 0
-      ? { departments: { some: { department: { ministry: { churchId: { in: churchIds } } } } } }
-      : undefined;
+    : { departments: { some: { department: { ministry: { churchId } } } } };
 
   const departmentsWhere = scope.scoped
     ? { id: { in: scope.departmentIds } }
-    : churchIds.length > 0
-      ? { ministry: { churchId: { in: churchIds } } }
-      : undefined;
+    : { ministry: { churchId } };
 
   const pendingRequests = canManage
     ? await prisma.memberLinkRequest.findMany({
         where: {
           status: "PENDING",
-          ...(churchIds.length > 0 ? { churchId: { in: churchIds } } : {}),
+          churchId,
         },
         include: {
           user: { select: { id: true, name: true, email: true, image: true } },

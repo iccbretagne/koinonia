@@ -5,18 +5,17 @@ import UsersClient from "./UsersClient";
 export default async function UsersPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (churchId) await requireChurchPermission("members:manage", churchId);
+  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("members:manage", churchId);
 
-  const churchRoles = session.user.churchRoles;
-  const isSuperAdmin = churchRoles.some((r) => r.role === "SUPER_ADMIN");
-  const churchIds = Array.from(new Set(churchRoles.map((r) => r.churchId)));
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
 
   const users = await prisma.user.findMany({
-    where: isSuperAdmin
-      ? undefined
-      : { churchRoles: { some: { churchId: { in: churchIds } } } },
+    where: { churchRoles: { some: { churchId } } },
     include: {
       churchRoles: {
+        where: { churchId },
         include: {
           church: { select: { id: true, name: true } },
           ministry: { select: { id: true, name: true } },
@@ -29,16 +28,14 @@ export default async function UsersPage() {
     orderBy: { name: "asc" },
   });
 
-  const whereChurch = isSuperAdmin ? {} : { churchId: { in: churchIds } };
-
   const ministries = await prisma.ministry.findMany({
-    where: whereChurch,
+    where: { churchId },
     select: { id: true, name: true, churchId: true },
     orderBy: { name: "asc" },
   });
 
   const departments = await prisma.department.findMany({
-    where: { ministry: whereChurch },
+    where: { ministry: { churchId } },
     select: { id: true, name: true, ministry: { select: { churchId: true } } },
     orderBy: { name: "asc" },
   });
