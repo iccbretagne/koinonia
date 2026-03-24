@@ -5,22 +5,16 @@ import EventsClient from "./EventsClient";
 export default async function EventsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (churchId) await requireChurchPermission("events:manage", churchId);
+  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("events:manage", churchId);
 
-  const churchRoles = session.user.churchRoles;
-  const isSuperAdmin = churchRoles.some((r) => r.role === "SUPER_ADMIN");
-  const churchIds = Array.from(new Set(churchRoles.map((r) => r.churchId)));
-
-  const churches = isSuperAdmin
-    ? await prisma.church.findMany({ orderBy: { name: "asc" } })
-    : churchRoles.map((r) => r.church);
-
-  const uniqueChurches = Array.from(
-    new Map(churches.map((c) => [c.id, c])).values()
-  );
+  const church = await prisma.church.findUnique({
+    where: { id: churchId },
+    select: { id: true, name: true },
+  });
 
   const events = await prisma.event.findMany({
-    where: isSuperAdmin ? undefined : { churchId: { in: churchIds } },
+    where: { churchId },
     include: {
       church: { select: { id: true, name: true } },
       eventDepts: {
@@ -40,7 +34,7 @@ export default async function EventsPage() {
           planningDeadline: e.planningDeadline?.toISOString() ?? null,
           createdAt: e.createdAt.toISOString(),
         }))}
-        churches={uniqueChurches.map((c) => ({ id: c.id, name: c.name }))}
+        churches={church ? [{ id: church.id, name: church.name }] : []}
       />
     </div>
   );

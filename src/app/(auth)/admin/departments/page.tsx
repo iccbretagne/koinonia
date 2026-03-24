@@ -5,23 +5,20 @@ import DepartmentsClient from "./DepartmentsClient";
 export default async function DepartmentsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (churchId) await requireChurchPermission("departments:manage", churchId);
+  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("departments:manage", churchId);
 
   const scope = getUserDepartmentScope(session);
-  const churchRoles = session.user.churchRoles;
-  const isSuperAdmin = churchRoles.some((r) => r.role === "SUPER_ADMIN");
-  const churchIds = Array.from(new Set(churchRoles.map((r) => r.churchId)));
+  const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
 
-  // For scoped users (MINISTER), get their ministryIds
-  const ministerMinistryIds = churchRoles
-    .filter((r) => r.role === "MINISTER" && r.ministryId)
+  // For scoped users (MINISTER), get their ministryIds in this church
+  const ministerMinistryIds = session.user.churchRoles
+    .filter((r) => r.churchId === churchId && r.role === "MINISTER" && r.ministryId)
     .map((r) => r.ministryId as string);
 
-  const departmentWhere = isSuperAdmin
-    ? undefined
-    : scope.scoped && ministerMinistryIds.length > 0
-      ? { ministryId: { in: ministerMinistryIds } }
-      : { ministry: { churchId: { in: churchIds } } };
+  const departmentWhere = scope.scoped && ministerMinistryIds.length > 0
+    ? { ministryId: { in: ministerMinistryIds } }
+    : { ministry: { churchId } };
 
   const departments = await prisma.department.findMany({
     where: departmentWhere,
@@ -32,16 +29,14 @@ export default async function DepartmentsPage() {
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
 
-  const ministryWhere = isSuperAdmin
-    ? undefined
-    : ministerMinistryIds.length > 0
-      ? { id: { in: ministerMinistryIds } }
-      : { churchId: { in: churchIds } };
+  const ministryWhere = ministerMinistryIds.length > 0
+    ? { id: { in: ministerMinistryIds } }
+    : { churchId };
 
   const ministries = await prisma.ministry.findMany({
     where: ministryWhere,
     include: { church: { select: { id: true, name: true } } },
-    orderBy: [{ church: { name: "asc" } }, { name: "asc" }],
+    orderBy: { name: "asc" },
   });
 
   return (
