@@ -12,6 +12,11 @@ const patchSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
   isUrgent: z.boolean().optional(),
+  isSaveTheDate: z.boolean().optional(),
+  eventDate: z.string().nullable().optional(),
+  channelInterne: z.boolean().optional(),
+  channelExterne: z.boolean().optional(),
+  targetEventIds: z.array(z.string()).optional(),
 });
 
 export async function GET(
@@ -108,6 +113,16 @@ export async function PATCH(
           ...(data.title && { title: data.title }),
           ...(data.content && { content: data.content }),
           ...(data.isUrgent !== undefined && { isUrgent: data.isUrgent }),
+          ...(data.isSaveTheDate !== undefined && { isSaveTheDate: data.isSaveTheDate }),
+          ...(data.eventDate !== undefined && { eventDate: data.eventDate ? new Date(data.eventDate) : null }),
+          ...(data.channelInterne !== undefined && { channelInterne: data.channelInterne }),
+          ...(data.channelExterne !== undefined && { channelExterne: data.channelExterne }),
+          ...(data.targetEventIds !== undefined && {
+            targetEvents: {
+              deleteMany: {},
+              create: data.targetEventIds.map((eventId) => ({ eventId })),
+            },
+          }),
         },
       });
 

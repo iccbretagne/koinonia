@@ -13,6 +13,24 @@ type DemandType =
   | "MODIFICATION_PLANNING"
   | "DEMANDE_ACCES";
 
+export interface EditData {
+  id: string;
+  type: string;
+  title: string;
+  payload: Record<string, unknown>;
+  announcement?: {
+    id: string;
+    title: string;
+    content: string;
+    eventDate: string | null;
+    isSaveTheDate: boolean;
+    isUrgent: boolean;
+    channelInterne: boolean;
+    channelExterne: boolean;
+    targetEvents?: { eventId: string }[];
+  } | null;
+}
+
 interface Props {
   churchId: string;
   canSubmitDemands: boolean;
@@ -21,6 +39,7 @@ interface Props {
   departments: { id: string; name: string; ministryName: string }[];
   users: { id: string; label: string }[];
   ministries: { id: string; name: string }[];
+  editData?: EditData;
 }
 
 const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
@@ -31,6 +50,8 @@ const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
   { key: "DEMANDE_ACCES", label: "Demande d'accès", icon: "🔑" },
 ];
 
+const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
+
 const EVENT_TYPES = ["CULTE", "PRIERE", "REUNION", "FORMATION", "EVENEMENT", "AUTRE"];
 
 const ROLES_FOR_ACCESS = [
@@ -40,6 +61,66 @@ const ROLES_FOR_ACCESS = [
   { value: "REPORTER", label: "Reporter" },
 ];
 
+function initFromEditData(editData: EditData): {
+  category: RequestCategory;
+  demandType: DemandType | null;
+  // announcement fields
+  annTitle: string;
+  annContent: string;
+  annEventDate: string;
+  annIsUrgent: boolean;
+  annChannelInterne: boolean;
+  annChannelExterne: boolean;
+  annTargetEventIds: string[];
+  // demand fields
+  eventTitle: string;
+  eventType: string;
+  eventDate: string;
+  planningDeadline: string;
+  selectedEventId: string;
+  reason: string;
+  selectedDeptId: string;
+  selectedMemberId: string;
+  newStatus: string;
+  targetUserId: string;
+  targetRole: string;
+  targetMinistryId: string;
+  targetDeptIds: string[];
+} {
+  const isAnnouncement = !!editData.announcement;
+  const isDemand = DEMAND_TYPE_KEYS.includes(editData.type);
+  const p = editData.payload;
+
+  return {
+    category: isAnnouncement ? "announcement" : isDemand ? "demand" : null,
+    demandType: isDemand ? (editData.type as DemandType) : null,
+    // announcement
+    annTitle: editData.announcement?.title ?? "",
+    annContent: editData.announcement?.content ?? "",
+    annEventDate: editData.announcement?.eventDate
+      ? editData.announcement.eventDate.split("T")[0]
+      : "",
+    annIsUrgent: editData.announcement?.isUrgent ?? false,
+    annChannelInterne: editData.announcement?.channelInterne ?? true,
+    annChannelExterne: editData.announcement?.channelExterne ?? false,
+    annTargetEventIds: editData.announcement?.targetEvents?.map((t) => t.eventId) ?? [],
+    // demand
+    eventTitle: (p?.eventTitle as string) ?? (p?.changes as Record<string, unknown>)?.title as string ?? "",
+    eventType: (p?.eventType as string) ?? "CULTE",
+    eventDate: (p?.eventDate as string) ?? "",
+    planningDeadline: (p?.planningDeadline as string) ?? "",
+    selectedEventId: (p?.eventId as string) ?? "",
+    reason: (p?.reason as string) ?? "",
+    selectedDeptId: (p?.departmentId as string) ?? "",
+    selectedMemberId: (p?.memberId as string) ?? "",
+    newStatus: (p?.newStatus as string) ?? "",
+    targetUserId: (p?.targetUserId as string) ?? "",
+    targetRole: (p?.role as string) ?? "MINISTER",
+    targetMinistryId: (p?.ministryId as string) ?? "",
+    targetDeptIds: (p?.departmentIds as string[]) ?? [],
+  };
+}
+
 export default function RequestForm({
   churchId,
   canSubmitDemands,
@@ -48,22 +129,27 @@ export default function RequestForm({
   departments,
   users,
   ministries,
+  editData,
 }: Props) {
   const router = useRouter();
+  const isEditMode = !!editData;
+
+  const init = editData ? initFromEditData(editData) : null;
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState<RequestCategory>(null);
-  const [demandType, setDemandType] = useState<DemandType | null>(null);
+  const [category, setCategory] = useState<RequestCategory>(init?.category ?? null);
+  const [demandType, setDemandType] = useState<DemandType | null>(init?.demandType ?? null);
 
   // Announcement fields
-  const [annTitle, setAnnTitle] = useState("");
-  const [annContent, setAnnContent] = useState("");
-  const [annEventDate, setAnnEventDate] = useState("");
-  const [annIsUrgent, setAnnIsUrgent] = useState(false);
-  const [annChannelInterne, setAnnChannelInterne] = useState(true);
-  const [annChannelExterne, setAnnChannelExterne] = useState(false);
+  const [annTitle, setAnnTitle] = useState(init?.annTitle ?? "");
+  const [annContent, setAnnContent] = useState(init?.annContent ?? "");
+  const [annEventDate, setAnnEventDate] = useState(init?.annEventDate ?? "");
+  const [annIsUrgent, setAnnIsUrgent] = useState(init?.annIsUrgent ?? false);
+  const [annChannelInterne, setAnnChannelInterne] = useState(init?.annChannelInterne ?? true);
+  const [annChannelExterne, setAnnChannelExterne] = useState(init?.annChannelExterne ?? false);
   const [annSourceId, setAnnSourceId] = useState(sourceOptions[0]?.id ?? "");
-  const [annTargetEventIds, setAnnTargetEventIds] = useState<string[]>([]);
+  const [annTargetEventIds, setAnnTargetEventIds] = useState<string[]>(init?.annTargetEventIds ?? []);
 
   function toggleEvent(id: string) {
     setAnnTargetEventIds((prev) =>
@@ -72,19 +158,19 @@ export default function RequestForm({
   }
 
   // Demand fields
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventType, setEventType] = useState("CULTE");
-  const [eventDate, setEventDate] = useState("");
-  const [planningDeadline, setPlanningDeadline] = useState("");
-  const [selectedEventId, setSelectedEventId] = useState("");
-  const [reason, setReason] = useState("");
-  const [selectedDeptId, setSelectedDeptId] = useState("");
-  const [selectedMemberId, setSelectedMemberId] = useState("");
-  const [newStatus, setNewStatus] = useState("");
-  const [targetUserId, setTargetUserId] = useState("");
-  const [targetRole, setTargetRole] = useState("MINISTER");
-  const [targetMinistryId, setTargetMinistryId] = useState("");
-  const [targetDeptIds, setTargetDeptIds] = useState<string[]>([]);
+  const [eventTitle, setEventTitle] = useState(init?.eventTitle ?? "");
+  const [eventType, setEventType] = useState(init?.eventType ?? "CULTE");
+  const [eventDate, setEventDate] = useState(init?.eventDate ?? "");
+  const [planningDeadline, setPlanningDeadline] = useState(init?.planningDeadline ?? "");
+  const [selectedEventId, setSelectedEventId] = useState(init?.selectedEventId ?? "");
+  const [reason, setReason] = useState(init?.reason ?? "");
+  const [selectedDeptId, setSelectedDeptId] = useState(init?.selectedDeptId ?? "");
+  const [selectedMemberId, setSelectedMemberId] = useState(init?.selectedMemberId ?? "");
+  const [newStatus, setNewStatus] = useState(init?.newStatus ?? "");
+  const [targetUserId, setTargetUserId] = useState(init?.targetUserId ?? "");
+  const [targetRole, setTargetRole] = useState(init?.targetRole ?? "MINISTER");
+  const [targetMinistryId, setTargetMinistryId] = useState(init?.targetMinistryId ?? "");
+  const [targetDeptIds, setTargetDeptIds] = useState<string[]>(init?.targetDeptIds ?? []);
 
   // Members for planning modification (loaded dynamically)
   const [members, setMembers] = useState<{ id: string; firstName: string; lastName: string }[]>([]);
@@ -109,6 +195,24 @@ export default function RequestForm({
   }
 
   async function submitAnnouncement() {
+    if (isEditMode && editData?.announcement) {
+      // PATCH the announcement
+      const annRes = await fetch(`/api/announcements/${editData.announcement.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: annTitle,
+          content: annContent,
+          eventDate: annEventDate || null,
+          isUrgent: annIsUrgent,
+          channelInterne: annChannelInterne,
+          channelExterne: annChannelExterne,
+          targetEventIds: annTargetEventIds,
+        }),
+      });
+      return annRes;
+    }
+
     const source = sourceOptions.find((s) => s.id === annSourceId);
     const res = await fetch("/api/announcements", {
       method: "POST",
@@ -176,6 +280,15 @@ export default function RequestForm({
       }
     }
 
+    if (isEditMode && editData) {
+      const res = await fetch(`/api/requests/${editData.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, payload }),
+      });
+      return res;
+    }
+
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -215,7 +328,7 @@ export default function RequestForm({
     }
   }
 
-  // Step 1: Choose category
+  // Step 1: Choose category (skipped in edit mode)
   if (!category) {
     return (
       <div className="max-w-2xl">
@@ -264,13 +377,15 @@ export default function RequestForm({
   // Step 2: Form
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
-      <button
-        type="button"
-        onClick={reset}
-        className="text-sm text-icc-violet hover:underline mb-2"
-      >
-        ← Changer de type
-      </button>
+      {!isEditMode && (
+        <button
+          type="button"
+          onClick={reset}
+          className="text-sm text-icc-violet hover:underline mb-2"
+        >
+          ← Changer de type
+        </button>
+      )}
 
       {category === "announcement" && (
         <>
@@ -351,7 +466,7 @@ export default function RequestForm({
               <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
             </div>
           )}
-          {sourceOptions.length > 1 && (
+          {!isEditMode && sourceOptions.length > 1 && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">Source</label>
               <select
@@ -611,7 +726,7 @@ export default function RequestForm({
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Envoi..." : "Soumettre"}
+          {submitting ? "Envoi..." : isEditMode ? "Enregistrer" : "Soumettre"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/requests")}>
           Annuler

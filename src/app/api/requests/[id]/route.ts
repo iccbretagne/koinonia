@@ -18,6 +18,9 @@ const EXECUTABLE_TYPES = [
 const patchSchema = z.object({
   status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE", "APPROUVEE", "REFUSEE"]).optional(),
   reviewNotes: z.string().nullable().optional(),
+  // Owner-editable fields (when request is EN_ATTENTE)
+  title: z.string().min(1).optional(),
+  payload: z.record(z.unknown()).optional(),
   // Payload fields update (for announcement-type requests)
   deliveryLink: z.string().nullable().optional(),
   format: z.string().nullable().optional(),
@@ -49,8 +52,14 @@ export async function GET(
             content: true,
             eventDate: true,
             isSaveTheDate: true,
+            isUrgent: true,
             channelInterne: true,
             channelExterne: true,
+            targetEvents: {
+              select: {
+                eventId: true,
+              },
+            },
           },
         },
         parentRequest: {
@@ -87,6 +96,7 @@ export async function PATCH(
         assignedDeptId: true,
         churchId: true,
         type: true,
+        status: true,
         announcementId: true,
         payload: true,
       },
@@ -119,11 +129,24 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
+    const isPending = existing.status === "EN_ATTENTE";
+
     if (isOwner && !canManage && !isAssignedDeptMember) {
-      throw new ApiError(403, "Le demandeur ne peut pas modifier sa propre demande");
+      // Owner can only edit their own pending requests
+      if (!isPending) {
+        throw new ApiError(403, "Le demandeur ne peut modifier que ses demandes en attente");
+      }
+      // Owner can only change status to ANNULE
+      if (data.status !== undefined && data.status !== "ANNULE") {
+        throw new ApiError(403, "Le demandeur ne peut qu'annuler sa propre demande");
+      }
+      // Owner cannot set reviewNotes
+      if (data.reviewNotes !== undefined) {
+        throw new ApiError(403, "Le demandeur ne peut pas ajouter de notes de révision");
+      }
     }
 
-    if (data.status !== undefined && !canManage && !isAssignedDeptMember) {
+    if (data.status !== undefined && data.status !== "ANNULE" && !canManage && !isAssignedDeptMember) {
       throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
     }
 
@@ -139,6 +162,8 @@ export async function PATCH(
     if (data.format !== undefined) payloadUpdates.format = data.format;
     if (data.brief !== undefined) payloadUpdates.brief = data.brief;
     if (data.deadline !== undefined) payloadUpdates.deadline = data.deadline;
+    // Owner payload update (full payload object merge)
+    if (data.payload !== undefined) Object.assign(payloadUpdates, data.payload);
     const hasPayloadUpdates = Object.keys(payloadUpdates).length > 0;
     const mergedPayload = hasPayloadUpdates
       ? { ...currentPayload, ...payloadUpdates }
@@ -178,6 +203,7 @@ export async function PATCH(
         where: { id },
         data: {
           ...(data.status && { status: data.status }),
+          ...(data.title !== undefined && { title: data.title }),
           ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
           ...(mergedPayload && { payload: mergedPayload as Prisma.InputJsonValue }),
           ...(data.status !== undefined && {
