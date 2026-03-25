@@ -263,46 +263,78 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
             </div>
 
             {/* Events */}
-            <div className="bg-white divide-y divide-gray-100">
-              {events.map((event) => (
-                <div key={event.id} className="px-6 py-4">
-                  {/* Event header row */}
-                  <div className="flex items-baseline justify-between gap-2 mb-1">
-                    <span className="font-semibold text-gray-900 text-sm">{event.title}</span>
-                    <span className="text-xs text-gray-500 whitespace-nowrap capitalize shrink-0">
-                      {formatEventDate(event.date)}
-                    </span>
+            <div className="bg-white divide-y divide-gray-200">
+              {events.map((event) => {
+                const withTasks = event.members.filter((m) => m.tasks.length > 0);
+                const withoutTasks = event.members.filter((m) => m.tasks.length === 0);
+
+                return (
+                  <div key={event.id} className="px-6 py-5">
+                    {/* Event header block */}
+                    <div className="bg-gray-50 -mx-6 px-6 py-2.5 border-l-4 border-icc-violet mb-4">
+                      <p className="font-bold text-gray-900 text-sm">{event.title}</p>
+                      <p className="text-xs text-gray-500 capitalize">{formatEventDate(event.date)}</p>
+                    </div>
+
+                    {/* Members */}
+                    {event.members.length === 0 ? (
+                      <p className="text-sm text-gray-400 italic">(aucun STAR en service)</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Members with tasks */}
+                        {withTasks.length > 0 && (
+                          <div>
+                            <ul className="space-y-1.5">
+                              {withTasks.map((member) => (
+                                <li key={member.id} className="flex items-center justify-between gap-2">
+                                  <span className="text-sm text-gray-900 font-bold">
+                                    {member.firstName} {member.lastName}
+                                  </span>
+                                  <span className="flex items-center gap-1 shrink-0">
+                                    <span className="text-xs text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full font-normal">
+                                      {member.tasks.join(", ")}
+                                    </span>
+                                    {member.status === "EN_SERVICE_DEBRIEF" && (
+                                      <span className="text-xs text-icc-bleu bg-icc-bleu/10 px-2 py-0.5 rounded-full">
+                                        Debrief
+                                      </span>
+                                    )}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Separator between groups */}
+                        {withTasks.length > 0 && withoutTasks.length > 0 && (
+                          <div className="h-px bg-gray-100" />
+                        )}
+
+                        {/* Members without tasks */}
+                        {withoutTasks.length > 0 && (
+                          <div>
+                            <ul className="space-y-1.5">
+                              {withoutTasks.map((member) => (
+                                <li key={member.id} className="flex items-center justify-between gap-2">
+                                  <span className="text-sm text-gray-700 font-bold">
+                                    {member.firstName} {member.lastName}
+                                  </span>
+                                  {member.status === "EN_SERVICE_DEBRIEF" && (
+                                    <span className="text-xs text-icc-bleu bg-icc-bleu/10 px-2 py-0.5 rounded-full shrink-0">
+                                      Debrief
+                                    </span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {/* Thin violet separator */}
-                  <div className="h-px bg-icc-violet/20 mb-3" />
-                  {/* Members */}
-                  {event.members.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">(aucun STAR en service)</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {event.members.map((member) => (
-                        <li key={member.id} className="flex items-center justify-between gap-2">
-                          <span className="text-sm text-gray-800 font-medium">
-                            {member.firstName} {member.lastName}
-                          </span>
-                          <span className="flex items-center gap-1 shrink-0">
-                            {member.tasks.length > 0 && (
-                              <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
-                                {member.tasks.join(", ")}
-                              </span>
-                            )}
-                            {member.status === "EN_SERVICE_DEBRIEF" && (
-                              <span className="text-xs bg-icc-bleu/10 text-icc-bleu px-2 py-0.5 rounded-full">
-                                Debrief
-                              </span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
           </>
