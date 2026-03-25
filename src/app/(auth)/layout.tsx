@@ -73,6 +73,10 @@ export default async function AuthLayout({
   // Compute visible config links
   const userRoles = churchRoles.map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));
+  // Super admins have all permissions regardless of church roles
+  if (session.user.isSuperAdmin) {
+    configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
+  }
   const visibleConfigLinks = configLinksDef
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));

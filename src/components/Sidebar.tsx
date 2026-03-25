@@ -278,7 +278,7 @@ export default function Sidebar({
     pathname.startsWith("/admin/reports");
   const isMembersActive = pathname.startsWith("/admin/members");
   const isServiceActive =
-    pathname.startsWith("/announcements") ||
+    pathname.startsWith("/requests") ||
     pathname.startsWith("/secretariat") ||
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
