@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 
 interface MemberItem {
   id: string;
@@ -21,9 +20,10 @@ interface EventItem {
 interface Props {
   departmentId: string;
   departmentName?: string;
+  churchName?: string;
 }
 
-export default function MonthlyPlanningView({ departmentId, departmentName }: Props) {
+export default function MonthlyPlanningView({ departmentId, departmentName, churchName }: Props) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
@@ -243,60 +243,73 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
         </div>
       )}
 
-      <div ref={printRef}>
+      <div ref={printRef} className="max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Chargement...</div>
+          <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
         ) : events.length === 0 ? (
           <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
             Aucun evenement ce mois
           </div>
         ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-lg shadow p-4"
-              >
-                <div className="flex items-baseline gap-3 mb-2">
-                  <span className="text-sm font-medium text-icc-violet capitalize">
-                    {formatEventDate(event.date)}
-                  </span>
-                  <Link
-                    href={`/dashboard?dept=${departmentId}&event=${event.id}&view=event`}
-                    className="text-sm text-gray-500 hover:text-icc-violet hover:underline transition-colors"
-                  >
-                    {event.title}
-                  </Link>
-                </div>
-                {event.members.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic">
-                    (aucun STAR en service)
-                  </p>
-                ) : (
-                  <ul className="space-y-1">
-                    {event.members.map((member) => (
-                      <li key={member.id} className="text-sm text-gray-700">
-                        {member.firstName} {member.lastName}
-                        {member.status === "EN_SERVICE_DEBRIEF" && (
-                          <svg className="inline-block w-5 h-5 ml-1 text-icc-violet align-text-bottom" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                            <circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/>
-                            <circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/>
-                            <circle cx="16" cy="10" r="1" fill="currentColor" stroke="none"/>
-                          </svg>
-                        )}
-                        {member.tasks.length > 0 && (
-                          <span className="ml-1.5 text-xs text-icc-violet">
-                            ({member.tasks.join(", ")})
+          <>
+            {/* Header */}
+            <div className="bg-icc-violet px-6 py-4">
+              <p className="text-lg font-bold text-white leading-tight">
+                {churchName ?? "ICC"}
+              </p>
+              <p className="text-sm text-white/80 mt-0.5 capitalize">
+                {departmentName ? `${departmentName} — ` : ""}{formatMonthLabel(currentMonth)}
+              </p>
+            </div>
+
+            {/* Events */}
+            <div className="bg-white divide-y divide-gray-100">
+              {events.map((event) => (
+                <div key={event.id} className="px-6 py-4">
+                  {/* Event header row */}
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <span className="font-semibold text-gray-900 text-sm">{event.title}</span>
+                    <span className="text-xs text-gray-500 whitespace-nowrap capitalize shrink-0">
+                      {formatEventDate(event.date)}
+                    </span>
+                  </div>
+                  {/* Thin violet separator */}
+                  <div className="h-px bg-icc-violet/20 mb-3" />
+                  {/* Members */}
+                  {event.members.length === 0 ? (
+                    <p className="text-sm text-gray-400 italic">(aucun STAR en service)</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {event.members.map((member) => (
+                        <li key={member.id} className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-gray-800 font-medium">
+                            {member.firstName} {member.lastName}
                           </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
+                          <span className="flex items-center gap-1 shrink-0">
+                            {member.tasks.length > 0 && (
+                              <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
+                                {member.tasks.join(", ")}
+                              </span>
+                            )}
+                            {member.status === "EN_SERVICE_DEBRIEF" && (
+                              <span className="text-xs bg-icc-bleu/10 text-icc-bleu px-2 py-0.5 rounded-full">
+                                Debrief
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-6 py-2">
+              <p className="text-xs text-gray-400 text-right">Koinonia</p>
+            </div>
+          </>
         )}
       </div>
     </div>
