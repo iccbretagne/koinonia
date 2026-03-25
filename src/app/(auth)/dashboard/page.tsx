@@ -85,6 +85,17 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     redirect(`/dashboard?${qs.toString()}`);
   }
 
+  // Get church name for the current church
+  const currentChurchRole = session.user.churchRoles.find(
+    (r) => r.churchId === currentChurchId
+  );
+  const churchName = currentChurchRole
+    ? (await prisma.church.findUnique({
+        where: { id: currentChurchId },
+        select: { name: true },
+      }))?.name ?? undefined
+    : undefined;
+
   // Fetch department name (for month view and tasks view)
   const selectedDepartment =
     (view === "month" || view === "tasks") && selectedDeptId
@@ -143,7 +154,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         )
       ) : view === "month" ? (
         selectedDeptId ? (
-          <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} />
+          <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
         ) : (
           <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
             Sélectionnez un département dans la barre latérale

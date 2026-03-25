@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 
 interface MemberItem {
   id: string;
@@ -21,9 +20,10 @@ interface EventItem {
 interface Props {
   departmentId: string;
   departmentName?: string;
+  churchName?: string;
 }
 
-export default function MonthlyPlanningView({ departmentId, departmentName }: Props) {
+export default function MonthlyPlanningView({ departmentId, departmentName, churchName }: Props) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
@@ -66,14 +66,6 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
     const [y, m] = ym.split("-").map(Number);
     const d = new Date(y, m - 1, 1);
     return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  }
-
-  function formatEventDate(iso: string) {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
   }
 
   function getExportFileName() {
@@ -243,60 +235,99 @@ export default function MonthlyPlanningView({ departmentId, departmentName }: Pr
         </div>
       )}
 
-      <div ref={printRef}>
+      <div ref={printRef} className="max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Chargement...</div>
+          <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
         ) : events.length === 0 ? (
           <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
             Aucun evenement ce mois
           </div>
         ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-lg shadow p-4"
-              >
-                <div className="flex items-baseline gap-3 mb-2">
-                  <span className="text-sm font-medium text-icc-violet capitalize">
-                    {formatEventDate(event.date)}
-                  </span>
-                  <Link
-                    href={`/dashboard?dept=${departmentId}&event=${event.id}&view=event`}
-                    className="text-sm text-gray-500 hover:text-icc-violet hover:underline transition-colors"
-                  >
-                    {event.title}
-                  </Link>
-                </div>
-                {event.members.length === 0 ? (
-                  <p className="text-sm text-gray-400 italic">
-                    (aucun STAR en service)
-                  </p>
-                ) : (
-                  <ul className="space-y-1">
-                    {event.members.map((member) => (
-                      <li key={member.id} className="text-sm text-gray-700">
-                        {member.firstName} {member.lastName}
-                        {member.status === "EN_SERVICE_DEBRIEF" && (
-                          <svg className="inline-block w-5 h-5 ml-1 text-icc-violet align-text-bottom" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                            <circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/>
-                            <circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/>
-                            <circle cx="16" cy="10" r="1" fill="currentColor" stroke="none"/>
-                          </svg>
+          <>
+            {/* Header */}
+            <div className="bg-icc-violet px-6 py-4">
+              <p className="text-lg font-bold text-white leading-tight">
+                {churchName ?? "ICC"}
+              </p>
+              <p className="text-sm text-white/80 mt-0.5 capitalize">
+                {departmentName ? `${departmentName} — ` : ""}{formatMonthLabel(currentMonth)}
+              </p>
+            </div>
+
+            {/* Events */}
+            <div className="bg-gray-50 px-5 py-4 space-y-4">
+              {events.map((event) => {
+                const withTasks = event.members.filter((m) => m.tasks.length > 0);
+                const withoutTasks = event.members.filter((m) => m.tasks.length === 0);
+                const d = new Date(event.date);
+                const dayNum = d.getDate();
+                const dayName = d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+
+                return (
+                  <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
+                    {/* Event row: date block + title + members */}
+                    <div className="flex">
+                      {/* Date block */}
+                      <div className="bg-icc-violet w-16 shrink-0 flex flex-col items-center justify-center py-3">
+                        <span className="text-xs font-semibold text-white/80 uppercase leading-none">{dayName}</span>
+                        <span className="text-2xl font-black text-white leading-none mt-0.5">{dayNum}</span>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 px-4 py-3 min-w-0">
+                        <p className="font-bold text-icc-violet text-xs uppercase tracking-wide mb-2">{event.title}</p>
+
+                        {event.members.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {/* Members with tasks */}
+                            {withTasks.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between gap-2">
+                                <span className="text-sm text-gray-900 font-semibold truncate">
+                                  {member.firstName} {member.lastName}
+                                </span>
+                                <span className="flex items-center gap-1 shrink-0">
+                                  <span className="text-xs text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full">
+                                    {member.tasks.join(", ")}
+                                  </span>
+                                  {member.status === "EN_SERVICE_DEBRIEF" && (
+                                    <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full">
+                                      Debrief
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+
+                            {/* Separator */}
+                            {withTasks.length > 0 && withoutTasks.length > 0 && (
+                              <div className="h-px bg-gray-100" />
+                            )}
+
+                            {/* Members without tasks */}
+                            {withoutTasks.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between gap-2">
+                                <span className="text-sm text-gray-600 font-medium truncate">
+                                  {member.firstName} {member.lastName}
+                                </span>
+                                {member.status === "EN_SERVICE_DEBRIEF" && (
+                                  <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full shrink-0">
+                                    Debrief
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
-                        {member.tasks.length > 0 && (
-                          <span className="ml-1.5 text-xs text-icc-violet">
-                            ({member.tasks.join(", ")})
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </>
         )}
       </div>
     </div>
