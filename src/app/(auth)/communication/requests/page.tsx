@@ -1,7 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { DepartmentFunction } from "@prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 import { notFound } from "next/navigation";
 import CommunicationDashboard from "./CommunicationDashboard";
 
@@ -12,7 +12,7 @@ export default async function CommunicationRequestsPage() {
   await requireChurchPermission("planning:view", churchId);
 
   const commDept = await prisma.department.findFirst({
-    where: { function: DepartmentFunction.COMMUNICATION, ministry: { churchId } },
+    where: { function: DEPT_FN.COMMUNICATION, ministry: { churchId } },
     select: { id: true, name: true },
   });
 
@@ -41,7 +41,7 @@ export default async function CommunicationRequestsPage() {
     );
   }
 
-  const requests = await prisma.serviceRequest.findMany({
+  const requests = await prisma.request.findMany({
     where: { type: "RESEAUX_SOCIAUX", assignedDeptId: commDept.id, churchId },
     include: {
       submittedBy: { select: { name: true, displayName: true } },
@@ -52,7 +52,7 @@ export default async function CommunicationRequestsPage() {
       },
       childRequests: {
         where: { type: "VISUEL" },
-        select: { id: true, type: true, status: true, deliveryLink: true },
+        select: { id: true, type: true, status: true, payload: true },
       },
     },
     orderBy: { submittedAt: "desc" },

@@ -4,10 +4,10 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { DepartmentFunction } from "@prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 import { z } from "zod";
 
-const createSchema = z.object({
+const createVisuelSchema = z.object({
   churchId: z.string().min(1, "L'église est requise"),
   title: z.string().min(1, "Le titre est requis"),
   brief: z.string().nullable().optional(),
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     const canManage =
       session.user.isSuperAdmin || churchPermissions.has("events:manage");
 
-    const serviceRequests = await prisma.serviceRequest.findMany({
+    const requests = await prisma.request.findMany({
       where: {
         churchId,
         parentRequestId: null,
@@ -61,8 +61,7 @@ export async function GET(request: Request) {
             id: true,
             type: true,
             status: true,
-            format: true,
-            deliveryLink: true,
+            payload: true,
             assignedDept: { select: { id: true, name: true } },
           },
         },
@@ -70,7 +69,7 @@ export async function GET(request: Request) {
       orderBy: { submittedAt: "desc" },
     });
 
-    return successResponse(serviceRequests);
+    return successResponse(requests);
   } catch (error) {
     return errorResponse(error);
   }
@@ -80,7 +79,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const data = createSchema.parse(body);
+    const data = createVisuelSchema.parse(body);
     const session = await requireChurchPermission("planning:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
@@ -106,13 +105,13 @@ export async function POST(request: Request) {
 
     const productionDept = await prisma.department.findFirst({
       where: {
-        function: DepartmentFunction.PRODUCTION_MEDIA,
+        function: DEPT_FN.PRODUCTION_MEDIA,
         ministry: { churchId: data.churchId },
       },
       select: { id: true },
     });
 
-    const serviceRequest = await prisma.serviceRequest.create({
+    const created = await prisma.request.create({
       data: {
         churchId: data.churchId,
         type: "VISUEL",
@@ -121,15 +120,17 @@ export async function POST(request: Request) {
         ministryId: data.ministryId ?? null,
         assignedDeptId: productionDept?.id ?? null,
         title: data.title,
-        brief: data.brief ?? null,
-        format: data.format ?? null,
-        deadline: data.deadline ? new Date(data.deadline) : null,
+        payload: {
+          brief: data.brief ?? null,
+          format: data.format ?? null,
+          deadline: data.deadline ?? null,
+        },
       },
     });
 
-    await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "ServiceRequest", entityId: serviceRequest.id, details: { title: data.title, type: "VISUEL" } });
+    await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Request", entityId: created.id, details: { title: data.title, type: "VISUEL" } });
 
-    return successResponse(serviceRequest, 201);
+    return successResponse(created, 201);
   } catch (error) {
     return errorResponse(error);
   }

@@ -298,7 +298,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "serviceRequest" | "memberLinkRequest" | "announcement" | "ministry",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -335,13 +335,13 @@ export async function resolveChurchId(
       if (!primary) throw new ApiError(404, "Membre sans département principal");
       return primary.department.ministry.churchId;
     }
-    case "serviceRequest": {
-      const sr = await prisma.serviceRequest.findUnique({
+    case "request": {
+      const req = await prisma.request.findUnique({
         where: { id: resourceId },
         select: { churchId: true },
       });
-      if (!sr) throw new ApiError(404, "Demande de service introuvable");
-      return sr.churchId;
+      if (!req) throw new ApiError(404, "Demande introuvable");
+      return req.churchId;
     }
     case "memberLinkRequest": {
       const mlr = await prisma.memberLinkRequest.findUnique({

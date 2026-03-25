@@ -3,7 +3,7 @@ import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import { DepartmentFunction } from "@prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 import { notFound } from "next/navigation";
 import MediaDashboard from "./MediaDashboard";
 
@@ -14,7 +14,7 @@ export default async function MediaRequestsPage() {
   await requireChurchPermission("planning:view", churchId);
 
   const mediaDept = await prisma.department.findFirst({
-    where: { function: DepartmentFunction.PRODUCTION_MEDIA, ministry: { churchId } },
+    where: { function: DEPT_FN.PRODUCTION_MEDIA, ministry: { churchId } },
     select: { id: true, name: true },
   });
 
@@ -43,7 +43,7 @@ export default async function MediaRequestsPage() {
     );
   }
 
-  const requests = await prisma.serviceRequest.findMany({
+  const requests = await prisma.request.findMany({
     where: { type: "VISUEL", assignedDeptId: mediaDept.id, churchId },
     include: {
       submittedBy: { select: { name: true, displayName: true } },

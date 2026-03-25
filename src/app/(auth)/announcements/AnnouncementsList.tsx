@@ -1,21 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import type { AnnouncementStatus, ServiceRequestType, ServiceRequestStatus } from "@prisma/client";
+import type { AnnouncementStatus } from "@prisma/client";
 
 interface ChildRequest {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
-  deliveryLink: string | null;
+  type: string;
+  status: string;
+  payload: unknown;
   reviewNotes: string | null;
   assignedDept: { id: string; name: string } | null;
 }
 
-interface ServiceRequest {
+interface RequestItem {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
+  type: string;
+  status: string;
   reviewNotes: string | null;
   assignedDept: { id: string; name: string } | null;
   childRequests: ChildRequest[];
@@ -35,7 +35,7 @@ interface Announcement {
   department: { id: string; name: string } | null;
   ministry: { id: string; name: string } | null;
   targetEvents: { event: { id: string; title: string; date: Date } }[];
-  serviceRequests: ServiceRequest[];
+  requests: RequestItem[];
 }
 
 interface Props {
@@ -56,27 +56,27 @@ const STATUS_COLOR: Record<AnnouncementStatus, string> = {
   ANNULEE: "bg-gray-100 text-gray-500",
 };
 
-const SR_TYPE_LABEL: Record<ServiceRequestType, string> = {
+const SR_TYPE_LABEL: Record<string, string> = {
   DIFFUSION_INTERNE: "Diffusion interne",
   RESEAUX_SOCIAUX: "Réseaux sociaux",
   VISUEL: "Visuel",
 };
 
-const SR_STATUS_BADGE: Record<ServiceRequestStatus, string> = {
+const SR_STATUS_BADGE: Record<string, string> = {
   EN_ATTENTE: "bg-amber-100 text-amber-800 border border-amber-200",
   EN_COURS:   "bg-blue-100 text-blue-800 border border-blue-200",
   LIVRE:      "bg-green-100 text-green-800 border border-green-200",
   ANNULE:     "bg-gray-100 text-gray-500 border border-gray-200",
 };
 
-const SR_STATUS_LABEL: Record<ServiceRequestStatus, string> = {
+const SR_STATUS_LABEL: Record<string, string> = {
   EN_ATTENTE: "En attente",
   EN_COURS:   "En cours",
   LIVRE:      "Livré",
   ANNULE:     "Annulé",
 };
 
-const SR_STATUS_DOT: Record<ServiceRequestStatus, string> = {
+const SR_STATUS_DOT: Record<string, string> = {
   EN_ATTENTE: "●",
   EN_COURS:   "●",
   LIVRE:      "✓",
@@ -183,9 +183,9 @@ export default function AnnouncementsList({ announcements: initial }: Props) {
             </div>
           )}
 
-          {ann.serviceRequests.length > 0 && (
+          {ann.requests.length > 0 && (
             <div className="border-t border-gray-100 pt-3 mt-1 space-y-2">
-              {ann.serviceRequests.map((sr) => (
+              {ann.requests.map((sr) => (
                 <div key={sr.id}>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[sr.status]}`}>
@@ -203,34 +203,38 @@ export default function AnnouncementsList({ announcements: initial }: Props) {
                       Motif : {sr.reviewNotes}
                     </p>
                   )}
-                  {sr.childRequests.map((child) => (
-                    <div key={child.id} className="pl-4 mt-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[child.status]}`}>
-                          {SR_STATUS_DOT[child.status]} {SR_STATUS_LABEL[child.status]}
-                        </span>
-                        <span className="text-xs text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
-                        {child.assignedDept && (
-                          <span className="text-xs text-gray-400">→ {child.assignedDept.name}</span>
-                        )}
-                        {child.deliveryLink && child.status === "LIVRE" && (
-                          <a
-                            href={child.deliveryLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-icc-violet underline font-medium"
-                          >
-                            Voir le visuel →
-                          </a>
+                  {sr.childRequests.map((child) => {
+                    const cp = (child.payload ?? {}) as Record<string, unknown>;
+                    const childDeliveryLink = (cp.deliveryLink as string) ?? null;
+                    return (
+                      <div key={child.id} className="pl-4 mt-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${SR_STATUS_BADGE[child.status]}`}>
+                            {SR_STATUS_DOT[child.status]} {SR_STATUS_LABEL[child.status]}
+                          </span>
+                          <span className="text-xs text-gray-500">{SR_TYPE_LABEL[child.type]}</span>
+                          {child.assignedDept && (
+                            <span className="text-xs text-gray-400">→ {child.assignedDept.name}</span>
+                          )}
+                          {childDeliveryLink && child.status === "LIVRE" && (
+                            <a
+                              href={childDeliveryLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-icc-violet underline font-medium"
+                            >
+                              Voir le visuel →
+                            </a>
+                          )}
+                        </div>
+                        {child.status === "ANNULE" && child.reviewNotes && (
+                          <p className="mt-1 text-xs text-gray-500 italic">
+                            Motif : {child.reviewNotes}
+                          </p>
                         )}
                       </div>
-                      {child.status === "ANNULE" && child.reviewNotes && (
-                        <p className="mt-1 text-xs text-gray-500 italic">
-                          Motif : {child.reviewNotes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ))}
             </div>

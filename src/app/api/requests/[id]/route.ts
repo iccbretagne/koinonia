@@ -4,11 +4,13 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 const patchSchema = z.object({
-  status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE"]).optional(),
-  deliveryLink: z.string().nullable().optional(),
+  status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE", "APPROUVEE", "REFUSEE"]).optional(),
   reviewNotes: z.string().nullable().optional(),
+  // Payload fields update (for announcement-type requests)
+  deliveryLink: z.string().nullable().optional(),
   format: z.string().nullable().optional(),
   brief: z.string().nullable().optional(),
   deadline: z.string().nullable().optional(),
@@ -20,10 +22,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveChurchId("serviceRequest", id);
+    const churchId = await resolveChurchId("request", id);
     await requireChurchPermission("planning:view", churchId);
 
-    const serviceRequest = await prisma.serviceRequest.findUnique({
+    const req = await prisma.request.findUnique({
       where: { id },
       include: {
         submittedBy: { select: { id: true, name: true, displayName: true } },
@@ -53,9 +55,9 @@ export async function GET(
       },
     });
 
-    if (!serviceRequest) throw new ApiError(404, "Demande introuvable");
+    if (!req) throw new ApiError(404, "Demande introuvable");
 
-    return successResponse(serviceRequest);
+    return successResponse(req);
   } catch (error) {
     return errorResponse(error);
   }
@@ -68,7 +70,7 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    const serviceRequest = await prisma.serviceRequest.findUnique({
+    const existing = await prisma.request.findUnique({
       where: { id },
       select: {
         id: true,
@@ -77,30 +79,29 @@ export async function PATCH(
         churchId: true,
         type: true,
         announcementId: true,
+        payload: true,
       },
     });
-    if (!serviceRequest) throw new ApiError(404, "Demande introuvable");
+    if (!existing) throw new ApiError(404, "Demande introuvable");
 
-    // Vérifier permission dans l'église de la demande
-    const session = await requireChurchPermission("planning:view", serviceRequest.churchId);
+    const session = await requireChurchPermission("planning:view", existing.churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles
-        .filter((r) => r.churchId === serviceRequest.churchId)
+        .filter((r) => r.churchId === existing.churchId)
         .flatMap((r) => hasPermission(r.role))
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");
 
-    // Members of the assigned department can also update their own requests
     const userDeptIds = session.user.churchRoles.flatMap((r) =>
       r.departments.map((d) => d.department.id)
     );
     const isAssignedDeptMember =
-      serviceRequest.assignedDeptId !== null &&
-      userDeptIds.includes(serviceRequest.assignedDeptId);
+      existing.assignedDeptId !== null &&
+      userDeptIds.includes(existing.assignedDeptId);
 
-    const isOwner = serviceRequest.submittedById === session.user.id;
+    const isOwner = existing.submittedById === session.user.id;
 
     if (!canManage && !isAssignedDeptMember && !isOwner) {
       throw new ApiError(403, "Accès refusé");
@@ -109,66 +110,61 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
-    // Owner can only read — all modifications restricted to dept members and managers
     if (isOwner && !canManage && !isAssignedDeptMember) {
       throw new ApiError(403, "Le demandeur ne peut pas modifier sa propre demande");
     }
 
-    // Status changes restricted to dept members and managers
     if (data.status !== undefined && !canManage && !isAssignedDeptMember) {
       throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
     }
 
-    const isDelivery = data.status === "LIVRE";
-
-    if (isDelivery && !data.deliveryLink && !isAssignedDeptMember && !canManage) {
-      throw new ApiError(400, "Un lien de livraison est requis pour marquer comme livré");
-    }
+    // Merge payload fields updates
+    const currentPayload = (existing.payload as Record<string, unknown>) ?? {};
+    const payloadUpdates: Record<string, unknown> = {};
+    if (data.deliveryLink !== undefined) payloadUpdates.deliveryLink = data.deliveryLink;
+    if (data.format !== undefined) payloadUpdates.format = data.format;
+    if (data.brief !== undefined) payloadUpdates.brief = data.brief;
+    if (data.deadline !== undefined) payloadUpdates.deadline = data.deadline;
+    const hasPayloadUpdates = Object.keys(payloadUpdates).length > 0;
+    const mergedPayload = hasPayloadUpdates
+      ? { ...currentPayload, ...payloadUpdates }
+      : undefined;
 
     const updated = await prisma.$transaction(async (tx) => {
-      const result = await tx.serviceRequest.update({
+      const result = await tx.request.update({
         where: { id },
         data: {
           ...(data.status && { status: data.status }),
-          ...(data.deliveryLink !== undefined && {
-            deliveryLink: data.deliveryLink,
-          }),
-          ...(data.reviewNotes !== undefined && {
-            reviewNotes: data.reviewNotes,
-          }),
-          ...(data.format !== undefined && { format: data.format }),
-          ...(data.brief !== undefined && { brief: data.brief }),
-          ...(data.deadline !== undefined && {
-            deadline: data.deadline ? new Date(data.deadline) : null,
-          }),
+          ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
+          ...(mergedPayload && { payload: mergedPayload as Prisma.InputJsonValue }),
           ...(data.status !== undefined && {
-            reviewedById: session.user.id,
+            reviewedBy: { connect: { id: session.user.id } },
             reviewedAt: new Date(),
           }),
         },
         select: { id: true, type: true, status: true },
       });
 
-      // Cascade cancellation: when a parent request is refused, cancel its VISUEL child
+      // Cascade cancellation: when parent request is cancelled, cancel children
       if (
         data.status === "ANNULE" &&
         (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
       ) {
-        await tx.serviceRequest.updateMany({
+        await tx.request.updateMany({
           where: { parentRequestId: id },
           data: { status: "ANNULE" },
         });
       }
 
-      // Sync announcement status when a parent SR (not VISUEL) changes status
+      // Sync announcement status when a parent SR changes status
       if (
         data.status !== undefined &&
-        serviceRequest.announcementId &&
+        existing.announcementId &&
         (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
       ) {
-        const siblingStatuses = await tx.serviceRequest.findMany({
+        const siblingStatuses = await tx.request.findMany({
           where: {
-            announcementId: serviceRequest.announcementId,
+            announcementId: existing.announcementId,
             parentRequestId: null,
             id: { not: id },
           },
@@ -189,7 +185,7 @@ export async function PATCH(
         }
 
         await tx.announcement.update({
-          where: { id: serviceRequest.announcementId },
+          where: { id: existing.announcementId },
           data: { status: announcementStatus },
         });
       }
@@ -197,7 +193,7 @@ export async function PATCH(
       return result;
     });
 
-    await logAudit({ userId: session.user.id, churchId: serviceRequest.churchId, action: "UPDATE", entityType: "ServiceRequest", entityId: id, details: { status: data.status, type: serviceRequest.type } });
+    await logAudit({ userId: session.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "Request", entityId: id, details: { status: data.status, type: existing.type } });
 
     return successResponse(updated);
   } catch (error) {

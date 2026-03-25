@@ -18,7 +18,7 @@ export default async function AnnouncementsPage() {
       targetEvents: {
         include: { event: { select: { id: true, title: true, date: true } } },
       },
-      serviceRequests: {
+      requests: {
         where: { parentRequestId: null },
         include: {
           assignedDept: { select: { id: true, name: true } },
@@ -27,7 +27,7 @@ export default async function AnnouncementsPage() {
               id: true,
               type: true,
               status: true,
-              deliveryLink: true,
+              payload: true,
               reviewNotes: true,
               assignedDept: { select: { id: true, name: true } },
             },

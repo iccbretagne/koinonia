@@ -2,23 +2,19 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import type { ServiceRequestStatus, ServiceRequestType } from "@prisma/client";
 
 interface ParentRequest {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
+  type: string;
+  status: string;
 }
 
-interface ServiceRequest {
+interface MediaRequest {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
+  type: string;
+  status: string;
   title: string;
-  brief: string | null;
-  format: string | null;
-  deadline: Date | null;
-  deliveryLink: string | null;
+  payload: unknown;
   reviewNotes: string | null;
   submittedAt: Date;
   submittedBy: { name: string | null; displayName: string | null };
@@ -34,24 +30,24 @@ interface ServiceRequest {
 }
 
 interface Props {
-  requests: ServiceRequest[];
+  requests: MediaRequest[];
 }
 
-const STATUS_LABEL: Record<ServiceRequestStatus, string> = {
+const STATUS_LABEL: Record<string, string> = {
   EN_ATTENTE: "En attente",
   EN_COURS: "En cours",
   LIVRE: "Livré",
   ANNULE: "Annulé",
 };
 
-const STATUS_COLOR: Record<ServiceRequestStatus, string> = {
+const STATUS_COLOR: Record<string, string> = {
   EN_ATTENTE: "bg-amber-100 text-amber-800",
   EN_COURS: "bg-blue-100 text-blue-800",
   LIVRE: "bg-green-100 text-green-800",
   ANNULE: "bg-gray-100 text-gray-500",
 };
 
-const PARENT_TYPE_LABEL: Record<ServiceRequestType, string> = {
+const PARENT_TYPE_LABEL: Record<string, string> = {
   DIFFUSION_INTERNE: "Diffusion interne",
   RESEAUX_SOCIAUX: "Réseaux sociaux",
   VISUEL: "Visuel",
@@ -65,13 +61,13 @@ export default function MediaDashboard({ requests: initial }: Props) {
 
   async function updateRequest(
     id: string,
-    status: ServiceRequestStatus,
+    status: string,
     deliveryLink?: string,
     reviewNotes?: string
   ) {
     setProcessing(id);
     try {
-      const res = await fetch(`/api/service-requests/${id}`, {
+      const res = await fetch(`/api/requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,11 +82,12 @@ export default function MediaDashboard({ requests: initial }: Props) {
         return;
       }
       setRequests((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? { ...r, status, deliveryLink: deliveryLink ?? r.deliveryLink, reviewNotes: reviewNotes ?? r.reviewNotes }
-            : r
-        )
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updatedPayload = { ...((r.payload ?? {}) as Record<string, unknown>) };
+          if (deliveryLink !== undefined) updatedPayload.deliveryLink = deliveryLink;
+          return { ...r, status, payload: updatedPayload, reviewNotes: reviewNotes ?? r.reviewNotes };
+        })
       );
       setDeliveryLinks((prev) => ({ ...prev, [id]: "" }));
       setNotes((prev) => ({ ...prev, [id]: "" }));
@@ -105,9 +102,14 @@ export default function MediaDashboard({ requests: initial }: Props) {
   const inProgress = requests.filter((r) => r.status === "EN_COURS");
   const done = requests.filter((r) => r.status === "LIVRE" || r.status === "ANNULE");
 
-  function renderRequest(req: ServiceRequest) {
+  function renderRequest(req: MediaRequest) {
     const source = req.department?.name ?? req.ministry?.name ?? "—";
     const author = req.submittedBy.displayName ?? req.submittedBy.name ?? "—";
+    const p = (req.payload ?? {}) as Record<string, unknown>;
+    const brief = (p.brief as string) ?? null;
+    const format = (p.format as string) ?? null;
+    const deadline = (p.deadline as string) ?? null;
+    const deliveryLink = (p.deliveryLink as string) ?? null;
 
     return (
       <div key={req.id} className="bg-white rounded-lg shadow p-5 border border-gray-100">
@@ -115,9 +117,9 @@ export default function MediaDashboard({ requests: initial }: Props) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900">{req.title}</h3>
-              {req.format && (
+              {format && (
                 <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
-                  {req.format}
+                  {format}
                 </span>
               )}
               {!req.announcement && (
@@ -128,11 +130,11 @@ export default function MediaDashboard({ requests: initial }: Props) {
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
               {source} · {author}
-              {req.deadline && (
+              {deadline && (
                 <>
                   {" "}· Deadline{" "}
                   <strong>
-                    {new Date(req.deadline).toLocaleDateString("fr-FR", {
+                    {new Date(deadline).toLocaleDateString("fr-FR", {
                       day: "2-digit",
                       month: "short",
                     })}
@@ -158,13 +160,13 @@ export default function MediaDashboard({ requests: initial }: Props) {
           </p>
         )}
 
-        {req.brief && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{req.brief}</p>
+        {brief && (
+          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{brief}</p>
         )}
 
-        {req.deliveryLink && req.status === "LIVRE" && (
+        {deliveryLink && req.status === "LIVRE" && (
           <a
-            href={req.deliveryLink}
+            href={deliveryLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm text-icc-violet underline mb-3"

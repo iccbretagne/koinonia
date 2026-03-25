@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import type { AnnouncementStatus, ServiceRequestStatus, ServiceRequestType } from "@prisma/client";
+import type { AnnouncementStatus } from "@prisma/client";
 
 interface ChildRequest {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
-  deliveryLink: string | null;
+  type: string;
+  status: string;
+  payload: unknown;
 }
 
-interface ServiceRequest {
+interface RequestItem {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
+  type: string;
+  status: string;
   reviewNotes: string | null;
   childRequests: ChildRequest[];
 }
@@ -32,14 +32,14 @@ interface Announcement {
   department: { name: string } | null;
   ministry: { name: string } | null;
   targetEvents: { event: { id: string; title: string; date: Date } }[];
-  serviceRequests: ServiceRequest[];
+  requests: RequestItem[];
 }
 
 interface Props {
   announcements: Announcement[];
 }
 
-const STATUS_COLOR: Record<ServiceRequestStatus, string> = {
+const STATUS_COLOR: Record<string, string> = {
   EN_ATTENTE: "bg-amber-100 text-amber-800",
   EN_COURS: "bg-blue-100 text-blue-800",
   LIVRE: "bg-green-100 text-green-800",
@@ -58,10 +58,10 @@ export default function SecretariatDashboard({ announcements: initial }: Props) 
   const [processing, setProcessing] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  async function updateRequest(srId: string, status: ServiceRequestStatus, note?: string) {
+  async function updateRequest(srId: string, status: string, note?: string) {
     setProcessing(srId);
     try {
-      const res = await fetch(`/api/service-requests/${srId}`, {
+      const res = await fetch(`/api/requests/${srId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +78,7 @@ export default function SecretariatDashboard({ announcements: initial }: Props) 
       setAnnouncements((prev) =>
         prev.map((ann) => ({
           ...ann,
-          serviceRequests: ann.serviceRequests.map((sr) =>
+          requests: ann.requests.map((sr) =>
             sr.id === srId ? { ...sr, status, reviewNotes: note ?? sr.reviewNotes } : sr
           ),
         }))
@@ -92,14 +92,14 @@ export default function SecretariatDashboard({ announcements: initial }: Props) 
   }
 
   const pending = announcements.filter((a) =>
-    a.serviceRequests.some((sr) => sr.type === "DIFFUSION_INTERNE" && sr.status === "EN_ATTENTE")
+    a.requests.some((sr) => sr.type === "DIFFUSION_INTERNE" && sr.status === "EN_ATTENTE")
   );
   const rest = announcements.filter((a) =>
-    !a.serviceRequests.some((sr) => sr.type === "DIFFUSION_INTERNE" && sr.status === "EN_ATTENTE")
+    !a.requests.some((sr) => sr.type === "DIFFUSION_INTERNE" && sr.status === "EN_ATTENTE")
   );
 
   function renderAnnouncement(ann: Announcement) {
-    const diffusion = ann.serviceRequests.find((sr) => sr.type === "DIFFUSION_INTERNE");
+    const diffusion = ann.requests.find((sr) => sr.type === "DIFFUSION_INTERNE");
     if (!diffusion) return null;
 
     const late = isLate(ann.submittedAt) && !ann.isUrgent;
@@ -155,7 +155,7 @@ export default function SecretariatDashboard({ announcements: initial }: Props) 
 
         {ann.eventDate && (
           <p className="text-xs text-gray-500 mb-2">
-            📅 Événement :{" "}
+            Événement :{" "}
             {new Date(ann.eventDate).toLocaleDateString("fr-FR", {
               day: "2-digit",
               month: "long",

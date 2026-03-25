@@ -34,7 +34,7 @@ export async function GET(
             event: { select: { id: true, title: true, date: true } },
           },
         },
-        serviceRequests: {
+        requests: {
           where: { parentRequestId: null },
           include: {
             assignedDept: { select: { id: true, name: true } },
@@ -44,8 +44,7 @@ export async function GET(
                 id: true,
                 type: true,
                 status: true,
-                format: true,
-                deliveryLink: true,
+                payload: true,
                 assignedDept: { select: { id: true, name: true } },
               },
             },
@@ -112,9 +111,9 @@ export async function PATCH(
         },
       });
 
-      // Cascade cancellation: annuler toutes les ServiceRequest liees
+      // Cascade cancellation: annuler toutes les Request liées
       if (data.status === "ANNULEE") {
-        await tx.serviceRequest.updateMany({
+        await tx.request.updateMany({
           where: { announcementId: id },
           data: { status: "ANNULE" },
         });

@@ -6,7 +6,7 @@ interface Department {
   id: string;
   name: string;
   ministryName: string;
-  function: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | null;
+  function: string | null;
 }
 
 interface Props {

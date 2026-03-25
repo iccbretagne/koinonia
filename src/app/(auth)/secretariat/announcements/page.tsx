@@ -1,7 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { DepartmentFunction } from "@prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 import { notFound } from "next/navigation";
 import SecretariatDashboard from "./SecretariatDashboard";
 
@@ -12,7 +12,7 @@ export default async function SecretariatAnnouncementsPage() {
   await requireChurchPermission("planning:view", churchId);
 
   const secretariatDept = await prisma.department.findFirst({
-    where: { function: DepartmentFunction.SECRETARIAT, ministry: { churchId } },
+    where: { function: DEPT_FN.SECRETARIAT, ministry: { churchId } },
     select: { id: true, name: true },
   });
 
@@ -46,7 +46,7 @@ export default async function SecretariatAnnouncementsPage() {
   const announcements = await prisma.announcement.findMany({
     where: {
       churchId,
-      serviceRequests: {
+      requests: {
         some: {
           type: "DIFFUSION_INTERNE",
           assignedDeptId: secretariatDept.id,
@@ -60,7 +60,7 @@ export default async function SecretariatAnnouncementsPage() {
       targetEvents: {
         include: { event: { select: { id: true, title: true, date: true } } },
       },
-      serviceRequests: {
+      requests: {
         where: { type: "DIFFUSION_INTERNE", assignedDeptId: secretariatDept.id },
         include: {
           childRequests: {
@@ -68,7 +68,7 @@ export default async function SecretariatAnnouncementsPage() {
               id: true,
               type: true,
               status: true,
-              deliveryLink: true,
+              payload: true,
             },
           },
         },
@@ -78,7 +78,7 @@ export default async function SecretariatAnnouncementsPage() {
   });
 
   const pending = announcements.filter((a) =>
-    a.serviceRequests.some((sr) => sr.status === "EN_ATTENTE")
+    a.requests.some((sr) => sr.status === "EN_ATTENTE")
   ).length;
 
   return (
