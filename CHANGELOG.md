@@ -26,6 +26,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 - Connexion super admin au premier démarrage (pas d'église configurée) (#105)
 - Sélecteur "Dimanches de diffusion" restauré dans le formulaire d'annonce (#105)
+- Attribution des rôles transverses (Admin, Secrétaire, Faiseur de Disciples) depuis la page Accès & rôles (#112)
+- Migration Prisma idempotente pour production (tables existantes via db push) (#105)
 
 ## [v0.12.6] - 2026-03-24
 
