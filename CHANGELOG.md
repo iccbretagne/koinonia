@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.14.0] - 2026-03-26
+
+### Nouveautes
+
+- **Vue STAR en service redessinée** : header bicolore (violet + jaune), grille violet, badges Debrief/Remplaçant, optimisée pour export paysage WhatsApp (#116)
+- **Planning mensuel redessiné** : blocs date proéminents, header violet, badges tâches et debrief, export image/PDF pour WhatsApp (#115)
+- **Demande ajout événement enrichie** : sélection des départements, récurrence hebdomadaire, offset deadline (#116)
+- **Demande modification événement** : champs type, date et deadline ajoutés (#116)
+- **Demande modification planning** : réécriture en gestion des départements en service (#116)
+
 ## [v0.13.0] - 2026-03-25
 
 ### Nouveautes
