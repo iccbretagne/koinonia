@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.14.1] - 2026-03-26
+
+### Modifie
+
+- **Vue STAR en service** : header indigo apaisé, fond clair, départements actifs uniquement, départements vides regroupés en ligne compacte
+- **Planning mensuel** : badges rôle en outline inline après le nom, badge Debrief en violet plein, tâches rendues individuellement
+
 ## [v0.14.0] - 2026-03-26
 
 ### Nouveautes
