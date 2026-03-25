@@ -6,6 +6,27 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.13.0] - 2026-03-25
+
+### Nouveautes
+
+- **Système de demandes unifié** : formulaire unique pour soumettre annonces et demandes au secrétariat (#105)
+- **Nouveaux types de demandes** : ajout/modification/annulation d'événement, modification de planning, demande d'accès (#105)
+- **Exécution automatique** : les demandes approuvées sont exécutées automatiquement (création d'événement, modification de planning, attribution de rôle) (#105)
+- **Fonctions de département personnalisées** : les admins peuvent créer et supprimer des fonctions en plus des fonctions système (#105)
+
+### Modifie
+
+- Migration `ServiceRequest` → `Request` (modèle unifié avec payload JSON) (#105)
+- Migration `DepartmentFunction` enum → `String?` (fonctions flexibles) (#105)
+- Sidebar : section "Annonces" renommée "Demandes" avec nouvelles routes (#105)
+- Pages annonces absorbées dans le système de demandes unifié (#105)
+
+### Corrige
+
+- Connexion super admin au premier démarrage (pas d'église configurée) (#105)
+- Sélecteur "Dimanches de diffusion" restauré dans le formulaire d'annonce (#105)
+
 ## [v0.12.6] - 2026-03-24
 
 ### Corrections
