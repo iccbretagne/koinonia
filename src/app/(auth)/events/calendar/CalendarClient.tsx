@@ -16,6 +16,18 @@ interface Props {
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; hover: string; dot: string; label: string }> = {
+  CULTE:      { bg: "bg-icc-violet/10", text: "text-icc-violet",    hover: "hover:bg-icc-violet",  dot: "bg-icc-violet",  label: "Culte" },
+  PRIERE:     { bg: "bg-icc-jaune/20",  text: "text-yellow-700",    hover: "hover:bg-yellow-500",  dot: "bg-yellow-500",  label: "Priere" },
+  REUNION:    { bg: "bg-icc-bleu/10",   text: "text-icc-bleu",      hover: "hover:bg-icc-bleu",    dot: "bg-icc-bleu",    label: "Reunion" },
+  CONFERENCE: { bg: "bg-icc-rouge/10",  text: "text-icc-rouge",     hover: "hover:bg-icc-rouge",   dot: "bg-icc-rouge",   label: "Conference" },
+  AUTRE:      { bg: "bg-gray-100",      text: "text-gray-600",      hover: "hover:bg-gray-500",    dot: "bg-gray-400",    label: "Autre" },
+};
+
+function getEventColors(type: string) {
+  return EVENT_TYPE_COLORS[type] || EVENT_TYPE_COLORS.AUTRE;
+}
+
 export default function CalendarClient({ events }: Props) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(
@@ -165,25 +177,42 @@ export default function CalendarClient({ events }: Props) {
                     {day.date}
                   </span>
                   {dayEvents.length > 0 && !isToday && (
-                    <span className="w-2 h-2 rounded-full bg-icc-violet mt-1" />
+                    <div className="flex gap-0.5 mt-1">
+                      {dayEvents.slice(0, 3).map((ev) => (
+                        <span key={ev.id} className={`w-2 h-2 rounded-full ${getEventColors(ev.type).dot}`} />
+                      ))}
+                    </div>
                   )}
                 </div>
                 <div className="space-y-1">
-                  {dayEvents.map((ev) => (
-                    <Link
-                      key={ev.id}
-                      href={`/events/${ev.id}/star-view`}
-                      className="block px-1.5 py-1 text-xs font-medium rounded-md bg-icc-violet/10 text-icc-violet hover:bg-icc-violet hover:text-white transition-colors truncate"
-                      title={`${ev.title} (${ev.type})`}
-                    >
-                      {ev.title}
-                    </Link>
-                  ))}
+                  {dayEvents.map((ev) => {
+                    const colors = getEventColors(ev.type);
+                    return (
+                      <Link
+                        key={ev.id}
+                        href={`/events/${ev.id}/star-view`}
+                        className={`block px-1.5 py-1 text-xs font-medium rounded-md ${colors.bg} ${colors.text} ${colors.hover} hover:text-white transition-colors truncate`}
+                        title={`${ev.title} (${ev.type})`}
+                      >
+                        {ev.title}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* Legend */}
+      <div className="mt-4 flex flex-wrap gap-3 justify-center">
+        {Object.entries(EVENT_TYPE_COLORS).map(([type, colors]) => (
+          <div key={type} className="flex items-center gap-1.5">
+            <span className={`w-3 h-3 rounded-full ${colors.dot}`} />
+            <span className="text-xs text-gray-600">{colors.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
