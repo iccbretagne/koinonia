@@ -33,9 +33,24 @@ interface Props {
   users: UserItem[];
   ministries: Ministry[];
   churchId: string;
+  isSuperAdmin: boolean;
 }
 
-type Tab = "roles" | "reporters";
+type Tab = "roles" | "transverse" | "reporters";
+
+type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER";
+
+const TRANSVERSE_ROLE_LABELS: Record<TransverseRole, string> = {
+  ADMIN: "Admin",
+  SECRETARY: "Secrétaire",
+  DISCIPLE_MAKER: "Faiseur de Disciples",
+};
+
+const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
+  ADMIN: "bg-red-100 text-red-700 border-red-200",
+  SECRETARY: "bg-blue-100 text-blue-700 border-blue-200",
+  DISCIPLE_MAKER: "bg-green-100 text-green-700 border-green-200",
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +73,7 @@ function Avatar({ user, size = 32 }: { user: Pick<UserItem, "name" | "image">; s
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export default function AccessClient({ users, ministries, churchId }: Props) {
+export default function AccessClient({ users, ministries, churchId, isSuperAdmin }: Props) {
   const [tab, setTab] = useState<Tab>("roles");
   const [localUsers, setLocalUsers] = useState(users);
 
@@ -72,6 +87,13 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
 
   // Reporter loading
   const [reporterLoading, setReporterLoading] = useState<string | null>(null);
+
+  // Transverse role loading: "userId:ROLE"
+  const [transverseLoading, setTransverseLoading] = useState<string | null>(null);
+
+  // Search filters
+  const [transverseSearch, setTransverseSearch] = useState("");
+  const [reporterSearch, setReporterSearch] = useState("");
 
   // ── Helpers locaux ─────────────────────────────────────────────────────────
 
@@ -325,6 +347,56 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
     }
   }
 
+  // ── Toggle transverse roles ────────────────────────────────────────────────
+
+  async function toggleTransverseRole(user: UserItem, role: TransverseRole) {
+    const has = user.churchRoles.some((r) => r.role === role);
+    const key = `${user.id}:${role}`;
+    setTransverseLoading(key);
+    try {
+      if (has) {
+        const res = await fetch(`/api/users/${user.id}/roles`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ churchId, role }),
+        });
+        if (res.ok) {
+          setLocalUsers((prev) =>
+            prev.map((u) =>
+              u.id === user.id
+                ? { ...u, churchRoles: u.churchRoles.filter((r) => r.role !== role) }
+                : u
+            )
+          );
+        }
+      } else {
+        const res = await fetch(`/api/users/${user.id}/roles`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ churchId, role }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLocalUsers((prev) =>
+            prev.map((u) =>
+              u.id === user.id
+                ? {
+                    ...u,
+                    churchRoles: [
+                      ...u.churchRoles,
+                      { id: data.id, role, ministryId: null, ministryName: null, departments: [] },
+                    ],
+                  }
+                : u
+            )
+          );
+        }
+      }
+    } finally {
+      setTransverseLoading(null);
+    }
+  }
+
   // ── Open modals ────────────────────────────────────────────────────────────
 
   function openMinisterModal(ministryId: string, ministryName: string) {
@@ -343,13 +415,30 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
   // Users that can be assigned (not already minister/head in a conflicting way)
   const assignableUsers = localUsers;
 
+  // Filtered user lists for search tabs
+  function matchesSearch(user: UserItem, term: string): boolean {
+    const q = term.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q)
+    );
+  }
+
+  const filteredTransverseUsers = transverseSearch
+    ? localUsers.filter((u) => matchesSearch(u, transverseSearch))
+    : localUsers;
+
+  const filteredReporterUsers = reporterSearch
+    ? localUsers.filter((u) => matchesSearch(u, reporterSearch))
+    : localUsers;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div>
       {/* Onglets */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(["roles", "reporters"] as Tab[]).map((t) => (
+        {(["roles", "transverse", "reporters"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -359,7 +448,7 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "roles" ? "Rôles" : "Comptes rendus"}
+            {t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : "Comptes rendus"}
           </button>
         ))}
       </div>
@@ -456,13 +545,90 @@ export default function AccessClient({ users, ministries, churchId }: Props) {
         </div>
       )}
 
+      {/* ── Onglet Rôles transverses ──────────────────────────────────────── */}
+      {tab === "transverse" && (
+        <div className="space-y-3">
+          <p className="text-xs text-gray-400 mb-4">
+            Les rôles transverses donnent des accès fonctionnels globaux indépendants de la hiérarchie ministères/départements.
+            {isSuperAdmin && (
+              <> Les rôles <strong>Admin</strong> et <strong>Secrétaire</strong> sont réservés aux super-admins.</>
+            )}
+          </p>
+          <input
+            type="text"
+            value={transverseSearch}
+            onChange={(e) => setTransverseSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
+          />
+          {filteredTransverseUsers.map((user) => {
+            const userTransverseRoles = (["ADMIN", "SECRETARY", "DISCIPLE_MAKER"] as TransverseRole[]).filter(
+              (role) => {
+                if (role === "ADMIN" || role === "SECRETARY") return isSuperAdmin;
+                return true;
+              }
+            );
+            return (
+              <div key={user.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-start gap-3 flex-wrap">
+                <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                  <Avatar user={user} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {(["ADMIN", "SECRETARY", "DISCIPLE_MAKER"] as TransverseRole[])
+                      .filter((role) => user.churchRoles.some((r) => r.role === role))
+                      .map((role) => (
+                        <span
+                          key={role}
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium border ${TRANSVERSE_ROLE_COLORS[role]}`}
+                        >
+                          {TRANSVERSE_ROLE_LABELS[role]}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {userTransverseRoles.map((role) => {
+                    const has = user.churchRoles.some((r) => r.role === role);
+                    const loading = transverseLoading === `${user.id}:${role}`;
+                    return (
+                      <button
+                        key={role}
+                        onClick={() => toggleTransverseRole(user, role)}
+                        disabled={loading}
+                        className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-50 border ${
+                          has
+                            ? "bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+                            : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
+                        }`}
+                      >
+                        {loading ? "…" : has ? `Retirer ${TRANSVERSE_ROLE_LABELS[role]}` : `+ ${TRANSVERSE_ROLE_LABELS[role]}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Onglet Comptes rendus ─────────────────────────────────────────── */}
       {tab === "reporters" && (
         <div className="space-y-3">
           <p className="text-xs text-gray-400 mb-4">
             Les utilisateurs avec le rôle <strong>Reporter</strong> peuvent consulter les comptes rendus et statistiques des événements.
           </p>
-          {localUsers.map((user) => {
+          <input
+            type="text"
+            value={reporterSearch}
+            onChange={(e) => setReporterSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
+          />
+          {filteredReporterUsers.map((user) => {
             const isReporter = user.churchRoles.some((r) => r.role === "REPORTER");
             const loading = reporterLoading === user.id;
             return (
