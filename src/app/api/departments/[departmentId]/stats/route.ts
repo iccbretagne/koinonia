@@ -108,12 +108,66 @@ export async function GET(
       a.month.localeCompare(b.month)
     );
 
+    // Task assignment stats
+    const eventIds = eventDepts.map((ed) => ed.event.id);
+    const taskAssignments = await prisma.taskAssignment.findMany({
+      where: {
+        eventId: { in: eventIds },
+        task: { departmentId },
+      },
+      include: {
+        task: { select: { id: true, name: true } },
+        member: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    // Per-task counts and per-member task breakdown
+    const taskCounts = new Map<string, { name: string; count: number }>();
+    const memberTaskMap = new Map<string, Map<string, number>>();
+
+    for (const ta of taskAssignments) {
+      // Task totals
+      if (!taskCounts.has(ta.task.id)) {
+        taskCounts.set(ta.task.id, { name: ta.task.name, count: 0 });
+      }
+      taskCounts.get(ta.task.id)!.count++;
+
+      // Per-member breakdown
+      const memberId = ta.member.id;
+      if (!memberTaskMap.has(memberId)) {
+        memberTaskMap.set(memberId, new Map());
+      }
+      const mtMap = memberTaskMap.get(memberId)!;
+      mtMap.set(ta.task.id, (mtMap.get(ta.task.id) || 0) + 1);
+    }
+
+    const tasks = Array.from(taskCounts.entries())
+      .map(([id, t]) => ({ id, name: t.name, count: t.count }))
+      .sort((a, b) => b.count - a.count);
+
+    const memberTasks = Array.from(memberTaskMap.entries())
+      .map(([memberId, taskMap]) => {
+        const mStat = memberStats.get(memberId);
+        return {
+          id: memberId,
+          name: mStat?.name ?? memberId,
+          tasks: Array.from(taskMap.entries()).map(([taskId, count]) => ({
+            taskId,
+            taskName: taskCounts.get(taskId)?.name ?? taskId,
+            count,
+          })),
+          totalAssignments: Array.from(taskMap.values()).reduce((a, b) => a + b, 0),
+        };
+      })
+      .sort((a, b) => b.totalAssignments - a.totalAssignments);
+
     return successResponse({
       department,
       totalEvents,
       months,
       members,
       trend,
+      taskStats: { tasks, memberTasks },
     });
   } catch (error) {
     return errorResponse(error);
