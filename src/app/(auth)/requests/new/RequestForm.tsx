@@ -106,9 +106,9 @@ function initFromEditData(editData: EditData): {
     annTargetEventIds: editData.announcement?.targetEvents?.map((t) => t.eventId) ?? [],
     // demand
     eventTitle: (p?.eventTitle as string) ?? (p?.changes as Record<string, unknown>)?.title as string ?? "",
-    eventType: (p?.eventType as string) ?? "CULTE",
-    eventDate: (p?.eventDate as string) ?? "",
-    planningDeadline: (p?.planningDeadline as string) ?? "",
+    eventType: (p?.eventType as string) ?? ((p?.changes as Record<string, unknown>)?.type as string) ?? "",
+    eventDate: (p?.eventDate as string) ?? ((p?.changes as Record<string, unknown>)?.date as string) ?? "",
+    planningDeadline: (p?.planningDeadline as string) ?? ((p?.changes as Record<string, unknown>)?.planningDeadline as string) ?? "",
     selectedEventId: (p?.eventId as string) ?? "",
     reason: (p?.reason as string) ?? "",
     selectedDeptId: (p?.departmentId as string) ?? "",
@@ -247,7 +247,15 @@ export default function RequestForm({
       case "MODIFICATION_EVENEMENT": {
         const evt = events.find((e) => e.id === selectedEventId);
         title = `Modification : ${evt?.title ?? "événement"}`;
-        payload = { eventId: selectedEventId, changes: { title: eventTitle || undefined } };
+        payload = {
+          eventId: selectedEventId,
+          changes: {
+            title: eventTitle || undefined,
+            type: eventType || undefined,
+            date: eventDate || undefined,
+            planningDeadline: planningDeadline || undefined,
+          },
+        };
         break;
       }
       case "ANNULATION_EVENEMENT": {
@@ -526,7 +534,22 @@ export default function RequestForm({
             <label className="block text-sm font-medium text-gray-700">Événement à modifier</label>
             <select
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value;
+                setSelectedEventId(id);
+                const evt = events.find((ev) => ev.id === id);
+                if (evt) {
+                  setEventType(evt.type);
+                  // Format ISO date to datetime-local format (YYYY-MM-DDTHH:mm)
+                  const d = new Date(evt.date);
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                  setEventDate(local);
+                } else {
+                  setEventType("");
+                  setEventDate("");
+                }
+              }}
               required
               className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
             >
@@ -544,6 +567,37 @@ export default function RequestForm({
             onChange={(e) => setEventTitle(e.target.value)}
             placeholder="Nouveau titre..."
           />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Nouveau type</label>
+            <select
+              value={eventType}
+              onChange={(e) => setEventType(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            >
+              <option value="">— Inchangé —</option>
+              {["CULTE", "PRIERE", "REUNION", "CONFERENCE", "AUTRE"].map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Nouvelle date</label>
+            <input
+              type="datetime-local"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Deadline planning</label>
+            <input
+              type="datetime-local"
+              value={planningDeadline}
+              onChange={(e) => setPlanningDeadline(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            />
+          </div>
         </>
       )}
 

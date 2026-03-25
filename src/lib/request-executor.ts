@@ -95,6 +95,9 @@ async function executeModificationEvenement(
       ...(changes.title ? { title: changes.title as string } : {}),
       ...(changes.type ? { type: changes.type as string } : {}),
       ...(changes.date ? { date: new Date(changes.date as string) } : {}),
+      ...("planningDeadline" in changes
+        ? { planningDeadline: changes.planningDeadline ? new Date(changes.planningDeadline as string) : null }
+        : {}),
     },
   });
 
