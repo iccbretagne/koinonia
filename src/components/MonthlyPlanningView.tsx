@@ -305,10 +305,6 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
               ))}
             </div>
 
-            {/* Footer */}
-            <div className="bg-gray-50 px-6 py-2">
-              <p className="text-xs text-gray-400 text-right">Koinonia</p>
-            </div>
           </>
         )}
       </div>
