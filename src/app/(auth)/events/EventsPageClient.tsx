@@ -50,6 +50,7 @@ function formatEventDate(iso: string) {
 
 const typeBadgeColors: Record<string, string> = {
   CULTE: "bg-icc-violet/10 text-icc-violet",
+  PRIERE: "bg-icc-jaune/20 text-yellow-700",
   REUNION: "bg-icc-bleu/10 text-icc-bleu",
   CONFERENCE: "bg-icc-rouge/10 text-icc-rouge",
   AUTRE: "bg-gray-100 text-gray-600",
