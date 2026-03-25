@@ -79,9 +79,7 @@ function initFromEditData(editData: EditData): {
   planningDeadline: string;
   selectedEventId: string;
   reason: string;
-  selectedDeptId: string;
-  selectedMemberId: string;
-  newStatus: string;
+  planningDeptIds: string[];
   targetUserId: string;
   targetRole: string;
   targetMinistryId: string;
@@ -111,9 +109,7 @@ function initFromEditData(editData: EditData): {
     planningDeadline: (p?.planningDeadline as string) ?? ((p?.changes as Record<string, unknown>)?.planningDeadline as string) ?? "",
     selectedEventId: (p?.eventId as string) ?? "",
     reason: (p?.reason as string) ?? "",
-    selectedDeptId: (p?.departmentId as string) ?? "",
-    selectedMemberId: (p?.memberId as string) ?? "",
-    newStatus: (p?.newStatus as string) ?? "",
+    planningDeptIds: (p?.departmentIds as string[]) ?? [],
     targetUserId: (p?.targetUserId as string) ?? "",
     targetRole: (p?.role as string) ?? "MINISTER",
     targetMinistryId: (p?.ministryId as string) ?? "",
@@ -164,27 +160,29 @@ export default function RequestForm({
   const [planningDeadline, setPlanningDeadline] = useState(init?.planningDeadline ?? "");
   const [selectedEventId, setSelectedEventId] = useState(init?.selectedEventId ?? "");
   const [reason, setReason] = useState(init?.reason ?? "");
-  const [selectedDeptId, setSelectedDeptId] = useState(init?.selectedDeptId ?? "");
-  const [selectedMemberId, setSelectedMemberId] = useState(init?.selectedMemberId ?? "");
-  const [newStatus, setNewStatus] = useState(init?.newStatus ?? "");
+  const [planningDeptIds, setPlanningDeptIds] = useState<string[]>(init?.planningDeptIds ?? []);
+  const [loadingEventDepts, setLoadingEventDepts] = useState(false);
   const [targetUserId, setTargetUserId] = useState(init?.targetUserId ?? "");
   const [targetRole, setTargetRole] = useState(init?.targetRole ?? "MINISTER");
   const [targetMinistryId, setTargetMinistryId] = useState(init?.targetMinistryId ?? "");
   const [targetDeptIds, setTargetDeptIds] = useState<string[]>(init?.targetDeptIds ?? []);
 
-  // Members for planning modification (loaded dynamically)
-  const [members, setMembers] = useState<{ id: string; firstName: string; lastName: string }[]>([]);
-
-  async function loadMembers(deptId: string) {
-    if (!deptId) return;
+  async function loadEventDepartments(eventId: string) {
+    if (!eventId) return;
+    setLoadingEventDepts(true);
     try {
-      const res = await fetch(`/api/members?churchId=${churchId}&departmentId=${deptId}`);
+      const res = await fetch(`/api/events/${eventId}`);
       if (res.ok) {
         const data = await res.json();
-        setMembers(data.data ?? []);
+        const assignedIds: string[] = (data.data?.eventDepts ?? []).map(
+          (ed: { departmentId: string }) => ed.departmentId
+        );
+        setPlanningDeptIds(assignedIds);
       }
     } catch {
       // ignore
+    } finally {
+      setLoadingEventDepts(false);
     }
   }
 
@@ -266,12 +264,10 @@ export default function RequestForm({
       }
       case "MODIFICATION_PLANNING": {
         const evt3 = events.find((e) => e.id === selectedEventId);
-        title = `Modif. planning : ${evt3?.title ?? "événement"}`;
+        title = `Modification départements — ${evt3?.title ?? "événement"}`;
         payload = {
           eventId: selectedEventId,
-          departmentId: selectedDeptId,
-          memberId: selectedMemberId,
-          newStatus: newStatus || null,
+          departmentIds: planningDeptIds,
         };
         break;
       }
@@ -638,7 +634,12 @@ export default function RequestForm({
             <label className="block text-sm font-medium text-gray-700">Événement</label>
             <select
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value;
+                setSelectedEventId(id);
+                if (id) loadEventDepartments(id);
+                else setPlanningDeptIds([]);
+              }}
               required
               className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
             >
@@ -650,57 +651,44 @@ export default function RequestForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Département</label>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => {
-                setSelectedDeptId(e.target.value);
-                loadMembers(e.target.value);
-              }}
-              required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-            >
-              <option value="">— Sélectionner —</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.ministryName})
-                </option>
-              ))}
-            </select>
-          </div>
-          {members.length > 0 && (
+          {selectedEventId && (
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Membre</label>
-              <select
-                value={selectedMemberId}
-                onChange={(e) => setSelectedMemberId(e.target.value)}
-                required
-                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-              >
-                <option value="">— Sélectionner —</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.firstName} {m.lastName}
-                  </option>
+              <label className="block text-sm font-medium text-gray-700">
+                Départements assignés
+                {loadingEventDepts && (
+                  <span className="ml-2 text-xs text-gray-400 font-normal">Chargement...</span>
+                )}
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Cochez les départements qui doivent participer à cet événement.
+              </p>
+              <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+                {departments.map((d) => (
+                  <label key={d.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={planningDeptIds.includes(d.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPlanningDeptIds((prev) => [...prev, d.id]);
+                        } else {
+                          setPlanningDeptIds((prev) => prev.filter((id) => id !== d.id));
+                        }
+                      }}
+                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                    />
+                    <span>
+                      {d.name}
+                      <span className="text-gray-400 ml-1">({d.ministryName})</span>
+                    </span>
+                  </label>
                 ))}
-              </select>
+              </div>
+              <p className="text-xs text-gray-500">
+                {planningDeptIds.length} département{planningDeptIds.length !== 1 ? "s" : ""} sélectionné{planningDeptIds.length !== 1 ? "s" : ""}
+              </p>
             </div>
           )}
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Nouveau statut</label>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-            >
-              <option value="">Non planifié</option>
-              <option value="EN_SERVICE">En service</option>
-              <option value="EN_SERVICE_DEBRIEF">En service (debrief)</option>
-              <option value="INDISPONIBLE">Indisponible</option>
-              <option value="REMPLACANT">Remplaçant</option>
-            </select>
-          </div>
         </>
       )}
 

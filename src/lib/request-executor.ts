@@ -138,52 +138,45 @@ async function executeModificationPlanning(
   payload: Record<string, unknown>
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
-  const departmentId = payload.departmentId as string;
-  const memberId = payload.memberId as string;
-  const newStatus = payload.newStatus as string | null;
+  const departmentIds = payload.departmentIds as string[] | undefined;
 
-  if (!eventId || !departmentId || !memberId) {
-    return { success: false, error: "Données manquantes : eventId, departmentId, memberId" };
+  if (!eventId || !Array.isArray(departmentIds)) {
+    return { success: false, error: "Données manquantes : eventId, departmentIds" };
   }
 
-  const eventDept = await tx.eventDepartment.findFirst({
-    where: { eventId, departmentId },
-    select: { id: true },
+  // Fetch current EventDepartment records for this event
+  const currentEventDepts = await tx.eventDepartment.findMany({
+    where: { eventId },
+    select: { id: true, departmentId: true },
   });
 
-  if (!eventDept) {
-    // Create the event-department link if it doesn't exist
-    const created = await tx.eventDepartment.create({
-      data: { eventId, departmentId },
-    });
-    await tx.planning.create({
-      data: {
-        eventDepartmentId: created.id,
-        memberId,
-        status: newStatus as "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | "INDISPONIBLE" | "REMPLACANT" | null,
-      },
-    });
-    return { success: true };
+  const currentDeptIds = currentEventDepts.map((ed) => ed.departmentId);
+  const requestedDeptIds = departmentIds;
+
+  // Departments to add: in requested but not in current
+  const toAdd = requestedDeptIds.filter((id) => !currentDeptIds.includes(id));
+
+  // Departments to remove: in current but not in requested
+  const toRemove = currentEventDepts.filter((ed) => !requestedDeptIds.includes(ed.departmentId));
+
+  // Remove departments: cascade delete plannings first, then EventDepartment records
+  if (toRemove.length > 0) {
+    const removeIds = toRemove.map((ed) => ed.id);
+    await tx.planning.deleteMany({ where: { eventDepartmentId: { in: removeIds } } });
+    await tx.eventDepartment.deleteMany({ where: { id: { in: removeIds } } });
   }
 
-  await tx.planning.upsert({
-    where: {
-      eventDepartmentId_memberId: {
-        eventDepartmentId: eventDept.id,
-        memberId,
-      },
-    },
-    update: {
-      status: newStatus as "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | "INDISPONIBLE" | "REMPLACANT" | null,
-    },
-    create: {
-      eventDepartmentId: eventDept.id,
-      memberId,
-      status: newStatus as "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | "INDISPONIBLE" | "REMPLACANT" | null,
-    },
-  });
+  // Add new departments
+  if (toAdd.length > 0) {
+    await tx.eventDepartment.createMany({
+      data: toAdd.map((departmentId) => ({ eventId, departmentId })),
+    });
+  }
 
-  return { success: true };
+  return {
+    success: true,
+    error: undefined,
+  };
 }
 
 async function executeDemandeAcces(

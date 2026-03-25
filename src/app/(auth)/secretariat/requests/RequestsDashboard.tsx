@@ -155,6 +155,11 @@ export default function RequestsDashboard({ requests: initial }: Props) {
     if (req.type === "ANNULATION_EVENEMENT") {
       return `Raison : ${p.reason ?? "—"}`;
     }
+    if (req.type === "MODIFICATION_PLANNING") {
+      const deptIds = p.departmentIds as string[] | undefined;
+      const count = Array.isArray(deptIds) ? deptIds.length : 0;
+      return `${count} département${count !== 1 ? "s" : ""} sélectionné${count !== 1 ? "s" : ""}`;
+    }
     if (req.type === "DEMANDE_ACCES") {
       return `Rôle : ${p.role ?? "—"}`;
     }
