@@ -224,78 +224,68 @@ export default function StarViewClient({ eventId }: Props) {
 
       {/* Printable zone */}
       <div ref={printRef} className="rounded-2xl overflow-hidden shadow-xl">
-        {/* Header — split design: violet left + jaune right */}
-        <div className="relative flex">
-          {/* Left block — violet with event info */}
-          <div className="flex-1 bg-icc-violet px-8 py-6">
-            <p className="text-icc-jaune text-xs font-bold uppercase tracking-widest mb-2">
-              {data.event.church.name}
-            </p>
-            <h1 className="text-white text-2xl font-black uppercase tracking-wide leading-tight">
-              {data.event.title}
-            </h1>
-            <p className="text-white/60 text-sm mt-1.5 capitalize">
+        {/* Header */}
+        <div className="bg-indigo-900 px-8 py-5">
+          <p className="text-white/50 text-xs font-semibold tracking-wide mb-1">
+            {data.event.church.name}
+          </p>
+          <h1 className="text-white text-2xl font-bold uppercase tracking-wide leading-tight">
+            {data.event.title}
+          </h1>
+          <div className="flex items-center gap-3 mt-2">
+            <p className="text-white/50 text-sm capitalize">
               {formatDate(data.event.date)}
             </p>
-          </div>
-          {/* Right block — jaune with count */}
-          <div className="bg-icc-jaune px-8 py-6 flex flex-col items-center justify-center shrink-0">
-            <span className="text-4xl font-black text-icc-violet leading-none">
-              {data.totalStars}
-            </span>
-            <span className="text-[10px] font-bold text-icc-violet/70 uppercase tracking-widest mt-1">
-              STAR
+            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {data.totalStars} Star en service
             </span>
           </div>
         </div>
 
-        {/* Separator */}
-        <div className="h-1 bg-icc-jaune" />
-
-        {/* Department grid */}
-        <div className="bg-icc-violet px-5 py-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {data.departments.map((dept) => (
-            <div
-              key={dept.id}
-              className="bg-white/95 rounded-lg overflow-hidden"
-            >
-              {/* Department name inline */}
-              <div className="px-4 pt-3 pb-1.5">
-                <h3 className="text-[11px] font-black text-icc-violet uppercase tracking-widest leading-tight truncate border-b-2 border-icc-jaune pb-1.5 inline-block">
+        {/* Body */}
+        <div className="bg-gray-50 px-5 py-5">
+          {/* Active departments */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {data.departments.filter((d) => d.members.length > 0).map((dept) => (
+              <div
+                key={dept.id}
+                className="bg-white rounded-lg shadow-sm border-l-[3px] border-icc-violet px-4 py-3"
+              >
+                <h3 className="text-xs font-semibold text-icc-violet mb-2 truncate capitalize">
                   {dept.name}
                 </h3>
-              </div>
-
-              {/* Members */}
-              <div className="px-4 pb-3">
-                {dept.members.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic">
-                    (aucun STAR en service)
-                  </p>
-                ) : (
-                  <ul className="space-y-0.5">
-                    {dept.members.map((member) => (
-                      <li key={member.id} className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-800 font-semibold truncate">
-                          {member.firstName} {member.lastName}
+                <ul className="space-y-1">
+                  {dept.members.map((member) => (
+                    <li key={member.id} className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-gray-700 font-medium truncate">
+                        {member.firstName} {member.lastName}
+                      </span>
+                      {member.status === "EN_SERVICE_DEBRIEF" && (
+                        <span className="text-[11px] bg-icc-violet-light text-icc-violet px-2 py-0.5 rounded-full font-semibold shrink-0">
+                          Debrief
                         </span>
-                        {member.status === "EN_SERVICE_DEBRIEF" && (
-                          <span className="text-[11px] bg-icc-jaune text-icc-violet px-2.5 py-0.5 rounded-full font-bold shrink-0">
-                            Debrief
-                          </span>
-                        )}
-                        {member.status === "REMPLACANT" && (
-                          <span className="text-[11px] bg-white text-icc-violet border border-icc-violet/30 px-2.5 py-0.5 rounded-full font-semibold shrink-0">
-                            Remplaçant
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                      )}
+                      {member.status === "REMPLACANT" && (
+                        <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium shrink-0">
+                          Remplaçant
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ))}
+          </div>
+
+          {/* Inactive departments — compact line */}
+          {data.departments.some((d) => d.members.length === 0) && (
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <p className="text-xs text-gray-400">
+                <span className="font-medium text-gray-500">Non mobilisés : </span>
+                {data.departments.filter((d) => d.members.length === 0).map((d) => d.name).join(", ")}
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

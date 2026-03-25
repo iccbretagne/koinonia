@@ -280,23 +280,23 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
                         {event.members.length === 0 ? (
                           <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
                         ) : (
-                          <div className="space-y-2">
+                          <div className="space-y-1.5">
                             {/* Members with tasks */}
                             {withTasks.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between gap-2">
-                                <span className="text-sm text-gray-900 font-semibold truncate">
+                              <div key={member.id} className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-sm text-gray-900 font-semibold">
                                   {member.firstName} {member.lastName}
                                 </span>
-                                <span className="flex items-center gap-1 shrink-0">
-                                  <span className="text-xs text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full">
-                                    {member.tasks.join(", ")}
+                                {member.tasks.map((task) => (
+                                  <span key={task} className="text-[11px] font-medium border border-icc-violet/40 text-icc-violet px-2 py-0.5 rounded-full">
+                                    {task}
                                   </span>
-                                  {member.status === "EN_SERVICE_DEBRIEF" && (
-                                    <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full">
-                                      Debrief
-                                    </span>
-                                  )}
-                                </span>
+                                ))}
+                                {member.status === "EN_SERVICE_DEBRIEF" && (
+                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
+                                    Debrief
+                                  </span>
+                                )}
                               </div>
                             ))}
 
@@ -307,12 +307,12 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
 
                             {/* Members without tasks */}
                             {withoutTasks.map((member) => (
-                              <div key={member.id} className="flex items-center justify-between gap-2">
-                                <span className="text-sm text-gray-600 font-medium truncate">
+                              <div key={member.id} className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-sm text-gray-600 font-medium">
                                   {member.firstName} {member.lastName}
                                 </span>
                                 {member.status === "EN_SERVICE_DEBRIEF" && (
-                                  <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full shrink-0">
+                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
                                     Debrief
                                   </span>
                                 )}
