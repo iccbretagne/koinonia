@@ -275,7 +275,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
 
                       {/* Content */}
                       <div className="flex-1 px-4 py-3 min-w-0">
-                        <p className="font-bold text-gray-900 text-sm mb-2">{event.title}</p>
+                        <p className="font-bold text-icc-violet text-xs uppercase tracking-wide mb-2">{event.title}</p>
 
                         {event.members.length === 0 ? (
                           <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
