@@ -3,8 +3,17 @@ import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
+import { executeRequest } from "@/lib/request-executor";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+
+const EXECUTABLE_TYPES = [
+  "AJOUT_EVENEMENT",
+  "MODIFICATION_EVENEMENT",
+  "ANNULATION_EVENEMENT",
+  "MODIFICATION_PLANNING",
+  "DEMANDE_ACCES",
+];
 
 const patchSchema = z.object({
   status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE", "APPROUVEE", "REFUSEE"]).optional(),
@@ -118,6 +127,11 @@ export async function PATCH(
       throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
     }
 
+    // Refusal requires a note
+    if (data.status === "REFUSEE" && !data.reviewNotes) {
+      throw new ApiError(400, "Une note est obligatoire pour refuser une demande");
+    }
+
     // Merge payload fields updates
     const currentPayload = (existing.payload as Record<string, unknown>) ?? {};
     const payloadUpdates: Record<string, unknown> = {};
@@ -130,7 +144,36 @@ export async function PATCH(
       ? { ...currentPayload, ...payloadUpdates }
       : undefined;
 
+    const isExecutableType = EXECUTABLE_TYPES.includes(existing.type);
+
     const updated = await prisma.$transaction(async (tx) => {
+      // For executable types approved → run auto-execution
+      if (data.status === "APPROUVEE" && isExecutableType) {
+        const execResult = await executeRequest(
+          tx,
+          id,
+          existing.churchId,
+          existing.type,
+          currentPayload,
+          session.user.id
+        );
+
+        const result = await tx.request.update({
+          where: { id },
+          data: {
+            status: execResult.success ? "EXECUTEE" : "ERREUR",
+            reviewedBy: { connect: { id: session.user.id } },
+            reviewedAt: new Date(),
+            ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
+            ...(execResult.success && { executedAt: new Date() }),
+            ...(!execResult.success && { executionError: execResult.error }),
+          },
+          select: { id: true, type: true, status: true, executionError: true },
+        });
+
+        return result;
+      }
+
       const result = await tx.request.update({
         where: { id },
         data: {
@@ -156,7 +199,7 @@ export async function PATCH(
         });
       }
 
-      // Sync announcement status when a parent SR changes status
+      // Sync announcement status when a parent request changes status
       if (
         data.status !== undefined &&
         existing.announcementId &&

@@ -402,7 +402,7 @@ export default function Sidebar({
       {/* 4. Annonces */}
       {serviceLinks.length > 0 && (
         <AccordionSection
-          title="Annonces"
+          title="Demandes"
           icon={<IconMegaphone className="w-4 h-4" />}
           open={openSection === "service"}
           onToggle={() => toggle("service")}
