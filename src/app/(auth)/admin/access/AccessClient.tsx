@@ -91,6 +91,10 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
   // Transverse role loading: "userId:ROLE"
   const [transverseLoading, setTransverseLoading] = useState<string | null>(null);
 
+  // Search filters
+  const [transverseSearch, setTransverseSearch] = useState("");
+  const [reporterSearch, setReporterSearch] = useState("");
+
   // ── Helpers locaux ─────────────────────────────────────────────────────────
 
   function getMinister(ministryId: string): UserItem[] {
@@ -411,6 +415,23 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
   // Users that can be assigned (not already minister/head in a conflicting way)
   const assignableUsers = localUsers;
 
+  // Filtered user lists for search tabs
+  function matchesSearch(user: UserItem, term: string): boolean {
+    const q = term.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q)
+    );
+  }
+
+  const filteredTransverseUsers = transverseSearch
+    ? localUsers.filter((u) => matchesSearch(u, transverseSearch))
+    : localUsers;
+
+  const filteredReporterUsers = reporterSearch
+    ? localUsers.filter((u) => matchesSearch(u, reporterSearch))
+    : localUsers;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -533,7 +554,14 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
               <> Les rôles <strong>Admin</strong> et <strong>Secrétaire</strong> sont réservés aux super-admins.</>
             )}
           </p>
-          {localUsers.map((user) => {
+          <input
+            type="text"
+            value={transverseSearch}
+            onChange={(e) => setTransverseSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
+          />
+          {filteredTransverseUsers.map((user) => {
             const userTransverseRoles = (["ADMIN", "SECRETARY", "DISCIPLE_MAKER"] as TransverseRole[]).filter(
               (role) => {
                 if (role === "ADMIN" || role === "SECRETARY") return isSuperAdmin;
@@ -593,7 +621,14 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
           <p className="text-xs text-gray-400 mb-4">
             Les utilisateurs avec le rôle <strong>Reporter</strong> peuvent consulter les comptes rendus et statistiques des événements.
           </p>
-          {localUsers.map((user) => {
+          <input
+            type="text"
+            value={reporterSearch}
+            onChange={(e) => setReporterSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
+          />
+          {filteredReporterUsers.map((user) => {
             const isReporter = user.churchRoles.some((r) => r.role === "REPORTER");
             const loading = reporterLoading === user.id;
             return (
