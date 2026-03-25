@@ -54,6 +54,37 @@ const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
 
 const EVENT_TYPES = ["CULTE", "PRIERE", "REUNION", "FORMATION", "EVENEMENT", "AUTRE"];
 
+const DEADLINE_OFFSETS = [
+  { value: "", label: "Manuel" },
+  { value: "6h", label: "6h avant" },
+  { value: "12h", label: "12h avant" },
+  { value: "1d", label: "1 jour avant" },
+  { value: "2d", label: "2 jours avant" },
+  { value: "3d", label: "3 jours avant" },
+  { value: "5d", label: "5 jours avant" },
+  { value: "7d", label: "7 jours avant" },
+];
+
+const RECURRENCE_RULES = [
+  { value: "", label: "Pas de récurrence" },
+  { value: "weekly", label: "Hebdomadaire" },
+  { value: "biweekly", label: "Bihebdomadaire" },
+  { value: "monthly", label: "Mensuel" },
+];
+
+function computeDeadlineFromOffset(eventDate: string, offset: string): string {
+  if (!eventDate || !offset) return "";
+  const match = offset.match(/^(\d+)(h|d)$/);
+  if (!match) return "";
+  const d = new Date(eventDate);
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  if (unit === "h") d.setHours(d.getHours() - value);
+  else if (unit === "d") d.setDate(d.getDate() - value);
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 const ROLES_FOR_ACCESS = [
   { value: "MINISTER", label: "Ministre" },
   { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
@@ -77,11 +108,13 @@ function initFromEditData(editData: EditData): {
   eventType: string;
   eventDate: string;
   planningDeadline: string;
+  deadlineOffset: string;
+  eventDeptIds: string[];
+  recurrenceRule: string;
+  recurrenceEnd: string;
   selectedEventId: string;
   reason: string;
-  selectedDeptId: string;
-  selectedMemberId: string;
-  newStatus: string;
+  planningDeptIds: string[];
   targetUserId: string;
   targetRole: string;
   targetMinistryId: string;
@@ -106,14 +139,16 @@ function initFromEditData(editData: EditData): {
     annTargetEventIds: editData.announcement?.targetEvents?.map((t) => t.eventId) ?? [],
     // demand
     eventTitle: (p?.eventTitle as string) ?? (p?.changes as Record<string, unknown>)?.title as string ?? "",
-    eventType: (p?.eventType as string) ?? "CULTE",
-    eventDate: (p?.eventDate as string) ?? "",
-    planningDeadline: (p?.planningDeadline as string) ?? "",
+    eventType: (p?.eventType as string) ?? ((p?.changes as Record<string, unknown>)?.type as string) ?? "",
+    eventDate: (p?.eventDate as string) ?? ((p?.changes as Record<string, unknown>)?.date as string) ?? "",
+    planningDeadline: (p?.planningDeadline as string) ?? ((p?.changes as Record<string, unknown>)?.planningDeadline as string) ?? "",
+    deadlineOffset: (p?.deadlineOffset as string) ?? "",
+    eventDeptIds: (p?.departmentIds as string[]) ?? [],
+    recurrenceRule: (p?.recurrenceRule as string) ?? "",
+    recurrenceEnd: (p?.recurrenceEnd as string) ?? "",
     selectedEventId: (p?.eventId as string) ?? "",
     reason: (p?.reason as string) ?? "",
-    selectedDeptId: (p?.departmentId as string) ?? "",
-    selectedMemberId: (p?.memberId as string) ?? "",
-    newStatus: (p?.newStatus as string) ?? "",
+    planningDeptIds: (p?.departmentIds as string[]) ?? [],
     targetUserId: (p?.targetUserId as string) ?? "",
     targetRole: (p?.role as string) ?? "MINISTER",
     targetMinistryId: (p?.ministryId as string) ?? "",
@@ -162,29 +197,35 @@ export default function RequestForm({
   const [eventType, setEventType] = useState(init?.eventType ?? "CULTE");
   const [eventDate, setEventDate] = useState(init?.eventDate ?? "");
   const [planningDeadline, setPlanningDeadline] = useState(init?.planningDeadline ?? "");
+  const [deadlineOffset, setDeadlineOffset] = useState(init?.deadlineOffset ?? "");
+  const [eventDeptIds, setEventDeptIds] = useState<string[]>(init?.eventDeptIds ?? []);
+  const [recurrenceRule, setRecurrenceRule] = useState(init?.recurrenceRule ?? "");
+  const [recurrenceEnd, setRecurrenceEnd] = useState(init?.recurrenceEnd ?? "");
   const [selectedEventId, setSelectedEventId] = useState(init?.selectedEventId ?? "");
   const [reason, setReason] = useState(init?.reason ?? "");
-  const [selectedDeptId, setSelectedDeptId] = useState(init?.selectedDeptId ?? "");
-  const [selectedMemberId, setSelectedMemberId] = useState(init?.selectedMemberId ?? "");
-  const [newStatus, setNewStatus] = useState(init?.newStatus ?? "");
+  const [planningDeptIds, setPlanningDeptIds] = useState<string[]>(init?.planningDeptIds ?? []);
+  const [loadingEventDepts, setLoadingEventDepts] = useState(false);
   const [targetUserId, setTargetUserId] = useState(init?.targetUserId ?? "");
   const [targetRole, setTargetRole] = useState(init?.targetRole ?? "MINISTER");
   const [targetMinistryId, setTargetMinistryId] = useState(init?.targetMinistryId ?? "");
   const [targetDeptIds, setTargetDeptIds] = useState<string[]>(init?.targetDeptIds ?? []);
 
-  // Members for planning modification (loaded dynamically)
-  const [members, setMembers] = useState<{ id: string; firstName: string; lastName: string }[]>([]);
-
-  async function loadMembers(deptId: string) {
-    if (!deptId) return;
+  async function loadEventDepartments(eventId: string) {
+    if (!eventId) return;
+    setLoadingEventDepts(true);
     try {
-      const res = await fetch(`/api/members?churchId=${churchId}&departmentId=${deptId}`);
+      const res = await fetch(`/api/events/${eventId}`);
       if (res.ok) {
         const data = await res.json();
-        setMembers(data.data ?? []);
+        const assignedIds: string[] = (data.data?.eventDepts ?? []).map(
+          (ed: { departmentId: string }) => ed.departmentId
+        );
+        setPlanningDeptIds(assignedIds);
       }
     } catch {
       // ignore
+    } finally {
+      setLoadingEventDepts(false);
     }
   }
 
@@ -242,12 +283,29 @@ export default function RequestForm({
     switch (demandType) {
       case "AJOUT_EVENEMENT":
         title = `Ajout ${eventType} du ${new Date(eventDate).toLocaleDateString("fr-FR")}`;
-        payload = { eventTitle, eventType, eventDate, planningDeadline: planningDeadline || null };
+        payload = {
+          eventTitle,
+          eventType,
+          eventDate,
+          planningDeadline: planningDeadline || undefined,
+          deadlineOffset: deadlineOffset || undefined,
+          departmentIds: eventDeptIds,
+          recurrenceRule: recurrenceRule || undefined,
+          recurrenceEnd: recurrenceEnd || undefined,
+        };
         break;
       case "MODIFICATION_EVENEMENT": {
         const evt = events.find((e) => e.id === selectedEventId);
         title = `Modification : ${evt?.title ?? "événement"}`;
-        payload = { eventId: selectedEventId, changes: { title: eventTitle || undefined } };
+        payload = {
+          eventId: selectedEventId,
+          changes: {
+            title: eventTitle || undefined,
+            type: eventType || undefined,
+            date: eventDate || undefined,
+            planningDeadline: planningDeadline || undefined,
+          },
+        };
         break;
       }
       case "ANNULATION_EVENEMENT": {
@@ -258,12 +316,10 @@ export default function RequestForm({
       }
       case "MODIFICATION_PLANNING": {
         const evt3 = events.find((e) => e.id === selectedEventId);
-        title = `Modif. planning : ${evt3?.title ?? "événement"}`;
+        title = `Modification départements — ${evt3?.title ?? "événement"}`;
         payload = {
           eventId: selectedEventId,
-          departmentId: selectedDeptId,
-          memberId: selectedMemberId,
-          newStatus: newStatus || null,
+          departmentIds: planningDeptIds,
         };
         break;
       }
@@ -508,15 +564,103 @@ export default function RequestForm({
             label="Date"
             type="datetime-local"
             value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
+            onChange={(e) => {
+              const newDate = e.target.value;
+              setEventDate(newDate);
+              if (deadlineOffset && newDate) {
+                setPlanningDeadline(computeDeadlineFromOffset(newDate, deadlineOffset));
+              }
+            }}
             required
           />
-          <Input
-            label="Deadline planning (optionnel)"
-            type="datetime-local"
-            value={planningDeadline}
-            onChange={(e) => setPlanningDeadline(e.target.value)}
-          />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Délai avant l&apos;événement</label>
+            <select
+              value={deadlineOffset}
+              onChange={(e) => {
+                const offset = e.target.value;
+                setDeadlineOffset(offset);
+                if (offset && eventDate) {
+                  setPlanningDeadline(computeDeadlineFromOffset(eventDate, offset));
+                } else if (!offset) {
+                  setPlanningDeadline("");
+                }
+              }}
+              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            >
+              {DEADLINE_OFFSETS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          {!deadlineOffset && (
+            <Input
+              label="Deadline planning (optionnel)"
+              type="datetime-local"
+              value={planningDeadline}
+              onChange={(e) => setPlanningDeadline(e.target.value)}
+            />
+          )}
+          {deadlineOffset && planningDeadline && (
+            <p className="text-xs text-gray-500">
+              Deadline calculée : {new Date(planningDeadline).toLocaleString("fr-FR")}
+            </p>
+          )}
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Départements en service</label>
+            <p className="text-xs text-gray-500 mb-2">
+              Cochez les départements qui doivent participer à cet événement.
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+              {departments.map((d) => (
+                <label key={d.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={eventDeptIds.includes(d.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setEventDeptIds((prev) => [...prev, d.id]);
+                      } else {
+                        setEventDeptIds((prev) => prev.filter((id) => id !== d.id));
+                      }
+                    }}
+                    className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                  />
+                  <span>
+                    {d.name}
+                    <span className="text-gray-400 ml-1">({d.ministryName})</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">
+              {eventDeptIds.length} département{eventDeptIds.length !== 1 ? "s" : ""} sélectionné{eventDeptIds.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Récurrence</label>
+            <select
+              value={recurrenceRule}
+              onChange={(e) => {
+                setRecurrenceRule(e.target.value);
+                if (!e.target.value) setRecurrenceEnd("");
+              }}
+              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            >
+              {RECURRENCE_RULES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+          {recurrenceRule && (
+            <Input
+              label="Fin de récurrence"
+              type="date"
+              value={recurrenceEnd}
+              onChange={(e) => setRecurrenceEnd(e.target.value)}
+              required
+            />
+          )}
         </>
       )}
 
@@ -526,7 +670,22 @@ export default function RequestForm({
             <label className="block text-sm font-medium text-gray-700">Événement à modifier</label>
             <select
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value;
+                setSelectedEventId(id);
+                const evt = events.find((ev) => ev.id === id);
+                if (evt) {
+                  setEventType(evt.type);
+                  // Format ISO date to datetime-local format (YYYY-MM-DDTHH:mm)
+                  const d = new Date(evt.date);
+                  const pad = (n: number) => String(n).padStart(2, "0");
+                  const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                  setEventDate(local);
+                } else {
+                  setEventType("");
+                  setEventDate("");
+                }
+              }}
               required
               className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
             >
@@ -544,6 +703,37 @@ export default function RequestForm({
             onChange={(e) => setEventTitle(e.target.value)}
             placeholder="Nouveau titre..."
           />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Nouveau type</label>
+            <select
+              value={eventType}
+              onChange={(e) => setEventType(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            >
+              <option value="">— Inchangé —</option>
+              {["CULTE", "PRIERE", "REUNION", "CONFERENCE", "AUTRE"].map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Nouvelle date</label>
+            <input
+              type="datetime-local"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Deadline planning</label>
+            <input
+              type="datetime-local"
+              value={planningDeadline}
+              onChange={(e) => setPlanningDeadline(e.target.value)}
+              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+            />
+          </div>
         </>
       )}
 
@@ -584,7 +774,12 @@ export default function RequestForm({
             <label className="block text-sm font-medium text-gray-700">Événement</label>
             <select
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const id = e.target.value;
+                setSelectedEventId(id);
+                if (id) loadEventDepartments(id);
+                else setPlanningDeptIds([]);
+              }}
               required
               className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
             >
@@ -596,57 +791,44 @@ export default function RequestForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Département</label>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => {
-                setSelectedDeptId(e.target.value);
-                loadMembers(e.target.value);
-              }}
-              required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-            >
-              <option value="">— Sélectionner —</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.ministryName})
-                </option>
-              ))}
-            </select>
-          </div>
-          {members.length > 0 && (
+          {selectedEventId && (
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Membre</label>
-              <select
-                value={selectedMemberId}
-                onChange={(e) => setSelectedMemberId(e.target.value)}
-                required
-                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-              >
-                <option value="">— Sélectionner —</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.firstName} {m.lastName}
-                  </option>
+              <label className="block text-sm font-medium text-gray-700">
+                Départements assignés
+                {loadingEventDepts && (
+                  <span className="ml-2 text-xs text-gray-400 font-normal">Chargement...</span>
+                )}
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Cochez les départements qui doivent participer à cet événement.
+              </p>
+              <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+                {departments.map((d) => (
+                  <label key={d.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={planningDeptIds.includes(d.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPlanningDeptIds((prev) => [...prev, d.id]);
+                        } else {
+                          setPlanningDeptIds((prev) => prev.filter((id) => id !== d.id));
+                        }
+                      }}
+                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                    />
+                    <span>
+                      {d.name}
+                      <span className="text-gray-400 ml-1">({d.ministryName})</span>
+                    </span>
+                  </label>
                 ))}
-              </select>
+              </div>
+              <p className="text-xs text-gray-500">
+                {planningDeptIds.length} département{planningDeptIds.length !== 1 ? "s" : ""} sélectionné{planningDeptIds.length !== 1 ? "s" : ""}
+              </p>
             </div>
           )}
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Nouveau statut</label>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-            >
-              <option value="">Non planifié</option>
-              <option value="EN_SERVICE">En service</option>
-              <option value="EN_SERVICE_DEBRIEF">En service (debrief)</option>
-              <option value="INDISPONIBLE">Indisponible</option>
-              <option value="REMPLACANT">Remplaçant</option>
-            </select>
-          </div>
         </>
       )}
 

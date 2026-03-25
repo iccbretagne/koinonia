@@ -223,67 +223,77 @@ export default function StarViewClient({ eventId }: Props) {
       </div>
 
       {/* Printable zone */}
-      <div ref={printRef} className="bg-white rounded-lg shadow p-4 md:p-6 print:shadow-none">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-6 pb-4 border-b border-gray-200">
-          <div className="text-sm text-gray-600 capitalize">
-            {formatDate(data.event.date)}
+      <div ref={printRef} className="rounded-2xl overflow-hidden shadow-xl">
+        {/* Header — split design: violet left + jaune right */}
+        <div className="relative flex">
+          {/* Left block — violet with event info */}
+          <div className="flex-1 bg-icc-violet px-8 py-6">
+            <p className="text-icc-jaune text-xs font-bold uppercase tracking-widest mb-2">
+              {data.event.church.name}
+            </p>
+            <h1 className="text-white text-2xl font-black uppercase tracking-wide leading-tight">
+              {data.event.title}
+            </h1>
+            <p className="text-white/60 text-sm mt-1.5 capitalize">
+              {formatDate(data.event.date)}
+            </p>
           </div>
-          <h1 className="text-lg md:text-xl font-bold text-icc-violet uppercase tracking-wider">
-            STAR EN SERVICE
-          </h1>
-          <div className="text-lg font-bold text-icc-violet">
-            {data.totalStars} STAR
+          {/* Right block — jaune with count */}
+          <div className="bg-icc-jaune px-8 py-6 flex flex-col items-center justify-center shrink-0">
+            <span className="text-4xl font-black text-icc-violet leading-none">
+              {data.totalStars}
+            </span>
+            <span className="text-[10px] font-bold text-icc-violet/70 uppercase tracking-widest mt-1">
+              STAR
+            </span>
           </div>
         </div>
 
-        {/* Event info */}
-        <div className="mb-6 text-center">
-          <p className="text-lg font-semibold text-gray-800">
-            {data.event.title}
-          </p>
-          <p className="text-sm text-gray-500">{data.event.church.name}</p>
-        </div>
+        {/* Separator */}
+        <div className="h-1 bg-icc-jaune" />
 
         {/* Department grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 md:gap-4">
+        <div className="bg-icc-violet px-5 py-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {data.departments.map((dept) => (
             <div
               key={dept.id}
-              className="border border-gray-200 rounded-lg p-4"
+              className="bg-white/95 rounded-lg overflow-hidden"
             >
-              <h3 className="text-sm font-bold text-icc-violet uppercase mb-2 tracking-wide">
-                {dept.name}
-              </h3>
-              {dept.members.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">
-                  (aucun STAR en service)
-                </p>
-              ) : (
-                <ul className="space-y-1">
-                  {dept.members.map((member) => (
-                    <li
-                      key={member.id}
-                      className="text-sm font-semibold text-gray-800"
-                    >
-                      {member.firstName} {member.lastName}
-                      {member.status === "EN_SERVICE_DEBRIEF" && (
-                        <svg className="inline-block w-5 h-5 ml-1 text-icc-violet align-text-bottom" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                          <circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/>
-                          <circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/>
-                          <circle cx="16" cy="10" r="1" fill="currentColor" stroke="none"/>
-                        </svg>
-                      )}
-                      {member.status === "REMPLACANT" && (
-                        <span className="text-gray-400 font-normal ml-1">
-                          (Remplacant)
+              {/* Department name inline */}
+              <div className="px-4 pt-3 pb-1.5">
+                <h3 className="text-[11px] font-black text-icc-violet uppercase tracking-widest leading-tight truncate border-b-2 border-icc-jaune pb-1.5 inline-block">
+                  {dept.name}
+                </h3>
+              </div>
+
+              {/* Members */}
+              <div className="px-4 pb-3">
+                {dept.members.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">
+                    (aucun STAR en service)
+                  </p>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {dept.members.map((member) => (
+                      <li key={member.id} className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-gray-800 font-semibold truncate">
+                          {member.firstName} {member.lastName}
                         </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        {member.status === "EN_SERVICE_DEBRIEF" && (
+                          <span className="text-[11px] bg-icc-jaune text-icc-violet px-2.5 py-0.5 rounded-full font-bold shrink-0">
+                            Debrief
+                          </span>
+                        )}
+                        {member.status === "REMPLACANT" && (
+                          <span className="text-[11px] bg-white text-icc-violet border border-icc-violet/30 px-2.5 py-0.5 rounded-full font-semibold shrink-0">
+                            Remplaçant
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           ))}
         </div>

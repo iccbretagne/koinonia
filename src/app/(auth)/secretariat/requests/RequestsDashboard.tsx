@@ -150,10 +150,29 @@ export default function RequestsDashboard({ requests: initial }: Props) {
     const p = ((req.payload ?? {}) as Record<string, unknown>);
 
     if (req.type === "AJOUT_EVENEMENT") {
-      return `${p.eventType ?? ""} — ${p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : ""}`;
+      const deptIds = p.departmentIds as string[] | undefined;
+      const deptCount = Array.isArray(deptIds) ? deptIds.length : 0;
+      const recurrence = p.recurrenceRule as string | undefined;
+      const recurrenceLabels: Record<string, string> = {
+        weekly: "Hebdo",
+        biweekly: "Bihebdo",
+        monthly: "Mensuel",
+      };
+      const parts = [
+        `${p.eventType ?? ""}`,
+        p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : "",
+        deptCount > 0 ? `${deptCount} département${deptCount !== 1 ? "s" : ""}` : null,
+        recurrence ? `Récurrence : ${recurrenceLabels[recurrence] ?? recurrence}` : null,
+      ].filter(Boolean);
+      return parts.join(" — ");
     }
     if (req.type === "ANNULATION_EVENEMENT") {
       return `Raison : ${p.reason ?? "—"}`;
+    }
+    if (req.type === "MODIFICATION_PLANNING") {
+      const deptIds = p.departmentIds as string[] | undefined;
+      const count = Array.isArray(deptIds) ? deptIds.length : 0;
+      return `${count} département${count !== 1 ? "s" : ""} sélectionné${count !== 1 ? "s" : ""}`;
     }
     if (req.type === "DEMANDE_ACCES") {
       return `Rôle : ${p.role ?? "—"}`;
