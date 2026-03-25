@@ -46,6 +46,31 @@ export async function executeRequest(
   }
 }
 
+function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
+  const result = new Date(eventDate);
+  const match = offset.match(/^(\d+)(h|d)$/);
+  if (!match) return result;
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  if (unit === "h") result.setHours(result.getHours() - value);
+  else if (unit === "d") result.setDate(result.getDate() - value);
+  return result;
+}
+
+function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): Date[] {
+  const dates: Date[] = [];
+  const current = new Date(startDate);
+  while (true) {
+    if (rule === "weekly") current.setDate(current.getDate() + 7);
+    else if (rule === "biweekly") current.setDate(current.getDate() + 14);
+    else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
+    else break;
+    if (current > endDate) break;
+    dates.push(new Date(current));
+  }
+  return dates;
+}
+
 async function executeAjoutEvenement(
   tx: TxClient,
   churchId: string,
@@ -54,21 +79,88 @@ async function executeAjoutEvenement(
   const title = payload.eventTitle as string;
   const type = payload.eventType as string;
   const date = payload.eventDate as string;
-  const planningDeadline = payload.planningDeadline as string | null;
+  const planningDeadlineRaw = payload.planningDeadline as string | null | undefined;
+  const deadlineOffset = payload.deadlineOffset as string | null | undefined;
+  const departmentIds = payload.departmentIds as string[] | undefined;
+  const recurrenceRule = payload.recurrenceRule as string | null | undefined;
+  const recurrenceEnd = payload.recurrenceEnd as string | null | undefined;
 
   if (!title || !type || !date) {
     return { success: false, error: "Données manquantes : eventTitle, eventType, eventDate" };
   }
 
-  await tx.event.create({
+  const eventDate = new Date(date);
+  const useOffset = !!deadlineOffset && !planningDeadlineRaw;
+  const deadline = useOffset
+    ? computeDeadlineFromOffset(eventDate, deadlineOffset!)
+    : planningDeadlineRaw
+      ? new Date(planningDeadlineRaw)
+      : null;
+
+  if (recurrenceRule && recurrenceEnd) {
+    const endDate = new Date(recurrenceEnd);
+    const childDates = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
+
+    const parent = await tx.event.create({
+      data: {
+        title,
+        type,
+        date: eventDate,
+        churchId,
+        planningDeadline: deadline,
+        recurrenceRule,
+        isRecurrenceParent: true,
+      },
+    });
+
+    if (departmentIds && departmentIds.length > 0) {
+      await tx.eventDepartment.createMany({
+        data: departmentIds.map((departmentId) => ({ eventId: parent.id, departmentId })),
+      });
+    }
+
+    for (const childDate of childDates) {
+      const childDeadline = useOffset
+        ? computeDeadlineFromOffset(childDate, deadlineOffset!)
+        : deadline;
+
+      const child = await tx.event.create({
+        data: {
+          title,
+          type,
+          date: childDate,
+          churchId,
+          planningDeadline: childDeadline,
+          recurrenceRule,
+          seriesId: parent.id,
+        },
+      });
+
+      if (departmentIds && departmentIds.length > 0) {
+        await tx.eventDepartment.createMany({
+          data: departmentIds.map((departmentId) => ({ eventId: child.id, departmentId })),
+        });
+      }
+    }
+
+    return { success: true };
+  }
+
+  const event = await tx.event.create({
     data: {
       title,
       type,
-      date: new Date(date),
+      date: eventDate,
       churchId,
-      planningDeadline: planningDeadline ? new Date(planningDeadline) : null,
+      planningDeadline: deadline,
     },
   });
+
+  if (departmentIds && departmentIds.length > 0) {
+    await tx.eventDepartment.createMany({
+      data: departmentIds.map((departmentId) => ({ eventId: event.id, departmentId })),
+    });
+  }
 
   return { success: true };
 }
