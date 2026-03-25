@@ -73,16 +73,20 @@ export default async function AuthLayout({
   // Compute visible config links
   const userRoles = churchRoles.map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));
+  // Super admins have all permissions regardless of church roles
+  if (session.user.isSuperAdmin) {
+    configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
+  }
   const visibleConfigLinks = configLinksDef
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
 
-  // Compute service links (annonces & demandes)
+  // Compute service links (demandes)
   // Dashboards opérationnels restreints aux membres du département concerné + events:manage
   const serviceLinks: { href: string; label: string }[] = [];
 
   if (userPermissions.has("planning:view")) {
-    serviceLinks.push({ href: "/announcements", label: "Mes annonces" });
+    serviceLinks.push({ href: "/requests", label: "Mes demandes" });
   }
 
   if (currentChurchId && userPermissions.has("planning:view")) {
@@ -108,7 +112,7 @@ export default async function AuthLayout({
       serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
 
     if (isMemberOf("SECRETARIAT"))
-      serviceLinks.push({ href: "/secretariat/announcements", label: "Secrétariat" });
+      serviceLinks.push({ href: "/secretariat/requests", label: "Gestion" });
     if (isMemberOf("PRODUCTION_MEDIA"))
       serviceLinks.push({ href: "/media/requests", label: "Visuels" });
     if (isMemberOf("COMMUNICATION"))

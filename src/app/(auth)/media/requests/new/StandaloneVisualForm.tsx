@@ -39,7 +39,7 @@ export default function StandaloneVisualForm({ churchId, sourceOptions }: Props)
     const source = sourceOptions.find((s) => s.id === sourceId);
 
     try {
-      const res = await fetch("/api/service-requests", {
+      const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

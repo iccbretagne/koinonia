@@ -4,7 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { DepartmentFunction } from "@prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 import { z } from "zod";
 
 const createSchema = z
@@ -30,7 +30,7 @@ function computeIsSaveTheDate(eventDate: Date): boolean {
   return eventDate > threeWeeksFromNow;
 }
 
-async function findDeptByFunction(churchId: string, fn: DepartmentFunction) {
+async function findDeptByFunction(churchId: string, fn: string) {
   return prisma.department.findFirst({
     where: { function: fn, ministry: { churchId } },
     select: { id: true },
@@ -67,19 +67,20 @@ export async function GET(request: Request) {
             event: { select: { id: true, title: true, date: true } },
           },
         },
-        serviceRequests: {
+        requests: {
           where: { parentRequestId: null },
           select: {
             id: true,
             type: true,
             status: true,
+            payload: true,
             assignedDept: { select: { id: true, name: true } },
             childRequests: {
               select: {
                 id: true,
                 type: true,
                 status: true,
-                deliveryLink: true,
+                payload: true,
               },
             },
           },
@@ -107,12 +108,12 @@ export async function POST(request: Request) {
     const [secretariatDept, communicationDept, productionDept] =
       await Promise.all([
         data.channelInterne
-          ? findDeptByFunction(data.churchId, DepartmentFunction.SECRETARIAT)
+          ? findDeptByFunction(data.churchId, DEPT_FN.SECRETARIAT)
           : null,
         data.channelExterne
-          ? findDeptByFunction(data.churchId, DepartmentFunction.COMMUNICATION)
+          ? findDeptByFunction(data.churchId, DEPT_FN.COMMUNICATION)
           : null,
-        findDeptByFunction(data.churchId, DepartmentFunction.PRODUCTION_MEDIA),
+        findDeptByFunction(data.churchId, DEPT_FN.PRODUCTION_MEDIA),
       ]);
 
     const announcement = await prisma.$transaction(async (tx) => {
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
       });
 
       if (data.channelInterne) {
-        const diffusion = await tx.serviceRequest.create({
+        const diffusion = await tx.request.create({
           data: {
             churchId: data.churchId,
             type: "DIFFUSION_INTERNE",
@@ -148,11 +149,13 @@ export async function POST(request: Request) {
             assignedDeptId: secretariatDept?.id ?? null,
             announcementId: ann.id,
             title: data.title,
-            brief: data.content,
-            deadline: eventDate,
+            payload: {
+              brief: data.content,
+              deadline: eventDate?.toISOString() ?? null,
+            },
           },
         });
-        await tx.serviceRequest.create({
+        await tx.request.create({
           data: {
             churchId: data.churchId,
             type: "VISUEL",
@@ -163,15 +166,17 @@ export async function POST(request: Request) {
             announcementId: ann.id,
             parentRequestId: diffusion.id,
             title: `Visuel — ${data.title}`,
-            brief: data.content,
-            format: "Slide / Affiche event",
-            deadline: eventDate,
+            payload: {
+              brief: data.content,
+              format: "Slide / Affiche event",
+              deadline: eventDate?.toISOString() ?? null,
+            },
           },
         });
       }
 
       if (data.channelExterne) {
-        const social = await tx.serviceRequest.create({
+        const social = await tx.request.create({
           data: {
             churchId: data.churchId,
             type: "RESEAUX_SOCIAUX",
@@ -181,11 +186,13 @@ export async function POST(request: Request) {
             assignedDeptId: communicationDept?.id ?? null,
             announcementId: ann.id,
             title: data.title,
-            brief: data.content,
-            deadline: eventDate,
+            payload: {
+              brief: data.content,
+              deadline: eventDate?.toISOString() ?? null,
+            },
           },
         });
-        await tx.serviceRequest.create({
+        await tx.request.create({
           data: {
             churchId: data.churchId,
             type: "VISUEL",
@@ -196,9 +203,11 @@ export async function POST(request: Request) {
             announcementId: ann.id,
             parentRequestId: social.id,
             title: `Visuel réseaux — ${data.title}`,
-            brief: data.content,
-            format: "Story / Post réseaux sociaux",
-            deadline: eventDate,
+            payload: {
+              brief: data.content,
+              format: "Story / Post réseaux sociaux",
+              deadline: eventDate?.toISOString() ?? null,
+            },
           },
         });
       }

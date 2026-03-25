@@ -53,29 +53,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!user.email || !user.id) return true;
 
       if (isSuperAdmin(user.email)) {
-        // Set global flag
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { isSuperAdmin: true },
-        });
+        // On first-ever sign-in the User row may not exist yet (PrismaAdapter
+        // creates it after the signIn callback returns). We wrap everything in
+        // a try-catch so sign-in isn't blocked. The session callback falls back
+        // to the email check for isSuperAdmin, and these DB writes will succeed
+        // on the next sign-in.
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { isSuperAdmin: true },
+          });
 
-        const churches = await prisma.church.findMany();
-        for (const church of churches) {
-          await prisma.userChurchRole.upsert({
-            where: {
-              userId_churchId_role: {
+          const churches = await prisma.church.findMany();
+          for (const church of churches) {
+            await prisma.userChurchRole.upsert({
+              where: {
+                userId_churchId_role: {
+                  userId: user.id,
+                  churchId: church.id,
+                  role: "SUPER_ADMIN",
+                },
+              },
+              update: {},
+              create: {
                 userId: user.id,
                 churchId: church.id,
                 role: "SUPER_ADMIN",
               },
-            },
-            update: {},
-            create: {
-              userId: user.id,
-              churchId: church.id,
-              role: "SUPER_ADMIN",
-            },
-          });
+            });
+          }
+        } catch {
+          // User not yet created by adapter — skip, will be set on next login
         }
       }
 
@@ -89,7 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         select: { displayName: true, isSuperAdmin: true, hasSeenTour: true },
       });
       session.user.displayName = dbUser?.displayName ?? null;
-      session.user.isSuperAdmin = dbUser?.isSuperAdmin ?? false;
+      session.user.isSuperAdmin = dbUser?.isSuperAdmin || isSuperAdmin(user.email ?? "");
       session.user.hasSeenTour = dbUser?.hasSeenTour ?? false;
 
       const churchRoles = await prisma.userChurchRole.findMany({
@@ -298,7 +306,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "serviceRequest" | "memberLinkRequest" | "announcement" | "ministry",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -335,13 +343,13 @@ export async function resolveChurchId(
       if (!primary) throw new ApiError(404, "Membre sans département principal");
       return primary.department.ministry.churchId;
     }
-    case "serviceRequest": {
-      const sr = await prisma.serviceRequest.findUnique({
+    case "request": {
+      const req = await prisma.request.findUnique({
         where: { id: resourceId },
         select: { churchId: true },
       });
-      if (!sr) throw new ApiError(404, "Demande de service introuvable");
-      return sr.churchId;
+      if (!req) throw new ApiError(404, "Demande introuvable");
+      return req.churchId;
     }
     case "memberLinkRequest": {
       const mlr = await prisma.memberLinkRequest.findUnique({

@@ -12,6 +12,11 @@ const patchSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
   isUrgent: z.boolean().optional(),
+  isSaveTheDate: z.boolean().optional(),
+  eventDate: z.string().nullable().optional(),
+  channelInterne: z.boolean().optional(),
+  channelExterne: z.boolean().optional(),
+  targetEventIds: z.array(z.string()).optional(),
 });
 
 export async function GET(
@@ -34,7 +39,7 @@ export async function GET(
             event: { select: { id: true, title: true, date: true } },
           },
         },
-        serviceRequests: {
+        requests: {
           where: { parentRequestId: null },
           include: {
             assignedDept: { select: { id: true, name: true } },
@@ -44,8 +49,7 @@ export async function GET(
                 id: true,
                 type: true,
                 status: true,
-                format: true,
-                deliveryLink: true,
+                payload: true,
                 assignedDept: { select: { id: true, name: true } },
               },
             },
@@ -109,12 +113,22 @@ export async function PATCH(
           ...(data.title && { title: data.title }),
           ...(data.content && { content: data.content }),
           ...(data.isUrgent !== undefined && { isUrgent: data.isUrgent }),
+          ...(data.isSaveTheDate !== undefined && { isSaveTheDate: data.isSaveTheDate }),
+          ...(data.eventDate !== undefined && { eventDate: data.eventDate ? new Date(data.eventDate) : null }),
+          ...(data.channelInterne !== undefined && { channelInterne: data.channelInterne }),
+          ...(data.channelExterne !== undefined && { channelExterne: data.channelExterne }),
+          ...(data.targetEventIds !== undefined && {
+            targetEvents: {
+              deleteMany: {},
+              create: data.targetEventIds.map((eventId) => ({ eventId })),
+            },
+          }),
         },
       });
 
-      // Cascade cancellation: annuler toutes les ServiceRequest liees
+      // Cascade cancellation: annuler toutes les Request liées
       if (data.status === "ANNULEE") {
-        await tx.serviceRequest.updateMany({
+        await tx.request.updateMany({
           where: { announcementId: id },
           data: { status: "ANNULE" },
         });

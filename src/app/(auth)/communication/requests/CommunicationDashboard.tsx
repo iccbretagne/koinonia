@@ -2,22 +2,19 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import type { ServiceRequestStatus, ServiceRequestType } from "@prisma/client";
 
 interface ChildRequest {
   id: string;
-  type: ServiceRequestType;
-  status: ServiceRequestStatus;
-  deliveryLink: string | null;
+  type: string;
+  status: string;
+  payload: unknown;
 }
 
-interface ServiceRequest {
+interface CommRequest {
   id: string;
-  status: ServiceRequestStatus;
+  status: string;
   title: string;
-  brief: string | null;
-  deadline: Date | null;
-  deliveryLink: string | null;
+  payload: unknown;
   reviewNotes: string | null;
   submittedAt: Date;
   submittedBy: { name: string | null; displayName: string | null };
@@ -34,17 +31,17 @@ interface ServiceRequest {
 }
 
 interface Props {
-  requests: ServiceRequest[];
+  requests: CommRequest[];
 }
 
-const STATUS_COLOR: Record<ServiceRequestStatus, string> = {
+const STATUS_COLOR: Record<string, string> = {
   EN_ATTENTE: "bg-amber-100 text-amber-800",
   EN_COURS: "bg-blue-100 text-blue-800",
   LIVRE: "bg-green-100 text-green-800",
   ANNULE: "bg-gray-100 text-gray-500",
 };
 
-const VISUEL_STATUS_INFO: Record<ServiceRequestStatus, { icon: string; label: string; color: string }> = {
+const VISUEL_STATUS_INFO: Record<string, { icon: string; label: string; color: string }> = {
   EN_ATTENTE: { icon: "⏳", label: "Visuel en attente", color: "text-amber-600" },
   EN_COURS: { icon: "●", label: "Visuel en cours de création", color: "text-blue-600" },
   LIVRE: { icon: "✓", label: "Visuel livré", color: "text-green-600" },
@@ -56,10 +53,10 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
   const [processing, setProcessing] = useState<string | null>(null);
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({});
 
-  async function updateRequest(id: string, status: ServiceRequestStatus, deliveryLink?: string) {
+  async function updateRequest(id: string, status: string, deliveryLink?: string) {
     setProcessing(id);
     try {
-      const res = await fetch(`/api/service-requests/${id}`, {
+      const res = await fetch(`/api/requests/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,11 +70,12 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
         return;
       }
       setRequests((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? { ...r, status, deliveryLink: deliveryLink ?? r.deliveryLink }
-            : r
-        )
+        prev.map((r) => {
+          if (r.id !== id) return r;
+          const updatedPayload = { ...((r.payload ?? {}) as Record<string, unknown>) };
+          if (deliveryLink !== undefined) updatedPayload.deliveryLink = deliveryLink;
+          return { ...r, status, payload: updatedPayload };
+        })
       );
       setDeliveryLinks((prev) => ({ ...prev, [id]: "" }));
     } catch {
@@ -91,11 +89,15 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
   const inProgress = requests.filter((r) => r.status === "EN_COURS");
   const done = requests.filter((r) => r.status === "LIVRE" || r.status === "ANNULE");
 
-  function renderRequest(req: ServiceRequest) {
+  function renderRequest(req: CommRequest) {
     const source = req.department?.name ?? req.ministry?.name ?? "—";
     const author = req.submittedBy.displayName ?? req.submittedBy.name ?? "—";
+    const p = (req.payload ?? {}) as Record<string, unknown>;
+    const deliveryLink = (p.deliveryLink as string) ?? null;
     const visuel = req.childRequests.find((c) => c.type === "VISUEL");
     const visuelInfo = visuel ? VISUEL_STATUS_INFO[visuel.status] : null;
+    const vp = (visuel?.payload ?? {}) as Record<string, unknown>;
+    const visuelDeliveryLink = (vp.deliveryLink as string) ?? null;
 
     return (
       <div key={req.id} className="bg-white rounded-lg shadow p-5 border border-gray-100">
@@ -129,9 +131,9 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
           <div className={`flex items-center gap-2 text-xs mb-3 ${visuelInfo.color}`}>
             <span>{visuelInfo.icon}</span>
             <span>{visuelInfo.label}</span>
-            {visuel?.status === "LIVRE" && visuel.deliveryLink && (
+            {visuel?.status === "LIVRE" && visuelDeliveryLink && (
               <a
-                href={visuel.deliveryLink}
+                href={visuelDeliveryLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
@@ -142,9 +144,9 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
           </div>
         )}
 
-        {req.deliveryLink && req.status === "LIVRE" && (
+        {deliveryLink && req.status === "LIVRE" && (
           <a
-            href={req.deliveryLink}
+            href={deliveryLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm text-icc-violet underline mb-3"

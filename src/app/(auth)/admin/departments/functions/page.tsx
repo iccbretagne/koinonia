@@ -1,6 +1,7 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DeptFunctionsClient from "./DeptFunctionsClient";
+import { SYSTEM_FUNCTIONS } from "@/lib/department-functions";
 
 export default async function DeptFunctionsPage() {
   const session = await requireAuth();
@@ -13,6 +14,17 @@ export default async function DeptFunctionsPage() {
     include: { ministry: { select: { name: true } } },
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
+
+  const systemFunctionKeys = SYSTEM_FUNCTIONS.map((f) => f.key);
+
+  // Collect distinct custom function names (non-system, non-null)
+  const customFunctionNames = Array.from(
+    new Set(
+      departments
+        .map((d) => d.function)
+        .filter((fn): fn is string => fn !== null && !systemFunctionKeys.includes(fn as never))
+    )
+  ).sort();
 
   return (
     <div>
@@ -30,6 +42,7 @@ export default async function DeptFunctionsPage() {
           ministryName: d.ministry.name,
           function: d.function,
         }))}
+        initialCustomFunctions={customFunctionNames}
       />
     </div>
   );

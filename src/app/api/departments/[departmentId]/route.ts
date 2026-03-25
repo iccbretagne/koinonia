@@ -83,7 +83,7 @@ export async function PUT(
 }
 
 const patchFunctionSchema = z.object({
-  function: z.enum(["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"]).nullable(),
+  function: z.string().nullable(),
 });
 
 export async function PATCH(
