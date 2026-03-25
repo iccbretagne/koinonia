@@ -63,6 +63,13 @@ export default function RequestForm({
   const [annChannelInterne, setAnnChannelInterne] = useState(true);
   const [annChannelExterne, setAnnChannelExterne] = useState(false);
   const [annSourceId, setAnnSourceId] = useState(sourceOptions[0]?.id ?? "");
+  const [annTargetEventIds, setAnnTargetEventIds] = useState<string[]>([]);
+
+  function toggleEvent(id: string) {
+    setAnnTargetEventIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   // Demand fields
   const [eventTitle, setEventTitle] = useState("");
@@ -116,7 +123,7 @@ export default function RequestForm({
         channelExterne: annChannelExterne,
         departmentId: source?.type === "department" ? source.id : null,
         ministryId: source?.type === "ministry" ? source.id : null,
-        targetEventIds: [],
+        targetEventIds: annTargetEventIds,
       }),
     });
     return res;
@@ -296,7 +303,10 @@ export default function RequestForm({
               <input
                 type="checkbox"
                 checked={annChannelInterne}
-                onChange={(e) => setAnnChannelInterne(e.target.checked)}
+                onChange={(e) => {
+                  setAnnChannelInterne(e.target.checked);
+                  if (!e.target.checked) setAnnTargetEventIds([]);
+                }}
                 className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
               />
               Diffusion interne
@@ -320,6 +330,27 @@ export default function RequestForm({
               Urgent
             </label>
           </div>
+          {annChannelInterne && events.filter((e) => new Date(e.date) >= new Date()).length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Dimanches de diffusion</label>
+              <div className="space-y-2 border-2 border-gray-200 rounded-lg p-3">
+                {events
+                  .filter((e) => new Date(e.date) >= new Date())
+                  .map((e) => (
+                    <label key={e.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={annTargetEventIds.includes(e.id)}
+                        onChange={() => toggleEvent(e.id)}
+                        className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                      />
+                      {e.title} — {new Date(e.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </label>
+                  ))}
+              </div>
+              <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+            </div>
+          )}
           {sourceOptions.length > 1 && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">Source</label>
