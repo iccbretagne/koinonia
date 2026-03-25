@@ -68,14 +68,6 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
     return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   }
 
-  function formatEventDate(iso: string) {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  }
-
   function getExportFileName() {
     const label = formatMonthLabel(currentMonth);
     const name = departmentName || "planning";
@@ -263,75 +255,73 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
             </div>
 
             {/* Events */}
-            <div className="bg-white divide-y divide-gray-200">
+            <div className="bg-gray-50 px-5 py-4 space-y-4">
               {events.map((event) => {
                 const withTasks = event.members.filter((m) => m.tasks.length > 0);
                 const withoutTasks = event.members.filter((m) => m.tasks.length === 0);
+                const d = new Date(event.date);
+                const dayNum = d.getDate();
+                const dayName = d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
 
                 return (
-                  <div key={event.id} className="px-6 py-5">
-                    {/* Event header block */}
-                    <div className="bg-icc-violet/10 -mx-6 px-6 py-2.5 border-l-4 border-icc-violet mb-4">
-                      <p className="font-bold text-icc-violet text-sm">{event.title}</p>
-                      <p className="text-xs text-icc-violet/60 capitalize">{formatEventDate(event.date)}</p>
-                    </div>
+                  <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
+                    {/* Event row: date block + title + members */}
+                    <div className="flex">
+                      {/* Date block */}
+                      <div className="bg-icc-violet w-16 shrink-0 flex flex-col items-center justify-center py-3">
+                        <span className="text-xs font-semibold text-white/80 uppercase leading-none">{dayName}</span>
+                        <span className="text-2xl font-black text-white leading-none mt-0.5">{dayNum}</span>
+                      </div>
 
-                    {/* Members */}
-                    {event.members.length === 0 ? (
-                      <p className="text-sm text-gray-400 italic">(aucun STAR en service)</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {/* Members with tasks */}
-                        {withTasks.length > 0 && (
-                          <div>
-                            <ul className="space-y-1.5">
-                              {withTasks.map((member) => (
-                                <li key={member.id} className="flex items-center justify-between gap-2">
-                                  <span className="text-sm text-gray-900 font-bold">
-                                    {member.firstName} {member.lastName}
-                                  </span>
-                                  <span className="flex items-center gap-1 shrink-0">
-                                    <span className="text-xs text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full font-normal">
-                                      {member.tasks.join(", ")}
-                                    </span>
-                                    {member.status === "EN_SERVICE_DEBRIEF" && (
-                                      <span className="text-xs text-icc-bleu bg-icc-bleu/10 px-2 py-0.5 rounded-full">
-                                        Debrief
-                                      </span>
-                                    )}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                      {/* Content */}
+                      <div className="flex-1 px-4 py-3 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm mb-2">{event.title}</p>
 
-                        {/* Separator between groups */}
-                        {withTasks.length > 0 && withoutTasks.length > 0 && (
-                          <div className="h-px bg-gray-100" />
-                        )}
-
-                        {/* Members without tasks */}
-                        {withoutTasks.length > 0 && (
-                          <div>
-                            <ul className="space-y-1.5">
-                              {withoutTasks.map((member) => (
-                                <li key={member.id} className="flex items-center justify-between gap-2">
-                                  <span className="text-sm text-gray-700 font-bold">
-                                    {member.firstName} {member.lastName}
+                        {event.members.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {/* Members with tasks */}
+                            {withTasks.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between gap-2">
+                                <span className="text-sm text-gray-900 font-semibold truncate">
+                                  {member.firstName} {member.lastName}
+                                </span>
+                                <span className="flex items-center gap-1 shrink-0">
+                                  <span className="text-xs text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full">
+                                    {member.tasks.join(", ")}
                                   </span>
                                   {member.status === "EN_SERVICE_DEBRIEF" && (
-                                    <span className="text-xs text-icc-bleu bg-icc-bleu/10 px-2 py-0.5 rounded-full shrink-0">
+                                    <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full">
                                       Debrief
                                     </span>
                                   )}
-                                </li>
-                              ))}
-                            </ul>
+                                </span>
+                              </div>
+                            ))}
+
+                            {/* Separator */}
+                            {withTasks.length > 0 && withoutTasks.length > 0 && (
+                              <div className="h-px bg-gray-100" />
+                            )}
+
+                            {/* Members without tasks */}
+                            {withoutTasks.map((member) => (
+                              <div key={member.id} className="flex items-center justify-between gap-2">
+                                <span className="text-sm text-gray-600 font-medium truncate">
+                                  {member.firstName} {member.lastName}
+                                </span>
+                                {member.status === "EN_SERVICE_DEBRIEF" && (
+                                  <span className="text-xs text-white bg-icc-bleu px-2 py-0.5 rounded-full shrink-0">
+                                    Debrief
+                                  </span>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
