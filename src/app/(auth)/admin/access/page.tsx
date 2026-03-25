@@ -62,7 +62,7 @@ export default async function AccessPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Accès &amp; rôles</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Gérez les ministres, responsables de département et accès aux comptes rendus.
+          Gérez les ministres, responsables de département, rôles transverses (Admin, Secrétaire, Faiseur de Disciples) et accès aux comptes rendus.
         </p>
       </div>
       <AccessClient
@@ -89,6 +89,7 @@ export default async function AccessPage() {
           departments: m.departments,
         }))}
         churchId={churchId}
+        isSuperAdmin={session.user.isSuperAdmin ?? false}
       />
     </div>
   );
