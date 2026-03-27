@@ -174,6 +174,26 @@ async function createDemand(_request: Request, body: unknown) {
   const data = createDemandSchema.parse(body);
   const session = await requireChurchPermission("planning:edit", data.churchId);
 
+  // Validate cross-tenant references
+  if (data.departmentId) {
+    const dept = await prisma.department.findUnique({
+      where: { id: data.departmentId },
+      select: { ministry: { select: { churchId: true } } },
+    });
+    if (!dept || dept.ministry.churchId !== data.churchId) {
+      throw new ApiError(400, "Le département n'appartient pas à cette église");
+    }
+  }
+  if (data.ministryId) {
+    const ministry = await prisma.ministry.findUnique({
+      where: { id: data.ministryId },
+      select: { churchId: true },
+    });
+    if (!ministry || ministry.churchId !== data.churchId) {
+      throw new ApiError(400, "Le ministère n'appartient pas à cette église");
+    }
+  }
+
   // Demands are assigned to the secretariat department
   const secretariatDept = await prisma.department.findFirst({
     where: {

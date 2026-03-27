@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
@@ -34,8 +34,33 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveChurchId("request", id);
-    await requireChurchPermission("planning:view", churchId);
+
+    // Resolve churchId + ownership without a full join
+    const minimal = await prisma.request.findUnique({
+      where: { id },
+      select: { churchId: true, submittedById: true, assignedDeptId: true },
+    });
+    if (!minimal) throw new ApiError(404, "Demande introuvable");
+
+    const session = await requireChurchPermission("planning:view", minimal.churchId);
+
+    const userPermissions = new Set(
+      session.user.churchRoles
+        .filter((r) => r.churchId === minimal.churchId)
+        .flatMap((r) => hasPermission(r.role))
+    );
+    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    const userDeptIds = session.user.churchRoles
+      .filter((r) => r.churchId === minimal.churchId)
+      .flatMap((r) => r.departments.map((d) => d.department.id));
+
+    const isOwner = minimal.submittedById === session.user.id;
+    const isAssignedDeptMember =
+      minimal.assignedDeptId !== null && userDeptIds.includes(minimal.assignedDeptId);
+
+    if (!canManage && !isAssignedDeptMember && !isOwner) {
+      throw new ApiError(403, "Accès refusé");
+    }
 
     const req = await prisma.request.findUnique({
       where: { id },
@@ -72,8 +97,6 @@ export async function GET(
         },
       },
     });
-
-    if (!req) throw new ApiError(404, "Demande introuvable");
 
     return successResponse(req);
   } catch (error) {
@@ -174,12 +197,14 @@ export async function PATCH(
     const updated = await prisma.$transaction(async (tx) => {
       // For executable types approved → run auto-execution
       if (data.status === "APPROUVEE" && isExecutableType) {
+        // Execute using the effective payload (merged updates take precedence over stored payload)
+        const effectivePayload = mergedPayload ?? currentPayload;
         const execResult = await executeRequest(
           tx,
           id,
           existing.churchId,
           existing.type,
-          currentPayload,
+          effectivePayload,
           session.user.id
         );
 

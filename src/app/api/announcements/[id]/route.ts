@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
@@ -25,8 +25,25 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveChurchId("announcement", id);
-    await requireChurchPermission("planning:view", churchId);
+
+    // Resolve churchId + ownership without a full join
+    const minimal = await prisma.announcement.findUnique({
+      where: { id },
+      select: { churchId: true, submittedById: true },
+    });
+    if (!minimal) throw new ApiError(404, "Annonce introuvable");
+
+    const session = await requireChurchPermission("planning:view", minimal.churchId);
+
+    const userPermissions = new Set(
+      session.user.churchRoles
+        .filter((r) => r.churchId === minimal.churchId)
+        .flatMap((r) => hasPermission(r.role))
+    );
+    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    const isOwner = minimal.submittedById === session.user.id;
+
+    if (!canManage && !isOwner) throw new ApiError(403, "Accès refusé");
 
     const announcement = await prisma.announcement.findUnique({
       where: { id },
@@ -57,8 +74,6 @@ export async function GET(
         },
       },
     });
-
-    if (!announcement) throw new ApiError(404, "Annonce introuvable");
 
     return successResponse(announcement);
   } catch (error) {

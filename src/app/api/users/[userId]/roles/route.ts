@@ -86,7 +86,16 @@ export async function POST(
       }
     }
 
+    // Scope enforcement: MINISTER must have a ministry, DEPARTMENT_HEAD must have departments
+    if (role === "MINISTER" && !ministryId) {
+      throw new ApiError(400, "Le rôle Ministre requiert un ministère assigné");
+    }
+
     const depts = normalizeDepts(departments, departmentIds);
+
+    if (role === "DEPARTMENT_HEAD" && (!depts || depts.length === 0)) {
+      throw new ApiError(400, "Le rôle Responsable de département requiert au moins un département assigné");
+    }
 
     // Vérifier que les départements appartiennent à cette église
     if (depts?.length) {
@@ -94,13 +103,13 @@ export async function POST(
         where: { id: { in: depts.map((d) => d.id) } },
         include: { ministry: { select: { churchId: true } } },
       });
+      if (deptRecords.length !== depts.length) {
+        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
+      }
       for (const dept of deptRecords) {
         if (dept.ministry.churchId !== churchId) {
           throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
         }
-      }
-      if (deptRecords.length !== depts.length) {
-        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
       }
     }
 
