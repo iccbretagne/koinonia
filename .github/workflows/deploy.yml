@@ -1,8 +1,10 @@
 name: Deploy
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -12,44 +14,86 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
-  check-version:
-    if: startsWith(github.ref, 'refs/tags/v')
+  gate:
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
     steps:
-      - uses: actions/checkout@v6
-      - name: Check tag matches package.json version
-        run: |
-          TAG="${GITHUB_REF#refs/tags/v}"
-          PKG=$(node -p "require('./package.json').version")
-          if [ "$TAG" != "$PKG" ]; then
-            echo "::error::Tag v$TAG does not match package.json version $PKG"
-            exit 1
-          fi
-          echo "Tag v$TAG matches package.json version $PKG"
+      - run: echo "CI passed, deploy allowed"
 
-  deploy:
+  build:
+    needs: gate
     runs-on: ubuntu-latest
-    needs: check-version
-    environment: production
-    if: ${{ !cancelled() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped') }}
     timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+
       - name: Determine version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+            TAG="${{ github.event.workflow_run.head_branch }}"
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Check tag matches package.json
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          if [ "${{ steps.version.outputs.version }}" != "$PKG" ]; then
+            echo "::error::Version mismatch: tag=${{ steps.version.outputs.version }} package.json=$PKG"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
+
+      - name: Package artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar czf "koinonia-${VERSION}.tar.gz" \
+            .next/standalone .next/static \
+            prisma public package.json
+          echo "Built koinonia-${VERSION}.tar.gz"
+
+      - uses: actions/upload-artifact@ea165f8d65b6db9b8a1f7c064bc2f4c2582e7eb3 # v4.6.2
+        with:
+          name: koinonia-${{ steps.version.outputs.version }}
+          path: koinonia-${{ steps.version.outputs.version }}.tar.gz
+          retention-days: 14
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: koinonia-${{ needs.build.outputs.version }}
+
+      - name: Deploy artifact via SSH
+        uses: appleboy/ssh-action@1d1b21ca13b74cef323b9d4a6a3f9ef25af77b76 # v1.0.3
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.build.outputs.version }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -63,33 +107,27 @@ jobs:
 
             echo "Deploying v${VERSION}..."
 
-            cd "$DEPLOY_PATH/releases"
-
-            # 1. Telecharger la release
-            curl -L -o "koinonia-${VERSION}.tar.gz" \
-              "https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz"
-
-            # 2. Decompresser
-            tar xzf "koinonia-${VERSION}.tar.gz"
-            rm "koinonia-${VERSION}.tar.gz"
-
-            # 3. Lier le fichier .env
-            ln -sf "$DEPLOY_PATH/shared/.env" "$DEPLOY_PATH/releases/koinonia-${VERSION}/.env"
-
-            # 4. Installer les dependances et construire
+            # 1. Prepare release directory
+            mkdir -p "$DEPLOY_PATH/releases/koinonia-${VERSION}"
             cd "$DEPLOY_PATH/releases/koinonia-${VERSION}"
-            npm install --production=false
-            npx prisma generate
-            npx prisma migrate deploy
-            npm run build
 
-            # 5. Activer la release
+            # 2. Receive and extract pre-built artifact
+            cat /dev/stdin | tar xzf -
+
+            # 3. Link .env and install production deps only
+            ln -sf "$DEPLOY_PATH/shared/.env" .env
+            npm install --omit=dev
+
+            # 4. Run migrations
+            npx prisma migrate deploy
+
+            # 5. Activate release
             ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
 
-            # 6. Redemarrer le service
+            # 6. Restart
             sudo systemctl restart koinonia
 
-            # 7. Nettoyage : garder les 3 dernieres releases
+            # 7. Cleanup: keep last 3 releases
             cd "$DEPLOY_PATH/releases"
             ls -1dt koinonia-*/ | tail -n +4 | xargs rm -rf || true
 

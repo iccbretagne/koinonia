@@ -158,6 +158,28 @@ sudo systemctl enable koinonia
 sudo systemctl start koinonia
 ```
 
+### Durcissement systemd (recommande)
+
+Ajouter ces directives dans la section `[Service]` pour limiter la surface d'attaque :
+
+```ini
+# Isolation reseau et systeme de fichiers
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/opt/koinonia
+
+# Restrictions noyau
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Restrictions systeme
+RestrictSUIDSGID=true
+RemoveIPC=true
+```
+
 Commandes utiles :
 
 ```bash
@@ -214,7 +236,7 @@ https://votre-domaine.com/api/auth/callback/google
 
 ## Deploiement automatise (CD)
 
-Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le workflow de deploiement apres validation du CI.
+Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le CI, et le workflow de deploiement ne s'execute que si le CI passe integralement (typecheck, lint, tests). L'application est construite en CI (artefact immutable) puis deployee sur le serveur sans etape de build.
 
 ### Prerequis serveur
 
@@ -349,6 +371,16 @@ S3_ACCESS_KEY_ID=SCWXXXXXXXXX                # cle d'acces
 S3_SECRET_ACCESS_KEY=xxxxxxxx                # secret
 BACKUP_RETENTION_DAYS=30                     # retention en jours (defaut: 30)
 ```
+
+### Securite du bucket (recommande)
+
+Appliquer ces mesures sur le bucket S3 :
+
+- **Chiffrement cote serveur (SSE)** : activer le chiffrement par defaut (AES-256 ou SSE-KMS) sur le bucket. Tous les objets seront chiffres au repos.
+- **Versioning** : activer le versioning du bucket pour conserver les versions precedentes en cas de corruption ou suppression accidentelle.
+- **Acces restreint** : la cle S3 utilisee par Koinonia doit avoir uniquement les permissions `s3:PutObject`, `s3:GetObject`, `s3:ListBucket`, `s3:DeleteObject` sur le bucket cible. Ne pas utiliser une cle admin.
+- **Verification d'integrite** : avant restauration, verifier que le fichier se decompresse correctement (`gunzip -t backup.sql.gz`).
+- **Retention et lifecycle** : configurer une regle de lifecycle sur le bucket pour supprimer automatiquement les objets de plus de N jours (en complement de la retention applicative).
 
 ### Planification — timer systemd (recommande)
 

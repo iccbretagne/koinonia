@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
 export class ApiError extends Error {
   constructor(
@@ -22,6 +23,17 @@ export function errorResponse(error: unknown) {
     );
   }
 
+  if (error instanceof ZodError) {
+    const fieldErrors = error.errors.map((e) => ({
+      field: e.path.join("."),
+      message: e.message,
+    }));
+    return NextResponse.json(
+      { error: "Données invalides", details: fieldErrors },
+      { status: 400 }
+    );
+  }
+
   if (error instanceof Error) {
     if (error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -34,6 +46,6 @@ export function errorResponse(error: unknown) {
     }
   }
 
-  console.error("Unhandled error:", error);
+  console.error("Unhandled error:", error instanceof Error ? error.message : "Unknown error");
   return NextResponse.json({ error: "Server error" }, { status: 500 });
 }
