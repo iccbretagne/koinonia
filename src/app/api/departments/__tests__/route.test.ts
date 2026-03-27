@@ -115,8 +115,8 @@ describe("POST /api/departments", () => {
     });
     const res = await POST(request);
 
-    // Zod validation error returns 500 via errorResponse (generic Error)
-    expect(res.status).toBe(500);
+    // Zod validation error returns 400 via errorResponse
+    expect(res.status).toBe(400);
   });
 
   it("returns 403 when MINISTER creates outside their ministry", async () => {

@@ -26,13 +26,13 @@ export async function executeRequest(
         return await executeAjoutEvenement(tx, churchId, payload);
 
       case "MODIFICATION_EVENEMENT":
-        return await executeModificationEvenement(tx, payload);
+        return await executeModificationEvenement(tx, churchId, payload);
 
       case "ANNULATION_EVENEMENT":
-        return await executeAnnulationEvenement(tx, payload);
+        return await executeAnnulationEvenement(tx, churchId, payload);
 
       case "MODIFICATION_PLANNING":
-        return await executeModificationPlanning(tx, payload);
+        return await executeModificationPlanning(tx, churchId, payload);
 
       case "DEMANDE_ACCES":
         return await executeDemandeAcces(tx, churchId, payload);
@@ -87,6 +87,15 @@ async function executeAjoutEvenement(
 
   if (!title || !type || !date) {
     return { success: false, error: "Données manquantes : eventTitle, eventType, eventDate" };
+  }
+
+  if (departmentIds && departmentIds.length > 0) {
+    const validDepts = await tx.department.count({
+      where: { id: { in: departmentIds }, ministry: { churchId } },
+    });
+    if (validDepts !== departmentIds.length) {
+      return { success: false, error: "Départements invalides ou hors périmètre" };
+    }
   }
 
   const eventDate = new Date(date);
@@ -167,6 +176,7 @@ async function executeAjoutEvenement(
 
 async function executeModificationEvenement(
   tx: TxClient,
+  churchId: string,
   payload: Record<string, unknown>
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
@@ -176,9 +186,12 @@ async function executeModificationEvenement(
     return { success: false, error: "Données manquantes : eventId, changes" };
   }
 
-  const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true } });
   if (!event) {
     return { success: false, error: "Événement introuvable" };
+  }
+  if (event.churchId !== churchId) {
+    return { success: false, error: "Événement hors périmètre" };
   }
 
   await tx.event.update({
@@ -198,6 +211,7 @@ async function executeModificationEvenement(
 
 async function executeAnnulationEvenement(
   tx: TxClient,
+  churchId: string,
   payload: Record<string, unknown>
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
@@ -213,6 +227,9 @@ async function executeAnnulationEvenement(
   if (!event) {
     return { success: false, error: "Événement introuvable" };
   }
+  if (event.churchId !== churchId) {
+    return { success: false, error: "Événement hors périmètre" };
+  }
 
   const edIds = event.eventDepts.map((ed) => ed.id);
   if (edIds.length > 0) {
@@ -227,6 +244,7 @@ async function executeAnnulationEvenement(
 
 async function executeModificationPlanning(
   tx: TxClient,
+  churchId: string,
   payload: Record<string, unknown>
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
@@ -234,6 +252,23 @@ async function executeModificationPlanning(
 
   if (!eventId || !Array.isArray(departmentIds)) {
     return { success: false, error: "Données manquantes : eventId, departmentIds" };
+  }
+
+  const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true } });
+  if (!event) {
+    return { success: false, error: "Événement introuvable" };
+  }
+  if (event.churchId !== churchId) {
+    return { success: false, error: "Événement hors périmètre" };
+  }
+
+  if (departmentIds.length > 0) {
+    const validDepts = await tx.department.count({
+      where: { id: { in: departmentIds }, ministry: { churchId } },
+    });
+    if (validDepts !== departmentIds.length) {
+      return { success: false, error: "Départements invalides ou hors périmètre" };
+    }
   }
 
   // Fetch current EventDepartment records for this event
@@ -288,6 +323,22 @@ async function executeDemandeAcces(
   const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
   if (!user) {
     return { success: false, error: "Utilisateur cible introuvable" };
+  }
+
+  if (ministryId) {
+    const validMinistry = await tx.ministry.count({ where: { id: ministryId, churchId } });
+    if (validMinistry === 0) {
+      return { success: false, error: "Ministère invalide ou hors périmètre" };
+    }
+  }
+
+  if (departmentIds && departmentIds.length > 0) {
+    const validDepts = await tx.department.count({
+      where: { id: { in: departmentIds }, ministry: { churchId } },
+    });
+    if (validDepts !== departmentIds.length) {
+      return { success: false, error: "Départements invalides ou hors périmètre" };
+    }
   }
 
   await tx.userChurchRole.create({

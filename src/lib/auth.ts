@@ -89,6 +89,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
+    // OAuth tokens (access_token, refresh_token) are stored by PrismaAdapter in
+    // the accounts table but are intentionally never exposed here — we only use
+    // Google for authentication, not for API access.
     async session({ session, user }) {
       session.user.id = user.id;
 

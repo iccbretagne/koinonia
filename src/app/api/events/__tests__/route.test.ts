@@ -147,7 +147,7 @@ describe("POST /api/events", () => {
     });
     const res = await POST(request);
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(400);
   });
 });
 

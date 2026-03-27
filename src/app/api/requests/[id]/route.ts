@@ -113,9 +113,9 @@ export async function PATCH(
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");
 
-    const userDeptIds = session.user.churchRoles.flatMap((r) =>
-      r.departments.map((d) => d.department.id)
-    );
+    const userDeptIds = session.user.churchRoles
+      .filter((r) => r.churchId === existing.churchId)
+      .flatMap((r) => r.departments.map((d) => d.department.id));
     const isAssignedDeptMember =
       existing.assignedDeptId !== null &&
       userDeptIds.includes(existing.assignedDeptId);
