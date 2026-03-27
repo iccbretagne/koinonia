@@ -90,7 +90,7 @@ jobs:
           name: koinonia-${{ needs.build.outputs.version }}
 
       - name: Deploy artifact via SSH
-        uses: appleboy/ssh-action@1d1b21ca13b74cef323b9d4a6a3f9ef25af77b76 # v1.0.3
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         env:
           VERSION: ${{ needs.build.outputs.version }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
