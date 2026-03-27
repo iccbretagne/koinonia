@@ -70,7 +70,7 @@ jobs:
             prisma public package.json
           echo "Built koinonia-${VERSION}.tar.gz"
 
-      - uses: actions/upload-artifact@ea165f8d65b6db9b8a1f7c064bc2f4c2582e7eb3 # v4.6.2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: koinonia-${{ steps.version.outputs.version }}
           path: koinonia-${{ steps.version.outputs.version }}.tar.gz
