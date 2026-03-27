@@ -1,5 +1,21 @@
 import { ApiError } from "./api-utils";
 
+/**
+ * In-memory rate limiter — single-instance only.
+ *
+ * Limitations :
+ * - Les compteurs sont perdus au redemarrage du processus.
+ * - Ne fonctionne pas en mode multi-instances (pas de store partage).
+ *
+ * Pour un deploiement single-instance derriere Traefik (cas standard),
+ * ce niveau de protection est suffisant. Pour un deploiement distribue,
+ * remplacer par un store Redis (ex: @upstash/ratelimit).
+ *
+ * Hypothese proxy : l'en-tete x-forwarded-for est injecte par Traefik.
+ * Configurer Traefik pour ecraser cet en-tete afin d'empecher un client
+ * de le falsifier (directive trustedIPs / forwardedHeaders dans Traefik).
+ * Sans cette configuration, le rate-limit par IP est contournable.
+ */
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 interface RateLimitOptions {

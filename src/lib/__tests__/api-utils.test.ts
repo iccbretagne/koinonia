@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { z } from "zod";
 import { ApiError, successResponse, errorResponse } from "../api-utils";
 
 describe("ApiError", () => {
@@ -69,5 +70,24 @@ describe("errorResponse", () => {
     const body = await res.json();
     expect(body).toEqual({ error: "Server error" });
     consoleSpy.mockRestore();
+  });
+
+  it("handles ZodError as 400 with field details", async () => {
+    const schema = z.object({ name: z.string().min(1), age: z.number() });
+    let zodError: unknown;
+    try {
+      schema.parse({ name: "", age: "not-a-number" });
+    } catch (e) {
+      zodError = e;
+    }
+
+    const res = errorResponse(zodError);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("Données invalides");
+    expect(Array.isArray(body.details)).toBe(true);
+    expect(body.details.length).toBeGreaterThan(0);
+    expect(body.details[0]).toHaveProperty("field");
+    expect(body.details[0]).toHaveProperty("message");
   });
 });

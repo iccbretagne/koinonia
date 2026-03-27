@@ -1,5 +1,14 @@
 import nodemailer from "nodemailer";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "localhost",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -43,6 +52,10 @@ export function buildReminderEmail(params: {
     year: "numeric",
   });
 
+  const memberName = escapeHtml(params.memberName);
+  const eventTitle = escapeHtml(params.eventTitle);
+  const departmentName = escapeHtml(params.departmentName);
+
   return {
     subject: `Rappel : ${params.eventTitle} — ${params.daysUntil === 1 ? "demain" : `dans ${params.daysUntil} jours`}`,
     html: `
@@ -51,11 +64,11 @@ export function buildReminderEmail(params: {
           <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
         </div>
         <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-          <p>Bonjour <strong>${params.memberName}</strong>,</p>
+          <p>Bonjour <strong>${memberName}</strong>,</p>
           <p>
             Vous êtes en service pour l'événement
-            <strong>${params.eventTitle}</strong> le <strong>${dateStr}</strong>
-            au département <strong>${params.departmentName}</strong>.
+            <strong>${eventTitle}</strong> le <strong>${dateStr}</strong>
+            au département <strong>${departmentName}</strong>.
           </p>
           <p style="color: #6b7280; font-size: 14px;">
             ${params.daysUntil === 1 ? "C'est demain !" : `C'est dans ${params.daysUntil} jours.`}
