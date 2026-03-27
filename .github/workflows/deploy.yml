@@ -124,12 +124,14 @@ jobs:
             tar xzf "/tmp/koinonia-${VERSION}.tar.gz"
             rm "/tmp/koinonia-${VERSION}.tar.gz"
 
-            # 3. Link .env and install production deps only
-            ln -sf "$DEPLOY_PATH/shared/.env" .env
-            npm install --omit=dev
+            # 3. Assemble standalone bundle (Next.js standalone output)
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+            ln -sf "$DEPLOY_PATH/shared/.env" .next/standalone/.env
 
             # 4. Run migrations
-            npx prisma migrate deploy
+            DATABASE_URL=$(grep DATABASE_URL "$DEPLOY_PATH/shared/.env" | cut -d= -f2-) \
+              .next/standalone/node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
             # 5. Activate release
             ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
