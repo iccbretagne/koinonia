@@ -97,11 +97,11 @@ export async function POST(
       throw new ApiError(400, "Le rôle Responsable de département requiert au moins un département assigné");
     }
 
-    // Vérifier que les départements appartiennent à cette église et au même ministère
+    // Vérifier que les départements appartiennent à cette église
     if (depts?.length) {
       const deptRecords = await prisma.department.findMany({
         where: { id: { in: depts.map((d) => d.id) } },
-        include: { ministry: { select: { id: true, churchId: true } } },
+        include: { ministry: { select: { churchId: true } } },
       });
       if (deptRecords.length !== depts.length) {
         throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
@@ -110,11 +110,6 @@ export async function POST(
         if (dept.ministry.churchId !== churchId) {
           throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
         }
-      }
-      // All departments must belong to the same ministry
-      const ministryIds = new Set(deptRecords.map((d) => d.ministry.id));
-      if (ministryIds.size > 1) {
-        throw new ApiError(400, "Tous les départements doivent appartenir au même ministère");
       }
     }
 
