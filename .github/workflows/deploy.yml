@@ -67,7 +67,10 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           tar czf "koinonia-${VERSION}.tar.gz" \
             .next/standalone .next/static \
-            prisma public package.json
+            prisma public package.json \
+            node_modules/.bin/prisma \
+            node_modules/prisma \
+            node_modules/.prisma
           echo "Built koinonia-${VERSION}.tar.gz"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -131,7 +134,7 @@ jobs:
 
             # 4. Run migrations
             set -a; source "$DEPLOY_PATH/shared/.env"; set +a
-            .next/standalone/node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+            ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
             # 5. Activate release
             ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
