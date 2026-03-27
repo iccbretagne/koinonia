@@ -115,9 +115,9 @@ describe("POST /api/admin/backups/restore — security", () => {
     const { restoreBackup } = await import("@/lib/restore");
     vi.mocked(isS3Configured).mockReturnValue(true);
     vi.mocked(listBackups).mockResolvedValue([
-      { key: "backups/2024-01-01.sql.gz", size: 1024, lastModified: new Date() },
+      { key: "backups/2024-01-01.sql.gz", sizeBytes: 1024, lastModified: new Date() },
     ]);
-    vi.mocked(restoreBackup).mockResolvedValue({ durationMs: 1500 });
+    vi.mocked(restoreBackup).mockResolvedValue({ key: "backups/2024-01-01.sql.gz", durationMs: 1500 });
 
     const request = new Request("http://localhost/api/admin/backups/restore", {
       method: "POST",
