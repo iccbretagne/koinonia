@@ -6,6 +6,32 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.0] - 2026-03-27
+
+### Sécurité
+
+- **Validation cross-tenant** : les demandes exécutables, annonces et routes de planification valident désormais que toutes les références (departmentIds, eventIds, ministryId) appartiennent au même `churchId` (#117, #118, #119)
+- **Gestion des rôles** : scoping du périmètre de département par église dans les vérifications d'autorisation (#119)
+- **Erreurs de validation** : les erreurs Zod retournent désormais 400 avec détails par champ au lieu de 500 (#121)
+- **Logs sanitisés** : suppression des stack traces et données sensibles dans les logs d'erreur (#125)
+- **Tokens OAuth** : confirmé non exposés dans la session client (#128)
+
+### CI/CD
+
+- Déploiement conditionné au succès complet du CI (`workflow_run`) (#122)
+- Actions GitHub épinglées à des SHA immuables (supply chain) (#123)
+- Build immutable en CI (Next.js standalone), déploiement sans build sur le serveur (#124)
+
+### Configuration
+
+- Docker : port MariaDB bindé sur `127.0.0.1` uniquement (#129)
+- `.env.example` : placeholders explicitement non utilisables (#129)
+- Documentation systemd hardening et sécurité bucket S3 (#127, #129)
+
+### Tests
+
+- +29 tests sur les routes sensibles : cron backup/reminders, admin backups/restore, requests, announcements (105 → 134 tests) (#126)
+
 ## [v0.14.1] - 2026-03-26
 
 ### Modifie
