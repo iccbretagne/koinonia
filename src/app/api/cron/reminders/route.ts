@@ -66,7 +66,7 @@ export async function POST(request: Request) {
                 await sendEmail({ to: member.email, subject, html });
                 emailsSent++;
               } catch {
-                console.error(`Failed to send email to ${member.email}`);
+                console.error("Failed to send reminder email (recipient redacted)");
               }
             }
 

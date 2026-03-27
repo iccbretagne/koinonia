@@ -74,57 +74,23 @@ FLUSH PRIVILEGES;
 
 ## Deploiement
 
+> **Important** : le deploiement se fait exclusivement via GitHub Actions (artefact pre-compile en CI).
+> Aucune compilation ne doit avoir lieu sur le serveur de production.
+> Le `workflow_dispatch` permet de re-deployer une version existante en cas d'urgence — il execute le meme pipeline CI que le deploiement automatique.
+
 ### Premiere installation
 
-```bash
-# 1. Telecharger la release depuis GitHub
-cd /opt/koinonia/releases
-VERSION=0.1.0
-curl -L -o koinonia-${VERSION}.tar.gz \
-  https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
+La premiere release est deployee automatiquement apres le premier push de tag `v*` une fois les secrets GitHub configures (voir section "Deploiement automatise").
 
-# 2. Decompresser
-tar xzf koinonia-${VERSION}.tar.gz
-rm koinonia-${VERSION}.tar.gz
-
-# 3. Lier le fichier .env
-ln -s /opt/koinonia/shared/.env /opt/koinonia/releases/koinonia-${VERSION}/.env
-
-# 4. Installer les dependances et construire
-cd /opt/koinonia/releases/koinonia-${VERSION}
-npm install --production=false
-npm run build
-
-# 5. Appliquer le schema
-npm run db:push
-npm run db:seed    # optionnel : charge les donnees de demo ICC Rennes
-
-# 6. Activer la release
-ln -sfn /opt/koinonia/releases/koinonia-${VERSION} /opt/koinonia/current
-
-# 7. Demarrer le service (voir section systemd ci-dessous)
-sudo systemctl start koinonia
-```
-
-### Mises a jour
+Pour initialiser uniquement la base de donnees avant la premiere release :
 
 ```bash
-cd /opt/koinonia/releases
-VERSION=X.Y.Z
-curl -L -o koinonia-${VERSION}.tar.gz \
-  https://github.com/iccbretagne/koinonia/archive/refs/tags/v${VERSION}.tar.gz
-tar xzf koinonia-${VERSION}.tar.gz
-rm koinonia-${VERSION}.tar.gz
+# Appliquer les migrations (depuis le repertoire de la release deployee)
+cd /opt/koinonia/current
+./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
-ln -s /opt/koinonia/shared/.env /opt/koinonia/releases/koinonia-${VERSION}/.env
-
-cd /opt/koinonia/releases/koinonia-${VERSION}
-npm install --production=false
-npm run build
-npm run db:push
-
-ln -sfn /opt/koinonia/releases/koinonia-${VERSION} /opt/koinonia/current
-sudo systemctl restart koinonia
+# Optionnel : charger les donnees de demo ICC Rennes
+# (uniquement en environnement de test, jamais en production)
 ```
 
 ## Service systemd
@@ -140,15 +106,19 @@ After=network.target mariadb.service
 Type=simple
 User=koinonia
 Group=koinonia
-WorkingDirectory=/opt/koinonia/current
+WorkingDirectory=/opt/koinonia/current/.next/standalone
 EnvironmentFile=/opt/koinonia/shared/.env
-ExecStart=/usr/bin/node /opt/koinonia/current/node_modules/.bin/next start -p 3000
+Environment=NODE_ENV=production
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node /opt/koinonia/current/.next/standalone/server.js
 Restart=on-failure
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+> Le build utilise `output: "standalone"`. Le point d'entree est `server.js` dans le repertoire standalone — ne pas utiliser `next start` ni `npm start`.
 
 Activer et demarrer :
 
@@ -273,14 +243,9 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
 2. Le CI s'execute (typecheck, tests, verification version)
 3. Si le CI passe, le workflow deploy se connecte en SSH au serveur
-4. Le script telecharge la release, installe les dependances, construit, migre la BDD, bascule le symlink et redemarre le service
-5. Les anciennes releases sont nettoyees (3 dernieres conservees)
-
-Un script `scripts/deploy.sh` est egalement disponible pour les deploiements manuels depuis le serveur :
-
-```bash
-DEPLOY_PATH=/opt/koinonia bash scripts/deploy.sh 0.6.0
-```
+4. L'artefact pre-compile est transfere par SCP, extrait, les assets statiques assembles — aucune compilation n'a lieu en production
+5. Les migrations Prisma sont appliquees, le symlink `current` est bascule, le service redemarre
+6. Les anciennes releases sont nettoyees (3 dernieres conservees)
 
 ## Webcron — rappels de service
 
@@ -620,8 +585,7 @@ sudo systemctl start koinonia
 - [ ] `AUTH_TRUST_HOST=true` present
 - [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie
-- [ ] Schema applique (`npm run db:push`)
-- [ ] Application construite (`npm run build`)
+- [ ] Migrations appliquees via le pipeline CD (automatique)
 - [ ] Service systemd actif et active au boot
 - [ ] Traefik configure avec certificat TLS
 - [ ] URI de redirection Google OAuth ajoutee
