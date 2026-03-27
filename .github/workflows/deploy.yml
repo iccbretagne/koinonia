@@ -130,8 +130,8 @@ jobs:
             ln -sf "$DEPLOY_PATH/shared/.env" .next/standalone/.env
 
             # 4. Run migrations
-            DATABASE_URL=$(grep DATABASE_URL "$DEPLOY_PATH/shared/.env" | cut -d= -f2-) \
-              .next/standalone/node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+            set -a; source "$DEPLOY_PATH/shared/.env"; set +a
+            .next/standalone/node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
 
             # 5. Activate release
             ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
