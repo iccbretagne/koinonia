@@ -62,9 +62,8 @@ export async function createBackup(): Promise<BackupResult> {
     gzip.on("end", () => resolve(Buffer.concat(chunks)));
     gzip.on("error", reject);
     child.on("error", reject);
-    child.stderr!.on("data", (data: Buffer) => {
-      const msg = data.toString().trim();
-      if (msg) logger.warn({ msg: "mysqldump stderr", detail: msg });
+    child.stderr!.on("data", (_data: Buffer) => {
+      // Stderr is intentionally not logged to avoid exposing SQL fragments or credentials
     });
     child.on("exit", (code) => {
       if (code !== 0) reject(new Error(`mysqldump exited with code ${code}`));
@@ -77,6 +76,7 @@ export async function createBackup(): Promise<BackupResult> {
       Key: key,
       Body: buffer,
       ContentType: "application/gzip",
+      ServerSideEncryption: "AES256",
     })
   );
 

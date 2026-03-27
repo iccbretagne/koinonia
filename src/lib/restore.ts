@@ -52,15 +52,13 @@ export async function restoreBackup(key: string): Promise<RestoreResult> {
       stdio: ["pipe", "pipe", "pipe"],
     });
 
-    let stderrOutput = "";
-    mysql.stderr.on("data", (data: Buffer) => {
-      stderrOutput += data.toString();
-    });
+    // Stderr is consumed but not logged to avoid exposing SQL content
+    mysql.stderr.on("data", () => {});
 
     mysql.on("error", reject);
     mysql.on("exit", (code) => {
       if (code !== 0) {
-        logger.error({ msg: "mysql import failed", code, stderr: stderrOutput });
+        logger.error({ msg: "mysql import failed", code });
         reject(new Error(`mysql import exited with code ${code}`));
       } else {
         resolve();
