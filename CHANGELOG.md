@@ -6,6 +6,25 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.1] - 2026-03-28
+
+### Sécurité
+
+- Restreint l'accès au détail des demandes internes (`GET /api/requests/[id]`) aux seuls propriétaires, membres du département assigné et gestionnaires (#132)
+- Restreint l'accès au détail des annonces (`GET /api/announcements/[id]`) aux seuls propriétaires et gestionnaires (#133)
+- Enforce le scope rôles : `MINISTER` requiert un ministère, `DEPARTMENT_HEAD` requiert au moins un département (#134/#135)
+- Valide les références `departmentId`/`ministryId` cross-tenant dans `createDemand` ; utilise le payload fusionné effectif lors d'une approbation (#136)
+- Supprime la journalisation du stderr mysqldump/mysql (risque d'exposition SQL) (#137)
+- Chiffrement SSE-AES256 sur les uploads de backup S3 (#138)
+- Supprime `scripts/deploy.sh` (build depuis les sources en production, contourne le CI) ; aligne `docs/production.md` sur le déploiement artifact-only (#139)
+- Documente la limite single-instance du rate-limit et l'hypothèse proxy (#140)
+- Échappe le HTML dans les emails de rappel ; masque les adresses email dans les logs d'échec SMTP (#142)
+
+### Tests
+
+- Ajoute test `ZodError → HTTP 400` dans `api-utils.test.ts` (#141)
+- Ajoute tests de scope rôles (MINISTER, DEPARTMENT_HEAD, cross-church, escalade) (#141)
+
 ## [v0.15.0] - 2026-03-27
 
 ### Sécurité
