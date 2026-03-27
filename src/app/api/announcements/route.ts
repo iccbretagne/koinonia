@@ -102,6 +102,34 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("planning:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
+    // Validate departmentId belongs to churchId
+    if (data.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: { id: data.departmentId, ministry: { churchId: data.churchId } },
+        select: { id: true },
+      });
+      if (!dept) throw new ApiError(400, "Département invalide ou hors périmètre");
+    }
+
+    // Validate ministryId belongs to churchId
+    if (data.ministryId) {
+      const ministry = await prisma.ministry.findFirst({
+        where: { id: data.ministryId, churchId: data.churchId },
+        select: { id: true },
+      });
+      if (!ministry) throw new ApiError(400, "Ministère invalide ou hors périmètre");
+    }
+
+    // Validate targetEventIds belong to churchId
+    if (data.targetEventIds.length > 0) {
+      const validEvents = await prisma.event.count({
+        where: { id: { in: data.targetEventIds }, churchId: data.churchId },
+      });
+      if (validEvents !== data.targetEventIds.length) {
+        throw new ApiError(400, "Événements cibles invalides ou hors périmètre");
+      }
+    }
+
     const eventDate = data.eventDate ? new Date(data.eventDate) : null;
     const saveTheDate = eventDate ? computeIsSaveTheDate(eventDate) : false;
 

@@ -95,6 +95,16 @@ export async function PATCH(
     const body = await request.json();
     const data = patchSchema.parse(body);
 
+    // Validate targetEventIds belong to churchId
+    if (data.targetEventIds !== undefined && data.targetEventIds.length > 0) {
+      const validEvents = await prisma.event.count({
+        where: { id: { in: data.targetEventIds }, churchId: announcement.churchId },
+      });
+      if (validEvents !== data.targetEventIds.length) {
+        throw new ApiError(400, "Événements cibles invalides ou hors périmètre");
+      }
+    }
+
     // Status changes: managers can set any status, owners can only cancel
     if (data.status !== undefined) {
       if (!canManage && !isOwner) {
