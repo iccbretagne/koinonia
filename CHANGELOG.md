@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.2] - 2026-03-28
+
+### Documentation
+
+- Ajoute `SECURITY.md` : politique de divulgation responsable, périmètre, contact et délais de traitement
+
 ## [v0.15.1] - 2026-03-28
 
 ### Sécurité
