@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.3] - 2026-03-28
+
+### Améliorations
+
+- Gestion des membres : vue cartes responsive (1/2/3 colonnes), filtres persistants, tri alphabétique, sélection groupée
+
 ## [v0.17.2] - 2026-03-28
 
 ### Nouveautés
