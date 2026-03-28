@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { getEventTypeBadge, getEventTypeLabel } from "@/lib/event-types";
 
 interface EventDept {
   id: string;
@@ -48,17 +49,6 @@ function formatEventDate(iso: string) {
   });
 }
 
-const typeBadgeColors: Record<string, string> = {
-  CULTE: "bg-icc-violet/10 text-icc-violet",
-  PRIERE: "bg-icc-jaune/20 text-yellow-700",
-  REUNION: "bg-icc-bleu/10 text-icc-bleu",
-  CONFERENCE: "bg-icc-rouge/10 text-icc-rouge",
-  AUTRE: "bg-gray-100 text-gray-600",
-};
-
-function getTypeBadgeClass(type: string) {
-  return typeBadgeColors[type] || "bg-gray-100 text-gray-600";
-}
 
 const monthOptions = buildMonthOptions();
 
@@ -144,9 +134,9 @@ export default function EventsPageClient({ churchId }: { churchId: string }) {
                   {formatEventDate(event.date)}
                 </span>
                 <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${getTypeBadgeClass(event.type)}`}
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${getEventTypeBadge(event.type)}`}
                 >
-                  {event.type}
+                  {getEventTypeLabel(event.type)}
                 </span>
               </div>
               <h3 className="font-semibold text-gray-800 mb-3">{event.title}</h3>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 
 type RequestCategory = "announcement" | "demand" | null;
 type DemandType =
@@ -52,7 +53,6 @@ const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
 
 const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
 
-const EVENT_TYPES = ["CULTE", "PRIERE", "REUNION", "FORMATION", "EVENEMENT", "AUTRE"];
 
 const DEADLINE_OFFSETS = [
   { value: "", label: "Manuel" },
@@ -556,7 +556,7 @@ export default function RequestForm({
               className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
             >
               {EVENT_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
               ))}
             </select>
           </div>
@@ -711,8 +711,8 @@ export default function RequestForm({
               className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
             >
               <option value="">— Inchangé —</option>
-              {["CULTE", "PRIERE", "REUNION", "CONFERENCE", "AUTRE"].map((t) => (
-                <option key={t} value={t}>{t}</option>
+              {EVENT_TYPES.map((t) => (
+                <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
               ))}
             </select>
           </div>

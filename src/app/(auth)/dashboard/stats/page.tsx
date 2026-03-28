@@ -3,9 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import StatsClient from "./StatsClient";
 
-export default async function StatsPage() {
+interface StatsPageProps {
+  searchParams: Promise<{ dept?: string }>;
+}
+
+export default async function StatsPage({ searchParams }: StatsPageProps) {
   const session = await auth();
   if (!session?.user) redirect("/");
+
+  const { dept: initialDeptId } = await searchParams;
 
   const currentChurchId = await getCurrentChurchId(session);
   if (!currentChurchId) {
@@ -31,6 +37,7 @@ export default async function StatsPage() {
           name: d.name,
           ministryName: d.ministry.name,
         }))}
+        initialDeptId={initialDeptId}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import Modal from "@/components/ui/Modal";
 import DataTable from "@/components/ui/DataTable";
 import BulkActionBar from "@/components/ui/BulkActionBar";
@@ -443,7 +444,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
                 </span>
               ),
             },
-            { header: "Type", accessor: "type" },
+            { header: "Type", accessor: (ev: EventItem) => getEventTypeLabel(ev.type) },
             {
               header: "Date",
               accessor: (ev: EventItem) => formatDate(ev.date),
@@ -546,10 +547,12 @@ export default function EventsClient({ initialEvents, churches }: Props) {
               onChange={(e) => setTitle(e.target.value)}
               required
             />
-            <Input
+            <Select
               label="Type"
               value={type}
               onChange={(e) => setType(e.target.value)}
+              options={EVENT_TYPE_OPTIONS}
+              placeholder="Choisir un type"
               required
             />
             <Input
@@ -651,10 +654,11 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             onChange={(e) => setBulkTitle(e.target.value)}
             placeholder="Laisser vide pour ne pas modifier"
           />
-          <Input
+          <Select
             label="Type"
             value={bulkType}
             onChange={(e) => setBulkType(e.target.value)}
+            options={EVENT_TYPE_OPTIONS}
             placeholder="Laisser vide pour ne pas modifier"
           />
           <Input
