@@ -6,7 +6,7 @@ interface Member {
   id: string;
   firstName: string;
   lastName: string;
-  status: "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | "INDISPONIBLE" | "REMPLACANT" | null;
+  status: "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | null;
 }
 
 interface Notice {
@@ -33,19 +33,6 @@ interface WeeklyPlanningViewProps {
   canEdit: boolean;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  EN_SERVICE: "En service",
-  EN_SERVICE_DEBRIEF: "Debrief",
-  INDISPONIBLE: "Indisponible",
-  REMPLACANT: "Remplaçant",
-};
-
-const STATUS_CLASS: Record<string, string> = {
-  EN_SERVICE: "bg-green-100 text-green-700",
-  EN_SERVICE_DEBRIEF: "bg-icc-violet text-white",
-  INDISPONIBLE: "bg-red-100 text-red-600",
-  REMPLACANT: "bg-yellow-100 text-yellow-700",
-};
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -287,12 +274,6 @@ export default function WeeklyPlanningView({
               {events.map((event) => {
                 const { day, weekday } = formatDayShort(event.date);
                 const isEditing = editingEventId === event.id;
-                const enService = event.members.filter(
-                  (m) => m.status === "EN_SERVICE" || m.status === "EN_SERVICE_DEBRIEF"
-                );
-                const autres = event.members.filter(
-                  (m) => m.status === "INDISPONIBLE" || m.status === "REMPLACANT"
-                );
 
                 return (
                   <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
@@ -308,10 +289,10 @@ export default function WeeklyPlanningView({
                       </div>
                     </div>
 
-                    {/* Members */}
+                    {/* Members en service */}
                     {event.members.length > 0 && (
                       <div className="px-4 pt-2 pb-3 border-t border-gray-100 space-y-1.5">
-                        {enService.map((m) => (
+                        {event.members.map((m) => (
                           <div key={m.id} className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-gray-900">
                               {m.firstName} {m.lastName}
@@ -319,21 +300,6 @@ export default function WeeklyPlanningView({
                             {m.status === "EN_SERVICE_DEBRIEF" && (
                               <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
                                 Debrief
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                        {enService.length > 0 && autres.length > 0 && (
-                          <div className="h-px bg-gray-100" />
-                        )}
-                        {autres.map((m) => (
-                          <div key={m.id} className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">
-                              {m.firstName} {m.lastName}
-                            </span>
-                            {m.status && (
-                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_CLASS[m.status] ?? ""}`}>
-                                {STATUS_LABEL[m.status]}
                               </span>
                             )}
                           </div>

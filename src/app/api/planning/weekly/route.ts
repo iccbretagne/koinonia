@@ -33,7 +33,7 @@ export async function GET(request: Request) {
           where: { departmentId },
           include: {
             plannings: {
-              where: { status: { not: null } },
+              where: { status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] } },
               include: {
                 member: { select: { id: true, firstName: true, lastName: true } },
               },
