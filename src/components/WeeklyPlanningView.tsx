@@ -293,8 +293,8 @@ export default function WeeklyPlanningView({
                     {event.members.length > 0 && (
                       <div className="px-4 pt-2 pb-3 border-t border-gray-100 space-y-1.5">
                         {event.members.map((m) => (
-                          <div key={m.id} className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-900">
+                          <div key={m.id} className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm text-gray-600 font-medium">
                               {m.firstName} {m.lastName}
                             </span>
                             {m.status === "EN_SERVICE_DEBRIEF" && (
@@ -311,7 +311,7 @@ export default function WeeklyPlanningView({
                     <div className={`px-4 pb-3 border-t ${event.notice && !isEditing ? "border-icc-violet/20 bg-icc-violet/5" : "border-gray-100"}`}>
                       <div className="flex items-center justify-between mt-2 mb-1">
                         <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
-                          Notice de service
+                          ⚠️ Notice de service
                         </span>
                         {canEdit && !isEditing && !exporting && (
                           <button
