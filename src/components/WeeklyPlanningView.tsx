@@ -295,7 +295,7 @@ export default function WeeklyPlanningView({
                         {event.members.map((m) => (
                           <div key={m.id} className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-gray-900">
-                              🙌 {m.firstName} {m.lastName}
+                              {m.firstName} {m.lastName}
                             </span>
                             {m.status === "EN_SERVICE_DEBRIEF" && (
                               <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
