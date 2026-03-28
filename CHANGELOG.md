@@ -6,6 +6,27 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.0] - 2026-03-28
+
+### Nouveautés
+
+- Vue hebdomadaire : affichage des tâches par STAR (pills colorées), aligné sur la vue mensuelle
+- Sélection d'événement en deux temps : select mois → select événement avec auto-sélection
+- Types d'événement standardisés : Culte (violet), Prière (orange), Réunion (bleu), Formation (rouge), Autre (vert) — badge coloré partout
+- Lien Statistiques transmet le département courant pour pré-sélection directe
+
+### Améliorations
+
+- Vue hebdomadaire et mensuelle : carte élargie (`max-w-2xl`), noms STAR en gras
+- Vue hebdomadaire : zone notice conditionnelle, bouton "Ajouter" dans la section membres, boutons d'action exclus des captures
+- Vue hebdomadaire : bouton Supprimer pour les notices existantes
+- Navigation dashboard : renommage des boutons — Saisie, Vue semaine, Vue mois
+- Admin événements : saisie du type via select à la place d'un champ texte libre
+
+### Correctifs
+
+- Calendrier : correction du décalage des événements du dimanche (bug timezone UTC vs local)
+
 ## [v0.16.1] - 2026-03-28
 
 ### Améliorations
