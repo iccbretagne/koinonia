@@ -61,6 +61,10 @@ interface Props {
   initialDeptId?: string;
 }
 
+function toLocalDateInputValue(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function StatsClient({ departments, initialDeptId }: Props) {
   const [selectedDeptId, setSelectedDeptId] = useState(
     (initialDeptId && departments.some((d) => d.id === initialDeptId))
@@ -69,16 +73,22 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
   );
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [periodMode, setPeriodMode] = useState<"preset" | "custom">("preset");
   const [months, setMonths] = useState("6");
+  const defaultFrom = toLocalDateInputValue(new Date(new Date().setMonth(new Date().getMonth() - 6)));
+  const defaultTo = toLocalDateInputValue(new Date());
+  const [customFrom, setCustomFrom] = useState(defaultFrom);
+  const [customTo, setCustomTo] = useState(defaultTo);
   const [tab, setTab] = useState<"planning" | "tasks">("planning");
 
   const fetchStats = useCallback(async () => {
     if (!selectedDeptId) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/departments/${selectedDeptId}/stats?months=${months}`
-      );
+      const url = periodMode === "custom"
+        ? `/api/departments/${selectedDeptId}/stats?from=${customFrom}&to=${customTo}`
+        : `/api/departments/${selectedDeptId}/stats?months=${months}`;
+      const res = await fetch(url);
       if (res.ok) {
         const result = await res.json();
         setData(result);
@@ -88,7 +98,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [selectedDeptId, months]);
+  }, [selectedDeptId, periodMode, months, customFrom, customTo]);
 
   useEffect(() => {
     fetchStats();
@@ -116,18 +126,67 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
             }))}
           />
         </div>
-        <div className="w-40">
-          <Select
-            label="Période"
-            value={months}
-            onChange={(e) => setMonths(e.target.value)}
-            options={[
-              { value: "3", label: "3 mois" },
-              { value: "6", label: "6 mois" },
-              { value: "12", label: "12 mois" },
-            ]}
-          />
+
+        {/* Period mode toggle */}
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Période</span>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 h-fit">
+            <button
+              onClick={() => setPeriodMode("preset")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                periodMode === "preset" ? "bg-white text-icc-violet shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Prédéfinie
+            </button>
+            <button
+              onClick={() => setPeriodMode("custom")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                periodMode === "custom" ? "bg-white text-icc-violet shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Personnalisée
+            </button>
+          </div>
         </div>
+
+        {periodMode === "preset" ? (
+          <div className="w-36">
+            <Select
+              label="Durée"
+              value={months}
+              onChange={(e) => setMonths(e.target.value)}
+              options={[
+                { value: "1", label: "1 mois" },
+                { value: "3", label: "3 mois" },
+                { value: "6", label: "6 mois" },
+                { value: "12", label: "12 mois" },
+                { value: "24", label: "24 mois" },
+              ]}
+            />
+          </div>
+        ) : (
+          <div className="flex gap-3 items-end">
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Du</label>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">Au</label>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
