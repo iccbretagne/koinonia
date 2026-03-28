@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.5] - 2026-03-28
+
+### Améliorations
+
+- Message WhatsApp du compte rendu reformaté : zéro émoji, en-têtes en gras, structure lisible centrée sur les informations (#151)
+
 ## [v0.15.4] - 2026-03-28
 
 ### Correctifs
