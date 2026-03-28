@@ -97,9 +97,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       }))?.name ?? undefined
     : undefined;
 
-  // Fetch department name (for month view and tasks view)
+  // Fetch department name (for month, tasks and week views)
   const selectedDepartment =
-    (view === "month" || view === "tasks") && selectedDeptId
+    (view === "month" || view === "tasks" || view === "week") && selectedDeptId
       ? await prisma.department.findUnique({
           where: { id: selectedDeptId },
           select: { name: true },
@@ -142,7 +142,19 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       )}
 
       {view === "week" ? (
-        <WeeklyPlanningView churchId={currentChurchId} churchName={churchName} canEdit={canEditPlanning} />
+        selectedDeptId ? (
+          <WeeklyPlanningView
+            churchId={currentChurchId}
+            departmentId={selectedDeptId}
+            departmentName={selectedDepartment?.name}
+            churchName={churchName}
+            canEdit={canEditPlanning}
+          />
+        ) : (
+          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+            Sélectionnez un département dans la barre latérale
+          </div>
+        )
       ) : view === "tasks" ? (
         selectedDeptId ? (
           <DepartmentTasksView

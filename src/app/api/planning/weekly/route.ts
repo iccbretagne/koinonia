@@ -7,9 +7,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     const weekStart = searchParams.get("weekStart"); // YYYY-MM-DD (Monday)
+    const departmentId = searchParams.get("departmentId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
     if (!weekStart) throw new ApiError(400, "weekStart requis");
+    if (!departmentId) throw new ApiError(400, "departmentId requis");
 
     await requireChurchPermission("planning:view", churchId);
 
@@ -18,22 +20,29 @@ export async function GET(request: Request) {
     const to = new Date(from);
     to.setUTCDate(to.getUTCDate() + 7);
 
+    // Only events that have this department assigned
     const events = await prisma.event.findMany({
       where: {
         churchId,
         date: { gte: from, lt: to },
+        eventDepts: { some: { departmentId } },
       },
       orderBy: { date: "asc" },
       include: {
         eventDepts: {
+          where: { departmentId },
           include: {
-            department: { select: { id: true, name: true } },
+            plannings: {
+              where: { status: { not: null } },
+              include: {
+                member: { select: { id: true, firstName: true, lastName: true } },
+              },
+            },
           },
-          orderBy: { department: { name: "asc" } },
         },
         departmentNotices: {
+          where: { departmentId },
           select: {
-            departmentId: true,
             content: true,
             updatedAt: true,
             author: { select: { name: true, displayName: true } },
@@ -43,27 +52,30 @@ export async function GET(request: Request) {
     });
 
     const data = events.map((event) => {
-      const noticeByDept = new Map(
-        event.departmentNotices.map((n) => [
-          n.departmentId,
-          {
-            content: n.content,
-            updatedAt: n.updatedAt.toISOString(),
-            authorName: n.author.displayName ?? n.author.name ?? null,
-          },
-        ])
-      );
+      const eventDept = event.eventDepts[0]; // filtered to this dept only
+      const notice = event.departmentNotices[0] ?? null;
 
       return {
         id: event.id,
         title: event.title,
         type: event.type,
         date: event.date.toISOString(),
-        departments: event.eventDepts.map((ed) => ({
-          id: ed.department.id,
-          name: ed.department.name,
-          notice: noticeByDept.get(ed.department.id) ?? null,
-        })),
+        planningDeadline: event.planningDeadline?.toISOString() ?? null,
+        notice: notice
+          ? {
+              content: notice.content,
+              updatedAt: notice.updatedAt.toISOString(),
+              authorName: notice.author.displayName ?? notice.author.name ?? null,
+            }
+          : null,
+        members: eventDept
+          ? eventDept.plannings.map((p) => ({
+              id: p.member.id,
+              firstName: p.member.firstName,
+              lastName: p.member.lastName,
+              status: p.status,
+            }))
+          : [],
       };
     });
 
