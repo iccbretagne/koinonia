@@ -81,7 +81,7 @@ export default function WeeklyPlanningView({ churchId, churchName, canEdit }: We
         `/api/planning/weekly?churchId=${churchId}&weekStart=${toISODate(weekStart)}`
       );
       const data = await res.json();
-      setEvents(data.data ?? []);
+      setEvents(Array.isArray(data) ? data : []);
     } finally {
       setLoading(false);
     }
