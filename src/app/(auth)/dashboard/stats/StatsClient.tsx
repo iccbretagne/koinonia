@@ -58,10 +58,15 @@ interface StatsData {
 
 interface Props {
   departments: Department[];
+  initialDeptId?: string;
 }
 
-export default function StatsClient({ departments }: Props) {
-  const [selectedDeptId, setSelectedDeptId] = useState(departments[0]?.id || "");
+export default function StatsClient({ departments, initialDeptId }: Props) {
+  const [selectedDeptId, setSelectedDeptId] = useState(
+    (initialDeptId && departments.some((d) => d.id === initialDeptId))
+      ? initialDeptId
+      : (departments[0]?.id || "")
+  );
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [months, setMonths] = useState("6");
