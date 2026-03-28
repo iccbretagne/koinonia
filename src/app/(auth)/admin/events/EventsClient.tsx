@@ -208,6 +208,13 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     await doSubmit(false);
   }
 
+  async function reloadEvents() {
+    const cid = churches[0]?.id;
+    if (!cid) return;
+    const listRes = await fetch(`/api/events?churchId=${cid}`);
+    if (listRes.ok) setEvents(await listRes.json());
+  }
+
   async function doSubmit(applyToSeries: boolean) {
     setLoading(true); setError("");
     try {
@@ -219,20 +226,8 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Erreur"); }
-      const saved = await res.json();
 
-      if (editing && saved.seriesUpdated) {
-        const listRes = await fetch("/api/events");
-        if (listRes.ok) setEvents(await listRes.json());
-      } else if (editing) {
-        setEvents((prev) => prev.map((ev) => (ev.id === saved.id ? saved : ev)));
-      } else if (saved.childrenCreated) {
-        const listRes = await fetch("/api/events");
-        if (listRes.ok) setEvents(await listRes.json());
-      } else {
-        setEvents((prev) => [saved, ...prev]);
-      }
-
+      await reloadEvents();
       setModalOpen(false); setSeriesStep(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
