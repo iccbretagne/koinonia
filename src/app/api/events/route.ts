@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
@@ -11,16 +11,21 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchPermission("events:view", churchId);
+    const session = await requireChurchPermission("events:view", churchId);
 
     const trackedOnly = searchParams.get("trackedForDiscipleship") === "true";
     const from = searchParams.get("from");
+
+    const scope = getUserDepartmentScope(session);
 
     const events = await prisma.event.findMany({
       where: {
         churchId,
         ...(trackedOnly ? { trackedForDiscipleship: true } : {}),
         ...(from ? { date: { gte: new Date(from) } } : {}),
+        ...(scope.scoped && scope.departmentIds.length > 0
+          ? { eventDepts: { some: { departmentId: { in: scope.departmentIds } } } }
+          : {}),
       },
       include: {
         church: { select: { id: true, name: true } },
