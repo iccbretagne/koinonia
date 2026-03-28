@@ -7,6 +7,7 @@ interface Member {
   firstName: string;
   lastName: string;
   status: "EN_SERVICE" | "EN_SERVICE_DEBRIEF" | null;
+  tasks: string[];
 }
 
 interface Notice {
@@ -271,7 +272,7 @@ export default function WeeklyPlanningView({
       )}
 
       {/* Printable card */}
-      <div ref={printRef} className="max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
+      <div ref={printRef} className="max-w-2xl mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
         {loading ? (
           <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
         ) : !hasContent ? (
@@ -314,6 +315,11 @@ export default function WeeklyPlanningView({
                                 <span className="text-sm text-gray-900 font-bold">
                                   {m.firstName} {m.lastName}
                                 </span>
+                                {m.tasks.map((task) => (
+                                  <span key={task} className="text-[11px] font-medium border border-icc-violet/40 text-icc-violet px-2 py-0.5 rounded-full">
+                                    {task}
+                                  </span>
+                                ))}
                                 {m.status === "EN_SERVICE_DEBRIEF" && (
                                   <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
                                     Debrief
@@ -326,7 +332,7 @@ export default function WeeklyPlanningView({
 
                         {/* Notice — dans le flex, séparée par un trait */}
                         {(event.notice?.content || isEditing) && (
-                          <div className={`mt-3 pt-2 border-t ${event.notice?.content && !isEditing ? "border-icc-violet/20" : "border-gray-100"}`}>
+                          <div className={`mt-3 pt-2 border-t rounded-lg ${event.notice?.content && !isEditing ? "border-icc-violet/20 bg-icc-violet/5 px-2 pb-2" : "border-gray-100"}`}>
                             <div className="flex items-center justify-between mb-1">
                               <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice?.content && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
                                 ⚠️ Notice de service

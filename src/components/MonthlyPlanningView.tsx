@@ -235,7 +235,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
         </div>
       )}
 
-      <div ref={printRef} className="max-w-lg mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
+      <div ref={printRef} className="max-w-2xl mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
         {loading ? (
           <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
         ) : events.length === 0 ? (
