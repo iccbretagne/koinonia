@@ -106,11 +106,16 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         })
       : null;
 
-  // Fetch events for the church (needed for event view)
+  // Fetch events for the selected department (needed for event view)
   const events =
     view === "event"
       ? await prisma.event.findMany({
-          where: { churchId: currentChurchId },
+          where: {
+            churchId: currentChurchId,
+            ...(selectedDeptId
+              ? { eventDepts: { some: { departmentId: selectedDeptId } } }
+              : {}),
+          },
           orderBy: { date: "asc" },
           include: {
             eventDepts: {
