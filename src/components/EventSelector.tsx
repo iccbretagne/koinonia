@@ -50,18 +50,16 @@ export default function EventSelector({
     return Array.from(set).sort();
   }, [events]);
 
-  // Derive initial month from selected event, or default to current/nearest month
-  const initialMonth = useMemo(() => {
+  // Lazy initializer — runs once on mount to pick the right starting month
+  const [selectedMonth, setSelectedMonth] = useState(() => {
     if (selectedEventId) {
       const ev = events.find((e) => e.id === selectedEventId);
       if (ev) return toYearMonth(ev.date);
     }
+    const sortedMonths = Array.from(new Set(events.map((e) => toYearMonth(e.date)))).sort();
     const now = toYearMonth(new Date().toISOString());
-    // Pick current month if it has events, otherwise the next available month
-    return months.find((m) => m >= now) ?? months[0] ?? "";
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+    return sortedMonths.find((m) => m >= now) ?? sortedMonths[0] ?? "";
+  });
 
   // Events for the selected month
   const monthEvents = useMemo(
@@ -87,7 +85,7 @@ export default function EventSelector({
     if (selectedDeptId) params.set("dept", selectedDeptId);
     params.set("event", eventId);
     router.replace(`/dashboard?${params.toString()}`);
-  }, [selectedMonth, monthEvents]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedMonth, monthEvents, selectedEventId, selectedDeptId, router]);
 
   function handleMonthChange(ym: string) {
     setSelectedMonth(ym);
