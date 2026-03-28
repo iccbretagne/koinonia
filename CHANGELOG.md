@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.3] - 2026-03-28
+
+### Correctifs
+
+- Inclut `@prisma/engines` dans l'artifact de déploiement pour corriger `Cannot find module '@prisma/engines'` lors de `prisma migrate deploy`
+
 ## [v0.15.2] - 2026-03-28
 
 ### Documentation
