@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.4] - 2026-03-28
+
+### Correctifs
+
+- Inclut tout `node_modules/@prisma/*` dans l'artifact (fix complet après `@prisma/engines` seul ne suffisait pas — `@prisma/debug`, `@prisma/internals` etc. sont aussi requis par le CLI)
+
 ## [v0.15.3] - 2026-03-28
 
 ### Correctifs
