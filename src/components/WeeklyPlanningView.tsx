@@ -308,9 +308,9 @@ export default function WeeklyPlanningView({
                     )}
 
                     {/* Notice */}
-                    <div className="px-4 pb-3 border-t border-gray-100">
+                    <div className={`px-4 pb-3 border-t ${event.notice && !isEditing ? "border-icc-violet/20 bg-icc-violet/5" : "border-gray-100"}`}>
                       <div className="flex items-center justify-between mt-2 mb-1">
-                        <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
                           Notice de service
                         </span>
                         {canEdit && !isEditing && !exporting && (
@@ -353,7 +353,7 @@ export default function WeeklyPlanningView({
                           </div>
                         </div>
                       ) : event.notice ? (
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-sm text-icc-violet/80 whitespace-pre-wrap leading-relaxed">
                           {event.notice.content}
                         </p>
                       ) : (
