@@ -142,7 +142,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       )}
 
       {view === "week" ? (
-        <WeeklyPlanningView churchId={currentChurchId} canEdit={canEditPlanning} />
+        <WeeklyPlanningView churchId={currentChurchId} churchName={churchName} canEdit={canEditPlanning} />
       ) : view === "tasks" ? (
         selectedDeptId ? (
           <DepartmentTasksView
