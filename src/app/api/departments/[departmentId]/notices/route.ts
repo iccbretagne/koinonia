@@ -85,3 +85,41 @@ export async function PUT(
     return errorResponse(error);
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ departmentId: string }> }
+) {
+  try {
+    const { departmentId } = await params;
+    const churchId = await resolveChurchId("department", departmentId);
+    const session = await requireChurchPermission("planning:edit", churchId);
+
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get("eventId");
+    if (!eventId) throw new ApiError(400, "eventId requis");
+
+    const notice = await prisma.departmentNotice.findUnique({
+      where: { departmentId_eventId: { departmentId, eventId } },
+      select: { id: true },
+    });
+    if (!notice) throw new ApiError(404, "Notice introuvable");
+
+    await prisma.departmentNotice.delete({
+      where: { departmentId_eventId: { departmentId, eventId } },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "DELETE",
+      entityType: "DepartmentNotice",
+      entityId: notice.id,
+      details: { departmentId, eventId },
+    });
+
+    return successResponse({ success: true });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}

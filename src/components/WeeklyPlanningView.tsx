@@ -122,6 +122,26 @@ export default function WeeklyPlanningView({
     setSaveError(null);
   }
 
+  async function deleteNotice(eventId: string) {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(
+        `/api/departments/${departmentId}/notices?eventId=${eventId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error ?? "Erreur lors de la suppression");
+      }
+      await fetchWeek();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveNotice(eventId: string) {
     setSaving(true);
     setSaveError(null);
@@ -277,49 +297,59 @@ export default function WeeklyPlanningView({
 
                 return (
                   <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
-                    {/* Event header row */}
+                    {/* Event header row + members */}
                     <div className="flex">
                       <div className="bg-icc-violet w-16 shrink-0 flex flex-col items-center justify-center py-3">
                         <span className="text-xs font-semibold text-white/80 uppercase leading-none">{weekday}</span>
                         <span className="text-2xl font-black text-white leading-none mt-0.5">{day}</span>
                       </div>
                       <div className="flex-1 px-4 py-3 min-w-0">
-                        <p className="font-bold text-icc-violet text-xs uppercase tracking-wide">{event.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{event.type}</p>
+                        <p className="font-bold text-icc-violet text-xs uppercase tracking-wide mb-2">{event.title}</p>
+                        {event.members.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {event.members.map((m) => (
+                              <div key={m.id} className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-sm text-gray-600 font-medium">
+                                  {m.firstName} {m.lastName}
+                                </span>
+                                {m.status === "EN_SERVICE_DEBRIEF" && (
+                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
+                                    Debrief
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Members en service */}
-                    {event.members.length > 0 && (
-                      <div className="px-4 pt-2 pb-3 border-t border-gray-100 space-y-1.5">
-                        {event.members.map((m) => (
-                          <div key={m.id} className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-sm text-gray-600 font-medium">
-                              {m.firstName} {m.lastName}
-                            </span>
-                            {m.status === "EN_SERVICE_DEBRIEF" && (
-                              <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
-                                Debrief
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
                     {/* Notice */}
-                    <div className={`px-4 pb-3 border-t ${event.notice && !isEditing ? "border-icc-violet/20 bg-icc-violet/5" : "border-gray-100"}`}>
+                    <div className={`px-4 pb-3 border-t ${event.notice?.content && !isEditing ? "border-icc-violet/20 bg-icc-violet/5" : "border-gray-100"}`}>
                       <div className="flex items-center justify-between mt-2 mb-1">
-                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
+                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice?.content && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
                           ⚠️ Notice de service
                         </span>
                         {canEdit && !isEditing && !exporting && (
-                          <button
-                            onClick={() => startEdit(event.id, event.notice?.content ?? "")}
-                            className="text-[11px] text-icc-violet hover:underline"
-                          >
-                            {event.notice ? "Modifier" : "Ajouter"}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => startEdit(event.id, event.notice?.content ?? "")}
+                              className="text-[11px] text-icc-violet hover:underline"
+                            >
+                              {event.notice ? "Modifier" : "Ajouter"}
+                            </button>
+                            {event.notice && (
+                              <button
+                                onClick={() => deleteNotice(event.id)}
+                                disabled={saving}
+                                className="text-[11px] text-icc-rouge hover:underline disabled:opacity-50"
+                              >
+                                Supprimer
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
 
@@ -352,7 +382,7 @@ export default function WeeklyPlanningView({
                             </button>
                           </div>
                         </div>
-                      ) : event.notice ? (
+                      ) : event.notice?.content ? (
                         <p className="text-sm text-icc-violet/80 whitespace-pre-wrap leading-relaxed">
                           {event.notice.content}
                         </p>
