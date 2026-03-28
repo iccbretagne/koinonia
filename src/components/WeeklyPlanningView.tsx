@@ -311,7 +311,7 @@ export default function WeeklyPlanningView({
                           <div className="space-y-1.5">
                             {event.members.map((m) => (
                               <div key={m.id} className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-sm text-gray-600 font-medium">
+                                <span className="text-sm text-gray-900 font-bold">
                                   {m.firstName} {m.lastName}
                                 </span>
                                 {m.status === "EN_SERVICE_DEBRIEF" && (
@@ -323,6 +323,69 @@ export default function WeeklyPlanningView({
                             ))}
                           </div>
                         )}
+
+                        {/* Notice — dans le flex, séparée par un trait */}
+                        {(event.notice?.content || isEditing) && (
+                          <div className={`mt-3 pt-2 border-t ${event.notice?.content && !isEditing ? "border-icc-violet/20" : "border-gray-100"}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice?.content && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
+                                ⚠️ Notice de service
+                              </span>
+                              {canEdit && !isEditing && (
+                                <div data-html2canvas-ignore="true" className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => startEdit(event.id, event.notice?.content ?? "")}
+                                    className="text-[11px] text-icc-violet hover:underline"
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button
+                                    onClick={() => deleteNotice(event.id)}
+                                    disabled={saving}
+                                    className="text-[11px] text-icc-rouge hover:underline disabled:opacity-50"
+                                  >
+                                    Supprimer
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editContent}
+                                  onChange={(e) => setEditContent(e.target.value)}
+                                  rows={3}
+                                  maxLength={2000}
+                                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
+                                  placeholder="Instructions, rappels, informations pour ce service…"
+                                  autoFocus
+                                />
+                                {saveError && <p className="text-xs text-icc-rouge">{saveError}</p>}
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => saveNotice(event.id)}
+                                    disabled={saving}
+                                    className="px-3 py-1.5 text-xs font-medium bg-icc-violet text-white rounded-lg hover:opacity-90 disabled:opacity-50"
+                                  >
+                                    {saving ? "Enregistrement…" : "Enregistrer"}
+                                  </button>
+                                  <button
+                                    onClick={cancelEdit}
+                                    disabled={saving}
+                                    className="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                  >
+                                    Annuler
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className={`text-sm whitespace-pre-wrap leading-relaxed ${event.notice?.content ? "text-icc-violet/80" : "text-gray-400 italic"}`}>
+                                {event.notice!.content}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         {canEdit && !event.notice && !isEditing && (
                           <button
                             data-html2canvas-ignore="true"
@@ -334,69 +397,6 @@ export default function WeeklyPlanningView({
                         )}
                       </div>
                     </div>
-
-                    {/* Notice — affiché uniquement si contenu existe ou en cours d'édition */}
-                    {(event.notice?.content || isEditing) && (
-                      <div className={`px-4 pb-3 border-t ${event.notice?.content && !isEditing ? "border-icc-violet/20 bg-icc-violet/5" : "border-gray-100"}`}>
-                        <div className="flex items-center justify-between mt-2 mb-1">
-                          <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice?.content && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
-                            ⚠️ Notice de service
-                          </span>
-                          {canEdit && !isEditing && (
-                            <div data-html2canvas-ignore="true" className="flex items-center gap-2">
-                              <button
-                                onClick={() => startEdit(event.id, event.notice?.content ?? "")}
-                                className="text-[11px] text-icc-violet hover:underline"
-                              >
-                                Modifier
-                              </button>
-                              <button
-                                onClick={() => deleteNotice(event.id)}
-                                disabled={saving}
-                                className="text-[11px] text-icc-rouge hover:underline disabled:opacity-50"
-                              >
-                                Supprimer
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            <textarea
-                              value={editContent}
-                              onChange={(e) => setEditContent(e.target.value)}
-                              rows={3}
-                              maxLength={2000}
-                              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
-                              placeholder="Instructions, rappels, informations pour ce service…"
-                              autoFocus
-                            />
-                            {saveError && <p className="text-xs text-icc-rouge">{saveError}</p>}
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => saveNotice(event.id)}
-                                disabled={saving}
-                                className="px-3 py-1.5 text-xs font-medium bg-icc-violet text-white rounded-lg hover:opacity-90 disabled:opacity-50"
-                              >
-                                {saving ? "Enregistrement…" : "Enregistrer"}
-                              </button>
-                              <button
-                                onClick={cancelEdit}
-                                disabled={saving}
-                                className="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                              >
-                                Annuler
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-icc-violet/80 whitespace-pre-wrap leading-relaxed">
-                            {event.notice!.content}
-                          </p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })}
