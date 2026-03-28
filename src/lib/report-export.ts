@@ -61,18 +61,18 @@ function sortedSections(sections: ReportExportData["sections"]) {
 export function formatReportWhatsApp(data: ReportExportData): string {
   const lines: string[] = [];
 
-  lines.push(`*📋 Compte rendu — ${data.event.title}*`);
-  lines.push(`📅 ${formatDateFR(data.event.date)}`);
+  lines.push(`*Compte rendu — ${data.event.title}*`);
+  lines.push(formatDateFR(data.event.date));
 
   for (const section of sortedSections(data.sections)) {
     const deptType = getDeptType(section.label);
     const hasStats = section.stats !== null && Object.keys(section.stats).length > 0;
     const hasNotes = section.notes !== null && section.notes.trim() !== "";
 
-    // Skip completely empty sections
     if (!hasStats && !hasNotes) continue;
 
     lines.push("");
+    lines.push(`*${section.label.toUpperCase()}*`);
 
     if (hasStats && deptType === "accueil") {
       const h = section.stats!["hommes"] ?? null;
@@ -81,23 +81,17 @@ export function formatReportWhatsApp(data: ReportExportData): string {
       const totalAdultes = h !== null && f !== null ? h + f : null;
       const totalGeneral = totalAdultes !== null && e !== null ? totalAdultes + e : null;
 
-      lines.push(`*📊 ${section.label}*`);
       lines.push(
-        `👨 Hommes : ${statDisplay(h)} | 👩 Femmes : ${statDisplay(f)} | 👶 Enfants : ${statDisplay(e)}`
+        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)} | Enfants : ${statDisplay(e)}`
       );
       lines.push(
-        `📊 Total adultes : ${statDisplay(totalAdultes)} | Total général : ${statDisplay(totalGeneral)}`
+        `Total adultes : ${statDisplay(totalAdultes)} | Total général : ${statDisplay(totalGeneral)}`
       );
-      if (hasNotes) lines.push(`💬 ${section.notes}`);
     } else if (hasStats && deptType === "sainte-cene") {
       const used = section.stats!["supportsUtilises"] ?? null;
       const remaining = section.stats!["supportsRestants"] ?? null;
 
-      lines.push(`*📊 ${section.label}*`);
-      lines.push(
-        `🍞 Supports utilisés : ${statDisplay(used)} | 📦 Restants : ${statDisplay(remaining)}`
-      );
-      if (hasNotes) lines.push(`💬 ${section.notes}`);
+      lines.push(`Supports utilisés : ${statDisplay(used)} | Restants : ${statDisplay(remaining)}`);
     } else if (hasStats && deptType === "integration") {
       const h = section.stats!["hommes"] ?? null;
       const f = section.stats!["femmes"] ?? null;
@@ -105,35 +99,28 @@ export function formatReportWhatsApp(data: ReportExportData): string {
       const convertis = section.stats!["convertis"] ?? null;
       const voeux = section.stats!["voeux"] ?? null;
 
-      lines.push(`*📊 ${section.label}*`);
-      lines.push(`👨 Hommes : ${statDisplay(h)} | 👩 Femmes : ${statDisplay(f)}`);
+      lines.push(`Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)}`);
       lines.push(
-        `🚶 Passage : ${statDisplay(passage)} | ✝️ Convertis : ${statDisplay(convertis)} | 🙏 Vœux : ${statDisplay(voeux)}`
+        `De passage : ${statDisplay(passage)} | Convertis : ${statDisplay(convertis)} | Voeux : ${statDisplay(voeux)}`
       );
-      if (hasNotes) lines.push(`💬 ${section.notes}`);
-    } else if (!hasStats && hasNotes) {
-      // No stats but has notes
-      lines.push(`*📝 ${section.label}*`);
-      lines.push(`💬 ${section.notes}`);
     } else if (hasStats) {
-      // Has stats but no recognized type — generic display
-      lines.push(`*📊 ${section.label}*`);
       for (const [key, value] of Object.entries(section.stats!)) {
         lines.push(`${key} : ${statDisplay(value)}`);
       }
-      if (hasNotes) lines.push(`💬 ${section.notes}`);
     }
+
+    if (hasNotes) lines.push(section.notes!);
   }
 
   if (data.notes && data.notes.trim() !== "") {
     lines.push("");
-    lines.push(`*📌 Observations générales*`);
+    lines.push(`*OBSERVATIONS GENERALES*`);
     lines.push(data.notes);
   }
 
   if (data.decisions && data.decisions.trim() !== "") {
     lines.push("");
-    lines.push(`*✅ Décisions / Actions*`);
+    lines.push(`*DECISIONS / ACTIONS*`);
     lines.push(data.decisions);
   }
 
