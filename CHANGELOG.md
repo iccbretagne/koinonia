@@ -6,6 +6,17 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.2] - 2026-03-28
+
+### Nouveautés
+
+- Statistiques : sélection de période personnalisée (champs Du / Au) en plus des périodes prédéfinies (1, 3, 6, 12, 24 mois)
+
+### Correctifs
+
+- Saisie planning : l'EventSelector n'affiche plus que les événements auxquels le département est programmé
+- Admin événements : refonte UX — tri ascendant, filtres persistants, édition de la récurrence, vue carte, gestion des séries
+
 ## [v0.17.1] - 2026-03-28
 
 ### Correctifs
