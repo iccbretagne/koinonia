@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getEventTypeBadge, getEventTypeLabel } from "@/lib/event-types";
 
 interface MemberItem {
   id: string;
@@ -13,6 +14,7 @@ interface MemberItem {
 interface EventItem {
   id: string;
   title: string;
+  type: string;
   date: string;
   members: MemberItem[];
 }
@@ -275,7 +277,12 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
 
                       {/* Content */}
                       <div className="flex-1 px-4 py-3 min-w-0">
-                        <p className="font-bold text-icc-violet text-xs uppercase tracking-wide mb-2">{event.title}</p>
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          <p className="font-bold text-icc-violet text-xs uppercase tracking-wide">{event.title}</p>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${getEventTypeBadge(event.type)}`}>
+                            {getEventTypeLabel(event.type)}
+                          </span>
+                        </div>
 
                         {event.members.length === 0 ? (
                           <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>

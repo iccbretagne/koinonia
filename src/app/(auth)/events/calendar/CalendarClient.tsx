@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getEventTypeColors, EVENT_TYPE_COLORS } from "@/lib/event-types";
 
 interface CalendarEvent {
   id: string;
@@ -16,16 +17,8 @@ interface Props {
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; hover: string; dot: string; label: string }> = {
-  CULTE:      { bg: "bg-icc-violet/10", text: "text-icc-violet",    hover: "hover:bg-icc-violet",  dot: "bg-icc-violet",  label: "Culte" },
-  PRIERE:     { bg: "bg-icc-jaune/20",  text: "text-yellow-700",    hover: "hover:bg-yellow-500",  dot: "bg-yellow-500",  label: "Priere" },
-  REUNION:    { bg: "bg-icc-bleu/10",   text: "text-icc-bleu",      hover: "hover:bg-icc-bleu",    dot: "bg-icc-bleu",    label: "Reunion" },
-  CONFERENCE: { bg: "bg-icc-rouge/10",  text: "text-icc-rouge",     hover: "hover:bg-icc-rouge",   dot: "bg-icc-rouge",   label: "Conference" },
-  AUTRE:      { bg: "bg-gray-100",      text: "text-gray-600",      hover: "hover:bg-gray-500",    dot: "bg-gray-400",    label: "Autre" },
-};
-
 function getEventColors(type: string) {
-  return EVENT_TYPE_COLORS[type] || EVENT_TYPE_COLORS.AUTRE;
+  return getEventTypeColors(type);
 }
 
 export default function CalendarClient({ events }: Props) {
