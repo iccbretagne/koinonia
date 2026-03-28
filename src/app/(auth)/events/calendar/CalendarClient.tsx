@@ -21,6 +21,11 @@ function getEventColors(type: string) {
   return getEventTypeColors(type);
 }
 
+/** Build YYYY-MM-DD from local date components — avoids UTC offset shift from toISOString() */
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function CalendarClient({ events }: Props) {
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(
@@ -50,21 +55,13 @@ export default function CalendarClient({ events }: Props) {
     // Previous month padding
     for (let i = 0; i < startDow; i++) {
       const d = new Date(year, month - 1, -startDow + i + 1);
-      days.push({
-        date: d.getDate(),
-        inMonth: false,
-        dateStr: d.toISOString().split("T")[0],
-      });
+      days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
     }
 
     // Current month
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dt = new Date(year, month - 1, d);
-      days.push({
-        date: d,
-        inMonth: true,
-        dateStr: dt.toISOString().split("T")[0],
-      });
+      days.push({ date: d, inMonth: true, dateStr: localDateStr(dt) });
     }
 
     // Next month padding
@@ -72,11 +69,7 @@ export default function CalendarClient({ events }: Props) {
     if (remaining < 7) {
       for (let i = 1; i <= remaining; i++) {
         const d = new Date(year, month, i);
-        days.push({
-          date: d.getDate(),
-          inMonth: false,
-          dateStr: d.toISOString().split("T")[0],
-        });
+        days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
       }
     }
 
@@ -94,7 +87,7 @@ export default function CalendarClient({ events }: Props) {
     return map;
   }, [events]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDateStr(new Date());
 
   return (
     <div>
