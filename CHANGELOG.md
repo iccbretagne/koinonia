@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.16.1] - 2026-03-28
+
+### Améliorations
+
+- Vue hebdomadaire : design aligné sur la vue mensuelle (header violet, cartes avec bloc date, notices intégrées par département)
+- Vue hebdomadaire : ajout des boutons export — copier image, télécharger PNG, export PDF
+- Vue hebdomadaire : bouton "Semaine" ajouté dans la navigation principale du dashboard
+
 ## [v0.16.0] - 2026-03-28
 
 ### Nouveautés
