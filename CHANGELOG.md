@@ -6,6 +6,24 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.16.0] - 2026-03-28
+
+### Nouveautés
+
+- Notice de service par département : les responsables peuvent rédiger une notice affichée sur la nouvelle vue planning hebdomadaire (#150)
+- Nouvelle vue "Semaine" dans le dashboard : navigation semaine par semaine, événements groupés par jour, notices éditables inline
+
+### Correctifs
+
+- Artifact de déploiement : inclusion complète de `node_modules` — fin des erreurs de dépendances transitives Prisma manquantes (#155)
+
+### Dépendances
+
+- Bump actions/checkout 4.2.2 → 4.3.1 (#148)
+- Bump actions/setup-node 4.1.0 → 4.4.0 (#147)
+- Bump appleboy/ssh-action 1.0.3 → 1.2.5 (#146)
+- Bump dépendances npm mineures/patch (#149)
+
 ## [v0.15.5] - 2026-03-28
 
 ### Améliorations
