@@ -7,6 +7,7 @@ import PlanningGrid from "@/components/PlanningGrid";
 import DashboardActions from "@/components/DashboardActions";
 import MonthlyPlanningView from "@/components/MonthlyPlanningView";
 import DepartmentTasksView from "@/components/DepartmentTasksView";
+import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 
 interface DashboardProps {
   searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
@@ -140,7 +141,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         </div>
       )}
 
-      {view === "tasks" ? (
+      {view === "week" ? (
+        <WeeklyPlanningView churchId={currentChurchId} canEdit={canEditPlanning} />
+      ) : view === "tasks" ? (
         selectedDeptId ? (
           <DepartmentTasksView
             departmentId={selectedDeptId}

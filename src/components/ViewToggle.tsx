@@ -26,8 +26,18 @@ export default function ViewToggle() {
         Par evenement
       </button>
       <button
+        onClick={() => setView("week")}
+        className={`px-4 py-2 text-sm font-medium border-l border-gray-200 transition-colors ${
+          currentView === "week"
+            ? "bg-icc-violet text-white"
+            : "text-gray-600 hover:bg-gray-50"
+        }`}
+      >
+        Semaine
+      </button>
+      <button
         onClick={() => setView("month")}
-        className={`px-4 py-2 text-sm font-medium rounded-r-lg transition-colors ${
+        className={`px-4 py-2 text-sm font-medium rounded-r-lg border-l border-gray-200 transition-colors ${
           currentView === "month"
             ? "bg-icc-violet text-white"
             : "text-gray-600 hover:bg-gray-50"

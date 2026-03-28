@@ -105,6 +105,7 @@ model User {
   memberLinkRequests      MemberLinkRequest[] @relation("LinkRequester")
   reviewedLinkRequests    MemberLinkRequest[] @relation("LinkRequestReviewer")
   eventReports            EventReport[]       @relation("ReportAuthor")
+  departmentNotices       DepartmentNotice[]
 
   @@map("users")
 }
@@ -167,6 +168,7 @@ model Department {
   submittedRequests Request[]          @relation("RequestDepartment")
   assignedRequests  Request[]          @relation("RequestAssigned")
   reportSections    EventReportSection[]
+  notices           DepartmentNotice[]
 
   @@map("departments")
 }
@@ -304,6 +306,7 @@ model Event {
   statsEnabled               Boolean                  @default(false)
   discipleshipAttendances    DiscipleshipAttendance[]
   report                     EventReport?
+  departmentNotices          DepartmentNotice[]
 
   @@map("events")
 }
@@ -432,6 +435,26 @@ model Notification {
 
   @@index([userId, read, createdAt])
   @@map("notifications")
+}
+
+// ─── Notices de service ────────────────────────────────────────────
+
+model DepartmentNotice {
+  id           String     @id @default(cuid())
+  departmentId String
+  eventId      String
+  content      String     @db.Text
+  authorId     String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  event        Event      @relation(fields: [eventId],      references: [id], onDelete: Cascade)
+  author       User       @relation(fields: [authorId],     references: [id])
+
+  @@unique([departmentId, eventId])
+  @@index([eventId])
+  @@map("department_notices")
 }
 
 // ─── Announcements & Service Requests ──────────────────────────────
