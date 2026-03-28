@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.1] - 2026-03-28
+
+### Correctifs
+
+- Lint CI : remplacement du `useMemo([], [])` par un `useState` lazy initializer dans `EventSelector`
+
 ## [v0.17.0] - 2026-03-28
 
 ### Nouveautés
