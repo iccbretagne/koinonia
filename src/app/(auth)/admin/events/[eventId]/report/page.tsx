@@ -1,7 +1,8 @@
-import { requireAuth, resolveChurchId } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { ApiError } from "@/lib/api-utils";
 import EventReportClient from "./EventReportClient";
 
 export default async function EventReportPage({
@@ -11,14 +12,6 @@ export default async function EventReportPage({
 }) {
   const session = await requireAuth();
   const { eventId } = await params;
-  const churchId = await resolveChurchId("event", eventId);
-  // Allow access if user has events:manage OR reports:view for this church
-  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  const perms = new Set(churchRoles.flatMap((r) => hasPermission(r.role)));
-  if (!perms.has("events:manage") && !perms.has("reports:view")) {
-    const { ApiError } = await import("@/lib/api-utils");
-    throw new ApiError(403, "Forbidden");
-  }
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
@@ -44,6 +37,13 @@ export default async function EventReportPage({
 
   if (!event) notFound();
   if (!event.reportEnabled) notFound();
+
+  // Allow access if user has events:manage OR reports:view for this church
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === event.churchId);
+  const perms = new Set(churchRoles.flatMap((r) => hasPermission(r.role)));
+  if (!perms.has("events:manage") && !perms.has("reports:view")) {
+    throw new ApiError(403, "Forbidden");
+  }
 
   // Départements liés à l'événement pour pré-remplir les sections
   const eventDepts = await prisma.eventDepartment.findMany({
