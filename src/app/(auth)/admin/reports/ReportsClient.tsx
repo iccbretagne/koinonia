@@ -97,7 +97,7 @@ export default function ReportsClient({ events, churchId }: Props) {
   // Mois disponibles (YYYY-MM)
   const availableMonths = useMemo(() => {
     const months = new Set(events.map((e) => e.date.slice(0, 7)));
-    return Array.from(months).sort().reverse();
+    return Array.from(months).sort();
   }, [events]);
 
   // Types d'événements disponibles

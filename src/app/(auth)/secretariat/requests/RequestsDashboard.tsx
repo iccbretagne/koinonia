@@ -89,9 +89,10 @@ interface RequestItem {
 
 interface Props {
   requests: RequestItem[];
+  canManage?: boolean;
 }
 
-export default function RequestsDashboard({ requests: initial }: Props) {
+export default function RequestsDashboard({ requests: initial, canManage = false }: Props) {
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -106,6 +107,24 @@ export default function RequestsDashboard({ requests: initial }: Props) {
 
   const pending = filtered.filter((r) => r.status === "EN_ATTENTE");
   const processed = filtered.filter((r) => r.status !== "EN_ATTENTE");
+
+  async function deleteRequest(id: string) {
+    if (!confirm("Supprimer définitivement cette demande ?")) return;
+    setProcessing(id);
+    try {
+      const res = await fetch(`/api/requests/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur");
+        return;
+      }
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+    } catch {
+      alert("Erreur");
+    } finally {
+      setProcessing(null);
+    }
+  }
 
   async function updateRequest(id: string, status: string, note?: string) {
     setProcessing(id);
@@ -273,6 +292,20 @@ export default function RequestsDashboard({ requests: initial }: Props) {
         {/* Review notes */}
         {req.reviewNotes && req.status !== "EN_ATTENTE" && (
           <p className="text-xs text-gray-500 italic mb-3">Note : {req.reviewNotes}</p>
+        )}
+
+        {/* Delete button for managers on processed requests */}
+        {canManage && req.status !== "EN_ATTENTE" && (
+          <div className="border-t border-gray-100 pt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => deleteRequest(req.id)}
+              disabled={processing === req.id}
+            >
+              Supprimer
+            </Button>
+          </div>
         )}
 
         {/* Actions for pending requests */}
