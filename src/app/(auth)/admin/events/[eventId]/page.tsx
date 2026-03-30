@@ -1,4 +1,4 @@
-import { requireAuth, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import EventDetailClient from "./EventDetailClient";
@@ -10,8 +10,6 @@ export default async function EventDetailPage({
 }) {
   await requireAuth();
   const { eventId } = await params;
-  const churchId = await resolveChurchId("event", eventId);
-  await requireChurchPermission("events:manage", churchId);
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
@@ -24,6 +22,8 @@ export default async function EventDetailPage({
   });
 
   if (!event) notFound();
+
+  await requireChurchPermission("events:manage", event.churchId);
 
   const allDepartments = await prisma.department.findMany({
     where: { ministry: { churchId: event.churchId } },
