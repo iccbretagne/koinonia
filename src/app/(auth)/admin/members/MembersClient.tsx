@@ -5,7 +5,6 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
-import DataTable from "@/components/ui/DataTable";
 import BulkActionBar from "@/components/ui/BulkActionBar";
 
 type UserResult = { id: string; name: string | null; email: string; displayName: string | null; image: string | null };
@@ -33,6 +32,9 @@ interface Props {
   readOnly?: boolean;
 }
 
+const LS_FILTER_DEPT = "members_filter_dept";
+const LS_FILTER_SEARCH = "members_filter_search";
+
 export default function MembersClient({ initialMembers, departments, readOnly = false }: Props) {
   const [members, setMembers] = useState(initialMembers);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,8 +45,14 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [additionalDeptIds, setAdditionalDeptIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [filterDept, setFilterDept] = useState("");
-  const [search, setSearch] = useState("");
+  const [filterDept, setFilterDept] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem(LS_FILTER_DEPT) ?? "";
+    return "";
+  });
+  const [search, setSearch] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem(LS_FILTER_SEARCH) ?? "";
+    return "";
+  });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkFirstName, setBulkFirstName] = useState("");
@@ -62,6 +70,10 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const userSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist filters
+  useEffect(() => { localStorage.setItem(LS_FILTER_DEPT, filterDept); }, [filterDept]);
+  useEffect(() => { localStorage.setItem(LS_FILTER_SEARCH, search); }, [search]);
 
   useEffect(() => {
     if (!linkModal || userQuery.length < 2) { setUserResults([]); return; }
@@ -156,8 +168,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       }
 
       const saved = await res.json();
-
-      // Normaliser la réponse API en format Member
       const normalizedMember = normalizeMember(saved);
 
       if (editing) {
@@ -174,7 +184,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     }
   }
 
-  // Normaliser la réponse API (departments[]) vers le format Member du client
   function normalizeMember(raw: {
     id: string;
     firstName: string;
@@ -230,7 +239,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
   async function handleDelete(m: Member) {
     if (!confirm(`Supprimer ${m.firstName} ${m.lastName} ?`)) return;
-
     try {
       const res = await fetch(`/api/members/${m.id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -246,7 +254,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
   async function handleBulkDelete() {
     if (!confirm(`Supprimer ${selectedIds.size} STAR ?`)) return;
-
     try {
       const res = await fetch("/api/members", {
         method: "PATCH",
@@ -314,7 +321,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 ...d,
                 isPrimary: d.id === data.primaryDepartmentId,
               }));
-              // Si le nouveau dept principal n'est pas encore dans la liste, l'ajouter
               if (!updated.allDepartments.find((d) => d.id === data.primaryDepartmentId)) {
                 updated.allDepartments = [
                   { id: dept.id, name: dept.name, isPrimary: true, ministry: { id: "", name: dept.ministryName } },
@@ -335,18 +341,38 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     }
   }
 
-  const filtered = members.filter((m) => {
-    if (filterDept && !m.allDepartments.some((d) => d.id === filterDept)) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
-      if (!fullName.includes(q) && !`${m.lastName} ${m.firstName}`.toLowerCase().includes(q)) return false;
+  const filtered = members
+    .filter((m) => {
+      if (filterDept && !m.allDepartments.some((d) => d.id === filterDept)) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+        if (!fullName.includes(q) && !`${m.lastName} ${m.firstName}`.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, "fr"));
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((m) => m.id)));
     }
-    return true;
-  });
+  }
 
   return (
     <>
+      {/* Toolbar */}
       <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {!readOnly && <Button onClick={openCreate}>Nouveau STAR</Button>}
         <div className="flex-1 min-w-0">
@@ -370,89 +396,117 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             }))}
           />
         </div>
+        {(search || filterDept) && (
+          <button
+            onClick={() => { setSearch(""); setFilterDept(""); }}
+            className="text-sm text-gray-400 hover:text-gray-600 whitespace-nowrap"
+          >
+            Réinitialiser
+          </button>
+        )}
       </div>
 
-      {(search || filterDept) && (
-        <p className="text-sm text-gray-500 mb-2">
-          {filtered.length} STAR{filtered.length > 1 ? "s" : ""} sur {members.length}
+      {/* Count + select all */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-gray-500">
+          {filtered.length} STAR{filtered.length > 1 ? "s" : ""}
+          {(search || filterDept) && ` sur ${members.length}`}
         </p>
-      )}
-
-      <div className="bg-white rounded-lg shadow">
-        <DataTable
-          columns={[
-            { header: "Nom", accessor: "lastName" },
-            { header: "Prénom", accessor: "firstName" },
-            {
-              header: "Département principal",
-              accessor: (m: Member) => m.primaryDepartment?.name ?? "—",
-            },
-            {
-              header: "Autres départements",
-              accessor: (m: Member) => {
-                const secondary = m.allDepartments.filter((d) => !d.isPrimary);
-                if (secondary.length === 0) return <span className="text-xs text-gray-400">—</span>;
-                return (
-                  <div className="flex flex-wrap gap-1">
-                    {secondary.map((d) => (
-                      <span key={d.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                        {d.name}
-                      </span>
-                    ))}
-                  </div>
-                );
-              },
-            },
-            {
-              header: "Ministère",
-              accessor: (m: Member) => m.primaryDepartment?.ministry.name ?? "—",
-            },
-            {
-              header: "Compte",
-              accessor: (m: Member) =>
-                m.userLink ? (
-                  <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                    {m.userLink.userName ?? m.userLink.userEmail}
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400">—</span>
-                ),
-            },
-          ]}
-          data={filtered}
-          emptyMessage="Aucun STAR."
-          selectable={!readOnly}
-          selectedIds={selectedIds}
-          onSelectionChange={setSelectedIds}
-          actions={readOnly ? undefined : (m) => (
-            <div className="flex gap-2 justify-end">
-              {m.userLink ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleUnlink(m)}
-                >
-                  Délier
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
-                >
-                  Lier
-                </Button>
-              )}
-              <Button variant="secondary" onClick={() => openEdit(m)}>
-                Modifier
-              </Button>
-              <Button variant="danger" onClick={() => handleDelete(m)}>
-                Supprimer
-              </Button>
-            </div>
-          )}
-        />
+        {!readOnly && filtered.length > 0 && (
+          <button
+            onClick={toggleSelectAll}
+            className="text-sm text-icc-violet hover:underline"
+          >
+            {selectedIds.size === filtered.length ? "Tout désélectionner" : "Tout sélectionner"}
+          </button>
+        )}
       </div>
+
+      {/* Cards grid */}
+      {filtered.length === 0 ? (
+        <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+          Aucun STAR.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((m) => {
+            const isSelected = selectedIds.has(m.id);
+            const secondaryDepts = m.allDepartments.filter((d) => !d.isPrimary);
+            return (
+              <div
+                key={m.id}
+                className={`bg-white rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
+                  isSelected ? "border-icc-violet bg-icc-violet/5" : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                {/* Header: checkbox + name */}
+                <div className="flex items-start gap-3">
+                  {!readOnly && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(m.id)}
+                      className="mt-0.5 rounded border-gray-300 text-icc-violet focus:ring-icc-violet shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">
+                      {m.lastName} {m.firstName}
+                    </p>
+                    {m.userLink ? (
+                      <p className="text-xs text-green-700 truncate mt-0.5">
+                        {m.userLink.userName ?? m.userLink.userEmail}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-0.5">Non lié</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Departments */}
+                <div className="flex flex-wrap gap-1.5">
+                  {m.primaryDepartment && (
+                    <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+                      {m.primaryDepartment.name}
+                      <span className="text-icc-violet/60 ml-1">{m.primaryDepartment.ministry.name}</span>
+                    </span>
+                  )}
+                  {secondaryDepts.map((d) => (
+                    <span key={d.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                      {d.name}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                {!readOnly && (
+                  <div className="flex gap-2 flex-wrap pt-1 border-t border-gray-100">
+                    {m.userLink ? (
+                      <Button variant="secondary" size="sm" onClick={() => handleUnlink(m)}>
+                        Délier
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
+                      >
+                        Lier
+                      </Button>
+                    )}
+                    <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>
+                      Modifier
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(m)}>
+                      Supprimer
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <BulkActionBar
         count={selectedIds.size}
@@ -461,6 +515,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         onClear={() => setSelectedIds(new Set())}
       />
 
+      {/* Create / Edit modal */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -485,7 +540,6 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             onChange={(e) => {
               const newPrimary = e.target.value;
               setDepartmentId(newPrimary);
-              // Retirer le nouveau dept principal des départements supplémentaires s'il y était
               setAdditionalDeptIds((prev) => prev.filter((id) => id !== newPrimary));
             }}
             options={departments.map((d) => ({
@@ -515,11 +569,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setModalOpen(false)}
-            >
+            <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
@@ -529,7 +579,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         </form>
       </Modal>
 
-      {/* Modal lien compte */}
+      {/* Link user modal */}
       <Modal
         open={!!linkModal}
         onClose={() => setLinkModal(null)}
@@ -577,6 +627,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         </div>
       </Modal>
 
+      {/* Bulk edit modal */}
       <Modal
         open={bulkModalOpen}
         onClose={() => setBulkModalOpen(false)}
@@ -610,11 +661,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
           />
           {bulkError && <p className="text-sm text-red-600">{bulkError}</p>}
           <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={() => setBulkModalOpen(false)}
-            >
+            <Button variant="secondary" type="button" onClick={() => setBulkModalOpen(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={bulkLoading}>

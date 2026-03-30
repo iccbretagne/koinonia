@@ -12,6 +12,8 @@ export async function GET(
     await requireChurchPermission("planning:view", churchId);
     const { searchParams } = new URL(request.url);
     const months = parseInt(searchParams.get("months") || "6");
+    const fromParam = searchParams.get("from");
+    const toParam = searchParams.get("to");
 
     const department = await prisma.department.findUnique({
       where: { id: departmentId },
@@ -23,13 +25,26 @@ export async function GET(
     }
 
     // Get all events for this department in the time range
-    const since = new Date();
-    since.setMonth(since.getMonth() - months);
+    let since: Date;
+    let until: Date | undefined;
+
+    if (fromParam) {
+      since = new Date(fromParam);
+      until = toParam ? new Date(toParam) : undefined;
+    } else {
+      since = new Date();
+      since.setMonth(since.getMonth() - months);
+    }
 
     const eventDepts = await prisma.eventDepartment.findMany({
       where: {
         departmentId,
-        event: { date: { gte: since } },
+        event: {
+          date: {
+            gte: since,
+            ...(until ? { lte: until } : {}),
+          },
+        },
       },
       include: {
         event: { select: { id: true, title: true, date: true } },

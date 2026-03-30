@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getEventTypeColors, EVENT_TYPE_COLORS } from "@/lib/event-types";
 
 interface CalendarEvent {
   id: string;
@@ -16,16 +17,13 @@ interface Props {
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-const EVENT_TYPE_COLORS: Record<string, { bg: string; text: string; hover: string; dot: string; label: string }> = {
-  CULTE:      { bg: "bg-icc-violet/10", text: "text-icc-violet",    hover: "hover:bg-icc-violet",  dot: "bg-icc-violet",  label: "Culte" },
-  PRIERE:     { bg: "bg-icc-jaune/20",  text: "text-yellow-700",    hover: "hover:bg-yellow-500",  dot: "bg-yellow-500",  label: "Priere" },
-  REUNION:    { bg: "bg-icc-bleu/10",   text: "text-icc-bleu",      hover: "hover:bg-icc-bleu",    dot: "bg-icc-bleu",    label: "Reunion" },
-  CONFERENCE: { bg: "bg-icc-rouge/10",  text: "text-icc-rouge",     hover: "hover:bg-icc-rouge",   dot: "bg-icc-rouge",   label: "Conference" },
-  AUTRE:      { bg: "bg-gray-100",      text: "text-gray-600",      hover: "hover:bg-gray-500",    dot: "bg-gray-400",    label: "Autre" },
-};
-
 function getEventColors(type: string) {
-  return EVENT_TYPE_COLORS[type] || EVENT_TYPE_COLORS.AUTRE;
+  return getEventTypeColors(type);
+}
+
+/** Build YYYY-MM-DD from local date components — avoids UTC offset shift from toISOString() */
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function CalendarClient({ events }: Props) {
@@ -57,21 +55,13 @@ export default function CalendarClient({ events }: Props) {
     // Previous month padding
     for (let i = 0; i < startDow; i++) {
       const d = new Date(year, month - 1, -startDow + i + 1);
-      days.push({
-        date: d.getDate(),
-        inMonth: false,
-        dateStr: d.toISOString().split("T")[0],
-      });
+      days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
     }
 
     // Current month
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const dt = new Date(year, month - 1, d);
-      days.push({
-        date: d,
-        inMonth: true,
-        dateStr: dt.toISOString().split("T")[0],
-      });
+      days.push({ date: d, inMonth: true, dateStr: localDateStr(dt) });
     }
 
     // Next month padding
@@ -79,11 +69,7 @@ export default function CalendarClient({ events }: Props) {
     if (remaining < 7) {
       for (let i = 1; i <= remaining; i++) {
         const d = new Date(year, month, i);
-        days.push({
-          date: d.getDate(),
-          inMonth: false,
-          dateStr: d.toISOString().split("T")[0],
-        });
+        days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
       }
     }
 
@@ -101,7 +87,7 @@ export default function CalendarClient({ events }: Props) {
     return map;
   }, [events]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = localDateStr(new Date());
 
   return (
     <div>

@@ -6,14 +6,105 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
-## [v0.15.2] - 2026-03-31
+## [v0.17.4] - 2026-03-31
 
-### Corrigé
+### Correctifs
 
-- Tri ascendant des mois dans la section comptes rendus (était descendant)
-- Suppression des demandes traitées pour les gestionnaires (`DELETE /api/requests/[id]` + bouton dans le dashboard secrétariat)
-- Cascade manquante lors de la suppression d'événements en lot : supprime désormais `DiscipleshipAttendance`, `EventReport`, `TaskAssignment` et `AnnouncementEvent` avant la suppression de l'événement
-- Fix rechargement de la liste des événements après édition d'une série (le `fetch` manquait le paramètre `churchId`)
+- Cascade FK manquante lors de la suppression d'événements en lot : supprime désormais `DiscipleshipAttendance`, `EventReport`, `TaskAssignment` et `AnnouncementEvent` avant `event.deleteMany`
+
+## [v0.17.3] - 2026-03-28
+
+### Améliorations
+
+- Gestion des membres : vue cartes responsive (1/2/3 colonnes), filtres persistants, tri alphabétique, sélection groupée
+
+## [v0.17.2] - 2026-03-28
+
+### Nouveautés
+
+- Statistiques : sélection de période personnalisée (champs Du / Au) en plus des périodes prédéfinies (1, 3, 6, 12, 24 mois)
+
+### Correctifs
+
+- Saisie planning : l'EventSelector n'affiche plus que les événements auxquels le département est programmé
+- Admin événements : refonte UX — tri ascendant, filtres persistants, édition de la récurrence, vue carte, gestion des séries
+
+## [v0.17.1] - 2026-03-28
+
+### Correctifs
+
+- Lint CI : remplacement du `useMemo([], [])` par un `useState` lazy initializer dans `EventSelector`
+
+## [v0.17.0] - 2026-03-28
+
+### Nouveautés
+
+- Vue hebdomadaire : affichage des tâches par STAR (pills colorées), aligné sur la vue mensuelle
+- Sélection d'événement en deux temps : select mois → select événement avec auto-sélection
+- Types d'événement standardisés : Culte (violet), Prière (orange), Réunion (bleu), Formation (rouge), Autre (vert) — badge coloré partout
+- Lien Statistiques transmet le département courant pour pré-sélection directe
+
+### Améliorations
+
+- Vue hebdomadaire et mensuelle : carte élargie (`max-w-2xl`), noms STAR en gras
+- Vue hebdomadaire : zone notice conditionnelle, bouton "Ajouter" dans la section membres, boutons d'action exclus des captures
+- Vue hebdomadaire : bouton Supprimer pour les notices existantes
+- Navigation dashboard : renommage des boutons — Saisie, Vue semaine, Vue mois
+- Admin événements : saisie du type via select à la place d'un champ texte libre
+
+### Correctifs
+
+- Calendrier : correction du décalage des événements du dimanche (bug timezone UTC vs local)
+
+## [v0.16.1] - 2026-03-28
+
+### Améliorations
+
+- Vue hebdomadaire : design aligné sur la vue mensuelle (header violet, cartes avec bloc date, notices intégrées par département)
+- Vue hebdomadaire : ajout des boutons export — copier image, télécharger PNG, export PDF
+- Vue hebdomadaire : bouton "Semaine" ajouté dans la navigation principale du dashboard
+
+## [v0.16.0] - 2026-03-28
+
+### Nouveautés
+
+- Notice de service par département : les responsables peuvent rédiger une notice affichée sur la nouvelle vue planning hebdomadaire (#150)
+- Nouvelle vue "Semaine" dans le dashboard : navigation semaine par semaine, événements groupés par jour, notices éditables inline
+
+### Correctifs
+
+- Artifact de déploiement : inclusion complète de `node_modules` — fin des erreurs de dépendances transitives Prisma manquantes (#155)
+
+### Dépendances
+
+- Bump actions/checkout 4.2.2 → 4.3.1 (#148)
+- Bump actions/setup-node 4.1.0 → 4.4.0 (#147)
+- Bump appleboy/ssh-action 1.0.3 → 1.2.5 (#146)
+- Bump dépendances npm mineures/patch (#149)
+
+## [v0.15.5] - 2026-03-28
+
+### Améliorations
+
+- Message WhatsApp du compte rendu reformaté : zéro émoji, en-têtes en gras, structure lisible centrée sur les informations (#151)
+
+## [v0.15.4] - 2026-03-28
+
+### Correctifs
+
+- Inclut tout `node_modules/@prisma/*` dans l'artifact (fix complet après `@prisma/engines` seul ne suffisait pas — `@prisma/debug`, `@prisma/internals` etc. sont aussi requis par le CLI)
+
+## [v0.15.3] - 2026-03-28
+
+### Correctifs
+
+- Inclut `@prisma/engines` dans l'artifact de déploiement pour corriger `Cannot find module '@prisma/engines'` lors de `prisma migrate deploy`
+
+## [v0.15.2] - 2026-03-28
+
+### Documentation
+
+- Ajoute `SECURITY.md` : politique de divulgation responsable, périmètre, contact et délais de traitement
 
 ## [v0.15.1] - 2026-03-28
 

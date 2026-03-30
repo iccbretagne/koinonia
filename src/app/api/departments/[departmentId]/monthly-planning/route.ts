@@ -76,6 +76,7 @@ export async function GET(
     const events = eventDepartments.map((ed) => ({
       id: ed.event.id,
       title: ed.event.title,
+      type: ed.event.type,
       date: ed.event.date.toISOString(),
       members: ed.plannings.map((p) => ({
         id: p.member.id,

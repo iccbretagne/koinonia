@@ -42,6 +42,7 @@ const updateSchema = z.object({
   date: z.string().min(1, "La date est requise"),
   planningDeadline: z.string().nullable().optional(),
   applyToSeries: z.boolean().optional(),
+  removeFromSeries: z.boolean().optional(),
 });
 
 export async function PUT(
@@ -54,6 +55,19 @@ export async function PUT(
     const putSession = await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
+
+    if (data.removeFromSeries) {
+      const updated = await prisma.event.update({
+        where: { id: eventId },
+        data: { seriesId: null, recurrenceRule: null, isRecurrenceParent: false },
+        include: {
+          church: { select: { id: true, name: true } },
+          eventDepts: { include: { department: { select: { id: true, name: true } } } },
+        },
+      });
+      await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { removedFromSeries: true } });
+      return successResponse(updated);
+    }
 
     if (data.applyToSeries) {
       // Resolve the parent ID of the series

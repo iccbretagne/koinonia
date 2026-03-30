@@ -7,6 +7,7 @@ import PlanningGrid from "@/components/PlanningGrid";
 import DashboardActions from "@/components/DashboardActions";
 import MonthlyPlanningView from "@/components/MonthlyPlanningView";
 import DepartmentTasksView from "@/components/DepartmentTasksView";
+import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 
 interface DashboardProps {
   searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
@@ -96,20 +97,25 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       }))?.name ?? undefined
     : undefined;
 
-  // Fetch department name (for month view and tasks view)
+  // Fetch department name (for month, tasks and week views)
   const selectedDepartment =
-    (view === "month" || view === "tasks") && selectedDeptId
+    (view === "month" || view === "tasks" || view === "week") && selectedDeptId
       ? await prisma.department.findUnique({
           where: { id: selectedDeptId },
           select: { name: true },
         })
       : null;
 
-  // Fetch events for the church (needed for event view)
+  // Fetch events for the selected department (needed for event view)
   const events =
     view === "event"
       ? await prisma.event.findMany({
-          where: { churchId: currentChurchId },
+          where: {
+            churchId: currentChurchId,
+            ...(selectedDeptId
+              ? { eventDepts: { some: { departmentId: selectedDeptId } } }
+              : {}),
+          },
           orderBy: { date: "asc" },
           include: {
             eventDepts: {
@@ -140,7 +146,21 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         </div>
       )}
 
-      {view === "tasks" ? (
+      {view === "week" ? (
+        selectedDeptId ? (
+          <WeeklyPlanningView
+            churchId={currentChurchId}
+            departmentId={selectedDeptId}
+            departmentName={selectedDepartment?.name}
+            churchName={churchName}
+            canEdit={canEditPlanning}
+          />
+        ) : (
+          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+            Sélectionnez un département dans la barre latérale
+          </div>
+        )
+      ) : view === "tasks" ? (
         selectedDeptId ? (
           <DepartmentTasksView
             departmentId={selectedDeptId}

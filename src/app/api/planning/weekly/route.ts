@@ -1,0 +1,103 @@
+import { prisma } from "@/lib/prisma";
+import { requireChurchPermission } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const churchId = searchParams.get("churchId");
+    const weekStart = searchParams.get("weekStart"); // YYYY-MM-DD (Monday)
+    const departmentId = searchParams.get("departmentId");
+
+    if (!churchId) throw new ApiError(400, "churchId requis");
+    if (!weekStart) throw new ApiError(400, "weekStart requis");
+    if (!departmentId) throw new ApiError(400, "departmentId requis");
+
+    await requireChurchPermission("planning:view", churchId);
+
+    const from = new Date(weekStart);
+    from.setUTCHours(0, 0, 0, 0);
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + 7);
+
+    // Only events that have this department assigned
+    const events = await prisma.event.findMany({
+      where: {
+        churchId,
+        date: { gte: from, lt: to },
+        eventDepts: { some: { departmentId } },
+      },
+      orderBy: { date: "asc" },
+      include: {
+        eventDepts: {
+          where: { departmentId },
+          include: {
+            plannings: {
+              where: { status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] } },
+              include: {
+                member: { select: { id: true, firstName: true, lastName: true } },
+              },
+            },
+          },
+        },
+        departmentNotices: {
+          where: { departmentId },
+          select: {
+            content: true,
+            updatedAt: true,
+            author: { select: { name: true, displayName: true } },
+          },
+        },
+      },
+    });
+
+    // Fetch task assignments for all events in the week
+    const eventIds = events.map((e) => e.id);
+    const taskAssignments = await prisma.taskAssignment.findMany({
+      where: { eventId: { in: eventIds }, task: { departmentId } },
+      include: { task: { select: { name: true } } },
+    });
+
+    // Build map: eventId -> memberId -> task names
+    const taskMap = new Map<string, Map<string, string[]>>();
+    for (const ta of taskAssignments) {
+      if (!taskMap.has(ta.eventId)) taskMap.set(ta.eventId, new Map());
+      const memberTasks = taskMap.get(ta.eventId)!;
+      if (!memberTasks.has(ta.memberId)) memberTasks.set(ta.memberId, []);
+      memberTasks.get(ta.memberId)!.push(ta.task.name);
+    }
+
+    const data = events.map((event) => {
+      const eventDept = event.eventDepts[0]; // filtered to this dept only
+      const notice = event.departmentNotices[0] ?? null;
+
+      return {
+        id: event.id,
+        title: event.title,
+        type: event.type,
+        date: event.date.toISOString(),
+        planningDeadline: event.planningDeadline?.toISOString() ?? null,
+        notice: notice
+          ? {
+              content: notice.content,
+              updatedAt: notice.updatedAt.toISOString(),
+              authorName: notice.author.displayName ?? notice.author.name ?? null,
+            }
+          : null,
+        members: eventDept
+          ? eventDept.plannings.map((p) => ({
+              id: p.member.id,
+              firstName: p.member.firstName,
+              lastName: p.member.lastName,
+              status: p.status,
+              tasks: taskMap.get(event.id)?.get(p.member.id) ?? [],
+            }))
+          : [],
+      };
+    });
+
+    return successResponse(data);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
