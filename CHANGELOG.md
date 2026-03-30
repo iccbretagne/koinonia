@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.5] - 2026-03-31
+
+### Correctifs
+
+- Pages `/admin/events/[eventId]` et `/admin/events/[eventId]/report` : `notFound()` au lieu de `ApiError(404)` quand l'eventId est invalide (corrige l'erreur 500 en production)
+
 ## [v0.17.4] - 2026-03-31
 
 ### Correctifs
