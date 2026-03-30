@@ -294,3 +294,35 @@ export async function PATCH(
     return errorResponse(error);
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const existing = await prisma.request.findUnique({
+      where: { id },
+      select: { churchId: true, type: true },
+    });
+    if (!existing) throw new ApiError(404, "Demande introuvable");
+
+    const session = await requireChurchPermission("events:manage", existing.churchId);
+
+    await prisma.request.delete({ where: { id } });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId: existing.churchId,
+      action: "DELETE",
+      entityType: "Request",
+      entityId: id,
+      details: { type: existing.type },
+    });
+
+    return successResponse({ deleted: id });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}

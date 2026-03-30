@@ -17,11 +17,12 @@ export default async function SecretariatRequestsPage() {
   });
 
   // Access check: events:manage OR member of secretariat dept
+  const userPermissions = new Set(
+    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+  );
+  const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
+
   if (secretariatDept) {
-    const userPermissions = new Set(
-      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
-    );
-    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = session.user.churchRoles.flatMap((r) =>
       r.departments.map((d) => d.department.id)
     );
@@ -90,7 +91,7 @@ export default async function SecretariatRequestsPage() {
           </span>
         )}
       </div>
-      <RequestsDashboard requests={requests} />
+      <RequestsDashboard requests={requests} canManage={canManage} />
     </div>
   );
 }

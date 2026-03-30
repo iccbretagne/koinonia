@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.17.4] - 2026-03-31
+
+### Correctifs
+
+- Cascade FK manquante lors de la suppression d'événements en lot : supprime désormais `DiscipleshipAttendance`, `EventReport`, `TaskAssignment` et `AnnouncementEvent` avant `event.deleteMany`
+
 ## [v0.17.3] - 2026-03-28
 
 ### Améliorations
