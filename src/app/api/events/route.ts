@@ -76,6 +76,10 @@ export async function PATCH(request: Request) {
         ).map((ed) => ed.id);
         await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
         await tx.eventDepartment.deleteMany({ where: { eventId: { in: ids } } });
+        await tx.discipleshipAttendance.deleteMany({ where: { eventId: { in: ids } } });
+        await tx.eventReport.deleteMany({ where: { eventId: { in: ids } } });
+        await tx.taskAssignment.deleteMany({ where: { eventId: { in: ids } } });
+        await tx.announcementEvent.deleteMany({ where: { eventId: { in: ids } } });
         await tx.event.deleteMany({ where: { id: { in: ids } } });
       });
       for (const id of ids) {

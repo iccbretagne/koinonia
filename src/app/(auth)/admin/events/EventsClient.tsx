@@ -220,7 +220,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
       if (editing && saved.seriesUpdated) {
         // Series was updated — reload full list
-        const listRes = await fetch("/api/events");
+        const listRes = await fetch(`/api/events?churchId=${editing.church.id}`);
         if (listRes.ok) {
           const allEvents = await listRes.json();
           setEvents(allEvents);

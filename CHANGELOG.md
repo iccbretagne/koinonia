@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.15.2] - 2026-03-31
+
+### Corrigé
+
+- Tri ascendant des mois dans la section comptes rendus (était descendant)
+- Suppression des demandes traitées pour les gestionnaires (`DELETE /api/requests/[id]` + bouton dans le dashboard secrétariat)
+- Cascade manquante lors de la suppression d'événements en lot : supprime désormais `DiscipleshipAttendance`, `EventReport`, `TaskAssignment` et `AnnouncementEvent` avant la suppression de l'événement
+- Fix rechargement de la liste des événements après édition d'une série (le `fetch` manquait le paramètre `churchId`)
+
 ## [v0.15.1] - 2026-03-28
 
 ### Sécurité
