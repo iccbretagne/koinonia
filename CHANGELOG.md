@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.0] - 2026-03-31
+
+### Nouveautés
+
+- Calendrier : vue multi-mois avec sélecteurs de période (jusqu'à 12 mois simultanés)
+- Calendrier : export PDF (impression), téléchargement PNG et copie dans le presse-papiers
+- Discipolat : toggle global « Tous / Mes disciples » persistant sur les 3 onglets (Relations, Appel, Statistiques) pour les admins/secrétaires qui sont aussi FD
+
+### Correctifs
+
+- Tâches : erreur 400 lors de l'affectation à un membre dont le statut avait changé entre deux sessions
+
 ## [v0.17.5] - 2026-03-31
 
 ### Correctifs
