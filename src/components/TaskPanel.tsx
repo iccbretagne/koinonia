@@ -55,7 +55,10 @@ export default function TaskPanel({
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    const currentIds = task.assignments.map((a) => a.member.id);
+    const eligibleIds = new Set(eligibleMembers.map((m) => m.id));
+    const currentIds = task.assignments
+      .map((a) => a.member.id)
+      .filter((id) => eligibleIds.has(id));
     const newIds = currentIds.includes(memberId)
       ? currentIds.filter((id) => id !== memberId)
       : [...currentIds, memberId];
