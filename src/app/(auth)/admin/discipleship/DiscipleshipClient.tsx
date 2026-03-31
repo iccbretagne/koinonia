@@ -77,6 +77,9 @@ function firstDayOfMonthISO() {
 
 export default function DiscipleshipClient({ churchId, members, allAssignedDiscipleIds, canManage, canExport, canEditRelation = false, isFD = false, linkedMemberId = null }: Props) {
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
+  // Filtre global "Mes disciples" — visible uniquement si l'utilisateur est admin/secrétaire ET lié à un membre FD
+  const showMineFilter = canManage && !!linkedMemberId;
+  const [filterMine, setFilterMine] = useState(false);
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
     relations: "Relations",
@@ -86,31 +89,58 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
   return (
     <div>
-      {/* Tab bar */}
-      <div className="flex gap-1 mb-6 border-b-2 border-gray-200">
-        {(["relations", "appel", "stats"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 sm:py-2 text-sm font-medium rounded-t-lg transition-colors ${
-              activeTab === tab
-                ? "bg-icc-violet text-white"
-                : "text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5"
-            }`}
-          >
-            {TAB_LABELS[tab]}
-          </button>
-        ))}
+      {/* Tab bar + toggle "Tous / Mes disciples" */}
+      <div className="flex flex-wrap items-end justify-between gap-2 mb-6 border-b-2 border-gray-200">
+        <div className="flex gap-1">
+          {(["relations", "appel", "stats"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-3 sm:py-2 text-sm font-medium rounded-t-lg transition-colors ${
+                activeTab === tab
+                  ? "bg-icc-violet text-white"
+                  : "text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5"
+              }`}
+            >
+              {TAB_LABELS[tab]}
+            </button>
+          ))}
+        </div>
+
+        {showMineFilter && (
+          <div className="flex rounded-lg border-2 border-icc-violet/20 overflow-hidden mb-0.5">
+            <button
+              onClick={() => setFilterMine(false)}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                !filterMine
+                  ? "bg-icc-violet text-white"
+                  : "bg-white text-icc-violet hover:bg-icc-violet-light"
+              }`}
+            >
+              Tous
+            </button>
+            <button
+              onClick={() => setFilterMine(true)}
+              className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                filterMine
+                  ? "bg-icc-violet text-white"
+                  : "bg-white text-icc-violet hover:bg-icc-violet-light"
+              }`}
+            >
+              Mes disciples
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTab === "relations" && (
-        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} canEditRelation={canEditRelation} isFD={isFD} linkedMemberId={linkedMemberId} />
+        <RelationsTab churchId={churchId} members={members} allAssignedDiscipleIds={allAssignedDiscipleIds} canManage={canManage} canEditRelation={canEditRelation} isFD={isFD} linkedMemberId={linkedMemberId} filterMine={filterMine} />
       )}
       {activeTab === "appel" && (
-        <AppelTab churchId={churchId} canManage={canManage} />
+        <AppelTab churchId={churchId} canManage={canManage} filterMine={filterMine} linkedMemberId={linkedMemberId} />
       )}
       {activeTab === "stats" && (
-        <StatsTab churchId={churchId} canExport={canExport} />
+        <StatsTab churchId={churchId} canExport={canExport} filterMine={filterMine} linkedMemberId={linkedMemberId} />
       )}
     </div>
   );
@@ -266,13 +296,10 @@ function DiscipleCombobox({
 
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; canEditRelation: boolean; isFD: boolean; linkedMemberId: string | null }) {
+function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId, filterMine }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; canEditRelation: boolean; isFD: boolean; linkedMemberId: string | null; filterMine: boolean }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Filtre "Mes disciples" : visible si l'utilisateur est aussi FD (canManage + linkedMemberId)
-  const showMineFilter = canManage && !!linkedMemberId;
-  const [filterMine, setFilterMine] = useState(false);
 
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
@@ -486,19 +513,6 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
           <Button onClick={() => { setCreateModal(true); setCreateError(null); setDiscipleSelection(null); setNewMakerId(linkedMemberId ?? members[0]?.id ?? ""); }}>
             Nouvelle relation
           </Button>
-        )}
-        {showMineFilter && (
-          <button
-            type="button"
-            onClick={() => setFilterMine((v) => !v)}
-            className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-colors ${
-              filterMine
-                ? "bg-icc-violet text-white border-icc-violet"
-                : "text-gray-600 border-gray-200 hover:border-icc-violet hover:text-icc-violet"
-            }`}
-          >
-            Mes disciples
-          </button>
         )}
       </div>
 
@@ -787,7 +801,7 @@ interface TrackedEvent {
   date: string;
 }
 
-function AppelTab({ churchId, canManage }: { churchId: string; canManage: boolean }) {
+function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { churchId: string; canManage: boolean; filterMine: boolean; linkedMemberId: string | null }) {
   const [events, setEvents] = useState<TrackedEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [discipleships, setDiscipleships] = useState<DiscipleshipRow[]>([]);
@@ -886,8 +900,12 @@ function AppelTab({ churchId, canManage }: { churchId: string; canManage: boolea
     }
   }
 
-  // Group disciples by discipleMaker
-  const grouped = discipleships.reduce((acc, d) => {
+  // Group disciples by discipleMaker (filtre visuel uniquement — le save opère toujours sur tout)
+  const visibleDiscipleships = filterMine && linkedMemberId
+    ? discipleships.filter((d) => d.discipleMakerId === linkedMemberId)
+    : discipleships;
+
+  const grouped = visibleDiscipleships.reduce((acc, d) => {
     const key = d.discipleMakerId;
     if (!acc[key]) acc[key] = { maker: d.discipleMaker, disciples: [] };
     acc[key].disciples.push(d);
@@ -984,7 +1002,7 @@ function AppelTab({ churchId, canManage }: { churchId: string; canManage: boolea
 
 // ─── Tab: Statistiques ────────────────────────────────────────────────────────
 
-function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolean }) {
+function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { churchId: string; canExport: boolean; filterMine: boolean; linkedMemberId: string | null }) {
   const [from, setFrom] = useState(firstDayOfMonthISO());
   const [to, setTo] = useState(todayISO());
   const [data, setData] = useState<{ period: { from: string; to: string }; trackedEvents: { id: string; title: string; date: string }[]; stats: StatRow[] } | null>(null);
@@ -1075,12 +1093,18 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
           {data.trackedEvents.length === 0 ? (
             <p className="text-sm text-gray-400">Aucun événement suivi sur cette période.</p>
           ) : (
+            (() => {
+              const displayedStats = filterMine && linkedMemberId
+                ? data.stats.filter((r) => r.discipleMaker.id === linkedMemberId)
+                : data.stats;
+              return (
             <>
               <p className="text-xs text-gray-400 mb-3">
                 {data.trackedEvents.length} événement{data.trackedEvents.length > 1 ? "s" : ""} suivi{data.trackedEvents.length > 1 ? "s" : ""} sur la période
+                {filterMine && <span className="ml-2 text-icc-violet font-medium">— Mes disciples uniquement</span>}
               </p>
               <div className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
-                {data.stats.length === 0 ? (
+                {displayedStats.length === 0 ? (
                   <p className="text-sm text-gray-400 p-6">Aucun disciple enregistré.</p>
                 ) : (
                   <>
@@ -1096,7 +1120,7 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
                         </tr>
                       </thead>
                       <tbody>
-                        {data.stats.map((row) => (
+                        {displayedStats.map((row) => (
                           <tr key={row.discipleshipId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3 font-medium text-gray-900">{fullName(row.disciple)}</td>
                             <td className="px-4 py-3 text-gray-600">{fullName(row.discipleMaker)}</td>
@@ -1132,7 +1156,7 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
 
                   {/* Mobile cards */}
                   <div className="md:hidden divide-y divide-gray-100">
-                    {data.stats.map((row) => (
+                    {displayedStats.map((row) => (
                       <div key={row.discipleshipId} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1168,6 +1192,8 @@ function StatsTab({ churchId, canExport }: { churchId: string; canExport: boolea
                 )}
               </div>
             </>
+              );
+            })()
           )}
         </>
       )}
