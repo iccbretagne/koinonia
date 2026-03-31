@@ -104,6 +104,7 @@ export default function AuthLayoutShell({
           className={`
             fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 ease-in-out
             md:relative md:translate-x-0 md:transform-none
+            print:hidden
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           `}
         >
