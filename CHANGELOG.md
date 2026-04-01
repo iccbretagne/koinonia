@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.5] - 2026-04-01
+
+### Corrigé
+
+- Utilisateurs avec une fiche STAR liée mais sans rôle d'église invisibles dans Configuration > Utilisateurs (#180)
+
 ## [v0.18.4] - 2026-04-01
 
 ### Corrigé
