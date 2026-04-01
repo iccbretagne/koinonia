@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.6] - 2026-04-01
+
+### Corrigé
+
+- Onboarding : rôles transverses (Faiseur de disciples, Reporter) masqués pour les utilisateurs STAR (#182)
+- Onboarding : bouton "sans STAR" renommé en "Je souhaite accéder à l'application dans un autre rôle" (#182)
+
 ## [v0.18.5] - 2026-04-01
 
 ### Corrigé
