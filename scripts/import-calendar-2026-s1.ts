@@ -6,9 +6,11 @@
  * - --dry-run : affiche ce qui serait créé sans toucher la BDD
  */
 
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL!) });
 
 const DRY_RUN = process.argv.includes("--dry-run");
 

@@ -1,6 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL!) });
 
 const MINISTRIES_AND_DEPARTMENTS: Record<string, string[]> = {
   Accueil: ["Accueil", "Protocole", "Parking"],

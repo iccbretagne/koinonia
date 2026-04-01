@@ -1,6 +1,6 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import GuideContent from "@/components/GuideContent";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma/client";
 
 export default async function GuidePage() {
   const session = await requireAuth();
