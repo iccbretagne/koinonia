@@ -824,6 +824,7 @@ Supprime un role d'un utilisateur. Supprime en cascade les `UserDepartment` asso
 ### `GET /api/members/search`
 
 Recherche de STAR par nom pour l'autocomplete (utilisee depuis la page de liaison de compte). Retourne uniquement les membres sans lien utilisateur existant.
+La recherche est insensible aux accents et a la casse (normalisation NFD cote serveur).
 
 **Authentification** : session valide uniquement (pas de permission specifique)
 
@@ -860,7 +861,7 @@ Cree un lien direct entre un utilisateur et un STAR (sans workflow de validation
 
 ### `POST /api/member-link-requests`
 
-Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de validation par un admin). Deux modes : liaison a un STAR existant ou creation d'un nouveau STAR.
+Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de validation par un admin). Trois modes : liaison a un STAR existant, creation d'un nouveau STAR, ou role transverse sans carte STAR.
 
 **Authentification** : session valide uniquement (tout utilisateur authentifie peut soumettre)
 
@@ -869,7 +870,10 @@ Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de val
 {
   "type": "existing",
   "memberId": "clx...",
-  "churchId": "clx..."
+  "churchId": "clx...",
+  "departmentId": "clx...",
+  "requestedRole": "DEPARTMENT_HEAD",
+  "notes": "Responsable des choristes"
 }
 ```
 
@@ -880,9 +884,28 @@ Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de val
   "firstName": "Marie",
   "lastName": "Dupont",
   "phone": "+33 6 00 00 00 00",
-  "churchId": "clx..."
+  "churchId": "clx...",
+  "departmentId": "clx...",
+  "requestedRole": null,
+  "notes": "Nouvelle choriste"
 }
 ```
+
+**Body — mode role transverse (sans carte STAR)** :
+```json
+{
+  "type": "no_star",
+  "churchId": "clx...",
+  "requestedRole": "DISCIPLE_MAKER",
+  "notes": "Faiseur de disciples"
+}
+```
+
+Champs optionnels communs :
+- `departmentId` — departement associe (requis pour DEPARTMENT_HEAD / DEPUTY)
+- `ministryId` — ministere associe (requis pour MINISTER)
+- `requestedRole` — role demande : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre regulier)
+- `notes` — notes libres
 
 **Reponse** : `201` avec la demande creee.
 
@@ -931,6 +954,11 @@ ou pour un rejet :
 - Si le STAR existait : cree le lien `MemberUserLink` directement
 - Si c'est une nouvelle demande : cree le STAR dans le departement specifie, puis cree le lien
 - Met a jour le `displayName` de l'utilisateur avec le nom du STAR dans tous les cas
+- **Creation de roles automatique selon `requestedRole`** :
+  - `null` → `MemberUserLink` uniquement (membre regulier, pas de role admin)
+  - `DEPARTMENT_HEAD` / `DEPUTY` → `UserChurchRole(DEPARTMENT_HEAD)` + `UserDepartment` (adjoint si `DEPUTY`)
+  - `MINISTER` → `UserChurchRole(MINISTER)` avec `ministryId`
+  - `DISCIPLE_MAKER` / `REPORTER` → `UserChurchRole` uniquement (pas de `MemberUserLink` pour le type `no_star`)
 
 **Reponse** : `{ "approved": true }` ou la demande mise a jour (si rejet).
 
