@@ -29,14 +29,28 @@ interface Ministry {
   departments: { id: string; name: string }[];
 }
 
+interface PendingRequest {
+  id: string;
+  user: { name: string; email: string; image: string | null };
+  member: { id: string; firstName: string; lastName: string; deptName: string | null; ministryName: string | null } | null;
+  firstName: string | null;
+  lastName: string | null;
+  department: { id: string; name: string; ministryName: string } | null;
+  ministry: { id: string; name: string } | null;
+  requestedRole: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 interface Props {
   users: UserItem[];
   ministries: Ministry[];
   churchId: string;
   isSuperAdmin: boolean;
+  pendingRequests: PendingRequest[];
 }
 
-type Tab = "roles" | "transverse" | "reporters";
+type Tab = "requests" | "roles" | "transverse" | "reporters";
 
 type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER";
 
@@ -73,8 +87,20 @@ function Avatar({ user, size = 32 }: { user: Pick<UserItem, "name" | "image">; s
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
-export default function AccessClient({ users, ministries, churchId, isSuperAdmin }: Props) {
-  const [tab, setTab] = useState<Tab>("roles");
+const ROLE_LABELS: Record<string, string> = {
+  DEPARTMENT_HEAD: "Responsable de département",
+  DEPUTY: "Adjoint de département",
+  MINISTER: "Ministre",
+  DISCIPLE_MAKER: "Faiseur de disciples",
+  REPORTER: "Reporter",
+};
+
+export default function AccessClient({ users, ministries, churchId, isSuperAdmin, pendingRequests }: Props) {
+  const [tab, setTab] = useState<Tab>(pendingRequests.length > 0 ? "requests" : "roles");
+  const [localRequests, setLocalRequests] = useState<PendingRequest[]>(pendingRequests);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [localUsers, setLocalUsers] = useState(users);
 
   // ── Modal states ───────────────────────────────────────────────────────────
@@ -397,6 +423,49 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     }
   }
 
+  // ── Approve / Reject link requests ────────────────────────────────────────
+
+  async function approveRequest(req: PendingRequest) {
+    setApprovingId(req.id);
+    try {
+      const res = await fetch(`/api/member-link-requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve" }),
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        alert(json.error ?? "Erreur lors de l'approbation");
+        return;
+      }
+      setLocalRequests((prev) => prev.filter((r) => r.id !== req.id));
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
+  async function rejectRequest(req: PendingRequest) {
+    if (!rejectReason.trim()) return;
+    setApprovingId(req.id);
+    try {
+      const res = await fetch(`/api/member-link-requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", rejectReason: rejectReason.trim() }),
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        alert(json.error ?? "Erreur lors du refus");
+        return;
+      }
+      setLocalRequests((prev) => prev.filter((r) => r.id !== req.id));
+      setRejectingId(null);
+      setRejectReason("");
+    } finally {
+      setApprovingId(null);
+    }
+  }
+
   // ── Open modals ────────────────────────────────────────────────────────────
 
   function openMinisterModal(ministryId: string, ministryName: string) {
@@ -438,20 +507,139 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     <div>
       {/* Onglets */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(["roles", "transverse", "reporters"] as Tab[]).map((t) => (
+        {(["requests", "roles", "transverse", "reporters"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors relative ${
               tab === t
                 ? "border-icc-violet text-icc-violet"
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : "Comptes rendus"}
+            {t === "requests" ? "Demandes" : t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : "Comptes rendus"}
+            {t === "requests" && localRequests.length > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-icc-violet rounded-full">
+                {localRequests.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* ── Onglet Demandes ───────────────────────────────────────────────── */}
+      {tab === "requests" && (
+        <div className="space-y-4">
+          {localRequests.length === 0 && (
+            <p className="text-sm text-gray-400 italic text-center py-8">Aucune demande en attente.</p>
+          )}
+          {localRequests.map((req) => {
+            const displayName = req.member
+              ? `${req.member.firstName} ${req.member.lastName}`
+              : `${req.firstName ?? ""} ${req.lastName ?? ""}`.trim();
+
+            return (
+              <div key={req.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
+                {/* En-tête */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar user={req.user} size={36} />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{req.user.name}</p>
+                      <p className="text-xs text-gray-400">{req.user.email}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-400 shrink-0">
+                    {new Date(req.createdAt).toLocaleDateString("fr-FR")}
+                  </span>
+                </div>
+
+                {/* Détails */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Fiche STAR</p>
+                    {req.member ? (
+                      <span className="text-green-700 font-medium">{displayName} <span className="text-xs text-green-500">(existante)</span></span>
+                    ) : displayName ? (
+                      <span className="text-gray-700 font-medium">{displayName} <span className="text-xs text-gray-400">(nouvelle)</span></span>
+                    ) : (
+                      <span className="text-gray-400 italic text-xs">Sans fiche STAR</span>
+                    )}
+                  </div>
+                  {(req.department || req.ministry) && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">Département demandé</p>
+                      <p className="text-gray-700 font-medium text-sm">
+                        {req.department
+                          ? `${req.department.ministryName} / ${req.department.name}`
+                          : req.ministry?.name}
+                      </p>
+                    </div>
+                  )}
+                  {req.requestedRole && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-400 mb-0.5">Rôle souhaité</p>
+                      <span className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet border border-icc-violet/20">
+                        {ROLE_LABELS[req.requestedRole] ?? req.requestedRole}
+                      </span>
+                    </div>
+                  )}
+                  {req.notes && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-400 mb-0.5">Remarques</p>
+                      <p className="text-sm text-gray-600 italic">&ldquo;{req.notes}&rdquo;</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {rejectingId === req.id ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="Motif du refus (requis)"
+                      className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setRejectingId(null); setRejectReason(""); }}
+                        className="flex-1 px-3 py-2 text-sm border-2 border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={() => rejectRequest(req)}
+                        disabled={!rejectReason.trim() || approvingId === req.id}
+                        className="flex-1 px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {approvingId === req.id ? "…" : "Confirmer le refus"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setRejectingId(req.id); setRejectReason(""); }}
+                      className="flex-1 px-3 py-2 text-sm border-2 border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Refuser
+                    </button>
+                    <button
+                      onClick={() => approveRequest(req)}
+                      disabled={approvingId === req.id}
+                      className="flex-1 px-3 py-2 text-sm font-medium bg-icc-violet text-white rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+                    >
+                      {approvingId === req.id ? "…" : "Approuver"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Onglet Rôles ──────────────────────────────────────────────────── */}
       {tab === "roles" && (

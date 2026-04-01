@@ -24,6 +24,21 @@ export default async function NoAccessPage() {
     orderBy: { name: "asc" },
   });
 
+  const ministries = await prisma.ministry.findMany({
+    where: { isSystem: false },
+    select: {
+      id: true,
+      name: true,
+      churchId: true,
+      departments: {
+        where: { isSystem: false },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg border-2 border-gray-200 p-8">
@@ -54,7 +69,14 @@ export default async function NoAccessPage() {
             </p>
           </div>
         ) : (
-          <NoAccessClient churches={churches} />
+          <NoAccessClient
+            churches={churches}
+            ministries={ministries.map((m) => ({
+              id: m.id,
+              name: m.name,
+              departments: m.departments,
+            }))}
+          />
         )}
 
         <div className="mt-6 pt-4 border-t border-gray-100 text-center">

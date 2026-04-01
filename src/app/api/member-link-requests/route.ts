@@ -4,11 +4,20 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
+const roleSchema = z
+  .enum(["DEPARTMENT_HEAD", "DEPUTY", "MINISTER", "DISCIPLE_MAKER", "REPORTER"])
+  .nullable()
+  .optional();
+
 const createSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("existing"),
     memberId: z.string().min(1),
     churchId: z.string().min(1),
+    departmentId: z.string().optional(),
+    ministryId: z.string().optional(),
+    requestedRole: roleSchema,
+    notes: z.string().max(1000).optional(),
   }),
   z.object({
     type: z.literal("new"),
@@ -16,6 +25,16 @@ const createSchema = z.discriminatedUnion("type", [
     lastName: z.string().min(1, "Le nom est requis"),
     phone: z.string().optional(),
     churchId: z.string().min(1, "L'église est requise"),
+    departmentId: z.string().optional(),
+    ministryId: z.string().optional(),
+    requestedRole: roleSchema,
+    notes: z.string().max(1000).optional(),
+  }),
+  z.object({
+    type: z.literal("no_star"),
+    churchId: z.string().min(1, "L'église est requise"),
+    requestedRole: z.enum(["DISCIPLE_MAKER", "REPORTER"]),
+    notes: z.string().max(1000).optional(),
   }),
 ]);
 
@@ -44,8 +63,21 @@ export async function POST(request: Request) {
       throw new ApiError(409, "Votre compte est déjà lié à un STAR dans cette église");
     }
 
+    const commonFields = {
+      userId: session.user.id,
+      churchId: data.churchId,
+      requestedRole: ("requestedRole" in data ? data.requestedRole : null) ?? null,
+      notes: ("notes" in data ? data.notes : undefined) ?? undefined,
+      departmentId: ("departmentId" in data ? data.departmentId : undefined) ?? undefined,
+      ministryId: ("ministryId" in data ? data.ministryId : undefined) ?? undefined,
+    };
+
+    if (data.type === "no_star") {
+      const req = await prisma.memberLinkRequest.create({ data: commonFields });
+      return successResponse(req, 201);
+    }
+
     if (data.type === "existing") {
-      // Vérifier que le Member existe et n'est pas déjà lié
       const member = await prisma.member.findUnique({
         where: { id: data.memberId },
         include: {
@@ -59,32 +91,27 @@ export async function POST(request: Request) {
       if (!member) throw new ApiError(404, "STAR introuvable");
       if (member.userLink) throw new ApiError(409, "Ce STAR est déjà lié à un compte");
 
-      // Vérifier que le membre appartient bien à l'église indiquée
       const primaryChurchId = member.departments[0]?.department.ministry.churchId;
       if (primaryChurchId !== data.churchId) {
         throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
       }
 
       const req = await prisma.memberLinkRequest.create({
-        data: {
-          userId: session.user.id,
-          memberId: data.memberId,
-          churchId: data.churchId,
-        },
-      });
-      return successResponse(req, 201);
-    } else {
-      const req = await prisma.memberLinkRequest.create({
-        data: {
-          userId: session.user.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone,
-          churchId: data.churchId,
-        },
+        data: { ...commonFields, memberId: data.memberId },
       });
       return successResponse(req, 201);
     }
+
+    // type === "new"
+    const req = await prisma.memberLinkRequest.create({
+      data: {
+        ...commonFields,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone ?? undefined,
+      },
+    });
+    return successResponse(req, 201);
   } catch (error) {
     return errorResponse(error);
   }
@@ -106,7 +133,23 @@ export async function GET(request: Request) {
       },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },
-        member: { select: { id: true, firstName: true, lastName: true, departments: { where: { isPrimary: true }, select: { department: { select: { name: true, ministry: { select: { name: true } } } } } } } },
+        member: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            departments: {
+              where: { isPrimary: true },
+              select: {
+                department: {
+                  select: { name: true, ministry: { select: { name: true } } },
+                },
+              },
+            },
+          },
+        },
+        department: { select: { id: true, name: true, ministry: { select: { id: true, name: true } } } },
+        ministry: { select: { id: true, name: true } },
         church: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
