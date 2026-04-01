@@ -432,7 +432,7 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
   - `label` : intitule de la section (requis)
   - `position` : ordre d'affichage (defaut : index dans le tableau)
   - `departmentId` : ID du departement associe (optionnel)
-  - `stats` : objet cle/valeur de statistiques numeriques (optionnel)
+  - `stats` : objet JSON libre cle/valeur numeriques (optionnel). Par convention, les sections "Accueil" et "Integration" utilisent les cles `hommes`, `femmes`, `enfants`, `passage`, `convertis` pour alimenter l'export Excel.
   - `notes` : notes specifiques a la section (optionnel)
 
 **Reponse** : le CR complet avec ses sections.
@@ -443,19 +443,40 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
 
 ### `GET /api/events/reports/export`
 
-Exporte les statistiques hebdomadaires des cultes au format Excel (.xlsx) sur une periode donnee.
+Exporte les statistiques des cultes au format Excel (`.xlsx`) sur une periode donnee.
 
 **Permission requise** : `reports:view`
 
 **Parametres** (query string) :
 - `churchId` (requis) : ID de l'eglise
-- `from` (optionnel) : date de debut (`YYYY-MM-DD`, defaut : 1er jour du mois courant)
-- `to` (optionnel) : date de fin (`YYYY-MM-DD`, defaut : dernier jour du mois courant)
+- `from` (optionnel) : date de debut ISO (defaut : 1er jour du mois courant)
+- `to` (optionnel) : date de fin ISO (defaut : dernier jour du mois courant)
 
-**Reponse** : fichier Excel (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) avec les colonnes :
-- Date du culte, Eglise, Orateur, Titre du message
-- Hommes, Femmes, Enfants, Total adultes, Total general
-- Nouveaux arrivants (H), Nouveaux arrivants (F), De passage, Nouveaux convertis
+**Reponse** : fichier Excel avec une feuille **"Statistiques cultes"** contenant 13 colonnes :
+
+| Colonne | Source |
+|---|---|
+| Date du culte | `event.date` formate `fr-FR` |
+| Eglise | nom de l'eglise |
+| Orateur | `report.speaker` |
+| Titre du message | `report.messageTitle` |
+| Hommes | `section["Accueil"].stats.hommes` |
+| Femmes | `section["Accueil"].stats.femmes` |
+| Enfants | `section["Accueil"].stats.enfants` |
+| Total adultes | `hommes + femmes` (null si l'un manque) |
+| Total general | `totalAdultes + enfants` (null si l'un manque) |
+| Nouveaux arrivants (H) | `section["Integration"].stats.hommes` |
+| Nouveaux arrivants (F) | `section["Integration"].stats.femmes` |
+| De passage | `section["Integration"].stats.passage` |
+| Nouveaux convertis | `section["Integration"].stats.convertis` |
+
+**Convention des sections** : les sections sont localisees par leur `label` de maniere insensible a la casse et aux accents (NFD normalization). La section "Accueil" est recherchee par correspondance exacte (`label` normalise = `"accueil"`). La section "Integration" est recherchee par prefixe (`label` normalise commence par `"integration"`).
+
+Si la section ou la cle est absente, la colonne vaut `null` dans le fichier.
+
+**Securite Excel** : les valeurs commencant par `=`, `+`, `-`, `@`, tabulation ou retour chariot sont prefixees d'une apostrophe pour prevenir l'injection de formules.
+
+**Nom du fichier** : `statistiques-cultes-{mois}-{annee}.xlsx` (ou plage si multi-mois)
 
 **Erreurs** :
 - `400` si `churchId` est manquant
@@ -505,12 +526,14 @@ Valeurs possibles : `"SECRETARIAT"`, `"COMMUNICATION"`, `"PRODUCTION_MEDIA"`, `n
 
 ### `GET /api/departments/[departmentId]/stats`
 
-Statistiques de service d'un departement sur une periode glissante.
+Statistiques de service d'un departement sur une periode donnee.
 
 **Permission requise** : `planning:view`
 
 **Query params** :
-- `months` (optionnel, defaut : `6`) — nombre de mois en arriere
+- `months` (optionnel, defaut : `6`) — periode glissante en mois en arriere depuis aujourd'hui (ignore si `from`/`to` sont fournis)
+- `from` (optionnel) — debut de periode ISO, ex : `2026-01-01` (prend le pas sur `months`)
+- `to` (optionnel) — fin de periode ISO, ex : `2026-03-31`
 
 **Reponse** :
 ```json
@@ -529,9 +552,36 @@ Statistiques de service d'un departement sur une periode glissante.
   ],
   "trend": [
     { "month": "2026-01", "enService": 8, "totalSlots": 10 }
-  ]
+  ],
+  "taskStats": {
+    "tasks": [
+      { "id": "clx...", "name": "Régisseur son", "count": 7 }
+    ],
+    "memberTasks": [
+      {
+        "id": "clx...",
+        "name": "Marie Dupont",
+        "totalAssignments": 5,
+        "tasks": [
+          { "taskId": "clx...", "taskName": "Régisseur son", "count": 3 },
+          { "taskId": "clx...", "taskName": "Coordination", "count": 2 }
+        ]
+      }
+    ]
+  }
 }
 ```
+
+**Calculs** :
+- `members[].services` — nombre d'evenements ou le statut de planning est `EN_SERVICE` ou `EN_SERVICE_DEBRIEF`
+- `members[].indisponible` — nombre d'evenements ou le statut est `INDISPONIBLE`
+- `members[].rate` — `round(services / totalEvents * 100)`, vaut `0` si `totalEvents === 0`
+- `trend[].enService` — nombre de creneaux EN_SERVICE ou EN_SERVICE_DEBRIEF pour le mois
+- `trend[].totalSlots` — nombre total de creneaux de planning (toutes lignes du tableau)
+- `taskStats.tasks[].count` — nombre total d'affectations de la tache sur la periode
+- `taskStats.memberTasks[].totalAssignments` — somme de toutes les affectations de taches pour le membre
+
+Les listes `members` et `memberTasks` sont triees par valeur decroissante (`services` et `totalAssignments` respectivement).
 
 **Erreur** : `404` si le departement est introuvable.
 
@@ -1299,6 +1349,13 @@ Statistiques de participation aux evenements de discipolat sur une periode gliss
 }
 ```
 
+**Calculs** :
+- `stats.present` — nombre d'evenements ou une presence `present: true` est enregistree pour le disciple
+- `stats.absent` — `totalEvents - present`
+- `stats.rate` — `round(present / totalEvents * 100)`, vaut `null` si `totalEvents === 0`
+- Le perimetre est controle par `getDiscipleshipScope()` : un `DISCIPLE_MAKER` ne voit que ses propres disciples
+```
+
 ### `GET /api/discipleships/tree`
 
 Arbre de lignee recursif (profondeur illimitee) via requete SQL `WITH RECURSIVE`.
@@ -1329,7 +1386,7 @@ Arbre de lignee recursif (profondeur illimitee) via requete SQL `WITH RECURSIVE`
 
 ### `GET /api/discipleships/export`
 
-Exporte les statistiques de discipolat au format Excel (`.xlsx`) avec deux feuilles : statistiques par disciple et detail des presences par evenement.
+Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une periode donnee.
 
 **Permission requise** : `discipleship:export`
 
@@ -1338,7 +1395,38 @@ Exporte les statistiques de discipolat au format Excel (`.xlsx`) avec deux feuil
 - `from` (optionnel) — debut de periode ISO (defaut : 1er du mois courant)
 - `to` (optionnel) — fin de periode ISO (defaut : dernier jour du mois courant)
 
-**Reponse** : fichier `.xlsx` avec les headers `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` et `Content-Disposition: attachment; filename="discipolat-{mois}-{annee}.xlsx"`.
+**Reponse** : fichier `.xlsx` (`Content-Disposition: attachment; filename="discipolat-{mois}-{annee}.xlsx"`) avec deux feuilles :
+
+**Feuille 1 — "Statistiques"** (une ligne par disciple, triee par FD puis disciple) :
+
+| Colonne | Description |
+|---|---|
+| Disciple (Nom) | Nom de famille du disciple |
+| Disciple (Prénom) | Prénom du disciple |
+| Ministère | Ministère du département principal |
+| Département | Département principal du disciple |
+| FD actuel | `{prénom} {nom}` du faiseur de disciples courant |
+| Premier FD | `{prénom} {nom}` du premier faiseur de disciples |
+| Présences | Nombre d'événements suivis où le disciple était présent |
+| Événements suivis | Nombre total d'événements trackés sur la période |
+| Absences | `Événements suivis - Présences` |
+| Taux (%) | `round(Présences / Événements suivis * 100)`, vide si aucun événement |
+
+**Feuille 2 — "Détail présences"** (une ligne par couple disciple × événement, absente si aucun événement tracké) :
+
+| Colonne | Description |
+|---|---|
+| Disciple | `{prénom} {nom}` du disciple |
+| FD actuel | `{prénom} {nom}` du FD courant |
+| Événement | Titre de l'événement |
+| Date | Date formatée `fr-FR` |
+| Présent | `"Oui"` ou `"Non"` |
+
+**Securite Excel** : valeurs commencant par `=`, `+`, `-`, `@`, tabulation ou retour chariot prefixees d'une apostrophe.
+
+**Erreurs** :
+- `400` si `churchId` est manquant
+- `403` si l'utilisateur n'a pas la permission `discipleship:export`
 
 ---
 
