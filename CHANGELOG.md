@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.4] - 2026-04-01
+
+### Corrigé
+
+- Déploiement : inclusion de `prisma.config.ts` dans l'artifact pour que `prisma migrate deploy` trouve l'URL de la base de données (Prisma 7)
+
 ## [v0.18.3] - 2026-04-01
 
 ### Ajouté

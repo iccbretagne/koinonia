@@ -68,7 +68,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           tar czf "koinonia-${VERSION}.tar.gz" \
             .next/standalone .next/static \
-            prisma public package.json \
+            prisma prisma.config.ts public package.json \
             node_modules
           echo "Built koinonia-${VERSION}.tar.gz"
 
