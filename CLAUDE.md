@@ -22,19 +22,22 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 
 | Technologie | Version | Role |
 |---|---|---|
-| Next.js | 15 | Framework fullstack (App Router + Turbopack) |
+| Node.js | 22 | Runtime serveur |
+| Next.js | 16 | Framework fullstack (App Router + Turbopack) |
 | React | 19 | UI (Server Components + Client Components) |
 | Tailwind CSS | 4 | Styles (PostCSS, `@theme` tokens) |
 | NextAuth (Auth.js) | 5 beta | Authentification Google OAuth |
-| Prisma | 6 | ORM (connecteur MySQL vers MariaDB) |
+| Prisma | 7 | ORM (driver adapter MariaDB, ESM-only) |
 | MariaDB | 10.11 | Base de donnees (Docker) |
 | Zod | 3 | Validation des donnees cote API |
 | TypeScript | 5 | Typage strict |
 
 **Points d'attention** :
-- Prisma 6 utilise `@prisma/client` classique (pas de driver adapter)
+- Prisma 7 est ESM-only et requiert un driver adapter (`PrismaMariaDb` de `@prisma/adapter-mariadb`)
+- Le client Prisma genere est dans `src/generated/prisma/` (plus `@prisma/client`)
+- La datasource URL n'est plus dans `schema.prisma` mais dans `prisma.config.ts` (a la racine)
 - NextAuth v5 beta : utiliser `auth()` et non `getServerSession()`
-- Next.js 15 : les `params` des route handlers sont des `Promise<{}>` (il faut `await params`)
+- Next.js 16 : `src/middleware.ts` renomme en `src/proxy.ts`, export `middleware` → `proxy`, runtime Node.js (pas Edge)
 
 ## Structure du projet
 
@@ -46,6 +49,7 @@ koinonia/
 ├── prisma/
 │   ├── schema.prisma            # Schema BDD (domaine + NextAuth)
 │   └── seed.ts                  # Donnees initiales ICC Rennes
+├── prisma.config.ts             # Config CLI Prisma 7 (datasource URL, generated client path)
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout (Montserrat, metadata)
@@ -116,12 +120,14 @@ koinonia/
 │   │       ├── DataTable.tsx
 │   │       ├── CheckboxGroup.tsx
 │   │       └── BulkActionBar.tsx
+│   ├── generated/
+│   │   └── prisma/              # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
-│   │   ├── prisma.ts            # Singleton Prisma (globalThis pattern)
+│   │   ├── prisma.ts            # Singleton Prisma (globalThis pattern, driver adapter PrismaMariaDb)
 │   │   ├── auth.ts              # Config NextAuth + helpers
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
 │   │   └── permissions.ts       # Matrice roles-permissions RBAC (7 roles)
-│   └── middleware.ts            # Edge middleware (protection routes)
+│   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
 ├── docker-compose.yml           # MariaDB locale
 └── package.json

@@ -5,7 +5,7 @@ Guide de deploiement de Koinonia sur un serveur Debian avec Traefik, MariaDB et 
 ## Prerequis
 
 - Debian 11+ (ou Ubuntu 22.04+)
-- Node.js 20+ (via [NodeSource](https://github.com/nodesource/distributions))
+- Node.js 22+ (via [NodeSource](https://github.com/nodesource/distributions))
 - MariaDB 10.11+
 - Traefik configure avec terminaison TLS (Let's Encrypt)
 
@@ -243,7 +243,7 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
 2. Le CI s'execute (typecheck, tests, verification version)
 3. Si le CI passe, le workflow deploy se connecte en SSH au serveur
-4. L'artefact pre-compile est transfere par SCP, extrait, les assets statiques assembles — aucune compilation n'a lieu en production
+4. L'artefact pre-compile est transfere par SCP, extrait, les assets statiques assembles — aucune compilation n'a lieu en production. L'artefact inclut `prisma.config.ts` (requis par Prisma 7 pour la configuration CLI)
 5. Les migrations Prisma sont appliquees, le symlink `current` est bascule, le service redemarre
 6. Les anciennes releases sont nettoyees (3 dernieres conservees)
 

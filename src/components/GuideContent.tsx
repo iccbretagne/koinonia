@@ -126,7 +126,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Demandes",
-    description: "Soumission de demandes (annonces, événements, planning, accès) et suivi des traitements.",
+    description: "Soumission de demandes (annonces, accès) et suivi des traitements. Pour la liaison de compte, un parcours en plusieurs étapes guide l'utilisateur : identité → recherche STAR → département → rôle → confirmation → en attente.",
     category: "Demandes",
     screenshotTitle: "Mes demandes",
     screenshotFile: "guide-announcements.png",
@@ -142,7 +142,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Accès & rôles",
-    description: "Attribution des ministres, responsables de département (principal/adjoint) et accès aux comptes rendus.",
+    description: "Attribution des ministres, responsables de département (principal/adjoint) et accès aux comptes rendus. L'onglet « Demandes » affiche les demandes d'onboarding enrichies (département, rôle demandé, notes) pour validation ou rejet.",
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",

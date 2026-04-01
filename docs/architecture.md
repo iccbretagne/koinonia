@@ -4,11 +4,11 @@
 
 | Technologie | Version | Role |
 |---|---|---|
-| Next.js | 15 | Framework fullstack (App Router + Turbopack) |
+| Next.js | 16 | Framework fullstack (App Router + Turbopack) |
 | React | 19 | UI (Server Components + Client Components) |
 | Tailwind CSS | 4 | Styles (PostCSS) |
 | NextAuth (Auth.js) | 5 beta | Authentification Google OAuth |
-| Prisma | 6 | ORM (connecteur MySQL vers MariaDB) |
+| Prisma | 7 | ORM (driver adapter MariaDB, ESM-only) |
 | MariaDB | 10.11 | Base de donnees (Docker) |
 | Zod | 3 | Validation des donnees cote API |
 | TypeScript | 5 | Typage strict |
@@ -23,6 +23,7 @@ koinonia/
 ├── prisma/
 │   ├── schema.prisma              # Schema BDD (domaine + NextAuth)
 │   └── seed.ts                    # Donnees initiales ICC Rennes
+├── prisma.config.ts               # Config CLI Prisma 7 (datasource URL, generated client path)
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx             # Root layout (Montserrat, metadata)
@@ -101,12 +102,14 @@ koinonia/
 │   │       ├── DataTable.tsx
 │   │       ├── CheckboxGroup.tsx
 │   │       └── BulkActionBar.tsx
+│   ├── generated/
+│   │   └── prisma/                # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
-│   │   ├── prisma.ts              # Singleton Prisma (globalThis pattern)
+│   │   ├── prisma.ts              # Singleton Prisma (globalThis pattern, driver adapter PrismaMariaDb)
 │   │   ├── auth.ts                # Config NextAuth + helpers
 │   │   ├── api-utils.ts           # ApiError, successResponse, errorResponse
 │   │   └── permissions.ts         # Matrice roles-permissions RBAC (7 roles : SUPER_ADMIN, ADMIN, SECRETARY, MINISTER, DEPARTMENT_HEAD, DISCIPLE_MAKER, REPORTER)
-│   └── middleware.ts              # Edge middleware (protection routes)
+│   └── proxy.ts                   # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docker-compose.yml             # MariaDB locale
 ├── next.config.ts
 ├── tsconfig.json                  # Strict, path alias @/*
@@ -160,17 +163,21 @@ const data = schema.parse(await request.json());
 
 ### Prisma singleton
 
-Le client Prisma est instancie une seule fois via `globalThis` pour eviter les connexions multiples en developpement (hot reload) :
+Le client Prisma est instancie une seule fois via `globalThis` pour eviter les connexions multiples en developpement (hot reload).
+Prisma 7 est ESM-only et requiert un driver adapter (`PrismaMariaDb` de `@prisma/adapter-mariadb`).
+Le client genere se trouve dans `src/generated/prisma/` (plus `@prisma/client`).
+La datasource URL est configuree dans `prisma.config.ts` (a la racine) et non dans `schema.prisma`.
 
 ```typescript
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaMariaDb(...) });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
 ### Middleware
 
-Le middleware Next.js (`src/middleware.ts`) protege les routes `/dashboard/*` et `/api/*` (sauf `/api/auth/*`).
+Le proxy Next.js 16 (`src/proxy.ts`) protege les routes `/dashboard/*` et `/api/*` (sauf `/api/auth/*`).
+Il exporte une fonction `proxy` (au lieu de `middleware`) et s'execute sous le runtime Node.js (pas Edge).
 Il reexporte directement la fonction `auth` de NextAuth qui verifie la session.
 
 ### Navigation

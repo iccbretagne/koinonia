@@ -182,6 +182,10 @@ Demandes de liaison entre un compte utilisateur et un profil membre. Soumises pa
 | `churchId` | String | Ref vers `churches` |
 | `status` | MemberLinkRequestStatus | `PENDING`, `APPROVED`, `REJECTED` (default: `PENDING`) |
 | `rejectReason` | String? | Motif de rejet (renseigné si `REJECTED`) |
+| `departmentId` | String? | Ref vers `departments` (departement selectionne lors de l'onboarding) |
+| `ministryId` | String? | Ref vers `ministries` (ministere selectionne lors de l'onboarding) |
+| `requestedRole` | String? | Role demande : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre regulier) |
+| `notes` | String? (Text) | Notes libres du demandeur |
 | `createdAt` | DateTime | Date de soumission |
 | `reviewedAt` | DateTime? | Date de traitement |
 | `reviewedById` | String? | Ref vers `users` (administrateur traitant) |
