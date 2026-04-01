@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.1] - 2026-04-01
+
+### Technique
+
+- Upgrade Node.js 20 → 22 (CI + `.nvmrc`)
+- Upgrade Next.js 15 → 16 (`src/middleware.ts` → `src/proxy.ts`)
+
 ## [v0.18.0] - 2026-03-31
 
 ### Nouveautés
