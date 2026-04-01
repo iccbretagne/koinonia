@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.3] - 2026-04-01
+
+### Ajouté
+
+- Onboarding multi-étapes : identité → correspondance STAR → département → rôle → confirmation
+- Recherche de membre insensible à la casse et aux accents (NFD + `utf8mb4_unicode_ci`)
+- Demande de rôle lors de l'inscription : membre, responsable, adjoint, ministre, faiseur de disciples, reporter
+- Rôles transverses (Faiseur de disciples, Reporter) sans fiche STAR requise
+- Champ notes libre pour préciser la demande
+- Onglet "Demandes" dans l'admin avec détails enrichis (département, rôle demandé, notes)
+- Création automatique des rôles à l'approbation de la demande
+
 ## [v0.18.2] - 2026-04-01
 
 ### Technique
