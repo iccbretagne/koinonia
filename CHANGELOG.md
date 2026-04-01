@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.2] - 2026-04-01
+
+### Technique
+
+- Upgrade Prisma 6 → 7 (driver adapter MariaDB, `prisma.config.ts`, client généré dans `src/generated/prisma/`)
+
 ## [v0.18.1] - 2026-04-01
 
 ### Technique
