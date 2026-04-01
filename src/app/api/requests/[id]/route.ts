@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { hasPermission } from "@/lib/permissions";
 import { executeRequest } from "@/lib/request-executor";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 
 const EXECUTABLE_TYPES = [
   "AJOUT_EVENEMENT",

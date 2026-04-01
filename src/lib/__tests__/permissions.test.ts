@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hasPermission, userHasAnyRole } from "../permissions";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/generated/prisma/client";
 
 describe("hasPermission", () => {
   const allPermissions = [
