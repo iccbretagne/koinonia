@@ -146,8 +146,9 @@ model Ministry {
   departments     Department[]
   userRoles       UserChurchRole[]
   createdAt       DateTime         @default(now())
-  announcements   Announcement[]   @relation("AnnouncementMinistry")
-  requests        Request[]        @relation("RequestMinistry")
+  announcements   Announcement[]      @relation("AnnouncementMinistry")
+  requests        Request[]           @relation("RequestMinistry")
+  linkRequests    MemberLinkRequest[] @relation("LinkRequestMinistry")
 
   @@map("ministries")
 }
@@ -164,11 +165,12 @@ model Department {
   userDepts         UserDepartment[]
   tasks             Task[]
   createdAt         DateTime           @default(now())
-  announcements     Announcement[]     @relation("AnnouncementDepartment")
-  submittedRequests Request[]          @relation("RequestDepartment")
-  assignedRequests  Request[]          @relation("RequestAssigned")
+  announcements     Announcement[]      @relation("AnnouncementDepartment")
+  submittedRequests Request[]           @relation("RequestDepartment")
+  assignedRequests  Request[]           @relation("RequestAssigned")
   reportSections    EventReportSection[]
   notices           DepartmentNotice[]
+  linkRequests      MemberLinkRequest[] @relation("LinkRequestDept")
 
   @@map("departments")
 }
@@ -232,23 +234,30 @@ enum MemberLinkRequestStatus {
 }
 
 model MemberLinkRequest {
-  id           String                  @id @default(cuid())
-  userId       String
-  memberId     String?
-  firstName    String?
-  lastName     String?
-  phone        String?
-  churchId     String
-  status       MemberLinkRequestStatus @default(PENDING)
-  rejectReason String?
-  createdAt    DateTime                @default(now())
-  reviewedAt   DateTime?
-  reviewedById String?
+  id            String                  @id @default(cuid())
+  userId        String
+  memberId      String?
+  firstName     String?
+  lastName      String?
+  phone         String?
+  churchId      String
+  status        MemberLinkRequestStatus @default(PENDING)
+  rejectReason  String?
+  // Champs onboarding enrichi
+  departmentId  String?
+  ministryId    String?
+  requestedRole String?                 // DEPARTMENT_HEAD | DEPUTY | MINISTER | DISCIPLE_MAKER | REPORTER | null
+  notes         String?                 @db.Text
+  createdAt     DateTime                @default(now())
+  reviewedAt    DateTime?
+  reviewedById  String?
 
-  user       User    @relation("LinkRequester",      fields: [userId],       references: [id])
-  member     Member? @relation(fields: [memberId],   references: [id])
-  church     Church  @relation(fields: [churchId],   references: [id])
-  reviewedBy User?   @relation("LinkRequestReviewer", fields: [reviewedById], references: [id])
+  user       User        @relation("LinkRequester",       fields: [userId],       references: [id])
+  member     Member?     @relation(fields: [memberId],    references: [id])
+  church     Church      @relation(fields: [churchId],    references: [id])
+  department Department? @relation("LinkRequestDept",     fields: [departmentId], references: [id])
+  ministry   Ministry?   @relation("LinkRequestMinistry", fields: [ministryId],   references: [id])
+  reviewedBy User?       @relation("LinkRequestReviewer", fields: [reviewedById], references: [id])
 
   @@map("member_link_requests")
 }

@@ -2,6 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
+function normalize(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
 // Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete
 export async function GET(request: Request) {
   try {
@@ -13,15 +20,31 @@ export async function GET(request: Request) {
     await requireChurchAccess(churchId);
     if (q.length < 2) return successResponse([]);
 
+    const norm = normalize(q);
+    const terms = norm === q.toLowerCase() ? [q] : [q, norm];
+
     const matches = await prisma.member.findMany({
       where: {
         departments: { some: { department: { ministry: { churchId } } } },
-        OR: [
-          { firstName: { contains: q } },
-          { lastName: { contains: q } },
-        ],
+        OR: terms.flatMap((t) => [
+          { firstName: { contains: t } },
+          { lastName: { contains: t } },
+        ]),
       },
-      select: { id: true, firstName: true, lastName: true, userLink: { select: { id: true } } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        departments: {
+          where: { isPrimary: true },
+          select: {
+            department: {
+              select: { name: true, ministry: { select: { name: true } } },
+            },
+          },
+        },
+        userLink: { select: { id: true } },
+      },
       take: 20,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });

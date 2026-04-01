@@ -57,6 +57,20 @@ export default async function ProfilePage() {
     (c) => !linkedChurchIds.has(c.id) && !pendingChurchIds.has(c.id)
   );
 
+  const ministries = await prisma.ministry.findMany({
+    where: churchIds.length > 0 ? { churchId: { in: churchIds }, isSystem: false } : undefined,
+    select: {
+      id: true,
+      name: true,
+      departments: {
+        where: { isSystem: false },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Mon profil</h1>
@@ -139,7 +153,7 @@ export default async function ProfilePage() {
 
       {/* Nouvelle demande */}
       {unlinkableChurches.length > 0 && (
-        <ProfileClient churches={unlinkableChurches} />
+        <ProfileClient churches={unlinkableChurches} ministries={ministries} />
       )}
     </div>
   );

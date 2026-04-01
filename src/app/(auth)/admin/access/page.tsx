@@ -42,6 +42,28 @@ export default async function AccessPage() {
     orderBy: { name: "asc" },
   });
 
+  // Demandes d'accès en attente
+  const pendingRequests = await prisma.memberLinkRequest.findMany({
+    where: { churchId, status: "PENDING" },
+    include: {
+      user: { select: { id: true, name: true, displayName: true, email: true, image: true } },
+      member: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          departments: {
+            where: { isPrimary: true },
+            select: { department: { select: { name: true, ministry: { select: { name: true } } } } },
+          },
+        },
+      },
+      department: { select: { id: true, name: true, ministry: { select: { id: true, name: true } } } },
+      ministry: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
   // Ministries with departments for structure view
   const ministries = await prisma.ministry.findMany({
     where: { churchId, isSystem: false },
@@ -66,6 +88,32 @@ export default async function AccessPage() {
         </p>
       </div>
       <AccessClient
+        pendingRequests={pendingRequests.map((r) => ({
+          id: r.id,
+          user: {
+            name: r.user.displayName || r.user.name || r.user.email,
+            email: r.user.email,
+            image: r.user.image,
+          },
+          member: r.member
+            ? {
+                id: r.member.id,
+                firstName: r.member.firstName,
+                lastName: r.member.lastName,
+                deptName: r.member.departments[0]?.department.name ?? null,
+                ministryName: r.member.departments[0]?.department.ministry.name ?? null,
+              }
+            : null,
+          firstName: r.firstName,
+          lastName: r.lastName,
+          department: r.department
+            ? { id: r.department.id, name: r.department.name, ministryName: r.department.ministry.name }
+            : null,
+          ministry: r.ministry ? { id: r.ministry.id, name: r.ministry.name } : null,
+          requestedRole: r.requestedRole,
+          notes: r.notes,
+          createdAt: r.createdAt.toISOString(),
+        }))}
         users={users.map((u) => ({
           id: u.id,
           name: u.displayName || u.name || u.email,
