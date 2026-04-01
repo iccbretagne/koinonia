@@ -302,7 +302,7 @@ export default function NoAccessClient({
                     onClick={selectNoStar}
                     className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
                   >
-                    Je ne suis pas encore STAR
+                    Je souhaite accéder à l&apos;application dans un autre rôle
                   </button>
                 </div>
               </div>
@@ -324,8 +324,8 @@ export default function NoAccessClient({
                   onClick={selectNoStar}
                   className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="font-semibold text-gray-700">Je ne suis pas encore STAR</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Je rejoins l&apos;équipe et souhaite un rôle transverse</p>
+                  <span className="font-semibold text-gray-700">Je souhaite accéder à l&apos;application dans un autre rôle</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Faiseur de disciples, Reporter...</p>
                 </button>
               </div>
             </>
@@ -465,8 +465,8 @@ export default function NoAccessClient({
             </>
           )}
 
-          {/* Rôles transverses */}
-          {TRANSVERSE_ROLES.map((role) => (
+          {/* Rôles transverses — uniquement pour les non-STAR */}
+          {!selectedMember && !isNewStar && TRANSVERSE_ROLES.map((role) => (
             <button
               key={role}
               onClick={() => { setRequestedRole(role); goToConfirm(); }}
