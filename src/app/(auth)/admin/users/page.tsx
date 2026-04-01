@@ -12,7 +12,12 @@ export default async function UsersPage() {
   const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
 
   const users = await prisma.user.findMany({
-    where: { churchRoles: { some: { churchId } } },
+    where: {
+      OR: [
+        { churchRoles: { some: { churchId } } },
+        { memberLinks: { some: { churchId } } },
+      ],
+    },
     include: {
       churchRoles: {
         where: { churchId },
