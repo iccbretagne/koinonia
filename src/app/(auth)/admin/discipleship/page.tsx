@@ -31,7 +31,7 @@ export default async function DiscipleshipPage() {
 
   // Résoudre le membre lié pour le filtre "Mes disciples"
   // Visible pour tout utilisateur avec canManage ayant une fiche STAR liée
-  const linkedMemberId = canManage && !session.user.isSuperAdmin
+  const linkedMemberId = canManage
     ? (await prisma.memberUserLink.findUnique({
         where: { userId_churchId: { userId: session.user.id, churchId } },
         select: { memberId: true },
