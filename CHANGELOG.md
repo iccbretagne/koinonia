@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.2] - 2026-04-05
+
+### Corrigé
+
+- Cron : middleware proxy bloquait `POST /api/cron` (sans slash final) → 401
+- Doc : port `3000` hardcodé remplacé par `${PORT:-3000}` dans les services systemd et crontab
+- Doc : typo restauration backup — `MYSQL_PWD` doit précéder `mysql`, pas `gunzip`
+
 ## [v0.19.1] - 2026-04-04
 
 ### Documentation
