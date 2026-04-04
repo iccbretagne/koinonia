@@ -247,6 +247,44 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 5. Les migrations Prisma sont appliquees, le symlink `current` est bascule, le service redemarre
 6. Les anciennes releases sont nettoyees (3 dernieres conservees)
 
+## Configuration SMTP
+
+Les emails de rappel (J-3 et J-1 avant un événement) sont envoyés via un serveur SMTP. Ajouter dans `shared/.env` :
+
+```bash
+SMTP_HOST=smtp.votre-domaine.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=noreply@votre-domaine.com
+SMTP_PASS=mot-de-passe
+SMTP_FROM=Koinonia <noreply@votre-domaine.com>
+```
+
+> **Important** : ne pas mettre de commentaires inline sur ces lignes dans `.env` — systemd inclurait le commentaire dans la valeur.
+
+### Ports courants
+
+| Port | Protocole | `SMTP_SECURE` |
+|------|-----------|---------------|
+| 587 | STARTTLS (recommandé) | `false` |
+| 465 | SSL/TLS natif | `true` |
+| 25 | Sans chiffrement (local) | `false` |
+
+### Sans authentification (relais local)
+
+Si vous utilisez un relais SMTP local (ex : Postfix sur le même serveur), laisser `SMTP_USER` et `SMTP_PASS` vides :
+
+```bash
+SMTP_HOST=localhost
+SMTP_PORT=25
+SMTP_SECURE=false
+SMTP_FROM=Koinonia <noreply@votre-domaine.com>
+```
+
+### Test de la configuration
+
+Déclencher un backup manuel depuis l'interface admin ou appeler directement le cron de rappels après avoir configuré un événement de test.
+
 ## Webcron — rappels de service
 
 La route `POST /api/cron/reminders` envoie les rappels J-3 et J-1 (email + notification in-app). Elle doit être appelée **une fois par jour** par un service externe.
@@ -641,6 +679,7 @@ sudo systemctl start koinonia
 - [ ] Variables d'environnement configurees dans `shared/.env`
 - [ ] `AUTH_SECRET` genere avec `openssl rand -base64 32`
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
+- [ ] Variables SMTP configurees dans `shared/.env` (optionnel, pour les rappels email)
 - [ ] Timer systemd `koinonia-reminders.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron/reminders` quotidiennement
 - [ ] Variables S3 configurees pour les backups (optionnel)
 - [ ] Timer systemd `koinonia-backup.timer` active (ou crontab) pour backup quotidien (optionnel)
