@@ -79,7 +79,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
   const [activeTab, setActiveTab] = useState<"relations" | "appel" | "stats">("relations");
   // Filtre global "Mes disciples" — visible uniquement si l'utilisateur est admin/secrétaire ET lié à un membre FD
   const showMineFilter = canManage && !!linkedMemberId;
-  const [filterMine, setFilterMine] = useState(false);
+  const [filterMine, setFilterMine] = useState(showMineFilter);
 
   const TAB_LABELS: Record<typeof activeTab, string> = {
     relations: "Relations",
