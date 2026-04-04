@@ -6,6 +6,20 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.0] - 2026-04-04
+
+### Ajouté
+
+- Digest planning secrétariat : email récapitulatif horaire des modifications de planning, configurable via `Church.secretariatEmail` (Configuration > Église)
+- Endpoint cron orchestrateur `POST /api/cron` : remplace `/api/cron/reminders`, gère rappels J-1/J-3 (1x/jour par église) et digest planning (horaire si changements)
+- Template email HTML pour le digest planning (`buildPlanningDigestEmail`)
+
+### Technique
+
+- Migration : `Church.secretariatEmail`, `Church.reminderLastSentAt`, `Church.planningDigestLastSentAt`
+- Timer systemd `koinonia-cron.timer` (hourly) remplace `koinonia-reminders.timer`
+- Doc : configuration SMTP, timer systemd pour les rappels, migration vers le nouveau timer cron
+
 ## [v0.18.7] - 2026-04-01
 
 ### Documentation
