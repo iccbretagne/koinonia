@@ -52,21 +52,24 @@ model VerificationToken {
 // ─── Domain models ─────────────────────────────────────────────────
 
 model Church {
-  id                String              @id @default(cuid())
-  name              String
-  slug              String              @unique
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  users             UserChurchRole[]
-  ministries        Ministry[]
-  events            Event[]
-  auditLogs         AuditLog[]
-  announcements     Announcement[]
-  requests          Request[]
-  memberUserLinks    MemberUserLink[]
-  memberLinkRequests MemberLinkRequest[]
-  discipleships      Discipleship[]
-  eventReports       EventReport[]
+  id                       String              @id @default(cuid())
+  name                     String
+  slug                     String              @unique
+  secretariatEmail         String?
+  reminderLastSentAt       DateTime?
+  planningDigestLastSentAt DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  users                    UserChurchRole[]
+  ministries               Ministry[]
+  events                   Event[]
+  auditLogs                AuditLog[]
+  announcements            Announcement[]
+  requests                 Request[]
+  memberUserLinks          MemberUserLink[]
+  memberLinkRequests       MemberLinkRequest[]
+  discipleships            Discipleship[]
+  eventReports             EventReport[]
 
   @@map("churches")
 }

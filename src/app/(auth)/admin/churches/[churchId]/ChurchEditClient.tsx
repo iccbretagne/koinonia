@@ -6,13 +6,14 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 interface Props {
-  church: { id: string; name: string; slug: string };
+  church: { id: string; name: string; slug: string; secretariatEmail: string };
 }
 
 export default function ChurchEditClient({ church }: Props) {
   const router = useRouter();
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
+  const [secretariatEmail, setSecretariatEmail] = useState(church.secretariatEmail);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -27,7 +28,7 @@ export default function ChurchEditClient({ church }: Props) {
       const res = await fetch(`/api/churches/${church.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null }),
       });
 
       if (!res.ok) {
@@ -58,6 +59,13 @@ export default function ChurchEditClient({ church }: Props) {
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           required
+        />
+        <Input
+          label="Email secrétariat (digest planning)"
+          type="email"
+          value={secretariatEmail}
+          onChange={(e) => setSecretariatEmail(e.target.value)}
+          placeholder="secretariat@eglise.fr"
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && (
