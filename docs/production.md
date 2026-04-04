@@ -176,7 +176,7 @@ http:
     koinonia:
       loadBalancer:
         servers:
-          - url: "http://127.0.0.1:3000"
+          - url: "http://127.0.0.1:3001"   # adapter selon PORT dans shared/.env
 ```
 
 Traefik gere automatiquement le certificat TLS via Let's Encrypt.
@@ -323,13 +323,13 @@ Requires=koinonia.service
 Type=oneshot
 User=koinonia
 EnvironmentFile=/opt/koinonia/shared/.env
-ExecStart=/bin/sh -c 'curl -sf -X POST http://127.0.0.1:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"'
+ExecStart=/bin/sh -c 'curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron -H "Authorization: Bearer $CRON_SECRET"'
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=koinonia-cron
 ```
 
-> On appelle `127.0.0.1:3000` en local plutôt que le domaine public pour éviter de passer par Traefik/TLS.
+> On appelle `127.0.0.1:$PORT` en local plutôt que le domaine public pour éviter de passer par Traefik/TLS.
 
 **2. Créer le timer** `/etc/systemd/system/koinonia-cron.timer` :
 
@@ -383,7 +383,7 @@ sudo -u koinonia crontab -e
 Ajouter la ligne suivante (exécution toutes les heures) :
 
 ```
-0 * * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:3000/api/cron -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
+0 * * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
 ```
 
 ### Option 3 — service webcron externe
@@ -476,8 +476,7 @@ Requires=koinonia.service
 Type=oneshot
 User=koinonia
 EnvironmentFile=/opt/koinonia/shared/.env
-ExecStart=/usr/bin/curl -sf -X POST http://127.0.0.1:3000/api/cron/backup \
-  -H "Authorization: Bearer ${CRON_SECRET}"
+ExecStart=/bin/sh -c 'curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron/backup -H "Authorization: Bearer $CRON_SECRET"'
 
 # Journalisation
 StandardOutput=journal
@@ -485,7 +484,7 @@ StandardError=journal
 SyslogIdentifier=koinonia-backup
 ```
 
-> On appelle `127.0.0.1:3000` en local plutot que le domaine public pour eviter de passer par Traefik/TLS.
+> On appelle `127.0.0.1:$PORT` en local plutot que le domaine public pour eviter de passer par Traefik/TLS.
 
 **2. Creer le timer** `/etc/systemd/system/koinonia-backup.timer` :
 
@@ -537,7 +536,7 @@ sudo -u koinonia crontab -e
 ```
 
 ```
-0 2 * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:3000/api/cron/backup \
+0 2 * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron/backup \
   -H "Authorization: Bearer $CRON_SECRET" \
   >> /opt/koinonia/logs/backup.log 2>&1
 ```
@@ -649,7 +648,7 @@ sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
   DB_USER=$(echo $DATABASE_URL | sed "s|.*://\([^:]*\):.*|\1|") && \
   DB_PASS=$(echo $DATABASE_URL | sed "s|.*://[^:]*:\([^@]*\)@.*|\1|") && \
   DB_NAME=$(echo $DATABASE_URL | sed "s|.*/||") && \
-  MYSQL_PWD=$DB_PASS gunzip -c /tmp/restore.sql.gz | mysql -u $DB_USER $DB_NAME'
+  gunzip -c /tmp/restore.sql.gz | MYSQL_PWD=$DB_PASS mysql -u $DB_USER $DB_NAME'
 
 # 3. Nettoyer
 rm /tmp/restore.sql.gz
@@ -689,7 +688,7 @@ sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
   DB_USER=$(echo $DATABASE_URL | sed "s|.*://\([^:]*\):.*|\1|") && \
   DB_PASS=$(echo $DATABASE_URL | sed "s|.*://[^:]*:\([^@]*\)@.*|\1|") && \
   DB_NAME=$(echo $DATABASE_URL | sed "s|.*/||") && \
-  MYSQL_PWD=$DB_PASS gunzip -c /opt/koinonia/shared/pre-restore-backup.sql.gz | mysql -u $DB_USER $DB_NAME'
+  gunzip -c /opt/koinonia/shared/pre-restore-backup.sql.gz | MYSQL_PWD=$DB_PASS mysql -u $DB_USER $DB_NAME'
 sudo systemctl start koinonia
 ```
 

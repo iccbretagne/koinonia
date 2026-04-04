@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
 
   if (!sessionToken) {
     // Allow cron routes to pass through (authenticated by bearer token in route handler)
-    if (request.nextUrl.pathname.startsWith("/api/cron/")) {
+    if (request.nextUrl.pathname.startsWith("/api/cron")) {
       return NextResponse.next();
     }
     if (request.nextUrl.pathname.startsWith("/api/")) {
