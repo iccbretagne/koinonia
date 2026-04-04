@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.3] - 2026-04-05
+
+### Corrigé
+
+- Discipolat : filtre "Mes disciples" invisible pour les admins/secrétaires liés à une fiche STAR (#196)
+
 ## [v0.19.2] - 2026-04-05
 
 ### Corrigé
