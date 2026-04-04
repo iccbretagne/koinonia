@@ -285,9 +285,14 @@ SMTP_FROM=Koinonia <noreply@votre-domaine.com>
 
 Déclencher un backup manuel depuis l'interface admin ou appeler directement le cron de rappels après avoir configuré un événement de test.
 
-## Webcron — rappels de service
+## Cron — tâches planifiées
 
-La route `POST /api/cron/reminders` envoie les rappels J-3 et J-1 (email + notification in-app). Elle doit être appelée **une fois par jour** par un service externe.
+La route `POST /api/cron` orchestre toutes les tâches planifiées. Elle doit être appelée **toutes les heures**. Chaque tâche gère sa propre fréquence en interne :
+
+| Tâche | Fréquence effective | Description |
+|-------|--------------------|--------------------------------------------|
+| Rappels de service | 1 fois/jour par église | Emails + notifications in-app J-3 et J-1 |
+| Digest planning | Horaire si changements | Email récapitulatif des modifications au secrétariat |
 
 ### Variables d'environnement requises
 
@@ -305,11 +310,11 @@ Générer une valeur sécurisée : `openssl rand -base64 32`
 
 Plus fiable que crontab : journalisation native, gestion des échecs, exécution rattrapée après un reboot.
 
-**1. Créer le service** `/etc/systemd/system/koinonia-reminders.service` :
+**1. Créer le service** `/etc/systemd/system/koinonia-cron.service` :
 
 ```ini
 [Unit]
-Description=Koinonia — rappels de service
+Description=Koinonia — tâches cron
 After=network-online.target koinonia.service
 Wants=network-online.target
 Requires=koinonia.service
@@ -318,22 +323,22 @@ Requires=koinonia.service
 Type=oneshot
 User=koinonia
 EnvironmentFile=/opt/koinonia/shared/.env
-ExecStart=/bin/sh -c 'curl -sf -X POST http://127.0.0.1:3000/api/cron/reminders -H "Authorization: Bearer $CRON_SECRET"'
+ExecStart=/bin/sh -c 'curl -sf -X POST http://127.0.0.1:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"'
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=koinonia-reminders
+SyslogIdentifier=koinonia-cron
 ```
 
 > On appelle `127.0.0.1:3000` en local plutôt que le domaine public pour éviter de passer par Traefik/TLS.
 
-**2. Créer le timer** `/etc/systemd/system/koinonia-reminders.timer` :
+**2. Créer le timer** `/etc/systemd/system/koinonia-cron.timer` :
 
 ```ini
 [Unit]
-Description=Rappels de service Koinonia a 7h00
+Description=Tâches cron Koinonia — toutes les heures
 
 [Timer]
-OnCalendar=*-*-* 07:00:00
+OnCalendar=hourly
 Persistent=true
 RandomizedDelaySec=60
 
@@ -341,28 +346,33 @@ RandomizedDelaySec=60
 WantedBy=timers.target
 ```
 
+- `Persistent=true` : si le serveur était éteint, la tâche sera exécutée au prochain démarrage.
+- `RandomizedDelaySec=60` : délai aléatoire de 0 à 60s pour éviter les pics de charge.
+
 **3. Activer le timer** :
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now koinonia-reminders.timer
+sudo systemctl enable --now koinonia-cron.timer
 ```
 
 **4. Vérifier** :
 
 ```bash
 # Etat du timer
-sudo systemctl status koinonia-reminders.timer
+sudo systemctl status koinonia-cron.timer
 
 # Prochaine exécution
-sudo systemctl list-timers koinonia-reminders.timer
+sudo systemctl list-timers koinonia-cron.timer
 
 # Lancer manuellement pour tester
-sudo systemctl start koinonia-reminders.service
+sudo systemctl start koinonia-cron.service
 
 # Consulter les logs
-sudo journalctl -u koinonia-reminders -n 20
+sudo journalctl -u koinonia-cron -n 20
 ```
+
+> Si vous aviez l'ancien timer `koinonia-reminders.timer`, désactivez-le : `sudo systemctl disable --now koinonia-reminders.timer`
 
 ### Option 2 — crontab système
 
@@ -370,20 +380,20 @@ sudo journalctl -u koinonia-reminders -n 20
 sudo -u koinonia crontab -e
 ```
 
-Ajouter la ligne suivante (exécution chaque jour à 7h00) :
+Ajouter la ligne suivante (exécution toutes les heures) :
 
 ```
-0 7 * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:3000/api/cron/reminders -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
+0 * * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:3000/api/cron -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
 ```
 
 ### Option 3 — service webcron externe
 
 Configurer un service type [cron-job.org](https://cron-job.org) ou EasyCron :
 
-- **URL** : `https://votre-domaine.com/api/cron/reminders`
+- **URL** : `https://votre-domaine.com/api/cron`
 - **Méthode** : `POST`
 - **Header** : `Authorization: Bearer VOTRE_CRON_SECRET`
-- **Fréquence** : 1 fois par jour (ex : 7h00)
+- **Fréquence** : toutes les heures
 
 ## Captures du guide utilisateur
 
@@ -680,7 +690,7 @@ sudo systemctl start koinonia
 - [ ] `AUTH_SECRET` genere avec `openssl rand -base64 32`
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Variables SMTP configurees dans `shared/.env` (optionnel, pour les rappels email)
-- [ ] Timer systemd `koinonia-reminders.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron/reminders` quotidiennement
+- [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
 - [ ] Variables S3 configurees pour les backups (optionnel)
 - [ ] Timer systemd `koinonia-backup.timer` active (ou crontab) pour backup quotidien (optionnel)
 - [ ] Backup teste : declencher manuellement et verifier la presence dans S3

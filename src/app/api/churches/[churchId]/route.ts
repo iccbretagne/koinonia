@@ -7,6 +7,7 @@ import { z } from "zod";
 const updateSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   slug: z.string().min(1, "Le slug est requis"),
+  secretariatEmail: z.string().email("Email invalide").nullish(),
 });
 
 export async function PUT(
