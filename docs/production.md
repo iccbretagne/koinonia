@@ -565,6 +565,27 @@ Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. L
 - `mysqldump` et `mysql` installes sur le serveur
 - Acces au bucket S3 configure
 
+#### Obtenir le cookie de session
+
+Les endpoints `/api/admin/backups` et `/api/admin/backups/restore` requièrent une session SUPER_ADMIN. Pour les appeler via curl, récupérez le cookie depuis votre navigateur :
+
+1. Connectez-vous à Koinonia dans votre navigateur
+2. Ouvrez les DevTools → Onglet **Application** (Chrome) ou **Stockage** (Firefox)
+3. Rubrique **Cookies** → sélectionnez votre domaine
+4. Copiez la valeur du cookie :
+   - En production (HTTPS) : `__Secure-authjs.session-token`
+   - En développement (HTTP) : `authjs.session-token`
+
+Utilisez ce cookie dans vos commandes curl :
+
+```bash
+# Production
+COOKIE="__Secure-authjs.session-token=VALEUR_COPIEE"
+
+# Développement
+COOKIE="authjs.session-token=VALEUR_COPIEE"
+```
+
 #### Etape 1 — Identifier le backup a restaurer
 
 **Via l'API** :
@@ -572,7 +593,7 @@ Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. L
 ```bash
 # Lister les backups disponibles (du plus recent au plus ancien)
 curl -s https://votre-domaine.com/api/admin/backups \
-  -H "Cookie: authjs.session-token=..." | jq '.[] | {key, lastModified, sizeMB: (.sizeBytes/1048576 | round)}'
+  -H "Cookie: $COOKIE" | jq '.[] | {key, lastModified, sizeMB: (.sizeBytes/1048576 | round)}'
 ```
 
 **Via la CLI S3** (si vous avez `aws` ou `mc` configure) :
@@ -610,7 +631,7 @@ sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
 ```bash
 curl -X POST https://votre-domaine.com/api/admin/backups/restore \
   -H "Content-Type: application/json" \
-  -H "Cookie: authjs.session-token=..." \
+  -H "Cookie: $COOKIE" \
   -d '{"key":"backups/2026-03-24T02-00-00Z/db.sql.gz"}'
 ```
 
