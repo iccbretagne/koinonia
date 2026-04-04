@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.1] - 2026-04-04
+
+### Documentation
+
+- Explication du cookie de session (`__Secure-authjs.session-token` en prod, `authjs.session-token` en dev) pour les appels API restore via curl
+
 ## [v0.19.0] - 2026-04-04
 
 ### Ajouté
