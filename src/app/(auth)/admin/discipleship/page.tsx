@@ -29,10 +29,9 @@ export default async function DiscipleshipPage() {
   // Un admin/secrétariat peut éditer FD et premier FD
   const canEditRelation = canManage;
 
-  // Résoudre le membre lié si l'utilisateur a le rôle DISCIPLE_MAKER
-  // (même s'il est aussi admin/secrétariat — pour le filtre "Mes disciples")
-  const hasFDRole = churchRoles.some((r) => r.role === "DISCIPLE_MAKER") && !session.user.isSuperAdmin;
-  const linkedMemberId = hasFDRole
+  // Résoudre le membre lié pour le filtre "Mes disciples"
+  // Visible pour tout utilisateur avec canManage ayant une fiche STAR liée
+  const linkedMemberId = canManage && !session.user.isSuperAdmin
     ? (await prisma.memberUserLink.findUnique({
         where: { userId_churchId: { userId: session.user.id, churchId } },
         select: { memberId: true },
