@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.18.7] - 2026-04-01
+
+### Documentation
+
+- Mise à jour stack technique (Node.js 22, Next.js 16, Prisma 7) dans architecture.md et CLAUDE.md
+- Endpoints statistiques explicités : formules de calcul, colonnes exports Excel, conventions sections (#184, #185)
+- Guide utilisateur : flux onboarding multi-étapes et onglet Demandes admin
+- production.md : Node.js 22+, `prisma.config.ts` dans l'artifact
+
 ## [v0.18.6] - 2026-04-01
 
 ### Corrigé
