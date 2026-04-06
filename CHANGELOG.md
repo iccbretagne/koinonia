@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.5] - 2026-04-06
+
+### Corrigé
+
+- Sélecteur d'église : remplacement de `router.refresh()` par `window.location.reload()` pour garantir le rechargement sur tous les navigateurs (#202)
+- Accès & rôles : les utilisateurs membres d'une autre église sont maintenant visibles pour l'attribution de rôles (#202)
+- Discipolat : seuls SUPER_ADMIN, ADMIN et SECRETARY ont la vue globale — les autres rôles (DISCIPLE_MAKER, MINISTER, DEPARTMENT_HEAD) sont scopés à leurs propres disciples (#202)
+
 ## [v0.19.4] - 2026-04-05
 
 ### Corrigé
