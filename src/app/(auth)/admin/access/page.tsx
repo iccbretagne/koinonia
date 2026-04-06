@@ -10,12 +10,7 @@ export default async function AccessPage() {
 
   // All users in this church (with roles) + new users (no roles yet)
   const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { churchRoles: { some: { churchId } } },
-        { churchRoles: { none: {} } },
-      ],
-    },
+    where: {},
     select: {
       id: true,
       name: true,

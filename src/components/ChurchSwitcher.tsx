@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 interface Church {
   id: string;
   name: string;
@@ -16,8 +14,6 @@ export default function ChurchSwitcher({
   churches,
   currentChurchId,
 }: ChurchSwitcherProps) {
-  const router = useRouter();
-
   if (churches.length <= 1) return null;
 
   async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -27,7 +23,7 @@ export default function ChurchSwitcher({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ churchId }),
     });
-    router.refresh();
+    window.location.reload();
   }
 
   return (

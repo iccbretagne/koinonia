@@ -211,8 +211,8 @@ export type DiscipleshipScope =
 
 /**
  * Retourne la portée discipolat de l'utilisateur connecté pour une église donnée.
- * - DISCIPLE_MAKER → scoped : ne voit que ses propres disciples (filtre discipleMakerId)
- * - Tous les autres rôles → non scoped : vue complète de l'église
+ * - SUPER_ADMIN / ADMIN / SECRETARY → non scoped : vue complète de l'église
+ * - Tous les autres rôles (DISCIPLE_MAKER, MINISTER, DEPARTMENT_HEAD…) → scoped : ne voit que ses propres disciples
  */
 export async function getDiscipleshipScope(
   session: Session,
@@ -221,7 +221,7 @@ export async function getDiscipleshipScope(
   if (session.user.isSuperAdmin) return { scoped: false };
 
   const hasGlobalRole = session.user.churchRoles.some(
-    (r) => r.churchId === churchId && (r.role as Role) !== "DISCIPLE_MAKER"
+    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role as Role)
   );
   if (hasGlobalRole) return { scoped: false };
 
