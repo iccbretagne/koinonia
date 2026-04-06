@@ -57,7 +57,8 @@ export default function EventSelector({
       if (ev) return toYearMonth(ev.date);
     }
     const sortedMonths = Array.from(new Set(events.map((e) => toYearMonth(e.date)))).sort();
-    const now = toYearMonth(new Date().toISOString());
+    const d = new Date();
+    const now = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     return sortedMonths.find((m) => m >= now) ?? sortedMonths[0] ?? "";
   });
 

@@ -5,6 +5,7 @@ const CONFIG_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"
 const MEMBERS_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
 const REPORT_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"];
 const DISCIPLESHIP_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DEPARTMENT_HEAD", "DISCIPLE_MAKER"];
+const SERVICE_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
 
 export interface TourStep {
   /** CSS selector for the target element, or "center" for a centered modal */
@@ -20,43 +21,46 @@ export interface TourStep {
 const ALL_STEPS: TourStep[] = [
   {
     target: "center",
-    title: "Bienvenue !",
+    title: "Bienvenue dans Koinonia !",
     content:
-      "Bienvenue dans Koinonia ! Ce tour vous guide a travers les principales fonctionnalites.",
+      "Ce tour vous guide à travers les principales fonctionnalités. Vous pouvez le relancer à tout moment depuis le guide en haut de page.",
   },
   {
     target: '[data-tour="sidebar-planning"]',
     title: "Planning",
     content:
-      "Vos departements sont listes ici. Cliquez sur un departement pour voir son planning.",
+      "Vos départements sont listés ici, groupés par ministère. Cliquez sur un département pour voir et modifier le planning de service.",
     viewport: "desktop",
     roles: PLANNING_ROLES,
   },
   {
     target: '[data-tour="sidebar-events"]',
-    title: "Evenements",
-    content: "Accedez a la liste des evenements, au calendrier et aux comptes rendus avec export Excel des statistiques.",
+    title: "Événements",
+    content:
+      "Accédez à la liste et au calendrier des événements. Le sous-menu Comptes rendus permet de saisir les statistiques de présence et d'exporter les données en Excel.",
     viewport: "desktop",
   },
   {
     target: '[data-tour="sidebar-members"]',
-    title: "Membres",
-    content: "Consultez et gerez les membres (STAR) de vos departements.",
+    title: "Membres (STAR)",
+    content:
+      "Consultez et gérez les membres actifs (STAR) de vos départements : coordonnées, affectations, statuts.",
     viewport: "desktop",
     roles: MEMBERS_ROLES,
   },
   {
     target: '[data-tour="sidebar-service"]',
-    title: "Annonces",
+    title: "Demandes",
     content:
-      "Soumettez des annonces et suivez les demandes de service (secretariat, visuels, communication).",
+      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. Les responsables Secrétariat, Communication et Production Média traitent les demandes depuis leur tableau de bord.",
     viewport: "desktop",
+    roles: SERVICE_ROLES,
   },
   {
     target: '[data-tour="sidebar-discipleship"]',
     title: "Discipolat",
     content:
-      "Suivez les relations de discipolat, l'appel de presence et les statistiques.",
+      "Gérez les relations Faiseur de Disciples ↔ disciple, enregistrez l'appel de présence et consultez les statistiques. Les FD ne voient que leurs propres disciples.",
     viewport: "desktop",
     roles: DISCIPLESHIP_ROLES,
   },
@@ -64,7 +68,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-config"]',
     title: "Configuration",
     content:
-      "Gerez les departements, ministeres, eglises, acces et parametres.",
+      "Gérez les ministères, départements, accès et rôles, paramètres de l'église et journaux d'audit.",
     viewport: "desktop",
     roles: CONFIG_ROLES,
   },
@@ -72,7 +76,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-reports"]',
     title: "Comptes rendus",
     content:
-      "Saisissez les comptes rendus de culte (orateur, statistiques) et exportez les donnees en Excel.",
+      "Saisissez les comptes rendus de culte (orateur, titre du message, statistiques de présence par département) et exportez les données sur une période.",
     viewport: "desktop",
     roles: REPORT_ROLES,
   },
@@ -80,33 +84,34 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="bottom-nav"]',
     title: "Navigation",
     content:
-      "Naviguez entre le planning, les evenements et les membres.",
+      "Naviguez rapidement entre le planning, les événements, les membres et le guide depuis cette barre.",
     viewport: "mobile",
   },
   {
-    target: '[data-tour="header-guide"]',
-    title: "Guide",
-    content: "Retrouvez le guide des fonctionnalites a tout moment ici.",
+    target: '[data-tour="dashboard-actions"]',
+    title: "Vues du planning",
+    content:
+      "Basculez entre la vue par événement, la vue mensuelle et la vue des tâches du département.",
+    roles: PLANNING_ROLES,
+  },
+  {
+    target: '[data-tour="event-selector"]',
+    title: "Sélecteur d'événement",
+    content:
+      "Sélectionnez un événement pour afficher le planning correspondant. Les prochains événements sont proposés en premier.",
+    roles: PLANNING_ROLES,
   },
   {
     target: '[data-tour="header-notifications"]',
     title: "Notifications",
     content:
-      "Les notifications de changements de planning apparaissent ici.",
+      "Les changements de planning vous concernant (statut modifié, remplacement) apparaissent ici en temps réel.",
   },
   {
-    target: '[data-tour="dashboard-actions"]',
-    title: "Actions",
+    target: '[data-tour="header-guide"]',
+    title: "Guide utilisateur",
     content:
-      "Basculez entre la vue par evenement, la vue mensuelle et la vue des taches.",
-    roles: PLANNING_ROLES,
-  },
-  {
-    target: '[data-tour="event-selector"]',
-    title: "Selecteur",
-    content:
-      "Selectionnez un evenement pour afficher le planning correspondant.",
-    roles: PLANNING_ROLES,
+      "Retrouvez le guide complet des fonctionnalités à tout moment ici, avec les captures d'écran et les droits par rôle.",
   },
 ];
 
