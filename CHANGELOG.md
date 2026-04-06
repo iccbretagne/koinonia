@@ -6,6 +6,19 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.6] - 2026-04-06
+
+### Corrigé
+
+- Dashboard : sélecteur de mois utilisait l'heure UTC — le mois courant pouvait être décalé en début de mois pour les utilisateurs hors UTC (#204)
+
+### Amélioré
+
+- Guide utilisateur : ajout des features manquantes (stats planning, calendrier, profil, discipolat ×3, demandes ×5, journaux d'audit, fonctions départements) (#204)
+- Guide utilisateur : correction des niveaux d'accès par rôle selon la matrice de permissions réelle (#204)
+- Tour interactif : SECRETARY ajoutée au discipolat, étape "Annonces" → "Demandes", accents corrigés, contenus réécrits (#204)
+- Docs : ajout `docs/guide-screenshots.md` — liste des 24 captures et procédure de publication (#204)
+
 ## [v0.19.5] - 2026-04-06
 
 ### Corrigé
