@@ -6,6 +6,27 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v0.19.7] - 2026-04-12
+
+### Sécurité
+
+- Audit sécurité P0 : `DEMANDE_ACCES` — whitelist des rôles attribuables (MINISTER, DEPARTMENT_HEAD, DISCIPLE_MAKER, REPORTER) ; escalade vers SUPER_ADMIN/ADMIN/SECRETARY bloquée (#209)
+- Audit sécurité P0 : `isSuperAdmin(email)` renommée en `isBootstrapSuperAdminEmail()` (non-exportée) — seul `session.user.isSuperAdmin` (DB-backed, révocable) est utilisé pour les contrôles d'accès API (#209)
+- Audit sécurité P0 : routes `/api/churches`, `/api/admin/backups`, `/api/churches/onboard` migrent vers `requireSuperAdmin()` DB-backed (#209)
+- Audit sécurité P0 : `member-link-requests` — validation cross-tenant sur `ministryId` et `departmentIds` lors de l'approbation (#209)
+- Audit sécurité P1 : récurrence non plafonnée — `MAX_RECURRENCE_OCCURRENCES = 104` dans `events/route.ts` et `request-executor.ts` ; dates invalides rejetées par Zod (#209)
+- Audit sécurité P1 : réponse API honnête — `recurrenceTruncated: true` et `maxOccurrences: 104` retournés si le plafond est atteint (#209)
+
+### Corrigé
+
+- Planning : les admins (SUPER_ADMIN, ADMIN, SECRETARY) peuvent modifier le planning après la date limite (#208)
+
+### Qualité
+
+- ESLint : règle `@typescript-eslint/no-unused-vars` avec `argsIgnorePattern/varsIgnorePattern: "^_"` (#209)
+- `.gitignore` : exclusion de `coverage/` et `.codex` (#209)
+- Dépendances : `npm audit fix` — defu, dompurify, hono, brace-expansion, next (#206)
+
 ## [v0.19.6] - 2026-04-06
 
 ### Corrigé
