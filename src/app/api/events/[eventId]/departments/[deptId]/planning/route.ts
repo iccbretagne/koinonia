@@ -17,7 +17,14 @@ export async function GET(
   try {
     const { eventId, deptId: departmentId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:view", churchId);
+
+    const churchRoles = session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .map((r) => r.role);
+    const canBypassDeadline = churchRoles.some(
+      (r) => r === "SUPER_ADMIN" || r === "ADMIN" || r === "SECRETARY"
+    );
 
     // Verify department belongs to same church as event
     const deptCheck = await prisma.department.findUnique({
@@ -83,6 +90,7 @@ export async function GET(
         })),
         planningDeadline: event?.planningDeadline ?? null,
         deadlinePassed,
+        canBypassDeadline,
       });
     }
 
@@ -106,6 +114,7 @@ export async function GET(
       members,
       planningDeadline: eventDept.event.planningDeadline,
       deadlinePassed,
+      canBypassDeadline,
     });
   } catch (error) {
     return errorResponse(error);
