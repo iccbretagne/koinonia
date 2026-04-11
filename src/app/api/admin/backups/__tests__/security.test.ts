@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSuperAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createSuperAdminSession } from "@/__mocks__/auth";
 
-const mockRequirePermission = vi.fn();
+const mockRequireAuth = vi.fn();
 vi.mock("@/lib/auth", () => ({
-  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requireAuth: (...args: unknown[]) => mockRequireAuth(...args),
 }));
 vi.mock("@/lib/s3", () => ({ isS3Configured: vi.fn() }));
 vi.mock("@/lib/backup", () => ({ createBackup: vi.fn(), listBackups: vi.fn() }));
@@ -19,11 +19,21 @@ describe("GET /api/admin/backups — authentication", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequireAuth.mockRejectedValue(new Error("UNAUTHORIZED"));
 
     const res = await GET();
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when authenticated but not super-admin", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    const { isS3Configured } = await import("@/lib/s3");
+    vi.mocked(isS3Configured).mockReturnValue(true);
+
+    const res = await GET();
+
+    expect(res.status).toBe(403);
   });
 });
 
@@ -33,22 +43,32 @@ describe("POST /api/admin/backups — authentication", () => {
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequireAuth.mockRejectedValue(new Error("UNAUTHORIZED"));
 
     const res = await POST();
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when authenticated but not super-admin", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    const { isS3Configured } = await import("@/lib/s3");
+    vi.mocked(isS3Configured).mockReturnValue(true);
+
+    const res = await POST();
+
+    expect(res.status).toBe(403);
   });
 });
 
 describe("POST /api/admin/backups/restore — security", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createSuperAdminSession());
+    mockRequireAuth.mockResolvedValue(createSuperAdminSession());
   });
 
   it("returns 401 when not authenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequireAuth.mockRejectedValue(new Error("UNAUTHORIZED"));
 
     const { isS3Configured } = await import("@/lib/s3");
     vi.mocked(isS3Configured).mockReturnValue(true);
@@ -61,6 +81,22 @@ describe("POST /api/admin/backups/restore — security", () => {
     const res = await POST_RESTORE(request);
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when authenticated but not super-admin", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+
+    const { isS3Configured } = await import("@/lib/s3");
+    vi.mocked(isS3Configured).mockReturnValue(true);
+
+    const request = new Request("http://localhost/api/admin/backups/restore", {
+      method: "POST",
+      body: JSON.stringify({ key: "backups/2024-01-01.sql.gz" }),
+    });
+
+    const res = await POST_RESTORE(request);
+
+    expect(res.status).toBe(403);
   });
 
   it("returns 400 with invalid key format (path traversal attempt)", async () => {

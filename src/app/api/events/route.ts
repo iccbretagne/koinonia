@@ -111,15 +111,25 @@ export async function PATCH(request: Request) {
   }
 }
 
+function isValidDate(val: string) {
+  return !isNaN(new Date(val).getTime());
+}
+
 const createSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   type: z.string().min(1, "Le type est requis"),
-  date: z.string().min(1, "La date est requise"),
+  date: z.string().min(1, "La date est requise").refine(isValidDate, "Date invalide"),
   churchId: z.string().min(1, "L'église est requise"),
-  planningDeadline: z.string().nullable().optional(),
+  planningDeadline: z.string().nullable().optional().refine(
+    (v) => v == null || isValidDate(v),
+    "Date limite invalide"
+  ),
   deadlineOffset: z.string().nullable().optional(),
   recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).nullable().optional(),
-  recurrenceEnd: z.string().nullable().optional(),
+  recurrenceEnd: z.string().nullable().optional().refine(
+    (v) => v == null || isValidDate(v),
+    "Date de fin de récurrence invalide"
+  ),
 });
 
 function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {

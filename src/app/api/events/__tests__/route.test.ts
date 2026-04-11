@@ -140,10 +140,42 @@ describe("POST /api/events", () => {
     expect(body.childrenCreated).toBe(3); // March 8, 15, 22
   });
 
-  it("returns 500 for missing required fields", async () => {
+  it("returns 400 for missing required fields", async () => {
     const request = new Request("http://localhost/api/events", {
       method: "POST",
       body: JSON.stringify({ title: "Missing fields" }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for invalid date (DoS prevention)", async () => {
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "not-a-date",
+        churchId: "church-1",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for invalid recurrenceEnd (DoS prevention)", async () => {
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "2026-03-01",
+        churchId: "church-1",
+        recurrenceRule: "weekly",
+        recurrenceEnd: "not-a-date",
+      }),
     });
     const res = await POST(request);
 

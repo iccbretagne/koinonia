@@ -57,10 +57,13 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   return result;
 }
 
+const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
+
 function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): Date[] {
+  if (isNaN(endDate.getTime())) return [];
   const dates: Date[] = [];
   const current = new Date(startDate);
-  while (true) {
+  while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
     if (rule === "weekly") current.setDate(current.getDate() + 7);
     else if (rule === "biweekly") current.setDate(current.getDate() + 14);
     else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
@@ -89,6 +92,18 @@ async function executeAjoutEvenement(
     return { success: false, error: "Données manquantes : eventTitle, eventType, eventDate" };
   }
 
+  const eventDate = new Date(date);
+  if (isNaN(eventDate.getTime())) {
+    return { success: false, error: "eventDate invalide" };
+  }
+
+  if (recurrenceEnd) {
+    const endDateCheck = new Date(recurrenceEnd);
+    if (isNaN(endDateCheck.getTime())) {
+      return { success: false, error: "recurrenceEnd invalide" };
+    }
+  }
+
   if (departmentIds && departmentIds.length > 0) {
     const validDepts = await tx.department.count({
       where: { id: { in: departmentIds }, ministry: { churchId } },
@@ -98,7 +113,6 @@ async function executeAjoutEvenement(
     }
   }
 
-  const eventDate = new Date(date);
   const useOffset = !!deadlineOffset && !planningDeadlineRaw;
   const deadline = useOffset
     ? computeDeadlineFromOffset(eventDate, deadlineOffset!)
@@ -306,6 +320,16 @@ async function executeModificationPlanning(
   };
 }
 
+// Rôles pouvant être attribués via une DEMANDE_ACCES.
+// SUPER_ADMIN, ADMIN, SECRETARY sont explicitement exclus — ils ne peuvent
+// être assignés que par un super-administrateur via l'interface d'administration.
+const DEMANDE_ACCES_ALLOWED_ROLES = [
+  "MINISTER",
+  "DEPARTMENT_HEAD",
+  "DISCIPLE_MAKER",
+  "REPORTER",
+] as const;
+
 async function executeDemandeAcces(
   tx: TxClient,
   churchId: string,
@@ -318,6 +342,10 @@ async function executeDemandeAcces(
 
   if (!targetUserId || !role) {
     return { success: false, error: "Données manquantes : targetUserId, role" };
+  }
+
+  if (!DEMANDE_ACCES_ALLOWED_ROLES.includes(role as typeof DEMANDE_ACCES_ALLOWED_ROLES[number])) {
+    return { success: false, error: `Rôle non autorisé via demande d'accès : ${role}` };
   }
 
   const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
