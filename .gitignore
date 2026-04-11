@@ -24,3 +24,6 @@ tsconfig.tsbuildinfo
 # OS
 .DS_Store
 Thumbs.db
+
+# Test coverage
+coverage/
