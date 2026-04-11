@@ -53,10 +53,11 @@ export default function PlanningGrid({
   const [fetchError, setFetchError] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [deadlinePassed, setDeadlinePassed] = useState(false);
+  const [canBypassDeadline, setCanBypassDeadline] = useState(false);
   const [planningDeadline, setPlanningDeadline] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const isReadOnly = readOnly || deadlinePassed;
+  const isReadOnly = readOnly || (deadlinePassed && !canBypassDeadline);
 
   const fetchPlanning = useCallback(async () => {
     setLoading(true);
@@ -69,6 +70,7 @@ export default function PlanningGrid({
       const data = await res.json();
       setMembers(data.members);
       setDeadlinePassed(data.deadlinePassed ?? false);
+      setCanBypassDeadline(data.canBypassDeadline ?? false);
       setPlanningDeadline(data.planningDeadline ?? null);
       setDirty(false);
     } catch {
@@ -173,6 +175,9 @@ export default function PlanningGrid({
           <span className="text-gray-400 italic">
             {deadlinePassed ? "Échéance dépassée" : "Lecture seule"}
           </span>
+        )}
+        {deadlinePassed && canBypassDeadline && (
+          <span className="text-orange-500 italic text-xs">Échéance dépassée — modification autorisée</span>
         )}
         {saveError && <span className="text-icc-rouge">Erreur d&apos;enregistrement</span>}
         {!isReadOnly && saving && <span className="text-blue-500">Enregistrement...</span>}

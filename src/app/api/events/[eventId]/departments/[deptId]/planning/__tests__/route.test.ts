@@ -34,7 +34,7 @@ const mockDeptChurchCheck = { ministry: { churchId: "church-1" } };
 describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireAuth.mockResolvedValue(createAdminSession());
+    mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
   });
 
@@ -103,6 +103,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
 
     const body = await res.json();
     expect(body.deadlinePassed).toBe(true);
+    expect(body.canBypassDeadline).toBe(true); // ADMIN can bypass
   });
 });
 
