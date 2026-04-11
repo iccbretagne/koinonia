@@ -3,6 +3,8 @@ import type { Prisma } from "@/generated/prisma/client";
 interface ExecutionResult {
   success: boolean;
   error?: string;
+  recurrenceTruncated?: boolean;
+  maxOccurrences?: number;
 }
 
 type TxClient = Prisma.TransactionClient;
@@ -57,10 +59,13 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   return result;
 }
 
-function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): Date[] {
+const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
+
+function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): { dates: Date[]; truncated: boolean } {
+  if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
-  while (true) {
+  while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
     if (rule === "weekly") current.setDate(current.getDate() + 7);
     else if (rule === "biweekly") current.setDate(current.getDate() + 14);
     else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
@@ -68,7 +73,8 @@ function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): 
     if (current > endDate) break;
     dates.push(new Date(current));
   }
-  return dates;
+  const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
+  return { dates, truncated };
 }
 
 async function executeAjoutEvenement(
@@ -89,6 +95,18 @@ async function executeAjoutEvenement(
     return { success: false, error: "Données manquantes : eventTitle, eventType, eventDate" };
   }
 
+  const eventDate = new Date(date);
+  if (isNaN(eventDate.getTime())) {
+    return { success: false, error: "eventDate invalide" };
+  }
+
+  if (recurrenceEnd) {
+    const endDateCheck = new Date(recurrenceEnd);
+    if (isNaN(endDateCheck.getTime())) {
+      return { success: false, error: "recurrenceEnd invalide" };
+    }
+  }
+
   if (departmentIds && departmentIds.length > 0) {
     const validDepts = await tx.department.count({
       where: { id: { in: departmentIds }, ministry: { churchId } },
@@ -98,7 +116,6 @@ async function executeAjoutEvenement(
     }
   }
 
-  const eventDate = new Date(date);
   const useOffset = !!deadlineOffset && !planningDeadlineRaw;
   const deadline = useOffset
     ? computeDeadlineFromOffset(eventDate, deadlineOffset!)
@@ -108,7 +125,7 @@ async function executeAjoutEvenement(
 
   if (recurrenceRule && recurrenceEnd) {
     const endDate = new Date(recurrenceEnd);
-    const childDates = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
+    const { dates: childDates, truncated } = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
 
     const parent = await tx.event.create({
       data: {
@@ -152,7 +169,10 @@ async function executeAjoutEvenement(
       }
     }
 
-    return { success: true };
+    return {
+      success: true,
+      ...(truncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
+    };
   }
 
   const event = await tx.event.create({
@@ -306,6 +326,16 @@ async function executeModificationPlanning(
   };
 }
 
+// Rôles pouvant être attribués via une DEMANDE_ACCES.
+// SUPER_ADMIN, ADMIN, SECRETARY sont explicitement exclus — ils ne peuvent
+// être assignés que par un super-administrateur via l'interface d'administration.
+const DEMANDE_ACCES_ALLOWED_ROLES = [
+  "MINISTER",
+  "DEPARTMENT_HEAD",
+  "DISCIPLE_MAKER",
+  "REPORTER",
+] as const;
+
 async function executeDemandeAcces(
   tx: TxClient,
   churchId: string,
@@ -318,6 +348,18 @@ async function executeDemandeAcces(
 
   if (!targetUserId || !role) {
     return { success: false, error: "Données manquantes : targetUserId, role" };
+  }
+
+  if (!DEMANDE_ACCES_ALLOWED_ROLES.includes(role as typeof DEMANDE_ACCES_ALLOWED_ROLES[number])) {
+    return { success: false, error: `Rôle non autorisé via demande d'accès : ${role}` };
+  }
+
+  // MINISTER et DEPARTMENT_HEAD nécessitent un scope obligatoire
+  if (role === "MINISTER" && !ministryId) {
+    return { success: false, error: "ministryId requis pour le rôle MINISTER" };
+  }
+  if (role === "DEPARTMENT_HEAD" && (!departmentIds || departmentIds.length === 0)) {
+    return { success: false, error: "departmentIds requis pour le rôle DEPARTMENT_HEAD" };
   }
 
   const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });

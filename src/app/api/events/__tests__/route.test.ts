@@ -140,7 +140,7 @@ describe("POST /api/events", () => {
     expect(body.childrenCreated).toBe(3); // March 8, 15, 22
   });
 
-  it("returns 500 for missing required fields", async () => {
+  it("returns 400 for missing required fields", async () => {
     const request = new Request("http://localhost/api/events", {
       method: "POST",
       body: JSON.stringify({ title: "Missing fields" }),
@@ -148,6 +148,64 @@ describe("POST /api/events", () => {
     const res = await POST(request);
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for invalid date (DoS prevention)", async () => {
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "not-a-date",
+        churchId: "church-1",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 for invalid recurrenceEnd (DoS prevention)", async () => {
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "2026-03-01",
+        churchId: "church-1",
+        recurrenceRule: "weekly",
+        recurrenceEnd: "not-a-date",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("caps recurring events at MAX_RECURRENCE_OCCURRENCES (no infinite loop)", async () => {
+    const parent = { id: "evt-parent", title: "Culte", type: "CULTE", date: new Date(), churchId: "church-1" };
+    prismaMock.event.create.mockResolvedValue(parent);
+    prismaMock.event.findUnique.mockResolvedValue({ ...parent, church: { id: "church-1", name: "ICC Rennes" }, eventDepts: [] });
+
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "2020-01-05",
+        churchId: "church-1",
+        recurrenceRule: "weekly",
+        recurrenceEnd: "2100-01-01", // 4000+ semaines sans plafond
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(201);
+    // 1 parent + max 104 enfants
+    expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
+    const body = await res.json();
+    expect(body.recurrenceTruncated).toBe(true);
+    expect(body.maxOccurrences).toBe(104);
   });
 });
 

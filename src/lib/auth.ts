@@ -9,7 +9,13 @@ const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
-export function isSuperAdmin(email: string): boolean {
+/**
+ * Vérifie si un email est dans la liste SUPER_ADMIN_EMAILS (var d'env).
+ *
+ * USAGE RESTREINT : uniquement dans les callbacks NextAuth (signIn + session fallback).
+ * Ne pas utiliser pour des contrôles d'accès API — utiliser session.user.isSuperAdmin (DB-backed).
+ */
+function isBootstrapSuperAdminEmail(email: string): boolean {
   return SUPER_ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
@@ -52,7 +58,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       if (!user.email || !user.id) return true;
 
-      if (isSuperAdmin(user.email)) {
+      if (isBootstrapSuperAdminEmail(user.email)) {
         // On first-ever sign-in the User row may not exist yet (PrismaAdapter
         // creates it after the signIn callback returns). We wrap everything in
         // a try-catch so sign-in isn't blocked. The session callback falls back
@@ -100,7 +106,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         select: { displayName: true, isSuperAdmin: true, hasSeenTour: true },
       });
       session.user.displayName = dbUser?.displayName ?? null;
-      session.user.isSuperAdmin = dbUser?.isSuperAdmin || isSuperAdmin(user.email ?? "");
+      session.user.isSuperAdmin = dbUser?.isSuperAdmin || isBootstrapSuperAdminEmail(user.email ?? "");
       session.user.hasSeenTour = dbUser?.hasSeenTour ?? false;
 
       const churchRoles = await prisma.userChurchRole.findMany({

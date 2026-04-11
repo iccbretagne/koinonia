@@ -128,6 +128,14 @@ export async function PATCH(
 
         if (requestedRole === "MINISTER") {
           if (!effectiveMinistryId) throw new ApiError(400, "Le ministère est requis pour le rôle Ministre");
+          // Valider que le ministère appartient bien à l'église de la demande
+          const ministry = await tx.ministry.findUnique({
+            where: { id: effectiveMinistryId },
+            select: { churchId: true },
+          });
+          if (!ministry || ministry.churchId !== linkRequest.churchId) {
+            throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
+          }
           if (existingRole) {
             await tx.userChurchRole.update({
               where: { id: existingRole.id },
@@ -145,6 +153,17 @@ export async function PATCH(
           }
         } else if (requestedRole === "DEPARTMENT_HEAD" || requestedRole === "DEPUTY") {
           if (!effectiveDeptId) throw new ApiError(400, "Le département est requis pour ce rôle");
+          // Valider que le département appartient à l'église de la demande
+          // (le contrôle sur les nouveaux STAR est déjà fait plus haut, mais pas pour les STAR existants)
+          if (!isNewStar || isNoStarRole) {
+            const roleDept = await tx.department.findUnique({
+              where: { id: effectiveDeptId },
+              include: { ministry: { select: { churchId: true } } },
+            });
+            if (!roleDept || roleDept.ministry.churchId !== linkRequest.churchId) {
+              throw new ApiError(400, "Ce département n'appartient pas à cette église");
+            }
+          }
           const isDeputy = requestedRole === "DEPUTY";
 
           if (existingRole) {

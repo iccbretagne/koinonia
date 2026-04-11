@@ -1,9 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
+
+async function requireSuperAdmin() {
+  const session = await requireAuth();
+  if (!session.user.isSuperAdmin) throw new ApiError(403, "Réservé aux super-administrateurs");
+  return session;
+}
 
 const onboardSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -16,7 +22,7 @@ const onboardSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("church:manage");
+    const session = await requireSuperAdmin();
     requireRateLimit(request, { prefix: `onboard:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
     const body = await request.json();
     const { name, slug, adminEmail } = onboardSchema.parse(body);

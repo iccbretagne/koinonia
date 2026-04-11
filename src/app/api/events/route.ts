@@ -111,15 +111,25 @@ export async function PATCH(request: Request) {
   }
 }
 
+function isValidDate(val: string) {
+  return !isNaN(new Date(val).getTime());
+}
+
 const createSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   type: z.string().min(1, "Le type est requis"),
-  date: z.string().min(1, "La date est requise"),
+  date: z.string().min(1, "La date est requise").refine(isValidDate, "Date invalide"),
   churchId: z.string().min(1, "L'église est requise"),
-  planningDeadline: z.string().nullable().optional(),
+  planningDeadline: z.string().nullable().optional().refine(
+    (v) => v == null || isValidDate(v),
+    "Date limite invalide"
+  ),
   deadlineOffset: z.string().nullable().optional(),
   recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).nullable().optional(),
-  recurrenceEnd: z.string().nullable().optional(),
+  recurrenceEnd: z.string().nullable().optional().refine(
+    (v) => v == null || isValidDate(v),
+    "Date de fin de récurrence invalide"
+  ),
 });
 
 function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
@@ -139,16 +149,19 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   return result;
 }
 
+const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
+
 function generateRecurrenceDates(
   startDate: Date,
   rule: string,
   endDate: Date
-): Date[] {
+): { dates: Date[]; truncated: boolean } {
+  if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
 
   // Skip the first date (it's the parent)
-  while (true) {
+  while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
     if (rule === "weekly") current.setDate(current.getDate() + 7);
     else if (rule === "biweekly") current.setDate(current.getDate() + 14);
     else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
@@ -158,7 +171,8 @@ function generateRecurrenceDates(
     dates.push(new Date(current));
   }
 
-  return dates;
+  const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
+  return { dates, truncated };
 }
 
 export async function POST(request: Request) {
@@ -179,7 +193,7 @@ export async function POST(request: Request) {
     if (data.recurrenceRule && data.recurrenceEnd) {
       const startDate = new Date(data.date);
       const endDate = new Date(data.recurrenceEnd);
-      const childDates = generateRecurrenceDates(
+      const { dates: childDates, truncated: recurrenceTruncated } = generateRecurrenceDates(
         startDate,
         data.recurrenceRule,
         endDate
@@ -240,7 +254,11 @@ export async function POST(request: Request) {
       });
 
       return successResponse(
-        { ...result, childrenCreated: childDates.length },
+        {
+          ...result,
+          childrenCreated: childDates.length,
+          ...(recurrenceTruncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
+        },
         201
       );
     }
