@@ -1,19 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission, isSuperAdmin } from "@/lib/auth";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { requireAuth } from "@/lib/auth";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
-async function requireChurchManageOrSuperAdmin() {
+async function requireSuperAdmin() {
   const session = await requireAuth();
-  if (isSuperAdmin(session.user.email)) return session;
-
-  return requirePermission("church:manage");
+  if (!session.user.isSuperAdmin) {
+    throw new ApiError(403, "Réservé aux super-administrateurs");
+  }
+  return session;
 }
 
 export async function GET() {
   try {
-    await requireChurchManageOrSuperAdmin();
+    await requireSuperAdmin();
 
     const churches = await prisma.church.findMany({
       include: {
@@ -39,7 +40,7 @@ const bulkSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
-    const patchSession = await requireChurchManageOrSuperAdmin();
+    const patchSession = await requireSuperAdmin();
     const body = await request.json();
     const { ids, action, data } = bulkSchema.parse(body);
 
@@ -128,7 +129,7 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const postSession = await requireChurchManageOrSuperAdmin();
+    const postSession = await requireSuperAdmin();
     const body = await request.json();
     const parsed = createSchema.parse(body);
     const slug = parsed.slug || generateSlug(parsed.name);

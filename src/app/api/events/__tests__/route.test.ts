@@ -181,6 +181,28 @@ describe("POST /api/events", () => {
 
     expect(res.status).toBe(400);
   });
+
+  it("caps recurring events at MAX_RECURRENCE_OCCURRENCES (no infinite loop)", async () => {
+    const parent = { id: "evt-parent", title: "Culte", type: "CULTE", date: new Date(), churchId: "church-1" };
+    prismaMock.event.create.mockResolvedValue(parent);
+
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte",
+        type: "CULTE",
+        date: "2020-01-05",
+        churchId: "church-1",
+        recurrenceRule: "weekly",
+        recurrenceEnd: "2100-01-01", // 4000+ semaines sans plafond
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(201);
+    // 1 parent + max 104 enfants
+    expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
+  });
 });
 
 describe("PATCH /api/events (bulk)", () => {

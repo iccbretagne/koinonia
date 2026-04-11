@@ -348,6 +348,14 @@ async function executeDemandeAcces(
     return { success: false, error: `Rôle non autorisé via demande d'accès : ${role}` };
   }
 
+  // MINISTER et DEPARTMENT_HEAD nécessitent un scope obligatoire
+  if (role === "MINISTER" && !ministryId) {
+    return { success: false, error: "ministryId requis pour le rôle MINISTER" };
+  }
+  if (role === "DEPARTMENT_HEAD" && (!departmentIds || departmentIds.length === 0)) {
+    return { success: false, error: "departmentIds requis pour le rôle DEPARTMENT_HEAD" };
+  }
+
   const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
   if (!user) {
     return { success: false, error: "Utilisateur cible introuvable" };

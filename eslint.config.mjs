@@ -9,9 +9,15 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-empty": ["error", { allowEmptyCatch: false }],
     // setState in effects is a valid pattern for syncing with external state (e.g. route changes)
     "react-hooks/set-state-in-effect": "warn",
+    // Convention underscore : paramètres préfixés _ sont intentionnellement inutilisés
+    "@typescript-eslint/no-unused-vars": ["warn", {
+      argsIgnorePattern: "^_",
+      varsIgnorePattern: "^_",
+      destructuredArrayIgnorePattern: "^_",
+    }],
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts"]
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**"]
 }];
 
 export default eslintConfig;

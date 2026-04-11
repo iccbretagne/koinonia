@@ -149,16 +149,19 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   return result;
 }
 
+const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
+
 function generateRecurrenceDates(
   startDate: Date,
   rule: string,
   endDate: Date
 ): Date[] {
+  if (isNaN(endDate.getTime())) return [];
   const dates: Date[] = [];
   const current = new Date(startDate);
 
   // Skip the first date (it's the parent)
-  while (true) {
+  while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
     if (rule === "weekly") current.setDate(current.getDate() + 7);
     else if (rule === "biweekly") current.setDate(current.getDate() + 14);
     else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
