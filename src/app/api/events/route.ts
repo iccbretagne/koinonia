@@ -155,8 +155,8 @@ function generateRecurrenceDates(
   startDate: Date,
   rule: string,
   endDate: Date
-): Date[] {
-  if (isNaN(endDate.getTime())) return [];
+): { dates: Date[]; truncated: boolean } {
+  if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
 
@@ -171,7 +171,8 @@ function generateRecurrenceDates(
     dates.push(new Date(current));
   }
 
-  return dates;
+  const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
+  return { dates, truncated };
 }
 
 export async function POST(request: Request) {
@@ -192,7 +193,7 @@ export async function POST(request: Request) {
     if (data.recurrenceRule && data.recurrenceEnd) {
       const startDate = new Date(data.date);
       const endDate = new Date(data.recurrenceEnd);
-      const childDates = generateRecurrenceDates(
+      const { dates: childDates, truncated: recurrenceTruncated } = generateRecurrenceDates(
         startDate,
         data.recurrenceRule,
         endDate
@@ -253,7 +254,11 @@ export async function POST(request: Request) {
       });
 
       return successResponse(
-        { ...result, childrenCreated: childDates.length },
+        {
+          ...result,
+          childrenCreated: childDates.length,
+          ...(recurrenceTruncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
+        },
         201
       );
     }

@@ -185,6 +185,7 @@ describe("POST /api/events", () => {
   it("caps recurring events at MAX_RECURRENCE_OCCURRENCES (no infinite loop)", async () => {
     const parent = { id: "evt-parent", title: "Culte", type: "CULTE", date: new Date(), churchId: "church-1" };
     prismaMock.event.create.mockResolvedValue(parent);
+    prismaMock.event.findUnique.mockResolvedValue({ ...parent, church: { id: "church-1", name: "ICC Rennes" }, eventDepts: [] });
 
     const request = new Request("http://localhost/api/events", {
       method: "POST",
@@ -202,6 +203,9 @@ describe("POST /api/events", () => {
     expect(res.status).toBe(201);
     // 1 parent + max 104 enfants
     expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
+    const body = await res.json();
+    expect(body.recurrenceTruncated).toBe(true);
+    expect(body.maxOccurrences).toBe(104);
   });
 });
 

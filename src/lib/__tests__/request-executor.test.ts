@@ -202,8 +202,10 @@ describe("executeAjoutEvenement — date validation / DoS prevention", () => {
       recurrenceEnd: "2100-01-01",
     }, "approver-1");
 
-    // Should succeed but capped
+    // Should succeed but capped, and signal truncation
     expect(result.success).toBe(true);
+    expect(result.recurrenceTruncated).toBe(true);
+    expect(result.maxOccurrences).toBe(104);
     // Total event.create calls: 1 (parent) + at most 104 (children)
     expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
   });

@@ -3,6 +3,8 @@ import type { Prisma } from "@/generated/prisma/client";
 interface ExecutionResult {
   success: boolean;
   error?: string;
+  recurrenceTruncated?: boolean;
+  maxOccurrences?: number;
 }
 
 type TxClient = Prisma.TransactionClient;
@@ -59,8 +61,8 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
 
 const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
 
-function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): Date[] {
-  if (isNaN(endDate.getTime())) return [];
+function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): { dates: Date[]; truncated: boolean } {
+  if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
   while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
@@ -71,7 +73,8 @@ function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): 
     if (current > endDate) break;
     dates.push(new Date(current));
   }
-  return dates;
+  const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
+  return { dates, truncated };
 }
 
 async function executeAjoutEvenement(
@@ -122,7 +125,7 @@ async function executeAjoutEvenement(
 
   if (recurrenceRule && recurrenceEnd) {
     const endDate = new Date(recurrenceEnd);
-    const childDates = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
+    const { dates: childDates, truncated } = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
 
     const parent = await tx.event.create({
       data: {
@@ -166,7 +169,10 @@ async function executeAjoutEvenement(
       }
     }
 
-    return { success: true };
+    return {
+      success: true,
+      ...(truncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
+    };
   }
 
   const event = await tx.event.create({
