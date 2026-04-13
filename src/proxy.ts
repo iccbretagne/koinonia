@@ -11,6 +11,12 @@ export function proxy(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith("/api/cron")) {
       return NextResponse.next();
     }
+    // Allow public media token routes (validate, gallery, download — token-based auth)
+    if (request.nextUrl.pathname.startsWith("/api/media/validate/") ||
+        request.nextUrl.pathname.startsWith("/api/media/gallery/") ||
+        request.nextUrl.pathname.startsWith("/api/media/download/")) {
+      return NextResponse.next();
+    }
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
