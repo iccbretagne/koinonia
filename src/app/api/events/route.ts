@@ -3,6 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
+import { planningBus, deleteEvents } from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -68,19 +69,10 @@ export async function PATCH(request: Request) {
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
-        const eventDeptIds = (
-          await tx.eventDepartment.findMany({
-            where: { eventId: { in: ids } },
-            select: { id: true },
-          })
-        ).map((ed) => ed.id);
-        await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-        await tx.eventDepartment.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.discipleshipAttendance.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.eventReport.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.taskAssignment.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.announcementEvent.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.event.deleteMany({ where: { id: { in: ids } } });
+        await deleteEvents(
+          { tx, churchId: evtChurchId, userId: patchSession.user.id },
+          ids
+        );
       });
       for (const id of ids) {
         await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "DELETE", entityType: "Event", entityId: id });
@@ -232,6 +224,20 @@ export async function POST(request: Request) {
           });
         }
 
+        await planningBus.emit(
+          "planning:event:created",
+          { tx, churchId: data.churchId, userId: session.user.id },
+          {
+            eventId: parent.id,
+            churchId: data.churchId,
+            title: data.title,
+            type: data.type,
+            createdById: session.user.id,
+            isRecurrenceParent: true,
+            childCount: childDates.length,
+          }
+        );
+
         // Return parent with includes
         return tx.event.findUnique({
           where: { id: parent.id },
@@ -264,20 +270,37 @@ export async function POST(request: Request) {
     }
 
     // Single event creation
-    const event = await prisma.event.create({
-      data: {
-        title: data.title,
-        type: data.type,
-        date: new Date(data.date),
-        churchId: data.churchId,
-        planningDeadline: deadline,
-      },
-      include: {
-        church: { select: { id: true, name: true } },
-        eventDepts: {
-          include: { department: { select: { id: true, name: true } } },
+    const event = await prisma.$transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: {
+          title: data.title,
+          type: data.type,
+          date: new Date(data.date),
+          churchId: data.churchId,
+          planningDeadline: deadline,
         },
-      },
+        include: {
+          church: { select: { id: true, name: true } },
+          eventDepts: {
+            include: { department: { select: { id: true, name: true } } },
+          },
+        },
+      });
+
+      await planningBus.emit(
+        "planning:event:created",
+        { tx, churchId: data.churchId, userId: session.user.id },
+        {
+          eventId: created.id,
+          churchId: data.churchId,
+          title: data.title,
+          type: data.type,
+          createdById: session.user.id,
+          isRecurrenceParent: false,
+        }
+      );
+
+      return created;
     });
 
     await logAudit({

@@ -1,5 +1,5 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -20,7 +20,7 @@ export default async function MediaRequestsPage() {
 
   if (mediaDept) {
     const userPermissions = new Set(
-      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+      session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = session.user.churchRoles.flatMap((r) =>

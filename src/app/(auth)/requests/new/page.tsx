@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import RequestForm from "./RequestForm";
 
@@ -12,7 +12,7 @@ export default async function NewRequestPage() {
   const churchPermissions = new Set(
     session.user.churchRoles
       .filter((r) => r.churchId === churchId)
-      .flatMap((r) => hasPermission(r.role))
+      .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
 

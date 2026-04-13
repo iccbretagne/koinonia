@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import RequestForm, { type EditData } from "../../new/RequestForm";
 
@@ -48,7 +48,7 @@ export default async function EditRequestPage({ params }: Props) {
   const churchPermissions = new Set(
     session.user.churchRoles
       .filter((r) => r.churchId === churchId)
-      .flatMap((r) => hasPermission(r.role))
+      .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
 

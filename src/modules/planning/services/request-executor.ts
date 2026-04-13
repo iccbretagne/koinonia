@@ -1,52 +1,94 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { planningBus } from "../bus";
+import { deleteEvents } from "./event.service";
 
-interface ExecutionResult {
+export interface ExecutionResult {
   success: boolean;
   error?: string;
+  /** ID de la ressource créée ou modifiée (event, role…), si applicable. */
+  resourceId?: string;
   recurrenceTruncated?: boolean;
   maxOccurrences?: number;
+  /** Nombre d'occurrences enfants créées (AJOUT_EVENEMENT récurrent uniquement). */
+  childCount?: number;
 }
 
 type TxClient = Prisma.TransactionClient;
 
 /**
- * Execute the action associated with an approved request.
- * Called within a transaction after status is set to APPROUVEE.
- * On success, sets status to EXECUTEE. On failure, sets ERREUR + executionError.
+ * Exécute l'action associée à une demande approuvée.
+ *
+ * Doit être appelé dans une transaction Prisma.
+ * En cas de succès émet les événements planningBus correspondants.
+ * Retourne `{ success: false, error }` sans throw — l'appelant gère ERREUR vs EXECUTEE.
  */
 export async function executeRequest(
   tx: TxClient,
-  _requestId: string,
+  requestId: string,
   churchId: string,
   type: string,
   payload: Record<string, unknown>,
-  _approvedById: string
+  userId: string
 ): Promise<ExecutionResult> {
+  const ctx = { tx, churchId, userId };
+
   try {
+    let result: ExecutionResult;
+
     switch (type) {
       case "AJOUT_EVENEMENT":
-        return await executeAjoutEvenement(tx, churchId, payload);
-
+        result = await executeAjoutEvenement(tx, churchId, payload);
+        break;
       case "MODIFICATION_EVENEMENT":
-        return await executeModificationEvenement(tx, churchId, payload);
-
+        result = await executeModificationEvenement(tx, churchId, payload);
+        break;
       case "ANNULATION_EVENEMENT":
-        return await executeAnnulationEvenement(tx, churchId, payload);
-
+        // ctx + requestId passés pour émettre planning:event:cancelled AVANT la suppression
+        // (les handlers doivent nettoyer les FK avant que l'event soit supprimé)
+        result = await executeAnnulationEvenement(tx, churchId, payload, ctx, requestId);
+        break;
       case "MODIFICATION_PLANNING":
-        return await executeModificationPlanning(tx, churchId, payload);
-
+        result = await executeModificationPlanning(tx, churchId, payload);
+        break;
       case "DEMANDE_ACCES":
-        return await executeDemandeAcces(tx, churchId, payload);
-
+        result = await executeDemandeAcces(tx, churchId, payload);
+        break;
       default:
         return { success: false, error: `Type de demande non exécutable : ${type}` };
     }
+
+    if (!result.success) return result;
+
+    // Événements spécifiques par type
+    if (type === "AJOUT_EVENEMENT" && result.resourceId) {
+      await planningBus.emit("planning:event:created", ctx, {
+        eventId: result.resourceId,
+        churchId,
+        title: payload.eventTitle as string,
+        type: payload.eventType as string,
+        createdById: userId,
+        isRecurrenceParent: !!(payload.recurrenceRule && payload.recurrenceEnd),
+        childCount: result.childCount,
+      });
+    }
+
+    // Événement générique — émis pour toute exécution réussie
+    await planningBus.emit("planning:request:executed", ctx, {
+      requestId,
+      requestType: type,
+      churchId,
+      executedById: userId,
+      resourceId: result.resourceId,
+    });
+
+    return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erreur inconnue";
     return { success: false, error: message };
   }
 }
+
+// ─── Helpers internes ─────────────────────────────────────────────────────────
 
 function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   const result = new Date(eventDate);
@@ -61,7 +103,11 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
 
 const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
 
-function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): { dates: Date[]; truncated: boolean } {
+function generateRecurrenceDates(
+  startDate: Date,
+  rule: string,
+  endDate: Date
+): { dates: Date[]; truncated: boolean } {
   if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
@@ -76,6 +122,8 @@ function generateRecurrenceDates(startDate: Date, rule: string, endDate: Date): 
   const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
   return { dates, truncated };
 }
+
+// ─── Exécuteurs par type ──────────────────────────────────────────────────────
 
 async function executeAjoutEvenement(
   tx: TxClient,
@@ -100,11 +148,8 @@ async function executeAjoutEvenement(
     return { success: false, error: "eventDate invalide" };
   }
 
-  if (recurrenceEnd) {
-    const endDateCheck = new Date(recurrenceEnd);
-    if (isNaN(endDateCheck.getTime())) {
-      return { success: false, error: "recurrenceEnd invalide" };
-    }
+  if (recurrenceEnd && isNaN(new Date(recurrenceEnd).getTime())) {
+    return { success: false, error: "recurrenceEnd invalide" };
   }
 
   if (departmentIds && departmentIds.length > 0) {
@@ -128,15 +173,7 @@ async function executeAjoutEvenement(
     const { dates: childDates, truncated } = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
 
     const parent = await tx.event.create({
-      data: {
-        title,
-        type,
-        date: eventDate,
-        churchId,
-        planningDeadline: deadline,
-        recurrenceRule,
-        isRecurrenceParent: true,
-      },
+      data: { title, type, date: eventDate, churchId, planningDeadline: deadline, recurrenceRule, isRecurrenceParent: true },
     });
 
     if (departmentIds && departmentIds.length > 0) {
@@ -146,22 +183,10 @@ async function executeAjoutEvenement(
     }
 
     for (const childDate of childDates) {
-      const childDeadline = useOffset
-        ? computeDeadlineFromOffset(childDate, deadlineOffset!)
-        : deadline;
-
+      const childDeadline = useOffset ? computeDeadlineFromOffset(childDate, deadlineOffset!) : deadline;
       const child = await tx.event.create({
-        data: {
-          title,
-          type,
-          date: childDate,
-          churchId,
-          planningDeadline: childDeadline,
-          recurrenceRule,
-          seriesId: parent.id,
-        },
+        data: { title, type, date: childDate, churchId, planningDeadline: childDeadline, recurrenceRule, seriesId: parent.id },
       });
-
       if (departmentIds && departmentIds.length > 0) {
         await tx.eventDepartment.createMany({
           data: departmentIds.map((departmentId) => ({ eventId: child.id, departmentId })),
@@ -171,18 +196,14 @@ async function executeAjoutEvenement(
 
     return {
       success: true,
+      resourceId: parent.id,
+      childCount: childDates.length,
       ...(truncated ? { recurrenceTruncated: true, maxOccurrences: MAX_RECURRENCE_OCCURRENCES } : {}),
     };
   }
 
   const event = await tx.event.create({
-    data: {
-      title,
-      type,
-      date: eventDate,
-      churchId,
-      planningDeadline: deadline,
-    },
+    data: { title, type, date: eventDate, churchId, planningDeadline: deadline },
   });
 
   if (departmentIds && departmentIds.length > 0) {
@@ -191,7 +212,7 @@ async function executeAjoutEvenement(
     });
   }
 
-  return { success: true };
+  return { success: true, resourceId: event.id };
 }
 
 async function executeModificationEvenement(
@@ -207,12 +228,8 @@ async function executeModificationEvenement(
   }
 
   const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true } });
-  if (!event) {
-    return { success: false, error: "Événement introuvable" };
-  }
-  if (event.churchId !== churchId) {
-    return { success: false, error: "Événement hors périmètre" };
-  }
+  if (!event) return { success: false, error: "Événement introuvable" };
+  if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
 
   await tx.event.update({
     where: { id: eventId },
@@ -226,40 +243,32 @@ async function executeModificationEvenement(
     },
   });
 
-  return { success: true };
+  return { success: true, resourceId: eventId };
 }
 
 async function executeAnnulationEvenement(
   tx: TxClient,
   churchId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  ctx: { tx: TxClient; churchId: string; userId: string },
+  _requestId: string
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
 
-  if (!eventId) {
-    return { success: false, error: "Données manquantes : eventId" };
-  }
+  if (!eventId) return { success: false, error: "Données manquantes : eventId" };
 
   const event = await tx.event.findUnique({
     where: { id: eventId },
-    include: { eventDepts: { select: { id: true } } },
+    select: { id: true, churchId: true },
   });
-  if (!event) {
-    return { success: false, error: "Événement introuvable" };
-  }
-  if (event.churchId !== churchId) {
-    return { success: false, error: "Événement hors périmètre" };
-  }
+  if (!event) return { success: false, error: "Événement introuvable" };
+  if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
 
-  const edIds = event.eventDepts.map((ed) => ed.id);
-  if (edIds.length > 0) {
-    await tx.planning.deleteMany({ where: { eventDepartmentId: { in: edIds } } });
-    await tx.taskAssignment.deleteMany({ where: { eventId } });
-    await tx.eventDepartment.deleteMany({ where: { id: { in: edIds } } });
-  }
-  await tx.event.delete({ where: { id: eventId } });
+  // deleteEvents gère : émission bus, cleanup FK (planning + discipleship
+  // via handler + eventReport + announcementEvent), puis suppression.
+  await deleteEvents(ctx, [eventId]);
 
-  return { success: true };
+  return { success: true, resourceId: eventId };
 }
 
 async function executeModificationPlanning(
@@ -275,12 +284,8 @@ async function executeModificationPlanning(
   }
 
   const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true } });
-  if (!event) {
-    return { success: false, error: "Événement introuvable" };
-  }
-  if (event.churchId !== churchId) {
-    return { success: false, error: "Événement hors périmètre" };
-  }
+  if (!event) return { success: false, error: "Événement introuvable" };
+  if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
 
   if (departmentIds.length > 0) {
     const validDepts = await tx.department.count({
@@ -291,44 +296,30 @@ async function executeModificationPlanning(
     }
   }
 
-  // Fetch current EventDepartment records for this event
   const currentEventDepts = await tx.eventDepartment.findMany({
     where: { eventId },
     select: { id: true, departmentId: true },
   });
 
   const currentDeptIds = currentEventDepts.map((ed) => ed.departmentId);
-  const requestedDeptIds = departmentIds;
+  const toAdd = departmentIds.filter((id) => !currentDeptIds.includes(id));
+  const toRemove = currentEventDepts.filter((ed) => !departmentIds.includes(ed.departmentId));
 
-  // Departments to add: in requested but not in current
-  const toAdd = requestedDeptIds.filter((id) => !currentDeptIds.includes(id));
-
-  // Departments to remove: in current but not in requested
-  const toRemove = currentEventDepts.filter((ed) => !requestedDeptIds.includes(ed.departmentId));
-
-  // Remove departments: cascade delete plannings first, then EventDepartment records
   if (toRemove.length > 0) {
     const removeIds = toRemove.map((ed) => ed.id);
     await tx.planning.deleteMany({ where: { eventDepartmentId: { in: removeIds } } });
     await tx.eventDepartment.deleteMany({ where: { id: { in: removeIds } } });
   }
 
-  // Add new departments
   if (toAdd.length > 0) {
     await tx.eventDepartment.createMany({
       data: toAdd.map((departmentId) => ({ eventId, departmentId })),
     });
   }
 
-  return {
-    success: true,
-    error: undefined,
-  };
+  return { success: true, resourceId: eventId };
 }
 
-// Rôles pouvant être attribués via une DEMANDE_ACCES.
-// SUPER_ADMIN, ADMIN, SECRETARY sont explicitement exclus — ils ne peuvent
-// être assignés que par un super-administrateur via l'interface d'administration.
 const DEMANDE_ACCES_ALLOWED_ROLES = [
   "MINISTER",
   "DEPARTMENT_HEAD",
@@ -354,7 +345,6 @@ async function executeDemandeAcces(
     return { success: false, error: `Rôle non autorisé via demande d'accès : ${role}` };
   }
 
-  // MINISTER et DEPARTMENT_HEAD nécessitent un scope obligatoire
   if (role === "MINISTER" && !ministryId) {
     return { success: false, error: "ministryId requis pour le rôle MINISTER" };
   }
@@ -363,15 +353,11 @@ async function executeDemandeAcces(
   }
 
   const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
-  if (!user) {
-    return { success: false, error: "Utilisateur cible introuvable" };
-  }
+  if (!user) return { success: false, error: "Utilisateur cible introuvable" };
 
   if (ministryId) {
     const validMinistry = await tx.ministry.count({ where: { id: ministryId, churchId } });
-    if (validMinistry === 0) {
-      return { success: false, error: "Ministère invalide ou hors périmètre" };
-    }
+    if (validMinistry === 0) return { success: false, error: "Ministère invalide ou hors périmètre" };
   }
 
   if (departmentIds && departmentIds.length > 0) {
@@ -383,21 +369,18 @@ async function executeDemandeAcces(
     }
   }
 
-  await tx.userChurchRole.create({
+  const ucr = await tx.userChurchRole.create({
     data: {
       userId: targetUserId,
       churchId,
       role: role as "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER",
       ...(role === "MINISTER" && ministryId ? { ministryId } : {}),
       ...(role === "DEPARTMENT_HEAD" && departmentIds?.length
-        ? {
-            departments: {
-              create: departmentIds.map((departmentId) => ({ departmentId })),
-            },
-          }
+        ? { departments: { create: departmentIds.map((departmentId) => ({ departmentId })) } }
         : {}),
     },
+    select: { id: true },
   });
 
-  return { success: true };
+  return { success: true, resourceId: ucr.id };
 }

@@ -1,5 +1,5 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import DiscipleshipClient from "./DiscipleshipClient";
 
@@ -18,7 +18,7 @@ export default async function DiscipleshipPage() {
 
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const userPermissions = new Set(
-    churchRoles.flatMap((r) => hasPermission(r.role))
+    churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   const canManage = userPermissions.has("discipleship:manage");

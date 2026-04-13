@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -38,7 +38,7 @@ export async function GET(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === minimal.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const isOwner = minimal.submittedById === session.user.id;
@@ -99,7 +99,7 @@ export async function PATCH(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === announcement.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");
@@ -188,7 +188,7 @@ export async function DELETE(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === announcement.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");

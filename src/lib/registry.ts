@@ -1,7 +1,7 @@
 import { boot } from "@/core/boot";
 import { buildRolePermissions } from "@/core/permissions";
 import { coreModule } from "@/modules/core";
-import { planningModule } from "@/modules/planning";
+import { planningModule, planningBus } from "@/modules/planning";
 import { discipleshipModule } from "@/modules/discipleship";
 
 /**
@@ -19,3 +19,20 @@ export const registry = boot({
  * Remplace ROLE_PERMISSIONS de src/lib/permissions.ts dans les guards API.
  */
 export const rolePermissions = buildRolePermissions(registry);
+
+// ─── Abonnements cross-module ─────────────────────────────────────────────────
+//
+// Le registry est la racine de composition : seul endroit où tous les modules
+// sont visibles. Les abonnements ici permettent à un module de réagir aux
+// événements d'un autre sans importer directement depuis ce module.
+
+/**
+ * Discipleship → Planning : quand un événement est annulé, supprimer les
+ * enregistrements de présence discipleship liés (évite une FK violation et
+ * maintient la cohérence des données de suivi).
+ *
+ * S'exécute dans la même transaction que la suppression de l'événement.
+ */
+planningBus.on("planning:event:cancelled", async ({ tx }, { eventId }) => {
+  await tx.discipleshipAttendance.deleteMany({ where: { eventId } });
+});
