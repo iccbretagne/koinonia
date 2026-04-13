@@ -70,6 +70,9 @@ model Church {
   memberLinkRequests       MemberLinkRequest[]
   discipleships            Discipleship[]
   eventReports             EventReport[]
+  // Module media
+  mediaEvents              MediaEvent[]
+  mediaProjects            MediaProject[]
 
   @@map("churches")
 }
@@ -109,6 +112,11 @@ model User {
   reviewedLinkRequests    MemberLinkRequest[] @relation("LinkRequestReviewer")
   eventReports            EventReport[]       @relation("ReportAuthor")
   departmentNotices       DepartmentNotice[]
+  // Module media
+  mediaEventsCreated      MediaEvent[]        @relation("MediaEventCreator")
+  mediaProjectsCreated    MediaProject[]      @relation("MediaProjectCreator")
+  mediaFileVersions       MediaFileVersion[]  @relation("MediaFileVersionCreator")
+  mediaComments           MediaComment[]      @relation("MediaCommentAuthor")
 
   @@map("users")
 }
@@ -319,6 +327,8 @@ model Event {
   discipleshipAttendances    DiscipleshipAttendance[]
   report                     EventReport?
   departmentNotices          DepartmentNotice[]
+  // Module media : galeries photos liées à cet événement planning
+  mediaEvents                MediaEvent[]
 
   @@map("events")
 }
@@ -574,4 +584,290 @@ model Request {
   @@index([churchId, type, status])
   @@index([assignedDeptId, status])
   @@map("requests")
+}
+
+// ============================================================================
+// MODULE MEDIA (ex-Mediaflow)
+// ============================================================================
+
+enum MediaEventStatus {
+  DRAFT          // En cours d'upload
+  PENDING_REVIEW // En attente de validation
+  REVIEWED       // Validation terminée
+  ARCHIVED       // Archivé
+}
+
+enum MediaPhotoStatus {
+  PENDING      // En attente de validation
+  APPROVED     // Validée
+  REJECTED     // Rejetée
+  PREVALIDATED // Pré-validée (filtrée par le prévalidateur)
+  PREREJECTED  // Écartée par le prévalidateur
+}
+
+enum MediaFileType {
+  PHOTO  // Images événements
+  VISUAL // Visuels (PNG, SVG, PDF)
+  VIDEO  // Vidéos (MP4, MOV)
+}
+
+enum MediaFileStatus {
+  PENDING            // Photos: en attente
+  APPROVED           // Photos: validée
+  REJECTED           // Rejetée (photos et médias)
+  PREVALIDATED       // Photos: pré-validée
+  PREREJECTED        // Photos: écartée
+  DRAFT              // Médias: brouillon
+  IN_REVIEW          // Médias: en révision
+  REVISION_REQUESTED // Médias: révision demandée
+  FINAL_APPROVED     // Médias: approuvé définitivement
+}
+
+enum MediaCommentType {
+  GENERAL  // Commentaire général
+  TIMECODE // Commentaire avec timecode (vidéos)
+}
+
+enum MediaTokenType {
+  VALIDATOR    // Accès validation (lecture + modification status)
+  MEDIA        // Accès téléchargement (lecture photos validées uniquement)
+  PREVALIDATOR // Accès prévalidation (filtrage avant validation finale)
+  GALLERY      // Accès galerie (téléchargement photo par photo)
+}
+
+enum MediaJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+/// Événement média (galerie photos / médias Mediaflow).
+/// Distinct de l'Event planning — peut être lié à un Event planning via planningEventId.
+model MediaEvent {
+  id          String           @id @default(cuid())
+  name        String           @db.VarChar(255)
+  date        DateTime
+  description String?          @db.Text
+  status      MediaEventStatus @default(DRAFT)
+
+  // Lien optionnel vers l'événement planning correspondant
+  planningEventId String?
+  planningEvent   Event?  @relation(fields: [planningEventId], references: [id], onDelete: SetNull)
+
+  // Multi-tenant
+  churchId    String
+  church      Church @relation(fields: [churchId], references: [id])
+
+  // Créateur (utilisateur Koinonia)
+  createdById String
+  createdBy   User   @relation("MediaEventCreator", fields: [createdById], references: [id])
+
+  photos      MediaPhoto[]
+  files       MediaFile[]
+  shareTokens MediaShareToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId])
+  @@index([createdById])
+  @@index([status])
+  @@index([date])
+  @@index([planningEventId])
+  @@map("media_events")
+}
+
+/// Projet média (conteneur alternatif sans lien événement planning).
+model MediaProject {
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+
+  churchId    String
+  church      Church @relation(fields: [churchId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("MediaProjectCreator", fields: [createdById], references: [id])
+
+  files       MediaFile[]
+  shareTokens MediaShareToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId])
+  @@index([createdById])
+  @@map("media_projects")
+}
+
+/// Photo associée à un événement média.
+model MediaPhoto {
+  id           String           @id @default(cuid())
+  filename     String           @db.VarChar(255)
+  originalKey  String           @db.VarChar(512)
+  thumbnailKey String           @db.VarChar(512)
+  mimeType     String           @db.VarChar(100)
+  size         Int
+  width        Int?
+  height       Int?
+
+  status      MediaPhotoStatus @default(PENDING)
+  validatedAt DateTime?
+  validatedBy String?          @db.VarChar(255)
+
+  mediaEventId String
+  mediaEvent   MediaEvent @relation(fields: [mediaEventId], references: [id], onDelete: Cascade)
+
+  uploadedAt DateTime @default(now())
+
+  @@index([mediaEventId])
+  @@index([status])
+  @@index([mediaEventId, status])
+  @@map("media_photos")
+}
+
+/// Fichier média (visuel, vidéo, etc.) avec versionnage.
+model MediaFile {
+  id       String          @id @default(cuid())
+  type     MediaFileType
+  status   MediaFileStatus @default(PENDING)
+  filename String          @db.VarChar(255)
+  mimeType String          @db.VarChar(100)
+  size     Int
+  width    Int?
+  height   Int?
+  duration Int?            // Durée en secondes (vidéos)
+
+  scheduledDeletionAt DateTime?
+
+  // Relations (mutuellement exclusives)
+  mediaEventId   String?
+  mediaEvent     MediaEvent?   @relation(fields: [mediaEventId], references: [id], onDelete: Cascade)
+  mediaProjectId String?
+  mediaProject   MediaProject? @relation(fields: [mediaProjectId], references: [id], onDelete: Cascade)
+
+  versions MediaFileVersion[]
+  comments MediaComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaEventId])
+  @@index([mediaProjectId])
+  @@index([type])
+  @@index([status])
+  @@index([scheduledDeletionAt])
+  @@map("media_files")
+}
+
+/// Version d'un fichier média.
+model MediaFileVersion {
+  id            String @id @default(cuid())
+  versionNumber Int    @default(1)
+  originalKey   String @db.VarChar(512)
+  thumbnailKey  String @db.VarChar(512)
+  notes         String? @db.Text
+
+  mediaFileId String
+  mediaFile   MediaFile @relation(fields: [mediaFileId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User      @relation("MediaFileVersionCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([mediaFileId, versionNumber])
+  @@index([mediaFileId])
+  @@index([createdById])
+  @@map("media_file_versions")
+}
+
+/// Commentaire sur un fichier média.
+model MediaComment {
+  id      String           @id @default(cuid())
+  type    MediaCommentType @default(GENERAL)
+  content String           @db.Text
+
+  authorName  String? @db.VarChar(255)
+  authorImage String? @db.Text
+  timecode    Int?
+
+  parentId String?
+  parent   MediaComment?  @relation("MediaCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  MediaComment[] @relation("MediaCommentReplies")
+
+  mediaFileId String
+  mediaFile   MediaFile @relation(fields: [mediaFileId], references: [id], onDelete: Cascade)
+  authorId    String?
+  author      User?     @relation("MediaCommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([mediaFileId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("media_comments")
+}
+
+/// Token de partage pour accès sans authentification (galerie, validation, téléchargement).
+model MediaShareToken {
+  id     String         @id @default(cuid())
+  token  String         @unique @db.VarChar(64)
+  type   MediaTokenType
+  label  String?        @db.VarChar(255)
+  config Json?
+
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  usageCount Int       @default(0)
+
+  // Relations (mutuellement exclusives)
+  mediaEventId   String?
+  mediaEvent     MediaEvent?   @relation(fields: [mediaEventId], references: [id], onDelete: Cascade)
+  mediaProjectId String?
+  mediaProject   MediaProject? @relation(fields: [mediaProjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([mediaEventId])
+  @@index([mediaProjectId])
+  @@map("media_share_tokens")
+}
+
+/// Job de génération ZIP asynchrone.
+model MediaZipJob {
+  id       String         @id @default(cuid())
+  status   MediaJobStatus @default(PENDING)
+  progress Int            @default(0)
+
+  downloadKey String?   @db.VarChar(512)
+  expiresAt   DateTime?
+  error       String?   @db.Text
+
+  mediaEventId String
+  photoIds     Json
+  tokenId      String
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status])
+  @@map("media_zip_jobs")
+}
+
+/// Paramètres du module média (logo, favicon, rétention).
+model MediaSettings {
+  id              String   @id @default("default")
+  logoKey         String?  @db.VarChar(512)
+  faviconKey      String?  @db.VarChar(512)
+  logoFilename    String?  @db.VarChar(255)
+  faviconFilename String?  @db.VarChar(255)
+  retentionDays   Int      @default(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("media_settings")
 }

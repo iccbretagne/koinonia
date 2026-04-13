@@ -315,7 +315,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -383,6 +383,22 @@ export async function resolveChurchId(
       });
       if (!ministry) throw new ApiError(404, "Ministère introuvable");
       return ministry.churchId;
+    }
+    case "mediaEvent": {
+      const me = await prisma.mediaEvent.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!me) throw new ApiError(404, "Événement média introuvable");
+      return me.churchId;
+    }
+    case "mediaProject": {
+      const mp = await prisma.mediaProject.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!mp) throw new ApiError(404, "Projet média introuvable");
+      return mp.churchId;
     }
   }
 }
