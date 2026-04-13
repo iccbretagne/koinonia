@@ -74,6 +74,10 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   ],
 };
 
+/**
+ * @deprecated Utiliser `rolePermissions` depuis `@/lib/registry` à la place.
+ * Cette fonction sera supprimée quand la migration Phase 2 sera complète.
+ */
 export function hasPermission(role: Role): string[] {
   return ROLE_PERMISSIONS[role] || [];
 }

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
@@ -72,7 +72,7 @@ export default async function AuthLayout({
 
   // Compute visible config links
   const userRoles = churchRoles.map((r) => r.role);
-  const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));
+  const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
   // Super admins have all permissions regardless of church roles
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));

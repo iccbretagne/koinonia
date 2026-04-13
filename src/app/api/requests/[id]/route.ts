@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { executeRequest } from "@/lib/request-executor";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
@@ -47,7 +47,7 @@ export async function GET(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === minimal.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = session.user.churchRoles
@@ -131,7 +131,7 @@ export async function PATCH(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === existing.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");
