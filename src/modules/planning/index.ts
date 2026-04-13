@@ -2,6 +2,8 @@ import { defineModule } from "@/core/module-registry";
 
 export { planningBus } from "./bus";
 export type { PlanningEvents } from "./events";
+export { executeRequest } from "./services/request-executor";
+export type { ExecutionResult } from "./services/request-executor";
 
 /**
  * Module planning — ex-Koinonia.
