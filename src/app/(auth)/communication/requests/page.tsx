@@ -1,5 +1,5 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { DEPT_FN } from "@/lib/department-functions";
 import { notFound } from "next/navigation";
@@ -18,7 +18,7 @@ export default async function CommunicationRequestsPage() {
 
   if (commDept) {
     const userPermissions = new Set(
-      session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+      session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = session.user.churchRoles.flatMap((r) =>

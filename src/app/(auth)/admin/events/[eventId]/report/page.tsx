@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import EventReportClient from "./EventReportClient";
@@ -39,7 +39,7 @@ export default async function EventReportPage({
 
   // Allow access if user has events:manage OR reports:view for this church
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === event.churchId);
-  const perms = new Set(churchRoles.flatMap((r) => hasPermission(r.role)));
+  const perms = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
   if (!perms.has("events:manage") && !perms.has("reports:view")) {
     const { ApiError } = await import("@/lib/api-utils");
     throw new ApiError(403, "Forbidden");
