@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { deleteEvents } from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(
@@ -256,24 +257,9 @@ export async function DELETE(
       throw new ApiError(404, "Événement introuvable");
     }
 
-    // Delete related records in correct order to avoid FK violations
-    const eventDeptIds = await prisma.eventDepartment.findMany({
-      where: { eventId },
-      select: { id: true },
+    await prisma.$transaction(async (tx) => {
+      await deleteEvents({ tx, churchId, userId: delSession.user.id }, [eventId]);
     });
-    const edIds = eventDeptIds.map((ed) => ed.id);
-
-    await prisma.$transaction([
-      prisma.discipleshipAttendance.deleteMany({ where: { eventId } }),
-      prisma.announcementEvent.deleteMany({ where: { eventId } }),
-      prisma.taskAssignment.deleteMany({ where: { eventId } }),
-      ...(edIds.length > 0
-        ? [prisma.planning.deleteMany({ where: { eventDepartmentId: { in: edIds } } })]
-        : []),
-      prisma.eventReport.deleteMany({ where: { eventId } }),
-      prisma.eventDepartment.deleteMany({ where: { eventId } }),
-      prisma.event.delete({ where: { id: eventId } }),
-    ]);
 
     await logAudit({ userId: delSession.user.id, churchId, action: "DELETE", entityType: "Event", entityId: eventId, details: { title: event.title } });
 
