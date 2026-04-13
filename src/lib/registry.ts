@@ -3,6 +3,7 @@ import { buildRolePermissions } from "@/core/permissions";
 import { coreModule } from "@/modules/core";
 import { planningModule, planningBus } from "@/modules/planning";
 import { discipleshipModule } from "@/modules/discipleship";
+import { mediaModule } from "@/modules/media";
 
 /**
  * Registry singleton — chargé une fois au démarrage du process.
@@ -11,7 +12,7 @@ import { discipleshipModule } from "@/modules/discipleship";
  * Source de vérité pour les permissions dans les contrôles d'accès API.
  */
 export const registry = boot({
-  modules: [coreModule, planningModule, discipleshipModule],
+  modules: [coreModule, planningModule, discipleshipModule, mediaModule],
 });
 
 /**
