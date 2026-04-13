@@ -175,9 +175,9 @@ export async function requirePermission(permission: string, churchId?: string) {
     (r) => !churchId || r.churchId === churchId
   );
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    roles.flatMap((r) => hasPermission(r.role))
+    roles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!userPermissions.has(permission)) {
@@ -193,9 +193,9 @@ export async function requireAnyPermission(...permissions: string[]) {
   // Global super admin bypasses all permissions
   if (session.user.isSuperAdmin) return session;
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!permissions.some((p) => userPermissions.has(p))) {
@@ -279,9 +279,9 @@ export async function requireChurchPermission(
     throw new Error("FORBIDDEN");
   }
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    roles.flatMap((r) => hasPermission(r.role))
+    roles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!userPermissions.has(permission)) {
