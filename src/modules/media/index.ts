@@ -1,5 +1,7 @@
 import { defineModule } from "@/core/module-registry";
 
+export { createMediaShareToken, getTokenUrlPath, isTokenExpired, generateToken } from "./services/tokens";
+
 /**
  * Module media — ex-Mediaflow.
  *
