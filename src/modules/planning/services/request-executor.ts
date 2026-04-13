@@ -42,7 +42,9 @@ export async function executeRequest(
         result = await executeModificationEvenement(tx, churchId, payload);
         break;
       case "ANNULATION_EVENEMENT":
-        result = await executeAnnulationEvenement(tx, churchId, payload);
+        // ctx + requestId passés pour émettre planning:event:cancelled AVANT la suppression
+        // (les handlers doivent nettoyer les FK avant que l'event soit supprimé)
+        result = await executeAnnulationEvenement(tx, churchId, payload, ctx, requestId);
         break;
       case "MODIFICATION_PLANNING":
         result = await executeModificationPlanning(tx, churchId, payload);
@@ -66,15 +68,6 @@ export async function executeRequest(
         createdById: userId,
         isRecurrenceParent: !!(payload.recurrenceRule && payload.recurrenceEnd),
         childCount: result.childCount,
-      });
-    }
-
-    if (type === "ANNULATION_EVENEMENT" && result.resourceId) {
-      await planningBus.emit("planning:event:cancelled", ctx, {
-        eventId: result.resourceId,
-        churchId,
-        cancelledById: userId,
-        requestId,
       });
     }
 
@@ -255,7 +248,9 @@ async function executeModificationEvenement(
 async function executeAnnulationEvenement(
   tx: TxClient,
   churchId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  ctx: { tx: TxClient; churchId: string; userId: string },
+  requestId: string
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
 
@@ -267,6 +262,15 @@ async function executeAnnulationEvenement(
   });
   if (!event) return { success: false, error: "Événement introuvable" };
   if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
+
+  // Émettre AVANT la suppression : les handlers (ex. discipleship) doivent
+  // nettoyer leurs FK dans la même transaction avant que l'event soit supprimé.
+  await planningBus.emit("planning:event:cancelled", ctx, {
+    eventId,
+    churchId,
+    cancelledById: ctx.userId,
+    requestId,
+  });
 
   const edIds = event.eventDepts.map((ed) => ed.id);
   if (edIds.length > 0) {
