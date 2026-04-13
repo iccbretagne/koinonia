@@ -55,7 +55,10 @@ module.exports = {
       name: "core-no-modules-import",
       severity: "error",
       comment: "src/core/ ne doit pas importer depuis src/modules/.",
-      from: { path: "^src/core/" },
+      from: {
+        path: "^src/core/",
+        pathNot: "/__tests__/", // les tests d'intégration peuvent valider la cohérence cross-layer
+      },
       to: { path: "^src/modules/" },
     },
 
