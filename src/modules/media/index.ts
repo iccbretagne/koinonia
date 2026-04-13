@@ -12,6 +12,8 @@ export {
   getFileOriginalKey,
   getFileThumbnailKey,
   getZipKey,
+  getVersionOriginalKey,
+  getVersionThumbnailKey,
   createMultipartUpload,
   getSignedPartUrl,
   completeMultipartUpload,

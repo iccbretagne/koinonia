@@ -52,6 +52,14 @@ export function getZipKey(mediaEventId: string, jobId: string): string {
   return `media-events/${mediaEventId}/zips/${jobId}.zip`;
 }
 
+export function getVersionOriginalKey(fileId: string, versionNumber: number, ext: string): string {
+  return `media-files/${fileId}/v${versionNumber}/original.${ext}`;
+}
+
+export function getVersionThumbnailKey(fileId: string, versionNumber: number): string {
+  return `media-files/${fileId}/v${versionNumber}/thumbnail.webp`;
+}
+
 // ─── Upload ────────────────────────────────────────────────────────────────
 
 export async function uploadFile(key: string, body: Buffer, contentType: string): Promise<void> {
