@@ -40,16 +40,21 @@ session.user.churchRoles = [
 
 ### Protection des routes
 
-**Middleware** (`src/middleware.ts`) :
+**Middleware** (`src/proxy.ts`, ex `src/middleware.ts`) :
 - Protege `/dashboard/*` et `/api/*` (sauf `/api/auth/*`)
 - Verifie l'existence d'une session NextAuth valide
 - Redirige vers `/` si non authentifie
+- Exporte `proxy` (pas `middleware`), runtime Node.js (pas Edge)
 
 **Helpers** (`src/lib/auth.ts`) :
 - `requireAuth()` — verifie la session et throw `UNAUTHORIZED` si absente
-- `requirePermission(permission, churchId?)` — verifie une permission specifique et throw `FORBIDDEN` si non autorise
-- `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste (utilise par le layout admin)
+- `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN` si non autorise
+- `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
+- `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste
 - `getUserDepartmentScope(session)` — retourne le perimetre departements selon le role
+- `getDiscipleshipScope(session, churchId)` — portee discipolat (scoped ou non)
+- `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource
+- `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste)
 
 ---
 
@@ -79,7 +84,19 @@ Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la 
 
 ## Permissions
 
-Matrice role-permissions definie dans `src/lib/permissions.ts` :
+La matrice role-permissions est **derivee dynamiquement** depuis les manifestes de modules (`src/modules/*/index.ts`) via `buildRolePermissions(registry)`. La source de verite est les blocs `permissions` de chaque manifeste, pas le fichier `src/lib/permissions.ts` (deprecated).
+
+Le singleton `rolePermissions` (pre-calcule au demarrage dans `src/lib/registry.ts`) est utilise directement dans les routes API et composants :
+
+```typescript
+import { rolePermissions } from "@/lib/registry";
+
+const userPermissions = new Set(
+  session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
+);
+```
+
+Matrice resultante :
 
 | Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Disciple Maker | Reporter |
 |---|---|---|---|---|---|---|---|
@@ -114,12 +131,13 @@ Matrice role-permissions definie dans `src/lib/permissions.ts` :
 ### Utilisation dans le code
 
 ```typescript
-// Dans un route handler
-import { requirePermission } from "@/lib/auth";
+// Dans un route handler (protection + permission)
+import { requireChurchPermission } from "@/lib/auth";
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const session = await requirePermission("members:manage", churchId);
+    const { id } = await params;
+    const session = await requireChurchPermission("members:manage", churchId);
     // ... logique
   } catch (error) {
     return errorResponse(error); // 401 ou 403 automatique
@@ -127,9 +145,19 @@ export async function DELETE(request, { params }) {
 }
 ```
 
+```typescript
+// Test de permission dans un composant serveur
+import { rolePermissions } from "@/lib/registry";
+
+const canManage = session.user.isSuperAdmin || session.user.churchRoles
+  .filter((r) => r.churchId === churchId)
+  .flatMap((r) => rolePermissions[r.role] ?? [])
+  .includes("events:manage");
+```
+
 ### Cas particulier : PATCH departments/[id] (function)
 
-L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une `DepartmentFunction` est protege par `events:manage` (et non `departments:manage`). Ce choix reflète le fait que la configuration des fonctions departementales est liee au workflow des annonces et evenements, non a la gestion structurelle des departements.
+L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une fonction departementale (String) est protege par `events:manage`. Ce choix reflète que la configuration des fonctions est liee au workflow des annonces et evenements, non a la gestion structurelle des departements.
 
 ### Visibilite des departements
 

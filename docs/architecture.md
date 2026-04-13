@@ -13,18 +13,115 @@
 | Zod | 3 | Validation des donnees cote API |
 | TypeScript | 5 | Typage strict |
 
+## Architecture modulaire (v1.0)
+
+Koinonia suit une architecture **monolithe modulaire** : une seule base de code deployee ensemble, mais organisee en modules avec des frontieres strictes.
+
+```
+src/
+├── core/           ← infrastructure modulaire (framework-agnostic)
+├── modules/        ← logique metier par domaine
+└── app/            ← surface Next.js (routes, pages, composants)
+```
+
+### Couche core (`src/core/`)
+
+Fournit le "système de plugins" que les modules utilisent :
+
+| Fichier | Role |
+|---|---|
+| `module-registry.ts` | `ModuleRegistry` (register, validateDeps, resolveLoadOrder, collectPermissions) + `defineModule()` |
+| `event-bus.ts` | `EventBus<TEvents>` — bus in-process, typé, transaction-aware |
+| `boot.ts` | `boot()` — lit `ENABLED_MODULES`, charge les modules, valide les dépendances |
+| `permissions.ts` | `buildRolePermissions(registry)` — derive la matrice roles→permissions depuis les manifestes |
+
+### Couche modules (`src/modules/`)
+
+Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, sa navigation, et ses exports publics. La couche `src/app/` ne peut importer qu'a partir de l'index du module (regle CI `app-only-module-public-api`).
+
+| Module | Perimetre |
+|---|---|
+| `core` | Gestion des eglises (`church:manage`) et des utilisateurs (`users:manage`) |
+| `planning` | Evenements, planning, membres, annonces, demandes (Request workflow) |
+| `discipleship` | Suivi discipolat, relations, presences, stats |
+
+**Exports du module `planning` :**
+- `planningModule` — manifeste
+- `planningBus` — `EventBus<PlanningEvents>` singleton
+- `PlanningEvents` — carte des evenements emis
+- `executeRequest()` — executor des demandes approuvees
+- `ExecutionResult` — type de retour de l'executor
+
+### Registry (`src/lib/registry.ts`)
+
+Singleton process-level : boot avec tous les modules actifs + matrice `rolePermissions` pre-calculee.
+
+```typescript
+export const registry = boot({ modules: [coreModule, planningModule, discipleshipModule] });
+export const rolePermissions = buildRolePermissions(registry);
+```
+
+`rolePermissions` est importe directement par les routes API et composants qui ont besoin de tester une permission.
+
+### Bus d'evenements (`planningBus`)
+
+Le bus est transaction-aware : les handlers s'executent dans la meme `Prisma.TransactionClient` que l'emetteur. Si un handler throw, la transaction est rollback.
+
+```typescript
+await prisma.$transaction(async (tx) => {
+  const event = await tx.event.create({ ... });
+  await planningBus.emit("planning:event:created", { tx, churchId, userId }, {
+    eventId: event.id, ...
+  });
+});
+```
+
+Evenements definis : `planning:event:created`, `planning:event:cancelled`, `planning:request:executed`, `planning:status:changed`.
+
+### Frontieres modules (dependency-cruiser)
+
+CI enforce les regles suivantes via `npm run lint:boundaries` :
+
+| Regle | Description |
+|---|---|
+| `no-planning-imports-other-modules` | `planning` n'importe pas de `discipleship` |
+| `no-discipleship-imports-other-modules` | `discipleship` n'importe pas de `planning` |
+| `no-core-module-imports-other-modules` | `core` n'importe pas de module domaine |
+| `core-no-modules-import` | `src/core/` n'importe pas de `src/modules/` |
+| `app-only-module-public-api` | `src/app/` importe uniquement depuis `src/modules/X/index.ts` |
+
+---
+
 ## Structure du projet
 
 ```
 koinonia/
 ├── .github/
-│   ├── workflows/ci.yml           # CI : typecheck + version check
+│   ├── workflows/ci.yml           # CI : typecheck + lint + lint:boundaries + tests
 │   └── dependabot.yml             # Mises a jour automatiques des dependances
 ├── prisma/
 │   ├── schema.prisma              # Schema BDD (domaine + NextAuth)
 │   └── seed.ts                    # Donnees initiales ICC Rennes
 ├── prisma.config.ts               # Config CLI Prisma 7 (datasource URL, generated client path)
 ├── src/
+│   ├── core/                      # Infrastructure modulaire (framework-agnostic)
+│   │   ├── module-registry.ts     # ModuleRegistry + defineModule()
+│   │   ├── event-bus.ts           # EventBus<TEvents> typé, transaction-aware
+│   │   ├── boot.ts                # boot() : charge + valide les modules
+│   │   ├── permissions.ts         # buildRolePermissions(registry)
+│   │   └── __tests__/             # Tests unitaires core
+│   ├── modules/                   # Logique metier par domaine
+│   │   ├── core/
+│   │   │   └── index.ts           # Manifeste : church:manage, users:manage
+│   │   ├── planning/
+│   │   │   ├── index.ts           # Manifeste + exports publics
+│   │   │   ├── bus.ts             # planningBus = EventBus<PlanningEvents>
+│   │   │   ├── events.ts          # PlanningEvents type map
+│   │   │   └── services/
+│   │   │       └── request-executor.ts  # Executor demandes + emissions bus
+│   │   ├── discipleship/
+│   │   │   └── index.ts           # Manifeste : discipleship:view/manage/export
+│   │   └── __tests__/             # Tests unitaires modules
 │   ├── app/
 │   │   ├── layout.tsx             # Root layout (Montserrat, metadata)
 │   │   ├── page.tsx               # Page de connexion (Google OAuth)
@@ -33,18 +130,17 @@ koinonia/
 │   │   │   ├── layout.tsx         # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/         # Vue planning par departement
 │   │   │   │   └── stats/         # Statistiques par departement
-│   │   │   ├── events/            # Gestion des evenements
-│   │   │   │   ├── calendar/      # Vue calendrier des evenements
-│   │   │   │   └── [eventId]/     # Detail evenement
+│   │   │   ├── events/            # Liste et calendrier des evenements
+│   │   │   │   └── calendar/      # Vue calendrier
 │   │   │   ├── profile/           # Profil utilisateur et liaison compte STAR
-│   │   │   ├── announcements/     # Soumission et suivi des annonces
-│   │   │   │   ├── page.tsx       # Liste des annonces du referent
-│   │   │   │   └── new/           # Formulaire de soumission d'annonce
+│   │   │   ├── requests/          # "Mes demandes" (annonces + demandes unifiees)
+│   │   │   │   ├── new/           # Formulaire unifie (annonce ou demande)
+│   │   │   │   └── [id]/edit/     # Edition d'une demande en attente
 │   │   │   ├── secretariat/
-│   │   │   │   └── announcements/ # Dashboard Secretariat (DIFFUSION_INTERNE)
+│   │   │   │   └── requests/      # Dashboard Secretariat (toutes demandes)
 │   │   │   ├── media/
 │   │   │   │   └── requests/      # Dashboard Production Media (VISUEL)
-│   │   │   │       └── new/       # Formulaire demande visuel standalone
+│   │   │   │       └── new/       # Demande visuel standalone
 │   │   │   ├── communication/
 │   │   │   │   └── requests/      # Dashboard Communication (RESEAUX_SOCIAUX)
 │   │   │   ├── guide/             # Guide utilisateur par role
@@ -52,29 +148,28 @@ koinonia/
 │   │   │       ├── layout.tsx     # Guard multi-permissions
 │   │   │       ├── churches/      # CRUD eglises
 │   │   │       ├── users/         # Gestion utilisateurs et roles
-│   │   │       ├── access/        # Gestion des acces et roles (AccessClient.tsx)
+│   │   │       ├── access/        # Gestion des acces (ministres, resp. dept, reporters)
 │   │   │       ├── ministries/    # CRUD ministeres
 │   │   │       ├── departments/   # CRUD departements
 │   │   │       │   └── functions/ # Config fonctions departementales
-│   │   │       ├── members/       # CRUD membres
+│   │   │       ├── members/       # CRUD membres (STAR)
 │   │   │       ├── events/        # CRUD evenements
-│   │   │       │   └── [eventId]/
-│   │   │       │       └── report/ # Edition du CR d'evenement (EventReportClient.tsx)
-│   │   │       ├── reports/       # Dashboard rapports (ReportsClient.tsx)
-│   │   │       ├── discipleship/  # Dashboard discipolat (DiscipleshipClient.tsx)
-│   │   │       └── audit-logs/    # Journal des actions
+│   │   │       │   └── [eventId]/report/ # Saisie compte rendu
+│   │   │       ├── reports/       # Dashboard comptes rendus et statistiques
+│   │   │       ├── discipleship/  # Dashboard discipolat
+│   │   │       └── audit-logs/    # Historique des modifications
 │   │   └── api/                   # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/     # GET/POST + [id] GET/PATCH/DELETE
-│   │       ├── service-requests/  # GET/POST + [id] GET/PATCH
+│   │       ├── requests/          # GET/POST + [id] GET/PATCH/DELETE (unifie)
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── discipleships/     # GET/POST + gestion discipolat
 │   │       ├── events/
 │   │       │   └── [eventId]/
 │   │       │       └── report/    # GET/PATCH CR d'evenement
-│   │       ├── member-link-requests/ # Demandes de liaison membre-utilisateur
-│   │       ├── member-user-links/ # Liaisons membre-compte utilisateur
+│   │       ├── member-link-requests/
+│   │       ├── member-user-links/
 │   │       ├── members/
 │   │       ├── ministries/
 │   │       ├── notifications/
@@ -82,18 +177,12 @@ koinonia/
 │   ├── components/
 │   │   ├── AuthLayoutShell.tsx    # Shell layout authentifie (header, sidebar)
 │   │   ├── BottomNav.tsx          # Navigation mobile bas d'ecran
-│   │   ├── Sidebar.tsx            # Sidebar unifiee (6 sections : Planning, Événements (Liste, Calendrier, Gestion, CR), Membres, Annonces, Discipolat, Configuration)
+│   │   ├── Sidebar.tsx            # Sidebar unifiee
 │   │   ├── PlanningGrid.tsx       # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx      # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
-│   │   ├── ViewToggle.tsx
-│   │   ├── DashboardActions.tsx
 │   │   ├── NotificationBell.tsx   # Cloche de notifications
 │   │   ├── ChurchSwitcher.tsx     # Selecteur d'eglise multi-tenant
-│   │   ├── EventReportClient.tsx  # Edition du CR d'evenement
-│   │   ├── ReportsClient.tsx      # Dashboard rapports
-│   │   ├── AccessClient.tsx       # Gestion des acces et roles
-│   │   ├── DiscipleshipClient.tsx # Dashboard discipolat
 │   │   └── ui/                    # Composants UI reutilisables
 │   │       ├── Button.tsx
 │   │       ├── Input.tsx
@@ -105,166 +194,146 @@ koinonia/
 │   ├── generated/
 │   │   └── prisma/                # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
-│   │   ├── prisma.ts              # Singleton Prisma (globalThis pattern, driver adapter PrismaMariaDb)
-│   │   ├── auth.ts                # Config NextAuth + helpers
+│   │   ├── prisma.ts              # Singleton Prisma (globalThis, driver adapter PrismaMariaDb)
+│   │   ├── auth.ts                # Config NextAuth + helpers (requireAuth, requirePermission…)
+│   │   ├── registry.ts            # Boot du registry + rolePermissions pre-calcule
 │   │   ├── api-utils.ts           # ApiError, successResponse, errorResponse
-│   │   └── permissions.ts         # Matrice roles-permissions RBAC (7 roles : SUPER_ADMIN, ADMIN, SECRETARY, MINISTER, DEPARTMENT_HEAD, DISCIPLE_MAKER, REPORTER)
+│   │   ├── audit.ts               # logAudit() — journal des actions
+│   │   ├── rate-limit.ts          # Limiteur de debit par utilisateur
+│   │   └── permissions.ts         # DEPRECATED — utiliser rolePermissions de @/lib/registry
 │   └── proxy.ts                   # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docker-compose.yml             # MariaDB locale
+├── .dependency-cruiser.cjs        # Regles de frontieres modules (CI)
 ├── next.config.ts
 ├── tsconfig.json                  # Strict, path alias @/*
 └── postcss.config.mjs             # @tailwindcss/postcss
 ```
+
+---
 
 ## Patterns et conventions
 
 ### Server vs Client components
 
 - **Server Components** (par defaut) : pages, layouts, chargement de donnees initiales
-- **Client Components** (`"use client"`) : interactions utilisateur (EventSelector, PlanningGrid)
+- **Client Components** (`"use client"`) : interactions utilisateur
 
 Les pages chargent les donnees cote serveur et les passent en props aux composants client.
 
 ### API Route handlers
 
-Chaque route suit le meme pattern :
-
 ```typescript
-export async function GET(request, { params }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAuth();           // verifier l'authentification
-    const { id } = await params;   // extraire les parametres
-    // ... logique metier + requete Prisma
-    return successResponse(data);  // 200 avec JSON
+    await requireChurchPermission("events:view", churchId);
+    const { id } = await params;   // toujours await params (Next.js 15+)
+    // ... logique metier + Prisma
+    return successResponse(data);
   } catch (error) {
-    return errorResponse(error);   // gestion centralisee des erreurs
+    return errorResponse(error);
   }
 }
 ```
 
-Les erreurs metier utilisent `throw new ApiError(statusCode, message)`.
-Les erreurs d'auth (`UNAUTHORIZED`, `FORBIDDEN`) sont gerees automatiquement par `errorResponse`.
-
 ### Helpers d'authentification (`src/lib/auth.ts`)
 
-- `requireAuth()` — verifie la session, throw `UNAUTHORIZED`
-- `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN`
-- `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste
-- `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
+| Helper | Description |
+|---|---|
+| `requireAuth()` | Verifie la session, throw `UNAUTHORIZED` |
+| `requirePermission(perm, churchId?)` | Verifie une permission, throw `FORBIDDEN` |
+| `requireChurchPermission(perm, churchId)` | Idem, churchId obligatoire |
+| `requireAnyPermission(...perms)` | Au moins une permission valide |
+| `getUserDepartmentScope(session)` | `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` |
+| `getDiscipleshipScope(session, churchId)` | Portee discipolat (scoped ou non) |
+| `resolveChurchId(type, id)` | Retrouve le `churchId` d'une ressource par son type |
+| `getCurrentChurchId(session)` | Eglise active (cookie ou premiere de la liste) |
+
+### Permissions dans les composants
+
+```typescript
+import { rolePermissions } from "@/lib/registry";
+
+// Test de permission dans un composant serveur
+const userPermissions = new Set(
+  session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
+);
+const canEdit = userPermissions.has("planning:edit");
+```
+
+Ne pas utiliser `hasPermission()` de `src/lib/permissions.ts` — deprecated.
 
 ### Validation
-
-Les mutations (PUT, POST) valident le body avec Zod avant traitement :
 
 ```typescript
 const schema = z.object({ ... });
 const data = schema.parse(await request.json());
 ```
 
-### Prisma singleton
+### Prisma
 
-Le client Prisma est instancie une seule fois via `globalThis` pour eviter les connexions multiples en developpement (hot reload).
-Prisma 7 est ESM-only et requiert un driver adapter (`PrismaMariaDb` de `@prisma/adapter-mariadb`).
-Le client genere se trouve dans `src/generated/prisma/` (plus `@prisma/client`).
-La datasource URL est configuree dans `prisma.config.ts` (a la racine) et non dans `schema.prisma`.
-
-```typescript
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaMariaDb(...) });
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-```
+ESM-only, driver adapter `PrismaMariaDb`. Client genere dans `src/generated/prisma/`.
+Datasource URL dans `prisma.config.ts` (pas dans `schema.prisma`).
 
 ### Middleware
 
-Le proxy Next.js 16 (`src/proxy.ts`) protege les routes `/dashboard/*` et `/api/*` (sauf `/api/auth/*`).
-Il exporte une fonction `proxy` (au lieu de `middleware`) et s'execute sous le runtime Node.js (pas Edge).
-Il reexporte directement la fonction `auth` de NextAuth qui verifie la session.
+`src/proxy.ts` (ex `src/middleware.ts`) — protege `/dashboard/*` et `/api/*`.
+Exporte `proxy` (pas `middleware`), runtime Node.js.
 
-### Navigation
-
-La navigation dans le dashboard utilise les query params (`?dept=...&event=...`) plutot que des routes imbriquees.
-La sidebar utilise des liens `<a>` vers `/dashboard?dept={id}` et l'EventSelector met a jour les params via `router.push`.
-
-### Auto-save
-
-Le composant PlanningGrid sauvegarde automatiquement les modifications avec un debounce de 1 seconde.
-Un indicateur visuel affiche l'etat : sauvegarde en cours, modifications non sauvegardees, ou sauvegarde.
+---
 
 ## Variables d'environnement
 
-| Variable | Description | Exemple |
-|---|---|---|
-| `DATABASE_URL` | URL de connexion MariaDB | `mysql://koinonia:koinonia@localhost:3306/koinonia` |
-| `AUTH_SECRET` | Secret de chiffrement des sessions | `openssl rand -base64 32` |
-| `AUTH_URL` | URL publique de l'application | `http://localhost:3000` |
-| `GOOGLE_CLIENT_ID` | Client ID Google OAuth | |
-| `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth | |
-| `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) | `admin@example.com,other@example.com` |
-
-## Module Annonces et Demandes de service
-
-Le module d'annonces permet aux referents (tous les utilisateurs authentifies) de soumettre des annonces destinees a etre diffusees en interne ou sur les reseaux sociaux.
-
-### Flux de soumission
-
-1. Le referent soumet une annonce via `/announcements/new` avec les canaux cibles
-2. L'API `POST /api/announcements` cree l'annonce **et** les `ServiceRequest` correspondants en transaction :
-   - Canal INTERNE → `DIFFUSION_INTERNE` (Secretariat) + `VISUEL` (Production Media, Slide/Affiche)
-   - Canal EXTERNE → `RESEAUX_SOCIAUX` (Communication) + `VISUEL` (Production Media, Story/Post)
-3. Chaque departement fonctionnel traite ses demandes via son dashboard dedie
-
-### Fonctions departementales
-
-Un departement peut se voir assigner une `DepartmentFunction` qui le designe comme responsable d'un type de traitement :
-
-| Fonction | Type de ServiceRequest | Dashboard |
-|---|---|---|
-| `SECRETARIAT` | `DIFFUSION_INTERNE` | `/secretariat/announcements` |
-| `COMMUNICATION` | `RESEAUX_SOCIAUX` | `/communication/requests` |
-| `PRODUCTION_MEDIA` | `VISUEL` | `/media/requests` |
-
-La configuration se fait via `/admin/departments/functions` (permission `events:manage`).
-
-### Relation VISUEL → canal parent
-
-Les demandes `VISUEL` sont liees a leur demande parente (`DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`) via `parentRequestId`. Ce lien contextualise le format attendu (Slide vs Story/Post).
-
-**Annulation en cascade — deux niveaux** :
-1. Annuler une `Announcement` (`status = ANNULEE`) → toutes ses `ServiceRequest` (`announcementId`) passent en `ANNULE` (`PATCH /api/announcements/[id]`)
-2. Annuler une `ServiceRequest` parente `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` → la demande `VISUEL` enfant (`parentRequestId`) passe en `ANNULE` (`PATCH /api/service-requests/[id]`)
-
-Les deux cascades s'executent dans des transactions Prisma atomiques.
-
-**Motif de refus** : le champ `reviewNotes` de chaque `ServiceRequest` est visible par le demandeur dans `/announcements` (vue "Mes annonces"), sous le badge de statut `ANNULE`.
-
-### Synchronisation du statut d'annonce
-
-Le statut de l'`Announcement` est recalcule automatiquement apres chaque changement de statut d'une SR parente :
-
-| Statuts des SR parentes | Statut annonce |
+| Variable | Description |
 |---|---|
-| Toutes `ANNULE` | `ANNULEE` |
-| Toutes `LIVRE` ou (`LIVRE` + `ANNULE`) | `TRAITEE` |
-| Au moins une `EN_COURS` ou `LIVRE` | `EN_COURS` |
-| Sinon | `EN_ATTENTE` |
+| `DATABASE_URL` | URL de connexion MariaDB |
+| `AUTH_SECRET` | Secret de chiffrement des sessions |
+| `AUTH_URL` | URL publique de l'application |
+| `GOOGLE_CLIENT_ID` | Client ID Google OAuth |
+| `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth |
+| `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) |
+| `ENABLED_MODULES` | Modules a charger (virgule) — tous si absent |
 
-### Qualite du code
+---
 
-- **ESLint** : configure via `eslint.config.mjs` (`eslint-config-next`), script `npm run lint`
-- **TypeScript strict** : `noUnusedLocals` + `noUnusedParameters` actives dans `tsconfig.json`
-- **CI** : typecheck + lint + tests sur chaque PR
+## Module Demandes (Request workflow)
+
+Systeme unifie de soumission et traitement des demandes (annonces + evenements + acces).
+
+### Types de demandes (`RequestType`)
+
+| Type | Soumetteur | Traite par |
+|---|---|---|
+| `DIFFUSION_INTERNE` | Tous (planning:view) | SECRETARIAT |
+| `RESEAUX_SOCIAUX` | Tous | COMMUNICATION |
+| `VISUEL` | Systeme (enfant d'une annonce) | PRODUCTION_MEDIA |
+| `AJOUT_EVENEMENT` | planning:edit | SECRETARIAT |
+| `MODIFICATION_EVENEMENT` | planning:edit | SECRETARIAT |
+| `ANNULATION_EVENEMENT` | planning:edit | SECRETARIAT |
+| `MODIFICATION_PLANNING` | planning:edit | SECRETARIAT |
+| `DEMANDE_ACCES` | planning:edit | SECRETARIAT |
+
+### Execution automatique
+
+Quand une demande de type evenement est approuvee, `executeRequest()` (dans `src/modules/planning/services/request-executor.ts`) l'execute en transaction et emet les evenements planningBus correspondants. Le statut passe a `EXECUTEE` ou `ERREUR` selon le resultat.
+
+### Annulation en cascade
+
+- Annuler une `Announcement` → toutes ses `Request` liees passent en `ANNULE`
+- Annuler une `Request` parente `DIFFUSION_INTERNE`/`RESEAUX_SOCIAUX` → la `Request` enfant `VISUEL` passe en `ANNULE`
+
+---
+
+## Qualite du code
+
+- **TypeScript strict** : `noUnusedLocals` + `noUnusedParameters`
+- **ESLint** : `eslint.config.mjs` (`eslint-config-next` + `eslint-plugin-react-hooks`)
+- **dependency-cruiser** : frontieres modules enforces en CI (`npm run lint:boundaries`)
+- **Tests** : Vitest, `npm run test`
+- **CI** : typecheck + lint + lint:boundaries + tests sur chaque PR
+
+---
 
 ## Multi-tenant
 
-Chaque eglise (`Church`) est un tenant isole. Les donnees (ministeres, departements, membres, evenements, annonces) sont rattachees a une eglise via `churchId`.
-
-```
-Super Admin
-├── ICC Rennes
-│   └── Ministeres → Departements → Membres
-├── ICC Lyon
-│   └── Ministeres → Departements → Membres
-└── ...
-```
-
-Un utilisateur peut avoir des roles differents dans plusieurs eglises via la table `UserChurchRole`.
+Chaque eglise (`Church`) est un tenant isole. Toutes les donnees sont rattachees via `churchId`.
+Un utilisateur peut avoir des roles differents dans plusieurs eglises via `UserChurchRole`.
