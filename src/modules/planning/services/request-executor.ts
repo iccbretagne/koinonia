@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { planningBus } from "../bus";
+import { deleteEvents } from "./event.service";
 
 export interface ExecutionResult {
   success: boolean;
@@ -250,7 +251,7 @@ async function executeAnnulationEvenement(
   churchId: string,
   payload: Record<string, unknown>,
   ctx: { tx: TxClient; churchId: string; userId: string },
-  requestId: string
+  _requestId: string
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
 
@@ -258,27 +259,14 @@ async function executeAnnulationEvenement(
 
   const event = await tx.event.findUnique({
     where: { id: eventId },
-    include: { eventDepts: { select: { id: true } } },
+    select: { id: true, churchId: true },
   });
   if (!event) return { success: false, error: "Événement introuvable" };
   if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
 
-  // Émettre AVANT la suppression : les handlers (ex. discipleship) doivent
-  // nettoyer leurs FK dans la même transaction avant que l'event soit supprimé.
-  await planningBus.emit("planning:event:cancelled", ctx, {
-    eventId,
-    churchId,
-    cancelledById: ctx.userId,
-    requestId,
-  });
-
-  const edIds = event.eventDepts.map((ed) => ed.id);
-  if (edIds.length > 0) {
-    await tx.planning.deleteMany({ where: { eventDepartmentId: { in: edIds } } });
-    await tx.taskAssignment.deleteMany({ where: { eventId } });
-    await tx.eventDepartment.deleteMany({ where: { id: { in: edIds } } });
-  }
-  await tx.event.delete({ where: { id: eventId } });
+  // deleteEvents gère : émission bus, cleanup FK (planning + discipleship
+  // via handler + eventReport + announcementEvent), puis suppression.
+  await deleteEvents(ctx, [eventId]);
 
   return { success: true, resourceId: eventId };
 }

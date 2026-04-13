@@ -3,7 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { planningBus } from "@/modules/planning";
+import { planningBus, deleteEvents } from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -69,19 +69,10 @@ export async function PATCH(request: Request) {
 
     if (action === "delete") {
       await prisma.$transaction(async (tx) => {
-        const eventDeptIds = (
-          await tx.eventDepartment.findMany({
-            where: { eventId: { in: ids } },
-            select: { id: true },
-          })
-        ).map((ed) => ed.id);
-        await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-        await tx.eventDepartment.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.discipleshipAttendance.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.eventReport.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.taskAssignment.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.announcementEvent.deleteMany({ where: { eventId: { in: ids } } });
-        await tx.event.deleteMany({ where: { id: { in: ids } } });
+        await deleteEvents(
+          { tx, churchId: evtChurchId, userId: patchSession.user.id },
+          ids
+        );
       });
       for (const id of ids) {
         await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "DELETE", entityType: "Event", entityId: id });
