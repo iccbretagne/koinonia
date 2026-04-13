@@ -26,6 +26,7 @@ jobs:
       - run: npx prisma generate
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm run lint:boundaries
       - run: npm run test
 
   check-version:
