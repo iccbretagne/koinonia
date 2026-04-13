@@ -26,8 +26,8 @@ export function boot(options: BootOptions): ModuleRegistry {
     ? options.modules.filter((m) => enabled.includes(m.name))
     : options.modules;
 
-  for (const module of toLoad) {
-    registry.register(module);
+  for (const mod of toLoad) {
+    registry.register(mod);
   }
 
   const errors = registry.validateDependencies();

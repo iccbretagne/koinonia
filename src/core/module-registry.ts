@@ -44,11 +44,11 @@ export function defineModule(manifest: ModuleManifest): ModuleManifest {
 export class ModuleRegistry {
   private modules = new Map<string, ModuleManifest>();
 
-  register(module: ModuleManifest): void {
-    if (this.modules.has(module.name)) {
-      throw new Error(`Module "${module.name}" déjà enregistré`);
+  register(mod: ModuleManifest): void {
+    if (this.modules.has(mod.name)) {
+      throw new Error(`Module "${mod.name}" déjà enregistré`);
     }
-    this.modules.set(module.name, module);
+    this.modules.set(mod.name, mod);
   }
 
   get(name: string): ModuleManifest | undefined {
@@ -69,10 +69,10 @@ export class ModuleRegistry {
    */
   validateDependencies(): string[] {
     const errors: string[] = [];
-    for (const module of this.modules.values()) {
-      for (const dep of module.dependsOn ?? []) {
+    for (const mod of this.modules.values()) {
+      for (const dep of mod.dependsOn ?? []) {
         if (!this.modules.has(dep)) {
-          errors.push(`Module "${module.name}" dépend de "${dep}" qui n'est pas enregistré`);
+          errors.push(`Module "${mod.name}" dépend de "${dep}" qui n'est pas enregistré`);
         }
       }
     }
@@ -93,15 +93,15 @@ export class ModuleRegistry {
       if (visiting.has(name)) {
         throw new Error(`Dépendance circulaire détectée impliquant le module "${name}"`);
       }
-      const module = this.modules.get(name);
-      if (!module) return;
+      const mod = this.modules.get(name);
+      if (!mod) return;
       visiting.add(name);
-      for (const dep of module.dependsOn ?? []) {
+      for (const dep of mod.dependsOn ?? []) {
         visit(dep);
       }
       visiting.delete(name);
       visited.add(name);
-      sorted.push(module);
+      sorted.push(mod);
     };
 
     for (const name of this.modules.keys()) {
@@ -119,14 +119,14 @@ export class ModuleRegistry {
     const result: Record<Permission, readonly RoleName[]> = {};
     const owners = new Map<Permission, string>();
 
-    for (const module of this.modules.values()) {
-      for (const [perm, roles] of Object.entries(module.permissions ?? {})) {
+    for (const mod of this.modules.values()) {
+      for (const [perm, roles] of Object.entries(mod.permissions ?? {})) {
         if (owners.has(perm)) {
           throw new Error(
-            `Conflit de permission "${perm}" entre les modules "${owners.get(perm)}" et "${module.name}"`
+            `Conflit de permission "${perm}" entre les modules "${owners.get(perm)}" et "${mod.name}"`
           );
         }
-        owners.set(perm, module.name);
+        owners.set(perm, mod.name);
         result[perm] = roles;
       }
     }
