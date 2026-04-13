@@ -2,6 +2,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import { rolePermissions } from "@/lib/registry";
 import MediaProjectsList from "./MediaProjectsList";
 
 export default async function MediaProjectsPage() {
@@ -19,9 +20,12 @@ export default async function MediaProjectsPage() {
     },
   });
 
-  const canUpload = session.user.isSuperAdmin || session.user.churchRoles.some(
-    (r) => r.churchId === churchId && ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
+  const churchPerms = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
   );
+  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload");
 
   return (
     <div>

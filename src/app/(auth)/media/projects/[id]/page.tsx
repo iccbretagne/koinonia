@@ -43,15 +43,14 @@ export default async function MediaProjectDetailPage({
 
   if (!project) notFound();
 
-  const userPermissions = new Set(
-    session.user.isSuperAdmin
-      ? ["media:view", "media:upload", "media:review", "media:manage"]
-      : session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
+  const churchPerms = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId!)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
   );
-
-  const canUpload = userPermissions.has("media:upload");
-  const canReview = userPermissions.has("media:review");
-  const canManage = userPermissions.has("media:manage");
+  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload");
+  const canReview = session.user.isSuperAdmin || churchPerms.has("media:review");
+  const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage");
 
   return (
     <MediaProjectDetail
