@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/lib/api-utils";
 import type { MediaTokenType } from "@/generated/prisma/client";
 
 export function generateToken(): string {
@@ -27,6 +28,41 @@ interface CreateTokenOptions {
 
 type CreateTokenWithTarget = CreateTokenOptions &
   ({ mediaEventId: string; mediaProjectId?: never } | { mediaProjectId: string; mediaEventId?: never });
+
+/** Valide un token de partage et retourne ses données + l'événement ou projet lié. */
+export async function validateMediaShareToken(
+  token: string,
+  requiredTypes?: MediaTokenType | MediaTokenType[]
+) {
+  const shareToken = await prisma.mediaShareToken.findUnique({
+    where: { token },
+    include: {
+      mediaEvent: {
+        include: {
+          photos: { select: { status: true } },
+          shareTokens: { select: { type: true } },
+        },
+      },
+      mediaProject: { select: { id: true, name: true, churchId: true } },
+    },
+  });
+
+  if (!shareToken) throw new ApiError(401, "Token invalide");
+  if (isTokenExpired(shareToken.expiresAt)) throw new ApiError(401, "Token expiré");
+
+  if (requiredTypes) {
+    const allowed = Array.isArray(requiredTypes) ? requiredTypes : [requiredTypes];
+    if (!allowed.includes(shareToken.type)) throw new ApiError(403, "Type de token non autorisé");
+  }
+
+  // Update usage stats
+  await prisma.mediaShareToken.update({
+    where: { id: shareToken.id },
+    data: { lastUsedAt: new Date(), usageCount: { increment: 1 } },
+  });
+
+  return shareToken;
+}
 
 export async function createMediaShareToken(options: CreateTokenWithTarget) {
   const { type, label, expiresInDays, onlyApproved, mediaEventId, mediaProjectId } = options;
