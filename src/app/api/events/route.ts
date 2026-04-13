@@ -3,6 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
+import { planningBus } from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -232,6 +233,20 @@ export async function POST(request: Request) {
           });
         }
 
+        await planningBus.emit(
+          "planning:event:created",
+          { tx, churchId: data.churchId, userId: session.user.id },
+          {
+            eventId: parent.id,
+            churchId: data.churchId,
+            title: data.title,
+            type: data.type,
+            createdById: session.user.id,
+            isRecurrenceParent: true,
+            childCount: childDates.length,
+          }
+        );
+
         // Return parent with includes
         return tx.event.findUnique({
           where: { id: parent.id },
@@ -264,20 +279,37 @@ export async function POST(request: Request) {
     }
 
     // Single event creation
-    const event = await prisma.event.create({
-      data: {
-        title: data.title,
-        type: data.type,
-        date: new Date(data.date),
-        churchId: data.churchId,
-        planningDeadline: deadline,
-      },
-      include: {
-        church: { select: { id: true, name: true } },
-        eventDepts: {
-          include: { department: { select: { id: true, name: true } } },
+    const event = await prisma.$transaction(async (tx) => {
+      const created = await tx.event.create({
+        data: {
+          title: data.title,
+          type: data.type,
+          date: new Date(data.date),
+          churchId: data.churchId,
+          planningDeadline: deadline,
         },
-      },
+        include: {
+          church: { select: { id: true, name: true } },
+          eventDepts: {
+            include: { department: { select: { id: true, name: true } } },
+          },
+        },
+      });
+
+      await planningBus.emit(
+        "planning:event:created",
+        { tx, churchId: data.churchId, userId: session.user.id },
+        {
+          eventId: created.id,
+          churchId: data.churchId,
+          title: data.title,
+          type: data.type,
+          createdById: session.user.id,
+          isRecurrenceParent: false,
+        }
+      );
+
+      return created;
     });
 
     await logAudit({

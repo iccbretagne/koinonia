@@ -1,5 +1,8 @@
 import { defineModule } from "@/core/module-registry";
 
+export { planningBus } from "./bus";
+export type { PlanningEvents } from "./events";
+
 /**
  * Module planning — ex-Koinonia.
  *
