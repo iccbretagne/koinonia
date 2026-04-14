@@ -47,4 +47,22 @@ export type PlanningEvents = {
     newStatus: string | null;
     changedById: string;
   };
+
+  /**
+   * Le statut d'une Request a changé.
+   * Émis depuis PATCH /api/requests/[id] lors de toute transition de statut.
+   * Utilisé notamment pour déclencher la création d'un MediaProject quand
+   * une Request VISUEL passe en EN_COURS.
+   */
+  "planning:request:status_changed": {
+    requestId: string;
+    requestType: string;
+    churchId: string;
+    oldStatus: string;
+    newStatus: string;
+    updatedById: string;
+    title: string;
+    /** Payload brut de la Request, pour utilisation par les handlers cross-module. */
+    payload: Record<string, unknown>;
+  };
 }

@@ -3,7 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
-import { executeRequest } from "@/modules/planning";
+import { executeRequest, planningBus } from "@/modules/planning";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -120,6 +120,7 @@ export async function PATCH(
         churchId: true,
         type: true,
         status: true,
+        title: true,
         announcementId: true,
         payload: true,
       },
@@ -282,6 +283,24 @@ export async function PATCH(
           where: { id: existing.announcementId },
           data: { status: announcementStatus },
         });
+      }
+
+      // Emit status_changed event for cross-module integrations (e.g. media module)
+      if (data.status !== undefined) {
+        await planningBus.emit(
+          "planning:request:status_changed",
+          { tx, churchId: existing.churchId, userId: session.user.id },
+          {
+            requestId: id,
+            requestType: existing.type,
+            churchId: existing.churchId,
+            oldStatus: existing.status,
+            newStatus: data.status,
+            updatedById: session.user.id,
+            title: existing.title,
+            payload: currentPayload,
+          }
+        );
       }
 
       return result;

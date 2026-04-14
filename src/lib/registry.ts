@@ -37,3 +37,39 @@ export const rolePermissions = buildRolePermissions(registry);
 planningBus.on("planning:event:cancelled", async ({ tx }, { eventId }) => {
   await tx.discipleshipAttendance.deleteMany({ where: { eventId } });
 });
+
+/**
+ * Media → Planning : quand une Request VISUEL passe en EN_COURS (prise en charge
+ * par la Production Média), créer automatiquement un MediaProject correspondant.
+ *
+ * - Le nom du projet reprend le titre de la Request.
+ * - La description embarque le brief et l'identifiant de la Request (référence loose,
+ *   pas de FK Prisma cross-module — conforme aux règles d'architecture v1.0).
+ *
+ * S'exécute dans la même transaction que la mise à jour du statut.
+ */
+planningBus.on(
+  "planning:request:status_changed",
+  async ({ tx, userId }, { requestType, newStatus, churchId, requestId, title, payload }) => {
+    if (requestType !== "VISUEL" || newStatus !== "EN_COURS") return;
+
+    const brief = typeof payload.brief === "string" ? payload.brief : null;
+    const description = [
+      brief,
+      `[source:request:${requestId}]`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (!userId) return; // ne devrait pas arriver depuis une route API authentifiée
+
+    await tx.mediaProject.create({
+      data: {
+        name: title,
+        description,
+        churchId,
+        createdById: userId,
+      },
+    });
+  }
+);
