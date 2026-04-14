@@ -14,6 +14,7 @@ interface SidebarProps {
   hasPlanningAccess?: boolean;
   hasMembersAccess?: boolean;
   hasReports?: boolean;
+  hasMyPlanning?: boolean;
   onClose?: () => void;
 }
 
@@ -264,6 +265,7 @@ export default function Sidebar({
   hasPlanningAccess = true,
   hasMembersAccess = false,
   hasReports = false,
+  hasMyPlanning = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -272,6 +274,7 @@ export default function Sidebar({
 
   // ── Active detection ────────────────────────────────────
   const isDashboardActive = pathname === "/dashboard";
+  const isMyPlanningActive = pathname === "/planning";
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
@@ -312,6 +315,22 @@ export default function Sidebar({
 
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
+      {/* 0. Mon planning (STAR only) */}
+      {hasMyPlanning && (
+        <Link
+          href="/planning"
+          onClick={onClose}
+          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
+            isMyPlanningActive
+              ? "bg-icc-violet-light text-icc-violet"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <IconPlanning className="w-4 h-4" />
+          Mon planning
+        </Link>
+      )}
+
       {/* 1. Planning */}
       {hasPlanningAccess && (
         <AccordionSection

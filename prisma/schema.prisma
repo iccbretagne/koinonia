@@ -85,6 +85,7 @@ enum Role {
   DEPARTMENT_HEAD
   DISCIPLE_MAKER
   REPORTER
+  STAR
 }
 
 model User {

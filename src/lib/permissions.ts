@@ -72,6 +72,9 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "reports:view",
     "reports:edit",
   ],
+  STAR: [
+    "planning:view",
+  ],
 };
 
 /**

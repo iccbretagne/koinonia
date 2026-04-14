@@ -134,8 +134,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
+      // For STAR roles, load departments from the member link
+      const starDeptMap = new Map<string, { id: string; name: string }[]>();
+      for (const cr of churchRoles) {
+        if (cr.role === "STAR") {
+          const link = await prisma.memberUserLink.findUnique({
+            where: { userId_churchId: { userId: user.id, churchId: cr.churchId } },
+            include: {
+              member: {
+                include: {
+                  departments: {
+                    include: { department: { select: { id: true, name: true } } },
+                  },
+                },
+              },
+            },
+          });
+          if (link) {
+            starDeptMap.set(cr.id, link.member.departments.map((d) => d.department));
+          }
+        }
+      }
+
       session.user.churchRoles = churchRoles.map((cr) => {
-        const extraDepts = ministerDeptMap.get(cr.id);
+        const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
         const departments = cr.departments.map((d) => ({ department: d.department }));
         if (extraDepts) {
           const existingIds = new Set(departments.map((d) => d.department.id));

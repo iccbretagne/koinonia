@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER";
+type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR";
 
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
@@ -19,6 +19,7 @@ interface AuthLayoutShellProps {
   hasPlanningAccess: boolean;
   hasMembersAccess: boolean;
   hasReports: boolean;
+  hasMyPlanning?: boolean;
   userRole: RoleKey;
   header: React.ReactNode;
   children: React.ReactNode;
@@ -51,6 +52,7 @@ export default function AuthLayoutShell({
   hasPlanningAccess,
   hasMembersAccess,
   hasReports,
+  hasMyPlanning = false,
   userRole,
   header,
   children,
@@ -119,6 +121,7 @@ export default function AuthLayoutShell({
               hasPlanningAccess={hasPlanningAccess}
               hasMembersAccess={hasMembersAccess}
               hasReports={hasReports}
+              hasMyPlanning={hasMyPlanning}
               onClose={closeSidebar}
             />
           </div>
