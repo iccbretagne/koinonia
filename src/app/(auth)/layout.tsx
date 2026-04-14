@@ -195,6 +195,15 @@ export default async function AuthLayout({
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
 
+  // STAR: user whose only role is STAR (no management permissions)
+  const isStarOnly =
+    !session.user.isSuperAdmin &&
+    churchRoles.length > 0 &&
+    churchRoles.every((r) => r.role === "STAR");
+
+  // "Mon planning" link for users with a member link (STAR or any user with planning:view)
+  const hasMyPlanning = hasPlanningAccess && isStarOnly;
+
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
 
@@ -209,7 +218,8 @@ export default async function AuthLayout({
       hasPlanningAccess={hasPlanningAccess}
       hasMembersAccess={hasMembersAccess}
       hasReports={hasReports}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER"}
+      hasMyPlanning={hasMyPlanning}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR"}
       header={headerContent}
       footer={footerContent}
     >

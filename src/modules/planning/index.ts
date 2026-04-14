@@ -26,7 +26,7 @@ export const planningModule = defineModule({
 
   permissions: {
     // Planning
-    "planning:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
+    "planning:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "STAR"],
     "planning:edit":       ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
     // Membres (STAR)
     "members:view":        ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],

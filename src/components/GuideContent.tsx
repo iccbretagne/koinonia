@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER";
+type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR";
 
 interface GuideContentProps {
   defaultRole: RoleKey;
@@ -17,6 +17,7 @@ const ROLE_LABELS: Record<RoleKey, string> = {
   DEPARTMENT_HEAD: "Resp. Département",
   DISCIPLE_MAKER: "Faiseur de Disciples",
   REPORTER: "Reporter (Comptes rendus)",
+  STAR: "STAR (Membre)",
 };
 
 const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
@@ -27,6 +28,7 @@ const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés. Accès au discipolat.",
   DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",
   REPORTER: "Accès en lecture et écriture aux comptes rendus d'événements et statistiques.",
+  STAR: "Membre actif (STAR) : consulte son planning personnel et celui de ses départements en lecture seule.",
 };
 
 type AccessLevel = "edit" | "read" | "none";
@@ -51,7 +53,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Vue planning",
     screenshotFile: "guide-planning-view.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Modifier le planning",
@@ -59,7 +61,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Édition du planning",
     screenshotFile: "guide-planning-edit.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Statistiques du planning",
@@ -67,7 +69,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Statistiques du planning",
     screenshotFile: "guide-planning-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
 
   // ── Événements ───────────────────────────────────────────────────────────
@@ -77,7 +79,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Liste et calendrier des événements",
     screenshotFile: "guide-events-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "none" },
   },
   {
     name: "Gérer les événements",
@@ -85,7 +87,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Gestion des événements",
     screenshotFile: "guide-events-manage.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Comptes rendus",
@@ -93,7 +95,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Comptes rendus d'événements",
     screenshotFile: "guide-reports.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "edit", STAR: "none" },
   },
 
   // ── Membres ──────────────────────────────────────────────────────────────
@@ -103,7 +105,7 @@ const FEATURES: Feature[] = [
     category: "Membres",
     screenshotTitle: "Liste des STAR",
     screenshotFile: "guide-members-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Gérer les membres (STAR)",
@@ -111,7 +113,7 @@ const FEATURES: Feature[] = [
     category: "Membres",
     screenshotTitle: "Gestion des STAR",
     screenshotFile: "guide-members-manage.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
 
   // ── Discipolat ───────────────────────────────────────────────────────────
@@ -121,7 +123,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Relations de discipolat",
     screenshotFile: "guide-discipleship-relations.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Appel de présence",
@@ -129,7 +131,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Appel de présence discipolat",
     screenshotFile: "guide-discipleship-appel.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "edit", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Statistiques & Export",
@@ -137,7 +139,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Statistiques discipolat",
     screenshotFile: "guide-discipleship-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none" },
   },
 
   // ── Annonces ─────────────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Nouvelle demande",
     screenshotFile: "guide-requests-new.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Mes demandes",
@@ -155,7 +157,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Mes demandes",
     screenshotFile: "guide-requests-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Gestion (Secrétariat)",
@@ -163,7 +165,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Gestion des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Visuels (Prod. Média)",
@@ -171,7 +173,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Production Média",
     screenshotFile: "guide-media-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Communication",
@@ -179,7 +181,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Communication",
     screenshotFile: "guide-communication-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
 
   // ── Administration ────────────────────────────────────────────────────────
@@ -189,7 +191,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Ministères & départements",
@@ -197,7 +199,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Gestion des ministères et départements",
     screenshotFile: "guide-admin-departments.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Paramètres de l'église",
@@ -205,7 +207,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Paramètres de l'église",
     screenshotFile: "guide-admin-church.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Gestion des utilisateurs",
@@ -213,7 +215,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Gestion des utilisateurs",
     screenshotFile: "guide-admin-users.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
   {
     name: "Journaux d'audit",
@@ -221,7 +223,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Journaux d'audit",
     screenshotFile: "guide-admin-audit-logs.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none" },
   },
 
   // ── Profil ────────────────────────────────────────────────────────────────
@@ -231,11 +233,11 @@ const FEATURES: Feature[] = [
     category: "Profil",
     screenshotTitle: "Profil et liaison STAR",
     screenshotFile: "guide-profile.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "none" },
   },
 ];
 
-const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER"];
+const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR"];
 
 function AccessBadge({ level }: { level: AccessLevel }) {
   switch (level) {
