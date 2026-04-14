@@ -180,7 +180,7 @@ koinonia/
 │   ├── components/
 │   │   ├── AuthLayoutShell.tsx    # Shell layout authentifie (header, sidebar)
 │   │   ├── BottomNav.tsx          # Navigation mobile bas d'ecran
-│   │   ├── Sidebar.tsx            # Sidebar unifiee
+│   │   ├── Sidebar.tsx            # Sidebar (Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
 │   │   ├── PlanningGrid.tsx       # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx      # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
