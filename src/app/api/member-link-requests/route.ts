@@ -72,12 +72,11 @@ export async function POST(request: Request) {
       ministryId: ("ministryId" in data ? data.ministryId : undefined) ?? undefined,
     };
 
-    if (data.type === "no_star") {
-      const req = await prisma.memberLinkRequest.create({ data: commonFields });
-      return successResponse(req, 201);
-    }
+    let req;
 
-    if (data.type === "existing") {
+    if (data.type === "no_star") {
+      req = await prisma.memberLinkRequest.create({ data: commonFields });
+    } else if (data.type === "existing") {
       const member = await prisma.member.findUnique({
         where: { id: data.memberId },
         include: {
@@ -96,21 +95,45 @@ export async function POST(request: Request) {
         throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
       }
 
-      const req = await prisma.memberLinkRequest.create({
+      req = await prisma.memberLinkRequest.create({
         data: { ...commonFields, memberId: data.memberId },
       });
-      return successResponse(req, 201);
+    } else {
+      // type === "new"
+      req = await prisma.memberLinkRequest.create({
+        data: {
+          ...commonFields,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone ?? undefined,
+        },
+      });
     }
 
-    // type === "new"
-    const req = await prisma.memberLinkRequest.create({
-      data: {
-        ...commonFields,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone ?? undefined,
+    // Notify all admins/secretaries in the church about the new link request
+    const requesterName =
+      session.user.displayName || session.user.name || session.user.email;
+    const adminRoles = await prisma.userChurchRole.findMany({
+      where: {
+        churchId: data.churchId,
+        role: { in: ["SUPER_ADMIN", "ADMIN", "SECRETARY"] },
       },
+      select: { userId: true },
+      distinct: ["userId"],
     });
+    if (adminRoles.length > 0) {
+      await prisma.notification.createMany({
+        data: adminRoles.map((r) => ({
+          userId: r.userId,
+          type: "MEMBER_LINK_REQUEST",
+          title: "Nouvelle demande de liaison",
+          message: `${requesterName} a soumis une demande de liaison compte STAR.`,
+          link: "/admin/access",
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     return successResponse(req, 201);
   } catch (error) {
     return errorResponse(error);
