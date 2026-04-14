@@ -38,6 +38,29 @@ session.user.churchRoles = [
 ]
 ```
 
+#### Chargement des departements STAR
+
+Pour les roles `STAR`, le callback `session` ne consulte pas `user_departments` (vide par design) mais derive les departements depuis la liaison membre :
+
+```typescript
+// Pseudo-code du callback session (src/lib/auth.ts)
+if (cr.role === "STAR") {
+  const link = await prisma.memberUserLink.findUnique({
+    where: { userId_churchId: { userId, churchId: cr.churchId } },
+    include: { member: { include: { departments: { include: { department: true } } } } },
+  });
+  // departments = link.member.departments.map(d => d.department)
+}
+```
+
+Cela permet d'assigner le role STAR sans aucune entree `user_departments` : les departements visibles suivent automatiquement le profil membre.
+
+#### Notifications de liaison
+
+- Soumission d'une `MemberLinkRequest` → notification `MEMBER_LINK_REQUEST` envoyee a tous les utilisateurs avec role `ADMIN`, `SECRETARY` ou `SUPER_ADMIN` dans l'eglise concernee
+- Approbation → notification `MEMBER_LINK_APPROVED` au demandeur (lien : `/planning`)
+- Rejet → notification `MEMBER_LINK_REJECTED` au demandeur avec le motif (lien : `/profile`)
+
 ### Protection des routes
 
 **Middleware** (`src/proxy.ts`, ex `src/middleware.ts`) :
@@ -71,6 +94,7 @@ session.user.churchRoles = [
 | Responsable departement | `DEPARTMENT_HEAD` | Un ou plusieurs departements |
 | Accompagnateur discipolat | `DISCIPLE_MAKER` | Suivi des relations de discipolat et gestion des presences |
 | Rapporteur | `REPORTER` | Acces en lecture/ecriture aux comptes rendus d'evenements |
+| Membre actif | `STAR` | Consultation du planning personnel uniquement |
 
 Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la table `user_church_roles`.
 
@@ -79,6 +103,7 @@ Un utilisateur peut avoir **plusieurs roles** dans **plusieurs eglises** via la 
 - **Super Admin** : automatique a la premiere connexion si l'email est dans `SUPER_ADMIN_EMAILS`
 - **Autres roles** : via l'interface admin (`/admin/users`), avec affectation optionnelle de ministere (MINISTER) ou departements (DEPARTMENT_HEAD)
 - **isDeputy** : la table `user_departments` (liaison `DEPARTMENT_HEAD` ↔ departements) dispose d'un flag `isDeputy` pour distinguer le responsable principal du responsable adjoint (deputy)
+- **STAR** : attribue depuis `/admin/access` (onglet STAR) ; les departements visibles sont derives automatiquement depuis `MemberUserLink → Member → MemberDepartment` — aucune entree `user_departments` n'est creee
 
 ---
 
@@ -98,23 +123,23 @@ const userPermissions = new Set(
 
 Matrice resultante :
 
-| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Disciple Maker | Reporter |
-|---|---|---|---|---|---|---|---|
-| `planning:view` | x | x | x | x | x | | |
-| `planning:edit` | x | x | | x | x | | |
-| `members:view` | x | x | x | x | x | | |
-| `members:manage` | x | x | | x | x | | |
-| `events:view` | x | x | x | x | x | | x |
-| `events:manage` | x | x | x | | | | |
-| `departments:view` | x | x | x | x | x | | |
-| `departments:manage` | x | x | | | | | |
-| `church:manage` | x | | | | | | |
-| `users:manage` | x | | | | | | |
-| `discipleship:view` | x | x | x | | x | x | |
-| `discipleship:manage` | x | x | | | | x | |
-| `discipleship:export` | x | | x | | | | |
-| `reports:view` | x | x | x | | | | x |
-| `reports:edit` | x | x | x | | | | x |
+| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Disciple Maker | Reporter | STAR |
+|---|---|---|---|---|---|---|---|---|
+| `planning:view` | x | x | x | x | x | | | x |
+| `planning:edit` | x | x | | x | x | | | |
+| `members:view` | x | x | x | x | x | | | |
+| `members:manage` | x | x | | x | x | | | |
+| `events:view` | x | x | x | x | x | | x | |
+| `events:manage` | x | x | x | | | | | |
+| `departments:view` | x | x | x | x | x | | | |
+| `departments:manage` | x | x | | | | | | |
+| `church:manage` | x | | | | | | | |
+| `users:manage` | x | | | | | | | |
+| `discipleship:view` | x | x | x | | x | x | | |
+| `discipleship:manage` | x | x | | | | x | | |
+| `discipleship:export` | x | | x | | | | | |
+| `reports:view` | x | x | x | | | | x | |
+| `reports:edit` | x | x | x | | | | x | |
 
 **Spécificités du Secrétaire** :
 - Voit tous les départements de son église (même périmètre que Admin)
@@ -127,6 +152,13 @@ Matrice resultante :
 **Spécificités du Reporter** :
 - Accès aux événements en lecture (`events:view`) et aux comptes rendus (`reports:view` + `reports:edit`)
 - Pas d'accès au planning, aux membres, au discipolat ni à la section admin
+
+**Spécificités du STAR** :
+- Permission `planning:view` uniquement — accède à son planning personnel via `/planning`
+- Pas d'accès aux sections membres, événements, admin, discipolat
+- Navigation réduite : lien "Mon planning" visible uniquement si `isStarOnly` (`churchRoles.every(r => r.role === "STAR")`)
+- Les départements du STAR sont dérivés automatiquement depuis `MemberUserLink → Member → MemberDepartment` dans le callback de session (pas de `user_departments`)
+- Attribution requiert une liaison compte-membre valide (`MemberUserLink`)
 
 ### Utilisation dans le code
 
@@ -166,5 +198,6 @@ L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une fonction depa
 - **Responsable de département** : voit uniquement les départements qui lui sont assignés via `user_departments`
 - **Disciple Maker** : pas d'accès au planning ni à la grille des départements ; périmètre limité au module discipolat
 - **Reporter** : pas d'accès au planning, aux membres ni à la section admin ; voit uniquement les événements et les comptes rendus qui lui sont accessibles
+- **STAR** : accès à `/planning` uniquement (son planning personnel) ; les départements sont dérivés depuis `MemberUserLink`, pas depuis `user_departments`
 
 Cette logique est implémentée dans `src/app/(auth)/layout.tsx` et `getUserDepartmentScope()` dans `src/lib/auth.ts`.
