@@ -21,6 +21,7 @@ const roleSchema = z.object({
     "DEPARTMENT_HEAD",
     "DISCIPLE_MAKER",
     "REPORTER",
+    "STAR",
   ]),
   ministryId: z.string().optional(),
   // Supporte les deux formats : string[] (legacy) ou { id, isDeputy }[]

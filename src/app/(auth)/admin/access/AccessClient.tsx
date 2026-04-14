@@ -21,6 +21,7 @@ interface UserItem {
   email: string;
   image: string | null;
   churchRoles: UserRole[];
+  memberLink?: { memberId: string; memberName: string; validated: boolean } | null;
 }
 
 interface Ministry {
@@ -50,7 +51,7 @@ interface Props {
   pendingRequests: PendingRequest[];
 }
 
-type Tab = "requests" | "roles" | "transverse" | "reporters";
+type Tab = "requests" | "roles" | "transverse" | "reporters" | "stars";
 
 type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER";
 
@@ -114,12 +115,16 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
   // Reporter loading
   const [reporterLoading, setReporterLoading] = useState<string | null>(null);
 
+  // STAR loading
+  const [starLoading, setStarLoading] = useState<string | null>(null);
+
   // Transverse role loading: "userId:ROLE"
   const [transverseLoading, setTransverseLoading] = useState<string | null>(null);
 
   // Search filters
   const [transverseSearch, setTransverseSearch] = useState("");
   const [reporterSearch, setReporterSearch] = useState("");
+  const [starSearch, setStarSearch] = useState("");
 
   // ── Helpers locaux ─────────────────────────────────────────────────────────
 
@@ -326,6 +331,53 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     }
   }
 
+  // ── Toggle STAR ────────────────────────────────────────────────────────────
+
+  async function toggleStar(user: UserItem) {
+    const has = user.churchRoles.some((r) => r.role === "STAR");
+    setStarLoading(user.id);
+    try {
+      if (has) {
+        await fetch(`/api/users/${user.id}/roles`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ churchId, role: "STAR" }),
+        });
+        setLocalUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id
+              ? { ...u, churchRoles: u.churchRoles.filter((r) => r.role !== "STAR") }
+              : u
+          )
+        );
+      } else {
+        const res = await fetch(`/api/users/${user.id}/roles`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ churchId, role: "STAR" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLocalUsers((prev) =>
+            prev.map((u) =>
+              u.id === user.id
+                ? {
+                    ...u,
+                    churchRoles: [
+                      ...u.churchRoles,
+                      { id: data.id, role: "STAR", ministryId: null, ministryName: null, departments: [] },
+                    ],
+                  }
+                : u
+            )
+          );
+        }
+      }
+    } finally {
+      setStarLoading(null);
+    }
+  }
+
   // ── Toggle Reporter ────────────────────────────────────────────────────────
 
   async function toggleReporter(user: UserItem) {
@@ -501,13 +553,17 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     ? localUsers.filter((u) => matchesSearch(u, reporterSearch))
     : localUsers;
 
+  const filteredStarUsers = starSearch
+    ? localUsers.filter((u) => matchesSearch(u, starSearch))
+    : localUsers;
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div>
       {/* Onglets */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(["requests", "roles", "transverse", "reporters"] as Tab[]).map((t) => (
+        {(["requests", "roles", "transverse", "reporters", "stars"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -517,7 +573,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "requests" ? "Demandes" : t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : "Comptes rendus"}
+            {t === "requests" ? "Demandes" : t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : t === "reporters" ? "Comptes rendus" : "STAR"}
             {t === "requests" && localRequests.length > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-icc-violet rounded-full">
                 {localRequests.length}
@@ -842,6 +898,63 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                     }`}
                   >
                     {loading ? "…" : isReporter ? "Retirer" : "Accorder"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Onglet STAR ───────────────────────────────────────────────────── */}
+      {tab === "stars" && (
+        <div className="space-y-3">
+          <p className="text-xs text-gray-400 mb-4">
+            Les utilisateurs avec le rôle <strong>STAR</strong> peuvent consulter leur planning personnel via &quot;Mon planning&quot;.
+            Un <strong>lien membre validé</strong> est nécessaire pour que leurs départements soient chargés automatiquement.
+          </p>
+          <input
+            type="text"
+            value={starSearch}
+            onChange={(e) => setStarSearch(e.target.value)}
+            placeholder="Rechercher un utilisateur..."
+            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
+          />
+          {filteredStarUsers.map((user) => {
+            const isStar = user.churchRoles.some((r) => r.role === "STAR");
+            const loading = starLoading === user.id;
+            const link = user.memberLink;
+            return (
+              <div key={user.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
+                <Avatar user={user} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  {link && (
+                    <p className={`text-xs mt-0.5 ${link.validated ? "text-green-600" : "text-amber-600"}`}>
+                      {link.validated ? `✓ Lié à ${link.memberName}` : `⏳ En attente — ${link.memberName}`}
+                    </p>
+                  )}
+                  {!link && (
+                    <p className="text-xs text-gray-400 mt-0.5 italic">Aucun lien membre</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {isStar && (
+                    <span className="text-xs bg-icc-violet/10 text-icc-violet border border-icc-violet/20 px-2 py-0.5 rounded-full font-medium">
+                      STAR
+                    </span>
+                  )}
+                  <button
+                    onClick={() => toggleStar(user)}
+                    disabled={loading}
+                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-50 ${
+                      isStar
+                        ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                        : "bg-icc-violet text-white hover:bg-icc-violet-dark"
+                    }`}
+                  >
+                    {loading ? "…" : isStar ? "Retirer" : "Accorder"}
                   </button>
                 </div>
               </div>
