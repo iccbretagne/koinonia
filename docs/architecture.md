@@ -42,7 +42,7 @@ Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, 
 | Module | Perimetre |
 |---|---|
 | `core` | Gestion des eglises (`church:manage`) et des utilisateurs (`users:manage`) |
-| `planning` | Evenements, planning, membres, annonces, demandes (Request workflow) |
+| `planning` | Evenements, planning, membres, annonces, demandes (Request workflow), espace STAR |
 | `discipleship` | Suivi discipolat, relations, presences, stats |
 
 **Exports du module `planning` :**
@@ -130,6 +130,7 @@ koinonia/
 │   │   │   ├── layout.tsx         # Auth guard, header, sidebar, footer version
 │   │   │   ├── dashboard/         # Vue planning par departement
 │   │   │   │   └── stats/         # Statistiques par departement
+│   │   │   ├── planning/          # "Mon planning" — espace STAR (role STAR uniquement)
 │   │   │   ├── events/            # Liste et calendrier des evenements
 │   │   │   │   └── calendar/      # Vue calendrier
 │   │   │   ├── profile/           # Profil utilisateur et liaison compte STAR
@@ -139,8 +140,10 @@ koinonia/
 │   │   │   ├── secretariat/
 │   │   │   │   └── requests/      # Dashboard Secretariat (toutes demandes)
 │   │   │   ├── media/
-│   │   │   │   └── requests/      # Dashboard Production Media (VISUEL)
-│   │   │   │       └── new/       # Demande visuel standalone
+│   │   │   │   ├── requests/      # Dashboard Production Media (VISUEL)
+│   │   │   │   │   └── new/       # Demande visuel standalone
+│   │   │   │   ├── events/        # Evenements media (module Media)
+│   │   │   │   └── projects/      # Projets media (phases v/g/d)
 │   │   │   ├── communication/
 │   │   │   │   └── requests/      # Dashboard Communication (RESEAUX_SOCIAUX)
 │   │   │   ├── guide/             # Guide utilisateur par role
@@ -148,7 +151,7 @@ koinonia/
 │   │   │       ├── layout.tsx     # Guard multi-permissions
 │   │   │       ├── churches/      # CRUD eglises
 │   │   │       ├── users/         # Gestion utilisateurs et roles
-│   │   │       ├── access/        # Gestion des acces (ministres, resp. dept, reporters)
+│   │   │       ├── access/        # Gestion des acces (ministres, resp. dept, reporters, STAR)
 │   │   │       ├── ministries/    # CRUD ministeres
 │   │   │       ├── departments/   # CRUD departements
 │   │   │       │   └── functions/ # Config fonctions departementales

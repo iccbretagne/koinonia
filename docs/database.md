@@ -41,8 +41,8 @@ Tous les IDs sont des `String @default(cuid())`.
 │     │        ├──► discipleship_attendances                          │
 │     │        └──► event_reports ──► event_report_sections           │
 │     │                                          │                     │
-│     ├──► announcements ──► service_requests ───┘                    │
-│     ├──► service_requests                                            │
+│     ├──► announcements ──► requests ───────────┘                    │
+│     ├──► requests                                                    │
 │     ├──► member_user_links                                           │
 │     ├──► member_link_requests                                        │
 │     ├──► discipleships                                               │
@@ -101,7 +101,7 @@ Association utilisateur-eglise-role. Un utilisateur peut avoir plusieurs roles d
 | `id` | String (cuid) | Identifiant unique |
 | `userId` | String | Ref vers `users` |
 | `churchId` | String | Ref vers `churches` |
-| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD`, `DISCIPLE_MAKER`, `REPORTER` |
+| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD`, `DISCIPLE_MAKER`, `REPORTER`, `STAR` |
 | `ministryId` | String? | Ref vers `ministries` (pour MINISTER) |
 
 Contrainte unique : `[userId, churchId, role]`
@@ -136,7 +136,7 @@ Departements d'un ministere (Choristes, Musiciens, Son...).
 |---|---|---|
 | `name` | String | Nom du departement |
 | `ministryId` | String | Ref vers `ministries` |
-| `function` | DepartmentFunction? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA` (nullable) |
+| `function` | String? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisee (nullable) |
 
 #### `members`
 
@@ -355,30 +355,29 @@ Table de jointure Announcement ↔ Event (evenements cibles par l'annonce).
 
 Cle primaire composite : `[announcementId, eventId]`
 
-#### `service_requests`
+#### `requests`
 
-Demandes de service generees automatiquement lors de la soumission d'une annonce, ou creees manuellement (visuels standalone).
+Modele unifie pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL) et demandes metier (AJOUT_EVENEMENT, MODIFICATION_EVENEMENT, ANNULATION_EVENEMENT, MODIFICATION_PLANNING, DEMANDE_ACCES).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `churchId` | String | Ref vers `churches` |
-| `type` | ServiceRequestType | `VISUEL`, `DIFFUSION_INTERNE`, `RESEAUX_SOCIAUX` |
+| `type` | RequestType | Type de demande (voir enum ci-dessous) |
+| `status` | RequestStatus | Statut (voir enum ci-dessous) |
+| `title` | String | Titre de la demande |
+| `payload` | Json | Donnees specifiques au type (brief, eventId, changes, etc.) |
 | `submittedById` | String | Ref vers `users` (soumetteur) |
-| `departmentId` | String? | Departement soumetteur (optionnel) |
-| `ministryId` | String? | Ministere soumetteur (optionnel) |
-| `assignedDeptId` | String? | Departement traitant (resolu via `DepartmentFunction`) |
-| `announcementId` | String? | Ref vers `announcements` (si generee depuis une annonce) |
-| `parentRequestId` | String? | Ref vers `service_requests` (auto-referentiel : lie un VISUEL a son canal parent) |
-| `title` | String | Titre |
-| `brief` | String? (Text) | Description / brief |
-| `format` | String? | Format attendu (ex: Slide/Affiche, Story/Post) |
-| `deadline` | DateTime? | Echeance |
-| `status` | ServiceRequestStatus | `EN_ATTENTE`, `EN_COURS`, `LIVRE`, `ANNULE` |
-| `deliveryLink` | String? | Lien de livraison |
-| `reviewNotes` | String? | Notes de revue |
-| `reviewedById` | String? | Ref vers `users` (revieweur) |
-| `reviewedAt` | DateTime? | Date de revue |
+| `departmentId` | String? | Ref vers `departments` (departement source) |
+| `ministryId` | String? | Ref vers `ministries` (ministere source) |
+| `assignedDeptId` | String? | Ref vers `departments` (departement traitant, resolu via fonction) |
+| `announcementId` | String? | Ref vers `announcements` (si liee a une annonce) |
+| `parentRequestId` | String? | Ref vers `requests` (auto-referentiel : lie un VISUEL a son canal parent) |
+| `reviewNotes` | String? (Text) | Notes du traitant |
+| `reviewedById` | String? | Ref vers `users` (traitant) |
+| `reviewedAt` | DateTime? | Date de traitement |
+| `executedAt` | DateTime? | Date d'execution automatique (demandes metier) |
+| `executionError` | String? (Text) | Message d'erreur si execution echouee |
 | `submittedAt` | DateTime | Date de soumission |
 | `updatedAt` | DateTime | Derniere modification |
 
@@ -396,6 +395,7 @@ MINISTER         # Responsable d'un ministere
 DEPARTMENT_HEAD  # Responsable d'un ou plusieurs departements
 DISCIPLE_MAKER   # Faiseur de disciples (acces aux fonctionnalites de discipolat)
 REPORTER         # Rapporteur (acces a la saisie des comptes-rendus)
+STAR             # Membre actif (acces uniquement a son planning personnel via MemberUserLink)
 ```
 
 #### `ServiceStatus`
@@ -407,15 +407,17 @@ INDISPONIBLE        # Absent
 REMPLACANT          # Remplace un membre indisponible
 ```
 
-#### `DepartmentFunction`
+#### Fonctions departementales (`department.function`)
+
+Champ `String?` sur le modele `Department` (plus un enum Prisma depuis v1.0). Valeurs conventionnelles :
 
 ```
-SECRETARIAT       # Departement traitant les diffusions internes
+SECRETARIAT       # Departement traitant les diffusions internes et demandes
 COMMUNICATION     # Departement traitant les publications reseaux sociaux
 PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
 ```
 
-Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`.
+Des valeurs personnalisees sont possibles. Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`. Constantes definies dans `src/lib/department-functions.ts`.
 
 #### `MemberLinkRequestStatus`
 
@@ -434,21 +436,30 @@ TRAITEE     # Traitement termine
 ANNULEE     # Annulee
 ```
 
-#### `ServiceRequestType`
+#### `RequestType`
 
 ```
-VISUEL             # Creation d'un visuel (Production Media)
-DIFFUSION_INTERNE  # Diffusion interne (Secretariat)
-RESEAUX_SOCIAUX    # Publication reseaux sociaux (Communication)
+DIFFUSION_INTERNE      # Annonce : diffusion interne (Secretariat)
+RESEAUX_SOCIAUX        # Annonce : publication reseaux sociaux (Communication)
+VISUEL                 # Annonce : creation d'un visuel (Production Media) — enfant auto
+AJOUT_EVENEMENT        # Demande : ajouter un evenement au planning
+MODIFICATION_EVENEMENT # Demande : modifier un evenement existant
+ANNULATION_EVENEMENT   # Demande : annuler un evenement
+MODIFICATION_PLANNING  # Demande : modifier le statut d'un membre dans un planning
+DEMANDE_ACCES          # Demande : attribuer un role a un utilisateur
 ```
 
-#### `ServiceRequestStatus`
+#### `RequestStatus`
 
 ```
-EN_ATTENTE  # Demande recue, en attente
-EN_COURS    # En cours de traitement
-LIVRE       # Livre (avec lien de livraison)
-ANNULE      # Annulee
+EN_ATTENTE   # Recue, en attente de traitement
+EN_COURS     # Traitement en cours (annonces)
+APPROUVEE    # Validee (demandes metier, avant execution)
+EXECUTEE     # Execution automatique reussie
+LIVRE        # Livree manuellement (annonces)
+REFUSEE      # Refusee (note obligatoire)
+ANNULE       # Annulee par le soumetteur ou en cascade
+ERREUR       # Echec de l'execution automatique
 ```
 
 ## Seed (donnees initiales)
