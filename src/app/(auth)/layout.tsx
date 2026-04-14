@@ -119,6 +119,12 @@ export default async function AuthLayout({
       serviceLinks.push({ href: "/communication/requests", label: "Communication" });
   }
 
+  // Media module links
+  if (userPermissions.has("media:view")) {
+    serviceLinks.push({ href: "/media/events", label: "Événements médias" });
+    serviceLinks.push({ href: "/media/projects", label: "Projets médias" });
+  }
+
   const headerContent = (
     <>
       <div className="min-w-0">
