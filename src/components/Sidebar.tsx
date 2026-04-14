@@ -7,7 +7,8 @@ import { useSearchParams, usePathname } from "next/navigation";
 interface SidebarProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
-  serviceLinks: { href: string; label: string }[];
+  requestLinks: { href: string; label: string }[];
+  mediaLinks: { href: string; label: string }[];
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
   hasEventsManage?: boolean;
@@ -56,6 +57,14 @@ function IconDiscipleship({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+
+function IconMedia({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
 }
@@ -258,7 +267,8 @@ function NavLink({
 export default function Sidebar({
   departments,
   configLinks,
-  serviceLinks,
+  requestLinks,
+  mediaLinks,
   hasDiscipleship = false,
   hasEventsAccess = true,
   hasEventsManage = false,
@@ -280,9 +290,10 @@ export default function Sidebar({
     pathname.startsWith("/admin/events") ||
     pathname.startsWith("/admin/reports");
   const isMembersActive = pathname.startsWith("/admin/members");
-  const isServiceActive =
+  const isRequestsActive =
     pathname.startsWith("/requests") ||
-    pathname.startsWith("/secretariat") ||
+    pathname.startsWith("/secretariat");
+  const isMediaActive =
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
   const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
@@ -296,8 +307,8 @@ export default function Sidebar({
   function activeSection() {
     if (isEventsActive) return "events";
     if (isMembersActive) return "members";
-    if (isServiceActive) return "service";
-    if (isDiscipleshipActive) return "discipleship";
+    if (isRequestsActive) return "requests";
+    if (isMediaActive) return "media";
     if (isConfigActive) return "config";
     return "planning";
   }
@@ -315,7 +326,8 @@ export default function Sidebar({
 
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
-      {/* 0. Mon planning (STAR only) */}
+
+      {/* 0. Mon planning (STAR uniquement) */}
       {hasMyPlanning && (
         <Link
           href="/planning"
@@ -418,18 +430,18 @@ export default function Sidebar({
         </Link>
       )}
 
-      {/* 4. Annonces */}
-      {serviceLinks.length > 0 && (
+      {/* 4. Demandes */}
+      {requestLinks.length > 0 && (
         <AccordionSection
           title="Demandes"
           icon={<IconMegaphone className="w-4 h-4" />}
-          open={openSection === "service"}
-          onToggle={() => toggle("service")}
-          isActive={isServiceActive}
+          open={openSection === "requests"}
+          onToggle={() => toggle("requests")}
+          isActive={isRequestsActive}
           dataTour="sidebar-service"
         >
           <nav className="space-y-0.5 pl-6">
-            {serviceLinks.map((link) => (
+            {requestLinks.map((link) => (
               <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
                 {link.label}
               </NavLink>
@@ -438,25 +450,40 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 5. Discipolat */}
-      {hasDiscipleship && (
+      {/* 5. Médias */}
+      {mediaLinks.length > 0 && (
         <AccordionSection
-          title="Discipolat"
-          icon={<IconDiscipleship className="w-4 h-4" />}
-          open={openSection === "discipleship"}
-          onToggle={() => toggle("discipleship")}
-          isActive={isDiscipleshipActive}
-          dataTour="sidebar-discipleship"
+          title="Médias"
+          icon={<IconMedia className="w-4 h-4" />}
+          open={openSection === "media"}
+          onToggle={() => toggle("media")}
+          isActive={isMediaActive}
+          dataTour="sidebar-media"
         >
           <nav className="space-y-0.5 pl-6">
-            <NavLink href="/admin/discipleship" active={pathname === "/admin/discipleship"} onClose={onClose}>
-              Tableau de bord
-            </NavLink>
+            {mediaLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 6. Configuration */}
+      {/* 6. Discipolat — lien direct (une seule sous-page) */}
+      {hasDiscipleship && (
+        <Link
+          href="/admin/discipleship"
+          onClick={onClose}
+          data-tour="sidebar-discipleship"
+          className={`${sectionHeaderBase} ${isDiscipleshipActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+        >
+          <IconDiscipleship className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Discipolat</span>
+        </Link>
+      )}
+
+      {/* 7. Configuration */}
       {configLinks.length > 0 && (
         <AccordionSection
           title="Configuration"

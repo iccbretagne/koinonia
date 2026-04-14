@@ -12,7 +12,8 @@ type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
-  serviceLinks: { href: string; label: string }[];
+  requestLinks: { href: string; label: string }[];
+  mediaLinks: { href: string; label: string }[];
   hasDiscipleship: boolean;
   hasEventsAccess: boolean;
   hasEventsManage: boolean;
@@ -45,7 +46,8 @@ function IconClose({ className }: { className?: string }) {
 export default function AuthLayoutShell({
   departments,
   configLinks,
-  serviceLinks,
+  requestLinks,
+  mediaLinks,
   hasDiscipleship,
   hasEventsAccess,
   hasEventsManage,
@@ -114,7 +116,8 @@ export default function AuthLayoutShell({
             <Sidebar
               departments={departments}
               configLinks={configLinks}
-              serviceLinks={serviceLinks}
+              requestLinks={requestLinks}
+              mediaLinks={mediaLinks}
               hasDiscipleship={hasDiscipleship}
               hasEventsAccess={hasEventsAccess}
               hasEventsManage={hasEventsManage}
