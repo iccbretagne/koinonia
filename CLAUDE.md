@@ -117,7 +117,7 @@ koinonia/
 │   │       ├── notifications/
 │   │       └── users/           # CRUD + [userId]/roles POST/PATCH/DELETE
 │   ├── components/
-│   │   ├── Sidebar.tsx          # Sidebar (sections : Planning, Evenements, Membres, Demandes, Discipolat, Configuration)
+│   │   ├── Sidebar.tsx          # Sidebar (sections : Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
 │   │   ├── AuthLayoutShell.tsx  # Shell layout authentifie (sidebar + bottom nav + contenu)
 │   │   ├── BottomNav.tsx        # Navigation mobile fixe en bas
 │   │   ├── NotificationBell.tsx # Cloche de notifications avec badge

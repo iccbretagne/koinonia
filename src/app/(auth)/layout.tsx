@@ -81,13 +81,15 @@ export default async function AuthLayout({
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
 
-  // Compute service links (demandes)
-  // Dashboards opérationnels restreints aux membres du département concerné + events:manage
-  const serviceLinks: { href: string; label: string }[] = [];
+  // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
+  const requestLinks: { href: string; label: string }[] = [];
 
   if (userPermissions.has("planning:view")) {
-    serviceLinks.push({ href: "/requests", label: "Mes demandes" });
+    requestLinks.push({ href: "/requests", label: "Mes demandes" });
   }
+
+  // ── Section "Médias" (module Media + dashboards production) ─────────────────
+  const mediaLinks: { href: string; label: string }[] = [];
 
   if (currentChurchId && userPermissions.has("planning:view")) {
     const isGlobalManager = userPermissions.has("events:manage");
@@ -112,17 +114,16 @@ export default async function AuthLayout({
       serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
 
     if (isMemberOf("SECRETARIAT"))
-      serviceLinks.push({ href: "/secretariat/requests", label: "Gestion" });
+      requestLinks.push({ href: "/secretariat/requests", label: "Gestion" });
     if (isMemberOf("PRODUCTION_MEDIA"))
-      serviceLinks.push({ href: "/media/requests", label: "Visuels" });
+      mediaLinks.push({ href: "/media/requests", label: "Visuels" });
     if (isMemberOf("COMMUNICATION"))
-      serviceLinks.push({ href: "/communication/requests", label: "Communication" });
+      mediaLinks.push({ href: "/communication/requests", label: "Communication" });
   }
 
-  // Media module links
   if (userPermissions.has("media:view")) {
-    serviceLinks.push({ href: "/media/events", label: "Événements médias" });
-    serviceLinks.push({ href: "/media/projects", label: "Projets médias" });
+    mediaLinks.push({ href: "/media/events", label: "Événements" });
+    mediaLinks.push({ href: "/media/projects", label: "Projets" });
   }
 
   const headerContent = (
@@ -211,7 +212,8 @@ export default async function AuthLayout({
     <AuthLayoutShell
       departments={allDepartments}
       configLinks={visibleConfigLinks}
-      serviceLinks={serviceLinks}
+      requestLinks={requestLinks}
+      mediaLinks={mediaLinks}
       hasDiscipleship={hasDiscipleship}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}

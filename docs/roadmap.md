@@ -114,7 +114,10 @@
 - [x] Distinction principal/adjoint (isDeputy) sur les responsables de departement
 - [x] Onglet Comptes rendus : toggle REPORTER par utilisateur
 - [x] Onglet STAR : visualisation du statut de liaison compte-membre, toggle role STAR
-- [x] Reorganisation du menu sidebar en 6 sections (Planning, Evenements, Membres, Demandes, Discipolat, Configuration)
+- [x] Reorganisation du menu sidebar en 7 sections (Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
+- [x] Sidebar : section "Demandes" limitee aux flux de requetes (Mes demandes + Gestion secrétariat)
+- [x] Sidebar : section "Medias" separee (Evenements, Projets, Visuels, Communication) — visible selon permissions media:view ou appartenance au departement
+- [x] Sidebar : "Discipolat" passe en lien direct (suppression de l'accordéon superflu)
 
 ## Liaison compte STAR
 
