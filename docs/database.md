@@ -49,6 +49,23 @@ Tous les IDs sont des `String @default(cuid())`.
 │     └──► event_reports                                               │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Module Média                                 │
+│                                                                      │
+│  churches ──► media_events ──► media_photos                         │
+│          │         │                                                 │
+│          │         └──► media_share_tokens                          │
+│          │                                                           │
+│          ├──► media_projects ──► media_files ──► media_file_versions│
+│          │              │             │                              │
+│          │              │             ├──► media_comments           │
+│          │              └──► media_share_tokens                     │
+│          │                                                           │
+│          ├──► media_zip_jobs                                         │
+│          └──► media_settings                                         │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Modeles
@@ -460,6 +477,209 @@ LIVRE        # Livree manuellement (annonces)
 REFUSEE      # Refusee (note obligatoire)
 ANNULE       # Annulee par le soumetteur ou en cascade
 ERREUR       # Echec de l'execution automatique
+```
+
+### Module Media
+
+#### `media_events`
+
+Galerie photos liee a un evenement planning (ou autonome).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `name` | String | Nom de l'evenement media |
+| `date` | DateTime | Date de l'evenement |
+| `description` | String? (Text) | Description optionnelle |
+| `status` | MediaEventStatus | Statut : `DRAFT`, `PENDING_REVIEW`, `REVIEWED`, `ARCHIVED` |
+| `planningEventId` | String? (unique) | Ref vers `events` (lien optionnel au planning) |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_photos`
+
+Photos appartenant a un evenement media.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaEventId` | String | Ref vers `media_events` (cascade delete) |
+| `filename` | String | Nom du fichier original |
+| `mimeType` | String | Type MIME (image/jpeg, image/webp…) |
+| `size` | Int | Taille en octets |
+| `width` / `height` | Int? | Dimensions en pixels |
+| `originalKey` | String | Cle S3 de l'original (JPEG haute resolution) |
+| `thumbnailKey` | String | Cle S3 du thumbnail (WebP 400px) |
+| `status` | MediaPhotoStatus | Statut de validation |
+| `validatedAt` | DateTime? | Date de validation |
+| `validatedBy` | String? | Identifiant du validateur (token ou user) |
+| `uploadedAt` | DateTime | Date d'upload |
+
+#### `media_projects`
+
+Conteneur de fichiers de production (videos, visuels) sans lien planning.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `name` | String | Nom du projet |
+| `description` | String? (Text) | Description optionnelle |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_files`
+
+Fichier de production (video ou visuel) appartenant a un projet.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaProjectId` | String | Ref vers `media_projects` (cascade delete) |
+| `type` | MediaFileType | `VIDEO`, `VISUAL`, `PHOTO` |
+| `status` | MediaFileStatus | Statut du workflow de production |
+| `filename` | String | Nom du fichier |
+| `mimeType` | String | Type MIME |
+| `size` | Int | Taille en octets |
+| `width` / `height` | Int? | Dimensions (visuels) |
+| `duration` | Int? | Duree en secondes (videos) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_file_versions`
+
+Versions successives d'un fichier de production.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `versionNumber` | Int | Numero de version (auto-incremente par fichier) |
+| `originalKey` | String | Cle S3 du fichier |
+| `thumbnailKey` | String | Cle S3 du thumbnail / premiere frame |
+| `notes` | String? (Text) | Notes de la version |
+| `createdById` | String? | Ref vers `users` |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_comments`
+
+Commentaires de revision sur un fichier, avec support des timecodes video.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `type` | MediaCommentType | `GENERAL` ou `TIMECODE` |
+| `content` | String (Text) | Contenu du commentaire |
+| `timecode` | Int? | Position en secondes (si `TIMECODE`) |
+| `parentId` | String? | Ref vers `media_comments` (reponses imbriquees) |
+| `authorId` | String? | Ref vers `users` (null si commentaire externe) |
+| `authorName` | String? | Nom affiche (commentaires externes) |
+| `authorImage` | String? | Avatar (commentaires externes) |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_share_tokens`
+
+Tokens de partage sans authentification. Donne acces a un evenement ou un projet.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `token` | String (unique) | Token aleatoire (URL-safe) |
+| `type` | MediaTokenType | `GALLERY`, `MEDIA`, `VALIDATOR`, `PREVALIDATOR` |
+| `label` | String? | Etiquette (ex : "Familles") |
+| `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`) |
+| `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`) |
+| `expiresAt` | DateTime? | Expiration (null = illimite) |
+| `usageCount` | Int | Nombre d'utilisations (default: 0) |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_zip_jobs`
+
+Jobs asynchrones de generation de ZIP pour le telechargement groupe.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaEventId` | String | Ref vers `media_events` |
+| `status` | MediaJobStatus | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
+| `zipKey` | String? | Cle S3 du ZIP genere |
+| `error` | String? (Text) | Message d'erreur si echec |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_settings`
+
+Parametres globaux du module media par eglise (singleton par eglise).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String (unique) | Ref vers `churches` |
+| `logoKey` | String? | Cle S3 du logo |
+| `faviconKey` | String? | Cle S3 du favicon |
+| `retentionDays` | Int? | Retention en jours (null = indefinie) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+### Enums media
+
+#### `MediaEventStatus`
+```
+DRAFT          # Brouillon — en cours d'alimentation
+PENDING_REVIEW # En revision — soumis aux validateurs
+REVIEWED       # Valide
+ARCHIVED       # Archive
+```
+
+#### `MediaPhotoStatus`
+```
+PENDING      # En attente de validation
+APPROVED     # Approuvee
+REJECTED     # Rejetee
+PREVALIDATED # Pre-validee (par un PREVALIDATOR)
+PREREJECTED  # Pre-rejetee (par un PREVALIDATOR)
+```
+
+#### `MediaFileType`
+```
+VIDEO   # Fichier video (MP4, MOV, WebM)
+VISUAL  # Visuel statique (JPEG, PNG, WebP, SVG, PDF)
+PHOTO   # Photo (usage galerie)
+```
+
+#### `MediaFileStatus`
+```
+DRAFT              # Brouillon — upload en cours ou non soumis
+IN_REVIEW          # En cours de revision
+REVISION_REQUESTED # Revision demandee par le reviseur
+FINAL_APPROVED     # Valide final
+REJECTED           # Rejete
+PENDING            # En attente (intermediaire)
+APPROVED           # Approuve (intermediaire)
+PREVALIDATED       # Pre-valide
+PREREJECTED        # Pre-rejete
+```
+
+#### `MediaCommentType`
+```
+GENERAL   # Commentaire general sur le fichier
+TIMECODE  # Commentaire ancre a une position temporelle
+```
+
+#### `MediaTokenType`
+```
+GALLERY      # Galerie lecture seule (/media/g/[token])
+MEDIA        # Telechargement photos approuvees (/media/d/[token])
+VALIDATOR    # Validation/rejet des photos (/media/v/[token])
+PREVALIDATOR # Pre-validation sans approbation finale (/media/v/[token])
+```
+
+#### `MediaJobStatus`
+```
+PENDING    # En attente de traitement
+PROCESSING # En cours de generation
+COMPLETED  # ZIP genere et disponible
+FAILED     # Echec de generation
 ```
 
 ## Seed (donnees initiales)

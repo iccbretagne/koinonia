@@ -44,6 +44,15 @@ Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, 
 | `core` | Gestion des eglises (`church:manage`) et des utilisateurs (`users:manage`) |
 | `planning` | Evenements, planning, membres, annonces, demandes (Request workflow), espace STAR |
 | `discipleship` | Suivi discipolat, relations, presences, stats |
+| `media` | Galeries photos evenements, projets de production, versionnage fichiers, tokens de partage |
+
+**Exports du module `media` :**
+- `mediaModule` — manifeste
+- `uploadMediaFile`, `deleteMediaFile` — upload/suppression S3
+- `getSignedThumbnailUrl`, `getSignedOriginalUrl`, `getSignedDownloadUrl` — URLs signees
+- `processImage`, `validatePhotoFile` — traitement et validation images (sharp)
+- `createMediaShareToken`, `validateMediaShareToken` — gestion des tokens de partage
+- `createMultipartUpload`, `getSignedPartUrl`, `completeMultipartUpload`, `abortMultipartUpload` — upload multipart S3
 
 **Exports du module `planning` :**
 - `planningModule` — manifeste
@@ -171,6 +180,17 @@ koinonia/
 │   │       ├── events/
 │   │       │   └── [eventId]/
 │   │       │       └── report/    # GET/PATCH CR d'evenement
+│   │       ├── media-events/          # CRUD evenements media + photos + tokens partage
+│   │       ├── media-projects/        # CRUD projets media + tokens partage
+│   │       ├── media/
+│   │       │   ├── files/[id]/        # CRUD fichiers + versions + commentaires
+│   │       │   │   ├── versions/      # GET/POST versions + URLs streaming
+│   │       │   │   └── comments/      # GET/POST commentaires
+│   │       │   ├── files/upload/sign  # URL pre-signee S3 (upload direct navigateur)
+│   │       │   ├── settings/          # GET/PUT parametres module media
+│   │       │   ├── gallery/[token]/   # Galerie publique sans auth
+│   │       │   ├── validate/[token]/  # Validation photos sans auth
+│   │       │   └── download/[token]/  # Telechargement photos sans auth
 │   │       ├── member-link-requests/
 │   │       ├── member-user-links/
 │   │       ├── members/
@@ -295,6 +315,19 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) |
 | `ENABLED_MODULES` | Modules a charger (virgule) — tous si absent |
+| `S3_ENDPOINT` | Endpoint S3-compatible (backups BDD) |
+| `S3_REGION` | Region du bucket backups |
+| `S3_BUCKET` | Nom du bucket backups |
+| `S3_ACCESS_KEY_ID` | Cle d'acces backups |
+| `S3_SECRET_ACCESS_KEY` | Secret backups |
+| `BACKUP_RETENTION_DAYS` | Retention des backups en jours (defaut : 30) |
+| `MEDIA_S3_ENDPOINT` | Endpoint S3-compatible (module media — photos, visuels, videos) |
+| `MEDIA_S3_REGION` | Region du bucket media |
+| `MEDIA_S3_BUCKET` | Nom du bucket media |
+| `MEDIA_S3_ACCESS_KEY_ID` | Cle d'acces media |
+| `MEDIA_S3_SECRET_ACCESS_KEY` | Secret media |
+
+> Si `MEDIA_S3_*` sont absents, le module media utilise les variables `S3_*` (bucket unique — dev uniquement).
 
 ---
 
@@ -323,6 +356,59 @@ Quand une demande de type evenement est approuvee, `executeRequest()` (dans `src
 
 - Annuler une `Announcement` → toutes ses `Request` liees passent en `ANNULE`
 - Annuler une `Request` parente `DIFFUSION_INTERNE`/`RESEAUX_SOCIAUX` → la `Request` enfant `VISUEL` passe en `ANNULE`
+
+---
+
+## Module Media
+
+Perimetre : galeries photos (evenements) et projets de production (videos, visuels).
+
+### Dependances
+
+- `core` : obligatoire (churchId, permissions)
+- `planning` : optionnelle — lie un `MediaEvent` a un evenement du planning (`planningEventId`)
+
+### Permissions
+
+| Permission | Roles | Description |
+|---|---|---|
+| `media:view` | SUPER_ADMIN, ADMIN, SECRETARY | Consulter galeries, projets, fichiers |
+| `media:upload` | SUPER_ADMIN, ADMIN, SECRETARY | Uploader, supprimer photos et fichiers |
+| `media:review` | SUPER_ADMIN, ADMIN | Valider / rejeter photos et fichiers |
+| `media:manage` | SUPER_ADMIN, ADMIN | Creer/supprimer evenements et projets, gerer les tokens |
+
+### Services (`src/modules/media/services/`)
+
+| Fichier | Role |
+|---|---|
+| `image.ts` | Traitement d'images via `sharp` : redimensionnement, conversion WebP, validation MIME |
+| `s3.ts` | Interaction S3 : upload, suppression, URLs signees (get/put), upload multipart |
+| `tokens.ts` | Generation et validation des tokens de partage (`MediaShareToken`) |
+
+### Flux d'upload photos
+
+1. `POST /api/media-events/[id]/photos` — multipart form-data
+2. Serveur : `validatePhotoFile` → `processImage` (sharp) → `uploadMediaFile` (original + thumbnail S3)
+3. BDD : creation `MediaPhoto` avec `originalKey` + `thumbnailKey`
+
+### Flux d'upload fichiers (projets)
+
+Upload direct navigateur vers S3 (evite le transit serveur pour les gros fichiers) :
+
+1. `POST /api/media/files/upload/sign` → URL pre-signee S3 + `fileId`
+2. Navigateur : `PUT {uploadUrl}` directement vers S3 (XHR avec suivi de progression)
+3. `PATCH /api/media/files/[fileId]` avec `{ originalKey }` — confirmation cote serveur
+
+### Acces publics (tokens de partage)
+
+Quatre types de tokens controlent les acces sans authentification :
+
+| Type | Route | Droits |
+|---|---|---|
+| `GALLERY` | `/media/g/[token]` | Lecture seule, galerie photos approuvees |
+| `MEDIA` | `/media/d/[token]` | Telechargement photos approuvees |
+| `VALIDATOR` | `/media/v/[token]` | Valider/rejeter des photos (APPROVED/REJECTED) |
+| `PREVALIDATOR` | `/media/v/[token]` | Pre-valider (PREVALIDATED/PREREJECTED) |
 
 ---
 
