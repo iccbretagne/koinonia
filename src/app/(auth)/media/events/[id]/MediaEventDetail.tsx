@@ -310,17 +310,20 @@ function ShareTokenSection({
 
 export default function MediaEventDetail({
   event: initialEvent,
+  thumbnailUrls: initialThumbnailUrls,
   canUpload,
   canReview,
   canManage,
 }: {
   event: MediaEvent;
+  thumbnailUrls: Record<string, string>;
   canUpload: boolean;
   canReview: boolean;
   canManage: boolean;
 }) {
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
+  const [thumbnailUrls, setThumbnailUrls] = useState(initialThumbnailUrls);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
   const [photoFilter, setPhotoFilter] = useState<MediaPhotoStatus | "">("");
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -335,7 +338,13 @@ export default function MediaEventDetail({
   async function refreshPhotos() {
     const res = await fetch(`/api/media-events/${event.id}/photos`);
     const json = await res.json();
-    if (res.ok) setEvent((prev) => ({ ...prev, photos: json.data, _count: { ...prev._count, photos: json.data.length } }));
+    if (res.ok) {
+      const photos: (Photo & { thumbnailUrl?: string | null })[] = json.data;
+      const newUrls: Record<string, string> = {};
+      photos.forEach((p) => { if (p.thumbnailUrl) newUrls[p.id] = p.thumbnailUrl; });
+      setThumbnailUrls((prev) => ({ ...prev, ...newUrls }));
+      setEvent((prev) => ({ ...prev, photos, _count: { ...prev._count, photos: photos.length } }));
+    }
   }
 
   const filteredPhotos = event.photos.filter((p) =>
@@ -502,10 +511,21 @@ export default function MediaEventDetail({
                     style={selectedPhotoIds.has(photo.id) ? { opacity: 1 } : {}}
                   />
                 )}
-                <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                <div className="aspect-square bg-gray-100 overflow-hidden">
+                  {thumbnailUrls[photo.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbnailUrls[photo.id]}
+                      alt={photo.filename}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 <div className="p-1.5">
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${PHOTO_STATUS_COLORS[photo.status]}`}>

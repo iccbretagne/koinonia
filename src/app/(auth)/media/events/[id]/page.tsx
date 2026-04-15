@@ -2,6 +2,7 @@ import { requireChurchPermission, resolveChurchId, requireAuth } from "@/lib/aut
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { rolePermissions } from "@/lib/registry";
+import { getSignedThumbnailUrl } from "@/modules/media";
 import MediaEventDetail from "./MediaEventDetail";
 
 export default async function MediaEventDetailPage({
@@ -38,6 +39,16 @@ export default async function MediaEventDetailPage({
 
   if (!event) notFound();
 
+  // Générer les URLs signées pour les thumbnails (valides 1h)
+  const thumbnailUrls: Record<string, string> = {};
+  await Promise.all(
+    event.photos.map(async (p) => {
+      if (p.thumbnailKey) {
+        thumbnailUrls[p.id] = await getSignedThumbnailUrl(p.thumbnailKey);
+      }
+    })
+  );
+
   const churchPerms = new Set(
     session.user.churchRoles
       .filter((r) => r.churchId === churchId!)
@@ -50,6 +61,7 @@ export default async function MediaEventDetailPage({
   return (
     <MediaEventDetail
       event={event}
+      thumbnailUrls={thumbnailUrls}
       canUpload={canUpload}
       canReview={canReview}
       canManage={canManage}

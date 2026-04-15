@@ -8,6 +8,7 @@ import {
   uploadMediaFile,
   getPhotoOriginalKey,
   getPhotoThumbnailKey,
+  getSignedThumbnailUrl,
 } from "@/modules/media";
 import { z } from "zod";
 
@@ -30,7 +31,14 @@ export async function GET(
       orderBy: { uploadedAt: "desc" },
     });
 
-    return successResponse(photos);
+    const photosWithUrls = await Promise.all(
+      photos.map(async (p) => ({
+        ...p,
+        thumbnailUrl: p.thumbnailKey ? await getSignedThumbnailUrl(p.thumbnailKey) : null,
+      }))
+    );
+
+    return successResponse(photosWithUrls);
   } catch (error) {
     return errorResponse(error);
   }
