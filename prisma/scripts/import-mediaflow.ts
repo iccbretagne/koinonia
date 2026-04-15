@@ -310,9 +310,19 @@ async function main() {
     ok(`MediaEvents importés : ${eventsToCreate.length}`);
 
     // ── Étape 5 : MediaPhotos ────────────────────────────────────────────────
+    // Source : table Photo (ancienne) + Media(type=PHOTO) avec leur dernière version.
+    // Les deux sources sont fusionnées ; les doublons sont ignorés (skipDuplicates).
     step(5, "MediaPhotos");
 
-    const photosToCreate = mfPhotos
+    // Index : dernière version par mediaId
+    const latestVersionMap = new Map<string, MfVersion>();
+    for (const v of mfVersions) {
+      const cur = latestVersionMap.get(v.mediaId);
+      if (!cur || v.versionNumber > cur.versionNumber) latestVersionMap.set(v.mediaId, v);
+    }
+
+    // Source A : table Photo (structure plate, clés S3 directes)
+    const photosFromTable = mfPhotos
       .filter((p) => eventMap.has(p.eventId))
       .map((p) => ({
         id: p.id,
@@ -330,21 +340,61 @@ async function main() {
         uploadedAt: p.uploadedAt,
       }));
 
+    // Source B : Media(type=PHOTO) avec clés S3 via la dernière MediaVersion
+    const photoIdsFromTable = new Set(photosFromTable.map((p) => p.id));
+    const noKey: string[] = [];
+    const photosFromMedia = mfFiles
+      .filter((f) =>
+        f.type === "PHOTO" &&
+        f.eventId && eventMap.has(f.eventId) &&
+        !photoIdsFromTable.has(f.id) // déduplication
+      )
+      .flatMap((f) => {
+        const v = latestVersionMap.get(f.id);
+        if (!v?.originalKey) { noKey.push(f.id); return []; }
+        return [{
+          id: f.id,
+          filename: f.filename,
+          originalKey: v.originalKey,
+          thumbnailKey: v.thumbnailKey ?? v.originalKey,
+          mimeType: f.mimeType,
+          size: f.size,
+          width: f.width ?? null,
+          height: f.height ?? null,
+          status: mapPhotoStatus(f.status),
+          validatedAt: (f.status === "APPROVED" || f.status === "PREVALIDATED") ? f.updatedAt : null,
+          validatedBy: null,
+          mediaEventId: eventMap.get(f.eventId!)!,
+          uploadedAt: f.createdAt,
+        }];
+      });
+
+    if (noKey.length > 0) warn(`${noKey.length} Media(PHOTO) sans version/clé S3 — ignorés`);
+
+    const photosToCreate = [...photosFromTable, ...photosFromMedia];
+    info(`Source Photo (table) : ${photosFromTable.length}`);
+    info(`Source Media(PHOTO)  : ${photosFromMedia.length}`);
+
     if (!DRY_RUN && photosToCreate.length > 0) {
       for (let i = 0; i < photosToCreate.length; i += 500) {
+        process.stdout.write(`\r  Insertion photos : ${Math.min(i + 500, photosToCreate.length)}/${photosToCreate.length}`);
         await prisma.mediaPhoto.createMany({ data: photosToCreate.slice(i, i + 500), skipDuplicates: true });
       }
+      process.stdout.write("\n");
     }
     ok(`MediaPhotos importées : ${photosToCreate.length}`);
 
-    // ── Étape 6 : MediaFiles + MediaFileVersions ─────────────────────────────
-    step(6, "MediaFiles + versions");
+    // ── Étape 6 : MediaFiles (VIDEO + VISUAL) + MediaFileVersions ───────────
+    // Les PHOTO sont déjà traités à l'étape 5 → on les exclut ici.
+    step(6, "MediaFiles (VIDEO + VISUAL) + versions");
 
     const fileMap = new Map<string, string>(); // mf_id → koinonia_id
 
-    // Un Media peut être lié à un Event ou à un Project
     const filesToCreate = mfFiles
-      .filter((f) => (f.eventId && eventMap.has(f.eventId)) || (f.projectId && projectMap.has(f.projectId)))
+      .filter((f) =>
+        f.type !== "PHOTO" && // PHOTOs → media_photos (étape 5)
+        ((f.eventId && eventMap.has(f.eventId)) || (f.projectId && projectMap.has(f.projectId)))
+      )
       .map((f) => {
         fileMap.set(f.id, f.id);
         return {
@@ -358,12 +408,15 @@ async function main() {
           height: f.height ?? null,
           duration: f.duration ?? null,
           mediaEventId: (f.eventId && eventMap.get(f.eventId)) ?? null,
+          mediaProjectId: (f.projectId && projectMap.get(f.projectId)) ?? null,
           createdAt: f.createdAt,
           updatedAt: f.updatedAt,
         };
       });
 
-    const filesSkipped = mfFiles.length - filesToCreate.length;
+    const photosExcluded = mfFiles.filter((f) => f.type === "PHOTO").length;
+    const filesSkipped   = mfFiles.length - filesToCreate.length - photosExcluded;
+    info(`${photosExcluded} Media(PHOTO) traités à l'étape 5 — exclus ici`);
     if (filesSkipped > 0) warn(`${filesSkipped} fichiers ignorés (event/project non mappé)`);
 
     if (!DRY_RUN && filesToCreate.length > 0) {
@@ -427,7 +480,8 @@ async function main() {
         type: mapTokenType(t.type),
         label: t.label ?? null,
         config: t.config ? (typeof t.config === "string" ? JSON.parse(t.config) : t.config) : null,
-        mediaEventId: (t.eventId && eventMap.get(t.eventId)) ?? null,
+        mediaEventId:   (t.eventId   && eventMap.get(t.eventId))   ?? null,
+        mediaProjectId: (t.projectId && projectMap.get(t.projectId)) ?? null,
         expiresAt: t.expiresAt ?? null,
         lastUsedAt: t.lastUsedAt ?? null,
         usageCount: t.usageCount ?? 0,

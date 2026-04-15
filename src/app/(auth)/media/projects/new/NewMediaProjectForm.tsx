@@ -24,7 +24,7 @@ export default function NewMediaProjectForm({ churchId }: { churchId: string }) 
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur lors de la création");
-      router.push(`/media/projects/${json.data.id}`);
+      router.push(`/media/projects/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {

@@ -45,7 +45,7 @@ export default function DownloadView({
       if (!res.ok) return;
       // Trigger download
       const a = document.createElement("a");
-      a.href = json.data.downloadUrl;
+      a.href = json.downloadUrl;
       a.download = filename;
       a.click();
     } finally {

@@ -67,6 +67,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           tar czf "koinonia-${VERSION}.tar.gz" \
+            --exclude='prisma/scripts' \
             .next/standalone .next/static \
             prisma prisma.config.ts public package.json \
             node_modules

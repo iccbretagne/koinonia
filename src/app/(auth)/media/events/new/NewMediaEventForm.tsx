@@ -64,7 +64,7 @@ export default function NewMediaEventForm({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur lors de la création");
-      router.push(`/media/events/${json.data.id}`);
+      router.push(`/media/events/${json.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
     } finally {

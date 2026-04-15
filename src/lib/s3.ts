@@ -11,14 +11,17 @@ function makeClient(vars: {
   accessKeyId: string | undefined;
   secretAccessKey: string | undefined;
 }): S3Client {
+  // Provide credentials as an async function (AwsCredentialIdentityProvider) rather
+  // than a plain static object. This prevents the AWS SDK from also invoking the
+  // default credential provider chain, which tries to fs.watch() ~/.aws/credentials
+  // and fails on WSL2 with "Unable to add filesystem: <illegal path>".
+  const accessKeyId = vars.accessKeyId || "";
+  const secretAccessKey = vars.secretAccessKey || "";
   return new S3Client({
     endpoint: vars.endpoint,
     region: vars.region || "us-east-1",
     forcePathStyle: true,
-    credentials: {
-      accessKeyId: vars.accessKeyId || "",
-      secretAccessKey: vars.secretAccessKey || "",
-    },
+    credentials: async () => ({ accessKeyId, secretAccessKey }),
   });
 }
 

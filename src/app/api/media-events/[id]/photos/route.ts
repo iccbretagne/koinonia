@@ -9,6 +9,7 @@ import {
   getPhotoOriginalKey,
   getPhotoThumbnailKey,
   getSignedThumbnailUrl,
+  deleteMediaFile,
 } from "@/modules/media";
 import { z } from "zod";
 
@@ -134,6 +135,46 @@ export async function PATCH(
     });
 
     return successResponse({ updated: result.count });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/** DELETE — suppression d'une ou plusieurs photos (?photoIds=id1,id2). */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const churchId = await resolveChurchId("mediaEvent", id);
+    await requireChurchPermission("media:upload", churchId);
+
+    const url = new URL(request.url);
+    const raw = url.searchParams.get("photoIds") ?? "";
+    const photoIds = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (photoIds.length === 0) throw new ApiError(400, "photoIds requis");
+
+    const photos = await prisma.mediaPhoto.findMany({
+      where: { id: { in: photoIds }, mediaEventId: id },
+      select: { id: true, originalKey: true, thumbnailKey: true },
+    });
+
+    if (photos.length === 0) throw new ApiError(404, "Photos introuvables");
+
+    // Supprimer les fichiers S3
+    await Promise.allSettled(
+      photos.flatMap((p) => [
+        deleteMediaFile(p.originalKey).catch(() => {}),
+        deleteMediaFile(p.thumbnailKey).catch(() => {}),
+      ])
+    );
+
+    await prisma.mediaPhoto.deleteMany({
+      where: { id: { in: photos.map((p) => p.id) }, mediaEventId: id },
+    });
+
+    return successResponse({ deleted: photos.length });
   } catch (error) {
     return errorResponse(error);
   }

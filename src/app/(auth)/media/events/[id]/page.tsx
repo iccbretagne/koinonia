@@ -55,7 +55,6 @@ export default async function MediaEventDetailPage({
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload");
-  const canReview = session.user.isSuperAdmin || churchPerms.has("media:review");
   const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage");
 
   return (
@@ -63,7 +62,6 @@ export default async function MediaEventDetailPage({
       event={event}
       thumbnailUrls={thumbnailUrls}
       canUpload={canUpload}
-      canReview={canReview}
       canManage={canManage}
     />
   );
