@@ -10,7 +10,7 @@
 - [x] Dashboard Secretariat (`/secretariat/requests`) — traitement de toutes les demandes
 - [x] Dashboard Production Media (`/media/requests`) — traitement des VISUEL
 - [x] Dashboard Communication (`/communication/requests`) — traitement des RESEAUX_SOCIAUX
-- [x] Demande visuel standalone sans annonce (`/media/requests/new`)
+- [x] Demande visuel standalone sans annonce (intégrée dans `/requests/new` — carte "Demander un visuel")
 - [x] Configuration des fonctions departementales (`/admin/departments/functions`)
 - [x] Flag `allowAnnouncements` sur les evenements
 - [x] Relation auto-referentielle VISUEL → canal parent (format contextualise)
@@ -158,5 +158,6 @@
 - [x] Rate limiting sur les API routes
 - [x] Logs structures (pino ou similaire)
 - [x] Migrations Prisma correctrices (rattrapage db push → migrate)
+- [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
 - [ ] Tests E2E (Playwright ou Cypress)
 - [ ] Monitoring applicatif (healthcheck, metriques)
