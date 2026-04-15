@@ -483,15 +483,6 @@ export default function RequestForm({
   // Step 2: Form
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
-      {!isEditMode && (
-        <button
-          type="button"
-          onClick={reset}
-          className="text-sm text-icc-violet hover:underline mb-2"
-        >
-          ← Changer de type
-        </button>
-      )}
 
       {category === "announcement" && (
         <>
@@ -1015,7 +1006,7 @@ export default function RequestForm({
         <Button type="submit" disabled={submitting}>
           {submitting ? "Envoi..." : isEditMode ? "Enregistrer" : "Soumettre"}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push("/requests")}>
+        <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push("/requests") : reset()}>
           Annuler
         </Button>
       </div>
