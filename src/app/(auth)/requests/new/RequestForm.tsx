@@ -590,7 +590,7 @@ export default function RequestForm({
           )}
           {!isEditMode && sourceOptions.length > 1 && (
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Source</label>
+              <label className="block text-sm font-medium text-gray-700">Département</label>
               <select
                 value={annSourceId}
                 onChange={(e) => setAnnSourceId(e.target.value)}
@@ -645,7 +645,7 @@ export default function RequestForm({
           />
           {sourceOptions.length > 1 && (
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Source</label>
+              <label className="block text-sm font-medium text-gray-700">Département</label>
               <select
                 value={visualSourceId}
                 onChange={(e) => setVisualSourceId(e.target.value)}
