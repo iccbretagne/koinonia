@@ -8,11 +8,6 @@
  * Options :
  *   --dry-run   Affiche ce qui serait importé sans rien écrire
  *
- * Prérequis :
- *   - DATABASE_URL dans .env (BDD Koinonia cible)
- *   - MEDIAFLOW_DB_URL en variable d'environnement (BDD Mediaflow source)
- *   - Les deux peuvent être sur des serveurs différents
- *
  * Le script est IDEMPOTENT : relancer sans risque (upsert / skipDuplicates).
  */
 
@@ -25,7 +20,7 @@ import { PrismaClient } from "../../src/generated/prisma/client";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
-if (DRY_RUN) console.log("⚠️  MODE DRY-RUN — aucune écriture\n");
+if (DRY_RUN) console.log("⚠️   MODE DRY-RUN — aucune écriture\n");
 
 // ─── Clients BDD ─────────────────────────────────────────────────────────────
 
@@ -45,17 +40,18 @@ function parseDbUrl(url: string) {
   };
 }
 
-// ─── Types Mediaflow (adaptés au schéma réel) ─────────────────────────────────
+// ─── Types Mediaflow (schéma réel vérifié via DESCRIBE) ───────────────────────
 
-interface MfChurch   { id: string; name: string }
-interface MfUser     { id: string; email: string; name: string; image: string | null; role: string; churchId: string; createdAt: Date }
-interface MfEvent    { id: string; title: string; date: Date; description: string | null; status: string; churchId: string; createdById: string | null; createdAt: Date; updatedAt: Date }
-interface MfPhoto    { id: string; s3Key: string; thumbnailKey: string | null; filename: string | null; mimeType: string | null; size: number | null; width: number | null; height: number | null; status: string; validatedAt: Date | null; validatedBy: string | null; uploadedAt: Date | null; createdAt: Date; eventId: string }
-interface MfFile     { id: string; type: string; status: string; filename: string; mimeType: string | null; size: number | null; width: number | null; height: number | null; duration: number | null; eventId: string; createdAt: Date; updatedAt: Date }
-interface MfVersion  { id: string; versionNumber: number; s3Key: string; thumbnailKey: string | null; notes: string | null; fileId: string; createdById: string | null; createdAt: Date }
-interface MfComment  { id: string; type: string; content: string; authorName: string | null; authorImage: string | null; timecode: number | null; parentId: string | null; fileId: string; authorId: string | null; createdAt: Date; updatedAt: Date }
-interface MfToken    { id: string; token: string; type: string; label: string | null; config: string | null; eventId: string; expiresAt: Date | null; lastUsedAt: Date | null; usageCount: number; createdAt: Date }
-interface MfSettings { logoKey: string | null; faviconKey: string | null; logoFilename: string | null; faviconFilename: string | null; retentionDays: number | null; createdAt: Date }
+interface MfChurch  { id: string; name: string }
+interface MfUser    { id: string; email: string; name: string | null; image: string | null; role: string; createdAt: Date }
+interface MfEvent   { id: string; name: string; date: Date; description: string | null; status: string; churchId: string; createdById: string; createdAt: Date; updatedAt: Date }
+interface MfProject { id: string; name: string; description: string | null; churchId: string; createdById: string; createdAt: Date; updatedAt: Date }
+interface MfPhoto   { id: string; filename: string; originalKey: string; thumbnailKey: string; mimeType: string; size: number; width: number | null; height: number | null; status: string; validatedAt: Date | null; validatedBy: string | null; eventId: string; uploadedAt: Date }
+interface MfFile    { id: string; type: string; status: string; filename: string; mimeType: string; size: number; width: number | null; height: number | null; duration: number | null; eventId: string | null; projectId: string | null; createdAt: Date; updatedAt: Date }
+interface MfVersion { id: string; versionNumber: number; originalKey: string; thumbnailKey: string; notes: string | null; mediaId: string; createdById: string; createdAt: Date }
+interface MfComment { id: string; type: string; content: string; timecode: number | null; parentId: string | null; mediaId: string; authorId: string | null; authorName: string | null; authorImage: string | null; createdAt: Date; updatedAt: Date }
+interface MfToken   { id: string; token: string; type: string; label: string | null; config: string | null; eventId: string | null; projectId: string | null; expiresAt: Date | null; lastUsedAt: Date | null; usageCount: number; createdAt: Date }
+interface MfSettings { id: string; logoKey: string | null; faviconKey: string | null; logoFilename: string | null; faviconFilename: string | null; retentionDays: number; createdAt: Date }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -64,26 +60,25 @@ function step(n: number, label: string) {
   console.log(`Étape ${n} — ${label}`);
   console.log("─".repeat(60));
 }
-
-function ok(msg: string) { console.log(`  ✓ ${msg}`); }
+function ok(msg: string)   { console.log(`  ✓ ${msg}`); }
 function warn(msg: string) { console.log(`  ⚠  ${msg}`); }
 function info(msg: string) { console.log(`  · ${msg}`); }
 
 // ─── Mappings de statuts ──────────────────────────────────────────────────────
 
 function mapEventStatus(s: string) {
-  if (s === "REVIEWED" || s === "DONE") return "REVIEWED" as const;
-  if (s === "ARCHIVED") return "ARCHIVED" as const;
-  if (s === "DRAFT") return "DRAFT" as const;
+  if (s === "REVIEWED")  return "REVIEWED" as const;
+  if (s === "ARCHIVED")  return "ARCHIVED" as const;
+  if (s === "DRAFT")     return "DRAFT" as const;
   return "PENDING_REVIEW" as const;
 }
 
 function mapPhotoStatus(s: string) {
-  if (s === "APPROVED")     return "APPROVED" as const;
-  if (s === "REJECTED")     return "REJECTED" as const;
-  if (s === "PREVALIDATED") return "PREVALIDATED" as const;
-  if (s === "PREREJECTED")  return "PREREJECTED" as const;
-  return "PENDING" as const;
+  const m: Record<string, "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED"> = {
+    APPROVED: "APPROVED", REJECTED: "REJECTED",
+    PREVALIDATED: "PREVALIDATED", PREREJECTED: "PREREJECTED",
+  };
+  return m[s] ?? "PENDING";
 }
 
 function mapFileType(s: string) {
@@ -93,21 +88,21 @@ function mapFileType(s: string) {
 }
 
 function mapFileStatus(s: string) {
-  const map: Record<string, "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED" | "DRAFT" | "IN_REVIEW" | "REVISION_REQUESTED" | "FINAL_APPROVED"> = {
+  const m: Record<string, "PENDING" | "APPROVED" | "REJECTED" | "PREVALIDATED" | "PREREJECTED" | "DRAFT" | "IN_REVIEW" | "REVISION_REQUESTED" | "FINAL_APPROVED"> = {
     APPROVED: "APPROVED", REJECTED: "REJECTED",
     PREVALIDATED: "PREVALIDATED", PREREJECTED: "PREREJECTED",
     DRAFT: "DRAFT", IN_REVIEW: "IN_REVIEW",
     REVISION_REQUESTED: "REVISION_REQUESTED", FINAL_APPROVED: "FINAL_APPROVED",
   };
-  return map[s] ?? "PENDING";
+  return m[s] ?? "PENDING";
 }
 
 function mapTokenType(s: string) {
-  const map: Record<string, "VALIDATOR" | "PREVALIDATOR" | "MEDIA" | "GALLERY"> = {
+  const m: Record<string, "VALIDATOR" | "PREVALIDATOR" | "MEDIA" | "GALLERY"> = {
     VALIDATOR: "VALIDATOR", PREVALIDATOR: "PREVALIDATOR",
     MEDIA: "MEDIA", GALLERY: "GALLERY",
   };
-  return map[s] ?? "VALIDATOR";
+  return m[s] ?? "VALIDATOR";
 }
 
 // ─── Script principal ─────────────────────────────────────────────────────────
@@ -124,24 +119,25 @@ async function main() {
   console.log("✓ Connecté à Mediaflow");
 
   try {
-    // ── Étape 0 : Pré-validation ─────────────────────────────────────────────
-    step(0, "Pré-validation");
+    // ── Étape 0 : Lecture des données source ─────────────────────────────────
+    step(0, "Lecture Mediaflow");
 
-    const mfChurches: MfChurch[] = await mf.query("SELECT id, name FROM church");
-    const mfUsers: MfUser[]      = await mf.query("SELECT id, email, name, image, role, churchId, createdAt FROM `user`");
-    const mfEvents: MfEvent[]    = await mf.query("SELECT id, title, date, description, status, churchId, createdById, createdAt, updatedAt FROM event");
-    const mfPhotos: MfPhoto[]    = await mf.query("SELECT id, s3Key, thumbnailKey, filename, mimeType, size, width, height, status, validatedAt, validatedBy, uploadedAt, createdAt, eventId FROM photo");
-    const mfFiles: MfFile[]      = await mf.query("SELECT id, type, status, filename, mimeType, size, width, height, duration, eventId, createdAt, updatedAt FROM media_file");
-    const mfVersions: MfVersion[] = await mf.query("SELECT id, versionNumber, s3Key, thumbnailKey, notes, fileId, createdById, createdAt FROM media_file_version");
-    const mfComments: MfComment[] = await mf.query("SELECT id, type, content, authorName, authorImage, timecode, parentId, fileId, authorId, createdAt, updatedAt FROM comment");
-    const mfTokens: MfToken[]    = await mf.query("SELECT id, token, type, label, config, eventId, expiresAt, lastUsedAt, usageCount, createdAt FROM share_token");
-    const mfSettingsList: MfSettings[] = await mf.query("SELECT logoKey, faviconKey, logoFilename, faviconFilename, retentionDays, createdAt FROM settings LIMIT 1");
+    const mfChurches: MfChurch[]   = await mf.query("SELECT id, name FROM Church");
+    const mfUsers: MfUser[]        = await mf.query("SELECT id, email, name, image, role, createdAt FROM User");
+    const mfEvents: MfEvent[]      = await mf.query("SELECT id, name, date, description, status, churchId, createdById, createdAt, updatedAt FROM Event");
+    const mfProjects: MfProject[]  = await mf.query("SELECT id, name, description, churchId, createdById, createdAt, updatedAt FROM Project");
+    const mfPhotos: MfPhoto[]      = await mf.query("SELECT id, filename, originalKey, thumbnailKey, mimeType, size, width, height, status, validatedAt, validatedBy, eventId, uploadedAt FROM Photo");
+    const mfFiles: MfFile[]        = await mf.query("SELECT id, type, status, filename, mimeType, size, width, height, duration, eventId, projectId, createdAt, updatedAt FROM Media");
+    const mfVersions: MfVersion[]  = await mf.query("SELECT id, versionNumber, originalKey, thumbnailKey, notes, mediaId, createdById, createdAt FROM MediaVersion");
+    const mfComments: MfComment[]  = await mf.query("SELECT id, type, content, timecode, parentId, mediaId, authorId, authorName, authorImage, createdAt, updatedAt FROM Comment");
+    const mfTokens: MfToken[]      = await mf.query("SELECT id, token, type, label, config, eventId, projectId, expiresAt, lastUsedAt, usageCount, createdAt FROM ShareToken");
+    const mfSettingsList: MfSettings[] = await mf.query("SELECT id, logoKey, faviconKey, logoFilename, faviconFilename, retentionDays, createdAt FROM AppSettings LIMIT 1");
 
     info(`${mfChurches.length} churches`);
     info(`${mfUsers.length} users`);
-    info(`${mfEvents.length} événements`);
+    info(`${mfEvents.length} événements, ${mfProjects.length} projets`);
     info(`${mfPhotos.length} photos`);
-    info(`${mfFiles.length} fichiers, ${mfVersions.length} versions`);
+    info(`${mfFiles.length} fichiers Media, ${mfVersions.length} versions`);
     info(`${mfComments.length} commentaires`);
     info(`${mfTokens.length} share tokens`);
 
@@ -163,90 +159,122 @@ async function main() {
       }
     }
 
-    const unmapped = mfChurches.filter((c) => !churchMap.has(c.id));
-    if (unmapped.length > 0) {
-      warn(`${unmapped.length} church(es) non mappée(s). Vérifier les noms.`);
+    const unmappedChurches = mfChurches.filter((c) => !churchMap.has(c.id));
+    if (unmappedChurches.length > 0) {
+      warn(`${unmappedChurches.length} church(es) non mappée(s) — les données liées seront ignorées`);
     }
 
-    // ── Étape 2 : Déduplication et import des users ──────────────────────────
+    // ── Étape 2 : Users ──────────────────────────────────────────────────────
+    // Les users Mediaflow n'ont pas de churchId direct.
+    // Cas A : email existant dans Koinonia → réutilise l'ID Platform
+    // Cas B : email inconnu → crée avec l'ID Mediaflow (FK internes préservées)
     step(2, "Users");
 
     const userMap = new Map<string, string>(); // mf_id → koinonia_id
 
-    // Cas A : email existant dans Koinonia
     const kUsers = await prisma.user.findMany({ select: { id: true, email: true } });
     const kEmailMap = new Map(kUsers.map((u) => [u.email.toLowerCase(), u.id]));
 
-    let caseA = 0, caseB = 0;
+    const newUsers = [];
     for (const mfu of mfUsers) {
       const existing = kEmailMap.get(mfu.email.toLowerCase());
       if (existing) {
         userMap.set(mfu.id, existing);
-        caseA++;
+      } else {
+        userMap.set(mfu.id, mfu.id);
+        newUsers.push(mfu);
       }
     }
 
-    // Cas B : users inconnus → créer avec l'ID Mediaflow
-    const newUsers = mfUsers.filter((u) => !userMap.has(u.id));
     if (!DRY_RUN && newUsers.length > 0) {
       await prisma.user.createMany({
         data: newUsers.map((u) => ({
           id: u.id,
           email: u.email.toLowerCase(),
-          name: u.name,
+          name: u.name ?? null,
           image: u.image ?? null,
           createdAt: u.createdAt,
         })),
         skipDuplicates: true,
       });
     }
-    for (const u of newUsers) {
-      userMap.set(u.id, u.id); // même ID
-      caseB++;
+
+    ok(`Cas A (email existant) : ${mfUsers.length - newUsers.length}`);
+    ok(`Cas B (nouvel user)    : ${newUsers.length}`);
+
+    // Dériver la church principale de chaque user ADMIN depuis ses événements
+    // (User n'a pas de churchId dans Mediaflow)
+    const userPrimaryChurch = new Map<string, string>(); // mf_userId → mf_churchId
+    for (const e of mfEvents) {
+      if (!userPrimaryChurch.has(e.createdById)) {
+        userPrimaryChurch.set(e.createdById, e.churchId);
+      }
     }
 
-    ok(`Cas A (email existant) : ${caseA}`);
-    ok(`Cas B (nouvel user)    : ${caseB}`);
-
-    // Attribution du rôle ADMIN dans leur church d'origine
-    // Adapter le filtre "mfu.role === 'ADMIN'" selon l'enum réel de Mediaflow
-    const adminUsers = mfUsers.filter((u) => u.role === "ADMIN" && churchMap.has(u.churchId));
-    if (!DRY_RUN && adminUsers.length > 0) {
-      const superAdmin = await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } });
-      const fallbackId = superAdmin?.id ?? "";
-
-      await prisma.userChurchRole.createMany({
-        data: adminUsers.map((u) => ({
+    const adminUsers = mfUsers.filter((u) => u.role === "ADMIN");
+    const roleRows = adminUsers
+      .map((u) => {
+        const mfChurchId = userPrimaryChurch.get(u.id);
+        if (!mfChurchId || !churchMap.has(mfChurchId)) return null;
+        return {
           id: `mf-import-${u.id}`,
-          userId: userMap.get(u.id) ?? fallbackId,
-          churchId: churchMap.get(u.churchId)!,
+          userId: userMap.get(u.id)!,
+          churchId: churchMap.get(mfChurchId)!,
           role: "ADMIN" as const,
-        })),
-        skipDuplicates: true,
-      });
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    if (!DRY_RUN && roleRows.length > 0) {
+      await prisma.userChurchRole.createMany({ data: roleRows, skipDuplicates: true });
     }
-    info(`Rôles ADMIN assignés : ${adminUsers.length}`);
+    info(`Rôles ADMIN assignés : ${roleRows.length}`);
 
-    // ── Étape 3 : MediaEvents ────────────────────────────────────────────────
-    step(3, "MediaEvents");
+    // ── Étape 3 : MediaProjects (depuis Project Mediaflow) ───────────────────
+    step(3, "MediaProjects");
 
-    // Pré-charger les events planning pour la liaison heuristique
+    const projectMap = new Map<string, string>(); // mf_id → koinonia_id
+
+    const superAdmin = await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } });
+    const fallbackCreatorId = superAdmin?.id ?? userMap.values().next().value ?? "";
+
+    const projectsToCreate = mfProjects
+      .filter((p) => churchMap.has(p.churchId))
+      .map((p) => {
+        projectMap.set(p.id, p.id);
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.description ?? null,
+          churchId: churchMap.get(p.churchId)!,
+          createdById: userMap.get(p.createdById) ?? fallbackCreatorId,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+        };
+      });
+
+    if (!DRY_RUN && projectsToCreate.length > 0) {
+      await prisma.mediaProject.createMany({ data: projectsToCreate, skipDuplicates: true });
+    }
+    ok(`MediaProjects importés : ${projectsToCreate.length}`);
+
+    // ── Étape 4 : MediaEvents ────────────────────────────────────────────────
+    step(4, "MediaEvents");
+
+    // Pré-charger les events planning pour la liaison heuristique (±2h)
     const planningEvents = await prisma.event.findMany({
       select: { id: true, date: true, churchId: true },
     });
 
-    const eventMap = new Map<string, string>(); // mf_id → koinonia_id (IDs identiques ici)
-
-    const superAdmin = await prisma.user.findFirst({ where: { isSuperAdmin: true }, select: { id: true } });
-    const fallbackCreatorId = superAdmin?.id ?? "";
+    const eventMap = new Map<string, string>(); // mf_id → koinonia_id
 
     const eventsToCreate = mfEvents
       .filter((e) => churchMap.has(e.churchId))
       .map((e) => {
         const churchId = churchMap.get(e.churchId)!;
-        const createdById = (e.createdById && userMap.get(e.createdById)) ?? fallbackCreatorId;
+        const createdById = userMap.get(e.createdById) ?? fallbackCreatorId;
 
-        // Heuristique : événement planning le plus proche à ±2h dans la même église
+        // Heuristique : event planning le plus proche à ±2h dans la même église
         let planningEventId: string | null = null;
         let minDiff = Infinity;
         for (const pe of planningEvents) {
@@ -261,7 +289,7 @@ async function main() {
         eventMap.set(e.id, e.id);
         return {
           id: e.id,
-          name: e.title,
+          name: e.name,
           date: e.date,
           description: e.description ?? null,
           status: mapEventStatus(e.status),
@@ -281,42 +309,42 @@ async function main() {
     }
     ok(`MediaEvents importés : ${eventsToCreate.length}`);
 
-    // ── Étape 4 : MediaPhotos ────────────────────────────────────────────────
-    step(4, "MediaPhotos");
+    // ── Étape 5 : MediaPhotos ────────────────────────────────────────────────
+    step(5, "MediaPhotos");
 
     const photosToCreate = mfPhotos
       .filter((p) => eventMap.has(p.eventId))
       .map((p) => ({
         id: p.id,
-        filename: p.filename ?? p.s3Key.split("/").pop() ?? "photo",
-        originalKey: p.s3Key,
-        thumbnailKey: p.thumbnailKey ?? p.s3Key,
-        mimeType: p.mimeType ?? "image/jpeg",
-        size: p.size ?? 0,
+        filename: p.filename,
+        originalKey: p.originalKey,
+        thumbnailKey: p.thumbnailKey,
+        mimeType: p.mimeType,
+        size: p.size,
         width: p.width ?? null,
         height: p.height ?? null,
         status: mapPhotoStatus(p.status),
         validatedAt: p.validatedAt ?? null,
         validatedBy: p.validatedBy ?? null,
         mediaEventId: eventMap.get(p.eventId)!,
-        uploadedAt: p.uploadedAt ?? p.createdAt,
+        uploadedAt: p.uploadedAt,
       }));
 
     if (!DRY_RUN && photosToCreate.length > 0) {
-      // Par batch de 500 pour éviter les timeouts
       for (let i = 0; i < photosToCreate.length; i += 500) {
         await prisma.mediaPhoto.createMany({ data: photosToCreate.slice(i, i + 500), skipDuplicates: true });
       }
     }
     ok(`MediaPhotos importées : ${photosToCreate.length}`);
 
-    // ── Étape 5 : MediaFiles + MediaFileVersions ─────────────────────────────
-    step(5, "MediaFiles + versions");
+    // ── Étape 6 : MediaFiles + MediaFileVersions ─────────────────────────────
+    step(6, "MediaFiles + versions");
 
     const fileMap = new Map<string, string>(); // mf_id → koinonia_id
 
+    // Un Media peut être lié à un Event ou à un Project
     const filesToCreate = mfFiles
-      .filter((f) => eventMap.has(f.eventId))
+      .filter((f) => (f.eventId && eventMap.has(f.eventId)) || (f.projectId && projectMap.has(f.projectId)))
       .map((f) => {
         fileMap.set(f.id, f.id);
         return {
@@ -324,16 +352,19 @@ async function main() {
           type: mapFileType(f.type),
           status: mapFileStatus(f.status),
           filename: f.filename,
-          mimeType: f.mimeType ?? "application/octet-stream",
-          size: f.size ?? 0,
+          mimeType: f.mimeType,
+          size: f.size,
           width: f.width ?? null,
           height: f.height ?? null,
           duration: f.duration ?? null,
-          mediaEventId: eventMap.get(f.eventId)!,
+          mediaEventId: (f.eventId && eventMap.get(f.eventId)) ?? null,
           createdAt: f.createdAt,
           updatedAt: f.updatedAt,
         };
       });
+
+    const filesSkipped = mfFiles.length - filesToCreate.length;
+    if (filesSkipped > 0) warn(`${filesSkipped} fichiers ignorés (event/project non mappé)`);
 
     if (!DRY_RUN && filesToCreate.length > 0) {
       await prisma.mediaFile.createMany({ data: filesToCreate, skipDuplicates: true });
@@ -341,15 +372,15 @@ async function main() {
     ok(`MediaFiles importés : ${filesToCreate.length}`);
 
     const versionsToCreate = mfVersions
-      .filter((v) => fileMap.has(v.fileId))
+      .filter((v) => fileMap.has(v.mediaId))
       .map((v) => ({
         id: v.id,
         versionNumber: v.versionNumber,
-        originalKey: v.s3Key,
-        thumbnailKey: v.thumbnailKey ?? v.s3Key,
+        originalKey: v.originalKey,
+        thumbnailKey: v.thumbnailKey,
         notes: v.notes ?? null,
-        mediaFileId: fileMap.get(v.fileId)!,
-        createdById: (v.createdById && userMap.get(v.createdById)) ?? fallbackCreatorId,
+        mediaFileId: fileMap.get(v.mediaId)!,
+        createdById: userMap.get(v.createdById) ?? fallbackCreatorId,
         createdAt: v.createdAt,
       }));
 
@@ -358,11 +389,11 @@ async function main() {
     }
     ok(`MediaFileVersions importées : ${versionsToCreate.length}`);
 
-    // ── Étape 6 : MediaComments ──────────────────────────────────────────────
-    step(6, "MediaComments");
+    // ── Étape 7 : MediaComments ──────────────────────────────────────────────
+    step(7, "MediaComments");
 
     const commentsToCreate = mfComments
-      .filter((c) => fileMap.has(c.fileId))
+      .filter((c) => fileMap.has(c.mediaId))
       .map((c) => ({
         id: c.id,
         type: (c.type === "TIMECODE" ? "TIMECODE" : "GENERAL") as "TIMECODE" | "GENERAL",
@@ -371,7 +402,7 @@ async function main() {
         authorImage: c.authorImage ?? null,
         timecode: c.timecode ?? null,
         parentId: c.parentId ?? null,
-        mediaFileId: fileMap.get(c.fileId)!,
+        mediaFileId: fileMap.get(c.mediaId)!,
         authorId: (c.authorId && userMap.get(c.authorId)) ?? null,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
@@ -382,114 +413,107 @@ async function main() {
     }
     ok(`MediaComments importés : ${commentsToCreate.length}`);
 
-    // ── Étape 7 : MediaShareTokens (CRITIQUE — tokens préservés) ─────────────
-    step(7, "MediaShareTokens ← CRITIQUE");
+    // ── Étape 8 : MediaShareTokens (CRITIQUE — tokens préservés) ─────────────
+    step(8, "MediaShareTokens ← CRITIQUE");
 
     const tokensToCreate = mfTokens
-      .filter((t) => eventMap.has(t.eventId))
+      .filter((t) =>
+        (t.eventId && eventMap.has(t.eventId)) ||
+        (t.projectId && projectMap.has(t.projectId))
+      )
       .map((t) => ({
         id: t.id,
-        token: t.token,          // valeur préservée exactement
+        token: t.token,   // valeur préservée exactement
         type: mapTokenType(t.type),
         label: t.label ?? null,
         config: t.config ? JSON.parse(t.config) : null,
-        mediaEventId: eventMap.get(t.eventId)!,
+        mediaEventId: (t.eventId && eventMap.get(t.eventId)) ?? null,
         expiresAt: t.expiresAt ?? null,
         lastUsedAt: t.lastUsedAt ?? null,
         usageCount: t.usageCount ?? 0,
         createdAt: t.createdAt,
       }));
 
+    const tokensSkipped = mfTokens.length - tokensToCreate.length;
+    if (tokensSkipped > 0) warn(`${tokensSkipped} tokens ignorés (event/project non mappé)`);
+
     if (!DRY_RUN && tokensToCreate.length > 0) {
       await prisma.mediaShareToken.createMany({ data: tokensToCreate, skipDuplicates: true });
     }
-    ok(`MediaShareTokens importés : ${tokensToCreate.length} — tous tokens préservés`);
+    ok(`MediaShareTokens importés : ${tokensToCreate.length} — tokens préservés`);
 
-    // ── Étape 8 : MediaSettings ──────────────────────────────────────────────
-    step(8, "MediaSettings");
+    // ── Étape 9 : MediaSettings ──────────────────────────────────────────────
+    step(9, "MediaSettings");
 
     const mfSettings = mfSettingsList[0] ?? null;
     if (mfSettings && !DRY_RUN) {
-      await prisma.mediaSettings.upsert({
-        where: { id: "default" },
-        create: {
-          id: "default",
-          logoKey: mfSettings.logoKey,
-          faviconKey: mfSettings.faviconKey,
-          logoFilename: mfSettings.logoFilename,
-          faviconFilename: mfSettings.faviconFilename,
-          retentionDays: mfSettings.retentionDays ?? 30,
-          createdAt: mfSettings.createdAt,
-        },
-        update: {
-          // Ne remplace que les champs null dans Koinonia
-          logoKey: { set: undefined },       // mis à jour manuellement ci-dessous
-          faviconKey: { set: undefined },
-        },
-      }).then(async (existing) => {
-        // Remplir uniquement les champs null
+      const existing = await prisma.mediaSettings.findUnique({ where: { id: "default" } });
+      if (!existing) {
+        await prisma.mediaSettings.create({
+          data: {
+            id: "default",
+            logoKey: mfSettings.logoKey,
+            faviconKey: mfSettings.faviconKey,
+            logoFilename: mfSettings.logoFilename,
+            faviconFilename: mfSettings.faviconFilename,
+            retentionDays: mfSettings.retentionDays,
+            createdAt: mfSettings.createdAt,
+          },
+        });
+        ok("MediaSettings créé");
+      } else {
+        // Ne remplace que les champs null
         const patch: Record<string, unknown> = {};
-        if (!existing.logoKey && mfSettings.logoKey)             patch.logoKey = mfSettings.logoKey;
-        if (!existing.faviconKey && mfSettings.faviconKey)       patch.faviconKey = mfSettings.faviconKey;
-        if (!existing.logoFilename && mfSettings.logoFilename)   patch.logoFilename = mfSettings.logoFilename;
+        if (!existing.logoKey && mfSettings.logoKey)                 patch.logoKey = mfSettings.logoKey;
+        if (!existing.faviconKey && mfSettings.faviconKey)           patch.faviconKey = mfSettings.faviconKey;
+        if (!existing.logoFilename && mfSettings.logoFilename)       patch.logoFilename = mfSettings.logoFilename;
         if (!existing.faviconFilename && mfSettings.faviconFilename) patch.faviconFilename = mfSettings.faviconFilename;
         if (Object.keys(patch).length > 0) {
           await prisma.mediaSettings.update({ where: { id: "default" }, data: patch });
+          ok(`MediaSettings patché : ${Object.keys(patch).join(", ")}`);
+        } else {
+          ok("MediaSettings déjà configuré — aucune modification");
         }
-      });
-      ok("MediaSettings upserted");
+      }
     } else {
       info(mfSettings ? "dry-run : MediaSettings ignoré" : "Aucun settings dans Mediaflow");
     }
 
-    // ── Étape 9 : Invariants post-import ────────────────────────────────────
-    step(9, "Vérification des invariants");
+    // ── Étape 10 : Invariants post-import ────────────────────────────────────
+    step(10, "Vérification des invariants");
 
     if (!DRY_RUN) {
       let allOk = true;
 
-      // I1 : Aucun media_event sans church valide
-      const [i1r] = await prisma.$queryRaw<[{ c: number }]>`
-        SELECT COUNT(*) as c FROM media_events me
-        LEFT JOIN churches c ON c.id = me.churchId WHERE c.id IS NULL
-      `;
-      report("I1: media_events.churchId valides", Number(i1r.c), allOk = allOk && Number(i1r.c) === 0);
+      const check = (label: string, violations: number) => {
+        const pass = violations === 0;
+        if (!pass) allOk = false;
+        console.log(`  ${pass ? "✓" : "✗"} ${label} : ${pass ? "OK" : `${violations} violation(s)`}`);
+      };
 
-      const [i2r] = await prisma.$queryRaw<[{ c: number }]>`
-        SELECT COUNT(*) as c FROM media_events me
-        LEFT JOIN users u ON u.id = me.createdById WHERE u.id IS NULL
-      `;
-      report("I2: media_events.createdById valides", Number(i2r.c), allOk = allOk && Number(i2r.c) === 0);
+      const q = async (sql: string) => {
+        const [r] = await prisma.$queryRawUnsafe<[{ c: bigint }]>(sql);
+        return Number(r.c);
+      };
 
-      const [i3r] = await prisma.$queryRaw<[{ c: number }]>`
-        SELECT COUNT(*) as c FROM media_photos mp
-        LEFT JOIN media_events me ON me.id = mp.mediaEventId WHERE me.id IS NULL
-      `;
-      report("I3: media_photos sans orphelin", Number(i3r.c), allOk = allOk && Number(i3r.c) === 0);
+      check("I1: media_events.churchId valides",
+        await q("SELECT COUNT(*) as c FROM media_events me LEFT JOIN churches c ON c.id = me.churchId WHERE c.id IS NULL"));
+      check("I2: media_events.createdById valides",
+        await q("SELECT COUNT(*) as c FROM media_events me LEFT JOIN users u ON u.id = me.createdById WHERE u.id IS NULL"));
+      check("I3: media_photos sans media_event",
+        await q("SELECT COUNT(*) as c FROM media_photos mp LEFT JOIN media_events me ON me.id = mp.mediaEventId WHERE me.id IS NULL"));
+      check("I4: media_file_versions sans media_file",
+        await q("SELECT COUNT(*) as c FROM media_file_versions mfv LEFT JOIN media_files mf ON mf.id = mfv.mediaFileId WHERE mf.id IS NULL"));
+      check("I5: media_share_tokens orphelins",
+        await q("SELECT COUNT(*) as c FROM media_share_tokens mst WHERE mst.mediaEventId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM media_events me WHERE me.id = mst.mediaEventId)"));
+      check("I6: tokens uniques",
+        await q("SELECT COUNT(*) as c FROM (SELECT token FROM media_share_tokens GROUP BY token HAVING COUNT(*) > 1) t"));
 
-      const [i4r] = await prisma.$queryRaw<[{ c: number }]>`
-        SELECT COUNT(*) as c FROM media_file_versions mfv
-        LEFT JOIN media_files mf ON mf.id = mfv.mediaFileId WHERE mf.id IS NULL
-      `;
-      report("I4: media_file_versions sans orphelin", Number(i4r.c), allOk = allOk && Number(i4r.c) === 0);
+      console.log("\n" + (allOk ? "✅  Tous les invariants sont OK" : "❌  Des invariants ont échoué"));
 
-      const [i5r] = await prisma.$queryRaw<[{ c: number }]>`
-        SELECT COUNT(*) as c FROM media_share_tokens mst
-        LEFT JOIN media_events me ON me.id = mst.mediaEventId WHERE me.id IS NULL
-      `;
-      report("I5: media_share_tokens sans orphelin", Number(i5r.c), allOk = allOk && Number(i5r.c) === 0);
-
-      const i6r = await prisma.$queryRaw<{ token: string; cnt: number }[]>`
-        SELECT token, COUNT(*) as cnt FROM media_share_tokens
-        GROUP BY token HAVING cnt > 1
-      `;
-      const dupTokens = i6r.length;
-      report("I6: tokens uniques", dupTokens, allOk = allOk && dupTokens === 0);
-
-      console.log("\n" + (allOk ? "✅  Tous les invariants sont OK" : "❌  Des invariants ont échoué — vérifier avant de continuer"));
-
-      // Comptages finaux
+      // Résumé des comptages
       console.log("\n── Résumé ────────────────────────────────────────────");
+      console.log(`  media_projects      : ${await prisma.mediaProject.count()}`);
       console.log(`  media_events        : ${await prisma.mediaEvent.count()}`);
       console.log(`  media_photos        : ${await prisma.mediaPhoto.count()}`);
       console.log(`  media_files         : ${await prisma.mediaFile.count()}`);
@@ -506,11 +530,6 @@ async function main() {
     await mf.end();
     await prisma.$disconnect();
   }
-}
-
-function report(label: string, violations: number, passing: boolean) {
-  const icon = passing ? "✓" : "✗";
-  console.log(`  ${icon} ${label} : ${violations === 0 ? "OK" : `${violations} violation(s)`}`);
 }
 
 main().catch((err) => {
