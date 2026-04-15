@@ -35,6 +35,7 @@ export interface EditData {
 interface Props {
   churchId: string;
   canSubmitDemands: boolean;
+  announcementEvents: { id: string; title: string; type: string; date: string }[];
   events: { id: string; title: string; type: string; date: string }[];
   sourceOptions: { type: "department" | "ministry"; id: string; label: string }[];
   departments: { id: string; name: string; ministryName: string }[];
@@ -169,6 +170,7 @@ function initFromEditData(editData: EditData): {
 export default function RequestForm({
   churchId,
   canSubmitDemands,
+  announcementEvents,
   events,
   sourceOptions,
   departments,
@@ -542,25 +544,48 @@ export default function RequestForm({
               Urgent
             </label>
           </div>
-          {annChannelInterne && events.filter((e) => new Date(e.date) >= new Date()).length > 0 && (
+          {annChannelInterne && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Dimanches de diffusion</label>
-              <div className="space-y-2 border-2 border-gray-200 rounded-lg p-3">
-                {events
-                  .filter((e) => new Date(e.date) >= new Date())
-                  .map((e) => (
-                    <label key={e.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={annTargetEventIds.includes(e.id)}
-                        onChange={() => toggleEvent(e.id)}
-                        className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
-                      />
-                      {e.title} — {new Date(e.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                    </label>
-                  ))}
-              </div>
-              <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Dimanches de diffusion
+                {annTargetEventIds.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-icc-violet">
+                    {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
+                  </span>
+                )}
+              </label>
+              {announcementEvents.length === 0 ? (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
+                  <a href="/admin/events" className="underline">Configurer les événements</a>
+                </p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {announcementEvents.map((e) => {
+                      const selected = annTargetEventIds.includes(e.id);
+                      const date = new Date(e.date);
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => toggleEvent(e.id)}
+                          className={`px-3 py-1.5 rounded-full text-sm border-2 transition-colors ${
+                            selected
+                              ? "bg-icc-violet text-white border-icc-violet"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-icc-violet/50"
+                          }`}
+                        >
+                          {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                          {" · "}
+                          {e.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+                </>
+              )}
             </div>
           )}
           {!isEditMode && sourceOptions.length > 1 && (
