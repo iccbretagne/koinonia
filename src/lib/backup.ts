@@ -28,7 +28,7 @@ function parseDatabaseUrl() {
 }
 
 function getBucket(): string {
-  return process.env.S3_BUCKET || "koinonia-backups";
+  return process.env.S3_BUCKET || "koinonia-storage";
 }
 
 export async function createBackup(): Promise<BackupResult> {

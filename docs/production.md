@@ -432,9 +432,17 @@ gh release upload guide-assets guide-*.png
 
 > Les captures doivent etre prises en **1280x800** pour un ratio 16:9 coherent.
 
-## Sauvegardes S3
+## Stockage S3 (backups + module Media)
 
-Koinonia peut sauvegarder automatiquement la base de donnees vers un stockage S3-compatible (AWS S3, MinIO, Scaleway, OVH, Backblaze B2...).
+Les memes variables S3 servent a deux usages distincts dans le meme bucket, separes par prefixe :
+
+| Usage | Prefixe | Retention |
+|---|---|---|
+| Sauvegardes BDD | `backups/{timestamp}/` | `BACKUP_RETENTION_DAYS` (defaut 30j) |
+| Photos evenements media | `media-events/{id}/photos/` | indefinie |
+| Fichiers media (visuels, videos) | `media-events/{id}/files/`, `media-projects/{id}/` | indefinie |
+
+> **Recommandation production** : utiliser des buckets separes pour les backups et les medias afin d'appliquer des regles de lifecycle differentes. Un bucket media ne doit pas avoir de suppression automatique des objets.
 
 ### Configuration
 
@@ -443,10 +451,10 @@ Ajouter les variables suivantes dans `shared/.env` :
 ```bash
 S3_ENDPOINT=https://s3.fr-par.scw.cloud    # endpoint S3-compatible
 S3_REGION=fr-par                             # region
-S3_BUCKET=koinonia-backups                   # bucket (doit exister)
+S3_BUCKET=koinonia-storage                   # bucket (doit exister)
 S3_ACCESS_KEY_ID=SCWXXXXXXXXX                # cle d'acces
 S3_SECRET_ACCESS_KEY=xxxxxxxx                # secret
-BACKUP_RETENTION_DAYS=30                     # retention en jours (defaut: 30)
+BACKUP_RETENTION_DAYS=30                     # retention backups en jours (defaut: 30)
 ```
 
 ### Securite du bucket (recommande)
@@ -457,7 +465,7 @@ Appliquer ces mesures sur le bucket S3 :
 - **Versioning** : activer le versioning du bucket pour conserver les versions precedentes en cas de corruption ou suppression accidentelle.
 - **Acces restreint** : la cle S3 utilisee par Koinonia doit avoir uniquement les permissions `s3:PutObject`, `s3:GetObject`, `s3:ListBucket`, `s3:DeleteObject` sur le bucket cible. Ne pas utiliser une cle admin.
 - **Verification d'integrite** : avant restauration, verifier que le fichier se decompresse correctement (`gunzip -t backup.sql.gz`).
-- **Retention et lifecycle** : configurer une regle de lifecycle sur le bucket pour supprimer automatiquement les objets de plus de N jours (en complement de la retention applicative).
+- **Lifecycle backups** : configurer une regle de lifecycle sur le prefixe `backups/` uniquement pour supprimer automatiquement les objets de plus de N jours. Ne pas appliquer de suppression automatique sur les prefixes `media-*`.
 
 ### Planification — timer systemd (recommande)
 
