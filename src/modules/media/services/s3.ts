@@ -8,9 +8,7 @@ import {
   AbortMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3 as s3Client } from "@/lib/s3";
-
-const BUCKET = process.env.S3_BUCKET ?? "";
+import { s3Media as s3Client, MEDIA_BUCKET as BUCKET } from "@/lib/s3";
 
 // ─── URL expiry ────────────────────────────────────────────────────────────
 const THUMBNAIL_URL_EXPIRY = 3600;   // 1h
