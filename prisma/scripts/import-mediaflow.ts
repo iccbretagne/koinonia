@@ -426,7 +426,7 @@ async function main() {
         token: t.token,   // valeur préservée exactement
         type: mapTokenType(t.type),
         label: t.label ?? null,
-        config: t.config ? JSON.parse(t.config) : null,
+        config: t.config ? (typeof t.config === "string" ? JSON.parse(t.config) : t.config) : null,
         mediaEventId: (t.eventId && eventMap.get(t.eventId)) ?? null,
         expiresAt: t.expiresAt ?? null,
         lastUsedAt: t.lastUsedAt ?? null,
