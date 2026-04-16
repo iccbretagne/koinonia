@@ -156,4 +156,4 @@
 - [x] Logs structures (pino ou similaire)
 - [x] Migrations Prisma correctrices (rattrapage db push → migrate)
 - [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
-- [ ] Monitoring applicatif (healthcheck, metriques)
+- [x] Monitoring applicatif (healthcheck, metriques)
