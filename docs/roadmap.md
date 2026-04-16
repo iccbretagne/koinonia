@@ -73,7 +73,6 @@
 
 - [x] Notifications email pour rappels de service (J-3, J-1)
 - [x] Notifications in-app (badge, toast)
-- [ ] Notifications push (Web Push API)
 
 ## Statistiques
 
@@ -105,7 +104,6 @@
 - [x] Champs orateur et titre du message dans les comptes rendus
 - [x] Export Excel des statistiques hebdomadaires des cultes avec selection de periode
 - [x] Export PDF des comptes rendus
-- [ ] Historique des modifications d'un CR
 
 ## Gestion des acces
 
@@ -158,5 +156,4 @@
 - [x] Logs structures (pino ou similaire)
 - [x] Migrations Prisma correctrices (rattrapage db push → migrate)
 - [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
-- [ ] Tests E2E (Playwright ou Cypress)
 - [ ] Monitoring applicatif (healthcheck, metriques)
