@@ -432,32 +432,69 @@ gh release upload guide-assets guide-*.png
 
 > Les captures doivent etre prises en **1280x800** pour un ratio 16:9 coherent.
 
-## Sauvegardes S3
+## Stockage S3
 
-Koinonia peut sauvegarder automatiquement la base de donnees vers un stockage S3-compatible (AWS S3, MinIO, Scaleway, OVH, Backblaze B2...).
+Koinonia utilise **deux buckets S3 distincts** avec des credentials séparés :
+
+| Bucket | Usage | Rétention |
+|--------|-------|-----------|
+| `koinonia-backups` | Sauvegardes BDD (`backups/{timestamp}/`) | `BACKUP_RETENTION_DAYS` (défaut 30j) |
+| `koinonia-media` | Photos (`media-events/{id}/photos/`), fichiers (`media-events/{id}/files/`, `media-projects/{id}/`) | indéfinie |
+
+La séparation est obligatoire en production : les buckets ont des règles de lifecycle et des permissions différentes.
 
 ### Configuration
 
-Ajouter les variables suivantes dans `shared/.env` :
+Ajouter dans `shared/.env` :
 
 ```bash
-S3_ENDPOINT=https://s3.fr-par.scw.cloud    # endpoint S3-compatible
-S3_REGION=fr-par                             # region
-S3_BUCKET=koinonia-backups                   # bucket (doit exister)
-S3_ACCESS_KEY_ID=SCWXXXXXXXXX                # cle d'acces
-S3_SECRET_ACCESS_KEY=xxxxxxxx                # secret
-BACKUP_RETENTION_DAYS=30                     # retention en jours (defaut: 30)
+# ─── Backups BDD ───────────────────────────────────────────────
+S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
+S3_REGION=gra
+S3_BUCKET=koinonia-backups
+S3_ACCESS_KEY_ID=<access-key-backups>
+S3_SECRET_ACCESS_KEY=<secret-key-backups>
+BACKUP_RETENTION_DAYS=30
+
+# ─── Médias (photos, visuels, vidéos) ─────────────────────────
+MEDIA_S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
+MEDIA_S3_REGION=gra
+MEDIA_S3_BUCKET=koinonia-media
+MEDIA_S3_ACCESS_KEY_ID=<access-key-media>
+MEDIA_S3_SECRET_ACCESS_KEY=<secret-key-media>
 ```
 
-### Securite du bucket (recommande)
+> **Important** : ne pas mettre de commentaires inline sur ces lignes dans `.env` — systemd inclurait le commentaire dans la valeur.
 
-Appliquer ces mesures sur le bucket S3 :
+Si `MEDIA_S3_*` sont absents, l'application bascule sur les variables `S3_*` (bucket unique — acceptable en développement uniquement).
 
-- **Chiffrement cote serveur (SSE)** : activer le chiffrement par defaut (AES-256 ou SSE-KMS) sur le bucket. Tous les objets seront chiffres au repos.
-- **Versioning** : activer le versioning du bucket pour conserver les versions precedentes en cas de corruption ou suppression accidentelle.
-- **Acces restreint** : la cle S3 utilisee par Koinonia doit avoir uniquement les permissions `s3:PutObject`, `s3:GetObject`, `s3:ListBucket`, `s3:DeleteObject` sur le bucket cible. Ne pas utiliser une cle admin.
-- **Verification d'integrite** : avant restauration, verifier que le fichier se decompresse correctement (`gunzip -t backup.sql.gz`).
-- **Retention et lifecycle** : configurer une regle de lifecycle sur le bucket pour supprimer automatiquement les objets de plus de N jours (en complement de la retention applicative).
+### Paramétrage OVH Object Storage
+
+Pour un bucket OVH (Standard à Gravelines) :
+
+1. **Créer deux buckets** dans le Control Panel → Public Cloud → Object Storage
+2. **Créer deux utilisateurs S3 dédiés** (un par bucket) : Object Storage → S3 Users → "Créer un utilisateur S3"
+   - Le secret n'est affiché **qu'une seule fois** à la création — le noter immédiatement
+3. **Assigner les droits** sur chaque bucket : `GetObject`, `PutObject`, `DeleteObject`, `ListBucket`
+4. **Garder les buckets privés** — Koinonia génère des URLs signées, aucun accès public nécessaire
+
+**CORS** — nécessaire pour afficher les photos depuis le navigateur :
+
+```json
+[{
+  "AllowedOrigins": ["https://votre-domaine.com"],
+  "AllowedMethods": ["GET"],
+  "AllowedHeaders": ["*"],
+  "MaxAgeSeconds": 3600
+}]
+```
+
+### Sécurité du bucket
+
+- **Chiffrement SSE** : activer AES-256 par défaut sur les deux buckets
+- **Versioning** : activer sur le bucket backups (protection contre la corruption)
+- **Lifecycle backups** : règle d'expiration sur le préfixe `backups/` uniquement (ne pas appliquer sur `media-*`)
+- **Credentials minimum** : chaque utilisateur S3 n'a accès qu'à son propre bucket
 
 ### Planification — timer systemd (recommande)
 
@@ -704,6 +741,80 @@ sudo systemctl start koinonia
 | Restore echoue `ERROR 1049` | Base inexistante | Recreer la base (voir section BDD) |
 | S3 `AccessDenied` | Cle S3 invalide ou bucket inexistant | Verifier les variables `S3_*` et creer le bucket |
 
+## Scripts de maintenance S3
+
+Ces scripts s'exécutent **uniquement en local** (jamais sur le serveur — exclus du build via `--exclude='prisma/scripts'` dans le pipeline CI). Ils lisent le `.env` local ou acceptent des credentials en arguments.
+
+```bash
+# Prérequis : être dans le répertoire du projet avec le .env rempli
+cd /chemin/vers/koinonia
+```
+
+### Diagnostic (`debug-s3.ts`)
+
+Teste la connectivité, les droits d'accès et liste un aperçu du bucket.
+
+```bash
+# Tester les deux buckets
+npx tsx prisma/scripts/debug-s3.ts
+
+# Tester uniquement le bucket média
+npx tsx prisma/scripts/debug-s3.ts --media
+
+# Tester uniquement le bucket backups
+npx tsx prisma/scripts/debug-s3.ts --backup
+```
+
+Vérifie successivement : `HeadBucket` (accès), `ListObjectsV2` (listing), `PutObject` + `GetObject` + `DeleteObject` (lecture/écriture).
+
+### Synchronisation (`sync-s3.ts`)
+
+Copie les objets d'un bucket source vers un bucket destination. Idempotent (compare les ETags).
+
+```bash
+# Mediaflow → bucket média Koinonia (raccourci --from-mediaflow)
+MEDIAFLOW_S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net \
+MEDIAFLOW_S3_BUCKET=mediaflow \
+MEDIAFLOW_S3_ACCESS_KEY=xxx \
+MEDIAFLOW_S3_SECRET_KEY=yyy \
+npx tsx prisma/scripts/sync-s3.ts --from-mediaflow --dry-run
+
+# Exécution réelle, seulement le préfixe media-events/
+npx tsx prisma/scripts/sync-s3.ts --from-mediaflow --prefix=media-events/
+
+# Mode générique (source et destination explicites)
+SRC_ENDPOINT=... SRC_BUCKET=source SRC_ACCESS_KEY=... SRC_SECRET_KEY=... \
+DST_ENDPOINT=... DST_BUCKET=dest   DST_ACCESS_KEY=... DST_SECRET_KEY=... \
+npx tsx prisma/scripts/sync-s3.ts [--prefix=...] [--force] [--dry-run]
+```
+
+Options : `--prefix=<préfixe>`, `--force` (recopie même si déjà présent), `--concurrency=<n>` (défaut : 8).
+
+### Purge (`purge-s3.ts`)
+
+Supprime des objets S3. **Irréversible** — toujours faire un `--dry-run` d'abord. Bloqué si `NODE_ENV=production`.
+
+```bash
+# Aperçu — bucket média du .env
+npx tsx prisma/scripts/purge-s3.ts --media --dry-run
+
+# Purger les objets vieux de plus de 180 jours
+npx tsx prisma/scripts/purge-s3.ts --media --older-than=180 --dry-run
+npx tsx prisma/scripts/purge-s3.ts --media --older-than=180
+
+# Cibler un bucket arbitraire (Mediaflow, migration, etc.)
+npx tsx prisma/scripts/purge-s3.ts \
+  --endpoint=https://s3.gra.io.cloud.ovh.net \
+  --bucket=ancien-bucket \
+  --access-key=xxx \
+  --secret-key=yyy \
+  --region=gra \
+  --prefix=media-events/ \
+  --dry-run
+```
+
+Options : `--prefix=<préfixe>`, `--older-than=<n>` (jours), `--yes` (sans confirmation interactive).
+
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
@@ -711,10 +822,12 @@ sudo systemctl start koinonia
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Variables SMTP configurees dans `shared/.env` (optionnel, pour les rappels email)
 - [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
-- [ ] Variables S3 configurees pour les backups (optionnel)
-- [ ] Timer systemd `koinonia-backup.timer` active (ou crontab) pour backup quotidien (optionnel)
-- [ ] Backup teste : declencher manuellement et verifier la presence dans S3
-- [ ] Restore teste : restaurer un backup sur un environnement de test
+- [ ] Variables `S3_*` configurées pour les backups BDD (optionnel)
+- [ ] Variables `MEDIA_S3_*` configurées pour le bucket média (optionnel)
+- [ ] Diagnostic S3 validé : `npx tsx prisma/scripts/debug-s3.ts` (en local)
+- [ ] Timer systemd `koinonia-backup.timer` activé (ou crontab) pour backup quotidien (optionnel)
+- [ ] Backup testé : déclencher manuellement et vérifier la présence dans S3
+- [ ] Restore testé : restaurer un backup sur un environnement de test
 - [ ] `AUTH_TRUST_HOST=true` present
 - [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
 - [ ] Base de donnees creee avec utilisateur dedie

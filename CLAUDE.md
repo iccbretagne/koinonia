@@ -78,13 +78,12 @@ koinonia/
 │   │   │   │   └── calendar/    # Vue calendrier
 │   │   │   ├── profile/         # Profil utilisateur et liaison compte STAR
 │   │   │   ├── requests/        # "Mes demandes" (annonces + demandes unifiees)
-│   │   │   │   ├── new/         # Formulaire unifie (annonce ou demande)
+│   │   │   │   ├── new/         # Formulaire unifie : annonce, visuel standalone, demandes
 │   │   │   │   └── [id]/edit/   # Edition d'une demande en attente
 │   │   │   ├── secretariat/
 │   │   │   │   └── requests/    # Dashboard Secretariat (toutes demandes)
 │   │   │   ├── media/
-│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL)
-│   │   │   │       └── new/     # Demande visuel standalone
+│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL) — traitement uniquement
 │   │   │   ├── communication/
 │   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
 │   │   │   ├── guide/           # Guide utilisateur par role

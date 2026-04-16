@@ -127,7 +127,7 @@ export default async function AuthLayout({
   }
 
   const headerContent = (
-    <>
+    <div className="contents">
       <div className="min-w-0">
         <h1 className="text-lg md:text-xl font-bold text-white truncate">Koinonia</h1>
         {currentChurchId && churches.length > 1 ? (
@@ -172,7 +172,7 @@ export default async function AuthLayout({
           </button>
         </form>
       </div>
-    </>
+    </div>
   );
 
   const footerContent = (

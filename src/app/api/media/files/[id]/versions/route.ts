@@ -11,7 +11,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { getVersionOriginalKey, getVersionThumbnailKey } from "@/modules/media";
+import { getVersionOriginalKey, getVersionThumbnailKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "@/lib/s3";
@@ -55,7 +55,20 @@ export async function GET(
       },
     });
 
-    return successResponse(versions);
+    // Ajouter une URL signée (stream) pour chaque version
+    const versionsWithUrls = await Promise.all(
+      versions.map(async (v) => {
+        let streamUrl: string | null = null;
+        try {
+          streamUrl = await getSignedOriginalUrl(v.originalKey);
+        } catch (err) {
+          console.error(`[versions] getSignedOriginalUrl failed for key "${v.originalKey}":`, err);
+        }
+        return { ...v, streamUrl };
+      })
+    );
+
+    return successResponse({ data: versionsWithUrls });
   } catch (error) {
     return errorResponse(error);
   }

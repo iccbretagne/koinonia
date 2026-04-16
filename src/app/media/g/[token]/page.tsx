@@ -12,7 +12,7 @@ async function fetchGalleryData(token: string) {
   });
   if (!res.ok) return null;
   const json = await res.json();
-  return json.data;
+  return json;
 }
 
 export default async function GalleryPage({

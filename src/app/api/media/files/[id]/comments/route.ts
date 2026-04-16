@@ -49,7 +49,7 @@ export async function GET(
       orderBy: { createdAt: "asc" },
     });
 
-    return successResponse(comments);
+    return successResponse({ data: comments });
   } catch (error) {
     return errorResponse(error);
   }

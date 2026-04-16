@@ -16,9 +16,19 @@ export default async function NewRequestPage() {
   );
   const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
 
-  // Events for announcements and modification/cancellation
-  const events = await prisma.event.findMany({
-    where: { churchId, date: { gte: new Date() } },
+  const now = new Date();
+  const in90days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  // Events for announcements (only those flagged allowAnnouncements, next 90 days)
+  const announcementEvents = await prisma.event.findMany({
+    where: { churchId, date: { gte: now, lte: in90days }, allowAnnouncements: true },
+    select: { id: true, title: true, type: true, date: true },
+    orderBy: { date: "asc" },
+  });
+
+  // Events for modification/cancellation demands (all future, no restriction)
+  const allFutureEvents = await prisma.event.findMany({
+    where: { churchId, date: { gte: now } },
     select: { id: true, title: true, type: true, date: true },
     orderBy: { date: "asc" },
   });
@@ -79,7 +89,13 @@ export default async function NewRequestPage() {
       <RequestForm
         churchId={churchId}
         canSubmitDemands={canSubmitDemands}
-        events={events.map((e) => ({
+        announcementEvents={announcementEvents.map((e) => ({
+          id: e.id,
+          title: e.title,
+          type: e.type,
+          date: e.date.toISOString(),
+        }))}
+        events={allFutureEvents.map((e) => ({
           id: e.id,
           title: e.title,
           type: e.type,

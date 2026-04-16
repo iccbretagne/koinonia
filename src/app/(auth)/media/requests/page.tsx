@@ -1,8 +1,6 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
-import Button from "@/components/ui/Button";
 import { DEPT_FN } from "@/lib/department-functions";
 import { notFound } from "next/navigation";
 import MediaDashboard from "./MediaDashboard";
@@ -61,18 +59,13 @@ export default async function MediaRequestsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Production Média — Visuels</h1>
-          {pending > 0 && (
-            <span className="bg-icc-violet text-white text-sm font-bold px-2.5 py-1 rounded-full">
-              {pending}
-            </span>
-          )}
-        </div>
-        <Link href="/media/requests/new">
-          <Button>+ Demande standalone</Button>
-        </Link>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Production Média — Visuels</h1>
+        {pending > 0 && (
+          <span className="bg-icc-violet text-white text-sm font-bold px-2.5 py-1 rounded-full">
+            {pending}
+          </span>
+        )}
       </div>
       <MediaDashboard requests={requests} />
     </div>

@@ -4,6 +4,7 @@ export { createMediaShareToken, validateMediaShareToken, getTokenUrlPath, isToke
 export { processImage, validatePhotoFile, getExtensionFromMimeType, ALLOWED_PHOTO_MIME_TYPES, MAX_PHOTO_SIZE } from "./services/image";
 export {
   uploadFile as uploadMediaFile,
+  deleteMediaFile,
   getSignedThumbnailUrl,
   getSignedOriginalUrl,
   getSignedDownloadUrl,
