@@ -91,7 +91,7 @@
 - [x] API REST : CRUD, attendance, stats, tree (lignee recursive), export Excel
 - [x] Dashboard /admin/discipleship : 3 onglets (Relations, Appel, Statistiques)
 - [x] Export Excel : feuille statistiques + feuille detail presences
-- [ ] Notifications rappel de suivi pour les faiseurs de disciples
+- [x] Notifications rappel de suivi pour les faiseurs de disciples
 
 ## Comptes rendus
 
@@ -105,7 +105,7 @@
 - [x] Permission reports:edit separee de reports:view
 - [x] Champs orateur et titre du message dans les comptes rendus
 - [x] Export Excel des statistiques hebdomadaires des cultes avec selection de periode
-- [ ] Export PDF des comptes rendus
+- [x] Export PDF des comptes rendus
 - [ ] Historique des modifications d'un CR
 
 ## Gestion des acces
