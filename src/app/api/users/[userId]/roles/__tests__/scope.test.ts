@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createAdminSession, createMinisterSession } from "@/__mocks__/auth";
+import { createAdminSession, createMinisterSession, createSecretarySession } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockRequirePermission = vi.fn();
@@ -137,6 +137,38 @@ describe("BLOCKER-1 : POST /api/users/[userId]/roles — RBAC events:manage", ()
     });
 
     const res = await POST(request, { params: Promise.resolve({ userId: "user-2" }) });
+    expect(res.status).toBe(201);
+  });
+
+  it("SECRETARY peut assigner DEPARTMENT_HEAD (décision v1.0 documentée)", async () => {
+    // SECRETARY a events:manage → peut gérer les rôles non-privilégiés.
+    // Décision explicite : SECRETARY est un rôle de confiance élevée dans ce modèle.
+    mockRequirePermission.mockResolvedValue(createSecretarySession("church-1"));
+
+    prismaMock.department.findMany.mockResolvedValue([
+      { id: "dept-1", name: "Accueil", ministry: { churchId: "church-1" } },
+    ] as never);
+    prismaMock.userChurchRole.create.mockResolvedValue({
+      id: "ucr-2",
+      userId: "user-3",
+      churchId: "church-1",
+      role: "DEPARTMENT_HEAD",
+      ministryId: null,
+      church: { id: "church-1", name: "Test Church" },
+      ministry: null,
+      departments: [{ department: { id: "dept-1", name: "Accueil" } }],
+    } as never);
+
+    const request = new Request("http://localhost/api/users/user-3/roles", {
+      method: "POST",
+      body: JSON.stringify({
+        churchId: "church-1",
+        role: "DEPARTMENT_HEAD",
+        departmentIds: ["dept-1"],
+      }),
+    });
+
+    const res = await POST(request, { params: Promise.resolve({ userId: "user-3" }) });
     expect(res.status).toBe(201);
   });
 

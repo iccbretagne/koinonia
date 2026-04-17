@@ -65,7 +65,10 @@ export async function POST(
     const body = await request.json();
     const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
-    // Vérifier permission dans l'église ciblée
+    // Vérifier permission dans l'église ciblée.
+    // events:manage couvre SUPER_ADMIN, ADMIN, SECRETARY.
+    // Décision v1.0 : SECRETARY peut gérer les rôles non-privilégiés (MINISTER, DEPARTMENT_HEAD,
+    // DISCIPLE_MAKER, REPORTER, STAR) — rôle de confiance élevée, bras droit de l'admin.
     const session = await requireChurchPermission("events:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
