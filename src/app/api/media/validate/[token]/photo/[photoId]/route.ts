@@ -67,11 +67,6 @@ export async function PATCH(
       throw new ApiError(403, "Photo hors périmètre");
     }
 
-    const FINAL_STATUSES = ["APPROVED", "REJECTED"];
-    if (FINAL_STATUSES.includes(photo.status)) {
-      throw new ApiError(409, `La photo est déjà dans l'état final : ${photo.status}`);
-    }
-
     const updated = await prisma.mediaPhoto.update({
       where: { id: photoId },
       data: { status, validatedAt: new Date() },
