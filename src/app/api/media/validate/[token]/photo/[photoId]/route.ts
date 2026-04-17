@@ -59,12 +59,17 @@ export async function PATCH(
 
     const photo = await prisma.mediaPhoto.findUnique({
       where: { id: photoId },
-      select: { id: true, mediaEventId: true },
+      select: { id: true, mediaEventId: true, status: true },
     });
 
     if (!photo) throw new ApiError(404, "Photo introuvable");
     if (shareToken.mediaEventId && photo.mediaEventId !== shareToken.mediaEventId) {
       throw new ApiError(403, "Photo hors périmètre");
+    }
+
+    const FINAL_STATUSES = ["APPROVED", "REJECTED"];
+    if (FINAL_STATUSES.includes(photo.status)) {
+      throw new ApiError(409, `La photo est déjà dans l'état final : ${photo.status}`);
     }
 
     const updated = await prisma.mediaPhoto.update({

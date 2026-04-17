@@ -14,7 +14,7 @@ export default async function MembersPage() {
     churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canManage = userPermissions.has("members:manage");
-  const scope = getUserDepartmentScope(session);
+  const scope = getUserDepartmentScope(session, churchId);
 
   const membersWhere = scope.scoped
     ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }

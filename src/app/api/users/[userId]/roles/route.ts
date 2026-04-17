@@ -66,7 +66,7 @@ export async function POST(
     const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
     // Vérifier permission dans l'église ciblée
-    const session = await requireChurchPermission("departments:manage", churchId);
+    const session = await requireChurchPermission("events:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
@@ -158,7 +158,7 @@ export async function PATCH(
     }
 
     // Vérifier permission dans l'église du rôle existant
-    const patchSession = await requireChurchPermission("departments:manage", existing.churchId);
+    const patchSession = await requireChurchPermission("events:manage", existing.churchId);
     requireRateLimit(request, { prefix: `roles:${patchSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Vérifier que le ministryId appartient à cette église
@@ -236,7 +236,7 @@ export async function DELETE(
     const { churchId, role } = roleSchema.parse(body);
 
     // Vérifier permission dans l'église ciblée
-    const delSession = await requireChurchPermission("departments:manage", churchId);
+    const delSession = await requireChurchPermission("events:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Block deletion of privileged roles by non-super-admins

@@ -8,7 +8,7 @@ export default async function DepartmentsPage() {
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
   await requireChurchPermission("departments:manage", churchId);
 
-  const scope = getUserDepartmentScope(session);
+  const scope = getUserDepartmentScope(session, churchId);
   const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
 
   // For scoped users (MINISTER), get their ministryIds in this church

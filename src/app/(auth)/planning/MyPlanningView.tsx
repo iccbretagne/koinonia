@@ -62,8 +62,11 @@ type FilterMode = "upcoming" | "past" | "all";
 export default function MyPlanningView({ plannings }: Props) {
   const [filter, setFilter] = useState<FilterMode>("upcoming");
 
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
+  const now = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const filtered = useMemo(() => {
     return plannings.filter((p) => {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles } from "@/lib/s3";
+import { getFileOriginalKey } from "@/modules/media";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -14,25 +15,38 @@ const patchSchema = z.object({
     "DRAFT", "IN_REVIEW", "REVISION_REQUESTED", "FINAL_APPROVED",
   ]).optional(),
   filename: z.string().min(1).optional(),
-  // Confirm upload: set key after presigned upload completes
-  originalKey: z.string().optional(),
-  thumbnailKey: z.string().optional(),
+  // Confirm upload: signal that presigned upload completed (key is derived server-side)
+  confirmUpload: z.boolean().optional(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   duration: z.number().int().positive().optional(),
 });
 
-async function resolveMediaFileChurchId(fileId: string): Promise<string> {
+type MediaFileWithContainers = {
+  id: string;
+  filename: string;
+  mediaEventId: string | null;
+  mediaProjectId: string | null;
+  mediaEvent: { churchId: string } | null;
+  mediaProject: { churchId: string } | null;
+};
+
+async function resolveMediaFileChurchId(fileId: string): Promise<{ churchId: string; file: MediaFileWithContainers }> {
   const { ApiError } = await import("@/lib/api-utils");
   const file = await prisma.mediaFile.findUnique({
     where: { id: fileId },
-    include: {
+    select: {
+      id: true,
+      filename: true,
+      mediaEventId: true,
+      mediaProjectId: true,
       mediaEvent: { select: { churchId: true } },
       mediaProject: { select: { churchId: true } },
     },
   });
   if (!file) throw new ApiError(404, "Fichier média introuvable");
-  return file.mediaEvent?.churchId ?? file.mediaProject?.churchId ?? (() => { throw new ApiError(500, "Fichier sans conteneur"); })();
+  const churchId = file.mediaEvent?.churchId ?? file.mediaProject?.churchId ?? (() => { throw new ApiError(500, "Fichier sans conteneur"); })();
+  return { churchId, file };
 }
 
 export async function GET(
@@ -41,7 +55,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveMediaFileChurchId(id);
+    const { churchId } = await resolveMediaFileChurchId(id);
     await requireChurchPermission("media:view", churchId);
 
     const file = await prisma.mediaFile.findUnique({
@@ -65,7 +79,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveMediaFileChurchId(id);
+    const { churchId, file: mediaFile } = await resolveMediaFileChurchId(id);
     const session = await requireChurchPermission("media:upload", churchId);
 
     const body = await request.json();
@@ -87,16 +101,21 @@ export async function PATCH(
       },
     });
 
-    // If upload confirmed (originalKey provided), create version 1
-    if (data.originalKey) {
+    // If upload confirmed, create version 1 with server-derived key (never trust client-supplied keys)
+    if (data.confirmUpload) {
       const existingVersions = await prisma.mediaFileVersion.count({ where: { mediaFileId: id } });
       if (existingVersions === 0) {
+        const ext = mediaFile.filename.split(".").pop()?.toLowerCase() ?? "bin";
+        const container = mediaFile.mediaEventId ? ("media-events" as const) : ("media-projects" as const);
+        const containerId = (mediaFile.mediaEventId ?? mediaFile.mediaProjectId)!;
+        const derivedKey = getFileOriginalKey(container, containerId, id, 1, ext);
+
         await prisma.mediaFileVersion.create({
           data: {
             mediaFileId: id,
             versionNumber: 1,
-            originalKey: data.originalKey,
-            thumbnailKey: data.thumbnailKey ?? data.originalKey,
+            originalKey: derivedKey,
+            thumbnailKey: derivedKey,
             createdById: session.user.id,
           },
         });
@@ -117,7 +136,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveMediaFileChurchId(id);
+    const { churchId } = await resolveMediaFileChurchId(id);
     await requireChurchPermission("media:manage", churchId);
 
     const file = await prisma.mediaFile.findUnique({

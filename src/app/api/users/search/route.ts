@@ -15,10 +15,19 @@ export async function GET(request: Request) {
 
     const matches = await prisma.user.findMany({
       where: {
-        OR: [
-          { name: { contains: q } },
-          { email: { contains: q } },
-          { displayName: { contains: q } },
+        AND: [
+          {
+            OR: [
+              { name: { contains: q } },
+              { displayName: { contains: q } },
+            ],
+          },
+          {
+            OR: [
+              { churchRoles: { some: { churchId } } },
+              { memberLinkRequests: { some: { churchId } } },
+            ],
+          },
         ],
       },
       select: {

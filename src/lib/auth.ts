@@ -261,9 +261,11 @@ export async function getDiscipleshipScope(
   return { scoped: true, memberId: link?.memberId ?? null };
 }
 
-export function getUserDepartmentScope(session: Session): DepartmentScope {
-  const hasGlobalRole = session.user.churchRoles.some((r) =>
-    GLOBAL_ROLES.includes(r.role)
+export function getUserDepartmentScope(session: Session, churchId: string): DepartmentScope {
+  if (session.user.isSuperAdmin) return { scoped: false };
+
+  const hasGlobalRole = session.user.churchRoles.some(
+    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role)
   );
 
   if (hasGlobalRole) {
@@ -272,9 +274,9 @@ export function getUserDepartmentScope(session: Session): DepartmentScope {
 
   const departmentIds = Array.from(
     new Set(
-      session.user.churchRoles.flatMap((r) =>
-        r.departments.map((d) => d.department.id)
-      )
+      session.user.churchRoles
+        .filter((r) => r.churchId === churchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id))
     )
   );
 

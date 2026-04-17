@@ -20,7 +20,7 @@ export async function GET(
     const session = await requireChurchPermission("planning:view", churchId);
 
     // Vérifier le scope département : un DEPARTMENT_HEAD ne peut voir que ses départements
-    const deptScope = getUserDepartmentScope(session);
+    const deptScope = getUserDepartmentScope(session, churchId);
     if (deptScope.scoped && !deptScope.departmentIds.includes(departmentId)) {
       throw new ApiError(403, "Vous n'avez pas accès à ce département");
     }
@@ -150,7 +150,7 @@ export async function PUT(
     const session = await requireChurchPermission("planning:edit", eventChurchId);
 
     // Vérifier le scope département : un DEPARTMENT_HEAD ne peut éditer que ses départements
-    const deptScope = getUserDepartmentScope(session);
+    const deptScope = getUserDepartmentScope(session, eventChurchId);
     if (deptScope.scoped && !deptScope.departmentIds.includes(departmentId)) {
       throw new ApiError(403, "Vous n'avez pas accès à ce département");
     }

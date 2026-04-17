@@ -341,3 +341,6 @@ describe("P0-2 : Department scope — DEPARTMENT_HEAD ne peut pas accéder à un
     expect(res.status).toBe(200);
   });
 });
+
+// Note : les tests unitaires directs sur getUserDepartmentScope (BLOCKER-2)
+// sont dans le fichier dept-scope.test.ts (fichier séparé sans mock @/lib/auth)
