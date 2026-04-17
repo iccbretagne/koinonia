@@ -93,3 +93,20 @@ export async function deleteFiles(keys: string[]): Promise<void> {
     );
   }
 }
+
+/** Supprime plusieurs objets du bucket média (s3Media/MEDIA_BUCKET) en batch. */
+export async function deleteMediaFiles(keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  if (!MEDIA_BUCKET) return; // bucket média non configuré — no-op en dev
+
+  const BATCH = 1000;
+  for (let i = 0; i < keys.length; i += BATCH) {
+    const batch = keys.slice(i, i + BATCH);
+    await s3Media.send(
+      new DeleteObjectsCommand({
+        Bucket: MEDIA_BUCKET,
+        Delete: { Objects: batch.map((Key) => ({ Key })) },
+      })
+    );
+  }
+}

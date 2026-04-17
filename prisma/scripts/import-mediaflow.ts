@@ -500,33 +500,36 @@ async function main() {
     step(9, "MediaSettings");
 
     const mfSettings = mfSettingsList[0] ?? null;
+    // Les MediaSettings Mediaflow sont globaux : on les applique à chaque church mappée.
     if (mfSettings && !DRY_RUN) {
-      const existing = await prisma.mediaSettings.findUnique({ where: { id: "default" } });
-      if (!existing) {
-        await prisma.mediaSettings.create({
-          data: {
-            id: "default",
-            logoKey: mfSettings.logoKey,
-            faviconKey: mfSettings.faviconKey,
-            logoFilename: mfSettings.logoFilename,
-            faviconFilename: mfSettings.faviconFilename,
-            retentionDays: mfSettings.retentionDays,
-            createdAt: mfSettings.createdAt,
-          },
-        });
-        ok("MediaSettings créé");
-      } else {
-        // Ne remplace que les champs null
-        const patch: Record<string, unknown> = {};
-        if (!existing.logoKey && mfSettings.logoKey)                 patch.logoKey = mfSettings.logoKey;
-        if (!existing.faviconKey && mfSettings.faviconKey)           patch.faviconKey = mfSettings.faviconKey;
-        if (!existing.logoFilename && mfSettings.logoFilename)       patch.logoFilename = mfSettings.logoFilename;
-        if (!existing.faviconFilename && mfSettings.faviconFilename) patch.faviconFilename = mfSettings.faviconFilename;
-        if (Object.keys(patch).length > 0) {
-          await prisma.mediaSettings.update({ where: { id: "default" }, data: patch });
-          ok(`MediaSettings patché : ${Object.keys(patch).join(", ")}`);
+      for (const [, kChurchId] of churchMap) {
+        const existing = await prisma.mediaSettings.findUnique({ where: { churchId: kChurchId } });
+        if (!existing) {
+          await prisma.mediaSettings.create({
+            data: {
+              churchId: kChurchId,
+              logoKey: mfSettings.logoKey,
+              faviconKey: mfSettings.faviconKey,
+              logoFilename: mfSettings.logoFilename,
+              faviconFilename: mfSettings.faviconFilename,
+              retentionDays: mfSettings.retentionDays,
+              createdAt: mfSettings.createdAt,
+            },
+          });
+          ok(`MediaSettings créé pour church ${kChurchId}`);
         } else {
-          ok("MediaSettings déjà configuré — aucune modification");
+          // Ne remplace que les champs null
+          const patch: Record<string, unknown> = {};
+          if (!existing.logoKey && mfSettings.logoKey)                 patch.logoKey = mfSettings.logoKey;
+          if (!existing.faviconKey && mfSettings.faviconKey)           patch.faviconKey = mfSettings.faviconKey;
+          if (!existing.logoFilename && mfSettings.logoFilename)       patch.logoFilename = mfSettings.logoFilename;
+          if (!existing.faviconFilename && mfSettings.faviconFilename) patch.faviconFilename = mfSettings.faviconFilename;
+          if (Object.keys(patch).length > 0) {
+            await prisma.mediaSettings.update({ where: { churchId: kChurchId }, data: patch });
+            ok(`MediaSettings patché pour church ${kChurchId} : ${Object.keys(patch).join(", ")}`);
+          } else {
+            ok(`MediaSettings déjà configuré pour church ${kChurchId} — aucune modification`);
+          }
         }
       }
     } else {

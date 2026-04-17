@@ -73,6 +73,7 @@ model Church {
   // Module media
   mediaEvents              MediaEvent[]
   mediaProjects            MediaProject[]
+  mediaSettings            MediaSettings?
 
   @@map("churches")
 }
@@ -858,9 +859,10 @@ model MediaZipJob {
   @@map("media_zip_jobs")
 }
 
-/// Paramètres du module média (logo, favicon, rétention).
+/// Paramètres du module média par église (logo, favicon, rétention).
 model MediaSettings {
-  id              String   @id @default("default")
+  id              String   @id @default(cuid())
+  churchId        String   @unique
   logoKey         String?  @db.VarChar(512)
   faviconKey      String?  @db.VarChar(512)
   logoFilename    String?  @db.VarChar(255)
@@ -869,6 +871,8 @@ model MediaSettings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  church Church @relation(fields: [churchId], references: [id])
 
   @@map("media_settings")
 }

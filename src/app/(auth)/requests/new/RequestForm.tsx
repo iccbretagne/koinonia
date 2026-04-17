@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
@@ -557,7 +558,7 @@ export default function RequestForm({
               {announcementEvents.length === 0 ? (
                 <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
-                  <a href="/admin/events" className="underline">Configurer les événements</a>
+                  <Link href="/admin/events" className="underline">Configurer les événements</Link>
                 </p>
               ) : (
                 <>

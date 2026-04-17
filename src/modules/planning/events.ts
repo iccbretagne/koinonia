@@ -7,7 +7,6 @@
  * IMPORTANT : ces événements transitent par le bus in-process, transaction-aware.
  * Tout handler enregistré s'exécute dans la même transaction Prisma que l'émetteur.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type PlanningEvents = {
   /** Un événement unique a été créé (ou le parent d'une série récurrente). */
   "planning:event:created": {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { errorResponse, ApiError } from "@/lib/api-utils";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 /**
  * Neutralise les valeurs pouvant être interprétées comme des formules Excel.
@@ -92,21 +92,28 @@ export async function GET(request: Request) {
       };
     });
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.json_to_sheet(rows.map(sanitizeRow)),
-      "Statistiques cultes"
-    );
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet("Statistiques cultes");
 
-    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    const sanitizedRows = rows.map(sanitizeRow);
+    if (sanitizedRows.length > 0) {
+      sheet.columns = Object.keys(sanitizedRows[0]).map((key) => ({
+        header: key,
+        key,
+      }));
+      for (const row of sanitizedRows) {
+        sheet.addRow(row);
+      }
+    }
+
+    const buf = await wb.xlsx.writeBuffer();
 
     const fromStr = from.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     const toStr = to.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     const period = fromStr === toStr ? fromStr : `${fromStr}-${toStr}`;
     const filename = `statistiques-cultes-${period.replace(/\s/g, "-")}.xlsx`;
 
-    return new Response(buf, {
+    return new Response(buf as ArrayBuffer, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,

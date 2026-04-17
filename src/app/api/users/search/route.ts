@@ -24,7 +24,6 @@ export async function GET(request: Request) {
       select: {
         id: true,
         name: true,
-        email: true,
         displayName: true,
         image: true,
         memberLinks: { where: { churchId }, select: { id: true } },

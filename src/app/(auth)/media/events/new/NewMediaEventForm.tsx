@@ -96,7 +96,7 @@ export default function NewMediaEventForm({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Nom de l'événement <span className="text-red-500">*</span>
+          Nom de l&apos;événement <span className="text-red-500">*</span>
         </label>
         <Input
           value={name}

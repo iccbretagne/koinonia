@@ -25,9 +25,9 @@ export async function GET(request: Request) {
     await requireChurchPermission("media:manage", churchId);
 
     const settings = await prisma.mediaSettings.upsert({
-      where: { id: "default" },
+      where: { churchId },
       update: {},
-      create: { id: "default" },
+      create: { churchId },
     });
 
     return successResponse(settings);
@@ -48,9 +48,9 @@ export async function PUT(request: Request) {
     const data = putSchema.parse(body);
 
     const settings = await prisma.mediaSettings.upsert({
-      where: { id: "default" },
+      where: { churchId },
       update: data,
-      create: { id: "default", ...data },
+      create: { churchId, ...data },
     });
 
     return successResponse(settings);

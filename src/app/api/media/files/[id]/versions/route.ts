@@ -14,7 +14,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getVersionOriginalKey, getVersionThumbnailKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3 } from "@/lib/s3";
+import { s3Media, MEDIA_BUCKET } from "@/lib/s3";
 import { z } from "zod";
 
 const PRESIGNED_EXPIRY = 3600;
@@ -35,7 +35,9 @@ async function resolveFileChurchId(fileId: string) {
     },
   });
   if (!file) throw new ApiError(404, "Fichier introuvable");
-  return { churchId: file.mediaEvent?.churchId ?? file.mediaProject?.churchId!, file };
+  const churchId = file.mediaEvent?.churchId ?? file.mediaProject?.churchId;
+  if (!churchId) throw new ApiError(500, "Fichier sans conteneur");
+  return { churchId, file };
 }
 
 export async function GET(
@@ -116,8 +118,8 @@ export async function POST(
     });
 
     const uploadUrl = await getSignedUrl(
-      s3,
-      new PutObjectCommand({ Bucket: process.env.S3_BUCKET ?? "", Key: originalKey, ContentType: data.contentType }),
+      s3Media,
+      new PutObjectCommand({ Bucket: MEDIA_BUCKET, Key: originalKey, ContentType: data.contentType }),
       { expiresIn: PRESIGNED_EXPIRY }
     );
 

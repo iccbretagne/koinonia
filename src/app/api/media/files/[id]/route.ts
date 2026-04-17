@@ -5,7 +5,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { deleteFiles } from "@/lib/s3";
+import { deleteMediaFiles } from "@/lib/s3";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -127,7 +127,7 @@ export async function DELETE(
     if (!file) throw new ApiError(404, "Fichier média introuvable");
 
     const s3Keys = file.versions.flatMap((v) => [v.originalKey, v.thumbnailKey]);
-    if (s3Keys.length > 0) await deleteFiles(s3Keys);
+    if (s3Keys.length > 0) await deleteMediaFiles(s3Keys);
 
     await prisma.mediaFile.delete({ where: { id } });
 

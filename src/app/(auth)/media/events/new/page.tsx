@@ -12,7 +12,7 @@ export default async function NewMediaEventPage() {
   const planningEvents = await prisma.event.findMany({
     where: {
       churchId,
-      date: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+      date: { gte: new Date(new Date().getTime() - 90 * 24 * 60 * 60 * 1000) },
     },
     orderBy: { date: "desc" },
     select: { id: true, title: true, type: true, date: true },
