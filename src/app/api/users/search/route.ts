@@ -25,7 +25,7 @@ export async function GET(request: Request) {
           {
             OR: [
               { churchRoles: { some: { churchId } } },
-              { memberLinkRequests: { some: { churchId } } },
+              { memberLinkRequests: { some: { churchId, status: { in: ["PENDING", "APPROVED"] } } } },
             ],
           },
         ],

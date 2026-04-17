@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Vérifier que l'utilisateur a un lien légitime avec cette église
     const userInChurch =
       (await prisma.userChurchRole.findFirst({ where: { userId, churchId } })) ??
-      (await prisma.memberLinkRequest.findFirst({ where: { userId, churchId } }));
+      (await prisma.memberLinkRequest.findFirst({ where: { userId, churchId, status: { in: ["PENDING", "APPROVED"] } } }));
     if (!userInChurch) {
       throw new ApiError(403, "Cet utilisateur n'a pas de lien avec cette église");
     }
