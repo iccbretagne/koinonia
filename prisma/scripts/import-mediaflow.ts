@@ -180,10 +180,12 @@ async function main() {
     const kEmailMap = new Map(kUsers.map((u) => [u.email.toLowerCase(), u.id]));
 
     const newUsers = [];
+    let dedupCount = 0;
     for (const mfu of mfUsers) {
       const existing = kEmailMap.get(mfu.email.toLowerCase());
       if (existing) {
         userMap.set(mfu.id, existing);
+        dedupCount++;
       } else {
         userMap.set(mfu.id, mfu.id);
         newUsers.push(mfu);
@@ -203,8 +205,8 @@ async function main() {
       });
     }
 
-    ok(`Cas A (email existant) : ${mfUsers.length - newUsers.length}`);
-    ok(`Cas B (nouvel user)    : ${newUsers.length}`);
+    ok(`Email existant (dédupliqué) : ${dedupCount}`);
+    ok(`Nouvel utilisateur créé      : ${newUsers.length}`);
 
     // Dériver toutes les churches de chaque user depuis ses événements et projets
     // (User n'a pas de churchId dans Mediaflow)
@@ -268,6 +270,9 @@ async function main() {
     });
     const hasLink = new Set(existingLinks.map((l) => `${l.userId}:${l.churchId}`));
 
+    // Charger les noms des churches Koinonia pour les logs
+    const kChurchNames = new Map(kChurches.map((c) => [c.id, c.name]));
+
     type RoleRow = { id: string; userId: string; churchId: string; role: "STAR" };
     type DeptRow = { id: string; userChurchRoleId: string; departmentId: string };
     type LinkRow = { memberId: string; userId: string; churchId: string; validatedAt: Date };
@@ -277,18 +282,30 @@ async function main() {
     const newLinks: LinkRow[] = [];
     let caseA = 0, caseB = 0, matched = 0, ambiguous = 0, noMatch = 0;
 
+    // Pour la liste récapitulative des actions manuelles requises
+    type ManualAction = { email: string; name: string | null; churchName: string; reason: string };
+    const manualActions: ManualAction[] = [];
+
     for (const mfUser of mfUsers) {
       const mfChurchIds = [...(userChurches.get(mfUser.id) ?? [])].filter((id) => churchMap.has(id));
-      if (mfChurchIds.length === 0) continue;
+
+      if (mfChurchIds.length === 0) {
+        info(`${mfUser.email} (${mfUser.name ?? "—"}) — aucun événement/projet dans les churches mappées, ignoré`);
+        continue;
+      }
 
       const kUserId = userMap.get(mfUser.id)!;
+      const isNew   = newUsers.some((u) => u.id === mfUser.id);
+      const tag     = isNew ? "nouveau" : "existant";
+      console.log(`\n  ▸ ${mfUser.email} (${mfUser.name ?? "—"}) [${tag}]`);
 
       for (const mfChurchId of mfChurchIds) {
-        const kChurchId = churchMap.get(mfChurchId)!;
-        const deptId    = prodMediaByChurch.get(kChurchId);
+        const kChurchId  = churchMap.get(mfChurchId)!;
+        const churchName = kChurchNames.get(kChurchId) ?? kChurchId;
+        const deptId     = prodMediaByChurch.get(kChurchId);
 
         if (!deptId) {
-          warn(`Pas de département PRODUCTION_MEDIA pour church ${kChurchId} — ${mfUser.email} ignoré`);
+          console.log(`    ⚠  ${churchName} : pas de département PRODUCTION_MEDIA — ignoré`);
           continue;
         }
 
@@ -299,24 +316,30 @@ async function main() {
         if (existingRoleId) {
           caseA++;
           targetRoleId = existingRoleId;
+          console.log(`    · ${churchName} : Cas A — rôle existant, département PRODUCTION_MEDIA ajouté`);
         } else {
           caseB++;
-          // Id déterministe par (user, church) pour l'idempotence
           targetRoleId = `mf-star-${mfUser.id}-${kChurchId}`;
           newRoles.push({ id: targetRoleId, userId: kUserId, churchId: kChurchId, role: "STAR" });
 
-          if (!hasLink.has(roleKey)) {
+          if (hasLink.has(roleKey)) {
+            console.log(`    · ${churchName} : Cas B — STAR créé, liaison membre déjà existante`);
+          } else {
             const normalizedName = normalizeStr(mfUser.name ?? "");
             const candidates = memberIndex.get(`${kChurchId}:${normalizedName}`) ?? [];
             if (candidates.length === 1) {
               matched++;
               newLinks.push({ memberId: candidates[0], userId: kUserId, churchId: kChurchId, validatedAt: new Date() });
+              console.log(`    ✓ ${churchName} : Cas B — STAR créé + liaison membre "${mfUser.name}" (${candidates[0]})`);
             } else if (candidates.length > 1) {
               ambiguous++;
-              warn(`Nom ambigu "${mfUser.name}" dans church ${kChurchId} (${candidates.length} STAR) — liaison à créer manuellement`);
+              const ids = candidates.join(", ");
+              console.log(`    ⚠  ${churchName} : Cas B — STAR créé, nom ambigu "${mfUser.name}" (${candidates.length} candidats : ${ids}) — liaison manuelle`);
+              manualActions.push({ email: mfUser.email, name: mfUser.name, churchName, reason: `Nom ambigu — ${candidates.length} STAR : ${ids}` });
             } else {
               noMatch++;
-              info(`Aucun STAR trouvé pour "${mfUser.name}" dans church ${kChurchId} — liaison à créer manuellement`);
+              console.log(`    ⚠  ${churchName} : Cas B — STAR créé, aucun STAR "${mfUser.name}" trouvé — liaison manuelle`);
+              manualActions.push({ email: mfUser.email, name: mfUser.name, churchName, reason: "Aucun STAR correspondant trouvé" });
             }
           }
         }
@@ -331,11 +354,21 @@ async function main() {
       if (newLinks.length > 0) await prisma.memberUserLink.createMany({ data: newLinks, skipDuplicates: true });
     }
 
+    console.log();
     ok(`Cas A (rôle existant → dept ajouté)  : ${caseA}`);
     ok(`Cas B (nouveau rôle STAR)             : ${caseB}`);
-    ok(`  Liaisons STAR créées par nom        : ${matched}`);
-    if (ambiguous > 0) warn(`  Noms ambigus (à lier manuellement)  : ${ambiguous}`);
-    if (noMatch  > 0) info(`  Aucun STAR trouvé (manuel requis)   : ${noMatch}`);
+    ok(`  dont liaisons créées automatiquement: ${matched}`);
+    if (ambiguous > 0) warn(`  dont noms ambigus (liaison manuelle) : ${ambiguous}`);
+    if (noMatch  > 0) warn(`  dont aucun STAR trouvé (liaison man.) : ${noMatch}`);
+
+    if (manualActions.length > 0) {
+      console.log(`\n  ── Actions manuelles requises (${manualActions.length}) ─────────────────────`);
+      console.log("  Aller dans Admin → Accès & rôles → onglet STAR pour lier ces comptes :\n");
+      for (const a of manualActions) {
+        console.log(`  • ${a.email} (${a.name ?? "—"}) — ${a.churchName}`);
+        console.log(`    Raison : ${a.reason}`);
+      }
+    }
 
     // ── Étape 3 : MediaProjects (depuis Project Mediaflow) ───────────────────
     step(3, "MediaProjects");
