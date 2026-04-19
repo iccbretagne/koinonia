@@ -31,7 +31,7 @@ export async function restoreBackup(key: string): Promise<RestoreResult> {
 
   const response = await s3.send(
     new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET || "koinonia-backups",
+      Bucket: process.env.BACKUP_S3_BUCKET || "koinonia-backups",
       Key: key,
     })
   );

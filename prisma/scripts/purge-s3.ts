@@ -310,11 +310,11 @@ async function main() {
   console.log("════════════════════════════════════════════════════════════");
 
   if (USE_MEDIA) {
-    const endpoint   = process.env.MEDIA_S3_ENDPOINT          || process.env.S3_ENDPOINT;
-    const region     = process.env.MEDIA_S3_REGION            || process.env.S3_REGION;
-    const bucket     = process.env.MEDIA_S3_BUCKET            || process.env.S3_BUCKET || "";
-    const accessKey  = process.env.MEDIA_S3_ACCESS_KEY_ID     || process.env.S3_ACCESS_KEY_ID;
-    const secretKey  = process.env.MEDIA_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY;
+    const endpoint   = process.env.MEDIA_S3_ENDPOINT;
+    const region     = process.env.MEDIA_S3_REGION;
+    const bucket     = process.env.MEDIA_S3_BUCKET || "";
+    const accessKey  = process.env.MEDIA_S3_ACCESS_KEY_ID;
+    const secretKey  = process.env.MEDIA_S3_SECRET_ACCESS_KEY;
 
     if (!bucket || !accessKey || !secretKey) {
       fail("Configuration média incomplète (MEDIA_S3_BUCKET, MEDIA_S3_ACCESS_KEY_ID, MEDIA_S3_SECRET_ACCESS_KEY).");
@@ -326,14 +326,14 @@ async function main() {
   }
 
   if (USE_BACKUP) {
-    const endpoint   = process.env.S3_ENDPOINT;
-    const region     = process.env.S3_REGION;
-    const bucket     = process.env.S3_BUCKET || "";
-    const accessKey  = process.env.S3_ACCESS_KEY_ID;
-    const secretKey  = process.env.S3_SECRET_ACCESS_KEY;
+    const endpoint   = process.env.BACKUP_S3_ENDPOINT;
+    const region     = process.env.BACKUP_S3_REGION;
+    const bucket     = process.env.BACKUP_S3_BUCKET || "";
+    const accessKey  = process.env.BACKUP_S3_ACCESS_KEY_ID;
+    const secretKey  = process.env.BACKUP_S3_SECRET_ACCESS_KEY;
 
     if (!bucket || !accessKey || !secretKey) {
-      fail("Configuration backup incomplète (S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY).");
+      fail("Configuration backup incomplète (BACKUP_S3_BUCKET, BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY).");
       process.exit(1);
     }
 

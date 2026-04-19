@@ -218,12 +218,12 @@ async function main() {
     srcAccessKey = process.env.MEDIAFLOW_S3_ACCESS_KEY;
     srcSecretKey = process.env.MEDIAFLOW_S3_SECRET_KEY;
 
-    // Destination = Koinonia média (MEDIA_S3_* avec fallback S3_*)
-    dstEndpoint  = process.env.MEDIA_S3_ENDPOINT   || process.env.S3_ENDPOINT;
-    dstRegion    = process.env.MEDIA_S3_REGION      || process.env.S3_REGION;
-    dstBucket    = process.env.MEDIA_S3_BUCKET      || process.env.S3_BUCKET || "";
-    dstAccessKey = process.env.MEDIA_S3_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID;
-    dstSecretKey = process.env.MEDIA_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY;
+    // Destination = Koinonia média (MEDIA_S3_* obligatoires)
+    dstEndpoint  = process.env.MEDIA_S3_ENDPOINT;
+    dstRegion    = process.env.MEDIA_S3_REGION;
+    dstBucket    = process.env.MEDIA_S3_BUCKET || "";
+    dstAccessKey = process.env.MEDIA_S3_ACCESS_KEY_ID;
+    dstSecretKey = process.env.MEDIA_S3_SECRET_ACCESS_KEY;
   } else {
     // Variables explicites
     srcEndpoint  = process.env.SRC_ENDPOINT;

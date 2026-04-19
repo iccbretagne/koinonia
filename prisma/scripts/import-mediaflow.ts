@@ -97,6 +97,10 @@ function mapFileStatus(s: string) {
   return m[s] ?? "PENDING";
 }
 
+function normalizeStr(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function mapTokenType(s: string) {
   const m: Record<string, "VALIDATOR" | "PREVALIDATOR" | "MEDIA" | "GALLERY"> = {
     VALIDATOR: "VALIDATOR", PREVALIDATOR: "PREVALIDATOR",
@@ -202,33 +206,136 @@ async function main() {
     ok(`Cas A (email existant) : ${mfUsers.length - newUsers.length}`);
     ok(`Cas B (nouvel user)    : ${newUsers.length}`);
 
-    // Dériver la church principale de chaque user ADMIN depuis ses événements
+    // Dériver toutes les churches de chaque user depuis ses événements et projets
     // (User n'a pas de churchId dans Mediaflow)
-    const userPrimaryChurch = new Map<string, string>(); // mf_userId → mf_churchId
-    for (const e of mfEvents) {
-      if (!userPrimaryChurch.has(e.createdById)) {
-        userPrimaryChurch.set(e.createdById, e.churchId);
+    const userChurches = new Map<string, Set<string>>(); // mf_userId → Set<mf_churchId>
+    const addChurch = (userId: string, churchId: string) => {
+      const s = userChurches.get(userId) ?? new Set();
+      s.add(churchId);
+      userChurches.set(userId, s);
+    };
+    for (const e of mfEvents)   addChurch(e.createdById, e.churchId);
+    for (const p of mfProjects) addChurch(p.createdById, p.churchId);
+
+    // ── Rôles + département PRODUCTION_MEDIA + liaison STAR ──────────────────
+    // Cas A : user a déjà un rôle Koinonia → ajouter uniquement le département PRODUCTION_MEDIA
+    // Cas B : user sans rôle → STAR + PRODUCTION_MEDIA + tentative de liaison membre par nom
+
+    const kUserIds = [...new Set(userMap.values())];
+
+    // Charger les UserChurchRoles existants — besoin de l'id pour créer UserDepartment
+    const existingChurchRoles = await prisma.userChurchRole.findMany({
+      where: { userId: { in: kUserIds } },
+      select: { id: true, userId: true, churchId: true },
+    });
+    const existingRoleByKey = new Map<string, string>(); // "userId:churchId" → roleId
+    for (const r of existingChurchRoles) {
+      if (!existingRoleByKey.has(`${r.userId}:${r.churchId}`))
+        existingRoleByKey.set(`${r.userId}:${r.churchId}`, r.id);
+    }
+
+    // Charger les départements PRODUCTION_MEDIA par church
+    const prodMediaDepts = await prisma.department.findMany({
+      where: { function: "PRODUCTION_MEDIA" },
+      select: { id: true, ministry: { select: { churchId: true } } },
+    });
+    const prodMediaByChurch = new Map(prodMediaDepts.map((d) => [d.ministry.churchId, d.id]));
+
+    // Charger les membres par church pour matching par nom (Cas B)
+    const kChurchIds = [...new Set(churchMap.values())];
+    const allMembers = await prisma.member.findMany({
+      where: { departments: { some: { department: { ministry: { churchId: { in: kChurchIds } } } } } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        departments: { select: { department: { select: { ministry: { select: { churchId: true } } } } }, take: 1 },
+      },
+    });
+    const memberIndex = new Map<string, string[]>(); // "churchId:nom_normalisé" → [memberId]
+    for (const m of allMembers) {
+      const churchId = m.departments[0]?.department?.ministry?.churchId;
+      if (!churchId) continue;
+      const key = `${churchId}:${normalizeStr(`${m.firstName} ${m.lastName}`)}`;
+      const arr = memberIndex.get(key) ?? [];
+      arr.push(m.id);
+      memberIndex.set(key, arr);
+    }
+
+    const existingLinks = await prisma.memberUserLink.findMany({
+      where: { userId: { in: kUserIds } },
+      select: { userId: true, churchId: true },
+    });
+    const hasLink = new Set(existingLinks.map((l) => `${l.userId}:${l.churchId}`));
+
+    type RoleRow = { id: string; userId: string; churchId: string; role: "STAR" };
+    type DeptRow = { id: string; userChurchRoleId: string; departmentId: string };
+    type LinkRow = { memberId: string; userId: string; churchId: string; validatedAt: Date };
+
+    const newRoles: RoleRow[] = [];
+    const newDepts: DeptRow[] = [];
+    const newLinks: LinkRow[] = [];
+    let caseA = 0, caseB = 0, matched = 0, ambiguous = 0, noMatch = 0;
+
+    for (const mfUser of mfUsers) {
+      const mfChurchIds = [...(userChurches.get(mfUser.id) ?? [])].filter((id) => churchMap.has(id));
+      if (mfChurchIds.length === 0) continue;
+
+      const kUserId = userMap.get(mfUser.id)!;
+
+      for (const mfChurchId of mfChurchIds) {
+        const kChurchId = churchMap.get(mfChurchId)!;
+        const deptId    = prodMediaByChurch.get(kChurchId);
+
+        if (!deptId) {
+          warn(`Pas de département PRODUCTION_MEDIA pour church ${kChurchId} — ${mfUser.email} ignoré`);
+          continue;
+        }
+
+        const roleKey        = `${kUserId}:${kChurchId}`;
+        const existingRoleId = existingRoleByKey.get(roleKey);
+        let targetRoleId: string;
+
+        if (existingRoleId) {
+          caseA++;
+          targetRoleId = existingRoleId;
+        } else {
+          caseB++;
+          // Id déterministe par (user, church) pour l'idempotence
+          targetRoleId = `mf-star-${mfUser.id}-${kChurchId}`;
+          newRoles.push({ id: targetRoleId, userId: kUserId, churchId: kChurchId, role: "STAR" });
+
+          if (!hasLink.has(roleKey)) {
+            const normalizedName = normalizeStr(mfUser.name ?? "");
+            const candidates = memberIndex.get(`${kChurchId}:${normalizedName}`) ?? [];
+            if (candidates.length === 1) {
+              matched++;
+              newLinks.push({ memberId: candidates[0], userId: kUserId, churchId: kChurchId, validatedAt: new Date() });
+            } else if (candidates.length > 1) {
+              ambiguous++;
+              warn(`Nom ambigu "${mfUser.name}" dans church ${kChurchId} (${candidates.length} STAR) — liaison à créer manuellement`);
+            } else {
+              noMatch++;
+              info(`Aucun STAR trouvé pour "${mfUser.name}" dans church ${kChurchId} — liaison à créer manuellement`);
+            }
+          }
+        }
+
+        newDepts.push({ id: `mf-dept-${mfUser.id}-${kChurchId}`, userChurchRoleId: targetRoleId, departmentId: deptId });
       }
     }
 
-    const adminUsers = mfUsers.filter((u) => u.role === "ADMIN");
-    const roleRows = adminUsers
-      .map((u) => {
-        const mfChurchId = userPrimaryChurch.get(u.id);
-        if (!mfChurchId || !churchMap.has(mfChurchId)) return null;
-        return {
-          id: `mf-import-${u.id}`,
-          userId: userMap.get(u.id)!,
-          churchId: churchMap.get(mfChurchId)!,
-          role: "ADMIN" as const,
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null);
-
-    if (!DRY_RUN && roleRows.length > 0) {
-      await prisma.userChurchRole.createMany({ data: roleRows, skipDuplicates: true });
+    if (!DRY_RUN) {
+      if (newRoles.length > 0) await prisma.userChurchRole.createMany({ data: newRoles, skipDuplicates: true });
+      if (newDepts.length > 0) await prisma.userDepartment.createMany({ data: newDepts, skipDuplicates: true });
+      if (newLinks.length > 0) await prisma.memberUserLink.createMany({ data: newLinks, skipDuplicates: true });
     }
-    info(`Rôles ADMIN assignés : ${roleRows.length}`);
+
+    ok(`Cas A (rôle existant → dept ajouté)  : ${caseA}`);
+    ok(`Cas B (nouveau rôle STAR)             : ${caseB}`);
+    ok(`  Liaisons STAR créées par nom        : ${matched}`);
+    if (ambiguous > 0) warn(`  Noms ambigus (à lier manuellement)  : ${ambiguous}`);
+    if (noMatch  > 0) info(`  Aucun STAR trouvé (manuel requis)   : ${noMatch}`);
 
     // ── Étape 3 : MediaProjects (depuis Project Mediaflow) ───────────────────
     step(3, "MediaProjects");

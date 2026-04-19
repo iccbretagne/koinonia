@@ -315,11 +315,11 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) |
 | `ENABLED_MODULES` | Modules a charger (virgule) — tous si absent |
-| `S3_ENDPOINT` | Endpoint S3-compatible (backups BDD) |
-| `S3_REGION` | Region du bucket backups |
-| `S3_BUCKET` | Nom du bucket backups |
-| `S3_ACCESS_KEY_ID` | Cle d'acces backups |
-| `S3_SECRET_ACCESS_KEY` | Secret backups |
+| `BACKUP_S3_ENDPOINT` | Endpoint S3-compatible (backups BDD) |
+| `BACKUP_S3_REGION` | Region du bucket backups |
+| `BACKUP_S3_BUCKET` | Nom du bucket backups |
+| `BACKUP_S3_ACCESS_KEY_ID` | Cle d'acces backups |
+| `BACKUP_S3_SECRET_ACCESS_KEY` | Secret backups |
 | `BACKUP_RETENTION_DAYS` | Retention des backups en jours (defaut : 30) |
 | `MEDIA_S3_ENDPOINT` | Endpoint S3-compatible (module media — photos, visuels, videos) |
 | `MEDIA_S3_REGION` | Region du bucket media |
@@ -327,7 +327,7 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `MEDIA_S3_ACCESS_KEY_ID` | Cle d'acces media |
 | `MEDIA_S3_SECRET_ACCESS_KEY` | Secret media |
 
-> Si `MEDIA_S3_*` sont absents, le module media utilise les variables `S3_*` (bucket unique — dev uniquement).
+> Les variables `MEDIA_S3_*` sont obligatoires — aucun fallback sur `BACKUP_S3_*`. Les deux buckets doivent être configurés séparément.
 
 ---
 

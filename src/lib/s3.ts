@@ -29,46 +29,43 @@ function makeClient(vars: {
 
 export function isS3Configured(): boolean {
   return !!(
-    process.env.S3_ENDPOINT &&
-    process.env.S3_REGION &&
-    process.env.S3_BUCKET &&
-    process.env.S3_ACCESS_KEY_ID &&
-    process.env.S3_SECRET_ACCESS_KEY
+    process.env.BACKUP_S3_ENDPOINT &&
+    process.env.BACKUP_S3_REGION &&
+    process.env.BACKUP_S3_BUCKET &&
+    process.env.BACKUP_S3_ACCESS_KEY_ID &&
+    process.env.BACKUP_S3_SECRET_ACCESS_KEY
   );
 }
 
 export const s3 =
   globalForS3.s3 ??
   makeClient({
-    endpoint: process.env.S3_ENDPOINT,
-    region: process.env.S3_REGION,
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    endpoint: process.env.BACKUP_S3_ENDPOINT,
+    region: process.env.BACKUP_S3_REGION,
+    accessKeyId: process.env.BACKUP_S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.BACKUP_S3_SECRET_ACCESS_KEY,
   });
 
-// ─── Client média (bucket + credentials séparés) ─────────────────────────────
-// Utilise MEDIA_S3_* si définis, sinon fallback sur les vars backup (bucket unique).
+// ─── Client média (bucket + credentials dédiés — MEDIA_S3_* obligatoires) ────
 
 export function isMediaS3Configured(): boolean {
-  // Configuré si les vars media OU les vars backup sont présentes
   return !!(
-    (process.env.MEDIA_S3_ENDPOINT || process.env.S3_ENDPOINT) &&
-    (process.env.MEDIA_S3_BUCKET   || process.env.S3_BUCKET)   &&
-    (process.env.MEDIA_S3_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID) &&
-    (process.env.MEDIA_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY)
+    process.env.MEDIA_S3_ENDPOINT &&
+    process.env.MEDIA_S3_BUCKET &&
+    process.env.MEDIA_S3_ACCESS_KEY_ID &&
+    process.env.MEDIA_S3_SECRET_ACCESS_KEY
   );
 }
 
-export const MEDIA_BUCKET =
-  process.env.MEDIA_S3_BUCKET || process.env.S3_BUCKET || "";
+export const MEDIA_BUCKET = process.env.MEDIA_S3_BUCKET ?? "";
 
 export const s3Media =
   globalForS3.s3Media ??
   makeClient({
-    endpoint:        process.env.MEDIA_S3_ENDPOINT        || process.env.S3_ENDPOINT,
-    region:          process.env.MEDIA_S3_REGION          || process.env.S3_REGION,
-    accessKeyId:     process.env.MEDIA_S3_ACCESS_KEY_ID   || process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.MEDIA_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY,
+    endpoint:        process.env.MEDIA_S3_ENDPOINT,
+    region:          process.env.MEDIA_S3_REGION,
+    accessKeyId:     process.env.MEDIA_S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.MEDIA_S3_SECRET_ACCESS_KEY,
   });
 
 if (process.env.NODE_ENV !== "production") {
@@ -79,7 +76,7 @@ if (process.env.NODE_ENV !== "production") {
 /** Supprime plusieurs objets S3 en une requête batch (max 1000 clés par appel). */
 export async function deleteFiles(keys: string[]): Promise<void> {
   if (keys.length === 0) return;
-  const bucket = process.env.S3_BUCKET;
+  const bucket = process.env.BACKUP_S3_BUCKET;
   if (!bucket) return; // S3 non configuré — no-op en dev
 
   const BATCH = 1000;
@@ -97,7 +94,7 @@ export async function deleteFiles(keys: string[]): Promise<void> {
 /** Supprime plusieurs objets du bucket média (s3Media/MEDIA_BUCKET) en batch. */
 export async function deleteMediaFiles(keys: string[]): Promise<void> {
   if (keys.length === 0) return;
-  if (!MEDIA_BUCKET) return; // bucket média non configuré — no-op en dev
+  if (!MEDIA_BUCKET) throw new Error("MEDIA_S3_BUCKET non configuré — variables MEDIA_S3_* requises");
 
   const BATCH = 1000;
   for (let i = 0; i < keys.length; i += BATCH) {

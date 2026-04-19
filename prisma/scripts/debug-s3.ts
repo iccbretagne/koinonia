@@ -182,11 +182,11 @@ async function main() {
 
   // ── Bucket média ──────────────────────────────────────────────────────────
   if (testMedia) {
-    const mediaEndpoint   = process.env.MEDIA_S3_ENDPOINT        || process.env.S3_ENDPOINT;
-    const mediaRegion     = process.env.MEDIA_S3_REGION          || process.env.S3_REGION;
-    const mediaBucket     = process.env.MEDIA_S3_BUCKET          || process.env.S3_BUCKET || "";
-    const mediaAccessKey  = process.env.MEDIA_S3_ACCESS_KEY_ID   || process.env.S3_ACCESS_KEY_ID;
-    const mediaSecretKey  = process.env.MEDIA_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY;
+    const mediaEndpoint   = process.env.MEDIA_S3_ENDPOINT;
+    const mediaRegion     = process.env.MEDIA_S3_REGION;
+    const mediaBucket     = process.env.MEDIA_S3_BUCKET || "";
+    const mediaAccessKey  = process.env.MEDIA_S3_ACCESS_KEY_ID;
+    const mediaSecretKey  = process.env.MEDIA_S3_SECRET_ACCESS_KEY;
 
     const usesMediaVars = !!(process.env.MEDIA_S3_ENDPOINT || process.env.MEDIA_S3_BUCKET);
 
@@ -210,11 +210,11 @@ async function main() {
 
   // ── Bucket backups ────────────────────────────────────────────────────────
   if (testBackup) {
-    const backupEndpoint  = process.env.S3_ENDPOINT;
-    const backupRegion    = process.env.S3_REGION;
-    const backupBucket    = process.env.S3_BUCKET || "";
-    const backupAccessKey = process.env.S3_ACCESS_KEY_ID;
-    const backupSecretKey = process.env.S3_SECRET_ACCESS_KEY;
+    const backupEndpoint  = process.env.BACKUP_S3_ENDPOINT;
+    const backupRegion    = process.env.BACKUP_S3_REGION;
+    const backupBucket    = process.env.BACKUP_S3_BUCKET || "";
+    const backupAccessKey = process.env.BACKUP_S3_ACCESS_KEY_ID;
+    const backupSecretKey = process.env.BACKUP_S3_SECRET_ACCESS_KEY;
 
     displayConfig(
       "Backup (S3_*)",

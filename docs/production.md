@@ -23,10 +23,10 @@ L'application utilise une structure Capistrano-like :
 
 ```
 /opt/koinonia/
-├── current -> releases/koinonia-0.1.0   # symlink vers la release active
+├── current -> releases/koinonia-1.0.0   # symlink vers la release active
 ├── releases/
-│   ├── koinonia-0.1.0/
-│   ├── koinonia-0.0.9/
+│   ├── koinonia-1.0.0/
+│   ├── koinonia-0.19.7/
 │   └── ...
 └── shared/
     └── .env               # variables d'environnement (persistant)
@@ -449,11 +449,11 @@ Ajouter dans `shared/.env` :
 
 ```bash
 # ─── Backups BDD ───────────────────────────────────────────────
-S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
-S3_REGION=gra
-S3_BUCKET=koinonia-backups
-S3_ACCESS_KEY_ID=<access-key-backups>
-S3_SECRET_ACCESS_KEY=<secret-key-backups>
+BACKUP_S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
+BACKUP_S3_REGION=gra
+BACKUP_S3_BUCKET=koinonia-backups
+BACKUP_S3_ACCESS_KEY_ID=<access-key-backups>
+BACKUP_S3_SECRET_ACCESS_KEY=<secret-key-backups>
 BACKUP_RETENTION_DAYS=30
 
 # ─── Médias (photos, visuels, vidéos) ─────────────────────────
@@ -466,7 +466,7 @@ MEDIA_S3_SECRET_ACCESS_KEY=<secret-key-media>
 
 > **Important** : ne pas mettre de commentaires inline sur ces lignes dans `.env` — systemd inclurait le commentaire dans la valeur.
 
-Si `MEDIA_S3_*` sont absents, l'application bascule sur les variables `S3_*` (bucket unique — acceptable en développement uniquement).
+Les variables `MEDIA_S3_*` sont **obligatoires** — aucun fallback sur `BACKUP_S3_*`. Configurer les deux buckets séparément.
 
 ### Paramétrage OVH Object Storage
 
@@ -739,7 +739,7 @@ sudo systemctl start koinonia
 | `Access denied for user` | Mot de passe incorrect dans DATABASE_URL | Verifier `/opt/koinonia/shared/.env` |
 | Backup vide (0 octets) | Base inaccessible | Verifier `systemctl status mariadb` |
 | Restore echoue `ERROR 1049` | Base inexistante | Recreer la base (voir section BDD) |
-| S3 `AccessDenied` | Cle S3 invalide ou bucket inexistant | Verifier les variables `S3_*` et creer le bucket |
+| S3 `AccessDenied` | Cle S3 invalide ou bucket inexistant | Verifier les variables `BACKUP_S3_*` et creer le bucket |
 
 ## Scripts de maintenance S3
 
@@ -815,6 +815,12 @@ npx tsx prisma/scripts/purge-s3.ts \
 
 Options : `--prefix=<préfixe>`, `--older-than=<n>` (jours), `--yes` (sans confirmation interactive).
 
+## Mise à jour depuis une version précédente
+
+Pour mettre à jour une instance existante, consulter le guide de migration correspondant :
+
+- [Migration v0.19.x → v1.0.0](migration-v1.0.md)
+
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
@@ -822,7 +828,7 @@ Options : `--prefix=<préfixe>`, `--older-than=<n>` (jours), `--yes` (sans confi
 - [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
 - [ ] Variables SMTP configurees dans `shared/.env` (optionnel, pour les rappels email)
 - [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
-- [ ] Variables `S3_*` configurées pour les backups BDD (optionnel)
+- [ ] Variables `BACKUP_S3_*` configurées pour les backups BDD (optionnel)
 - [ ] Variables `MEDIA_S3_*` configurées pour le bucket média (optionnel)
 - [ ] Diagnostic S3 validé : `npx tsx prisma/scripts/debug-s3.ts` (en local)
 - [ ] Timer systemd `koinonia-backup.timer` activé (ou crontab) pour backup quotidien (optionnel)

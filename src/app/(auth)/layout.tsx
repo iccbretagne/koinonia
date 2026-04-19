@@ -196,14 +196,14 @@ export default async function AuthLayout({
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
 
-  // STAR: user whose only role is STAR (no management permissions)
-  const isStarOnly =
-    !session.user.isSuperAdmin &&
-    churchRoles.length > 0 &&
-    churchRoles.every((r) => r.role === "STAR");
-
-  // "Mon planning" link for users with a member link (STAR or any user with planning:view)
-  const hasMyPlanning = hasPlanningAccess && isStarOnly;
+  // "Mon planning" — visible pour tout utilisateur lié à un STAR dans l'église courante
+  const memberLink = currentChurchId
+    ? await prisma.memberUserLink.findUnique({
+        where: { userId_churchId: { userId: session.user.id!, churchId: currentChurchId } },
+        select: { id: true },
+      })
+    : null;
+  const hasMyPlanning = hasPlanningAccess && memberLink !== null;
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
