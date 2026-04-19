@@ -31,20 +31,58 @@ export default function MediaProjectsList({
   canUpload: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  const filtered = projects.filter((p) =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = projects.filter((p) => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    const d = new Date(p.createdAt);
+    if (dateFrom && d < new Date(dateFrom)) return false;
+    if (dateTo   && d > new Date(dateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  const hasDateFilter = dateFrom || dateTo;
 
   return (
     <div className="space-y-4">
-      <input
-        type="text"
-        placeholder="Rechercher…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full sm:w-80 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
-      />
+      <div className="flex flex-col gap-2">
+        <input
+          type="text"
+          placeholder="Rechercher…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full sm:w-96 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+        />
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs text-gray-500 shrink-0">Du</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs text-gray-500 shrink-0">au</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            />
+          </div>
+          {hasDateFilter && (
+            <button
+              onClick={() => { setDateFrom(""); setDateTo(""); }}
+              className="text-xs text-gray-400 hover:text-icc-violet transition-colors shrink-0 px-2 py-1"
+            >
+              Effacer dates
+            </button>
+          )}
+        </div>
+      </div>
 
       {filtered.length === 0 && (
         <div className="text-center py-12 text-gray-500">
