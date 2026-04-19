@@ -11,15 +11,40 @@ export default async function MediaEventsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("media:view", churchId);
 
-  const events = await prisma.mediaEvent.findMany({
-    where: { churchId },
-    orderBy: { date: "desc" },
-    include: {
-      createdBy: { select: { id: true, name: true, displayName: true } },
-      planningEvent: { select: { id: true, title: true, type: true, date: true } },
-      _count: { select: { photos: true, files: true } },
-    },
-  });
+  const [events, photoStatusRows] = await Promise.all([
+    prisma.mediaEvent.findMany({
+      where: { churchId },
+      orderBy: { date: "desc" },
+      include: {
+        createdBy: { select: { id: true, name: true, displayName: true } },
+        planningEvent: { select: { id: true, title: true, type: true, date: true } },
+        _count: { select: { photos: true, files: true } },
+      },
+    }),
+    prisma.mediaPhoto.groupBy({
+      by: ["mediaEventId", "status"],
+      where: { mediaEvent: { churchId } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  // Map eventId → { PENDING, PREVALIDATED, APPROVED, REJECTED }
+  type PhotoCounts = { pending: number; prevalidated: number; approved: number; rejected: number };
+  const photoCounts = new Map<string, PhotoCounts>();
+  for (const row of photoStatusRows) {
+    if (!row.mediaEventId) continue;
+    const entry = photoCounts.get(row.mediaEventId) ?? { pending: 0, prevalidated: 0, approved: 0, rejected: 0 };
+    if (row.status === "PENDING")      entry.pending      += row._count._all;
+    if (row.status === "PREVALIDATED") entry.prevalidated += row._count._all;
+    if (row.status === "APPROVED")     entry.approved     += row._count._all;
+    if (row.status === "REJECTED")     entry.rejected     += row._count._all;
+    photoCounts.set(row.mediaEventId, entry);
+  }
+
+  const eventsWithCounts = events.map((e) => ({
+    ...e,
+    photoCounts: photoCounts.get(e.id) ?? { pending: 0, prevalidated: 0, approved: 0, rejected: 0 },
+  }));
 
   const churchPerms = new Set(
     session.user.churchRoles
@@ -38,7 +63,7 @@ export default async function MediaEventsPage() {
           </Link>
         )}
       </div>
-      <MediaEventsList events={events} canUpload={canUpload} />
+      <MediaEventsList events={eventsWithCounts} canUpload={canUpload} />
     </div>
   );
 }

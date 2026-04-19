@@ -11,14 +11,38 @@ export default async function MediaProjectsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("media:view", churchId);
 
-  const projects = await prisma.mediaProject.findMany({
-    where: { churchId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      createdBy: { select: { id: true, name: true, displayName: true } },
-      _count: { select: { files: true } },
-    },
-  });
+  const [projects, fileStatusRows] = await Promise.all([
+    prisma.mediaProject.findMany({
+      where: { churchId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        createdBy: { select: { id: true, name: true, displayName: true } },
+        _count: { select: { files: true } },
+      },
+    }),
+    prisma.mediaFile.groupBy({
+      by: ["mediaProjectId", "status"],
+      where: { mediaProject: { churchId } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  type FileCounts = { inReview: number; revisionRequested: number; finalApproved: number; pending: number };
+  const fileCounts = new Map<string, FileCounts>();
+  for (const row of fileStatusRows) {
+    if (!row.mediaProjectId) continue;
+    const entry = fileCounts.get(row.mediaProjectId) ?? { inReview: 0, revisionRequested: 0, finalApproved: 0, pending: 0 };
+    if (row.status === "IN_REVIEW")           entry.inReview          += row._count._all;
+    if (row.status === "REVISION_REQUESTED")  entry.revisionRequested += row._count._all;
+    if (row.status === "FINAL_APPROVED")      entry.finalApproved     += row._count._all;
+    if (row.status === "PENDING")             entry.pending           += row._count._all;
+    fileCounts.set(row.mediaProjectId, entry);
+  }
+
+  const projectsWithCounts = projects.map((p) => ({
+    ...p,
+    fileCounts: fileCounts.get(p.id) ?? { inReview: 0, revisionRequested: 0, finalApproved: 0, pending: 0 },
+  }));
 
   const churchPerms = new Set(
     session.user.churchRoles
@@ -37,7 +61,7 @@ export default async function MediaProjectsPage() {
           </Link>
         )}
       </div>
-      <MediaProjectsList projects={projects} canUpload={canUpload} />
+      <MediaProjectsList projects={projectsWithCounts} canUpload={canUpload} />
     </div>
   );
 }
