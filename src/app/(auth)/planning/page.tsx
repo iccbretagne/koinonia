@@ -32,27 +32,32 @@ export default async function MyPlanningPage() {
     );
   }
 
-  const plannings = await prisma.planning.findMany({
-    where: { memberId: link.memberId },
-    include: {
-      eventDepartment: {
-        include: {
-          event: {
-            select: {
-              id: true,
-              title: true,
-              type: true,
-              date: true,
-            },
-          },
-          department: {
-            select: { id: true, name: true },
+  const [plannings, taskAssignments] = await Promise.all([
+    prisma.planning.findMany({
+      where: { memberId: link.memberId },
+      include: {
+        eventDepartment: {
+          include: {
+            event: { select: { id: true, title: true, type: true, date: true } },
+            department: { select: { id: true, name: true } },
           },
         },
       },
-    },
-    orderBy: { eventDepartment: { event: { date: "asc" } } },
-  });
+      orderBy: { eventDepartment: { event: { date: "asc" } } },
+    }),
+    prisma.taskAssignment.findMany({
+      where: { memberId: link.memberId },
+      select: { eventId: true, task: { select: { name: true } } },
+    }),
+  ]);
+
+  // Map eventId → task names
+  const tasksByEvent = new Map<string, string[]>();
+  for (const ta of taskAssignments) {
+    const arr = tasksByEvent.get(ta.eventId) ?? [];
+    arr.push(ta.task.name);
+    tasksByEvent.set(ta.eventId, arr);
+  }
 
   const memberName = `${link.member.firstName} ${link.member.lastName}`;
 
@@ -62,7 +67,7 @@ export default async function MyPlanningPage() {
         <h1 className="text-2xl font-bold text-gray-900">Mon planning</h1>
         <p className="text-sm text-gray-500 mt-1">{memberName}</p>
       </div>
-      <MyPlanningView plannings={plannings} />
+      <MyPlanningView plannings={plannings} tasksByEvent={Object.fromEntries(tasksByEvent)} />
     </div>
   );
 }

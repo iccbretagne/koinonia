@@ -35,6 +35,7 @@ type PlanningEntry = {
 
 interface Props {
   plannings: PlanningEntry[];
+  tasksByEvent?: Record<string, string[]>;
 }
 
 function formatDate(date: Date | string) {
@@ -47,51 +48,57 @@ function formatDate(date: Date | string) {
   });
 }
 
-function formatMonth(date: Date | string) {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+function formatMonthLabel(year: number, month: number) {
+  return new Date(year, month - 1, 1).toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
 }
 
-function getMonthKey(date: Date | string) {
+function parseMonthKey(key: string): { year: number; month: number } {
+  const [y, m] = key.split("-").map(Number);
+  return { year: y, month: m };
+}
+
+function monthKeyOf(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-type FilterMode = "upcoming" | "past" | "all";
+function addMonths(key: string, delta: number): string {
+  const { year, month } = parseMonthKey(key);
+  const d = new Date(year, month - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
-export default function MyPlanningView({ plannings }: Props) {
-  const [filter, setFilter] = useState<FilterMode>("upcoming");
+function currentMonthKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
-  const now = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) {
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
 
-  const filtered = useMemo(() => {
-    return plannings.filter((p) => {
-      const d = new Date(p.eventDepartment.event.date);
-      if (filter === "upcoming") return d >= now;
-      if (filter === "past") return d < now;
-      return true;
-    });
-  }, [plannings, filter, now]);
+  const { minKey, maxKey } = useMemo(() => {
+    if (plannings.length === 0) return { minKey: currentMonthKey(), maxKey: currentMonthKey() };
+    const keys = plannings.map((p) => monthKeyOf(p.eventDepartment.event.date)).sort();
+    // Extend range to include current month
+    const cur = currentMonthKey();
+    return {
+      minKey: keys[0] < cur ? keys[0] : cur,
+      maxKey: keys[keys.length - 1] > cur ? keys[keys.length - 1] : cur,
+    };
+  }, [plannings]);
 
-  // Group by month
-  const grouped = useMemo(() => {
-    const map = new Map<string, { label: string; entries: PlanningEntry[] }>();
-    for (const p of filtered) {
-      const key = getMonthKey(p.eventDepartment.event.date);
-      if (!map.has(key)) {
-        map.set(key, {
-          label: formatMonth(p.eventDepartment.event.date),
-          entries: [],
-        });
-      }
-      map.get(key)!.entries.push(p);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  const entries = useMemo(
+    () => plannings.filter((p) => monthKeyOf(p.eventDepartment.event.date) === selectedMonth)
+             .sort((a, b) => new Date(a.eventDepartment.event.date).getTime() - new Date(b.eventDepartment.event.date).getTime()),
+    [plannings, selectedMonth]
+  );
+
+  const { year, month } = parseMonthKey(selectedMonth);
+  const canPrev = selectedMonth > minKey;
+  const canNext = selectedMonth < maxKey;
 
   if (plannings.length === 0) {
     return (
@@ -106,76 +113,88 @@ export default function MyPlanningView({ plannings }: Props) {
 
   return (
     <div>
-      {/* Filter tabs */}
-      <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden text-sm w-fit mb-6">
-        {(["upcoming", "past", "all"] as const).map((mode) => (
-          <button
-            key={mode}
-            onClick={() => setFilter(mode)}
-            className={`px-4 py-2 font-medium transition-colors ${
-              filter === mode
-                ? "bg-icc-violet text-white"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {mode === "upcoming" ? "À venir" : mode === "past" ? "Passés" : "Tout"}
-          </button>
-        ))}
+      {/* Navigation mois */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => setSelectedMonth((k) => addMonths(k, -1))}
+          disabled={!canPrev}
+          className="p-2 rounded-lg border-2 border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Mois précédent"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h2 className="text-base font-semibold text-gray-800 capitalize">
+          {formatMonthLabel(year, month)}
+        </h2>
+        <button
+          onClick={() => setSelectedMonth((k) => addMonths(k, 1))}
+          disabled={!canNext}
+          className="p-2 rounded-lg border-2 border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label="Mois suivant"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
-      {filtered.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          <p>Aucun service {filter === "upcoming" ? "à venir" : "passé"}.</p>
+      {entries.length === 0 ? (
+        <div className="text-center py-8 text-gray-400 border-2 border-gray-100 border-dashed rounded-lg">
+          <p>Aucun service ce mois-ci.</p>
         </div>
-      )}
-
-      {/* Grouped by month */}
-      <div className="space-y-8">
-        {grouped.map(([key, { label, entries }]) => (
-          <div key={key}>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 capitalize">
-              {label}
-            </h2>
-            <div className="space-y-2">
-              {entries.map((p) => {
-                const event = p.eventDepartment.event;
-                const dept = p.eventDepartment.department;
-                const isPast = new Date(event.date) < now;
-                return (
-                  <div
-                    key={p.id}
-                    className={`bg-white rounded-lg border-2 px-4 py-3 flex items-center justify-between gap-4 ${
-                      isPast ? "border-gray-100 opacity-70" : "border-gray-200"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{event.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {formatDate(event.date)}
-                        <span className="mx-1.5">·</span>
-                        {dept.name}
-                      </p>
-                    </div>
-                    {p.status ? (
-                      <span
-                        className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-                          STATUS_COLOR[p.status] ?? "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {STATUS_LABEL[p.status] ?? p.status}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 text-xs text-gray-400 italic">
-                        Non défini
-                      </span>
+      ) : (
+        <div className="space-y-2">
+          {entries.map((p) => {
+            const event = p.eventDepartment.event;
+            const dept = p.eventDepartment.department;
+            const isPast = new Date(event.date) < new Date();
+            const tasks = tasksByEvent[event.id] ?? [];
+            return (
+              <div
+                key={p.id}
+                className={`bg-white rounded-lg border-2 px-4 py-3 ${
+                  isPast ? "border-gray-100 opacity-70" : "border-gray-200"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{event.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatDate(event.date)}
+                      <span className="mx-1.5">·</span>
+                      {dept.name}
+                    </p>
+                    {tasks.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {tasks.map((t) => (
+                          <span key={t} className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+                  {p.status ? (
+                    <span
+                      className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
+                        STATUS_COLOR[p.status] ?? "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {STATUS_LABEL[p.status] ?? p.status}
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full">
+                      Pas en service
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
