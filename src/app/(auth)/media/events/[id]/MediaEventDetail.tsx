@@ -442,7 +442,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
   }, [index]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" onClick={onClose}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 py-3 bg-black/60 backdrop-blur-sm shrink-0"

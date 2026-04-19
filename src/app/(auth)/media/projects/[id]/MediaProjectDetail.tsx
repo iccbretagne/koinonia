@@ -627,9 +627,12 @@ function NewVersionUpload({ fileId, onDone }: { fileId: string; onDone: () => vo
 
 // ─── Panneau détail fichier ───────────────────────────────────────────────────
 
-function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, onReviewFile, onRefresh }: {
+function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, canUpload, canReview, onClose, onReviewFile, onRefresh }: {
   file: MediaFile;
   thumbnailUrl: string | undefined;
+  allFiles: MediaFile[];
+  fileIndex: number;
+  onNavigate: (file: MediaFile) => void;
   canUpload: boolean;
   canReview: boolean;
   onClose: () => void;
@@ -643,6 +646,9 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
   const [newComment, setNewComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
   const [activeTab, setActiveTab] = useState<"versions" | "comments">("versions");
+
+  const hasPrev = fileIndex > 0;
+  const hasNext = fileIndex < allFiles.length - 1;
 
   const loadVersions = useCallback(async () => {
     setLoadingVersions(true);
@@ -669,10 +675,15 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
   useEffect(() => { loadVersions(); loadComments(); }, [loadVersions, loadComments]);
 
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowLeft" && hasPrev) onNavigate(allFiles[fileIndex - 1]);
+      else if (e.key === "ArrowRight" && hasNext) onNavigate(allFiles[fileIndex + 1]);
+    };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileIndex, hasPrev, hasNext]);
 
   async function postComment() {
     if (!newComment.trim()) return;
@@ -696,32 +707,54 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-white h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-gray-200 shrink-0">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 shrink-0">
+          {/* Navigation prev/next */}
+          {allFiles.length > 1 && (
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])}
+                disabled={!hasPrev}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span className="text-xs text-gray-400 tabular-nums w-10 text-center">{fileIndex + 1}/{allFiles.length}</span>
+              <button
+                onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])}
+                disabled={!hasNext}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium shrink-0">
                 {FILE_TYPE_LABELS[file.type]}
               </span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${FILE_STATUS_COLORS[file.status]}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FILE_STATUS_COLORS[file.status]}`}>
                 {FILE_STATUS_LABELS[file.status]}
               </span>
+              <span className="text-xs text-gray-400 truncate">
+                {file.filename}
+                {latestVersion && <span className="ml-1 text-gray-300">v{latestVersion.versionNumber}</span>}
+              </span>
             </div>
-            <h3 className="text-sm font-semibold text-gray-900 mt-1 truncate">{file.filename}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {formatSize(file.size)}
-              {file.duration ? ` · ${formatDuration(file.duration)}` : ""}
-              {latestVersion && ` · v${latestVersion.versionNumber}`}
-            </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0 mt-0.5">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Preview */}
-        <div className="shrink-0 bg-black aspect-video relative">
+        {/* Preview — height capped on mobile so content below stays reachable */}
+        <div className="shrink-0 bg-black h-44 md:h-56 relative overflow-hidden">
           {file.type === "VIDEO" ? (
             loadingVersions ? (
               <div className="w-full h-full flex items-center justify-center">
@@ -749,10 +782,10 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
 
         {/* Actions review */}
         {canReview && file.status === "IN_REVIEW" && (
-          <div className="shrink-0 flex gap-2 px-5 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="shrink-0 flex gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
             <button onClick={() => { onReviewFile(file.id, "FINAL_APPROVED"); onClose(); }}
               className="flex-1 text-sm bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium">
-              ✓ Valider final
+              ✓ Valider
             </button>
             <button onClick={() => { onReviewFile(file.id, "REVISION_REQUESTED"); onClose(); }}
               className="flex-1 text-sm bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 font-medium">
@@ -782,7 +815,7 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
           ))}
         </div>
 
-        {/* Tab content */}
+        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {activeTab === "versions" && (
             <div className="space-y-3">
@@ -815,29 +848,13 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
           )}
 
           {activeTab === "comments" && (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Ajouter un commentaire…"
-                  rows={2}
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
-                />
-                <button
-                  onClick={postComment}
-                  disabled={postingComment || !newComment.trim()}
-                  className="self-end text-sm bg-icc-violet text-white px-3 py-2 rounded-lg hover:bg-icc-violet/90 disabled:opacity-40 font-medium"
-                >
-                  Envoyer
-                </button>
-              </div>
-              {loadingComments ? (
-                <p className="text-xs text-gray-400 text-center py-4">Chargement…</p>
-              ) : comments.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-4">Aucun commentaire.</p>
-              ) : (
-                comments.map((c) => (
+            loadingComments ? (
+              <p className="text-xs text-gray-400 text-center py-4">Chargement…</p>
+            ) : comments.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">Aucun commentaire.</p>
+            ) : (
+              <div className="space-y-2">
+                {comments.map((c) => (
                   <div key={c.id} className="space-y-2">
                     <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                       <div className="flex items-center gap-2 mb-1">
@@ -865,11 +882,31 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
                       </div>
                     ))}
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
+
+        {/* Comment input — pinned at bottom, always reachable */}
+        {activeTab === "comments" && (
+          <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-gray-200 bg-white">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Ajouter un commentaire…"
+              rows={2}
+              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
+            />
+            <button
+              onClick={postComment}
+              disabled={postingComment || !newComment.trim()}
+              className="self-end text-sm bg-icc-violet text-white px-3 py-2 rounded-lg hover:bg-icc-violet/90 disabled:opacity-40 font-medium"
+            >
+              Envoyer
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -951,6 +988,9 @@ export default function MediaProjectDetail({
         <FileDetailPanel
           file={selectedFile}
           thumbnailUrl={thumbnailUrls[selectedFile.id]}
+          allFiles={filteredFiles}
+          fileIndex={filteredFiles.findIndex((f) => f.id === selectedFile.id)}
+          onNavigate={setSelectedFile}
           canUpload={canUpload}
           canReview={canReview}
           onClose={() => setSelectedFile(null)}
