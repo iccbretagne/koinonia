@@ -692,7 +692,7 @@ function FileDetailPanel({ file, thumbnailUrl, canUpload, canReview, onClose, on
   const latestVersion = versions[0] ?? file.versions[0];
 
   return (
-    <div className="fixed inset-0 z-40 flex">
+    <div className="fixed inset-0 z-[60] flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-white h-full flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
