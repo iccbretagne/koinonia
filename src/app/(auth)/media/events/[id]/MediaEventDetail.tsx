@@ -108,16 +108,25 @@ function formatSize(bytes: number) {
 
 // ─── Upload zone ──────────────────────────────────────────────────────────────
 
-function PhotoUploadZone({ eventId, onUploaded }: { eventId: string; onUploaded: () => void }) {
+function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
+  eventId: string;
+  onUploaded: () => void;
+  onProgressChange?: (p: { done: number; total: number } | null) => void;
+}) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  function reportProgress(p: { done: number; total: number } | null) {
+    setProgress(p);
+    onProgressChange?.(p);
+  }
+
   async function uploadFiles(files: File[]) {
     setUploading(true);
     setError(null);
-    setProgress({ done: 0, total: files.length });
+    reportProgress({ done: 0, total: files.length });
     let done = 0;
     const errors: string[] = [];
     for (const file of files) {
@@ -131,10 +140,10 @@ function PhotoUploadZone({ eventId, onUploaded }: { eventId: string; onUploaded:
         errors.push(`${file.name}: Erreur réseau`);
       }
       done++;
-      setProgress({ done, total: files.length });
+      reportProgress({ done, total: files.length });
     }
     setUploading(false);
-    setProgress(null);
+    reportProgress(null);
     if (errors.length > 0) setError(errors.join("\n"));
     onUploaded();
   }
@@ -538,10 +547,11 @@ export default function MediaEventDetail({
   const [thumbnailUrls, setThumbnailUrls] = useState(initialThumbnailUrls);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<MediaPhotoStatus | "">("");
-  const [bulkLoading] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
   async function refreshEvent() {
     const res = await fetch(`/api/media-events/${event.id}`);
@@ -571,7 +581,7 @@ export default function MediaEventDetail({
     if (photoIds.length === 0) return;
     setPendingDelete(null);
     setLightboxIndex(null);
-    // Mise à jour optimiste
+    setBulkLoading(true);
     setEvent((prev) => ({
       ...prev,
       photos: prev.photos.filter((p) => !photoIds.includes(p.id)),
@@ -581,7 +591,8 @@ export default function MediaEventDetail({
     await fetch(`/api/media-events/${event.id}/photos?photoIds=${photoIds.join(",")}`, {
       method: "DELETE",
     });
-    refreshPhotos(); // synchronise en arrière-plan
+    setBulkLoading(false);
+    refreshPhotos();
   }
 
   async function deleteEvent() {
@@ -772,10 +783,39 @@ export default function MediaEventDetail({
           </div>
         </div>
 
+        {/* Bannière d'activité */}
+        {(uploadProgress || bulkLoading) && (
+          <div className="px-5 py-2 border-b border-gray-100 bg-amber-50 flex items-center gap-3">
+            <div className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
+            {uploadProgress ? (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-amber-800">
+                    Upload en cours · {uploadProgress.done}/{uploadProgress.total} photo{uploadProgress.total > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-xs text-amber-600">{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
+                </div>
+                <div className="h-1 bg-amber-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 transition-all duration-300"
+                    style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <span className="text-xs font-medium text-amber-800">Suppression en cours…</span>
+            )}
+          </div>
+        )}
+
         {/* Upload zone (conditionnelle) */}
         {showUpload && (
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
-            <PhotoUploadZone eventId={event.id} onUploaded={() => { setShowUpload(false); refreshPhotos(); }} />
+            <PhotoUploadZone
+              eventId={event.id}
+              onUploaded={() => { setShowUpload(false); refreshPhotos(); }}
+              onProgressChange={setUploadProgress}
+            />
           </div>
         )}
 

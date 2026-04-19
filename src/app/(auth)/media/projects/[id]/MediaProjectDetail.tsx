@@ -454,7 +454,11 @@ async function uploadToS3(uploadUrl: string, file: File, onProgress?: (p: number
 
 // ─── Zone d'upload nouveaux fichiers ─────────────────────────────────────────
 
-function FileUploadZone({ projectId, onUploaded }: { projectId: string; onUploaded: () => void }) {
+function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
+  projectId: string;
+  onUploaded: () => void;
+  onActivityChange?: (active: boolean, label?: string) => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ file: string; pct: number } | null>(null);
@@ -470,6 +474,7 @@ function FileUploadZone({ projectId, onUploaded }: { projectId: string; onUpload
     for (const file of valid) {
       try {
         setProgress({ file: file.name, pct: 0 });
+        onActivityChange?.(true, file.name);
         const signRes = await fetch("/api/media/files/upload/sign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -497,6 +502,7 @@ function FileUploadZone({ projectId, onUploaded }: { projectId: string; onUpload
 
     setUploading(false);
     setProgress(null);
+    onActivityChange?.(false);
     if (errors.length > 0) setError(errors.join("\n"));
     onUploaded();
   }
@@ -935,6 +941,7 @@ export default function MediaProjectDetail({
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [activity, setActivity] = useState<{ label: string } | null>(null);
 
   async function refreshProject() {
     const res = await fetch(`/api/media-projects/${project.id}`);
@@ -944,12 +951,15 @@ export default function MediaProjectDetail({
   }
 
   async function reviewFile(fileId: string, status: "FINAL_APPROVED" | "REVISION_REQUESTED" | "REJECTED") {
+    const labels = { FINAL_APPROVED: "Validation finale…", REVISION_REQUESTED: "Demande de révision…", REJECTED: "Rejet en cours…" };
+    setActivity({ label: labels[status] });
     await fetch(`/api/media/files/${fileId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
     await refreshProject();
+    setActivity(null);
   }
 
   async function deleteProject() {
@@ -1179,12 +1189,23 @@ export default function MediaProjectDetail({
             </div>
           </div>
 
+          {/* Bannière d'activité */}
+          {activity && (
+            <div className="px-5 py-2 border-b border-gray-100 bg-amber-50 flex items-center gap-3">
+              <div className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-xs font-medium text-amber-800">{activity.label}</span>
+            </div>
+          )}
+
           {/* Zone d'upload (toggle) */}
           {showUpload && (
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
               <FileUploadZone
                 projectId={project.id}
                 onUploaded={() => { setShowUpload(false); refreshProject(); }}
+                onActivityChange={(active, filename) =>
+                  setActivity(active ? { label: `Upload en cours · ${filename ?? ""}` } : null)
+                }
               />
             </div>
           )}
