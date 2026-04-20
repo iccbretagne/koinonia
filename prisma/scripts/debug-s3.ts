@@ -25,6 +25,8 @@ import {
 function ok(msg: string)   { console.log(`  ✓ ${msg}`); }
 function fail(msg: string) { console.log(`  ✗ ${msg}`); }
 function info(msg: string) { console.log(`  · ${msg}`); }
+function redactKey(v: string | undefined)    { return v ? v.slice(0, 6) + "…"        : "(non défini)"; }
+function redactSecret(v: string | undefined) { return v ? "***" + v.slice(-4)        : "(non défini)"; }
 function section(title: string) {
   console.log(`\n${"─".repeat(60)}`);
   console.log(`  ${title}`);
@@ -54,15 +56,15 @@ function displayConfig(label: string, vars: {
   endpoint?: string;
   region?: string;
   bucket?: string;
-  accessKeyId?: string;
-  secretAccessKey?: string;
+  accessKeyId: string;
+  secretAccessKey: string;
 }) {
   section(`Configuration — ${label}`);
-  info(`endpoint        : ${vars.endpoint   || "(non défini)"}`);
-  info(`region          : ${vars.region     || "(non défini, défaut: us-east-1)"}`);
-  info(`bucket          : ${vars.bucket     || "(non défini)"}`);
-  info(`access_key_id   : ${vars.accessKeyId    ? vars.accessKeyId.slice(0, 6) + "…" : "(non défini)"}`);
-  info(`secret_key      : ${vars.secretAccessKey ? "***" + vars.secretAccessKey.slice(-4) : "(non défini)"}`);
+  info(`endpoint        : ${vars.endpoint || "(non défini)"}`);
+  info(`region          : ${vars.region   || "(non défini, défaut: us-east-1)"}`);
+  info(`bucket          : ${vars.bucket   || "(non défini)"}`);
+  info(`access_key_id   : ${vars.accessKeyId}`);
+  info(`secret_key      : ${vars.secretAccessKey}`);
 }
 
 // ─── Tests de connectivité ────────────────────────────────────────────────────
@@ -191,7 +193,7 @@ async function main() {
     displayConfig(
       `Média${usesMediaVars ? " (MEDIA_S3_*)" : " (fallback S3_*)"}`,
       { endpoint: mediaEndpoint, region: mediaRegion, bucket: mediaBucket,
-        accessKeyId: mediaAccessKey, secretAccessKey: mediaSecretKey }
+        accessKeyId: redactKey(mediaAccessKey), secretAccessKey: redactSecret(mediaSecretKey) }
     );
 
     if (!mediaEndpoint || !mediaBucket || !mediaAccessKey || !mediaSecretKey) {
@@ -217,7 +219,7 @@ async function main() {
     displayConfig(
       "Backup (S3_*)",
       { endpoint: backupEndpoint, region: backupRegion, bucket: backupBucket,
-        accessKeyId: backupAccessKey, secretAccessKey: backupSecretKey }
+        accessKeyId: redactKey(backupAccessKey), secretAccessKey: redactSecret(backupSecretKey) }
     );
 
     if (!backupEndpoint || !backupBucket || !backupAccessKey || !backupSecretKey) {
