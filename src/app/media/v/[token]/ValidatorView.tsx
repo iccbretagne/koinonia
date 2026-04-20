@@ -19,7 +19,6 @@ type ValidationData = {
     status: string;
     isPrevalidator: boolean;
     hasPrevalidator: boolean;
-    photos: Photo[];
     totalPhotos: number;
     approvedCount: number;
     pendingCount: number;
