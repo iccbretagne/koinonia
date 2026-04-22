@@ -130,7 +130,6 @@ export default function AuthLayoutShell({
 
       {/* Bottom navigation (mobile only) */}
       <BottomNav
-        hasPlanningAccess={hasPlanningAccess}
         hasMembersAccess={hasMembersAccess}
         hasMyPlanning={hasMyPlanning}
         onMenuOpen={() => setSidebarOpen(true)}

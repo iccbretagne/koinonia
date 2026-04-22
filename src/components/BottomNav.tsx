@@ -4,22 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 interface BottomNavProps {
-  hasPlanningAccess?: boolean;
   hasMembersAccess?: boolean;
   hasMyPlanning?: boolean;
   onMenuOpen?: () => void;
 }
 
 // Sections that have a dedicated nav item — "Menu" is active for everything else
-const KNOWN_PREFIXES = ["/dashboard", "/planning", "/events"];
-
-function IconGrid({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-    </svg>
-  );
-}
+const KNOWN_PREFIXES = ["/planning", "/events"];
 
 function IconPerson({ className }: { className?: string }) {
   return (
@@ -46,7 +37,6 @@ function IconMenu({ className }: { className?: string }) {
 }
 
 export default function BottomNav({
-  hasPlanningAccess = true,
   hasMyPlanning = false,
   onMenuOpen,
 }: BottomNavProps) {
@@ -54,12 +44,6 @@ export default function BottomNav({
   const isOnKnownRoute = KNOWN_PREFIXES.some((p) => pathname.startsWith(p));
 
   const links = [
-    hasPlanningAccess && {
-      href: "/dashboard",
-      label: "Planning",
-      matchPrefix: "/dashboard",
-      icon: <IconGrid className="w-5 h-5" />,
-    },
     hasMyPlanning && {
       href: "/planning",
       label: "Mon planning",
