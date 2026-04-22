@@ -60,6 +60,7 @@ export default async function MediaEventDetailPage({
   return (
     <MediaEventDetail
       event={event}
+      churchId={churchId!}
       thumbnailUrls={thumbnailUrls}
       canUpload={canUpload}
       canManage={canManage}
