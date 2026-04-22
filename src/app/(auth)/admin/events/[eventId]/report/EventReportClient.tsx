@@ -46,7 +46,7 @@ interface Props {
 // ─── Configuration des champs par type de département ───────────────────────
 
 type FieldConfig = { key: string; label: string; color: string };
-type DeptType = "accueil" | "sainte-cene" | "integration" | null;
+type DeptType = "accueil" | "sainte-cene" | "integration" | "navette" | null;
 
 function norm(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -57,6 +57,7 @@ function getDeptType(label: string): DeptType {
   if (n === "accueil") return "accueil";
   if (n.includes("sainte") && n.includes("cene")) return "sainte-cene";
   if (n === "integration" || n.startsWith("integration")) return "integration";
+  if (n.includes("navette")) return "navette";
   return null;
 }
 
@@ -76,6 +77,11 @@ const DEPT_FIELDS: Record<Exclude<DeptType, null>, FieldConfig[]> = {
     { key: "passage",   label: "De passage",              color: "border-gray-200 focus:border-gray-400" },
     { key: "convertis", label: "Nouveaux convertis",      color: "border-green-200 focus:border-green-400" },
     { key: "voeux",     label: "Renouvellement de vœux",  color: "border-icc-violet/40 focus:border-icc-violet" },
+  ],
+  navette: [
+    { key: "hommes",  label: "Hommes",  color: "border-blue-200 focus:border-blue-400" },
+    { key: "femmes",  label: "Femmes",  color: "border-pink-200 focus:border-pink-400" },
+    { key: "enfants", label: "Enfants", color: "border-yellow-200 focus:border-yellow-400" },
   ],
 };
 
@@ -401,7 +407,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                       />
                     </div>
                   ))}
-                  {deptType === "accueil" && (
+                  {(deptType === "accueil" || deptType === "navette") && (
                     <>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Total adultes</label>
