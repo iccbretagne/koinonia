@@ -16,6 +16,7 @@ const configLinksDef = [
   { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
   { href: "/admin/churches", label: "Églises", permissions: ["church:manage"] },
+  { href: "/admin/backups", label: "Sauvegardes", permissions: ["church:manage"] },
   { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
 ];
 

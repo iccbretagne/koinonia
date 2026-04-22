@@ -531,13 +531,17 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+type PlanningEventOption = { id: string; title: string; type: string; date: string };
+
 export default function MediaEventDetail({
   event: initialEvent,
+  churchId,
   thumbnailUrls: initialThumbnailUrls,
   canUpload,
   canManage,
 }: {
   event: MediaEvent;
+  churchId: string;
   thumbnailUrls: Record<string, string>;
   canUpload: boolean;
   canManage: boolean;
@@ -552,6 +556,51 @@ export default function MediaEventDetail({
   const [showUpload, setShowUpload] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // ── Edit mode ────────────────────────────────────────────────────────────────
+  const [editMode, setEditMode] = useState(false);
+  const [editName, setEditName] = useState(event.name);
+  const [editPlanningEventId, setEditPlanningEventId] = useState<string>(event.planningEvent?.id ?? "");
+  const [planningEvents, setPlanningEvents] = useState<PlanningEventOption[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  async function openEdit() {
+    setEditName(event.name);
+    setEditPlanningEventId(event.planningEvent?.id ?? "");
+    setEditError(null);
+    if (planningEvents.length === 0) {
+      const res = await fetch(`/api/events?churchId=${churchId}`);
+      if (res.ok) {
+        const json = await res.json();
+        setPlanningEvents(Array.isArray(json) ? json : (json.events ?? []));
+      }
+    }
+    setEditMode(true);
+  }
+
+  async function saveEdit() {
+    setEditSaving(true);
+    setEditError(null);
+    const res = await fetch(`/api/media-events/${event.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editName.trim() || undefined,
+        planningEventId: editPlanningEventId || null,
+      }),
+    });
+    setEditSaving(false);
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setEditError(json.error ?? "Erreur lors de la sauvegarde");
+      return;
+    }
+    const updated = await res.json();
+    setEvent((prev) => ({ ...prev, name: updated.name, planningEvent: updated.planningEvent ?? null }));
+    setEditMode(false);
+    router.refresh();
+  }
 
   async function refreshEvent() {
     const res = await fetch(`/api/media-events/${event.id}`);
@@ -660,15 +709,73 @@ export default function MediaEventDetail({
                 <p className="text-sm text-gray-600 mt-2 leading-relaxed">{event.description}</p>
               )}
             </div>
-            {canManage && (
-              <button
-                onClick={deleteEvent}
-                className="text-xs text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 transition-colors shrink-0"
-              >
-                Supprimer
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+              {canManage && !editMode && (
+                <button
+                  onClick={openEdit}
+                  className="text-xs text-icc-violet hover:text-icc-violet/80 border border-icc-violet/30 hover:border-icc-violet/60 rounded-lg px-3 py-2 hover:bg-icc-violet/5 transition-colors"
+                >
+                  Modifier
+                </button>
+              )}
+              {canManage && (
+                <button
+                  onClick={deleteEvent}
+                  className="text-xs text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 transition-colors"
+                >
+                  Supprimer
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* ── Panneau d'édition ──────────────────────────────────────── */}
+          {editMode && (
+            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Nom de l&apos;événement</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+                  placeholder="Nom de l'événement"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Lier à un événement planning</label>
+                <select
+                  value={editPlanningEventId}
+                  onChange={(e) => setEditPlanningEventId(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet bg-white"
+                >
+                  <option value="">— Aucun lien —</option>
+                  {planningEvents.map((pe) => (
+                    <option key={pe.id} value={pe.id}>
+                      {new Date(pe.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} — {pe.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {editError && <p className="text-xs text-red-600">{editError}</p>}
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setEditMode(false)}
+                  className="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
+                  disabled={editSaving}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={editSaving || !editName.trim()}
+                  className="text-xs px-4 py-2 rounded-lg bg-icc-violet text-white font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+                >
+                  {editSaving ? "Enregistrement…" : "Enregistrer"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Stat pills */}
           <div className="flex flex-wrap gap-2 mt-4">
