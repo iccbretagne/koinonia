@@ -46,6 +46,24 @@ function getAccueilStats(sections: ReportSection[]) {
   return { hommes, femmes, enfants, adultes: hommes + femmes, total: hommes + femmes + enfants };
 }
 
+function getSainteCeneStats(sections: ReportSection[]) {
+  const s = sections.find((s) => norm(s.label).includes("sainte") && norm(s.label).includes("cene"));
+  if (!s?.stats) return null;
+  return {
+    supportsUtilises: s.stats["supportsUtilises"] ?? 0,
+    supportsRestants: s.stats["supportsRestants"] ?? 0,
+  };
+}
+
+function getNavetteStats(sections: ReportSection[]) {
+  const s = sections.find((s) => norm(s.label).includes("navette"));
+  if (!s?.stats) return null;
+  const hommes = s.stats["hommes"] ?? 0;
+  const femmes = s.stats["femmes"] ?? 0;
+  const enfants = s.stats["enfants"] ?? 0;
+  return { hommes, femmes, enfants, total: hommes + femmes + enfants };
+}
+
 function getIntegrationStats(sections: ReportSection[]) {
   const s = sections.find((s) => norm(s.label).startsWith("int") && norm(s.label).includes("gration"));
   if (!s?.stats) return null;
@@ -147,6 +165,35 @@ export default function ReportsClient({ events, churchId }: Props) {
       total: acc.total + r.total,
     }), { hommes: 0, femmes: 0, enfants: 0, adultes: 0, total: 0 });
     return { ...sum, count: rows.length, avgAdultes: Math.round(sum.adultes / rows.length), avgTotal: Math.round(sum.total / rows.length) };
+  }, [filteredEvents]);
+
+  // Agrégation stats Sainte Cène
+  const sainteCeneAgg = useMemo(() => {
+    const rows = filteredEvents
+      .filter((e) => e.statsEnabled && e.report)
+      .map((e) => getSainteCeneStats(e.report!.sections))
+      .filter(Boolean) as NonNullable<ReturnType<typeof getSainteCeneStats>>[];
+    if (!rows.length) return null;
+    return rows.reduce((acc, r) => ({
+      supportsUtilises: acc.supportsUtilises + r.supportsUtilises,
+      supportsRestants: acc.supportsRestants + r.supportsRestants,
+    }), { supportsUtilises: 0, supportsRestants: 0 });
+  }, [filteredEvents]);
+
+  // Agrégation stats Navette
+  const navetteAgg = useMemo(() => {
+    const rows = filteredEvents
+      .filter((e) => e.statsEnabled && e.report)
+      .map((e) => getNavetteStats(e.report!.sections))
+      .filter(Boolean) as NonNullable<ReturnType<typeof getNavetteStats>>[];
+    if (!rows.length) return null;
+    const sum = rows.reduce((acc, r) => ({
+      hommes: acc.hommes + r.hommes,
+      femmes: acc.femmes + r.femmes,
+      enfants: acc.enfants + r.enfants,
+      total: acc.total + r.total,
+    }), { hommes: 0, femmes: 0, enfants: 0, total: 0 });
+    return { ...sum, count: rows.length, avgTotal: Math.round(sum.total / rows.length) };
   }, [filteredEvents]);
 
   // Agrégation stats Intégration
@@ -426,6 +473,54 @@ export default function ReportsClient({ events, churchId }: Props) {
             </div>
           ) : (
             <p className="text-sm text-gray-400 italic">Aucune donnée Intégration sur cette période.</p>
+          )}
+
+          {/* Bloc Sainte Cène */}
+          {sainteCeneAgg ? (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-amber-50 border-b border-amber-100">
+                <h3 className="text-sm font-semibold text-amber-800">Sainte Cène</h3>
+              </div>
+              <div className="p-5 grid grid-cols-2 gap-4 max-w-xs">
+                {[
+                  { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises, color: "text-amber-700" },
+                  { label: "Supports restants",  value: sainteCeneAgg.supportsRestants, color: "text-gray-600" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">Aucune donnée Sainte Cène sur cette période.</p>
+          )}
+
+          {/* Bloc Navette */}
+          {navetteAgg ? (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 bg-sky-50 border-b border-sky-100">
+                <h3 className="text-sm font-semibold text-sky-800">Navette</h3>
+                <p className="text-xs text-sky-600 mt-0.5">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
+              </div>
+              <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte`,  color: "text-blue-600" },
+                  { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte`,  color: "text-pink-600" },
+                  { label: "Enfants (total)", value: navetteAgg.enfants,   sub: `moy. ${Math.round(navetteAgg.enfants / navetteAgg.count)}/culte`, color: "text-yellow-600" },
+                  { label: "Total général",   value: navetteAgg.total,     sub: `moy. ${navetteAgg.avgTotal}/culte`,                               color: "text-sky-700" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
+                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+                    <div className="text-xs text-gray-400">{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 italic">Aucune donnée Navette sur cette période.</p>
           )}
 
           {/* Détail par événement */}

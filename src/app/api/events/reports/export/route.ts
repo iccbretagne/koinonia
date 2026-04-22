@@ -75,6 +75,18 @@ export async function GET(request: Request) {
       });
       const intStats = (integration?.stats as Record<string, number | null> | null) ?? {};
 
+      // Find Sainte Cène section stats
+      const sainteCene = r.sections.find((s) => norm(s.label).includes("sainte") && norm(s.label).includes("cene"));
+      const ceneStats = (sainteCene?.stats as Record<string, number | null> | null) ?? {};
+
+      // Find Navette section stats
+      const navette = r.sections.find((s) => norm(s.label).includes("navette"));
+      const navStats = (navette?.stats as Record<string, number | null> | null) ?? {};
+      const navHommes = navStats["hommes"] ?? null;
+      const navFemmes = navStats["femmes"] ?? null;
+      const navEnfants = navStats["enfants"] ?? null;
+      const navTotal = navHommes !== null && navFemmes !== null ? navHommes + navFemmes + (navEnfants ?? 0) : null;
+
       return {
         "Date du culte": new Date(r.event.date).toLocaleDateString("fr-FR"),
         "Église": church?.name ?? "",
@@ -89,6 +101,13 @@ export async function GET(request: Request) {
         "Nouveaux arrivants (F)": intStats["femmes"] ?? null,
         "De passage": intStats["passage"] ?? null,
         "Nouveaux convertis": intStats["convertis"] ?? null,
+        "Renouvellement vœux": intStats["voeux"] ?? null,
+        "Cène — supports utilisés": ceneStats["supportsUtilises"] ?? null,
+        "Cène — supports restants": ceneStats["supportsRestants"] ?? null,
+        "Navette — Hommes": navHommes,
+        "Navette — Femmes": navFemmes,
+        "Navette — Enfants": navEnfants,
+        "Navette — Total": navTotal,
       };
     });
 
