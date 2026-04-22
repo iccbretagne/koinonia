@@ -21,6 +21,7 @@ const roleSchema = z.object({
     "DEPARTMENT_HEAD",
     "DISCIPLE_MAKER",
     "REPORTER",
+    "STAR",
   ]),
   ministryId: z.string().optional(),
   // Supporte les deux formats : string[] (legacy) ou { id, isDeputy }[]
@@ -64,8 +65,11 @@ export async function POST(
     const body = await request.json();
     const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
-    // Vérifier permission dans l'église ciblée
-    const session = await requireChurchPermission("departments:manage", churchId);
+    // Vérifier permission dans l'église ciblée.
+    // events:manage couvre SUPER_ADMIN, ADMIN, SECRETARY.
+    // Décision v1.0 : SECRETARY peut gérer les rôles non-privilégiés (MINISTER, DEPARTMENT_HEAD,
+    // DISCIPLE_MAKER, REPORTER, STAR) — rôle de confiance élevée, bras droit de l'admin.
+    const session = await requireChurchPermission("events:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
@@ -157,7 +161,7 @@ export async function PATCH(
     }
 
     // Vérifier permission dans l'église du rôle existant
-    const patchSession = await requireChurchPermission("departments:manage", existing.churchId);
+    const patchSession = await requireChurchPermission("events:manage", existing.churchId);
     requireRateLimit(request, { prefix: `roles:${patchSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Vérifier que le ministryId appartient à cette église
@@ -235,7 +239,7 @@ export async function DELETE(
     const { churchId, role } = roleSchema.parse(body);
 
     // Vérifier permission dans l'église ciblée
-    const delSession = await requireChurchPermission("departments:manage", churchId);
+    const delSession = await requireChurchPermission("events:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Block deletion of privileged roles by non-super-admins

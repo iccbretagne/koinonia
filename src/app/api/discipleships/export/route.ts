@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { errorResponse, ApiError } from "@/lib/api-utils";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 /**
  * Neutralise les valeurs pouvant être interprétées comme des formules Excel.
@@ -99,17 +99,37 @@ export async function GET(request: Request) {
       }
     }
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsRows.map(sanitizeRow)), "Statistiques");
-    if (detailRows.length > 0) {
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailRows.map(sanitizeRow)), "Détail présences");
+    const wb = new ExcelJS.Workbook();
+
+    const statsSheet = wb.addWorksheet("Statistiques");
+    const sanitizedStats = statsRows.map(sanitizeRow);
+    if (sanitizedStats.length > 0) {
+      statsSheet.columns = Object.keys(sanitizedStats[0]).map((key) => ({
+        header: key,
+        key,
+      }));
+      for (const row of sanitizedStats) {
+        statsSheet.addRow(row);
+      }
     }
 
-    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    if (detailRows.length > 0) {
+      const detailSheet = wb.addWorksheet("Détail présences");
+      const sanitizedDetail = detailRows.map(sanitizeRow);
+      detailSheet.columns = Object.keys(sanitizedDetail[0]).map((key) => ({
+        header: key,
+        key,
+      }));
+      for (const row of sanitizedDetail) {
+        detailSheet.addRow(row);
+      }
+    }
+
+    const buf = await wb.xlsx.writeBuffer();
     const month = from.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
     const filename = `discipolat-${month.replace(/\s/g, "-")}.xlsx`;
 
-    return new Response(buf, {
+    return new Response(buf as ArrayBuffer, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="${filename}"`,

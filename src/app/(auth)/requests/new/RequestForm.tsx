@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 
-type RequestCategory = "announcement" | "demand" | null;
+type RequestCategory = "announcement" | "visual" | "demand" | null;
 type DemandType =
   | "AJOUT_EVENEMENT"
   | "MODIFICATION_EVENEMENT"
@@ -35,6 +36,7 @@ export interface EditData {
 interface Props {
   churchId: string;
   canSubmitDemands: boolean;
+  announcementEvents: { id: string; title: string; type: string; date: string }[];
   events: { id: string; title: string; type: string; date: string }[];
   sourceOptions: { type: "department" | "ministry"; id: string; label: string }[];
   departments: { id: string; name: string; ministryName: string }[];
@@ -52,6 +54,16 @@ const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
 ];
 
 const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
+
+const VISUAL_FORMATS = [
+  "Story Instagram",
+  "Post carré (1:1)",
+  "Bannière web",
+  "Affiche A4",
+  "Slide / Écran",
+  "Logo",
+  "Autre",
+];
 
 
 const DEADLINE_OFFSETS = [
@@ -159,6 +171,7 @@ function initFromEditData(editData: EditData): {
 export default function RequestForm({
   churchId,
   canSubmitDemands,
+  announcementEvents,
   events,
   sourceOptions,
   departments,
@@ -175,6 +188,13 @@ export default function RequestForm({
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<RequestCategory>(init?.category ?? null);
   const [demandType, setDemandType] = useState<DemandType | null>(init?.demandType ?? null);
+
+  // Visual fields
+  const [visualTitle, setVisualTitle] = useState("");
+  const [visualBrief, setVisualBrief] = useState("");
+  const [visualFormat, setVisualFormat] = useState("");
+  const [visualDeadline, setVisualDeadline] = useState("");
+  const [visualSourceId, setVisualSourceId] = useState(sourceOptions[0]?.id ?? "");
 
   // Announcement fields
   const [annTitle, setAnnTitle] = useState(init?.annTitle ?? "");
@@ -233,6 +253,23 @@ export default function RequestForm({
     setCategory(null);
     setDemandType(null);
     setError(null);
+  }
+
+  async function submitVisual() {
+    const source = sourceOptions.find((s) => s.id === visualSourceId);
+    return fetch("/api/requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        churchId,
+        title: visualTitle,
+        brief: visualBrief || null,
+        format: visualFormat || null,
+        deadline: visualDeadline || null,
+        departmentId: source?.type === "department" ? source.id : null,
+        ministryId: source?.type === "ministry" ? source.id : null,
+      }),
+    });
   }
 
   async function submitAnnouncement() {
@@ -366,6 +403,8 @@ export default function RequestForm({
     try {
       const res = category === "announcement"
         ? await submitAnnouncement()
+        : category === "visual"
+        ? await submitVisual()
         : await submitDemand();
 
       if (!res) return;
@@ -404,6 +443,20 @@ export default function RequestForm({
           </div>
         </button>
 
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Médias</h3>
+        <button
+          onClick={() => setCategory("visual")}
+          className="w-full text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors mb-6"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎨</span>
+            <div>
+              <p className="font-semibold text-gray-900">Demander un visuel</p>
+              <p className="text-xs text-gray-500">Commande directe à la Production Média, sans lien avec une annonce</p>
+            </div>
+          </div>
+        </button>
+
         {canSubmitDemands && (
           <>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Demandes</h3>
@@ -433,15 +486,6 @@ export default function RequestForm({
   // Step 2: Form
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
-      {!isEditMode && (
-        <button
-          type="button"
-          onClick={reset}
-          className="text-sm text-icc-violet hover:underline mb-2"
-        >
-          ← Changer de type
-        </button>
-      )}
 
       {category === "announcement" && (
         <>
@@ -501,33 +545,111 @@ export default function RequestForm({
               Urgent
             </label>
           </div>
-          {annChannelInterne && events.filter((e) => new Date(e.date) >= new Date()).length > 0 && (
+          {annChannelInterne && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Dimanches de diffusion</label>
-              <div className="space-y-2 border-2 border-gray-200 rounded-lg p-3">
-                {events
-                  .filter((e) => new Date(e.date) >= new Date())
-                  .map((e) => (
-                    <label key={e.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={annTargetEventIds.includes(e.id)}
-                        onChange={() => toggleEvent(e.id)}
-                        className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
-                      />
-                      {e.title} — {new Date(e.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                    </label>
-                  ))}
-              </div>
-              <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+              <label className="block text-sm font-medium text-gray-700">
+                Dimanches de diffusion
+                {annTargetEventIds.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-icc-violet">
+                    {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
+                  </span>
+                )}
+              </label>
+              {announcementEvents.length === 0 ? (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
+                  <Link href="/admin/events" className="underline">Configurer les événements</Link>
+                </p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {announcementEvents.map((e) => {
+                      const selected = annTargetEventIds.includes(e.id);
+                      const date = new Date(e.date);
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => toggleEvent(e.id)}
+                          className={`px-3 py-1.5 rounded-full text-sm border-2 transition-colors ${
+                            selected
+                              ? "bg-icc-violet text-white border-icc-violet"
+                              : "bg-white text-gray-700 border-gray-300 hover:border-icc-violet/50"
+                          }`}
+                        >
+                          {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                          {" · "}
+                          {e.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+                </>
+              )}
             </div>
           )}
           {!isEditMode && sourceOptions.length > 1 && (
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Source</label>
+              <label className="block text-sm font-medium text-gray-700">Département</label>
               <select
                 value={annSourceId}
                 onChange={(e) => setAnnSourceId(e.target.value)}
+                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              >
+                {sourceOptions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </>
+      )}
+
+      {category === "visual" && (
+        <>
+          <Input
+            label="Titre"
+            value={visualTitle}
+            onChange={(e) => setVisualTitle(e.target.value)}
+            required
+            placeholder="Ex : Bannière formation leaders"
+          />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Brief</label>
+            <textarea
+              value={visualBrief}
+              onChange={(e) => setVisualBrief(e.target.value)}
+              rows={4}
+              placeholder="Description du besoin, couleurs, texte à inclure..."
+              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700">Format</label>
+            <select
+              value={visualFormat}
+              onChange={(e) => setVisualFormat(e.target.value)}
+              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            >
+              <option value="">— Sélectionner —</option>
+              {VISUAL_FORMATS.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Deadline souhaitée"
+            type="date"
+            value={visualDeadline}
+            onChange={(e) => setVisualDeadline(e.target.value)}
+          />
+          {sourceOptions.length > 1 && (
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">Département</label>
+              <select
+                value={visualSourceId}
+                onChange={(e) => setVisualSourceId(e.target.value)}
                 className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
               >
                 {sourceOptions.map((s) => (
@@ -910,7 +1032,7 @@ export default function RequestForm({
         <Button type="submit" disabled={submitting}>
           {submitting ? "Envoi..." : isEditMode ? "Enregistrer" : "Soumettre"}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push("/requests")}>
+        <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push("/requests") : reset()}>
           Annuler
         </Button>
       </div>

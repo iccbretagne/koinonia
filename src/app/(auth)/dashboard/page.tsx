@@ -1,5 +1,5 @@
 import { auth, getCurrentChurchId } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import EventSelector from "@/components/EventSelector";
@@ -26,7 +26,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
   const currentChurchId = await getCurrentChurchId(session);
   const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canEditPlanning = userPermissions.has("planning:edit");
 

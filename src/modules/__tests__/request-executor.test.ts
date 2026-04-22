@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { executeRequest } from "@/lib/request-executor";
+import { executeRequest } from "@/modules/planning";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 

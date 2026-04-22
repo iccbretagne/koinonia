@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { hasPermission } from "@/lib/permissions";
-import { executeRequest } from "@/lib/request-executor";
+import { rolePermissions } from "@/lib/registry";
+import { executeRequest, planningBus } from "@/modules/planning";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -47,7 +47,7 @@ export async function GET(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === minimal.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = session.user.churchRoles
@@ -120,6 +120,7 @@ export async function PATCH(
         churchId: true,
         type: true,
         status: true,
+        title: true,
         announcementId: true,
         payload: true,
       },
@@ -131,7 +132,7 @@ export async function PATCH(
     const userPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === existing.churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage =
       session.user.isSuperAdmin || userPermissions.has("events:manage");
@@ -282,6 +283,24 @@ export async function PATCH(
           where: { id: existing.announcementId },
           data: { status: announcementStatus },
         });
+      }
+
+      // Emit status_changed event for cross-module integrations (e.g. media module)
+      if (data.status !== undefined) {
+        await planningBus.emit(
+          "planning:request:status_changed",
+          { tx, churchId: existing.churchId, userId: session.user.id },
+          {
+            requestId: id,
+            requestType: existing.type,
+            churchId: existing.churchId,
+            oldStatus: existing.status,
+            newStatus: data.status,
+            updatedById: session.user.id,
+            title: existing.title,
+            payload: currentPayload,
+          }
+        );
       }
 
       return result;

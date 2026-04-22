@@ -1,17 +1,22 @@
 # Roadmap
 
-## Annonces et production media
+## Demandes et production media (systeme unifie)
 
-- [x] Module annonces : soumission par les referents (`/announcements/new`)
-- [x] Liste des annonces du referent (`/announcements`)
-- [x] Generation automatique des ServiceRequests selon les canaux (INTERNE/EXTERNE)
-- [x] Dashboard Secretariat (`/secretariat/announcements`) — traitement des DIFFUSION_INTERNE
+- [x] Systeme unifie de demandes (`Request`) : annonces + evenements + acces dans un seul modele
+- [x] Migration `ServiceRequest` → `Request` avec payload JSON type-specifique
+- [x] `DepartmentFunction` : enum → `String?` (flexible, extensible)
+- [x] "Mes demandes" (`/requests`) : liste unifiee annonces + demandes pour le soumetteur
+- [x] Formulaire unifie (`/requests/new`) : cartes par type, champs dynamiques
+- [x] Dashboard Secretariat (`/secretariat/requests`) — traitement de toutes les demandes
 - [x] Dashboard Production Media (`/media/requests`) — traitement des VISUEL
 - [x] Dashboard Communication (`/communication/requests`) — traitement des RESEAUX_SOCIAUX
-- [x] Demande visuel standalone sans annonce (`/media/requests/new`)
+- [x] Demande visuel standalone sans annonce (intégrée dans `/requests/new` — carte "Demander un visuel")
 - [x] Configuration des fonctions departementales (`/admin/departments/functions`)
 - [x] Flag `allowAnnouncements` sur les evenements
 - [x] Relation auto-referentielle VISUEL → canal parent (format contextualise)
+- [x] Execution automatique des demandes approuvees (`executeRequest()` dans `request-executor.ts`)
+- [x] Module Media : evenements, projets, pages publiques (`/media/*`)
+- [x] Module Media : gestion des phases (v/g/d) par projet
 
 ## Interface utilisateur
 
@@ -67,9 +72,7 @@
 ## Notifications
 
 - [x] Notifications email pour rappels de service (J-3, J-1)
-- [ ] Integration WhatsApp (API Business)
 - [x] Notifications in-app (badge, toast)
-- [ ] Notifications push (Web Push API)
 
 ## Statistiques
 
@@ -86,7 +89,7 @@
 - [x] API REST : CRUD, attendance, stats, tree (lignee recursive), export Excel
 - [x] Dashboard /admin/discipleship : 3 onglets (Relations, Appel, Statistiques)
 - [x] Export Excel : feuille statistiques + feuille detail presences
-- [ ] Notifications rappel de suivi pour les faiseurs de disciples
+- [x] Notifications rappel de suivi pour les faiseurs de disciples
 
 ## Comptes rendus
 
@@ -100,15 +103,18 @@
 - [x] Permission reports:edit separee de reports:view
 - [x] Champs orateur et titre du message dans les comptes rendus
 - [x] Export Excel des statistiques hebdomadaires des cultes avec selection de periode
-- [ ] Export PDF des comptes rendus
-- [ ] Historique des modifications d'un CR
+- [x] Export PDF des comptes rendus
 
 ## Gestion des acces
 
 - [x] Page /admin/access : attribution des ministres et responsables de departement
 - [x] Distinction principal/adjoint (isDeputy) sur les responsables de departement
 - [x] Onglet Comptes rendus : toggle REPORTER par utilisateur
-- [x] Reorganisation du menu sidebar en 6 sections (Planning, Evenements, Membres, Annonces, Discipolat, Configuration)
+- [x] Onglet STAR : visualisation du statut de liaison compte-membre, toggle role STAR
+- [x] Reorganisation du menu sidebar en 7 sections (Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
+- [x] Sidebar : section "Demandes" limitee aux flux de requetes (Mes demandes + Gestion secrétariat)
+- [x] Sidebar : section "Medias" separee (Evenements, Projets, Visuels, Communication) — visible selon permissions media:view ou appartenance au departement
+- [x] Sidebar : "Discipolat" passe en lien direct (suppression de l'accordéon superflu)
 
 ## Liaison compte STAR
 
@@ -116,7 +122,18 @@
 - [x] Page profil /profile : visualisation et demande de liaison
 - [x] Interface admin : colonne Compte et bouton Lier sur la page membres
 - [x] Liaison independante de l'attribution de role
-- [ ] Notification au responsable lors d'une nouvelle demande de liaison
+- [x] Notification aux admins/secretaires lors d'une nouvelle demande de liaison
+- [x] Notification au demandeur lors de l'approbation ou du rejet de sa demande
+- [x] Attribution du role STAR depuis /admin/access (onglet dedie)
+
+## Espace STAR (membre actif)
+
+- [x] Role `STAR` dans l'enum `Role` Prisma
+- [x] Session callback : departements du STAR derives automatiquement depuis `MemberUserLink → Member → MemberDepartment` (sans `user_departments`)
+- [x] Page "Mon planning" (`/planning`) : liste des services futurs et passes du membre lie
+- [x] Sidebar : lien "Mon planning" visible uniquement pour les utilisateurs STAR-only
+- [x] Guide utilisateur : onglet et description pour le role STAR
+- [x] `isStarOnly` flag dans le layout pour conditionner la navigation
 
 ## Guide utilisateur
 
@@ -138,5 +155,5 @@
 - [x] Rate limiting sur les API routes
 - [x] Logs structures (pino ou similaire)
 - [x] Migrations Prisma correctrices (rattrapage db push → migrate)
-- [ ] Tests E2E (Playwright ou Cypress)
-- [ ] Monitoring applicatif (healthcheck, metriques)
+- [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
+- [x] Monitoring applicatif (healthcheck, metriques)

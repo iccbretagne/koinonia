@@ -44,13 +44,28 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 ```
 koinonia/
 ├── .github/
-│   ├── workflows/ci.yml         # CI : typecheck + version check
+│   ├── workflows/ci.yml         # CI : typecheck + lint + lint:boundaries + tests
 │   └── dependabot.yml           # Mises a jour automatiques des dependances
 ├── prisma/
 │   ├── schema.prisma            # Schema BDD (domaine + NextAuth)
 │   └── seed.ts                  # Donnees initiales ICC Rennes
 ├── prisma.config.ts             # Config CLI Prisma 7 (datasource URL, generated client path)
+├── .dependency-cruiser.cjs      # Regles de frontieres modules (enforced en CI)
 ├── src/
+│   ├── core/                    # Infrastructure modulaire (framework-agnostic)
+│   │   ├── module-registry.ts   # ModuleRegistry + defineModule()
+│   │   ├── event-bus.ts         # EventBus<TEvents> typé, transaction-aware
+│   │   ├── boot.ts              # boot() : charge et valide les modules actifs
+│   │   └── permissions.ts       # buildRolePermissions(registry)
+│   ├── modules/                 # Logique metier par domaine
+│   │   ├── core/index.ts        # Manifeste : church:manage, users:manage
+│   │   ├── planning/
+│   │   │   ├── index.ts         # Manifeste + exports publics (planningBus, executeRequest…)
+│   │   │   ├── bus.ts           # planningBus = EventBus<PlanningEvents>
+│   │   │   ├── events.ts        # PlanningEvents type map
+│   │   │   └── services/
+│   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
+│   │   └── discipleship/index.ts # Manifeste : discipleship:view/manage/export
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout (Montserrat, metadata)
 │   │   ├── page.tsx             # Page de connexion (Google OAuth)
@@ -62,13 +77,13 @@ koinonia/
 │   │   │   ├── events/          # Liste et calendrier des evenements
 │   │   │   │   └── calendar/    # Vue calendrier
 │   │   │   ├── profile/         # Profil utilisateur et liaison compte STAR
-│   │   │   ├── announcements/   # Soumission et suivi des annonces
-│   │   │   │   └── new/         # Formulaire soumission annonce
+│   │   │   ├── requests/        # "Mes demandes" (annonces + demandes unifiees)
+│   │   │   │   ├── new/         # Formulaire unifie : annonce, visuel standalone, demandes
+│   │   │   │   └── [id]/edit/   # Edition d'une demande en attente
 │   │   │   ├── secretariat/
-│   │   │   │   └── announcements/ # Dashboard Secretariat (DIFFUSION_INTERNE)
+│   │   │   │   └── requests/    # Dashboard Secretariat (toutes demandes)
 │   │   │   ├── media/
-│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL)
-│   │   │   │       └── new/     # Demande visuel standalone
+│   │   │   │   └── requests/    # Dashboard Production Media (VISUEL) — traitement uniquement
 │   │   │   ├── communication/
 │   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
 │   │   │   ├── guide/           # Guide utilisateur par role
@@ -76,7 +91,7 @@ koinonia/
 │   │   │       ├── layout.tsx   # Guard multi-permissions (requireAnyPermission)
 │   │   │       ├── churches/    # CRUD eglises + onboarding
 │   │   │       ├── users/       # Gestion utilisateurs
-│   │   │       ├── access/      # Gestion des acces et roles (ministres, resp. dept, reporters)
+│   │   │       ├── access/      # Gestion des acces et roles
 │   │   │       ├── ministries/  # CRUD ministeres
 │   │   │       ├── departments/ # CRUD departements
 │   │   │       │   └── functions/ # Config fonctions departementales
@@ -89,7 +104,7 @@ koinonia/
 │   │   └── api/                 # Route handlers (API REST)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
-│   │       ├── service-requests/ # GET/POST + [id] GET/PATCH
+│   │       ├── requests/        # GET/POST + [id] GET/PATCH/DELETE (unifie)
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── discipleships/   # CRUD, attendance, stats, tree, export
@@ -101,7 +116,7 @@ koinonia/
 │   │       ├── notifications/
 │   │       └── users/           # CRUD + [userId]/roles POST/PATCH/DELETE
 │   ├── components/
-│   │   ├── Sidebar.tsx          # Sidebar (6 sections : Planning, Evenements, Membres, Annonces, Discipolat, Configuration)
+│   │   ├── Sidebar.tsx          # Sidebar (sections : Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
 │   │   ├── AuthLayoutShell.tsx  # Shell layout authentifie (sidebar + bottom nav + contenu)
 │   │   ├── BottomNav.tsx        # Navigation mobile fixe en bas
 │   │   ├── NotificationBell.tsx # Cloche de notifications avec badge
@@ -109,9 +124,6 @@ koinonia/
 │   │   ├── PlanningGrid.tsx     # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx    # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
-│   │   ├── GuideContent.tsx     # Contenu du guide par role (13 features, 7 roles)
-│   │   ├── ViewToggle.tsx
-│   │   ├── DashboardActions.tsx
 │   │   └── ui/                  # Composants UI reutilisables
 │   │       ├── Button.tsx
 │   │       ├── Input.tsx
@@ -124,9 +136,12 @@ koinonia/
 │   │   └── prisma/              # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
 │   │   ├── prisma.ts            # Singleton Prisma (globalThis pattern, driver adapter PrismaMariaDb)
-│   │   ├── auth.ts              # Config NextAuth + helpers
+│   │   ├── auth.ts              # Config NextAuth + helpers (requireAuth, requirePermission…)
+│   │   ├── registry.ts          # Boot registry + rolePermissions pre-calcule
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
-│   │   └── permissions.ts       # Matrice roles-permissions RBAC (7 roles)
+│   │   ├── audit.ts             # logAudit() — journal des actions
+│   │   ├── rate-limit.ts        # Limiteur de debit par utilisateur
+│   │   └── permissions.ts       # DEPRECATED — utiliser rolePermissions de @/lib/registry
 │   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
 ├── docker-compose.yml           # MariaDB locale
@@ -140,6 +155,9 @@ npm run dev              # Developpement (Turbopack)
 npm run build            # Build de production
 npm run start            # Serveur de production
 npm run typecheck        # Verification TypeScript (tsc --noEmit)
+npm run lint             # ESLint
+npm run lint:boundaries  # Verification des frontieres modules (dependency-cruiser)
+npm run test             # Tests unitaires (Vitest)
 npm run db:push          # Appliquer le schema Prisma
 npm run db:seed          # Charger les donnees ICC Rennes
 npm run db:migrate         # Creer une migration (dev)
@@ -170,8 +188,10 @@ export async function GET(
 
 - `requireAuth()` — verifie la session, throw `UNAUTHORIZED`
 - `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN`
+- `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
 - `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste
 - `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
+- `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID
 
 ### Reponses API (`src/lib/api-utils.ts`)
 
@@ -259,7 +279,7 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 
 ## CI/CD
 
-- **GitHub Actions** (`.github/workflows/ci.yml`) : typecheck sur chaque PR et push main, validation version sur tags
+- **GitHub Actions** (`.github/workflows/ci.yml`) : typecheck + lint + lint:boundaries + tests sur chaque PR, validation version sur tags
 - **Dependabot** (`.github/dependabot.yml`) : mises a jour hebdomadaires npm + GitHub Actions (minor/patch uniquement, majeures ignorées)
 
 ## Documentation
@@ -284,3 +304,6 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 7. **Erreurs** : utiliser `ApiError` pour les erreurs metier, Zod pour la validation
 8. **Permissions** : toujours proteger les routes API avec `requireAuth()` ou `requirePermission()`
 9. **Migrations** : toujours creer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schema
+10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry` (PAS `hasPermission` de `@/lib/permissions` qui est deprecated)
+11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
+12. **Frontieres modules** : verifier `npm run lint:boundaries` apres tout ajout de dependance entre modules

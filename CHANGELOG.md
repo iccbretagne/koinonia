@@ -6,6 +6,53 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.0.0] - 2026-04-17
+
+### Sécurité — audit pré-v1.0
+
+- BLOCKER-1 : gestion des rôles restreinte à `events:manage` — MINISTER exclu, SECRETARY autorisé (décision documentée)
+- BLOCKER-2 : `getUserDepartmentScope(session, churchId)` — filtrage par église pour corriger le bypass scope multi-tenant
+- BLOCKER-3 : clés S3 upload re-dérivées server-side — `originalKey`/`thumbnailKey` client ignorés
+- HIGH-1 : recherche utilisateur scopée à l'église (`churchRoles ∨ memberLinkRequests PENDING/APPROVED`) ; éligibilité vérifiée dans `member-user-links`
+- HIGH-2 : machine d'état validation photo — transitions bloquées par type de token (PREVALIDATOR/VALIDATOR) ; correction d'erreur APPROVED ↔ REJECTED intentionnellement autorisée
+- HIGH-1 : filtre `memberLinkRequests` restreint aux statuts PENDING/APPROVED
+- P0-1 : tokens VALIDATOR/PREVALIDATOR réservés à `media:manage` ; masquage pour `media:view`
+- P0-2 : scope département enforced sur GET et PUT planning
+- P0-4 : séparation S3 backup/media — `deleteMediaFiles()` dédié
+- P0-5 : XOR strict `mediaEventId ⊕ mediaProjectId` à l'upload
+- P0-6 : `MediaSettings` tenant-scoped par `churchId` (migration `20260416000000`)
+- P1-1 : email retiré du select `/users/search`
+- P1-3 : `xlsx` remplacé par `exceljs` (HIGH CVE)
+- P1-4 : `lint:boundaries` couvre `src/core src/modules src/app`
+- Exceptions sécurité résiduelles documentées dans `docs/security-exceptions.md`
+
+### Ajouté
+
+- Navigation mobile : bottom sheet avec drill-down à deux niveaux (remplace le drawer latéral)
+- Planning mobile : liste plate avec séparateurs de ministère (suppression des accordéons imbriqués)
+- Suppression du bouton "Planning" de la bottom nav mobile
+- Endpoint `GET /api/health` — statut, version, db, uptime
+- PWA : manifest + service worker
+- Export PDF planning et comptes rendus
+- Notifications email rappels de service (J-3, J-1)
+- Module Discipolat : relations, suivi présences, export Excel, stats
+- Module Média : événements, projets, phases, tokens de validation
+- Système de demandes unifié (`Request`) — annonces + demandes secrétariat
+- Dashboard comptes rendus avec export Excel/PDF
+- Gestion des accès (`/admin/access`) : MINISTER, DEPARTMENT_HEAD, REPORTER, STAR
+- Liaison compte STAR (`MemberUserLink`, `MemberLinkRequest`)
+- Calendrier événements, récurrence, duplication planning
+- Vue planning STAR (`/planning`)
+- Statistiques présences par membre et département
+- Audit log (`AuditLog`)
+- Rate limiting sur routes sensibles
+- CI/CD GitHub Actions (typecheck, lint, boundaries, tests, version check)
+- Déploiement Docker multi-stage + Traefik
+
+### Tests
+
+- 267 tests (38 fichiers) — couverture routes RBAC, multi-tenant, S3, machine d'état
+
 ## [v0.19.7] - 2026-04-12
 
 ### Sécurité

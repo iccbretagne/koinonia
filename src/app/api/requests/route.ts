@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import { DEPT_FN } from "@/lib/department-functions";
 import { z } from "zod";
 
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     const churchPermissions = new Set(
       session.user.churchRoles
         .filter((r) => r.churchId === churchId)
-        .flatMap((r) => hasPermission(r.role))
+        .flatMap((r) => rolePermissions[r.role] ?? [])
     );
     const canManage =
       session.user.isSuperAdmin || churchPermissions.has("events:manage");

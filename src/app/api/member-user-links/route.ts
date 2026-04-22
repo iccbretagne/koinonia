@@ -32,6 +32,14 @@ export async function POST(request: Request) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new ApiError(404, "Utilisateur introuvable");
 
+    // Vérifier que l'utilisateur a un lien légitime avec cette église
+    const userInChurch =
+      (await prisma.userChurchRole.findFirst({ where: { userId, churchId } })) ??
+      (await prisma.memberLinkRequest.findFirst({ where: { userId, churchId, status: { in: ["PENDING", "APPROVED"] } } }));
+    if (!userInChurch) {
+      throw new ApiError(403, "Cet utilisateur n'a pas de lien avec cette église");
+    }
+
     // Vérifier qu'il n'y a pas déjà un lien pour ce membre ou cet utilisateur dans cette église
     const existingByMember = await prisma.memberUserLink.findUnique({
       where: { memberId },

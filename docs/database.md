@@ -41,12 +41,29 @@ Tous les IDs sont des `String @default(cuid())`.
 │     │        ├──► discipleship_attendances                          │
 │     │        └──► event_reports ──► event_report_sections           │
 │     │                                          │                     │
-│     ├──► announcements ──► service_requests ───┘                    │
-│     ├──► service_requests                                            │
+│     ├──► announcements ──► requests ───────────┘                    │
+│     ├──► requests                                                    │
 │     ├──► member_user_links                                           │
 │     ├──► member_link_requests                                        │
 │     ├──► discipleships                                               │
 │     └──► event_reports                                               │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Module Média                                 │
+│                                                                      │
+│  churches ──► media_events ──► media_photos                         │
+│          │         │                                                 │
+│          │         └──► media_share_tokens                          │
+│          │                                                           │
+│          ├──► media_projects ──► media_files ──► media_file_versions│
+│          │              │             │                              │
+│          │              │             ├──► media_comments           │
+│          │              └──► media_share_tokens                     │
+│          │                                                           │
+│          ├──► media_zip_jobs                                         │
+│          └──► media_settings                                         │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
@@ -101,7 +118,7 @@ Association utilisateur-eglise-role. Un utilisateur peut avoir plusieurs roles d
 | `id` | String (cuid) | Identifiant unique |
 | `userId` | String | Ref vers `users` |
 | `churchId` | String | Ref vers `churches` |
-| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD`, `DISCIPLE_MAKER`, `REPORTER` |
+| `role` | Role (enum) | `SUPER_ADMIN`, `ADMIN`, `SECRETARY`, `MINISTER`, `DEPARTMENT_HEAD`, `DISCIPLE_MAKER`, `REPORTER`, `STAR` |
 | `ministryId` | String? | Ref vers `ministries` (pour MINISTER) |
 
 Contrainte unique : `[userId, churchId, role]`
@@ -136,7 +153,7 @@ Departements d'un ministere (Choristes, Musiciens, Son...).
 |---|---|---|
 | `name` | String | Nom du departement |
 | `ministryId` | String | Ref vers `ministries` |
-| `function` | DepartmentFunction? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA` (nullable) |
+| `function` | String? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisee (nullable) |
 
 #### `members`
 
@@ -355,30 +372,29 @@ Table de jointure Announcement ↔ Event (evenements cibles par l'annonce).
 
 Cle primaire composite : `[announcementId, eventId]`
 
-#### `service_requests`
+#### `requests`
 
-Demandes de service generees automatiquement lors de la soumission d'une annonce, ou creees manuellement (visuels standalone).
+Modele unifie pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL) et demandes metier (AJOUT_EVENEMENT, MODIFICATION_EVENEMENT, ANNULATION_EVENEMENT, MODIFICATION_PLANNING, DEMANDE_ACCES).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `churchId` | String | Ref vers `churches` |
-| `type` | ServiceRequestType | `VISUEL`, `DIFFUSION_INTERNE`, `RESEAUX_SOCIAUX` |
+| `type` | RequestType | Type de demande (voir enum ci-dessous) |
+| `status` | RequestStatus | Statut (voir enum ci-dessous) |
+| `title` | String | Titre de la demande |
+| `payload` | Json | Donnees specifiques au type (brief, eventId, changes, etc.) |
 | `submittedById` | String | Ref vers `users` (soumetteur) |
-| `departmentId` | String? | Departement soumetteur (optionnel) |
-| `ministryId` | String? | Ministere soumetteur (optionnel) |
-| `assignedDeptId` | String? | Departement traitant (resolu via `DepartmentFunction`) |
-| `announcementId` | String? | Ref vers `announcements` (si generee depuis une annonce) |
-| `parentRequestId` | String? | Ref vers `service_requests` (auto-referentiel : lie un VISUEL a son canal parent) |
-| `title` | String | Titre |
-| `brief` | String? (Text) | Description / brief |
-| `format` | String? | Format attendu (ex: Slide/Affiche, Story/Post) |
-| `deadline` | DateTime? | Echeance |
-| `status` | ServiceRequestStatus | `EN_ATTENTE`, `EN_COURS`, `LIVRE`, `ANNULE` |
-| `deliveryLink` | String? | Lien de livraison |
-| `reviewNotes` | String? | Notes de revue |
-| `reviewedById` | String? | Ref vers `users` (revieweur) |
-| `reviewedAt` | DateTime? | Date de revue |
+| `departmentId` | String? | Ref vers `departments` (departement source) |
+| `ministryId` | String? | Ref vers `ministries` (ministere source) |
+| `assignedDeptId` | String? | Ref vers `departments` (departement traitant, resolu via fonction) |
+| `announcementId` | String? | Ref vers `announcements` (si liee a une annonce) |
+| `parentRequestId` | String? | Ref vers `requests` (auto-referentiel : lie un VISUEL a son canal parent) |
+| `reviewNotes` | String? (Text) | Notes du traitant |
+| `reviewedById` | String? | Ref vers `users` (traitant) |
+| `reviewedAt` | DateTime? | Date de traitement |
+| `executedAt` | DateTime? | Date d'execution automatique (demandes metier) |
+| `executionError` | String? (Text) | Message d'erreur si execution echouee |
 | `submittedAt` | DateTime | Date de soumission |
 | `updatedAt` | DateTime | Derniere modification |
 
@@ -396,6 +412,7 @@ MINISTER         # Responsable d'un ministere
 DEPARTMENT_HEAD  # Responsable d'un ou plusieurs departements
 DISCIPLE_MAKER   # Faiseur de disciples (acces aux fonctionnalites de discipolat)
 REPORTER         # Rapporteur (acces a la saisie des comptes-rendus)
+STAR             # Membre actif (acces uniquement a son planning personnel via MemberUserLink)
 ```
 
 #### `ServiceStatus`
@@ -407,15 +424,17 @@ INDISPONIBLE        # Absent
 REMPLACANT          # Remplace un membre indisponible
 ```
 
-#### `DepartmentFunction`
+#### Fonctions departementales (`department.function`)
+
+Champ `String?` sur le modele `Department` (plus un enum Prisma depuis v1.0). Valeurs conventionnelles :
 
 ```
-SECRETARIAT       # Departement traitant les diffusions internes
+SECRETARIAT       # Departement traitant les diffusions internes et demandes
 COMMUNICATION     # Departement traitant les publications reseaux sociaux
 PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
 ```
 
-Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`.
+Des valeurs personnalisees sont possibles. Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`. Constantes definies dans `src/lib/department-functions.ts`.
 
 #### `MemberLinkRequestStatus`
 
@@ -434,21 +453,233 @@ TRAITEE     # Traitement termine
 ANNULEE     # Annulee
 ```
 
-#### `ServiceRequestType`
+#### `RequestType`
 
 ```
-VISUEL             # Creation d'un visuel (Production Media)
-DIFFUSION_INTERNE  # Diffusion interne (Secretariat)
-RESEAUX_SOCIAUX    # Publication reseaux sociaux (Communication)
+DIFFUSION_INTERNE      # Annonce : diffusion interne (Secretariat)
+RESEAUX_SOCIAUX        # Annonce : publication reseaux sociaux (Communication)
+VISUEL                 # Annonce : creation d'un visuel (Production Media) — enfant auto
+AJOUT_EVENEMENT        # Demande : ajouter un evenement au planning
+MODIFICATION_EVENEMENT # Demande : modifier un evenement existant
+ANNULATION_EVENEMENT   # Demande : annuler un evenement
+MODIFICATION_PLANNING  # Demande : modifier le statut d'un membre dans un planning
+DEMANDE_ACCES          # Demande : attribuer un role a un utilisateur
 ```
 
-#### `ServiceRequestStatus`
+#### `RequestStatus`
 
 ```
-EN_ATTENTE  # Demande recue, en attente
-EN_COURS    # En cours de traitement
-LIVRE       # Livre (avec lien de livraison)
-ANNULE      # Annulee
+EN_ATTENTE   # Recue, en attente de traitement
+EN_COURS     # Traitement en cours (annonces)
+APPROUVEE    # Validee (demandes metier, avant execution)
+EXECUTEE     # Execution automatique reussie
+LIVRE        # Livree manuellement (annonces)
+REFUSEE      # Refusee (note obligatoire)
+ANNULE       # Annulee par le soumetteur ou en cascade
+ERREUR       # Echec de l'execution automatique
+```
+
+### Module Media
+
+#### `media_events`
+
+Galerie photos liee a un evenement planning (ou autonome).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `name` | String | Nom de l'evenement media |
+| `date` | DateTime | Date de l'evenement |
+| `description` | String? (Text) | Description optionnelle |
+| `status` | MediaEventStatus | Statut : `DRAFT`, `PENDING_REVIEW`, `REVIEWED`, `ARCHIVED` |
+| `planningEventId` | String? (unique) | Ref vers `events` (lien optionnel au planning) |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_photos`
+
+Photos appartenant a un evenement media.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaEventId` | String | Ref vers `media_events` (cascade delete) |
+| `filename` | String | Nom du fichier original |
+| `mimeType` | String | Type MIME (image/jpeg, image/webp…) |
+| `size` | Int | Taille en octets |
+| `width` / `height` | Int? | Dimensions en pixels |
+| `originalKey` | String | Cle S3 de l'original (JPEG haute resolution) |
+| `thumbnailKey` | String | Cle S3 du thumbnail (WebP 400px) |
+| `status` | MediaPhotoStatus | Statut de validation |
+| `validatedAt` | DateTime? | Date de validation |
+| `validatedBy` | String? | Identifiant du validateur (token ou user) |
+| `uploadedAt` | DateTime | Date d'upload |
+
+#### `media_projects`
+
+Conteneur de fichiers de production (videos, visuels) sans lien planning.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `name` | String | Nom du projet |
+| `description` | String? (Text) | Description optionnelle |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_files`
+
+Fichier de production (video ou visuel) appartenant a un projet.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaProjectId` | String | Ref vers `media_projects` (cascade delete) |
+| `type` | MediaFileType | `VIDEO`, `VISUAL`, `PHOTO` |
+| `status` | MediaFileStatus | Statut du workflow de production |
+| `filename` | String | Nom du fichier |
+| `mimeType` | String | Type MIME |
+| `size` | Int | Taille en octets |
+| `width` / `height` | Int? | Dimensions (visuels) |
+| `duration` | Int? | Duree en secondes (videos) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_file_versions`
+
+Versions successives d'un fichier de production.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `versionNumber` | Int | Numero de version (auto-incremente par fichier) |
+| `originalKey` | String | Cle S3 du fichier |
+| `thumbnailKey` | String | Cle S3 du thumbnail / premiere frame |
+| `notes` | String? (Text) | Notes de la version |
+| `createdById` | String? | Ref vers `users` |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_comments`
+
+Commentaires de revision sur un fichier, avec support des timecodes video.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `type` | MediaCommentType | `GENERAL` ou `TIMECODE` |
+| `content` | String (Text) | Contenu du commentaire |
+| `timecode` | Int? | Position en secondes (si `TIMECODE`) |
+| `parentId` | String? | Ref vers `media_comments` (reponses imbriquees) |
+| `authorId` | String? | Ref vers `users` (null si commentaire externe) |
+| `authorName` | String? | Nom affiche (commentaires externes) |
+| `authorImage` | String? | Avatar (commentaires externes) |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_share_tokens`
+
+Tokens de partage sans authentification. Donne acces a un evenement ou un projet.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `token` | String (unique) | Token aleatoire (URL-safe) |
+| `type` | MediaTokenType | `GALLERY`, `MEDIA`, `VALIDATOR`, `PREVALIDATOR` |
+| `label` | String? | Etiquette (ex : "Familles") |
+| `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`) |
+| `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`) |
+| `expiresAt` | DateTime? | Expiration (null = illimite) |
+| `usageCount` | Int | Nombre d'utilisations (default: 0) |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` | DateTime | Date de creation |
+
+#### `media_zip_jobs`
+
+Jobs asynchrones de generation de ZIP pour le telechargement groupe.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `mediaEventId` | String | Ref vers `media_events` |
+| `status` | MediaJobStatus | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
+| `zipKey` | String? | Cle S3 du ZIP genere |
+| `error` | String? (Text) | Message d'erreur si echec |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+#### `media_settings`
+
+Parametres globaux du module media par eglise (singleton par eglise).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String (unique) | Ref vers `churches` |
+| `logoKey` | String? | Cle S3 du logo |
+| `faviconKey` | String? | Cle S3 du favicon |
+| `retentionDays` | Int? | Retention en jours (null = indefinie) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+### Enums media
+
+#### `MediaEventStatus`
+```
+DRAFT          # Brouillon — en cours d'alimentation
+PENDING_REVIEW # En revision — soumis aux validateurs
+REVIEWED       # Valide
+ARCHIVED       # Archive
+```
+
+#### `MediaPhotoStatus`
+```
+PENDING      # En attente de validation
+APPROVED     # Approuvee
+REJECTED     # Rejetee
+PREVALIDATED # Pre-validee (par un PREVALIDATOR)
+PREREJECTED  # Pre-rejetee (par un PREVALIDATOR)
+```
+
+#### `MediaFileType`
+```
+VIDEO   # Fichier video (MP4, MOV, WebM)
+VISUAL  # Visuel statique (JPEG, PNG, WebP, SVG, PDF)
+PHOTO   # Photo (usage galerie)
+```
+
+#### `MediaFileStatus`
+```
+DRAFT              # Brouillon — upload en cours ou non soumis
+IN_REVIEW          # En cours de revision
+REVISION_REQUESTED # Revision demandee par le reviseur
+FINAL_APPROVED     # Valide final
+REJECTED           # Rejete
+PENDING            # En attente (intermediaire)
+APPROVED           # Approuve (intermediaire)
+PREVALIDATED       # Pre-valide
+PREREJECTED        # Pre-rejete
+```
+
+#### `MediaCommentType`
+```
+GENERAL   # Commentaire general sur le fichier
+TIMECODE  # Commentaire ancre a une position temporelle
+```
+
+#### `MediaTokenType`
+```
+GALLERY      # Galerie lecture seule (/media/g/[token])
+MEDIA        # Telechargement photos approuvees (/media/d/[token])
+VALIDATOR    # Validation/rejet des photos (/media/v/[token])
+PREVALIDATOR # Pre-validation sans approbation finale (/media/v/[token])
+```
+
+#### `MediaJobStatus`
+```
+PENDING    # En attente de traitement
+PROCESSING # En cours de generation
+COMPLETED  # ZIP genere et disponible
+FAILED     # Echec de generation
 ```
 
 ## Seed (donnees initiales)

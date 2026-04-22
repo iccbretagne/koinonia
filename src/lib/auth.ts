@@ -134,8 +134,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
+      // For STAR roles, load departments from the member link
+      const starDeptMap = new Map<string, { id: string; name: string }[]>();
+      for (const cr of churchRoles) {
+        if (cr.role === "STAR") {
+          const link = await prisma.memberUserLink.findUnique({
+            where: { userId_churchId: { userId: user.id, churchId: cr.churchId } },
+            include: {
+              member: {
+                include: {
+                  departments: {
+                    include: { department: { select: { id: true, name: true } } },
+                  },
+                },
+              },
+            },
+          });
+          if (link) {
+            starDeptMap.set(cr.id, link.member.departments.map((d) => d.department));
+          }
+        }
+      }
+
       session.user.churchRoles = churchRoles.map((cr) => {
-        const extraDepts = ministerDeptMap.get(cr.id);
+        const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
         const departments = cr.departments.map((d) => ({ department: d.department }));
         if (extraDepts) {
           const existingIds = new Set(departments.map((d) => d.department.id));
@@ -175,9 +197,9 @@ export async function requirePermission(permission: string, churchId?: string) {
     (r) => !churchId || r.churchId === churchId
   );
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    roles.flatMap((r) => hasPermission(r.role))
+    roles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!userPermissions.has(permission)) {
@@ -193,9 +215,9 @@ export async function requireAnyPermission(...permissions: string[]) {
   // Global super admin bypasses all permissions
   if (session.user.isSuperAdmin) return session;
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => hasPermission(r.role))
+    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!permissions.some((p) => userPermissions.has(p))) {
@@ -239,9 +261,11 @@ export async function getDiscipleshipScope(
   return { scoped: true, memberId: link?.memberId ?? null };
 }
 
-export function getUserDepartmentScope(session: Session): DepartmentScope {
-  const hasGlobalRole = session.user.churchRoles.some((r) =>
-    GLOBAL_ROLES.includes(r.role)
+export function getUserDepartmentScope(session: Session, churchId: string): DepartmentScope {
+  if (session.user.isSuperAdmin) return { scoped: false };
+
+  const hasGlobalRole = session.user.churchRoles.some(
+    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role)
   );
 
   if (hasGlobalRole) {
@@ -250,9 +274,9 @@ export function getUserDepartmentScope(session: Session): DepartmentScope {
 
   const departmentIds = Array.from(
     new Set(
-      session.user.churchRoles.flatMap((r) =>
-        r.departments.map((d) => d.department.id)
-      )
+      session.user.churchRoles
+        .filter((r) => r.churchId === churchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id))
     )
   );
 
@@ -279,9 +303,9 @@ export async function requireChurchPermission(
     throw new Error("FORBIDDEN");
   }
 
-  const { hasPermission } = await import("./permissions");
+  const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
-    roles.flatMap((r) => hasPermission(r.role))
+    roles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
 
   if (!userPermissions.has(permission)) {
@@ -315,7 +339,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -383,6 +407,22 @@ export async function resolveChurchId(
       });
       if (!ministry) throw new ApiError(404, "Ministère introuvable");
       return ministry.churchId;
+    }
+    case "mediaEvent": {
+      const me = await prisma.mediaEvent.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!me) throw new ApiError(404, "Événement média introuvable");
+      return me.churchId;
+    }
+    case "mediaProject": {
+      const mp = await prisma.mediaProject.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!mp) throw new ApiError(404, "Projet média introuvable");
+      return mp.churchId;
     }
   }
 }

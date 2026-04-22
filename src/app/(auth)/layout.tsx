@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasPermission } from "@/lib/permissions";
+import { rolePermissions } from "@/lib/registry";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
@@ -72,7 +72,7 @@ export default async function AuthLayout({
 
   // Compute visible config links
   const userRoles = churchRoles.map((r) => r.role);
-  const userPermissions = new Set(userRoles.flatMap((r) => hasPermission(r)));
+  const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
   // Super admins have all permissions regardless of church roles
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
@@ -81,13 +81,15 @@ export default async function AuthLayout({
     .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
     .map(({ href, label }) => ({ href, label }));
 
-  // Compute service links (demandes)
-  // Dashboards opérationnels restreints aux membres du département concerné + events:manage
-  const serviceLinks: { href: string; label: string }[] = [];
+  // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
+  const requestLinks: { href: string; label: string }[] = [];
 
   if (userPermissions.has("planning:view")) {
-    serviceLinks.push({ href: "/requests", label: "Mes demandes" });
+    requestLinks.push({ href: "/requests", label: "Mes demandes" });
   }
+
+  // ── Section "Médias" (module Media + dashboards production) ─────────────────
+  const mediaLinks: { href: string; label: string }[] = [];
 
   if (currentChurchId && userPermissions.has("planning:view")) {
     const isGlobalManager = userPermissions.has("events:manage");
@@ -112,11 +114,16 @@ export default async function AuthLayout({
       serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
 
     if (isMemberOf("SECRETARIAT"))
-      serviceLinks.push({ href: "/secretariat/requests", label: "Gestion" });
+      requestLinks.push({ href: "/secretariat/requests", label: "Gestion" });
     if (isMemberOf("PRODUCTION_MEDIA"))
-      serviceLinks.push({ href: "/media/requests", label: "Visuels" });
+      mediaLinks.push({ href: "/media/requests", label: "Visuels" });
     if (isMemberOf("COMMUNICATION"))
-      serviceLinks.push({ href: "/communication/requests", label: "Communication" });
+      mediaLinks.push({ href: "/communication/requests", label: "Communication" });
+  }
+
+  if (userPermissions.has("media:view")) {
+    mediaLinks.push({ href: "/media/events", label: "Événements" });
+    mediaLinks.push({ href: "/media/projects", label: "Projets" });
   }
 
   const headerContent = (
@@ -189,6 +196,15 @@ export default async function AuthLayout({
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
 
+  // "Mon planning" — visible pour tout utilisateur lié à un STAR dans l'église courante
+  const memberLink = currentChurchId
+    ? await prisma.memberUserLink.findUnique({
+        where: { userId_churchId: { userId: session.user.id!, churchId: currentChurchId } },
+        select: { id: true },
+      })
+    : null;
+  const hasMyPlanning = hasPlanningAccess && memberLink !== null;
+
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
 
@@ -196,14 +212,16 @@ export default async function AuthLayout({
     <AuthLayoutShell
       departments={allDepartments}
       configLinks={visibleConfigLinks}
-      serviceLinks={serviceLinks}
+      requestLinks={requestLinks}
+      mediaLinks={mediaLinks}
       hasDiscipleship={hasDiscipleship}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
       hasMembersAccess={hasMembersAccess}
       hasReports={hasReports}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER"}
+      hasMyPlanning={hasMyPlanning}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR"}
       header={headerContent}
       footer={footerContent}
     >

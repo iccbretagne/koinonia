@@ -1430,6 +1430,393 @@ Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une periode
 
 ---
 
+## Médias
+
+Le module média gère les galeries photos (événements) et les projets de production (vidéos, visuels). Il expose deux familles d'endpoints : des routes authentifiées (admin/upload) et des routes publiques accessibles via token de partage.
+
+### Permissions
+
+| Permission | Rôles | Description |
+|---|---|---|
+| `media:view` | SUPER_ADMIN, ADMIN, SECRETARY | Consulter événements, projets, fichiers |
+| `media:upload` | SUPER_ADMIN, ADMIN, SECRETARY | Uploader, supprimer photos et fichiers |
+| `media:review` | SUPER_ADMIN, ADMIN | Valider / rejeter photos et fichiers |
+| `media:manage` | SUPER_ADMIN, ADMIN | Créer/supprimer événements et projets, gérer les tokens |
+
+---
+
+### Événements médias
+
+#### `GET /api/media-events`
+
+Liste les événements médias de l'église courante.
+
+**Permission requise** : `media:view`
+
+**Réponse** : tableau d'événements avec `_count.photos`, `_count.files`, `createdBy`, `planningEvent`.
+
+#### `POST /api/media-events`
+
+Crée un événement média.
+
+**Permission requise** : `media:manage`
+
+**Body** :
+```json
+{
+  "churchId": "clx...",
+  "name": "Culte de Pâques 2026",
+  "date": "2026-04-05T10:00:00.000Z",
+  "description": "Photos du culte pascal",
+  "planningEventId": "clx..."
+}
+```
+
+- `planningEventId` : optionnel — lie l'événement média à un événement planning
+
+**Réponse** : `201` avec l'événement créé.
+
+#### `GET /api/media-events/[id]`
+
+Détail d'un événement avec `photos`, `shareTokens`, `createdBy`, `planningEvent`, `_count`.
+
+**Permission requise** : `media:view`
+
+#### `PATCH /api/media-events/[id]`
+
+Met à jour le nom, la date, la description ou le statut d'un événement.
+
+**Permission requise** : `media:manage`
+
+**Body** (champs optionnels) :
+```json
+{
+  "name": "Nouveau nom",
+  "status": "PENDING_REVIEW"
+}
+```
+
+Valeurs possibles pour `status` : `DRAFT`, `PENDING_REVIEW`, `REVIEWED`, `ARCHIVED`.
+
+#### `DELETE /api/media-events/[id]`
+
+Supprime un événement et toutes ses photos (S3 + BDD).
+
+**Permission requise** : `media:manage`
+
+---
+
+#### `GET /api/media-events/[id]/photos`
+
+Liste les photos d'un événement avec URLs signées des thumbnails (valables ~1h).
+
+**Permission requise** : `media:view`
+
+**Réponse** : tableau de photos avec `thumbnailUrl` (URL signée S3).
+
+#### `POST /api/media-events/[id]/photos`
+
+Upload une ou plusieurs photos (multipart/form-data).
+
+**Permission requise** : `media:upload`
+
+**Body** : `multipart/form-data`, champ `files` (plusieurs fichiers acceptés).
+
+Formats acceptés : JPEG, PNG, WebP. Chaque photo est redimensionnée (original + thumbnail WebP) avant upload vers S3.
+
+**Réponse** : `201` avec `{ uploaded: [{ id, filename }], errors: [...] }`.
+
+#### `PATCH /api/media-events/[id]/photos`
+
+Mise à jour de statut en masse.
+
+**Permission requise** : `media:review`
+
+**Body** :
+```json
+{
+  "photoIds": ["clx...", "clx..."],
+  "status": "APPROVED"
+}
+```
+
+Valeurs possibles : `PENDING`, `APPROVED`, `REJECTED`, `PREVALIDATED`, `PREREJECTED`.
+
+**Réponse** : `{ updated: N }`.
+
+#### `DELETE /api/media-events/[id]/photos`
+
+Supprime une ou plusieurs photos (S3 + BDD).
+
+**Permission requise** : `media:upload`
+
+**Query params** : `photoIds=id1,id2,...`
+
+**Réponse** : `{ deleted: N }`.
+
+---
+
+#### `POST /api/media-events/[id]/share`
+
+Crée un token de partage pour l'événement.
+
+**Permission requise** : `media:manage`
+
+**Body** :
+```json
+{
+  "type": "GALLERY",
+  "label": "Familles",
+  "expiresInDays": 7
+}
+```
+
+Types de token :
+
+| Type | URL publique | Usage |
+|---|---|---|
+| `GALLERY` | `/media/g/[token]` | Galerie lecture seule |
+| `MEDIA` | `/media/d/[token]` | Téléchargement des photos approuvées |
+| `VALIDATOR` | `/media/v/[token]` | Validation/rejet des photos |
+| `PREVALIDATOR` | `/media/v/[token]` | Pré-validation (sans approbation finale) |
+
+- `expiresInDays` : optionnel (absent = illimité)
+
+**Réponse** : `201` avec le token créé.
+
+#### `DELETE /api/media-events/[id]/share`
+
+Supprime un token de partage.
+
+**Permission requise** : `media:manage`
+
+**Query params** : `tokenId=clx...`
+
+---
+
+### Projets médias
+
+#### `GET /api/media-projects`
+
+Liste les projets médias de l'église courante.
+
+**Permission requise** : `media:view`
+
+**Réponse** : tableau de projets avec `_count.files`, `createdBy`.
+
+#### `POST /api/media-projects`
+
+Crée un projet média.
+
+**Permission requise** : `media:manage`
+
+**Body** :
+```json
+{
+  "churchId": "clx...",
+  "name": "Clip de louange avril 2026",
+  "description": "Montage vidéo du concert"
+}
+```
+
+**Réponse** : `201` avec le projet créé.
+
+#### `GET /api/media-projects/[id]`
+
+Détail d'un projet avec `files` (et leur `versions[0]`), `shareTokens`, `createdBy`, `_count`.
+
+**Permission requise** : `media:view`
+
+#### `PATCH /api/media-projects/[id]`
+
+Met à jour le nom ou la description d'un projet.
+
+**Permission requise** : `media:manage`
+
+#### `DELETE /api/media-projects/[id]`
+
+Supprime un projet et tous ses fichiers (S3 + BDD).
+
+**Permission requise** : `media:manage`
+
+#### `POST /api/media-projects/[id]/share`
+
+Identique à `POST /api/media-events/[id]/share` — crée un token de partage projet.
+
+#### `DELETE /api/media-projects/[id]/share`
+
+Supprime un token de partage projet. **Query params** : `tokenId=clx...`
+
+---
+
+### Fichiers médias
+
+#### `POST /api/media/files/upload/sign`
+
+Demande une URL pré-signée S3 pour un upload direct depuis le navigateur (évite le transit serveur).
+
+**Permission requise** : `media:upload`
+
+**Body** :
+```json
+{
+  "filename": "video-clip.mp4",
+  "contentType": "video/mp4",
+  "size": 52428800,
+  "type": "VIDEO",
+  "mediaProjectId": "clx..."
+}
+```
+
+- `type` : `VIDEO`, `VISUAL` ou `PHOTO`
+- `mediaProjectId` ou `mediaEventId` : l'un des deux est requis
+
+**Réponse** : `{ fileId, uploadUrl, key }` — `uploadUrl` est utilisé pour un `PUT` direct vers S3 avec `Content-Type` correspondant.
+
+Après upload S3 : confirmer via `PATCH /api/media/files/[fileId]` avec `{ originalKey: key }`.
+
+#### `GET /api/media/files/[id]`
+
+Détail d'un fichier avec sa dernière version.
+
+**Permission requise** : `media:view`
+
+#### `PATCH /api/media/files/[id]`
+
+Met à jour le statut ou l'`originalKey` (confirmation post-upload).
+
+**Permission requise** : `media:upload` (confirmation) ou `media:review` (changement de statut)
+
+**Body** (champs optionnels) :
+```json
+{
+  "status": "IN_REVIEW",
+  "originalKey": "media-projects/clx.../files/clx.../v1/video.mp4"
+}
+```
+
+Valeurs possibles pour `status` : `DRAFT`, `IN_REVIEW`, `REVISION_REQUESTED`, `FINAL_APPROVED`, `REJECTED`.
+
+#### `DELETE /api/media/files/[id]`
+
+Supprime un fichier et toutes ses versions (S3 + BDD).
+
+**Permission requise** : `media:upload`
+
+---
+
+#### `GET /api/media/files/[id]/versions`
+
+Liste les versions d'un fichier avec URLs de streaming (signées, ~1h).
+
+**Permission requise** : `media:view`
+
+**Réponse** : `{ data: [{ id, versionNumber, streamUrl, notes, createdAt, createdBy }] }`
+
+#### `POST /api/media/files/[id]/versions`
+
+Crée une nouvelle version et retourne une URL pré-signée S3 pour l'upload direct.
+
+**Permission requise** : `media:upload`
+
+**Body** :
+```json
+{
+  "filename": "clip-v2.mp4",
+  "contentType": "video/mp4",
+  "size": 54000000,
+  "notes": "Correction du générique"
+}
+```
+
+**Réponse** : `{ versionId, uploadUrl, key }`.
+
+---
+
+#### `GET /api/media/files/[id]/comments`
+
+Liste les commentaires d'un fichier (avec réponses imbriquées).
+
+**Permission requise** : `media:view`
+
+**Réponse** : `{ data: [{ id, type, content, timecode, author, replies, createdAt }] }`
+
+#### `POST /api/media/files/[id]/comments`
+
+Ajoute un commentaire sur un fichier.
+
+**Permission requise** : `media:view`
+
+**Body** :
+```json
+{
+  "content": "Le générique est trop long",
+  "type": "TIMECODE",
+  "timecode": 12
+}
+```
+
+- `type` : `GENERAL` ou `TIMECODE`
+- `timecode` : secondes depuis le début (requis si `type = TIMECODE`)
+- `parentId` : ID d'un commentaire parent pour les réponses (optionnel)
+
+---
+
+### Paramètres du module média
+
+#### `GET /api/media/settings`
+
+Récupère les paramètres globaux du module média pour l'église courante.
+
+**Permission requise** : `media:view`
+
+#### `PUT /api/media/settings`
+
+Met à jour les paramètres du module.
+
+**Permission requise** : `media:manage`
+
+---
+
+### Accès publics via token (sans authentification)
+
+Ces routes sont accessibles sans session — le token de partage fait office d'authentification.
+
+#### `GET /api/media/gallery/[token]`
+
+Données de la galerie publique : liste des photos approuvées avec URLs signées.
+
+**Réponse** : `{ token, event, photos: [{ id, filename, thumbnailUrl, size, width, height }] }`
+
+#### `GET /api/media/validate/[token]`
+
+Données pour la page de validation : liste des photos avec statuts et URLs signées.
+
+#### `POST /api/media/validate/[token]/photo/[photoId]`
+
+Valide ou rejette une photo depuis un lien validateur.
+
+**Body** :
+```json
+{ "action": "approve" }
+```
+
+ou `{ "action": "reject" }` / `{ "action": "prevalidate" }` / `{ "action": "prereject" }`.
+
+Le type du token détermine les actions autorisées : `VALIDATOR` → approve/reject, `PREVALIDATOR` → prevalidate/prereject.
+
+#### `GET /api/media/download/[token]`
+
+Données pour la page de téléchargement.
+
+#### `GET /api/media/download/[token]/photo/[photoId]`
+
+Génère une URL de téléchargement signée pour une photo approuvée.
+
+**Réponse** : `{ downloadUrl }` (URL S3 signée avec `Content-Disposition: attachment`).
+
+---
+
 ## Notifications
 
 ### `GET /api/notifications`

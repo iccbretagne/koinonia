@@ -33,6 +33,14 @@ export default async function AccessPage() {
           },
         },
       },
+      memberLinks: {
+        where: { churchId },
+        select: {
+          memberId: true,
+          validatedAt: true,
+          member: { select: { firstName: true, lastName: true } },
+        },
+      },
     },
     orderBy: { name: "asc" },
   });
@@ -125,6 +133,13 @@ export default async function AccessPage() {
               isDeputy: d.isDeputy,
             })),
           })),
+          memberLink: u.memberLinks[0]
+            ? {
+                memberId: u.memberLinks[0].memberId,
+                memberName: `${u.memberLinks[0].member.firstName} ${u.memberLinks[0].member.lastName}`,
+                validated: u.memberLinks[0].validatedAt !== null,
+              }
+            : null,
         }))}
         ministries={ministries.map((m) => ({
           id: m.id,
