@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
+import MobileNavSheet from "@/components/MobileNavSheet";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
 
@@ -35,13 +36,6 @@ function IconMenu({ className }: { className?: string }) {
   );
 }
 
-function IconClose({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-}
 
 export default function AuthLayoutShell({
   departments,
@@ -80,13 +74,9 @@ export default function AuthLayoutShell({
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="md:hidden p-1.5 -ml-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-            aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-label="Ouvrir le menu"
           >
-            {sidebarOpen ? (
-              <IconClose className="w-6 h-6" />
-            ) : (
-              <IconMenu className="w-6 h-6" />
-            )}
+            <IconMenu className="w-6 h-6" />
           </button>
           {header}
         </div>
@@ -94,41 +84,40 @@ export default function AuthLayoutShell({
 
       {/* Body: sidebar + main */}
       <div className="flex flex-col md:flex-row mx-auto max-w-7xl">
-        {/* Overlay (mobile only) */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-30 bg-black/50 md:hidden"
-            onClick={closeSidebar}
-            aria-hidden="true"
+        {/* Sidebar — desktop uniquement */}
+        <div className="hidden md:block print:hidden shrink-0">
+          <Sidebar
+            departments={departments}
+            configLinks={configLinks}
+            requestLinks={requestLinks}
+            mediaLinks={mediaLinks}
+            hasDiscipleship={hasDiscipleship}
+            hasEventsAccess={hasEventsAccess}
+            hasEventsManage={hasEventsManage}
+            hasPlanningAccess={hasPlanningAccess}
+            hasMembersAccess={hasMembersAccess}
+            hasReports={hasReports}
+            hasMyPlanning={hasMyPlanning}
+            onClose={closeSidebar}
           />
-        )}
-
-        {/* Sidebar */}
-        <div
-          className={`
-            fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 ease-in-out
-            md:relative md:translate-x-0 md:transform-none
-            print:hidden
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          `}
-        >
-          <div className="h-full pt-[57px] md:pt-0">
-            <Sidebar
-              departments={departments}
-              configLinks={configLinks}
-              requestLinks={requestLinks}
-              mediaLinks={mediaLinks}
-              hasDiscipleship={hasDiscipleship}
-              hasEventsAccess={hasEventsAccess}
-              hasEventsManage={hasEventsManage}
-              hasPlanningAccess={hasPlanningAccess}
-              hasMembersAccess={hasMembersAccess}
-              hasReports={hasReports}
-              hasMyPlanning={hasMyPlanning}
-              onClose={closeSidebar}
-            />
-          </div>
         </div>
+
+        {/* Bottom sheet — mobile uniquement */}
+        <MobileNavSheet
+          departments={departments}
+          configLinks={configLinks}
+          requestLinks={requestLinks}
+          mediaLinks={mediaLinks}
+          hasDiscipleship={hasDiscipleship}
+          hasEventsAccess={hasEventsAccess}
+          hasEventsManage={hasEventsManage}
+          hasPlanningAccess={hasPlanningAccess}
+          hasMembersAccess={hasMembersAccess}
+          hasReports={hasReports}
+          hasMyPlanning={hasMyPlanning}
+          open={sidebarOpen}
+          onClose={closeSidebar}
+        />
 
         {/* Main content */}
         <main className="flex-1 min-w-0 p-4 pb-16 md:p-6 md:pb-6">
@@ -141,7 +130,6 @@ export default function AuthLayoutShell({
 
       {/* Bottom navigation (mobile only) */}
       <BottomNav
-        hasPlanningAccess={hasPlanningAccess}
         hasMembersAccess={hasMembersAccess}
         hasMyPlanning={hasMyPlanning}
         onMenuOpen={() => setSidebarOpen(true)}
