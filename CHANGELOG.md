@@ -6,6 +6,19 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.0] - 2026-04-23
+
+### Ajouté
+
+- Comptes rendus : statistiques Sainte Cène (supports utilisés/restants) dans l'onglet Statistiques et l'export Excel
+- Comptes rendus : section Navette (H/F/Enfants/Total) dans la saisie, les statistiques et l'export Excel
+- Médias : édition d'un événement média (renommage et liaison à un événement planning)
+- Admin : UI de gestion des sauvegardes (liste, déclenchement manuel, restauration avec double confirmation)
+
+### Mis à jour
+
+- Dépendances npm (minor/patch) — next-auth beta.31
+
 ## [v1.0.0] - 2026-04-17
 
 ### Sécurité — audit pré-v1.0
