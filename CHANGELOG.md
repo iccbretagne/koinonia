@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Ajouté
+
+- Navigation mobile : bottom sheet avec drill-down à deux niveaux (remplace le drawer latéral)
+- Planning mobile : liste plate avec séparateurs de ministère (suppression des accordéons imbriqués)
+- Suppression du bouton "Planning" de la bottom nav mobile
+
 ## [v1.0.0] - 2026-04-17
 
 ### Sécurité — audit pré-v1.0
