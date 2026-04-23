@@ -562,12 +562,12 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
   return (
     <div>
       {/* Onglets */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
+      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         {(["requests", "roles", "transverse", "reporters", "stars"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors relative ${
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors relative whitespace-nowrap shrink-0 ${
               tab === t
                 ? "border-icc-violet text-icc-violet"
                 : "border-transparent text-gray-500 hover:text-gray-700"

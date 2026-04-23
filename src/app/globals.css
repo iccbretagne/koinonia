@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  overflow-x: hidden;
+}
+
 @theme {
   --color-icc-violet: #5E17EB;
   --color-icc-violet-dark: #4a12bb;

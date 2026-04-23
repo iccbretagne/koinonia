@@ -177,7 +177,7 @@ export default async function AuthLayout({
   );
 
   const footerContent = (
-    <footer className="py-4 text-center text-xs text-gray-400">
+    <footer className="pt-4 pb-20 md:py-4 text-center text-xs text-gray-400">
       <a
         href="https://github.com/iccbretagne/koinonia"
         target="_blank"
