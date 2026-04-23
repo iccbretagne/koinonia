@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteFiles } from "@/lib/s3";
@@ -20,7 +20,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireChurchPermission("media:view", churchId);
+    await requireMediaAccess(churchId);
 
     const event = await prisma.mediaEvent.findUnique({
       where: { id },
@@ -49,7 +49,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    const session = await requireChurchPermission("media:upload", churchId);
+    const session = await requireMediaUploadAccess(churchId);
 
     const body = await request.json();
     const data = patchSchema.parse(body);

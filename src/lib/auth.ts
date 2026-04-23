@@ -428,6 +428,63 @@ export async function resolveChurchId(
   }
 }
 
+// ── Media access helpers ──────────────────────────────────────────────────────
+
+/**
+ * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA dans l'église donnée.
+ * Utilisé pour donner accès aux vues média aux STARs de la team production uniquement.
+ */
+export async function isProductionMediaMember(session: Session, churchId: string): Promise<boolean> {
+  const userDeptIds = session.user.churchRoles
+    .filter((r) => r.churchId === churchId)
+    .flatMap((r) => r.departments.map((d) => d.department.id));
+  if (userDeptIds.length === 0) return false;
+  const count = await prisma.department.count({
+    where: { function: "PRODUCTION_MEDIA", ministry: { churchId }, id: { in: userDeptIds } },
+  });
+  return count > 0;
+}
+
+/**
+ * Autorise l'accès en lecture aux ressources média.
+ * Passe si : permission `media:view` (ADMIN, SECRETARY…) OU membre d'un département PRODUCTION_MEDIA.
+ */
+export async function requireMediaAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (userPerms.has("media:view") || await isProductionMediaMember(session, churchId))
+    return session;
+
+  throw new Error("FORBIDDEN");
+}
+
+/**
+ * Autorise l'upload et la création de ressources média.
+ * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre d'un département PRODUCTION_MEDIA.
+ */
+export async function requireMediaUploadAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (userPerms.has("media:upload") || await isProductionMediaMember(session, churchId))
+    return session;
+
+  throw new Error("FORBIDDEN");
+}
+
 export async function getCurrentChurchId(
   session: Session
 ): Promise<string | undefined> {

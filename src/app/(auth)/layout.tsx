@@ -120,11 +120,11 @@ export default async function AuthLayout({
       mediaLinks.push({ href: "/media/requests", label: "Visuels" });
     if (isMemberOf("COMMUNICATION"))
       mediaLinks.push({ href: "/communication/requests", label: "Communication" });
-  }
 
-  if (userPermissions.has("media:view")) {
-    mediaLinks.push({ href: "/media/events", label: "Événements" });
-    mediaLinks.push({ href: "/media/projects", label: "Projets" });
+    if (userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA")) {
+      mediaLinks.push({ href: "/media/events", label: "Événements" });
+      mediaLinks.push({ href: "/media/projects", label: "Projets" });
+    }
   }
 
   const headerContent = (

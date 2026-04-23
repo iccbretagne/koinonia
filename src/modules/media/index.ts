@@ -43,9 +43,9 @@ export const mediaModule = defineModule({
 
   permissions: {
     // Accès en lecture aux galeries et médias
-    "media:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "STAR"],
+    "media:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Upload, organisation, création de projets et événements médias
-    "media:upload":  ["SUPER_ADMIN", "ADMIN", "SECRETARY", "STAR"],
+    "media:upload":  ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Validation/rejet des photos et médias
     "media:review":  ["SUPER_ADMIN", "ADMIN"],
     // Administration du module (paramètres, tokens)

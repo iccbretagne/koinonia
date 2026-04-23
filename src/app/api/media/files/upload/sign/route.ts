@@ -4,7 +4,7 @@
  * Pour les fichiers VISUAL et VIDEO (pas les photos — celles-ci passent par /api/media-events/[id]/photos).
  */
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaUploadAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { getFileOriginalKey } from "@/modules/media";
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       ? await resolveChurchId("mediaEvent", data.mediaEventId)
       : await resolveChurchId("mediaProject", data.mediaProjectId!);
 
-    const session = await requireChurchPermission("media:upload", churchId);
+    const session = await requireMediaUploadAccess(churchId);
     requireRateLimit(request, { prefix: `media:upload:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const ext = data.filename.split(".").pop()?.toLowerCase() ?? "bin";

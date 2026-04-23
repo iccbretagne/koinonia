@@ -1,11 +1,11 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaUploadAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import NewMediaProjectForm from "./NewMediaProjectForm";
 
 export default async function NewMediaProjectPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("media:upload", churchId);
+  await requireMediaUploadAccess(churchId);
 
   return (
     <div>
