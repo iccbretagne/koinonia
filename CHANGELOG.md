@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.1] - 2026-04-23
+
+### Corrigé
+
+- Authentification : erreur `OAuthAccountNotLinked` pour les utilisateurs migrés depuis Mediaflow — liaison automatique du compte Google à l'utilisateur existant par email
+
 ## [v1.1.0] - 2026-04-23
 
 ### Ajouté
