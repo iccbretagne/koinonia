@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.2] - 2026-04-23
+
+### Corrigé
+
+- Mobile : BottomNav ne se décale plus sur les pages larges (overflow-x: hidden sur html)
+- Mobile : onglets "Accès & rôles" scrollables horizontalement sur petits écrans
+- Mobile : MobileNavSheet s'affiche au-dessus du BottomNav (z-index corrigé)
+- Mobile : footer visible au-dessus du BottomNav (padding-bottom ajouté)
+- Médias : accès en lecture et upload limités aux STARs membres d'un département PRODUCTION_MEDIA (auparavant inaccessible)
+
 ## [v1.1.1] - 2026-04-23
 
 ### Corrigé
