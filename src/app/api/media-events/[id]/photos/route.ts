@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
   processImage,
@@ -25,7 +25,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireChurchPermission("media:view", churchId);
+    await requireMediaAccess(churchId);
 
     const photos = await prisma.mediaPhoto.findMany({
       where: { mediaEventId: id },
@@ -53,7 +53,7 @@ export async function POST(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireChurchPermission("media:upload", churchId);
+    await requireMediaUploadAccess(churchId);
 
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
@@ -148,7 +148,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireChurchPermission("media:upload", churchId);
+    await requireMediaUploadAccess(churchId);
 
     const url = new URL(request.url);
     const raw = url.searchParams.get("photoIds") ?? "";

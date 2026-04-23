@@ -3,7 +3,7 @@
  * Commentaires de révision sur un fichier média.
  */
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireMediaAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -33,7 +33,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveFileChurchId(id);
-    await requireChurchPermission("media:view", churchId);
+    await requireMediaAccess(churchId);
 
     const comments = await prisma.mediaComment.findMany({
       where: { mediaFileId: id, parentId: null },
@@ -62,7 +62,7 @@ export async function POST(
   try {
     const { id } = await params;
     const churchId = await resolveFileChurchId(id);
-    const session = await requireChurchPermission("media:view", churchId);
+    const session = await requireMediaAccess(churchId);
 
     const body = await request.json();
     const data = postSchema.parse(body);

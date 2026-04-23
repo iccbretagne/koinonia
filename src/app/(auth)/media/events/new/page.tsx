@@ -1,4 +1,4 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaUploadAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import NewMediaEventForm from "./NewMediaEventForm";
 
@@ -6,7 +6,7 @@ export default async function NewMediaEventPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("media:upload", churchId);
+  await requireMediaUploadAccess(churchId);
 
   // Load upcoming planning events for linking
   const planningEvents = await prisma.event.findMany({

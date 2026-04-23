@@ -10,10 +10,12 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireChurchPermission = vi.fn();
+const mockRequireMediaUploadAccess = vi.fn();
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
+  requireMediaUploadAccess: (...args: unknown[]) => mockRequireMediaUploadAccess(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
@@ -49,6 +51,7 @@ describe("POST /api/media/files/upload/sign — P0-5 XOR validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockRequireMediaUploadAccess.mockResolvedValue(createAdminSession());
     prismaMock.mediaFile.create.mockResolvedValue({
       id: "file-1",
       type: "VIDEO",

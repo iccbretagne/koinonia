@@ -1,4 +1,4 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaAccess, isProductionMediaMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -9,7 +9,7 @@ export default async function MediaEventsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("media:view", churchId);
+  await requireMediaAccess(churchId);
 
   const [events, photoStatusRows] = await Promise.all([
     prisma.mediaEvent.findMany({
@@ -51,7 +51,8 @@ export default async function MediaEventsPage() {
       .filter((r) => r.churchId === churchId)
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
-  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload");
+  const isProductionMember = await isProductionMediaMember(session, churchId);
+  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember;
 
   return (
     <div>

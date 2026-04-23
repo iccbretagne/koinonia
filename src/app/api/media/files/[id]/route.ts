@@ -3,7 +3,7 @@
  * CRUD sur un fichier média (visual/vidéo).
  */
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles } from "@/lib/s3";
 import { getFileOriginalKey } from "@/modules/media";
@@ -56,7 +56,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { churchId } = await resolveMediaFileChurchId(id);
-    await requireChurchPermission("media:view", churchId);
+    await requireMediaAccess(churchId);
 
     const file = await prisma.mediaFile.findUnique({
       where: { id },
@@ -80,7 +80,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const { churchId, file: mediaFile } = await resolveMediaFileChurchId(id);
-    const session = await requireChurchPermission("media:upload", churchId);
+    const session = await requireMediaUploadAccess(churchId);
 
     const body = await request.json();
     const data = patchSchema.parse(body);

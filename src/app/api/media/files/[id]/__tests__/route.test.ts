@@ -7,9 +7,11 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireChurchPermission = vi.fn();
+const mockRequireMediaUploadAccess = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
+  requireMediaUploadAccess: (...args: unknown[]) => mockRequireMediaUploadAccess(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -41,7 +43,7 @@ const mockMediaFile = {
 describe("BLOCKER-3 : PATCH /api/media/files/[id] — clés S3 server-side", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireChurchPermission.mockResolvedValue(createAdminSession("church-1"));
+    mockRequireMediaUploadAccess.mockResolvedValue(createAdminSession("church-1"));
     mockGetFileOriginalKey.mockReturnValue("media-events/evt-1/files/v1/file-1.jpg");
 
     prismaMock.mediaFile.findUnique.mockResolvedValue(mockMediaFile as never);

@@ -9,7 +9,7 @@
  *   3. PATCH /api/media/files/[id] avec originalKey pour confirmer l'upload
  */
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getVersionOriginalKey, getVersionThumbnailKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -47,7 +47,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { churchId } = await resolveFileChurchId(id);
-    await requireChurchPermission("media:view", churchId);
+    await requireMediaAccess(churchId);
 
     const versions = await prisma.mediaFileVersion.findMany({
       where: { mediaFileId: id },
@@ -83,7 +83,7 @@ export async function POST(
   try {
     const { id } = await params;
     const { churchId, file } = await resolveFileChurchId(id);
-    const session = await requireChurchPermission("media:upload", churchId);
+    const session = await requireMediaUploadAccess(churchId);
 
     if (file.type === "PHOTO") throw new ApiError(400, "Les photos ne supportent pas le versionnage");
 
