@@ -56,7 +56,7 @@ export default async function MediaEventDetailPage({
   );
   const isProductionMember = await isProductionMediaMember(session, churchId!);
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember;
-  const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage");
+  const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember;
 
   return (
     <MediaEventDetail

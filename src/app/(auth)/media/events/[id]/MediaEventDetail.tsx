@@ -213,6 +213,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [pendingDeleteTokenId, setPendingDeleteTokenId] = useState<string | null>(null);
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function createToken() {
@@ -242,8 +243,8 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   }
 
   async function deleteToken(tokenId: string) {
-    if (!confirm("Supprimer ce lien de partage ?")) return;
     await fetch(`/api/media-events/${eventId}/share?tokenId=${tokenId}`, { method: "DELETE" });
+    setPendingDeleteTokenId(null);
     onRefresh();
   }
 
@@ -290,7 +291,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
                 {copied === token.id ? "✓ Copié" : "Copier"}
               </button>
               <button
-                onClick={() => deleteToken(token.id)}
+                onClick={() => setPendingDeleteTokenId(token.id)}
                 className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 rounded-lg px-2.5 py-1.5 transition-colors"
               >
                 Suppr.
@@ -361,14 +362,24 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
           Ajouter un lien
         </button>
       )}
+
+      {pendingDeleteTokenId !== null && (
+        <ConfirmDeleteModal
+          title="Supprimer ce lien de partage ?"
+          message="Les utilisateurs ayant ce lien ne pourront plus l'utiliser."
+          onConfirm={() => deleteToken(pendingDeleteTokenId)}
+          onCancel={() => setPendingDeleteTokenId(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Confirmation de suppression ─────────────────────────────────────────────
 
-function ConfirmDeleteModal({ count, onConfirm, onCancel }: {
-  count: number;
+function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: {
+  title: string;
+  message: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -383,8 +394,8 @@ function ConfirmDeleteModal({ count, onConfirm, onCancel }: {
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-gray-900">Supprimer {count > 1 ? `${count} photos` : "cette photo"} ?</p>
-            <p className="text-sm text-gray-500 mt-0.5">Cette action est irréversible.</p>
+            <p className="font-semibold text-gray-900">{title}</p>
+            <p className="text-sm text-gray-500 mt-0.5">{message}</p>
           </div>
         </div>
         <div className="flex gap-2 justify-end pt-1">
@@ -555,6 +566,7 @@ export default function MediaEventDetail({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  const [confirmDeleteEvent, setConfirmDeleteEvent] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
   // ── Edit mode ────────────────────────────────────────────────────────────────
@@ -645,7 +657,6 @@ export default function MediaEventDetail({
   }
 
   async function deleteEvent() {
-    if (!confirm(`Supprimer l'événement "${event.name}" et toutes ses photos ?`)) return;
     await fetch(`/api/media-events/${event.id}`, { method: "DELETE" });
     router.push("/media/events");
   }
@@ -720,7 +731,7 @@ export default function MediaEventDetail({
               )}
               {canManage && (
                 <button
-                  onClick={deleteEvent}
+                  onClick={() => setConfirmDeleteEvent(true)}
                   className="text-xs text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 transition-colors"
                 >
                   Supprimer
@@ -1078,9 +1089,19 @@ export default function MediaEventDetail({
       {/* ── Modale de confirmation de suppression ─────────────── */}
       {pendingDelete !== null && (
         <ConfirmDeleteModal
-          count={pendingDelete.length}
+          title={pendingDelete.length > 1 ? `Supprimer ${pendingDelete.length} photos ?` : "Supprimer cette photo ?"}
+          message="Cette action est irréversible."
           onConfirm={() => deletePhotos(pendingDelete!)}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {confirmDeleteEvent && (
+        <ConfirmDeleteModal
+          title={`Supprimer "${event.name}" ?`}
+          message="L'événement et toutes ses photos seront supprimés. Cette action est irréversible."
+          onConfirm={deleteEvent}
+          onCancel={() => setConfirmDeleteEvent(false)}
         />
       )}
     </div>
