@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.5] - 2026-04-24
+
+### Ajouté
+
+- Médias : téléchargement ZIP des photos approuvées depuis la page de téléchargement
+  - Bouton "Tout télécharger (.zip)" pour toutes les photos
+  - Bouton "Télécharger (N)" pour la sélection en cours
+
 ## [v1.1.4] - 2026-04-24
 
 ### Corrigé
