@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.4] - 2026-04-24
+
+### Corrigé
+
+- Médias : la team PRODUCTION_MEDIA voit et peut créer tous les types de liens de partage (section absente auparavant)
+- Médias : modale de confirmation avant suppression d'un événement
+- Médias : modale de confirmation avant suppression d'un lien de partage
+
 ## [v1.1.3] - 2026-04-24
 
 ### Corrigé
