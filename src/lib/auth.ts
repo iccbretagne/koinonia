@@ -485,6 +485,26 @@ export async function requireMediaUploadAccess(churchId: string) {
   throw new Error("FORBIDDEN");
 }
 
+/**
+ * Autorise la gestion des ressources média (liens de partage, tokens sensibles…).
+ * Passe si : permission `media:manage` (ADMIN…) OU membre d'un département PRODUCTION_MEDIA.
+ */
+export async function requireMediaManageAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (userPerms.has("media:manage") || await isProductionMediaMember(session, churchId))
+    return session;
+
+  throw new Error("FORBIDDEN");
+}
+
 export async function getCurrentChurchId(
   session: Session
 ): Promise<string | undefined> {
