@@ -36,6 +36,28 @@ export default function DownloadView({
   const { event, photos } = data;
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [zipping, setZipping] = useState(false);
+
+  async function downloadZip(photoIds?: string[]) {
+    setZipping(true);
+    try {
+      const res = await fetch(`/api/media/download/${token}/zip`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(photoIds?.length ? { photoIds } : {}),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "photos.zip";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setZipping(false);
+    }
+  }
 
   async function downloadPhoto(photoId: string, filename: string) {
     setDownloading((prev) => ({ ...prev, [photoId]: true }));
@@ -74,9 +96,32 @@ export default function DownloadView({
           <h1 className="text-xl font-bold text-gray-900">{event?.name ?? "Téléchargement"}</h1>
           {event && <p className="text-sm text-gray-500 mt-1">{formatDate(event.date)}</p>}
           {data.token.label && <p className="text-xs text-gray-400 mt-0.5">{data.token.label}</p>}
-          <p className="text-sm text-gray-600 mt-2">
-            {photos.length} photo{photos.length !== 1 ? "s" : ""} approuvée{photos.length !== 1 ? "s" : ""} · {formatSize(totalSize)}
-          </p>
+          <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+            <p className="text-sm text-gray-600">
+              {photos.length} photo{photos.length !== 1 ? "s" : ""} approuvée{photos.length !== 1 ? "s" : ""} · {formatSize(totalSize)}
+            </p>
+            {photos.length > 0 && (
+              <button
+                onClick={() => downloadZip()}
+                disabled={zipping}
+                className="flex items-center gap-1.5 text-sm bg-icc-violet text-white px-4 py-2 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors font-medium"
+              >
+                {zipping ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Préparation…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Tout télécharger (.zip)
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -99,9 +144,13 @@ export default function DownloadView({
                 : "Tout sélectionner"}
             </span>
             {selected.size > 0 && (
-              <span className="text-xs text-gray-400 ml-auto">
-                Téléchargement individuel uniquement
-              </span>
+              <button
+                onClick={() => downloadZip(Array.from(selected))}
+                disabled={zipping}
+                className="ml-auto flex items-center gap-1.5 text-sm bg-icc-violet text-white px-3 py-1.5 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors font-medium"
+              >
+                {zipping ? "Préparation…" : `Télécharger (${selected.size})`}
+              </button>
             )}
           </div>
         )}
