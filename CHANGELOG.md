@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.6] - 2026-04-24
+
+### Corrigé
+
+- Médias : les liens de partage s'affichent immédiatement après création ou suppression
+- Médias : correction d'un bug silencieux où `refreshEvent()` pouvait écraser les données photos complètes
+
 ## [v1.1.5] - 2026-04-24
 
 ### Ajouté
