@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.3] - 2026-04-24
+
+### Corrigé
+
+- Médias : la team PRODUCTION_MEDIA peut désormais créer, voir et supprimer les tokens VALIDATOR/PREVALIDATOR (liens de validation)
+
 ## [v1.1.2] - 2026-04-23
 
 ### Corrigé
