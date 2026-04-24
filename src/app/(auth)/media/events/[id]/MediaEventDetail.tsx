@@ -617,7 +617,14 @@ export default function MediaEventDetail({
   async function refreshEvent() {
     const res = await fetch(`/api/media-events/${event.id}`);
     const json = await res.json();
-    if (res.ok) setEvent({ ...event, ...json, photos: json.photos ?? event.photos, shareTokens: json.shareTokens ?? event.shareTokens });
+    if (res.ok) {
+      setEvent((prev) => ({
+        ...prev,
+        ...json,
+        photos: prev.photos,           // photos complètes gérées par refreshPhotos
+        shareTokens: json.shareTokens ?? prev.shareTokens,
+      }));
+    }
     router.refresh();
   }
 

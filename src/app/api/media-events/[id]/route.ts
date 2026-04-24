@@ -29,9 +29,8 @@ export async function GET(
         createdBy: { select: { id: true, name: true, displayName: true } },
         planningEvent: { select: { id: true, title: true, type: true, date: true } },
         _count: { select: { photos: true, files: true, shareTokens: true } },
-        photos: {
-          select: { status: true },
-        },
+        photos: { select: { status: true } },
+        shareTokens: { orderBy: { createdAt: "desc" } },
       },
     });
 
