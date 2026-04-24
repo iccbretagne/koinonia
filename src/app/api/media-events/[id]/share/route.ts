@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, isProductionMediaMember, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken, getTokenUrlPath } from "@/modules/media";
 import { z } from "zod";
@@ -29,16 +29,15 @@ export async function GET(
 
     const baseUrl = process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
-    // Vérifier si l'utilisateur a la permission media:manage pour voir les tokens sensibles
+    // Vérifier si l'utilisateur peut voir les tokens sensibles (media:manage OU PRODUCTION_MEDIA)
     const { rolePermissions } = await import("@/lib/registry");
     const userRoles = session.user.churchRoles
       .filter((r) => r.churchId === churchId)
       .map((r) => r.role);
     const canManage =
       session.user.isSuperAdmin ||
-      userRoles.some((role) =>
-        (rolePermissions[role] ?? []).includes("media:manage")
-      );
+      userRoles.some((role) => (rolePermissions[role] ?? []).includes("media:manage")) ||
+      await isProductionMediaMember(session, churchId);
 
     return successResponse(
       tokens.map((t) => {
@@ -71,7 +70,7 @@ export async function POST(
     // Les tokens VALIDATOR et PREVALIDATOR donnent accès à des actions d'approbation :
     // exiger media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(data.type)) {
-      await requireChurchPermission("media:manage", churchId);
+      await requireMediaManageAccess(churchId);
     }
 
     // Rule: only one PREVALIDATOR per event
@@ -137,7 +136,7 @@ export async function DELETE(
 
     // Les tokens sensibles (VALIDATOR/PREVALIDATOR) nécessitent media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(existingToken.type)) {
-      await requireChurchPermission("media:manage", churchId);
+      await requireMediaManageAccess(churchId);
     }
 
     await prisma.mediaShareToken.delete({

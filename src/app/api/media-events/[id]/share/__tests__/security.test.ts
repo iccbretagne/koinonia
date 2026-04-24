@@ -13,12 +13,16 @@ import { createAdminSession, createDepartmentHeadSession } from "@/__mocks__/aut
 const mockRequireChurchPermission = vi.fn();
 const mockRequireMediaAccess = vi.fn();
 const mockRequireMediaUploadAccess = vi.fn();
+const mockRequireMediaManageAccess = vi.fn();
+const mockIsProductionMediaMember = vi.fn().mockResolvedValue(false);
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
   requireMediaAccess: (...args: unknown[]) => mockRequireMediaAccess(...args),
   requireMediaUploadAccess: (...args: unknown[]) => mockRequireMediaUploadAccess(...args),
+  requireMediaManageAccess: (...args: unknown[]) => mockRequireMediaManageAccess(...args),
+  isProductionMediaMember: (...args: unknown[]) => mockIsProductionMediaMember(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
@@ -45,6 +49,7 @@ const makeParams = (id: string) => Promise.resolve({ id });
 describe("GET /api/media-events/[id]/share — P0-1 token visibility", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsProductionMediaMember.mockResolvedValue(false);
     prismaMock.mediaShareToken.findMany.mockResolvedValue([
       {
         id: "tok-1",
@@ -112,12 +117,12 @@ describe("GET /api/media-events/[id]/share — P0-1 token visibility", () => {
 describe("POST /api/media-events/[id]/share — P0-1 token creation RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsProductionMediaMember.mockResolvedValue(false);
   });
 
-  it("refuse la création d'un token VALIDATOR sans media:manage", async () => {
-    // Premier appel (media:upload) passe, mais le second (media:manage) pour VALIDATOR doit rejeter
-    mockRequireMediaUploadAccess.mockResolvedValueOnce(createDepartmentHeadSession([{ id: "dept-1", name: "Son" }])); // upload ok
-    mockRequireChurchPermission.mockRejectedValueOnce(Object.assign(new Error("FORBIDDEN"), { code: "FORBIDDEN", status: 403 })); // media:manage rejeté
+  it("refuse la création d'un token VALIDATOR sans media:manage ni PRODUCTION_MEDIA", async () => {
+    mockRequireMediaUploadAccess.mockResolvedValueOnce(createDepartmentHeadSession([{ id: "dept-1", name: "Son" }]));
+    mockRequireMediaManageAccess.mockRejectedValueOnce(Object.assign(new Error("FORBIDDEN"), { code: "FORBIDDEN", status: 403 }));
 
     const request = new Request("http://localhost/api/media-events/ev-1/share", {
       method: "POST",
@@ -131,7 +136,7 @@ describe("POST /api/media-events/[id]/share — P0-1 token creation RBAC", () =>
   it("autorise la création d'un token VALIDATOR avec media:manage", async () => {
     prismaMock.mediaShareToken.count.mockResolvedValue(0);
     mockRequireMediaUploadAccess.mockResolvedValue(createAdminSession());
-    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockRequireMediaManageAccess.mockResolvedValue(createAdminSession());
 
     const request = new Request("http://localhost/api/media-events/ev-1/share", {
       method: "POST",
@@ -160,15 +165,16 @@ describe("POST /api/media-events/[id]/share — P0-1 token creation RBAC", () =>
 describe("DELETE /api/media-events/[id]/share — P0-1 token deletion RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsProductionMediaMember.mockResolvedValue(false);
   });
 
-  it("refuse la suppression d'un token VALIDATOR sans media:manage", async () => {
+  it("refuse la suppression d'un token VALIDATOR sans media:manage ni PRODUCTION_MEDIA", async () => {
     prismaMock.mediaShareToken.findUnique.mockResolvedValue({
       id: "tok-1",
       type: "VALIDATOR",
     } as never);
-    mockRequireMediaUploadAccess.mockResolvedValueOnce(createDepartmentHeadSession([{ id: "dept-1", name: "Son" }])); // upload ok
-    mockRequireChurchPermission.mockRejectedValueOnce(Object.assign(new Error("FORBIDDEN"), { code: "FORBIDDEN", status: 403 })); // media:manage rejeté
+    mockRequireMediaUploadAccess.mockResolvedValueOnce(createDepartmentHeadSession([{ id: "dept-1", name: "Son" }]));
+    mockRequireMediaManageAccess.mockRejectedValueOnce(Object.assign(new Error("FORBIDDEN"), { code: "FORBIDDEN", status: 403 }));
 
     const url = "http://localhost/api/media-events/ev-1/share?tokenId=tok-1";
     const res = await DELETE(new Request(url, { method: "DELETE" }), {
