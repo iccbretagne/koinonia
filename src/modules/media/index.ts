@@ -15,6 +15,7 @@ export {
   getZipKey,
   getVersionOriginalKey,
   getVersionThumbnailKey,
+  getS3ObjectStream,
   createMultipartUpload,
   getSignedPartUrl,
   completeMultipartUpload,

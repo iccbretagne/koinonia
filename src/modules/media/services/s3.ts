@@ -82,6 +82,16 @@ export async function getSignedDownloadUrl(key: string, filename: string): Promi
   );
 }
 
+// ─── Raw stream (for ZIP) ─────────────────────────────────────────────────
+
+import type { Readable } from "node:stream";
+
+export async function getS3ObjectStream(key: string): Promise<Readable> {
+  const resp = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  if (!resp.Body) throw new Error(`S3 object not found: ${key}`);
+  return resp.Body as Readable;
+}
+
 // ─── Delete ────────────────────────────────────────────────────────────────
 
 export async function deleteMediaFile(key: string): Promise<void> {
