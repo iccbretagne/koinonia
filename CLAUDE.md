@@ -293,6 +293,89 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 | [Production](docs/production.md) | Deploiement Debian, Traefik, systemd |
 | [Roadmap](docs/roadmap.md) | Evolutions prevues |
 
+## Setup local
+
+Prerequis : Node.js 22, Docker.
+
+```bash
+# 1. Installer les dependances
+npm install
+
+# 2. Demarrer MariaDB
+docker-compose up -d
+
+# 3. Copier les variables d'environnement et les remplir
+cp .env.example .env
+# Variables requises : AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DATABASE_URL
+
+# 4. Initialiser la base de donnees
+npm run db:migrate
+npm run db:seed
+
+# 5. Lancer en developpement
+npm run dev
+```
+
+## Workflow contributeur
+
+### Conventions de branches
+
+| Prefixe | Usage |
+|---|---|
+| `feat/<nom>` | Nouvelle fonctionnalite |
+| `fix/<nom>` | Correction de bug |
+| `chore/<nom>` | Maintenance (release, deps, config) |
+
+Ne jamais pusher directement sur `main`.
+
+### Sequence pour une feature
+
+```bash
+git checkout -b feat/ma-feature
+# ... developpement ...
+npm run typecheck && npm run lint && npm run test
+# Ouvrir une PR vers main — CI doit passer avant de merger
+```
+
+### Sequence de release
+
+```bash
+# 1. Bumper la version dans package.json + CHANGELOG.md
+git checkout -b chore/release-vX.Y.Z
+git commit -m "chore: release vX.Y.Z (#N)"
+# Ouvrir une PR vers main, la merger
+
+# 2. Tagger apres merge
+git checkout main && git pull
+git tag vX.Y.Z && git push origin vX.Y.Z
+
+# 3. Creer la GitHub Release
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
+```
+
+### Features longues (multi-PR)
+
+Creer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `feat/X`. Une seule PR finale `feat/X` → `main`.
+
+## Pieges connus
+
+1. **`next-env.d.ts` regenere automatiquement** — ce fichier change a chaque `npm run dev`. Si `git pull` bloque a cause de lui :
+   ```bash
+   git stash && git pull && git stash drop
+   ```
+
+2. **`await params` obligatoire** — dans les route handlers Next.js 15+, `params` est une `Promise`. Toujours `const { id } = await params` (jamais destructuring direct).
+
+3. **`Modal` : prop `open` pas `isOpen`** — `<Modal open onClose={...}>` — voir `src/components/ui/Modal.tsx` avant d'utiliser un composant UI.
+
+4. **`Button` : pas de prop `loading`** — utiliser `disabled={isLoading}` avec un texte conditionnel.
+
+5. **Imports Prisma** — les types enum (ex. `Role`) viennent de `@/generated/prisma/client`, pas de `@prisma/client`.
+
+6. **`rolePermissions` pas `hasPermission`** — `src/lib/permissions.ts` est deprecated. Utiliser `rolePermissions` de `@/lib/registry`.
+
+7. **Conflits de migration** — si deux branches modifient `schema.prisma`, rebaser sur `main` avant `npm run db:migrate` pour eviter des conflits de fichiers de migration.
+
 ## Regles pour les agents IA
 
 1. **Lire avant d'ecrire** : toujours lire un fichier existant avant de le modifier
