@@ -213,6 +213,18 @@ export async function PATCH(
         }
       }
 
+      // ── Auto-assigner le rôle STAR si aucun rôle dans l'église ─────────────
+      if (!isNoStarRole && memberId) {
+        const hasAnyRole = await tx.userChurchRole.findFirst({
+          where: { userId: linkRequest.userId, churchId: linkRequest.churchId },
+        });
+        if (!hasAnyRole) {
+          await tx.userChurchRole.create({
+            data: { userId: linkRequest.userId, churchId: linkRequest.churchId, role: "STAR" },
+          });
+        }
+      }
+
       // ── Mettre à jour la demande ──────────────────────────────────────────────
       await tx.memberLinkRequest.update({
         where: { id },

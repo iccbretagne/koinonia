@@ -1,6 +1,7 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import MembersClient from "./MembersClient";
 import LinkRequestsClient from "./LinkRequestsClient";
 
@@ -75,7 +76,17 @@ export default async function MembersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">STAR</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">STAR</h1>
+        {canManage && (
+          <Link
+            href="/admin/members/duplicates"
+            className="text-sm text-icc-violet hover:underline font-medium"
+          >
+            Doublons potentiels →
+          </Link>
+        )}
+      </div>
 
       {pendingRequests.length > 0 && (
         <div className="mb-8">
