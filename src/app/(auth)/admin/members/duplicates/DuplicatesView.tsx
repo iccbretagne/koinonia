@@ -23,6 +23,7 @@ type Group = {
 
 interface Props {
   groups: Group[];
+  allMembers: MemberSummary[];
   churchId: string;
 }
 
@@ -286,11 +287,94 @@ function MergeModal({
   );
 }
 
-export default function DuplicatesView({ groups, churchId }: Props) {
+function MemberPicker({
+  label,
+  members,
+  selectedId,
+  excludeId,
+  onSelect,
+}: {
+  label: string;
+  members: MemberSummary[];
+  selectedId: string;
+  excludeId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const filtered = members.filter((m) => {
+    if (m.id === excludeId) return false;
+    const q = search.toLowerCase();
+    return (
+      `${m.firstName} ${m.lastName}`.toLowerCase().includes(q) ||
+      (m.email?.toLowerCase().includes(q) ?? false)
+    );
+  });
+  const selected = members.find((m) => m.id === selectedId);
+
+  return (
+    <div className="border-2 rounded-lg p-3">
+      <p className="text-xs font-semibold text-gray-500 mb-2">{label}</p>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Rechercher par nom ou email…"
+        className="w-full border rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-icc-violet"
+      />
+      {selected && !search && (
+        <div className="flex items-center justify-between bg-icc-violet/10 rounded px-2 py-1.5 mb-2">
+          <span className="text-sm font-medium text-icc-violet">
+            {selected.firstName} {selected.lastName}
+            {selected.email && <span className="text-xs text-gray-500 ml-1">({selected.email})</span>}
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelect("")}
+            className="text-xs text-gray-400 hover:text-gray-600 ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {(search || !selectedId) && (
+        <ul className="max-h-40 overflow-y-auto divide-y border rounded">
+          {filtered.length === 0 && (
+            <li className="px-2 py-2 text-sm text-gray-400">Aucun résultat</li>
+          )}
+          {filtered.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                onClick={() => { onSelect(m.id); setSearch(""); }}
+                className={`w-full text-left px-2 py-2 text-sm hover:bg-gray-50 ${m.id === selectedId ? "bg-icc-violet/10 font-medium" : ""}`}
+              >
+                {m.firstName} {m.lastName}
+                {m.email && <span className="text-xs text-gray-400 ml-1">· {m.email}</span>}
+                {m.userLink && <span className="text-xs text-icc-violet ml-1">· compte lié</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export default function DuplicatesView({ groups, allMembers, churchId }: Props) {
   const router = useRouter();
   const [mergeGroup, setMergeGroup] = useState<Group | null>(null);
   const [assigningStars, setAssigningStars] = useState(false);
   const [assignResult, setAssignResult] = useState<{ assigned: number; total: number } | null>(null);
+
+  const [manualSourceId, setManualSourceId] = useState("");
+  const [manualTargetId, setManualTargetId] = useState("");
+
+  function openManualMerge() {
+    const source = allMembers.find((m) => m.id === manualSourceId);
+    const target = allMembers.find((m) => m.id === manualTargetId);
+    if (!source || !target) return;
+    setMergeGroup({ reason: "same_name", members: [source, target] });
+  }
 
   async function assignStarRoles() {
     setAssigningStars(true);
@@ -326,6 +410,37 @@ export default function DuplicatesView({ groups, churchId }: Props) {
           <p className="text-sm text-green-700 mt-2">
             {assignResult.assigned} rôle(s) STAR assigné(s) sur {assignResult.total} compte(s) lié(s).
           </p>
+        )}
+      </div>
+
+      {/* Fusion manuelle */}
+      <div className="border-2 rounded-lg p-4">
+        <p className="font-semibold text-gray-800 mb-1">Fusion manuelle</p>
+        <p className="text-sm text-gray-500 mb-4">
+          Sélectionnez deux membres à fusionner, même s&apos;ils ne sont pas détectés automatiquement comme doublons.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <MemberPicker
+            label="Membre à supprimer"
+            members={allMembers}
+            selectedId={manualSourceId}
+            excludeId={manualTargetId}
+            onSelect={setManualSourceId}
+          />
+          <MemberPicker
+            label="Membre à conserver"
+            members={allMembers}
+            selectedId={manualTargetId}
+            excludeId={manualSourceId}
+            onSelect={setManualTargetId}
+          />
+        </div>
+        {manualSourceId && manualTargetId && (
+          <div className="mt-3 flex justify-end">
+            <Button onClick={openManualMerge}>
+              Fusionner ces deux membres
+            </Button>
+          </div>
         )}
       </div>
 

@@ -68,9 +68,8 @@ export default async function DuplicatesPage() {
     }
   }
 
-  const serialized = groups.map((g) => ({
-    reason: g.reason,
-    members: g.members.map((m) => ({
+  function serializeMember(m: MemberRow) {
+    return {
       id: m.id,
       firstName: m.firstName,
       lastName: m.lastName,
@@ -86,8 +85,15 @@ export default async function DuplicatesPage() {
         ? { userId: m.userLink.userId, name: m.userLink.user.name, email: m.userLink.user.email }
         : null,
       counts: { plannings: m._count.plannings, disciples: m._count.discipleships, disciplesMade: m._count.disciplesMade },
-    })),
+    };
+  }
+
+  const serialized = groups.map((g) => ({
+    reason: g.reason,
+    members: g.members.map(serializeMember),
   }));
+
+  const allMembers = members.map(serializeMember);
 
   return (
     <div>
@@ -97,7 +103,7 @@ export default async function DuplicatesPage() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Doublons potentiels</h1>
       </div>
-      <DuplicatesView groups={serialized} churchId={churchId} />
+      <DuplicatesView groups={serialized} allMembers={allMembers} churchId={churchId} />
     </div>
   );
 }
