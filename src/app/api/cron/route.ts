@@ -74,8 +74,8 @@ async function runReminders() {
               try {
                 await sendEmail({ to: member.email, subject, html });
                 emailsSent++;
-              } catch {
-                console.error("Failed to send reminder email (recipient redacted)");
+              } catch (err) {
+                console.error("Failed to send reminder email (recipient redacted):", err instanceof Error ? err.message : err);
               }
             }
 
@@ -186,8 +186,8 @@ async function runPlanningDigest() {
       try {
         await sendEmail({ to: church.secretariatEmail, subject, html });
         digestsSent++;
-      } catch {
-        console.error(`Failed to send planning digest for church ${church.id}`);
+      } catch (err) {
+        console.error(`Failed to send planning digest for church ${church.id}:`, err instanceof Error ? err.message : err);
       }
     }
 
