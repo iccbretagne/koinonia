@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.8] - 2026-04-26
+
+### Ajouté
+
+- STAR : fusion manuelle de deux membres quelconques depuis la page des doublons
+  - Deux sélecteurs avec recherche par nom/email (exclusion croisée automatique)
+  - Réutilise le flow de résolution de conflits existant (modal côte à côte, champ par champ)
+
+### Documentation
+
+- CLAUDE.md : ajout des sections Setup local, Workflow contributeur et Pièges connus pour faciliter l'onboarding de nouveaux développeurs
+
 ## [v1.1.7] - 2026-04-25
 
 ### Ajouté
