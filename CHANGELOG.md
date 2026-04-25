@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.7] - 2026-04-25
+
+### Ajouté
+
+- STAR : fusion de doublons avec résolution de conflits champ par champ
+  - Détection automatique par nom normalisé et/ou email identique
+  - Page `/admin/members/duplicates` : liste des groupes, modal côte à côte (source / cible), bouton ⇄ pour inverser
+  - Résolution par champ : prénom, nom, email, téléphone
+  - Choix du compte Google à conserver si les deux membres ont un lien
+  - Fusion transactionnelle : Planning, TaskAssignment, Discipleship, DiscipleshipAttendance, MemberDepartment (déduplication automatique)
+- STAR : assignation automatique du rôle STAR lors de l'approbation d'une demande de liaison (si aucun rôle existant dans l'église)
+- STAR : endpoint bulk pour rétroactivement assigner le rôle STAR aux membres déjà liés sans accès
+
+### Corrigé
+
+- Cron : les erreurs d'envoi d'email (rappels et digest planning) affichent maintenant le message d'erreur réel dans les logs
+
 ## [v1.1.6] - 2026-04-24
 
 ### Corrigé
