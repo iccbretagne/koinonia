@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.10] - 2026-04-28
+
+### Corrigé
+
+- Médias : les uploads de photos > 10MB échouaient toujours via les route handlers — ajout de `middlewareClientMaxBodySize: 100MB` dans next.config.ts (le précédent fix `serverActions.bodySizeLimit` ne couvrait pas les routes API transitant par le middleware)
+- Médias : erreur de parsing FormData retourne désormais un 400 explicite au lieu d'une exception non gérée
+- Emails : le digest planning échouait avec `self-signed certificate` sur un relay SMTP local (localhost:25) — ajout de l'option `ignoreTLS` (variable `SMTP_IGNORE_TLS=true`)
+
+### Documentation
+
+- `.env.example` : ajout de `SMTP_IGNORE_TLS` et `SMTP_TLS_REJECT_UNAUTHORIZED`
+
 ## [v1.1.9] - 2026-04-28
 
 ### Corrigé

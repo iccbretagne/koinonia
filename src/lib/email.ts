@@ -19,6 +19,12 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS,
       }
     : undefined,
+  // ignoreTLS : désactive STARTTLS même si le serveur l'annonce (relay local port 25)
+  ignoreTLS: process.env.SMTP_IGNORE_TLS === "true",
+  tls: {
+    // Mettre à "false" si le serveur SMTP utilise un certificat auto-signé
+    rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
+  },
 });
 
 interface SendEmailOptions {

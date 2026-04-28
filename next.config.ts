@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "100mb",
     },
+    // Limite la taille du corps transmis à travers le middleware (proxy.ts) vers les route handlers
+    middlewareClientMaxBodySize: 100 * 1024 * 1024, // 100MB
   },
 };
 
