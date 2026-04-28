@@ -9,13 +9,15 @@ import DownloadView from "./DownloadView";
 
 async function fetchDownloadData(token: string) {
   try {
-    const shareToken = await validateMediaShareToken(token, "MEDIA");
+    const shareToken = await validateMediaShareToken(token, ["MEDIA", "MEDIA_ALL"]);
     const event = shareToken.mediaEvent;
 
     if (!event) return { token: shareToken, event: null, photos: [] };
 
+    const allStatuses = shareToken.type === "MEDIA_ALL";
+
     const photos = await prisma.mediaPhoto.findMany({
-      where: { mediaEventId: event.id, status: "APPROVED" },
+      where: { mediaEventId: event.id, ...(!allStatuses && { status: "APPROVED" }) },
       orderBy: { uploadedAt: "asc" },
     });
 
@@ -26,6 +28,7 @@ async function fetchDownloadData(token: string) {
         size: p.size,
         width: p.width,
         height: p.height,
+        status: p.status,
         thumbnailUrl: await getSignedThumbnailUrl(p.thumbnailKey),
       }))
     );

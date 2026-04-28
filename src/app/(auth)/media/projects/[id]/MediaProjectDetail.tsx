@@ -115,7 +115,8 @@ const FILE_TYPE_LABELS: Record<MediaFileType, string> = {
 const TOKEN_TYPE_LABELS: Record<MediaTokenType, string> = {
   VALIDATOR:    "Validateur",
   PREVALIDATOR: "Pré-validateur",
-  MEDIA:        "Téléchargement",
+  MEDIA:        "Téléchargement (validées)",
+  MEDIA_ALL:    "Téléchargement (toutes)",
   GALLERY:      "Galerie",
 };
 
@@ -123,6 +124,7 @@ const TOKEN_TYPE_ICONS: Record<MediaTokenType, string> = {
   VALIDATOR:    "✅",
   PREVALIDATOR: "👁",
   MEDIA:        "⬇️",
+  MEDIA_ALL:    "📦",
   GALLERY:      "🖼️",
 };
 
@@ -265,7 +267,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
   }
 
   function getTokenUrl(token: ShareToken) {
-    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", GALLERY: "g" };
+    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g" };
     return `${origin}/media/${paths[token.type]}/${token.token}`;
   }
 

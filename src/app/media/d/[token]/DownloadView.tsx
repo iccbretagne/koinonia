@@ -9,6 +9,7 @@ type Photo = {
   size: number;
   width: number | null;
   height: number | null;
+  status: string;
 };
 
 type DownloadData = {
@@ -98,7 +99,13 @@ export default function DownloadView({
           {data.token.label && <p className="text-xs text-gray-400 mt-0.5">{data.token.label}</p>}
           <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
             <p className="text-sm text-gray-600">
-              {photos.length} photo{photos.length !== 1 ? "s" : ""} approuvée{photos.length !== 1 ? "s" : ""} · {formatSize(totalSize)}
+              {photos.length} photo{photos.length !== 1 ? "s" : ""}
+              {data.token.type === "MEDIA_ALL" && photos.some((p) => p.status !== "APPROVED") && (
+                <span className="ml-1.5 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full px-2 py-0.5">
+                  dont {photos.filter((p) => p.status !== "APPROVED").length} non validée{photos.filter((p) => p.status !== "APPROVED").length > 1 ? "s" : ""}
+                </span>
+              )}
+              {" · "}{formatSize(totalSize)}
             </p>
             {photos.length > 0 && (
               <button
@@ -178,6 +185,11 @@ export default function DownloadView({
                   />
                 </div>
                 <div className="p-1.5">
+                            {photo.status !== "APPROVED" && (
+                    <span className="inline-block text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full px-1.5 py-0.5 mb-0.5">
+                      Non validée
+                    </span>
+                  )}
                   <p className="text-xs text-gray-500 truncate">{photo.filename}</p>
                   <p className="text-xs text-gray-400">{formatSize(photo.size)}</p>
                   <button

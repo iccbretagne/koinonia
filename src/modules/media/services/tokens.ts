@@ -14,7 +14,7 @@ export function isTokenExpired(expiresAt: Date | null): boolean {
 
 /** URL path segment par type de token (pour les liens publics). */
 export function getTokenUrlPath(type: MediaTokenType): string {
-  if (type === "MEDIA") return "d";
+  if (type === "MEDIA" || type === "MEDIA_ALL") return "d";
   if (type === "GALLERY") return "g";
   return "v";
 }
