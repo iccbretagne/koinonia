@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 type Photo = {
   id: string;
@@ -29,28 +29,20 @@ type ValidationData = {
   photos: Photo[];
 };
 
-const STATUS_BORDER: Record<string, string> = {
-  PENDING:      "border-gray-300",
-  APPROVED:     "border-green-500",
-  REJECTED:     "border-red-400",
-  PREVALIDATED: "border-blue-400",
-  PREREJECTED:  "border-orange-400",
+const STATUS_BADGE: Record<string, string> = {
+  PENDING:      "bg-gray-700 text-gray-200",
+  APPROVED:     "bg-green-600 text-white",
+  REJECTED:     "bg-red-600 text-white",
+  PREVALIDATED: "bg-blue-600 text-white",
+  PREREJECTED:  "bg-orange-600 text-white",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:      "En attente",
-  APPROVED:     "Approuvée",
+  APPROVED:     "Validée",
   REJECTED:     "Rejetée",
   PREVALIDATED: "Pré-validée",
   PREREJECTED:  "Pré-rejetée",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  PENDING:      "bg-gray-100 text-gray-600",
-  APPROVED:     "bg-green-100 text-green-700",
-  REJECTED:     "bg-red-100 text-red-700",
-  PREVALIDATED: "bg-blue-100 text-blue-700",
-  PREREJECTED:  "bg-orange-100 text-orange-700",
 };
 
 function formatSize(bytes: number) {
@@ -58,61 +50,52 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("fr-FR", {
-    day: "numeric", month: "long", year: "numeric",
-  });
-}
+type SummaryFilter = "ALL" | "APPROVED" | "REJECTED" | "PENDING";
 
-// ── Lightbox ─────────────────────────────────────────────────────────────────
+// ── HD Lightbox ───────────────────────────────────────────────────────────────
 
-function Lightbox({
+function HdLightbox({
   photo,
   token,
-  isPrevalidator,
   onClose,
   onApprove,
   onReject,
-  onPrev,
-  onNext,
+  approveStatus,
+  rejectStatus,
+  labels,
 }: {
   photo: Photo;
   token: string;
-  isPrevalidator: boolean;
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
-  onPrev: () => void;
-  onNext: () => void;
+  approveStatus: string;
+  rejectStatus: string;
+  labels: { approved: string; rejected: string };
 }) {
   const [hdUrl, setHdUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [hdLoading, setHdLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const approveStatus = isPrevalidator ? "PREVALIDATED" : "APPROVED";
-  const rejectStatus  = isPrevalidator ? "PREREJECTED"  : "REJECTED";
-  const isPending = photo.status === "PENDING" || (isPrevalidator && photo.status === "PENDING");
+  const isPending = photo.status === "PENDING";
 
   useEffect(() => {
     setHdUrl(null);
-    setLoading(true);
+    setHdLoading(true);
     fetch(`/api/media/validate/${token}/photo/${photo.id}`)
       .then((r) => r.json())
       .then((j) => { if (j.data?.originalUrl) setHdUrl(j.data.originalUrl); })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => setHdLoading(false));
   }, [photo.id, token]);
 
-  // Keyboard navigation
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
-      if (e.key === "ArrowLeft")  onPrev();
-      if (e.key === "ArrowRight") onNext();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, onPrev, onNext]);
+  }, [onClose]);
 
   async function handleAction(status: string) {
     setActionLoading(true);
@@ -130,175 +113,266 @@ function Lightbox({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
-      onClick={onClose}
-    >
-      {/* Nav prev */}
-      <button
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-black/40 rounded-full p-3 z-10"
-        onClick={(e) => { e.stopPropagation(); onPrev(); }}
-        aria-label="Photo précédente"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-
-      {/* Nav next */}
-      <button
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-black/40 rounded-full p-3 z-10"
-        onClick={(e) => { e.stopPropagation(); onNext(); }}
-        aria-label="Photo suivante"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-      {/* Close */}
-      <button
-        className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/40 rounded-full p-2 z-10"
-        onClick={onClose}
-        aria-label="Fermer"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="text-white/70 hover:text-white transition-colors" aria-label="Fermer">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-white/60 text-xs truncate">{photo.filename}</span>
+          <span className="text-white/40 text-xs shrink-0">{formatSize(photo.size)}</span>
+        </div>
+        {hdUrl && (
+          <a
+            href={hdUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs text-white/50 hover:text-white underline shrink-0 transition-colors"
+          >
+            Ouvrir ↗
+          </a>
+        )}
+      </div>
 
       {/* Image */}
       <div
-        className="relative max-w-5xl max-h-[85vh] mx-16 flex flex-col items-center"
+        className="flex-1 flex items-center justify-center px-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {loading ? (
-          <div className="w-64 h-64 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          </div>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
+        <div className="relative flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={hdUrl ?? photo.thumbnailUrl}
             alt={photo.filename}
-            className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[78vh] object-contain rounded shadow-2xl"
+            style={{ filter: hdLoading && !hdUrl ? "blur(3px)" : "none", transition: "filter 300ms" }}
           />
-        )}
-
-        {/* Bottom bar */}
-        <div className="mt-3 flex items-center gap-3 bg-black/60 rounded-xl px-4 py-2 text-white text-sm">
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[photo.status] ?? "bg-gray-100 text-gray-700"}`}>
-            {STATUS_LABELS[photo.status] ?? photo.status}
-          </span>
-          <span className="text-white/50 text-xs">{photo.filename}</span>
-          <span className="text-white/50 text-xs">{formatSize(photo.size)}</span>
-          {!loading && hdUrl && (
-            <a
-              href={hdUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/70 hover:text-white text-xs underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Ouvrir HD
-            </a>
+          {hdLoading && !hdUrl && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+          )}
+          {hdUrl && !hdLoading && (
+            <div className="absolute top-2 right-2 text-[10px] text-white/40 bg-black/40 rounded px-1.5 py-0.5">HD</div>
+          )}
+          {/* Status badge */}
+          {photo.status !== "PENDING" && (
+            <div className="absolute top-2 left-2">
+              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_BADGE[photo.status] ?? "bg-gray-700 text-white"}`}>
+                {STATUS_LABELS[photo.status] ?? photo.status}
+              </span>
+            </div>
           )}
         </div>
-
-        {/* Action buttons */}
-        {isPending && (
-          <div className="mt-2 flex gap-3">
-            <button
-              onClick={() => handleAction(approveStatus)}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              Approuver
-            </button>
-            <button
-              onClick={() => handleAction(rejectStatus)}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Rejeter
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Bottom actions */}
+      {isPending && (
+        <div
+          className="flex items-center justify-center gap-4 px-4 py-4 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => void handleAction(rejectStatus)}
+            disabled={actionLoading}
+            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            ✗ {labels.rejected}
+          </button>
+          <button
+            onClick={() => void handleAction(approveStatus)}
+            disabled={actionLoading}
+            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            ✓ {labels.approved}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Progress bar ──────────────────────────────────────────────────────────────
+
+function ProgressBar({
+  total,
+  approved,
+  rejected,
+}: {
+  total: number;
+  approved: number;
+  rejected: number;
+}) {
+  if (total === 0) return null;
+  const approvedPct = (approved / total) * 100;
+  const rejectedPct = (rejected / total) * 100;
+  const pendingPct  = 100 - approvedPct - rejectedPct;
+
+  return (
+    <div className="h-1 w-full flex shrink-0 overflow-hidden">
+      <div className="bg-green-500 transition-all duration-300" style={{ width: `${approvedPct}%` }} />
+      <div className="bg-red-500 transition-all duration-300"   style={{ width: `${rejectedPct}%` }} />
+      <div className="bg-white/10"                              style={{ width: `${pendingPct}%` }} />
     </div>
   );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ValidatorView({
-  token,
-  data,
-}: {
-  token: string;
-  data: ValidationData;
-}) {
+export default function ValidatorView({ token, data }: { token: string; data: ValidationData }) {
   const { event } = data;
   const isPrevalidator = data.token.type === "PREVALIDATOR";
   const approveStatus = isPrevalidator ? "PREVALIDATED" : "APPROVED";
   const rejectStatus  = isPrevalidator ? "PREREJECTED"  : "REJECTED";
+  const labels = isPrevalidator
+    ? { approved: "Gardée", rejected: "Écartée", approvedPlural: "gardées", rejectedPlural: "écartées" }
+    : { approved: "Validée", rejected: "Rejetée", approvedPlural: "validées", rejectedPlural: "rejetées" };
 
   const [photos, setPhotos] = useState<Photo[]>(data.photos ?? []);
-  const [loading, setLoading]     = useState<Record<string, boolean>>({});
-  const [selected, setSelected]   = useState<Set<string>>(new Set());
-  const [bulkLoading, setBulkLoading] = useState(false);
-  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const first = (data.photos ?? []).findIndex((p) => p.status === "PENDING");
+    return first >= 0 ? first : 0;
+  });
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryFilter, setSummaryFilter] = useState<SummaryFilter>("ALL");
+  const [undoAction, setUndoAction] = useState<{ photoId: string; prevStatus: string } | null>(null);
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [showHdLightbox, setShowHdLightbox] = useState(false);
+  const [summaryDark, setSummaryDark] = useState(true);
 
-  const pendingPhotos = photos.filter((p) => p.status === "PENDING");
+  // Swipe gesture state
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const pointerIdRef = useRef<number | null>(null);
+  const startXRef = useRef(0);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function setPhotoStatus(photoId: string, status: string) {
-    setLoading((prev) => ({ ...prev, [photoId]: true }));
+  const totalPhotos = photos.length;
+  const currentPhoto = photos[currentIndex];
+  const approvedCount = photos.filter((p) => p.status === "APPROVED" || p.status === "PREVALIDATED").length;
+  const rejectedCount = photos.filter((p) => p.status === "REJECTED"  || p.status === "PREREJECTED").length;
+  const pendingCount  = photos.filter((p) => p.status === "PENDING").length;
+  const allDecided = pendingCount === 0 && totalPhotos > 0;
+
+  // Index of next PENDING photo after current position
+  const nextPendingIndex = photos.findIndex((p, i) => i > currentIndex && p.status === "PENDING");
+  // Also look before currentIndex if none found after
+  const anyPendingIndex = nextPendingIndex >= 0
+    ? nextPendingIndex
+    : photos.findIndex((p) => p.status === "PENDING");
+
+  const saveStatus = useCallback(async (photoId: string, status: string) => {
+    setSaving((prev) => ({ ...prev, [photoId]: true }));
     try {
-      const res = await fetch(`/api/media/validate/${token}/photo/${photoId}`, {
+      await fetch(`/api/media/validate/${token}/photo/${photoId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (res.ok) {
-        setPhotos((prev) => prev.map((p) => p.id === photoId ? { ...p, status } : p));
-      }
     } finally {
-      setLoading((prev) => ({ ...prev, [photoId]: false }));
+      setSaving((prev) => ({ ...prev, [photoId]: false }));
     }
-  }
+  }, [token]);
 
-  async function bulkSetStatus(status: string) {
-    if (selected.size === 0) return;
-    setBulkLoading(true);
-    try {
-      await Promise.all(
-        Array.from(selected).map((id) =>
-          fetch(`/api/media/validate/${token}/photo/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status }),
-          })
-        )
-      );
-      setPhotos((prev) => prev.map((p) => selected.has(p.id) ? { ...p, status } : p));
-      setSelected(new Set());
-    } finally {
-      setBulkLoading(false);
+  const makeDecision = useCallback(async (status: string) => {
+    if (!currentPhoto) return;
+    const prevStatus = currentPhoto.status;
+    setPhotos((prev) => prev.map((p) => p.id === currentPhoto.id ? { ...p, status } : p));
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoAction({ photoId: currentPhoto.id, prevStatus });
+    undoTimerRef.current = setTimeout(() => setUndoAction(null), 3000);
+
+    void saveStatus(currentPhoto.id, status);
+
+    if (currentIndex < totalPhotos - 1) {
+      setCurrentIndex((i) => i + 1);
+    } else {
+      setShowSummary(true);
     }
-  }
+  }, [currentPhoto, currentIndex, totalPhotos, saveStatus]);
 
-  const openLightbox = useCallback((idx: number) => setLightboxIdx(idx), []);
-  const closeLightbox = useCallback(() => setLightboxIdx(null), []);
-  const prevPhoto = useCallback(() => setLightboxIdx((i) => i !== null ? Math.max(0, i - 1) : null), []);
-  const nextPhoto = useCallback(() => setLightboxIdx((i) => i !== null ? Math.min(photos.length - 1, i + 1) : null), [photos.length]);
+  const skipPhoto = useCallback(() => {
+    if (currentIndex < totalPhotos - 1) {
+      setCurrentIndex((i) => i + 1);
+    } else {
+      setShowSummary(true);
+    }
+  }, [currentIndex, totalPhotos]);
 
-  const approvedCount = photos.filter((p) => ["APPROVED", "PREVALIDATED"].includes(p.status)).length;
+  const undo = useCallback(() => {
+    if (!undoAction) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setPhotos((prev) =>
+      prev.map((p) => p.id === undoAction.photoId ? { ...p, status: undoAction.prevStatus } : p)
+    );
+    void saveStatus(undoAction.photoId, undoAction.prevStatus);
+    setCurrentIndex((i) => Math.max(0, i - 1));
+    setUndoAction(null);
+  }, [undoAction, saveStatus]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (showHdLightbox) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (showSummary) return;
+      if (e.key === "ArrowRight" || e.key === "v") void makeDecision(approveStatus);
+      else if (e.key === "ArrowLeft" || e.key === "x") void makeDecision(rejectStatus);
+      else if (e.key === " " || e.key === "ArrowDown") { e.preventDefault(); skipPhoto(); }
+      else if (e.key === "h" || e.key === "Enter") setShowHdLightbox(true);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [makeDecision, skipPhoto, showSummary, showHdLightbox, approveStatus, rejectStatus]);
+
+  // Swipe gesture handlers
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (showSummary || !currentPhoto || showHdLightbox) return;
+      pointerIdRef.current = e.pointerId;
+      startXRef.current = e.clientX;
+      setDragging(true);
+      setDragX(0);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [showSummary, currentPhoto, showHdLightbox]
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragging || pointerIdRef.current !== e.pointerId) return;
+      setDragX(e.clientX - startXRef.current);
+    },
+    [dragging]
+  );
+
+  const handlePointerEnd = useCallback(() => {
+    if (!dragging) return;
+    const delta = dragX;
+    setDragging(false);
+    setDragX(0);
+    pointerIdRef.current = null;
+    if (Math.abs(delta) >= 80) void makeDecision(delta > 0 ? approveStatus : rejectStatus);
+  }, [dragging, dragX, makeDecision, approveStatus, rejectStatus]);
+
+  // Toggle decision in summary view
+  const toggleDecision = useCallback(async (photoId: string) => {
+    const photo = photos.find((p) => p.id === photoId);
+    if (!photo) return;
+    const newStatus =
+      photo.status === approveStatus ? rejectStatus :
+      photo.status === rejectStatus  ? "PENDING"    :
+      photo.status === "PENDING"     ? approveStatus :
+      photo.status;
+    setPhotos((prev) => prev.map((p) => p.id === photoId ? { ...p, status: newStatus } : p));
+    void saveStatus(photoId, newStatus);
+  }, [photos, approveStatus, rejectStatus, saveStatus]);
 
   if (!event) {
     return (
@@ -308,193 +382,356 @@ export default function ValidatorView({
     );
   }
 
-  return (
-    <>
-      {/* Lightbox */}
-      {lightboxIdx !== null && (
-        <Lightbox
-          photo={photos[lightboxIdx]}
-          token={token}
-          isPrevalidator={isPrevalidator}
-          onClose={closeLightbox}
-          onApprove={() => {
-            setPhotos((prev) => prev.map((p, i) => i === lightboxIdx ? { ...p, status: approveStatus } : p));
-            if (lightboxIdx < photos.length - 1) setLightboxIdx(lightboxIdx + 1);
-            else closeLightbox();
-          }}
-          onReject={() => {
-            setPhotos((prev) => prev.map((p, i) => i === lightboxIdx ? { ...p, status: rejectStatus } : p));
-            if (lightboxIdx < photos.length - 1) setLightboxIdx(lightboxIdx + 1);
-            else closeLightbox();
-          }}
-          onPrev={prevPhoto}
-          onNext={nextPhoto}
-        />
-      )}
+  if (totalPhotos === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <p className="text-gray-500">Aucune photo à valider.</p>
+      </div>
+    );
+  }
 
-      <div className="min-h-screen bg-gray-50">
+  // ── Summary view ─────────────────────────────────────────────────────────────
+  if (showSummary) {
+    const filteredPhotos = photos.filter((p) => {
+      if (summaryFilter === "ALL") return true;
+      if (summaryFilter === "APPROVED") return p.status === "APPROVED" || p.status === "PREVALIDATED";
+      if (summaryFilter === "REJECTED") return p.status === "REJECTED"  || p.status === "PREREJECTED";
+      return p.status === "PENDING";
+    });
+
+    const dk = summaryDark;
+
+    const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
+      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-white/20 text-white border-transparent"           : "bg-gray-200 text-gray-800 border-transparent",        dot: "" },
+      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, activeClass: dk ? "bg-green-500/30 text-green-300 border-transparent"   : "bg-green-100 text-green-800 border-transparent", dot: "bg-green-500" },
+      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, activeClass: dk ? "bg-red-500/30 text-red-300 border-transparent"       : "bg-red-100 text-red-800 border-transparent",     dot: "bg-red-500" },
+      { key: "PENDING",  label: "En attente",                             count: pendingCount,  activeClass: dk ? "bg-yellow-500/20 text-yellow-300 border-transparent" : "bg-yellow-100 text-yellow-800 border-transparent", dot: "bg-yellow-500" },
+    ];
+
+    return (
+      <div className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-black" : "bg-gray-50"}`}>
+        {/* Progress bar */}
+        <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
+
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-          <div className="max-w-5xl mx-auto px-4 py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
-                <p className="text-sm text-gray-500 mt-0.5">{formatDate(event.date)}</p>
-                {data.token.label && (
-                  <span className="inline-block mt-1 text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
-                    {data.token.label}
-                  </span>
+        <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-black/95" : "bg-white border-b border-gray-200"}`}>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => {
+                const firstPending = photos.findIndex((p) => p.status === "PENDING");
+                setCurrentIndex(firstPending >= 0 ? firstPending : 0);
+                setShowSummary(false);
+                setSummaryFilter("ALL");
+              }}
+              className={`text-sm transition-colors ${dk ? "text-white/70 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+            >
+              ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
+            </button>
+            <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-white/80" : "text-gray-800"}`}>{event.name}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-sm tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{totalPhotos} photos</span>
+              {/* Theme toggle */}
+              <button
+                onClick={() => setSummaryDark((v) => !v)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dk ? "bg-white/10 hover:bg-white/20 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-500"}`}
+                aria-label="Basculer le thème"
+              >
+                {dk ? (
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
                 )}
-              </div>
-              <div className="flex gap-2 text-sm shrink-0">
-                <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
-                  {photos.length} photos
-                </span>
-                {pendingPhotos.length > 0 && (
-                  <span className="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-                    {pendingPhotos.length} en attente
-                  </span>
-                )}
-                {approvedCount > 0 && (
-                  <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-                    {approvedCount} approuvée{approvedCount > 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
+              </button>
             </div>
+          </div>
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-green-500/15 border-green-500/30" : "bg-green-50 border-green-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-green-400" : "text-green-600"}`}>{approvedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-green-400/70" : "text-green-500"}`}>{labels.approvedPlural}</p>
+            </div>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{pendingCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-white/30" : "text-gray-400"}`}>en attente</p>
+            </div>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-red-500/15 border-red-500/30" : "bg-red-50 border-red-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-red-400" : "text-red-600"}`}>{rejectedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-red-400/70" : "text-red-500"}`}>{labels.rejectedPlural}</p>
+            </div>
+          </div>
+
+          {/* Filter pills */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {filterConfig.map(({ key, label, count, activeClass, dot }) => (
+              <button
+                key={key}
+                onClick={() => setSummaryFilter(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
+                  summaryFilter === key
+                    ? activeClass
+                    : dk
+                      ? "bg-transparent text-white/40 border-white/10 hover:text-white/60 hover:border-white/20"
+                      : "bg-transparent text-gray-400 border-gray-200 hover:text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
+                {label}
+                <span className="tabular-nums opacity-70">({count})</span>
+              </button>
+            ))}
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 py-6 space-y-4">
-          {/* Bulk actions */}
-          {pendingPhotos.length > 0 && (
-            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <input
-                type="checkbox"
-                checked={selected.size === pendingPhotos.length && pendingPhotos.length > 0}
-                onChange={() => {
-                  if (selected.size === pendingPhotos.length) setSelected(new Set());
-                  else setSelected(new Set(pendingPhotos.map((p) => p.id)));
-                }}
-                className="w-4 h-4 rounded border-gray-300 accent-icc-violet"
-              />
-              <span className="text-sm text-gray-600 flex-1">
-                {selected.size > 0
-                  ? `${selected.size} sélectionnée${selected.size > 1 ? "s" : ""}`
-                  : "Tout sélectionner"}
-              </span>
-              {selected.size > 0 && (
-                <>
-                  <button
-                    onClick={() => bulkSetStatus(approveStatus)}
-                    disabled={bulkLoading}
-                    className="flex items-center gap-1.5 text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Approuver
-                  </button>
-                  <button
-                    onClick={() => bulkSetStatus(rejectStatus)}
-                    disabled={bulkLoading}
-                    className="flex items-center gap-1.5 text-sm bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Rejeter
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Photo grid */}
-          {photos.length === 0 ? (
-            <div className="text-center py-16 text-gray-500">
-              <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Aucune photo à valider.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {photos.map((photo, idx) => {
-                const isPending = photo.status === "PENDING";
-                return (
-                  <div
-                    key={photo.id}
-                    className={`relative group rounded-xl overflow-hidden border-2 bg-white shadow-sm transition-all hover:shadow-md ${STATUS_BORDER[photo.status] ?? "border-gray-300"}`}
-                  >
-                    {/* Checkbox overlay */}
-                    {isPending && (
-                      <input
-                        type="checkbox"
-                        checked={selected.has(photo.id)}
-                        onChange={() => setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(photo.id)) next.delete(photo.id);
-                          else next.add(photo.id);
-                          return next;
-                        })}
-                        className="absolute top-2 left-2 z-10 w-4 h-4 rounded border-gray-300 accent-icc-violet opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={selected.has(photo.id) ? { opacity: 1 } : {}}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    )}
-
-                    {/* Image — click opens lightbox */}
-                    <div
-                      className="aspect-square bg-gray-100 overflow-hidden cursor-pointer"
-                      onClick={() => openLightbox(idx)}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.thumbnailUrl}
-                        alt={photo.filename}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      {/* Zoom hint */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                        <svg className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* Bottom: status + quick actions */}
-                    <div className="p-1.5">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${STATUS_BADGE[photo.status] ?? "bg-gray-100 text-gray-600"}`}>
-                        {STATUS_LABELS[photo.status] ?? photo.status}
-                      </span>
-                      {isPending && (
-                        <div className="flex gap-1 mt-1">
-                          <button
-                            onClick={() => setPhotoStatus(photo.id, approveStatus)}
-                            disabled={loading[photo.id]}
-                            className="flex-1 text-xs bg-green-600 text-white py-1 rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
-                            title="Approuver"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={() => setPhotoStatus(photo.id, rejectStatus)}
-                            disabled={loading[photo.id]}
-                            className="flex-1 text-xs bg-red-600 text-white py-1 rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium"
-                            title="Rejeter"
-                          >
-                            ✗
-                          </button>
-                        </div>
-                      )}
-                    </div>
+        {/* Grid */}
+        <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-gray-100"}`}>
+          {filteredPhotos.map((photo) => {
+            const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
+            const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
+            return (
+              <button
+                key={photo.id}
+                onClick={() => void toggleDecision(photo.id)}
+                className={`relative aspect-square overflow-hidden rounded-sm ${dk ? "bg-gray-900" : "bg-gray-200"}`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
+                {/* Corner badge */}
+                {isApproved && (
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md">
+                    <span className="text-white text-[10px] font-bold leading-none">✓</span>
                   </div>
-                );
-              })}
+                )}
+                {isRejected && (
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                    <span className="text-white text-[10px] font-bold leading-none">✗</span>
+                  </div>
+                )}
+                {photo.status === "PENDING" && (
+                  <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-md" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Card-swipe view ───────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* HD Lightbox */}
+      {showHdLightbox && currentPhoto && (
+        <HdLightbox
+          photo={currentPhoto}
+          token={token}
+          approveStatus={approveStatus}
+          rejectStatus={rejectStatus}
+          labels={labels}
+          onClose={() => setShowHdLightbox(false)}
+          onApprove={() => {
+            setPhotos((prev) => prev.map((p) => p.id === currentPhoto.id ? { ...p, status: approveStatus } : p));
+            setShowHdLightbox(false);
+            if (currentIndex < totalPhotos - 1) setCurrentIndex((i) => i + 1);
+            else setShowSummary(true);
+          }}
+          onReject={() => {
+            setPhotos((prev) => prev.map((p) => p.id === currentPhoto.id ? { ...p, status: rejectStatus } : p));
+            setShowHdLightbox(false);
+            if (currentIndex < totalPhotos - 1) setCurrentIndex((i) => i + 1);
+            else setShowSummary(true);
+          }}
+        />
+      )}
+
+      <div className="min-h-screen bg-black flex flex-col select-none overflow-hidden">
+        {/* Progress bar */}
+        <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
+
+        {/* Header */}
+        <header className="bg-black/80 text-white px-4 py-3 flex items-center justify-between shrink-0">
+          <div className="text-sm truncate max-w-[35%] text-white/80">{event.name}</div>
+
+          <div className="flex items-center gap-2">
+            {/* Jump to next pending */}
+            {!allDecided && currentPhoto?.status !== "PENDING" && anyPendingIndex >= 0 && (
+              <button
+                onClick={() => setCurrentIndex(anyPendingIndex)}
+                className="text-xs text-yellow-400 hover:text-yellow-300 bg-yellow-900/40 border border-yellow-700/50 rounded-full px-2.5 py-0.5 transition-colors"
+              >
+                {pendingCount} en attente →
+              </button>
+            )}
+            <button
+              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              disabled={currentIndex === 0}
+              className="text-white disabled:opacity-30 text-xl px-1"
+              aria-label="Photo précédente"
+            >
+              ‹
+            </button>
+            <span className="text-sm tabular-nums text-white/90">{currentIndex + 1}/{totalPhotos}</span>
+            <button
+              onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))}
+              disabled={currentIndex === totalPhotos - 1}
+              className="text-white disabled:opacity-30 text-xl px-1"
+              aria-label="Photo suivante"
+            >
+              ›
+            </button>
+          </div>
+
+          <button onClick={() => setShowSummary(true)} className="text-sm text-white/70 hover:text-white">
+            Récap
+          </button>
+        </header>
+
+        {/* Photo area */}
+        <div
+          className="flex-1 flex items-center justify-center relative overflow-hidden"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
+          style={{ touchAction: "pan-y" }}
+        >
+          {currentPhoto && (
+            <div
+              className="relative flex items-center justify-center"
+              style={{
+                transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
+                transition: dragging ? "none" : "transform 150ms ease-out",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentPhoto.thumbnailUrl}
+                alt={currentPhoto.filename}
+                className="max-w-[90vw] max-h-[65vh] object-contain"
+                draggable={false}
+              />
+
+              {/* Swipe feedback */}
+              {dragX !== 0 && (
+                <div
+                  className={`absolute inset-0 flex items-start ${dragX > 0 ? "justify-start" : "justify-end"}`}
+                  style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}
+                >
+                  <div
+                    className={`m-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-white ${
+                      dragX > 0 ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  >
+                    {dragX > 0 ? "✓" : "✗"}
+                  </div>
+                </div>
+              )}
+
+              {/* Decision badge */}
+              {dragX === 0 && currentPhoto.status !== "PENDING" && (
+                <div className="absolute top-3 left-3">
+                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGE[currentPhoto.status] ?? "bg-gray-700 text-white"}`}>
+                    {STATUS_LABELS[currentPhoto.status] ?? currentPhoto.status}
+                  </span>
+                </div>
+              )}
+
+              {/* HD button — tap opens lightbox */}
+              <button
+                onClick={() => setShowHdLightbox(true)}
+                className="absolute bottom-3 right-3 text-xs text-white/60 hover:text-white bg-black/50 hover:bg-black/70 rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
+                HD
+              </button>
             </div>
           )}
-        </main>
+        </div>
+
+        {/* Stats bar */}
+        <div className="bg-black/60 px-4 py-1.5 flex items-center justify-center gap-4 shrink-0">
+          <span className="text-xs text-green-400 tabular-nums">{approvedCount} {labels.approvedPlural}</span>
+          <span className="text-xs text-white/30" aria-hidden>·</span>
+          <span className="text-xs text-white/40 tabular-nums">{pendingCount} en attente</span>
+          <span className="text-xs text-white/30" aria-hidden>·</span>
+          <span className="text-xs text-red-400 tabular-nums">{rejectedCount} {labels.rejectedPlural}</span>
+        </div>
+
+        {/* "All decided" banner */}
+        {allDecided && (
+          <div className="bg-green-700 text-white text-sm px-4 py-2 text-center shrink-0">
+            Tout est traité.{" "}
+            <button onClick={() => setShowSummary(true)} className="font-bold underline">
+              Voir le récap
+            </button>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div
+          className="bg-black/80 px-4 pt-4 flex items-center justify-center gap-5 shrink-0"
+          style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        >
+          <button
+            onClick={() => void makeDecision(rejectStatus)}
+            disabled={!!saving[currentPhoto?.id ?? ""]}
+            className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center text-2xl hover:bg-red-600 active:scale-95 transition-all disabled:opacity-50 shadow-lg"
+            aria-label="Rejeter"
+          >
+            ✗
+          </button>
+          <button
+            onClick={skipPhoto}
+            className="w-12 h-12 rounded-full bg-gray-600 text-white flex items-center justify-center text-xs hover:bg-gray-500 active:scale-95 transition-all"
+            aria-label="Passer"
+          >
+            Passer
+          </button>
+          <button
+            onClick={() => void makeDecision(approveStatus)}
+            disabled={!!saving[currentPhoto?.id ?? ""]}
+            className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center text-2xl hover:bg-green-600 active:scale-95 transition-all disabled:opacity-50 shadow-lg"
+            aria-label="Valider"
+          >
+            ✓
+          </button>
+        </div>
+
+        {/* Keyboard hints */}
+        <div className="bg-black/60 px-4 py-1 flex justify-center gap-4 shrink-0">
+          <span className="text-[10px] text-white/30">← X : rejeter</span>
+          <span className="text-[10px] text-white/30">Espace : passer</span>
+          <span className="text-[10px] text-white/30">→ V : valider</span>
+          <span className="text-[10px] text-white/30">H / Entrée : HD</span>
+        </div>
+
+        {/* Undo toast */}
+        {undoAction && (
+          <div
+            className="fixed left-4 right-4 bg-gray-800 text-white rounded-xl px-4 py-3 flex items-center justify-between z-50 shadow-xl"
+            style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }}
+          >
+            <span className="text-sm">
+              {(() => {
+                const photo = photos.find((p) => p.id === undoAction.photoId);
+                const s = photo?.status;
+                if (s === "APPROVED" || s === "PREVALIDATED") return labels.approved;
+                if (s === "REJECTED" || s === "PREREJECTED") return labels.rejected;
+                return "Annulé";
+              })()}
+            </span>
+            <button onClick={undo} className="text-icc-violet font-bold text-sm ml-4">
+              ANNULER
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
