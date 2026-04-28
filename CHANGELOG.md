@@ -6,6 +6,23 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.11] - 2026-04-29
+
+### Ajouté
+
+- Médias : token `MEDIA_ALL` — lien de téléchargement donnant accès à toutes les photos (validées et non validées), pour l'équipe de Laval
+- Médias : lightbox plein écran dans la vue téléchargement — clic sur une miniature ouvre la photo HD avec navigation ←/→, sélection et téléchargement intégrés
+- Médias : vue de validation iso mediaflow — flux card-swipe photo par photo avec swipe gauche/droite, raccourcis clavier (← X / → V / Espace), toast undo, barre de progression temps réel, stats en bas d'écran
+- Médias : lightbox HD inline dans la validation — touche H / Entrée ou clic sur le bouton HD ouvre l'original avec chargement progressif et boutons valider/rejeter intégrés
+- Médias : bouton "X en attente →" dans le header de validation pour sauter directement au prochain PENDING
+- Médias : récap de validation revu — fond noir cohérent, 3 cartes stats (validées / en attente / rejetées), grille 5 colonnes, badge de statut par miniature, toggle thème clair/sombre
+- Médias : accès en lecture aux événements et projets pour la team Communication (vue uniquement, sans upload ni gestion)
+
+### Corrigé
+
+- Auth : erreur `CallbackRouteError: unexpected "iss"` sur le callback Google OAuth — ajout de `trustHost: true` dans la config NextAuth pour les déploiements derrière reverse proxy (Traefik)
+- Médias : les droits de la team Communication sont limités à la vue uniquement (`requireMediaUploadAccess` et `requireMediaManageAccess` restent réservés à PRODUCTION_MEDIA)
+
 ## [v1.1.10] - 2026-04-28
 
 ### Ajouté
