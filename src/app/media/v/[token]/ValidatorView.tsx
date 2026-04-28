@@ -29,14 +29,6 @@ type ValidationData = {
   photos: Photo[];
 };
 
-const STATUS_BORDER: Record<string, string> = {
-  PENDING:      "border-gray-500",
-  APPROVED:     "border-green-500",
-  REJECTED:     "border-red-400",
-  PREVALIDATED: "border-blue-400",
-  PREREJECTED:  "border-orange-400",
-};
-
 const STATUS_BADGE: Record<string, string> = {
   PENDING:      "bg-gray-700 text-gray-200",
   APPROVED:     "bg-green-600 text-white",
@@ -399,24 +391,6 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
 
   // ── Summary view ─────────────────────────────────────────────────────────────
   if (showSummary) {
-    const counts: Record<SummaryFilter, number> = {
-      ALL: totalPhotos,
-      APPROVED: approvedCount,
-      REJECTED: rejectedCount,
-      PENDING: pendingCount,
-    };
-    const filterLabels: Record<SummaryFilter, string> = {
-      ALL: "Toutes",
-      APPROVED: isPrevalidator ? "Gardées" : "Validées",
-      REJECTED: isPrevalidator ? "Écartées" : "Rejetées",
-      PENDING: "En attente",
-    };
-    const activeColors: Record<SummaryFilter, string> = {
-      ALL:      "bg-gray-200 text-gray-800",
-      APPROVED: "bg-green-100 text-green-800",
-      REJECTED: "bg-red-100 text-red-800",
-      PENDING:  "bg-yellow-100 text-yellow-800",
-    };
     const filteredPhotos = photos.filter((p) => {
       if (summaryFilter === "ALL") return true;
       if (summaryFilter === "APPROVED") return p.status === "APPROVED" || p.status === "PREVALIDATED";
@@ -424,10 +398,21 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
       return p.status === "PENDING";
     });
 
+    const filterConfig: { key: SummaryFilter; label: string; count: number; active: string; dot: string }[] = [
+      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   active: "bg-white/20 text-white",        dot: "" },
+      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, active: "bg-green-500/30 text-green-300", dot: "bg-green-400" },
+      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, active: "bg-red-500/30 text-red-300",     dot: "bg-red-400" },
+      { key: "PENDING",  label: "En attente",                             count: pendingCount,  active: "bg-yellow-500/20 text-yellow-300", dot: "bg-yellow-400" },
+    ];
+
     return (
-      <div className="min-h-screen bg-gray-50 pb-6">
-        <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-black flex flex-col">
+        {/* Progress bar */}
+        <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
+
+        {/* Header */}
+        <header className="bg-black/90 px-4 pt-4 pb-3 sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => {
                 const firstPending = photos.findIndex((p) => p.status === "PENDING");
@@ -435,56 +420,86 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
                 setShowSummary(false);
                 setSummaryFilter("ALL");
               }}
-              className="text-icc-violet font-medium text-sm"
+              className="text-white/70 hover:text-white text-sm transition-colors"
             >
-              ← Continuer
+              ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
             </button>
-            <span className="text-sm font-semibold text-gray-800 truncate max-w-[45%]">{event.name}</span>
-            <span className="text-sm text-gray-500 shrink-0">
-              {approvedCount}/{totalPhotos} {labels.approvedPlural}
-            </span>
+            <span className="text-white/80 text-sm font-medium truncate max-w-[45%]">{event.name}</span>
+            <span className="text-white/50 text-sm tabular-nums shrink-0">{totalPhotos} photos</span>
           </div>
-          {/* Progress bar in summary */}
-          <div className="mt-2 h-1.5 w-full rounded-full overflow-hidden bg-gray-100 flex">
-            <div className="bg-green-500 transition-all duration-300 rounded-l-full" style={{ width: `${(approvedCount / totalPhotos) * 100}%` }} />
-            <div className="bg-red-400 transition-all duration-300" style={{ width: `${(rejectedCount / totalPhotos) * 100}%` }} />
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-green-500/15 border border-green-500/30 rounded-xl px-3 py-2.5 text-center">
+              <p className="text-2xl font-bold text-green-400 tabular-nums">{approvedCount}</p>
+              <p className="text-xs text-green-400/70 mt-0.5">{labels.approvedPlural}</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-center">
+              <p className="text-2xl font-bold text-white/50 tabular-nums">{pendingCount}</p>
+              <p className="text-xs text-white/30 mt-0.5">en attente</p>
+            </div>
+            <div className="bg-red-500/15 border border-red-500/30 rounded-xl px-3 py-2.5 text-center">
+              <p className="text-2xl font-bold text-red-400 tabular-nums">{rejectedCount}</p>
+              <p className="text-xs text-red-400/70 mt-0.5">{labels.rejectedPlural}</p>
+            </div>
+          </div>
+
+          {/* Filter pills */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {filterConfig.map(({ key, label, count, active, dot }) => (
+              <button
+                key={key}
+                onClick={() => setSummaryFilter(key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
+                  summaryFilter === key
+                    ? `${active} border-transparent`
+                    : "bg-transparent text-white/40 border-white/10 hover:border-white/20 hover:text-white/60"
+                }`}
+              >
+                {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
+                {label}
+                <span className="tabular-nums opacity-70">({count})</span>
+              </button>
+            ))}
           </div>
         </header>
 
-        <div className="bg-white border-b border-gray-200 px-4 py-2 flex gap-2 sticky top-[68px] z-10 overflow-x-auto">
-          {(["ALL", "APPROVED", "REJECTED", "PENDING"] as SummaryFilter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setSummaryFilter(f)}
-              className={`px-3 py-1 text-sm rounded-full whitespace-nowrap shrink-0 transition-colors ${
-                summaryFilter === f ? activeColors[f] : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {filterLabels[f]} ({counts[f]})
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-3 gap-0.5 p-0.5 mt-0.5">
-          {filteredPhotos.map((photo) => (
-            <button
-              key={photo.id}
-              onClick={() => void toggleDecision(photo.id)}
-              className={`relative aspect-square bg-gray-200 overflow-hidden border-2 ${STATUS_BORDER[photo.status] ?? "border-gray-400"}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
-              {photo.status !== "PENDING" && (
-                <div
-                  className={`absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                    photo.status === "APPROVED" || photo.status === "PREVALIDATED" ? "bg-green-500" : "bg-red-500"
-                  }`}
-                >
-                  {photo.status === "APPROVED" || photo.status === "PREVALIDATED" ? "✓" : "✗"}
-                </div>
-              )}
-            </button>
-          ))}
+        {/* Grid */}
+        <div className="grid grid-cols-3 gap-1 p-1 flex-1">
+          {filteredPhotos.map((photo) => {
+            const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
+            const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
+            return (
+              <button
+                key={photo.id}
+                onClick={() => void toggleDecision(photo.id)}
+                className="relative aspect-square bg-gray-900 overflow-hidden rounded-md"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.thumbnailUrl}
+                  alt={photo.filename}
+                  className="w-full h-full object-cover"
+                  style={{ opacity: photo.status === "PENDING" ? 1 : 0.55 }}
+                />
+                {/* Status overlay */}
+                {isApproved && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-green-500/20">
+                    <span className="text-green-400 text-2xl font-bold drop-shadow">✓</span>
+                  </div>
+                )}
+                {isRejected && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                    <span className="text-red-400 text-2xl font-bold drop-shadow">✗</span>
+                  </div>
+                )}
+                {/* Pending dot */}
+                {photo.status === "PENDING" && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-yellow-400" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
