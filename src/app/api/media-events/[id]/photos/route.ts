@@ -55,9 +55,14 @@ export async function POST(
     const churchId = await resolveChurchId("mediaEvent", id);
     await requireMediaUploadAccess(churchId);
 
-    const formData = await request.formData();
-    const files = formData.getAll("files") as File[];
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      throw new ApiError(400, "Corps de requête invalide — vérifiez que le fichier ne dépasse pas 50 MB");
+    }
 
+    const files = formData.getAll("files") as File[];
     if (!files || files.length === 0) throw new ApiError(400, "Aucun fichier fourni");
 
     const uploaded: { id: string; filename: string }[] = [];

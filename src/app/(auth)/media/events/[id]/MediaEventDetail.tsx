@@ -129,19 +129,41 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
     reportProgress({ done: 0, total: files.length });
     let done = 0;
     const errors: string[] = [];
+
     for (const file of files) {
       try {
-        const form = new FormData();
-        form.append("files", file);
-        const res = await fetch(`/api/media-events/${eventId}/photos`, { method: "POST", body: form });
-        const json = await res.json();
-        if (!res.ok) errors.push(`${file.name}: ${json.error || "Erreur"}`);
-      } catch {
-        errors.push(`${file.name}: Erreur réseau`);
+        // 1 — Demande une presigned PUT URL
+        const signRes = await fetch(`/api/media-events/${eventId}/photos/sign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, mimeType: file.type, size: file.size }),
+        });
+        const signJson = await signRes.json();
+        if (!signRes.ok) throw new Error(signJson.error || "Erreur de signature");
+
+        // 2 — Upload direct navigateur → S3 (aucun transit par Next.js)
+        const putRes = await fetch(signJson.url, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!putRes.ok) throw new Error("Échec de l'upload S3 — vérifiez la configuration CORS du bucket");
+
+        // 3 — Confirmation : sharp (EXIF + JPEG 90% + thumbnail WebP) + création DB
+        const confirmRes = await fetch(`/api/media-events/${eventId}/photos/confirm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quarantineId: signJson.quarantineId, filename: file.name, mimeType: file.type, size: file.size }),
+        });
+        const confirmJson = await confirmRes.json();
+        if (!confirmRes.ok) throw new Error(confirmJson.error || "Erreur de confirmation");
+      } catch (err) {
+        errors.push(`${file.name}: ${err instanceof Error ? err.message : "Erreur réseau"}`);
       }
       done++;
       reportProgress({ done, total: files.length });
     }
+
     setUploading(false);
     reportProgress(null);
     if (errors.length > 0) setError(errors.join("\n"));

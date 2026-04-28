@@ -2,6 +2,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   CompleteMultipartUploadCommand,
@@ -56,6 +57,41 @@ export function getVersionOriginalKey(fileId: string, versionNumber: number, ext
 
 export function getVersionThumbnailKey(fileId: string, versionNumber: number): string {
   return `media-files/${fileId}/v${versionNumber}/thumbnail.webp`;
+}
+
+// ─── Quarantine (upload direct navigateur → S3) ───────────────────────────
+
+export function getQuarantineKey(eventId: string, quarantineId: string, ext: string): string {
+  return `quarantine/media-events/${eventId}/${quarantineId}.${ext}`;
+}
+
+const PRESIGNED_PUT_EXPIRY = 300; // 5 min
+
+export async function getSignedPutUrl(key: string, contentType: string, expiresIn = PRESIGNED_PUT_EXPIRY): Promise<string> {
+  return getSignedUrl(
+    s3Client,
+    new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType }),
+    { expiresIn, signableHeaders: new Set(["content-type"]) },
+  );
+}
+
+export async function fileExists(key: string): Promise<boolean> {
+  try {
+    await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function downloadFile(key: string): Promise<Buffer> {
+  const resp = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
+  if (!resp.Body) throw new Error(`S3 object not found: ${key}`);
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of resp.Body as AsyncIterable<Uint8Array>) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 }
 
 // ─── Upload ────────────────────────────────────────────────────────────────
