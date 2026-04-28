@@ -242,6 +242,7 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
   const [undoAction, setUndoAction] = useState<{ photoId: string; prevStatus: string } | null>(null);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showHdLightbox, setShowHdLightbox] = useState(false);
+  const [summaryDark, setSummaryDark] = useState(true);
 
   // Swipe gesture state
   const [dragX, setDragX] = useState(0);
@@ -398,20 +399,22 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
       return p.status === "PENDING";
     });
 
-    const filterConfig: { key: SummaryFilter; label: string; count: number; active: string; dot: string }[] = [
-      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   active: "bg-white/20 text-white",        dot: "" },
-      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, active: "bg-green-500/30 text-green-300", dot: "bg-green-400" },
-      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, active: "bg-red-500/30 text-red-300",     dot: "bg-red-400" },
-      { key: "PENDING",  label: "En attente",                             count: pendingCount,  active: "bg-yellow-500/20 text-yellow-300", dot: "bg-yellow-400" },
+    const dk = summaryDark;
+
+    const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
+      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-white/20 text-white border-transparent"           : "bg-gray-200 text-gray-800 border-transparent",        dot: "" },
+      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, activeClass: dk ? "bg-green-500/30 text-green-300 border-transparent"   : "bg-green-100 text-green-800 border-transparent", dot: "bg-green-500" },
+      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, activeClass: dk ? "bg-red-500/30 text-red-300 border-transparent"       : "bg-red-100 text-red-800 border-transparent",     dot: "bg-red-500" },
+      { key: "PENDING",  label: "En attente",                             count: pendingCount,  activeClass: dk ? "bg-yellow-500/20 text-yellow-300 border-transparent" : "bg-yellow-100 text-yellow-800 border-transparent", dot: "bg-yellow-500" },
     ];
 
     return (
-      <div className="min-h-screen bg-black flex flex-col">
+      <div className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-black" : "bg-gray-50"}`}>
         {/* Progress bar */}
         <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
 
         {/* Header */}
-        <header className="bg-black/90 px-4 pt-4 pb-3 sticky top-0 z-10">
+        <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-black/95" : "bg-white border-b border-gray-200"}`}>
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => {
@@ -420,40 +423,60 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
                 setShowSummary(false);
                 setSummaryFilter("ALL");
               }}
-              className="text-white/70 hover:text-white text-sm transition-colors"
+              className={`text-sm transition-colors ${dk ? "text-white/70 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
             >
               ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
             </button>
-            <span className="text-white/80 text-sm font-medium truncate max-w-[45%]">{event.name}</span>
-            <span className="text-white/50 text-sm tabular-nums shrink-0">{totalPhotos} photos</span>
+            <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-white/80" : "text-gray-800"}`}>{event.name}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`text-sm tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{totalPhotos} photos</span>
+              {/* Theme toggle */}
+              <button
+                onClick={() => setSummaryDark((v) => !v)}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dk ? "bg-white/10 hover:bg-white/20 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-500"}`}
+                aria-label="Basculer le thème"
+              >
+                {dk ? (
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Stats cards */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="bg-green-500/15 border border-green-500/30 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-2xl font-bold text-green-400 tabular-nums">{approvedCount}</p>
-              <p className="text-xs text-green-400/70 mt-0.5">{labels.approvedPlural}</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-green-500/15 border-green-500/30" : "bg-green-50 border-green-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-green-400" : "text-green-600"}`}>{approvedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-green-400/70" : "text-green-500"}`}>{labels.approvedPlural}</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-2xl font-bold text-white/50 tabular-nums">{pendingCount}</p>
-              <p className="text-xs text-white/30 mt-0.5">en attente</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{pendingCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-white/30" : "text-gray-400"}`}>en attente</p>
             </div>
-            <div className="bg-red-500/15 border border-red-500/30 rounded-xl px-3 py-2.5 text-center">
-              <p className="text-2xl font-bold text-red-400 tabular-nums">{rejectedCount}</p>
-              <p className="text-xs text-red-400/70 mt-0.5">{labels.rejectedPlural}</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-red-500/15 border-red-500/30" : "bg-red-50 border-red-200"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-red-400" : "text-red-600"}`}>{rejectedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-red-400/70" : "text-red-500"}`}>{labels.rejectedPlural}</p>
             </div>
           </div>
 
           {/* Filter pills */}
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {filterConfig.map(({ key, label, count, active, dot }) => (
+            {filterConfig.map(({ key, label, count, activeClass, dot }) => (
               <button
                 key={key}
                 onClick={() => setSummaryFilter(key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
                   summaryFilter === key
-                    ? `${active} border-transparent`
-                    : "bg-transparent text-white/40 border-white/10 hover:border-white/20 hover:text-white/60"
+                    ? activeClass
+                    : dk
+                      ? "bg-transparent text-white/40 border-white/10 hover:text-white/60 hover:border-white/20"
+                      : "bg-transparent text-gray-400 border-gray-200 hover:text-gray-600 hover:border-gray-300"
                 }`}
               >
                 {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
@@ -465,7 +488,7 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
         </header>
 
         {/* Grid */}
-        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1">
+        <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-gray-100"}`}>
           {filteredPhotos.map((photo) => {
             const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
             const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
@@ -473,14 +496,10 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
               <button
                 key={photo.id}
                 onClick={() => void toggleDecision(photo.id)}
-                className="relative aspect-square bg-gray-900 overflow-hidden rounded-sm"
+                className={`relative aspect-square overflow-hidden rounded-sm ${dk ? "bg-gray-900" : "bg-gray-200"}`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.thumbnailUrl}
-                  alt={photo.filename}
-                  className="w-full h-full object-cover"
-                />
+                <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
                 {/* Corner badge */}
                 {isApproved && (
                   <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md">
