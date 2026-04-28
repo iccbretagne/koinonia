@@ -632,7 +632,8 @@ enum MediaCommentType {
 
 enum MediaTokenType {
   VALIDATOR    // Accès validation (lecture + modification status)
-  MEDIA        // Accès téléchargement (lecture photos validées uniquement)
+  MEDIA        // Accès téléchargement (photos approuvées uniquement)
+  MEDIA_ALL    // Accès téléchargement (toutes photos, validées ou non)
   PREVALIDATOR // Accès prévalidation (filtrage avant validation finale)
   GALLERY      // Accès galerie (téléchargement photo par photo)
 }

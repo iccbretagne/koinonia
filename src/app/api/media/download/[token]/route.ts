@@ -12,13 +12,15 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
-    const shareToken = await validateMediaShareToken(token, "MEDIA");
+    const shareToken = await validateMediaShareToken(token, ["MEDIA", "MEDIA_ALL"]);
     const event = shareToken.mediaEvent;
 
     if (!event) return successResponse({ token: shareToken, photos: [] });
 
+    const allStatuses = shareToken.type === "MEDIA_ALL";
+
     const photos = await prisma.mediaPhoto.findMany({
-      where: { mediaEventId: event.id, status: "APPROVED" },
+      where: { mediaEventId: event.id, ...(!allStatuses && { status: "APPROVED" }) },
       orderBy: { uploadedAt: "asc" },
     });
 
@@ -29,6 +31,7 @@ export async function GET(
         size: p.size,
         width: p.width,
         height: p.height,
+        status: p.status,
         thumbnailUrl: await getSignedThumbnailUrl(p.thumbnailKey),
       }))
     );

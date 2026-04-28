@@ -22,15 +22,16 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    const shareToken = await validateMediaShareToken(token, "MEDIA");
+    const shareToken = await validateMediaShareToken(token, ["MEDIA", "MEDIA_ALL"]);
     const event = shareToken.mediaEvent;
     if (!event) throw new ApiError(404, "Événement introuvable");
 
     const body = bodySchema.parse(await request.json().catch(() => ({})));
+    const allStatuses = shareToken.type === "MEDIA_ALL";
 
     const where = {
       mediaEventId: event.id,
-      status: "APPROVED" as const,
+      ...(!allStatuses && { status: "APPROVED" as const }),
       ...(body.photoIds?.length ? { id: { in: body.photoIds } } : {}),
     };
 
@@ -40,7 +41,7 @@ export async function POST(
       orderBy: { uploadedAt: "asc" },
     });
 
-    if (photos.length === 0) throw new ApiError(404, "Aucune photo approuvée");
+    if (photos.length === 0) throw new ApiError(404, "Aucune photo disponible");
 
     // Nom du fichier ZIP : nom événement sanitisé
     const safeName = event.name.replace(/[^a-z0-9\-_]/gi, "_").slice(0, 60);

@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { token, photoId } = await params;
-    const shareToken = await validateMediaShareToken(token, "MEDIA");
+    const shareToken = await validateMediaShareToken(token, ["MEDIA", "MEDIA_ALL"]);
 
     const photo = await prisma.mediaPhoto.findUnique({
       where: { id: photoId },
@@ -23,7 +23,9 @@ export async function GET(
     if (shareToken.mediaEventId && photo.mediaEventId !== shareToken.mediaEventId) {
       throw new ApiError(403, "Photo hors périmètre");
     }
-    if (photo.status !== "APPROVED") throw new ApiError(403, "Photo non approuvée");
+    if (shareToken.type === "MEDIA" && photo.status !== "APPROVED") {
+      throw new ApiError(403, "Photo non approuvée");
+    }
 
     const downloadUrl = await getSignedDownloadUrl(photo.originalKey, photo.filename);
 
