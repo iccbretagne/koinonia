@@ -132,7 +132,7 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
     for (const file of files) {
       try {
         const form = new FormData();
-        form.append("file", file);
+        form.append("files", file);
         const res = await fetch(`/api/media-events/${eventId}/photos`, { method: "POST", body: form });
         const json = await res.json();
         if (!res.ok) errors.push(`${file.name}: ${json.error || "Erreur"}`);
