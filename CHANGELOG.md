@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.12] - 2026-04-29
+
+### Ajouté
+
+- Médias : droits d'upload pour la team Communication — les membres peuvent désormais uploader des photos dans les événements et projets média
+
 ## [v1.1.11] - 2026-04-29
 
 ### Ajouté
