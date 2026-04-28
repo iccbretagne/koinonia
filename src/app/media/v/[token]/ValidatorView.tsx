@@ -481,10 +481,20 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
                   alt={photo.filename}
                   className="w-full h-full object-cover"
                 />
-                {/* Thin bottom strip as status indicator */}
-                {isApproved && <div className="absolute bottom-0 inset-x-0 h-1 bg-green-500" />}
-                {isRejected  && <div className="absolute bottom-0 inset-x-0 h-1 bg-red-500" />}
-                {photo.status === "PENDING" && <div className="absolute bottom-0 inset-x-0 h-1 bg-yellow-400/60" />}
+                {/* Corner badge */}
+                {isApproved && (
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md">
+                    <span className="text-white text-[10px] font-bold leading-none">✓</span>
+                  </div>
+                )}
+                {isRejected && (
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                    <span className="text-white text-[10px] font-bold leading-none">✗</span>
+                  </div>
+                )}
+                {photo.status === "PENDING" && (
+                  <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-md" />
+                )}
               </button>
             );
           })}
