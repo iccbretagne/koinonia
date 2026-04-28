@@ -431,8 +431,8 @@ export async function resolveChurchId(
 // ── Media access helpers ──────────────────────────────────────────────────────
 
 /**
- * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA dans l'église donnée.
- * Utilisé pour donner accès aux vues média aux STARs de la team production uniquement.
+ * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA ou COMMUNICATION
+ * dans l'église donnée. Ces deux équipes ont accès complet à la section média.
  */
 export async function isProductionMediaMember(session: Session, churchId: string): Promise<boolean> {
   const userDeptIds = session.user.churchRoles
@@ -440,14 +440,14 @@ export async function isProductionMediaMember(session: Session, churchId: string
     .flatMap((r) => r.departments.map((d) => d.department.id));
   if (userDeptIds.length === 0) return false;
   const count = await prisma.department.count({
-    where: { function: "PRODUCTION_MEDIA", ministry: { churchId }, id: { in: userDeptIds } },
+    where: { function: { in: ["PRODUCTION_MEDIA", "COMMUNICATION"] }, ministry: { churchId }, id: { in: userDeptIds } },
   });
   return count > 0;
 }
 
 /**
  * Autorise l'accès en lecture aux ressources média.
- * Passe si : permission `media:view` (ADMIN, SECRETARY…) OU membre d'un département PRODUCTION_MEDIA.
+ * Passe si : permission `media:view` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
  */
 export async function requireMediaAccess(churchId: string) {
   const session = await requireAuth();
@@ -467,7 +467,7 @@ export async function requireMediaAccess(churchId: string) {
 
 /**
  * Autorise l'upload et la création de ressources média.
- * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre d'un département PRODUCTION_MEDIA.
+ * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
  */
 export async function requireMediaUploadAccess(churchId: string) {
   const session = await requireAuth();
@@ -487,7 +487,7 @@ export async function requireMediaUploadAccess(churchId: string) {
 
 /**
  * Autorise la gestion des ressources média (liens de partage, tokens sensibles…).
- * Passe si : permission `media:manage` (ADMIN…) OU membre d'un département PRODUCTION_MEDIA.
+ * Passe si : permission `media:manage` (ADMIN…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
  */
 export async function requireMediaManageAccess(churchId: string) {
   const session = await requireAuth();

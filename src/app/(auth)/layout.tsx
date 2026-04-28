@@ -121,7 +121,7 @@ export default async function AuthLayout({
     if (isMemberOf("COMMUNICATION"))
       mediaLinks.push({ href: "/communication/requests", label: "Communication" });
 
-    if (userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA")) {
+    if (userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION")) {
       mediaLinks.push({ href: "/media/events", label: "Événements" });
       mediaLinks.push({ href: "/media/projects", label: "Projets" });
     }
