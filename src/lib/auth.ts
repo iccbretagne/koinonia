@@ -489,8 +489,9 @@ export async function requireMediaAccess(churchId: string) {
 
 /**
  * Autorise l'upload et la création de ressources média.
- * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA.
- * La team Communication n'a pas ce droit.
+ * Passe si : permission `media:upload` (ADMIN, SECRETARY…)
+ *         OU membre PRODUCTION_MEDIA
+ *         OU membre COMMUNICATION.
  */
 export async function requireMediaUploadAccess(churchId: string) {
   const session = await requireAuth();
@@ -502,7 +503,7 @@ export async function requireMediaUploadAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:upload") || await isProductionMediaMember(session, churchId))
+  if (userPerms.has("media:upload") || await isProductionMediaMember(session, churchId) || await isCommunicationMember(session, churchId))
     return session;
 
   throw new Error("FORBIDDEN");

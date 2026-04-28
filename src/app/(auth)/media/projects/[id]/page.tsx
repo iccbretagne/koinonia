@@ -1,4 +1,4 @@
-import { requireMediaAccess, isProductionMediaMember, resolveChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, resolveChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { rolePermissions } from "@/lib/registry";
@@ -65,7 +65,8 @@ export default async function MediaProjectDetailPage({
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const isProductionMember = await isProductionMediaMember(session, churchId!);
-  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember;
+  const isCommMember = await isCommunicationMember(session, churchId!);
+  const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
   const canReview = session.user.isSuperAdmin || churchPerms.has("media:review");
   const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember;
 
