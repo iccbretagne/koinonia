@@ -8,6 +8,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [v1.1.10] - 2026-04-28
 
+### Ajouté
+
+- Médias : upload de photos via presigned URL S3 — le fichier transite directement du navigateur vers S3 sans passer par Next.js (endpoints `POST /photos/sign` + `POST /photos/confirm`)
+
 ### Corrigé
 
 - Médias : les uploads de photos > 10MB échouaient toujours via les route handlers — ajout de `middlewareClientMaxBodySize: 100MB` dans next.config.ts (le précédent fix `serverActions.bodySizeLimit` ne couvrait pas les routes API transitant par le middleware)

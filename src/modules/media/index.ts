@@ -20,6 +20,10 @@ export {
   getSignedPartUrl,
   completeMultipartUpload,
   abortMultipartUpload,
+  getQuarantineKey,
+  getSignedPutUrl,
+  fileExists,
+  downloadFile,
 } from "./services/s3";
 
 /**
