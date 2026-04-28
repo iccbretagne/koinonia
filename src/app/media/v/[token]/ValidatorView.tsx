@@ -465,7 +465,7 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
         </header>
 
         {/* Grid */}
-        <div className="grid grid-cols-3 gap-1 p-1 flex-1">
+        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-0.5 p-0.5 flex-1">
           {filteredPhotos.map((photo) => {
             const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
             const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
@@ -473,30 +473,18 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
               <button
                 key={photo.id}
                 onClick={() => void toggleDecision(photo.id)}
-                className="relative aspect-square bg-gray-900 overflow-hidden rounded-md"
+                className="relative aspect-square bg-gray-900 overflow-hidden"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={photo.thumbnailUrl}
                   alt={photo.filename}
                   className="w-full h-full object-cover"
-                  style={{ opacity: photo.status === "PENDING" ? 1 : 0.55 }}
                 />
-                {/* Status overlay */}
-                {isApproved && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-green-500/20">
-                    <span className="text-green-400 text-2xl font-bold drop-shadow">✓</span>
-                  </div>
-                )}
-                {isRejected && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
-                    <span className="text-red-400 text-2xl font-bold drop-shadow">✗</span>
-                  </div>
-                )}
-                {/* Pending dot */}
-                {photo.status === "PENDING" && (
-                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-yellow-400" />
-                )}
+                {/* Thin bottom strip as status indicator */}
+                {isApproved && <div className="absolute bottom-0 inset-x-0 h-1 bg-green-500" />}
+                {isRejected  && <div className="absolute bottom-0 inset-x-0 h-1 bg-red-500" />}
+                {photo.status === "PENDING" && <div className="absolute bottom-0 inset-x-0 h-1 bg-yellow-400/60" />}
               </button>
             );
           })}
