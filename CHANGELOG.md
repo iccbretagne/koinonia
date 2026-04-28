@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.9] - 2026-04-28
+
+### Corrigé
+
+- Médias : l'upload de photos ne bloque plus sur la limite de 10MB de Next.js (portée à 100MB dans next.config.ts)
+- Médias : correction d'un bug critique — les uploads de photos authentifiés retournaient 400 silencieusement (clé FormData `"file"` → `"files"`, en accord avec le serveur)
+
 ## [v1.1.8] - 2026-04-26
 
 ### Ajouté
