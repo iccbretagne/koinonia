@@ -436,8 +436,8 @@ export async function resolveChurchId(
 // ── Media access helpers ──────────────────────────────────────────────────────
 
 /**
- * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA ou COMMUNICATION
- * dans l'église donnée. Ces deux équipes ont accès complet à la section média.
+ * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA dans l'église donnée.
+ * Droits complets : vue, upload, gestion des tokens et suppression.
  */
 export async function isProductionMediaMember(session: Session, churchId: string): Promise<boolean> {
   const userDeptIds = session.user.churchRoles
@@ -445,14 +445,31 @@ export async function isProductionMediaMember(session: Session, churchId: string
     .flatMap((r) => r.departments.map((d) => d.department.id));
   if (userDeptIds.length === 0) return false;
   const count = await prisma.department.count({
-    where: { function: { in: ["PRODUCTION_MEDIA", "COMMUNICATION"] }, ministry: { churchId }, id: { in: userDeptIds } },
+    where: { function: "PRODUCTION_MEDIA", ministry: { churchId }, id: { in: userDeptIds } },
+  });
+  return count > 0;
+}
+
+/**
+ * Vérifie si l'utilisateur est membre d'un département COMMUNICATION dans l'église donnée.
+ * Droits limités : vue uniquement (pas d'upload ni de gestion).
+ */
+export async function isCommunicationMember(session: Session, churchId: string): Promise<boolean> {
+  const userDeptIds = session.user.churchRoles
+    .filter((r) => r.churchId === churchId)
+    .flatMap((r) => r.departments.map((d) => d.department.id));
+  if (userDeptIds.length === 0) return false;
+  const count = await prisma.department.count({
+    where: { function: "COMMUNICATION", ministry: { churchId }, id: { in: userDeptIds } },
   });
   return count > 0;
 }
 
 /**
  * Autorise l'accès en lecture aux ressources média.
- * Passe si : permission `media:view` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
+ * Passe si : permission `media:view` (ADMIN, SECRETARY…)
+ *         OU membre PRODUCTION_MEDIA (droits complets)
+ *         OU membre COMMUNICATION (vue uniquement).
  */
 export async function requireMediaAccess(churchId: string) {
   const session = await requireAuth();
@@ -464,7 +481,7 @@ export async function requireMediaAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:view") || await isProductionMediaMember(session, churchId))
+  if (userPerms.has("media:view") || await isProductionMediaMember(session, churchId) || await isCommunicationMember(session, churchId))
     return session;
 
   throw new Error("FORBIDDEN");
@@ -472,7 +489,8 @@ export async function requireMediaAccess(churchId: string) {
 
 /**
  * Autorise l'upload et la création de ressources média.
- * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
+ * Passe si : permission `media:upload` (ADMIN, SECRETARY…) OU membre PRODUCTION_MEDIA.
+ * La team Communication n'a pas ce droit.
  */
 export async function requireMediaUploadAccess(churchId: string) {
   const session = await requireAuth();
@@ -492,7 +510,8 @@ export async function requireMediaUploadAccess(churchId: string) {
 
 /**
  * Autorise la gestion des ressources média (liens de partage, tokens sensibles…).
- * Passe si : permission `media:manage` (ADMIN…) OU membre PRODUCTION_MEDIA / COMMUNICATION.
+ * Passe si : permission `media:manage` (ADMIN…) OU membre PRODUCTION_MEDIA.
+ * La team Communication n'a pas ce droit.
  */
 export async function requireMediaManageAccess(churchId: string) {
   const session = await requireAuth();
