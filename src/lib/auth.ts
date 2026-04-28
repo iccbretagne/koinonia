@@ -45,6 +45,11 @@ declare module "next-auth" {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Nécessaire derrière un reverse proxy (Traefik, nginx) pour que l'URL de
+  // callback OAuth soit construite à partir du Host header et non de l'URL
+  // interne — sans ça, la validation PKCE/nonce peut échouer avec une erreur
+  // "unexpected iss" sur le callback Google.
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
