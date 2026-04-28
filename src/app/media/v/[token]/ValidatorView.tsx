@@ -465,7 +465,7 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
         </header>
 
         {/* Grid */}
-        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-0.5 p-0.5 flex-1">
+        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1">
           {filteredPhotos.map((photo) => {
             const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
             const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
@@ -473,7 +473,7 @@ export default function ValidatorView({ token, data }: { token: string; data: Va
               <button
                 key={photo.id}
                 onClick={() => void toggleDecision(photo.id)}
-                className="relative aspect-square bg-gray-900 overflow-hidden"
+                className="relative aspect-square bg-gray-900 overflow-hidden rounded-sm"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
