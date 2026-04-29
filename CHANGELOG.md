@@ -6,6 +6,17 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.0] - 2026-04-29
+
+### Ajouté
+
+- Module MRBS (optionnel) : SSO entre Koinonia et MRBS (réservation de salles) — les utilisateurs connectés à Koinonia sont automatiquement reconnus dans MRBS via cookie partagé
+- Module MRBS : mapping automatique des niveaux MRBS (0 lecture, 1 utilisateur, 2 admin) selon le rôle Koinonia
+- Module MRBS : page d'administration `/admin/mrbs-links` pour lier les comptes MRBS aux comptes Koinonia (auto-détection par email, liaison manuelle)
+- Module MRBS : endpoints API `/api/auth/mrbs/*` pour la résolution de session et la récupération des utilisateurs
+- Module MRBS : lien "Salles" dans la sidebar pointant vers l'instance MRBS configurée
+- Migration BDD : table `mrbs_user_links` pour les liaisons manuelles de comptes
+
 ## [v1.1.13] - 2026-04-29
 
 ### Corrigé
