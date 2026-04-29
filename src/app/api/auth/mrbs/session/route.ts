@@ -24,6 +24,12 @@ function requireMrbsSecret(request: Request): void {
  */
 export async function GET(request: Request) {
   try {
+    console.log("[mrbs/session] incoming", {
+      authorization: request.headers.get("authorization") ? "present" : "missing",
+      tokenHeader: request.headers.get("x-mrbs-session-token") ? "present" : "missing",
+      churchIdHeader: request.headers.get("x-koinonia-church-id") ?? "(none)",
+    });
+
     requireMrbsSecret(request);
 
     const { searchParams } = new URL(request.url);
@@ -37,6 +43,8 @@ export async function GET(request: Request) {
       searchParams.get("churchId") ??
       process.env.MRBS_CHURCH_ID ??
       "";
+
+    console.log("[mrbs/session] params", { token: token ? "present" : "missing", churchId });
 
     if (!token) throw new ApiError(400, "Paramètre 'token' requis");
     if (!churchId) throw new ApiError(400, "Paramètre 'churchId' requis");
