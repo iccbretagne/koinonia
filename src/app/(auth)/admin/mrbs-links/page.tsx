@@ -27,7 +27,10 @@ async function fetchMrbsUsers(): Promise<MrbsUser[]> {
       await conn.end();
     }
   } catch (err) {
-    console.error("[mrbs-links] fetchMrbsUsers error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    // Masquer l'URL de connexion qui peut contenir le mot de passe
+    const safe = msg.replace(/\/\/[^@]*@/, "//***:***@");
+    console.error("[mrbs-links] fetchMrbsUsers error:", safe);
     return [];
   }
 }
