@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.1.13] - 2026-04-29
+
+### Corrigé
+
+- Médias : création d'un lien "Téléchargement (toutes)" (`MEDIA_ALL`) échouait avec "Données invalides" — `MEDIA_ALL` était absent du schéma de validation côté API
+
 ## [v1.1.12] - 2026-04-29
 
 ### Ajouté
