@@ -9,6 +9,8 @@ interface SidebarProps {
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
   mediaLinks: { href: string; label: string }[];
+  mrbsUrl?: string | null;
+  mrbsAdminLink?: string | null;
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
   hasEventsManage?: boolean;
@@ -82,6 +84,14 @@ function IconConfig({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function IconMrbs({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
 }
@@ -277,6 +287,8 @@ export default function Sidebar({
   configLinks,
   requestLinks,
   mediaLinks,
+  mrbsUrl = null,
+  mrbsAdminLink = null,
   hasDiscipleship = false,
   hasEventsAccess = true,
   hasEventsManage = false,
@@ -478,7 +490,37 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 6. Discipolat — lien direct (une seule sous-page) */}
+      {/* 6. Réservation de salles (module MRBS optionnel) */}
+      {(mrbsUrl || mrbsAdminLink) && (
+        <AccordionSection
+          title="Salles"
+          icon={<IconMrbs className="w-4 h-4" />}
+          open={openSection === "mrbs"}
+          onToggle={() => toggle("mrbs")}
+          isActive={pathname.startsWith("/admin/mrbs")}
+          dataTour="sidebar-mrbs"
+        >
+          <nav className="space-y-0.5 pl-6">
+            {mrbsUrl && (
+              <a
+                href={mrbsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm px-3 py-1.5 rounded-md text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5 transition-colors"
+              >
+                Réserver une salle ↗
+              </a>
+            )}
+            {mrbsAdminLink && (
+              <NavLink href={mrbsAdminLink} active={pathname.startsWith(mrbsAdminLink)} onClose={onClose}>
+                Liaison comptes
+              </NavLink>
+            )}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 7. Discipolat — lien direct (une seule sous-page) */}
       {hasDiscipleship && (
         <Link
           href="/admin/discipleship"

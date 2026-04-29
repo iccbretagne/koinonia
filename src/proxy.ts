@@ -17,6 +17,10 @@ export function proxy(request: NextRequest) {
         request.nextUrl.pathname.startsWith("/api/media/download/")) {
       return NextResponse.next();
     }
+    // Allow MRBS SSO endpoints (authenticated by Bearer secret, not session cookie)
+    if (request.nextUrl.pathname.startsWith("/api/auth/mrbs/")) {
+      return NextResponse.next();
+    }
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
