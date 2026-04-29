@@ -12,7 +12,7 @@ import { defineModule } from "@/core/module-registry";
  * Dépendances : core uniquement.
  *
  * Niveaux MRBS :
- *   2 (Admin)     — isSuperAdmin ou rôle SUPER_ADMIN / ADMIN
+ *   2 (Admin)     — isSuperAdmin ou rôle SUPER_ADMIN / ADMIN / SECRETARY
  *   1 (User)      — rôle MINISTER / DEPARTMENT_HEAD ou isDeputy sur un département
  *   0 (Read-only) — tous les autres utilisateurs authentifiés
  */
@@ -51,7 +51,7 @@ export async function computeMrbsLevel(
 
   const { role, departments } = churchRole;
 
-  if (role === "SUPER_ADMIN" || role === "ADMIN") return 2;
+  if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "SECRETARY") return 2;
   if (role === "MINISTER" || role === "DEPARTMENT_HEAD") return 1;
   if (departments.some((d) => d.isDeputy)) return 1;
 

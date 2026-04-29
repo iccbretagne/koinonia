@@ -26,7 +26,8 @@ async function fetchMrbsUsers(): Promise<MrbsUser[]> {
     } finally {
       await conn.end();
     }
-  } catch {
+  } catch (err) {
+    console.error("[mrbs-links] fetchMrbsUsers error:", err);
     return [];
   }
 }

@@ -27,8 +27,16 @@ export async function GET(request: Request) {
     requireMrbsSecret(request);
 
     const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
-    const churchId = searchParams.get("churchId") ?? process.env.MRBS_CHURCH_ID ?? "";
+    // Token : header (SessionKoinonia.php) ou query param (tests directs)
+    const token =
+      request.headers.get("x-mrbs-session-token") ??
+      searchParams.get("token");
+    // ChurchId : header (SessionKoinonia.php) > query param > env var
+    const churchId =
+      request.headers.get("x-koinonia-church-id") ??
+      searchParams.get("churchId") ??
+      process.env.MRBS_CHURCH_ID ??
+      "";
 
     if (!token) throw new ApiError(400, "Paramètre 'token' requis");
     if (!churchId) throw new ApiError(400, "Paramètre 'churchId' requis");
