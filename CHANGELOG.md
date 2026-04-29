@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.3] - 2026-04-30
+
+### Corrigé
+
+- MRBS : suppression des logs de debug dans `/api/auth/mrbs/session`
+
 ## [v1.2.2] - 2026-04-29
 
 ### Corrigé
