@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.1] - 2026-04-29
+
+### Corrigé
+
+- MRBS : résolution de session toujours nulle (niveau 0 pour tous) — le plugin PHP envoyait le token via header `X-Mrbs-Session-Token` mais l'API le lisait en query param `?token=`
+- MRBS : ajout logs d'erreur sur `fetchMrbsUsers` pour diagnostiquer les problèmes de connexion BDD
+- MRBS : rôle SECRETARY passe en niveau 2 (admin MRBS) pour cohérence avec ses droits Koinonia
+
 ## [v1.2.0] - 2026-04-29
 
 ### Ajouté
