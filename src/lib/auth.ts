@@ -43,6 +43,27 @@ declare module "next-auth" {
   }
 }
 
+// Lorsque AUTH_COOKIE_DOMAIN est défini (ex: ".iccrennes.fr"), le cookie de
+// session est posé sur le domaine parent et devient lisible par tous les
+// sous-domaines (ex: booking.iccrennes.fr pour le plugin MRBS).
+const cookieDomain = process.env.AUTH_COOKIE_DOMAIN || undefined;
+const cookieOptions = cookieDomain
+  ? {
+      cookies: {
+        sessionToken: {
+          name: "__Secure-authjs.session-token",
+          options: {
+            domain: cookieDomain,
+            httpOnly: true,
+            sameSite: "lax" as const,
+            path: "/",
+            secure: true,
+          },
+        },
+      },
+    }
+  : {};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   // Nécessaire derrière un reverse proxy (Traefik, nginx) pour que l'URL de
@@ -50,6 +71,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // interne — sans ça, la validation PKCE/nonce peut échouer avec une erreur
   // "unexpected iss" sur le callback Google.
   trustHost: true,
+  ...cookieOptions,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
