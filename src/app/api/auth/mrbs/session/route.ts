@@ -24,12 +24,6 @@ function requireMrbsSecret(request: Request): void {
  */
 export async function GET(request: Request) {
   try {
-    console.log("[mrbs/session] incoming", {
-      authorization: request.headers.get("authorization") ? "present" : "missing",
-      tokenHeader: request.headers.get("x-mrbs-session-token") ? "present" : "missing",
-      churchIdHeader: request.headers.get("x-koinonia-church-id") ?? "(none)",
-    });
-
     requireMrbsSecret(request);
 
     const { searchParams } = new URL(request.url);
@@ -43,8 +37,6 @@ export async function GET(request: Request) {
       searchParams.get("churchId") ??
       process.env.MRBS_CHURCH_ID ??
       "";
-
-    console.log("[mrbs/session] params", { token: token ? "present" : "missing", churchId });
 
     if (!token) throw new ApiError(400, "Paramètre 'token' requis");
     if (!churchId) throw new ApiError(400, "Paramètre 'churchId' requis");
@@ -81,14 +73,6 @@ export async function GET(request: Request) {
     const username = link?.mrbsUsername ?? user.email ?? user.id;
     const displayName = user.displayName ?? user.name ?? username;
     const level = await computeMrbsLevel(user.id, churchId, user.isSuperAdmin);
-
-    console.log("[mrbs/session]", {
-      userId: user.id,
-      email: user.email,
-      isSuperAdmin: user.isSuperAdmin,
-      churchId,
-      level,
-    });
 
     return successResponse({ username, display_name: displayName, email: user.email, level });
   } catch (error) {
