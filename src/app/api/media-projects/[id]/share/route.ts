@@ -7,7 +7,7 @@ import { z } from "zod";
 const SENSITIVE_TOKEN_TYPES = ["VALIDATOR", "PREVALIDATOR"] as const;
 
 const createSchema = z.object({
-  type: z.enum(["VALIDATOR", "MEDIA", "PREVALIDATOR", "GALLERY"]),
+  type: z.enum(["VALIDATOR", "MEDIA", "MEDIA_ALL", "PREVALIDATOR", "GALLERY"]),
   label: z.string().optional(),
   expiresInDays: z.number().int().positive().optional(),
   onlyApproved: z.boolean().optional(),
