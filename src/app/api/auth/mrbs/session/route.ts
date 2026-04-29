@@ -74,6 +74,14 @@ export async function GET(request: Request) {
     const displayName = user.displayName ?? user.name ?? username;
     const level = await computeMrbsLevel(user.id, churchId, user.isSuperAdmin);
 
+    console.log("[mrbs/session]", {
+      userId: user.id,
+      email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
+      churchId,
+      level,
+    });
+
     return successResponse({ username, display_name: displayName, email: user.email, level });
   } catch (error) {
     return errorResponse(error);
