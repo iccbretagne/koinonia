@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.2] - 2026-04-29
+
+### Corrigé
+
+- MRBS : credentials BDD masqués dans les logs (`mysql://***:***@host/db` au lieu de l'URL complète)
+- MRBS : log de debug `[mrbs/session]` pour diagnostiquer les problèmes de niveau (userId, churchId, level)
+
 ## [v1.2.1] - 2026-04-29
 
 ### Corrigé
