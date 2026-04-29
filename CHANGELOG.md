@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.4] - 2026-04-30
+
+### Corrigé
+
+- MRBS : cookie de session posé sur le domaine parent (`.iccrennes.fr`) via `AUTH_COOKIE_DOMAIN` — nécessaire pour que `booking.iccrennes.fr` reçoive le cookie posé par `koinonia.iccrennes.fr`
+- CI : mise à jour des actions GitHub vers Node.js 24 natif (`checkout` v6, `setup-node` v6, `upload-artifact` v7)
+
 ## [v1.2.3] - 2026-04-30
 
 ### Corrigé
