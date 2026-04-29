@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { rolePermissions } from "@/lib/registry";
+import { rolePermissions, registry } from "@/lib/registry";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
@@ -190,6 +190,13 @@ export default async function AuthLayout({
     </footer>
   );
 
+  // ── Module MRBS (optionnel) ───────────────────────────────────────────────
+  const mrbsUrl = registry.has("mrbs") ? (process.env.MRBS_URL ?? null) : null;
+  const mrbsAdminLink =
+    registry.has("mrbs") && userPermissions.has("mrbs:manage")
+      ? "/admin/mrbs-links"
+      : null;
+
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
@@ -215,6 +222,8 @@ export default async function AuthLayout({
       configLinks={visibleConfigLinks}
       requestLinks={requestLinks}
       mediaLinks={mediaLinks}
+      mrbsUrl={mrbsUrl}
+      mrbsAdminLink={mrbsAdminLink}
       hasDiscipleship={hasDiscipleship}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
