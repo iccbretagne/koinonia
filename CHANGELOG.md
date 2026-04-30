@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.5] - 2026-04-30
+
+### Corrigé
+
+- Mobile : lien "Salles" (MRBS) absent du menu mobile — `mrbsUrl` et `mrbsAdminLink` n'étaient pas transmis au `MobileNavSheet`
+
 ## [v1.2.4] - 2026-04-30
 
 ### Corrigé
