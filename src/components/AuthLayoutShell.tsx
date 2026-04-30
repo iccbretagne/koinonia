@@ -114,6 +114,8 @@ export default function AuthLayoutShell({
           configLinks={configLinks}
           requestLinks={requestLinks}
           mediaLinks={mediaLinks}
+          mrbsUrl={mrbsUrl}
+          mrbsAdminLink={mrbsAdminLink}
           hasDiscipleship={hasDiscipleship}
           hasEventsAccess={hasEventsAccess}
           hasEventsManage={hasEventsManage}
