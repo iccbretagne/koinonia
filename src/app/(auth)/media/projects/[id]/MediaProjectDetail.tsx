@@ -948,7 +948,7 @@ export default function MediaProjectDetail({
   async function refreshProject() {
     const res = await fetch(`/api/media-projects/${project.id}`);
     const json = await res.json();
-    if (res.ok) setProject(json);
+    if (res.ok) setProject(json.data ?? json);
     router.refresh();
   }
 
