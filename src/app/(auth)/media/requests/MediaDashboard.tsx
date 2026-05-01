@@ -53,6 +53,22 @@ const PARENT_TYPE_LABEL: Record<string, string> = {
   VISUEL: "Visuel",
 };
 
+function isUrgent(deadline: string | null): boolean {
+  if (!deadline) return false;
+  return new Date(deadline + "T23:59:59").getTime() < Date.now() + 48 * 60 * 60 * 1000;
+}
+
+function sortUrgentFirst(list: MediaRequest[]): MediaRequest[] {
+  return [...list].sort((a, b) => {
+    const pa = (a.payload ?? {}) as Record<string, unknown>;
+    const pb = (b.payload ?? {}) as Record<string, unknown>;
+    const ua = isUrgent((pa.deadline as string) ?? null);
+    const ub = isUrgent((pb.deadline as string) ?? null);
+    if (ua === ub) return 0;
+    return ua ? -1 : 1;
+  });
+}
+
 export default function MediaDashboard({ requests: initial }: Props) {
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -98,8 +114,8 @@ export default function MediaDashboard({ requests: initial }: Props) {
     }
   }
 
-  const pending = requests.filter((r) => r.status === "EN_ATTENTE");
-  const inProgress = requests.filter((r) => r.status === "EN_COURS");
+  const pending = sortUrgentFirst(requests.filter((r) => r.status === "EN_ATTENTE"));
+  const inProgress = sortUrgentFirst(requests.filter((r) => r.status === "EN_COURS"));
   const done = requests.filter((r) => r.status === "LIVRE" || r.status === "ANNULE");
 
   function renderRequest(req: MediaRequest) {
@@ -110,13 +126,19 @@ export default function MediaDashboard({ requests: initial }: Props) {
     const format = (p.format as string) ?? null;
     const deadline = (p.deadline as string) ?? null;
     const deliveryLink = (p.deliveryLink as string) ?? null;
+    const urgent = isUrgent(deadline);
 
     return (
-      <div key={req.id} className="bg-white rounded-lg shadow p-5 border border-gray-100">
+      <div key={req.id} className={`bg-white rounded-lg shadow p-5 border ${urgent && req.status !== "LIVRE" && req.status !== "ANNULE" ? "border-icc-rouge/40" : "border-gray-100"}`}>
         <div className="flex items-start justify-between gap-4 mb-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-gray-900">{req.title}</h3>
+              {urgent && req.status !== "LIVRE" && req.status !== "ANNULE" && (
+                <span className="text-xs font-semibold bg-icc-rouge text-white px-2 py-0.5 rounded-full">
+                  ⚡ Urgent
+                </span>
+              )}
               {format && (
                 <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
                   {format}

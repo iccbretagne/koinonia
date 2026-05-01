@@ -645,6 +645,14 @@ export default function RequestForm({
             value={visualDeadline}
             onChange={(e) => setVisualDeadline(e.target.value)}
           />
+          {visualDeadline && new Date(visualDeadline + "T23:59:59").getTime() < Date.now() + 48 * 60 * 60 * 1000 && (
+            <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800">
+              <span className="shrink-0 mt-0.5">⚠️</span>
+              <span>
+                <strong>Délai inférieur à 48h</strong> — le traitement de cette demande n&apos;est pas garanti et reste à la discrétion de la Production Média.
+              </span>
+            </div>
+          )}
           {sourceOptions.length > 1 && (
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">Département</label>
