@@ -29,10 +29,16 @@ interface MediaRequest {
   parentRequest: ParentRequest | null;
 }
 
+interface MediaProject {
+  id: string;
+  name: string;
+  shareTokens: { token: string; type: string }[];
+}
+
 interface Props {
   requests: MediaRequest[];
   churchId: string;
-  mediaProjects: { id: string; name: string }[];
+  mediaProjects: MediaProject[];
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -73,7 +79,7 @@ function sortUrgentFirst(list: MediaRequest[]): MediaRequest[] {
 
 export default function MediaDashboard({ requests: initial, churchId, mediaProjects: initialProjects }: Props) {
   const [requests, setRequests] = useState(initial);
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<MediaProject[]>(initialProjects);
   const [processing, setProcessing] = useState<string | null>(null);
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -108,7 +114,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
         if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur création projet"); return; }
         const created = await res.json();
         projectId = created.data.id;
-        setProjects((prev) => [{ id: projectId, name: newProjectName.trim() }, ...prev]);
+        setProjects((prev) => [{ id: projectId, name: newProjectName.trim(), shareTokens: [] }, ...prev]);
       }
 
       const patchRes = await fetch(`/api/requests/${reqId}`, {
@@ -246,19 +252,37 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
           <p className="text-sm text-gray-600 mb-3 line-clamp-3">{brief}</p>
         )}
 
-        {linkedProject && req.status === "EN_COURS" && (
-          <a
-            href={`/media/projects/${linkedProject.id}`}
-            className="inline-flex items-center gap-1.5 text-sm text-icc-violet hover:underline mb-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            {linkedProject.name}
-          </a>
-        )}
+        {linkedProject && (req.status === "EN_COURS" || req.status === "LIVRE") && (() => {
+          const shareToken = linkedProject.shareTokens[0];
+          const shareUrl = shareToken
+            ? (shareToken.type === "GALLERY" ? `/media/g/${shareToken.token}` : `/media/d/${shareToken.token}`)
+            : null;
+          return (
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <a
+                href={`/media/projects/${linkedProject.id}`}
+                className="inline-flex items-center gap-1.5 text-sm text-icc-violet hover:underline"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                {linkedProject.name}
+              </a>
+              {shareUrl && (
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full hover:bg-icc-violet/20"
+                >
+                  ↓ Télécharger
+                </a>
+              )}
+            </div>
+          );
+        })()}
 
-        {deliveryLink && req.status === "LIVRE" && (
+        {!linkedProject && deliveryLink && req.status === "LIVRE" && (
           <a
             href={deliveryLink}
             target="_blank"
@@ -318,7 +342,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
               </div>
             ) : (
               <>
-                {req.status === "EN_COURS" && (
+                {req.status === "EN_COURS" && !linkedProject && (
                   <input
                     type="url"
                     value={deliveryLinks[req.id] ?? ""}
@@ -341,7 +365,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                   {req.status === "EN_COURS" && (
                     <Button
                       size="sm"
-                      onClick={() => updateRequest(req.id, "LIVRE", deliveryLinks[req.id] || undefined)}
+                      onClick={() => updateRequest(req.id, "LIVRE", linkedProject ? undefined : (deliveryLinks[req.id] || undefined))}
                       disabled={processing === req.id}
                     >
                       ✓ Marquer livré

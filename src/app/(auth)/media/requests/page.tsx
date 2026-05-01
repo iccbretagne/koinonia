@@ -58,7 +58,15 @@ export default async function MediaRequestsPage() {
     prisma.mediaProject.findMany({
       where: { churchId },
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        shareTokens: {
+          select: { token: true, type: true },
+          where: { type: { in: ["GALLERY", "MEDIA", "MEDIA_ALL"] } },
+          take: 1,
+        },
+      },
     }),
   ]);
 
