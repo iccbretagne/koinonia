@@ -67,7 +67,7 @@ export default async function MediaRequestsPage() {
           take: 1,
         },
       },
-    }),
+    }).catch(() => []),
   ]);
 
   const pending = requests.filter((r) => r.status === "EN_ATTENTE").length;
