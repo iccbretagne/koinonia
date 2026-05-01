@@ -66,7 +66,16 @@ export async function POST(request: Request) {
       }
 
       // ── Planning ──────────────────────────────────────────────────────────────
-      await tx.planning.updateMany({ where: { memberId: sourceId }, data: { memberId: targetId } });
+      // Unique constraint: (eventDepartmentId, memberId) — dédupliquer
+      const srcPlannings = await tx.planning.findMany({ where: { memberId: sourceId } });
+      for (const p of srcPlannings) {
+        const conflict = await tx.planning.findFirst({
+          where: { eventDepartmentId: p.eventDepartmentId, memberId: targetId },
+        });
+        if (!conflict) {
+          await tx.planning.update({ where: { id: p.id }, data: { memberId: targetId } });
+        }
+      }
 
       // ── TaskAssignment ────────────────────────────────────────────────────────
       // Unique constraint: (taskId, eventId, memberId) — dédupliquer
