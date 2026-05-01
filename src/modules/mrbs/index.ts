@@ -38,22 +38,25 @@ export async function computeMrbsLevel(
 
   const { prisma } = await import("@/lib/prisma");
 
-  const churchRole = await prisma.userChurchRole.findFirst({
+  const churchRoles = await prisma.userChurchRole.findMany({
     where: { userId, churchId },
     select: {
       role: true,
       departments: { select: { isDeputy: true } },
     },
-    orderBy: { role: "asc" },
   });
 
-  if (!churchRole) return 0;
+  if (churchRoles.length === 0) return 0;
 
-  const { role, departments } = churchRole;
+  const isDeputy = churchRoles.some((r) => r.departments.some((d) => d.isDeputy));
 
-  if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "SECRETARY") return 2;
-  if (role === "MINISTER" || role === "DEPARTMENT_HEAD") return 1;
-  if (departments.some((d) => d.isDeputy)) return 1;
+  for (const { role } of churchRoles) {
+    if (role === "SUPER_ADMIN" || role === "ADMIN" || role === "SECRETARY") return 2;
+  }
+  for (const { role } of churchRoles) {
+    if (role === "MINISTER" || role === "DEPARTMENT_HEAD") return 1;
+  }
+  if (isDeputy) return 1;
 
   return 0;
 }
