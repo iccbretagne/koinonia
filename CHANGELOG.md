@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.8] - 2026-05-01
+
+### Amélioré
+
+- Notifications : bottom sheet plein-largeur sur mobile (poignée, fermeture par tap backdrop ou bouton ✕, scroll sécurisé iPhone) — le dropdown desktop reste inchangé
+
 ## [v1.2.7] - 2026-05-01
 
 ### Corrigé
