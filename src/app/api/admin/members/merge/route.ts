@@ -74,6 +74,8 @@ export async function POST(request: Request) {
         });
         if (!conflict) {
           await tx.planning.update({ where: { id: p.id }, data: { memberId: targetId } });
+        } else {
+          await tx.planning.delete({ where: { id: p.id } });
         }
       }
 
@@ -86,6 +88,8 @@ export async function POST(request: Request) {
         });
         if (!conflict) {
           await tx.taskAssignment.update({ where: { id: t.id }, data: { memberId: targetId } });
+        } else {
+          await tx.taskAssignment.delete({ where: { id: t.id } });
         }
       }
 
@@ -97,6 +101,8 @@ export async function POST(request: Request) {
         });
         if (!conflict) {
           await tx.discipleshipAttendance.update({ where: { id: a.id }, data: { memberId: targetId } });
+        } else {
+          await tx.discipleshipAttendance.delete({ where: { id: a.id } });
         }
       }
 
@@ -108,8 +114,9 @@ export async function POST(request: Request) {
         });
         if (!conflict) {
           await tx.discipleship.update({ where: { id: d.id }, data: { discipleId: targetId } });
+        } else {
+          await tx.discipleship.delete({ where: { id: d.id } });
         }
-        // else: target a déjà un FD dans cette église → on laisse tomber la relation source
       }
 
       // ── Discipleship (en tant que FD et premier FD) ───────────────────────────
