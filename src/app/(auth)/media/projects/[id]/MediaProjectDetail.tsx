@@ -45,6 +45,7 @@ type MediaFile = {
   createdAt: Date;
   updatedAt: Date;
   versions: FileVersion[];
+  thumbnailUrl?: string | null;
 };
 
 type ShareToken = {
@@ -635,16 +636,17 @@ function NewVersionUpload({ fileId, onDone }: { fileId: string; onDone: () => vo
 
 // ─── Panneau détail fichier ───────────────────────────────────────────────────
 
-function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, canUpload, canReview, onClose, onReviewFile, onRefresh }: {
+function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, canReview, canManage, onClose, onReviewFile, onDelete, onRefresh }: {
   file: MediaFile;
-  thumbnailUrl: string | undefined;
   allFiles: MediaFile[];
   fileIndex: number;
   onNavigate: (file: MediaFile) => void;
   canUpload: boolean;
   canReview: boolean;
+  canManage: boolean;
   onClose: () => void;
   onReviewFile: (id: string, status: "FINAL_APPROVED" | "REVISION_REQUESTED" | "REJECTED") => void;
+  onDelete: (id: string) => void;
   onRefresh: () => void;
 }) {
   const [versions, setVersions] = useState<(FileVersion & { createdBy?: { name: string | null; displayName: string | null } })[]>([]);
@@ -654,6 +656,7 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
   const [newComment, setNewComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
   const [activeTab, setActiveTab] = useState<"versions" | "comments">("versions");
+  const [pendingDelete, setPendingDelete] = useState(false);
 
   const hasPrev = fileIndex > 0;
   const hasNext = fileIndex < allFiles.length - 1;
@@ -711,6 +714,17 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
   const latestVersion = versions[0] ?? file.versions[0];
 
   return (
+    <>
+    {pendingDelete && (
+      <ConfirmModal
+        title={`Supprimer "${file.filename}" ?`}
+        message="Le fichier et toutes ses versions seront définitivement supprimés."
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={() => { setPendingDelete(false); onDelete(file.id); }}
+        onCancel={() => setPendingDelete(false)}
+      />
+    )}
     <div className="fixed inset-0 z-[60] flex">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-white h-full flex flex-col shadow-2xl overflow-hidden">
@@ -754,11 +768,24 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {canManage && (
+              <button
+                onClick={() => setPendingDelete(true)}
+                className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition-colors"
+                title="Supprimer ce fichier"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 rounded-lg p-1.5">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Preview — height capped on mobile so content below stays reachable */}
@@ -769,7 +796,7 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
                 <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               </div>
             ) : versions[0]?.streamUrl ? (
-              <VideoPlayer src={versions[0].streamUrl} thumbnail={thumbnailUrl} onExpired={loadVersions} />
+              <VideoPlayer src={versions[0].streamUrl} thumbnail={file.thumbnailUrl ?? undefined} onExpired={loadVersions} />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400 p-4">
                 <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -778,9 +805,9 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
                 <p className="text-sm text-gray-500 text-center">Vidéo non disponible<br/><span className="text-xs text-gray-400">Vérifiez la configuration S3</span></p>
               </div>
             )
-          ) : thumbnailUrl ? (
+          ) : file.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
+            <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-600">
               <p className="text-sm">Aucun aperçu disponible</p>
@@ -917,6 +944,7 @@ function FileDetailPanel({ file, thumbnailUrl, allFiles, fileIndex, onNavigate, 
         )}
       </div>
     </div>
+    </>
   );
 }
 
@@ -936,8 +964,9 @@ export default function MediaProjectDetail({
   canManage: boolean;
 }) {
   const router = useRouter();
-  const [project, setProject] = useState(initialProject);
-  const [thumbnailUrls] = useState(initialThumbnailUrls);
+  // Merge server-side thumbnail URLs into the initial files so we have them from the start
+  const hydrated = { ...initialProject, files: initialProject.files.map((f) => ({ ...f, thumbnailUrl: f.thumbnailUrl ?? initialThumbnailUrls[f.id] ?? null })) };
+  const [project, setProject] = useState(hydrated);
   const [statusFilter, setStatusFilter] = useState<MediaFileStatus | "">("");
   const [typeFilter, setTypeFilter] = useState<MediaFileType | "">("");
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
@@ -948,7 +977,12 @@ export default function MediaProjectDetail({
   async function refreshProject() {
     const res = await fetch(`/api/media-projects/${project.id}`);
     const json = await res.json();
-    if (res.ok) setProject(json.data ?? json);
+    if (res.ok) {
+      const updated = json.data ?? json;
+      setProject(updated);
+      // Keep the selected file in sync with the refreshed data
+      setSelectedFile((prev) => prev ? (updated.files?.find((f: MediaFile) => f.id === prev.id) ?? prev) : null);
+    }
     router.refresh();
   }
 
@@ -968,6 +1002,14 @@ export default function MediaProjectDetail({
     setConfirmDelete(false);
     await fetch(`/api/media-projects/${project.id}`, { method: "DELETE" });
     router.push("/media/projects");
+  }
+
+  async function deleteFile(fileId: string) {
+    setSelectedFile(null);
+    setActivity({ label: "Suppression du fichier…" });
+    await fetch(`/api/media/files/${fileId}`, { method: "DELETE" });
+    await refreshProject();
+    setActivity(null);
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -999,14 +1041,15 @@ export default function MediaProjectDetail({
       {selectedFile && (
         <FileDetailPanel
           file={selectedFile}
-          thumbnailUrl={thumbnailUrls[selectedFile.id]}
           allFiles={filteredFiles}
           fileIndex={filteredFiles.findIndex((f) => f.id === selectedFile.id)}
           onNavigate={setSelectedFile}
           canUpload={canUpload}
           canReview={canReview}
+          canManage={canManage}
           onClose={() => setSelectedFile(null)}
           onReviewFile={reviewFile}
+          onDelete={deleteFile}
           onRefresh={refreshProject}
         />
       )}
@@ -1234,7 +1277,7 @@ export default function MediaProjectDetail({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filteredFiles.map((file) => {
-                  const thumb = thumbnailUrls[file.id];
+                  const thumb = file.thumbnailUrl;
                   const latestV = file.versions[0];
                   return (
                     <div
