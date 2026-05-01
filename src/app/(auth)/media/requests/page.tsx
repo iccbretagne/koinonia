@@ -41,19 +41,34 @@ export default async function MediaRequestsPage() {
     );
   }
 
-  const requests = await prisma.request.findMany({
-    where: { type: "VISUEL", assignedDeptId: mediaDept.id, churchId },
-    include: {
-      submittedBy: { select: { name: true, displayName: true } },
-      department: { select: { name: true } },
-      ministry: { select: { name: true } },
-      announcement: {
-        select: { id: true, title: true, eventDate: true, isSaveTheDate: true },
+  const [requests, mediaProjects] = await Promise.all([
+    prisma.request.findMany({
+      where: { type: "VISUEL", assignedDeptId: mediaDept.id, churchId },
+      include: {
+        submittedBy: { select: { name: true, displayName: true } },
+        department: { select: { name: true } },
+        ministry: { select: { name: true } },
+        announcement: {
+          select: { id: true, title: true, eventDate: true, isSaveTheDate: true },
+        },
+        parentRequest: { select: { id: true, type: true, status: true } },
       },
-      parentRequest: { select: { id: true, type: true, status: true } },
-    },
-    orderBy: { submittedAt: "desc" },
-  });
+      orderBy: { submittedAt: "desc" },
+    }),
+    prisma.mediaProject.findMany({
+      where: { churchId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        shareTokens: {
+          select: { token: true, type: true },
+          where: { type: { in: ["GALLERY", "MEDIA", "MEDIA_ALL"] } },
+          take: 1,
+        },
+      },
+    }).catch(() => []),
+  ]);
 
   const pending = requests.filter((r) => r.status === "EN_ATTENTE").length;
 
@@ -67,7 +82,7 @@ export default async function MediaRequestsPage() {
           </span>
         )}
       </div>
-      <MediaDashboard requests={requests} />
+      <MediaDashboard requests={requests} churchId={churchId} mediaProjects={mediaProjects} />
     </div>
   );
 }
