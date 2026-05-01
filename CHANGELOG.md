@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.9] - 2026-05-02
+
+### Corrigé
+
+- Demandes : la soumission d'une demande de visuel échouait avec "Type de demande invalide : undefined" — le champ `type` n'était pas envoyé au serveur
+
 ## [v1.2.8] - 2026-05-01
 
 ### Amélioré
