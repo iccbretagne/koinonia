@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.7] - 2026-05-01
+
+### Corrigé
+
+- Membres : la fusion de comptes échouait avec une violation de clé étrangère quand les deux membres avaient des doublons (planning, tâches, présences discipolat, relation disciple) — les doublons non migrés sont désormais supprimés avant la suppression du membre source
+
 ## [v1.2.6] - 2026-05-01
 
 ### Corrigé
