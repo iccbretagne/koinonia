@@ -971,7 +971,7 @@ export default function MediaProjectDetail({
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
-  const allFiles = project.files;
+  const allFiles = project.files ?? [];
   const doneCount    = allFiles.filter((f) => DONE_STATUSES.includes(f.status)).length;
   const approvedCount = allFiles.filter((f) => f.status === "FINAL_APPROVED").length;
   const rejectedCount = allFiles.filter((f) => f.status === "REJECTED").length;

@@ -23,6 +23,18 @@ export async function GET(
       where: { id },
       include: {
         createdBy: { select: { id: true, name: true, displayName: true } },
+        files: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            versions: {
+              orderBy: { versionNumber: "desc" },
+              take: 1,
+            },
+          },
+        },
+        shareTokens: {
+          orderBy: { createdAt: "desc" },
+        },
         _count: { select: { files: true, shareTokens: true } },
       },
     });
