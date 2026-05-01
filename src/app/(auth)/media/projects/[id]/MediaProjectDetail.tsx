@@ -948,7 +948,7 @@ export default function MediaProjectDetail({
   async function refreshProject() {
     const res = await fetch(`/api/media-projects/${project.id}`);
     const json = await res.json();
-    if (res.ok) setProject(json);
+    if (res.ok) setProject(json.data ?? json);
     router.refresh();
   }
 
@@ -971,7 +971,7 @@ export default function MediaProjectDetail({
   }
 
   // ── Stats ──────────────────────────────────────────────────────────────────
-  const allFiles = project.files;
+  const allFiles = project.files ?? [];
   const doneCount    = allFiles.filter((f) => DONE_STATUSES.includes(f.status)).length;
   const approvedCount = allFiles.filter((f) => f.status === "FINAL_APPROVED").length;
   const rejectedCount = allFiles.filter((f) => f.status === "REJECTED").length;
