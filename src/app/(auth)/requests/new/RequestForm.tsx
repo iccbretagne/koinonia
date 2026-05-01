@@ -262,6 +262,7 @@ export default function RequestForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         churchId,
+        type: "VISUEL",
         title: visualTitle,
         brief: visualBrief || null,
         format: visualFormat || null,
