@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.2.6] - 2026-05-01
+
+### Corrigé
+
+- Membres : fusion de comptes échouait avec une contrainte unique quand les deux membres avaient déjà un planning pour le même événement/département
+- MRBS : `computeMrbsLevel` ne prenait en compte qu'un seul rôle par utilisateur — les utilisateurs avec plusieurs rôles pouvaient avoir un niveau MRBS sous-estimé
+
 ## [v1.2.5] - 2026-04-30
 
 ### Corrigé
