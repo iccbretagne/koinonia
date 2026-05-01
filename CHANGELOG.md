@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.0] - 2026-05-02
+
+### Ajouté
+
+- Demandes de visuels : indicateur d'urgence (⚡) et tri prioritaire dans le dashboard Production Média quand la deadline est dans moins de 48h
+- Demandes de visuels : bandeau d'avertissement dans le formulaire si la deadline choisie est dans moins de 48h
+- Dashboard Production Média : liaison d'une demande à un projet média existant ou nouveau à la prise en charge ; lien de téléchargement affiché si un token de partage est disponible sur le projet
+
 ## [v1.2.9] - 2026-05-02
 
 ### Corrigé
