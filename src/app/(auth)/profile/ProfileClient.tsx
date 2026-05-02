@@ -3,7 +3,7 @@
 import NoAccessClient from "@/app/no-access/NoAccessClient";
 
 type Church = { id: string; name: string };
-type Ministry = { id: string; name: string; departments: { id: string; name: string }[] };
+type Ministry = { id: string; name: string; churchId: string; departments: { id: string; name: string }[] };
 
 export default function ProfileClient({ churches, ministries }: { churches: Church[]; ministries: Ministry[] }) {
   return (

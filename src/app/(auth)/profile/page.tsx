@@ -62,6 +62,7 @@ export default async function ProfilePage() {
     select: {
       id: true,
       name: true,
+      churchId: true,
       departments: {
         where: { isSystem: false },
         select: { id: true, name: true },

@@ -74,6 +74,7 @@ export default async function NoAccessPage() {
             ministries={ministries.map((m) => ({
               id: m.id,
               name: m.name,
+              churchId: m.churchId,
               departments: m.departments,
             }))}
           />
