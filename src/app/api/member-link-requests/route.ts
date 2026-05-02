@@ -47,12 +47,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    // Vérifier qu'il n'y a pas déjà une demande PENDING pour cet utilisateur
+    // Vérifier qu'il n'y a pas déjà une demande PENDING pour cet utilisateur dans cette église
     const existing = await prisma.memberLinkRequest.findFirst({
-      where: { userId: session.user.id, status: "PENDING" },
+      where: { userId: session.user.id, churchId: data.churchId, status: "PENDING" },
     });
     if (existing) {
-      throw new ApiError(409, "Une demande est déjà en attente pour votre compte");
+      throw new ApiError(409, "Une demande est déjà en attente pour votre compte dans cette église");
     }
 
     // Vérifier qu'un lien n'existe pas déjà pour cet utilisateur dans cette église
