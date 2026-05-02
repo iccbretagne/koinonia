@@ -98,8 +98,16 @@ export default async function MembersPage() {
           </h2>
           <LinkRequestsClient
             initialRequests={pendingRequests.map((r) => ({
-              ...r,
+              id: r.id,
+              user: r.user,
+              member: r.member,
+              firstName: r.firstName,
+              lastName: r.lastName,
+              phone: r.phone,
+              church: r.church,
               createdAt: r.createdAt.toISOString(),
+              requestedRole: r.requestedRole as "DEPARTMENT_HEAD" | "DEPUTY" | "MINISTER" | "DISCIPLE_MAKER" | "REPORTER" | null,
+              notes: r.notes,
             }))}
             departments={departments.map((d) => ({
               id: d.id,

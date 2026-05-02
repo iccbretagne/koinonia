@@ -8,6 +8,16 @@ import Select from "@/components/ui/Select";
 
 type Department = { id: string; name: string; ministryName: string };
 
+type RequestedRole = "DEPARTMENT_HEAD" | "DEPUTY" | "MINISTER" | "DISCIPLE_MAKER" | "REPORTER" | null;
+
+const ROLE_LABELS: Record<NonNullable<RequestedRole>, string> = {
+  DEPARTMENT_HEAD: "Responsable de département",
+  DEPUTY: "Adjoint",
+  MINISTER: "Ministre",
+  DISCIPLE_MAKER: "Faiseur de disciples",
+  REPORTER: "Reporter",
+};
+
 interface LinkRequest {
   id: string;
   user: { id: string; name: string | null; email: string; image: string | null };
@@ -22,6 +32,8 @@ interface LinkRequest {
   phone: string | null;
   church: { id: string; name: string };
   createdAt: string;
+  requestedRole: RequestedRole;
+  notes: string | null;
 }
 
 export default function LinkRequestsClient({
@@ -119,6 +131,16 @@ export default function LinkRequestsClient({
                 </p>
               )}
               <p className="text-gray-400 text-xs mt-0.5">Église : {req.church.name}</p>
+              {req.requestedRole && (
+                <p className="text-xs mt-1">
+                  <span className="inline-block bg-icc-violet/10 text-icc-violet px-1.5 py-0.5 rounded font-medium">
+                    {ROLE_LABELS[req.requestedRole]}
+                  </span>
+                </p>
+              )}
+              {req.notes && (
+                <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{req.notes}&rdquo;</p>
+              )}
             </div>
 
             <div className="mt-3 flex gap-2">
@@ -163,17 +185,22 @@ export default function LinkRequestsClient({
             {" "}dans <strong>{approveModal?.church.name}</strong>.
           </p>
 
-          {!approveModal?.member && (
-            <Select
-              label="Département (pour la fiche STAR)"
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value)}
-              options={departments.map((d) => ({
-                value: d.id,
-                label: `${d.ministryName} / ${d.name}`,
-              }))}
-            />
-          )}
+          {(() => {
+            const role = approveModal?.requestedRole;
+            const needsDept = !approveModal?.member || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
+            if (!needsDept) return null;
+            return (
+              <Select
+                label={approveModal?.member ? "Département (pour le rôle)" : "Département (pour la fiche STAR)"}
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+                options={departments.map((d) => ({
+                  value: d.id,
+                  label: `${d.ministryName} / ${d.name}`,
+                }))}
+              />
+            );
+          })()}
 
           {error && <p className="text-sm text-icc-rouge">{error}</p>}
 
@@ -182,11 +209,13 @@ export default function LinkRequestsClient({
               Annuler
             </Button>
             <Button
-              onClick={() =>
+              onClick={() => {
+                const role = approveModal?.requestedRole;
+                const needsDept = !approveModal?.member || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
                 handleAction(approveModal!.id, "approve", {
-                  departmentId: approveModal?.member ? undefined : departmentId,
-                })
-              }
+                  departmentId: needsDept ? departmentId : undefined,
+                });
+              }}
               disabled={processing === approveModal?.id}
             >
               {processing === approveModal?.id ? "En cours..." : "Confirmer"}
