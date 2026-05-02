@@ -3,6 +3,7 @@ import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, 
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteFiles } from "@/lib/s3";
+import { getSignedThumbnailUrl } from "@/modules/media";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -40,7 +41,20 @@ export async function GET(
     });
 
     if (!project) throw new ApiError(404, "Projet média introuvable");
-    return successResponse(project);
+
+    // Embed signed thumbnail URLs so the client component can refresh without a full page reload
+    const filesWithThumbs = await Promise.all(
+      project.files.map(async (file) => {
+        const key = file.versions[0]?.thumbnailKey;
+        let thumbnailUrl: string | null = null;
+        if (key) {
+          try { thumbnailUrl = await getSignedThumbnailUrl(key); } catch { /* unavailable */ }
+        }
+        return { ...file, thumbnailUrl };
+      })
+    );
+
+    return successResponse({ ...project, files: filesWithThumbs });
   } catch (error) {
     return errorResponse(error);
   }
