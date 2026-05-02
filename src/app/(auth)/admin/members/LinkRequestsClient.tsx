@@ -57,6 +57,7 @@ export default function LinkRequestsClient({
   rejectedRequests?: RejectedRequest[];
 }) {
   const [requests, setRequests] = useState(initialRequests);
+  const [rejected, setRejected] = useState(rejectedRequests);
   const [showRejected, setShowRejected] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<LinkRequest | null>(null);
@@ -65,7 +66,7 @@ export default function LinkRequestsClient({
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (requests.length === 0 && rejectedRequests.length === 0) {
+  if (requests.length === 0 && rejected.length === 0) {
     return (
       <p className="text-sm text-gray-400 py-4">Aucune demande en attente.</p>
     );
@@ -89,6 +90,40 @@ export default function LinkRequestsClient({
       setRequests((prev) => prev.filter((r) => r.id !== id));
       setApproveModal(null);
       setRejectModal(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Une erreur est survenue");
+    } finally {
+      setProcessing(null);
+    }
+  }
+
+  async function reconsider(req: RejectedRequest) {
+    setProcessing(req.id);
+    try {
+      const res = await fetch(`/api/member-link-requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reconsider" }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur");
+      setRejected((prev) => prev.filter((r) => r.id !== req.id));
+      // Réintègre la demande dans la liste en attente (données minimales disponibles)
+      setRequests((prev) => [
+        ...prev,
+        {
+          id: req.id,
+          user: { id: "", ...req.user, image: null },
+          member: req.member ? { id: "", ...req.member, departments: [] } : null,
+          firstName: req.firstName,
+          lastName: req.lastName,
+          phone: null,
+          church: { id: "", name: "" },
+          createdAt: new Date().toISOString(),
+          requestedRole: req.requestedRole,
+          notes: null,
+        },
+      ]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Une erreur est survenue");
     } finally {
@@ -181,7 +216,7 @@ export default function LinkRequestsClient({
       {error && <p className="mt-2 text-sm text-icc-rouge">{error}</p>}
 
       {/* Demandes refusées */}
-      {rejectedRequests.length > 0 && (
+      {rejected.length > 0 && (
         <div className="mt-4">
           <button
             onClick={() => setShowRejected((v) => !v)}
@@ -193,12 +228,12 @@ export default function LinkRequestsClient({
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            Demandes refusées ({rejectedRequests.length})
+            Demandes refusées ({rejected.length})
           </button>
 
           {showRejected && (
             <div className="mt-3 space-y-2">
-              {rejectedRequests.map((r) => {
+              {rejected.map((r) => {
                 const name = r.member
                   ? `${r.member.firstName} ${r.member.lastName}`
                   : `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
@@ -225,6 +260,15 @@ export default function LinkRequestsClient({
                     {r.rejectReason && (
                       <p className="mt-1.5 text-xs text-gray-500 italic">&ldquo;{r.rejectReason}&rdquo;</p>
                     )}
+                    <div className="mt-2">
+                      <button
+                        onClick={() => reconsider(r)}
+                        disabled={processing === r.id}
+                        className="text-xs text-icc-violet border border-icc-violet/30 rounded-lg px-2.5 py-1 hover:bg-icc-violet/5 disabled:opacity-50 transition-colors"
+                      >
+                        {processing === r.id ? "En cours…" : "↩ Reconsidérer"}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
