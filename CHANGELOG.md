@@ -6,6 +6,20 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.1] - 2026-05-02
+
+### Corrigé
+
+- Projets média : les thumbnails ne s'affichaient plus après un `refreshProject()` — les URLs signées S3 sont maintenant embarquées dans la réponse API et le composant les consomme dynamiquement
+- Projets média : suppression d'un fichier maintenant possible depuis le panneau latéral (bouton poubelle + confirmation, visible avec le rôle `media:manage`)
+- Demandes d'accès : le sélecteur de ministère/département dans `/no-access` et `/profile` affichait tous les ministères de toutes les églises — filtrage par église sélectionnée ajouté
+- Demandes d'accès : l'approbation d'une demande DEPARTMENT_HEAD/DEPUTY pour un STAR existant échouait si le departmentId stocké appartenait à une autre église — l'admin peut maintenant corriger le département dans la modale d'approbation
+
+### Ajouté
+
+- Demandes d'accès : section repliable "Demandes refusées" (30 dernières) avec motif, date et bouton "↩ Reconsidérer" pour remettre une demande en attente
+- Demandes d'accès : rôle demandé et notes visibles dans chaque carte de demande en attente
+
 ## [v1.3.0] - 2026-05-02
 
 ### Ajouté
