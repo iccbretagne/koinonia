@@ -67,6 +67,23 @@ export default async function AccessPage() {
     orderBy: { createdAt: "asc" },
   });
 
+  // Demandes refusées (30 dernières)
+  const rejectedRequests = await prisma.memberLinkRequest.findMany({
+    where: { churchId, status: "REJECTED" },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      requestedRole: true,
+      rejectReason: true,
+      reviewedAt: true,
+      user: { select: { name: true, displayName: true, email: true } },
+      member: { select: { firstName: true, lastName: true } },
+    },
+    orderBy: { reviewedAt: "desc" },
+    take: 30,
+  });
+
   // Ministries with departments for structure view
   const ministries = await prisma.ministry.findMany({
     where: { churchId, isSystem: false },
@@ -148,6 +165,16 @@ export default async function AccessPage() {
         }))}
         churchId={churchId}
         isSuperAdmin={session.user.isSuperAdmin ?? false}
+        rejectedRequests={rejectedRequests.map((r) => ({
+          id: r.id,
+          user: { name: r.user.displayName || r.user.name || r.user.email, email: r.user.email },
+          member: r.member ? { firstName: r.member.firstName, lastName: r.member.lastName } : null,
+          firstName: r.firstName,
+          lastName: r.lastName,
+          requestedRole: r.requestedRole,
+          rejectReason: r.rejectReason,
+          reviewedAt: r.reviewedAt?.toISOString() ?? null,
+        }))}
       />
     </div>
   );
