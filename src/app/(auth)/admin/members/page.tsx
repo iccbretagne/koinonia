@@ -25,30 +25,44 @@ export default async function MembersPage() {
     ? { id: { in: scope.departmentIds } }
     : { ministry: { churchId } };
 
-  const pendingRequests = canManage
-    ? await prisma.memberLinkRequest.findMany({
-        where: {
-          status: "PENDING",
-          churchId,
-        },
-        include: {
-          user: { select: { id: true, name: true, email: true, image: true } },
-          member: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              departments: {
-                where: { isPrimary: true },
-                include: { department: { select: { name: true, ministry: { select: { name: true } } } } },
+  const [pendingRequests, rejectedRequests] = canManage
+    ? await Promise.all([
+        prisma.memberLinkRequest.findMany({
+          where: { status: "PENDING", churchId },
+          include: {
+            user: { select: { id: true, name: true, email: true, image: true } },
+            member: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                departments: {
+                  where: { isPrimary: true },
+                  include: { department: { select: { name: true, ministry: { select: { name: true } } } } },
+                },
               },
             },
+            church: { select: { id: true, name: true } },
           },
-          church: { select: { id: true, name: true } },
-        },
-        orderBy: { createdAt: "asc" },
-      })
-    : [];
+          orderBy: { createdAt: "asc" },
+        }),
+        prisma.memberLinkRequest.findMany({
+          where: { status: "REJECTED", churchId },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            requestedRole: true,
+            rejectReason: true,
+            reviewedAt: true,
+            user: { select: { name: true, email: true } },
+            member: { select: { firstName: true, lastName: true } },
+          },
+          orderBy: { reviewedAt: "desc" },
+          take: 30,
+        }),
+      ])
+    : [[], []];
 
   const members = await prisma.member.findMany({
     where: membersWhere,
@@ -88,23 +102,43 @@ export default async function MembersPage() {
         )}
       </div>
 
-      {pendingRequests.length > 0 && (
+      {(pendingRequests.length > 0 || rejectedRequests.length > 0) && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            Demandes d&apos;accès en attente
-            <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-icc-violet rounded-full">
-              {pendingRequests.length}
-            </span>
+            Demandes d&apos;accès
+            {pendingRequests.length > 0 && (
+              <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-icc-violet rounded-full">
+                {pendingRequests.length}
+              </span>
+            )}
           </h2>
           <LinkRequestsClient
             initialRequests={pendingRequests.map((r) => ({
-              ...r,
+              id: r.id,
+              user: r.user,
+              member: r.member,
+              firstName: r.firstName,
+              lastName: r.lastName,
+              phone: r.phone,
+              church: r.church,
               createdAt: r.createdAt.toISOString(),
+              requestedRole: r.requestedRole as "DEPARTMENT_HEAD" | "DEPUTY" | "MINISTER" | "DISCIPLE_MAKER" | "REPORTER" | null,
+              notes: r.notes,
             }))}
             departments={departments.map((d) => ({
               id: d.id,
               name: d.name,
               ministryName: d.ministry.name,
+            }))}
+            rejectedRequests={rejectedRequests.map((r) => ({
+              id: r.id,
+              user: r.user,
+              member: r.member,
+              firstName: r.firstName,
+              lastName: r.lastName,
+              requestedRole: r.requestedRole as "DEPARTMENT_HEAD" | "DEPUTY" | "MINISTER" | "DISCIPLE_MAKER" | "REPORTER" | null,
+              rejectReason: r.rejectReason,
+              reviewedAt: r.reviewedAt?.toISOString() ?? null,
             }))}
           />
         </div>

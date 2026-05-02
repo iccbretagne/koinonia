@@ -16,6 +16,7 @@ type MemberResult = {
 type Ministry = {
   id: string;
   name: string;
+  churchId: string;
   departments: { id: string; name: string }[];
 };
 
@@ -99,7 +100,8 @@ export default function NoAccessClient({
     setSelectedDeptId("");
   }, [churchId]);
 
-  const selectedMinistry = ministries.find((m) => m.id === selectedMinistryId);
+  const churchMinistries = ministries.filter((m) => m.churchId === churchId);
+  const selectedMinistry = churchMinistries.find((m) => m.id === selectedMinistryId);
 
   function goToMatch() {
     if (!firstName.trim() || !lastName.trim()) return;
@@ -381,7 +383,7 @@ export default function NoAccessClient({
               className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
             >
               <option value="">-- Choisir un ministère --</option>
-              {ministries.map((m) => (
+              {churchMinistries.map((m) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>

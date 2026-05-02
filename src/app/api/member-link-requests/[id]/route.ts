@@ -6,7 +6,7 @@ import { Role } from "@/generated/prisma/client";
 import { z } from "zod";
 
 const schema = z.object({
-  action: z.enum(["approve", "reject"]),
+  action: z.enum(["approve", "reject", "reconsider"]),
   rejectReason: z.string().optional(),
   departmentId: z.string().optional(), // override admin si besoin
 });
@@ -33,6 +33,20 @@ export async function PATCH(
       },
     });
     if (!linkRequest) throw new ApiError(404, "Demande introuvable");
+
+    // Reconsidérer une demande refusée → repasser en PENDING
+    if (action === "reconsider") {
+      if (linkRequest.status !== "REJECTED") {
+        throw new ApiError(409, "Seules les demandes refusées peuvent être reconsidérées");
+      }
+      const updated = await prisma.memberLinkRequest.update({
+        where: { id },
+        data: { status: "PENDING", rejectReason: null, reviewedAt: null, reviewedById: null },
+      });
+      await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reconsider" } });
+      return successResponse(updated);
+    }
+
     if (linkRequest.status !== "PENDING") {
       throw new ApiError(409, "Cette demande a déjà été traitée");
     }
