@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.2] - 2026-05-02
+
+### Corrigé
+
+- Demandes d'accès : la section "Demandes refusées" et la modale d'approbation avec sélecteur de département (DEPARTMENT_HEAD/DEPUTY) sont maintenant disponibles dans `/admin/access` (elles n'étaient présentes que dans `/admin/members`)
+- Multi-église : un STAR servant dans plusieurs églises ne pouvait pas soumettre une demande de lien pour une seconde église si une demande était déjà en attente pour la première — la vérification de doublon est maintenant scoped par église
+
 ## [v1.3.1] - 2026-05-02
 
 ### Corrigé
