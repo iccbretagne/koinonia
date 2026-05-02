@@ -36,14 +36,28 @@ interface LinkRequest {
   notes: string | null;
 }
 
+interface RejectedRequest {
+  id: string;
+  user: { name: string | null; email: string };
+  member: { firstName: string; lastName: string } | null;
+  firstName: string | null;
+  lastName: string | null;
+  requestedRole: RequestedRole;
+  rejectReason: string | null;
+  reviewedAt: string | null;
+}
+
 export default function LinkRequestsClient({
   initialRequests,
   departments,
+  rejectedRequests = [],
 }: {
   initialRequests: LinkRequest[];
   departments: Department[];
+  rejectedRequests?: RejectedRequest[];
 }) {
   const [requests, setRequests] = useState(initialRequests);
+  const [showRejected, setShowRejected] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<LinkRequest | null>(null);
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
@@ -51,7 +65,7 @@ export default function LinkRequestsClient({
   const [rejectReason, setRejectReason] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (requests.length === 0) {
+  if (requests.length === 0 && rejectedRequests.length === 0) {
     return (
       <p className="text-sm text-gray-400 py-4">Aucune demande en attente.</p>
     );
@@ -165,6 +179,59 @@ export default function LinkRequestsClient({
       </div>
 
       {error && <p className="mt-2 text-sm text-icc-rouge">{error}</p>}
+
+      {/* Demandes refusées */}
+      {rejectedRequests.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowRejected((v) => !v)}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${showRejected ? "rotate-90" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Demandes refusées ({rejectedRequests.length})
+          </button>
+
+          {showRejected && (
+            <div className="mt-3 space-y-2">
+              {rejectedRequests.map((r) => {
+                const name = r.member
+                  ? `${r.member.firstName} ${r.member.lastName}`
+                  : `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
+                return (
+                  <div key={r.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-700 truncate">
+                          {r.user.name ?? r.user.email}
+                        </p>
+                        {name && (
+                          <p className="text-xs text-gray-500 truncate">{r.member ? "STAR : " : "Nouveau : "}{name}</p>
+                        )}
+                        {r.requestedRole && (
+                          <span className="inline-block mt-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                            {ROLE_LABELS[r.requestedRole]}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString("fr-FR") : "—"}
+                      </span>
+                    </div>
+                    {r.rejectReason && (
+                      <p className="mt-1.5 text-xs text-gray-500 italic">&ldquo;{r.rejectReason}&rdquo;</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modal approbation */}
       <Modal
