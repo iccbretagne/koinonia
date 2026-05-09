@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.3] - 2026-05-09
+
+### Corrigé
+
+- Vue STAR : l'export PDF/PNG capturait le layout mobile (2 colonnes) — la capture force désormais un rendu A4 paysage (1122px, 4 colonnes) quelle que soit la taille du viewport
+
 ## [v1.3.2] - 2026-05-02
 
 ### Corrigé
