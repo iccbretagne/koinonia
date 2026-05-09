@@ -166,12 +166,27 @@ export default function WeeklyPlanningView({
     }
   }
 
+  // Force portrait A4 width (max-w-2xl = 672px) for consistent capture on mobile.
+  async function captureForExport(): Promise<HTMLCanvasElement | null> {
+    if (!printRef.current) return null;
+    const html2canvas = (await import("html2canvas-pro")).default;
+    const el = printRef.current;
+    const savedWidth = el.style.width;
+    el.style.width = "672px";
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    try {
+      return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
+    } finally {
+      el.style.width = savedWidth;
+    }
+  }
+
   async function copyImage() {
     if (!printRef.current || exporting) return;
     setExporting("copy");
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
+      const canvas = await captureForExport();
+      if (!canvas) return;
       try {
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((b: Blob | null) => { if (b) resolve(b); else reject(new Error("failed")); }, "image/png");
@@ -189,8 +204,8 @@ export default function WeeklyPlanningView({
     if (!printRef.current || exporting) return;
     setExporting("image");
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
+      const canvas = await captureForExport();
+      if (!canvas) return;
       const link = document.createElement("a");
       link.download = `${getExportFileName(departmentName, weekStart)}.png`;
       link.href = canvas.toDataURL("image/png");
@@ -202,9 +217,9 @@ export default function WeeklyPlanningView({
     if (!printRef.current || exporting) return;
     setExporting("pdf");
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
       const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
+      const canvas = await captureForExport();
+      if (!canvas) return;
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("portrait", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
