@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.4] - 2026-05-09
+
+### Corrigé
+
+- Planning mensuel et hebdomadaire : l'export PDF/PNG capturait le layout mobile (~350px) au lieu de la largeur portrait A4 (672px) — la capture force désormais 672px quelle que soit la taille du viewport
+
 ## [v1.3.3] - 2026-05-09
 
 ### Corrigé
