@@ -117,10 +117,15 @@ export async function DELETE(
       return successResponse({ success: true });
     }
 
-    await prisma.eventDepartment.delete({
-      where: {
-        eventId_departmentId: { eventId, departmentId },
-      },
+    await prisma.$transaction(async (tx) => {
+      const ed = await tx.eventDepartment.findUnique({
+        where: { eventId_departmentId: { eventId, departmentId } },
+        select: { id: true },
+      });
+      if (ed) await tx.planning.deleteMany({ where: { eventDepartmentId: ed.id } });
+      await tx.eventDepartment.delete({
+        where: { eventId_departmentId: { eventId, departmentId } },
+      });
     });
 
     return successResponse({ success: true });
