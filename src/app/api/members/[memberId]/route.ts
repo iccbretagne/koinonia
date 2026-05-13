@@ -83,6 +83,27 @@ export async function PUT(
       await tx.memberDepartment.deleteMany({
         where: { memberId, departmentId: { notIn: allDeptIds } },
       });
+
+      // Supprimer les affectations planning et tâches futures dans les départements retirés
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      await tx.planning.deleteMany({
+        where: {
+          memberId,
+          eventDepartment: {
+            departmentId: { notIn: allDeptIds },
+            event: { date: { gte: today } },
+          },
+        },
+      });
+      await tx.taskAssignment.deleteMany({
+        where: {
+          memberId,
+          event: { date: { gte: today } },
+          task: { departmentId: { notIn: allDeptIds } },
+        },
+      });
+
       // 2. Upsert chaque département avec le bon flag isPrimary
       for (const deptId of allDeptIds) {
         await tx.memberDepartment.upsert({
