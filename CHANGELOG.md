@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.5] - 2026-05-13
+
+### Corrigé
+
+- Demandes : le texte complet des annonces n'était pas affiché dans "Mes demandes" — ajout du contenu avec un toggle "Voir plus / Voir moins" pour les textes longs
+- Planning : retirer un STAR d'un département supprime désormais automatiquement ses affectations futures dans ce département (plannings et tâches)
+
 ## [v1.3.4] - 2026-05-09
 
 ### Corrigé
