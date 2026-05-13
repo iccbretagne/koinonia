@@ -67,6 +67,7 @@ interface RequestItem {
   announcement: {
     id: string;
     title: string;
+    content: string;
     status: string;
     eventDate: Date | null;
     isSaveTheDate: boolean;
@@ -88,6 +89,11 @@ interface Props {
 function RequestCard({ req, onUpdated }: { req: RequestItem; onUpdated: (updated: Partial<RequestItem>) => void }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const announcementContent = req.announcement?.content ?? null;
+  const PREVIEW_LENGTH = 150;
+  const isLong = announcementContent !== null && announcementContent.length > PREVIEW_LENGTH;
 
   const source = req.department?.name ?? req.ministry?.name ?? null;
   const isPending = req.status === "EN_ATTENTE";
@@ -144,6 +150,25 @@ function RequestCard({ req, onUpdated }: { req: RequestItem; onUpdated: (updated
           {STATUS_LABEL[req.status] ?? req.status}
         </span>
       </div>
+
+      {/* Announcement content */}
+      {announcementContent && (
+        <div className="mt-2">
+          <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+            {isLong && !expanded
+              ? `${announcementContent.slice(0, PREVIEW_LENGTH).trimEnd()}…`
+              : announcementContent}
+          </p>
+          {isLong && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1 text-xs text-icc-violet hover:underline"
+            >
+              {expanded ? "Voir moins" : "Voir plus"}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Child requests (visuals under announcements) */}
       {req.childRequests.length > 0 && (
