@@ -25,6 +25,7 @@ export default async function MyRequestsPage() {
         select: {
           id: true,
           title: true,
+          content: true,
           status: true,
           eventDate: true,
           isSaveTheDate: true,
