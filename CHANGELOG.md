@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.3.6] - 2026-05-13
+
+### Corrigé
+
+- Événements : retirer un département d'un événement causait une erreur FK en production — les plannings associés sont maintenant supprimés avant la suppression du lien événement-département
+- Annonces : soumettre une annonce avec diffusion externe/interne quand le département cible n'était pas configuré créait une demande orpheline invisible — une erreur explicite est maintenant retournée
+
 ## [v1.3.5] - 2026-05-13
 
 ### Corrigé
