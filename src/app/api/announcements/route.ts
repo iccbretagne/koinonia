@@ -144,6 +144,13 @@ export async function POST(request: Request) {
         findDeptByFunction(data.churchId, DEPT_FN.PRODUCTION_MEDIA),
       ]);
 
+    if (data.channelInterne && !secretariatDept) {
+      throw new ApiError(400, "Le département Secrétariat n'est pas configuré. Contactez un administrateur.");
+    }
+    if (data.channelExterne && !communicationDept) {
+      throw new ApiError(400, "Le département Communication n'est pas configuré. Contactez un administrateur.");
+    }
+
     const announcement = await prisma.$transaction(async (tx) => {
       const ann = await tx.announcement.create({
         data: {
