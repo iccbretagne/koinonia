@@ -91,14 +91,15 @@ export default async function AuthLayout({
 
   // ── Section "Médias" (module Media + dashboards production) ─────────────────
   const mediaLinks: { href: string; label: string }[] = [];
+  let isProtocoleMember = false;
 
   if (currentChurchId && userPermissions.has("planning:view")) {
     const isGlobalManager = userPermissions.has("events:manage");
 
-    // One query for all 3 department functions
+    // One query for all department functions we need to check
     const serviceDepts = await prisma.department.findMany({
       where: {
-        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"] },
+        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE"] },
         ministry: { churchId: currentChurchId },
       },
       select: { id: true, function: true },
@@ -125,7 +126,24 @@ export default async function AuthLayout({
       mediaLinks.push({ href: "/media/events", label: "Événements" });
       mediaLinks.push({ href: "/media/projects", label: "Projets" });
     }
+
+    // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
+    isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
+
+    requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
   }
+
+  // ── Section "Agenda pastoral" ────────────────────────────────────────────────
+  const agendaLinks: { href: string; label: string }[] = [];
+  const hasAgendaView = userPermissions.has("agenda:view") || isProtocoleMember;
+  const hasAgendaManage = userPermissions.has("agenda:manage") || isProtocoleMember;
+  const hasAgendaQualify = userPermissions.has("agenda:qualify");
+
+  if (hasAgendaView) agendaLinks.push({ href: "/agenda", label: "Vue agenda" });
+  if (hasAgendaQualify) agendaLinks.push({ href: "/agenda/requests", label: "Qualification" });
+  if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
+  if (hasAgendaManage) agendaLinks.push({ href: "/agenda/new", label: "Nouvelle entrée" });
+  if (userPermissions.has("church:manage")) agendaLinks.push({ href: "/admin/pastoral-profiles", label: "Profils pastoraux" });
 
   const headerContent = (
     <>
@@ -222,6 +240,7 @@ export default async function AuthLayout({
       configLinks={visibleConfigLinks}
       requestLinks={requestLinks}
       mediaLinks={mediaLinks}
+      agendaLinks={agendaLinks}
       mrbsUrl={mrbsUrl}
       mrbsAdminLink={mrbsAdminLink}
       hasDiscipleship={hasDiscipleship}

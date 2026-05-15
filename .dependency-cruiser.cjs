@@ -63,21 +63,23 @@ module.exports = {
     },
 
     /**
-     * Règle 3 — src/app ne peut importer que l'index public d'un module.
+     * Règle 3 — src/app ne peut importer que les points d'entrée publics d'un module.
      *
-     * Protège les API publiques : seul {module}/index.ts est importable
-     * depuis src/app/. Les fichiers internes d'un module ne sont pas
-     * accessibles directement depuis les routes Next.js.
+     * Points d'entrée autorisés :
+     *   - {module}/index.ts  — manifest + exports domaine (sans dépendances Node.js/Next.js)
+     *   - {module}/auth.ts   — guards d'authentification spécifiques au module
+     *     (second point d'entrée séparé pour éviter que next-auth ne pollue le
+     *      graphe d'imports du registry lors des tests unitaires)
      */
     {
       name: "app-only-module-public-api",
       severity: "error",
       comment:
-        "src/app/ ne peut importer que l'index public d'un module (src/modules/{name}/index.ts).",
+        "src/app/ ne peut importer que les points d'entrée publics d'un module (index.ts ou auth.ts).",
       from: { path: "^src/app/" },
       to: {
         path: "^src/modules/[^/]+/",
-        pathNot: "^src/modules/[^/]+/index\\.ts$",
+        pathNot: "^src/modules/[^/]+/(index|auth)\\.ts$",
       },
     },
   ],

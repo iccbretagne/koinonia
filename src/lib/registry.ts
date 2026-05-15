@@ -5,6 +5,7 @@ import { planningModule, planningBus } from "@/modules/planning";
 import { discipleshipModule } from "@/modules/discipleship";
 import { mediaModule } from "@/modules/media";
 import { mrbsModule } from "@/modules/mrbs";
+import { agendaModule } from "@/modules/agenda";
 
 /**
  * Registry singleton — chargé une fois au démarrage du process.
@@ -13,7 +14,7 @@ import { mrbsModule } from "@/modules/mrbs";
  * Source de vérité pour les permissions dans les contrôles d'accès API.
  */
 export const registry = boot({
-  modules: [coreModule, planningModule, discipleshipModule, mediaModule, mrbsModule],
+  modules: [coreModule, planningModule, discipleshipModule, mediaModule, mrbsModule, agendaModule],
 });
 
 /**

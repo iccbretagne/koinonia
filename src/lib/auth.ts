@@ -367,7 +367,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -451,6 +451,30 @@ export async function resolveChurchId(
       });
       if (!mp) throw new ApiError(404, "Projet média introuvable");
       return mp.churchId;
+    }
+    case "appointmentRequest": {
+      const ar = await prisma.appointmentRequest.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!ar) throw new ApiError(404, "Demande de RDV introuvable");
+      return ar.churchId;
+    }
+    case "agendaEntry": {
+      const ae = await prisma.agendaEntry.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!ae) throw new ApiError(404, "Entrée agenda introuvable");
+      return ae.churchId;
+    }
+    case "pastoralProfile": {
+      const pp = await prisma.pastoralProfile.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!pp) throw new ApiError(404, "Profil pastoral introuvable");
+      return pp.churchId;
     }
   }
 }
