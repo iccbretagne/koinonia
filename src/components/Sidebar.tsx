@@ -9,6 +9,7 @@ interface SidebarProps {
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
   mediaLinks: { href: string; label: string }[];
+  agendaLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
   hasDiscipleship?: boolean;
@@ -84,6 +85,14 @@ function IconConfig({ className }: { className?: string }) {
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function IconAgenda({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
   );
 }
@@ -287,6 +296,7 @@ export default function Sidebar({
   configLinks,
   requestLinks,
   mediaLinks,
+  agendaLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
   hasDiscipleship = false,
@@ -316,19 +326,22 @@ export default function Sidebar({
   const isMediaActive =
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
+  const isAgendaActive = pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles");
   const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
-    !pathname.startsWith("/admin/discipleship");
+    !pathname.startsWith("/admin/discipleship") &&
+    !pathname.startsWith("/admin/pastoral-profiles");
 
   function activeSection() {
     if (isEventsActive) return "events";
     if (isMembersActive) return "members";
     if (isRequestsActive) return "requests";
     if (isMediaActive) return "media";
+    if (isAgendaActive) return "agenda";
     if (isConfigActive) return "config";
     return "planning";
   }
@@ -520,7 +533,26 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 7. Discipolat — lien direct (une seule sous-page) */}
+      {/* 7. Agenda pastoral */}
+      {agendaLinks.length > 0 && (
+        <AccordionSection
+          title="Agenda pastoral"
+          icon={<IconAgenda className="w-4 h-4" />}
+          open={openSection === "agenda"}
+          onToggle={() => toggle("agenda")}
+          isActive={isAgendaActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            {agendaLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 8. Discipolat — lien direct (une seule sous-page) */}
       {hasDiscipleship && (
         <Link
           href="/admin/discipleship"

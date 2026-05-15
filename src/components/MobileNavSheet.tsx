@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type SheetView = "root" | "planning" | "events" | "requests" | "media" | "config";
+type SheetView = "root" | "planning" | "events" | "requests" | "media" | "agenda" | "config";
 
 interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
   mediaLinks: { href: string; label: string }[];
+  agendaLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
   hasDiscipleship?: boolean;
@@ -219,6 +220,7 @@ export default function MobileNavSheet({
   configLinks,
   requestLinks,
   mediaLinks,
+  agendaLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
   hasDiscipleship = false,
@@ -268,12 +270,14 @@ export default function MobileNavSheet({
     pathname.startsWith("/requests") || pathname.startsWith("/secretariat");
   const isMediaActive =
     pathname.startsWith("/media") || pathname.startsWith("/communication");
+  const isAgendaActive = pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles");
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
-    !pathname.startsWith("/admin/discipleship");
+    !pathname.startsWith("/admin/discipleship") &&
+    !pathname.startsWith("/admin/pastoral-profiles");
 
   /* ── Views ── */
 
@@ -332,6 +336,15 @@ export default function MobileNavSheet({
             hasChildren
             isActive={isMediaActive}
             onClick={() => setView("media")}
+          />
+        )}
+        {agendaLinks.length > 0 && (
+          <RootRow
+            label="Agenda pastoral"
+            icon={<IconDiscipleship className="w-5 h-5" />}
+            hasChildren
+            isActive={isAgendaActive}
+            onClick={() => setView("agenda")}
           />
         )}
         {hasDiscipleship && (
@@ -476,6 +489,7 @@ export default function MobileNavSheet({
       case "events":   return renderEvents();
       case "requests": return renderLinks("Demandes", requestLinks);
       case "media":    return renderLinks("Médias", mediaLinks);
+      case "agenda":   return renderLinks("Agenda pastoral", agendaLinks);
       case "config":   return renderConfigLinks(configLinks);
       default:         return renderRoot();
     }
