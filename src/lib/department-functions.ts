@@ -10,6 +10,7 @@ export const DEPT_FN = {
   SECRETARIAT: "SECRETARIAT",
   COMMUNICATION: "COMMUNICATION",
   PRODUCTION_MEDIA: "PRODUCTION_MEDIA",
+  PROTOCOLE: "PROTOCOLE",
 } as const;
 
 export type SystemFunction = (typeof DEPT_FN)[keyof typeof DEPT_FN];
@@ -33,6 +34,11 @@ export const SYSTEM_FUNCTIONS: {
     key: DEPT_FN.PRODUCTION_MEDIA,
     label: "Production Média",
     description: "Crée les visuels pour les demandes",
+  },
+  {
+    key: DEPT_FN.PROTOCOLE,
+    label: "Protocole",
+    description: "Gère l'agenda pastoral et planifie les rendez-vous",
   },
 ];
 

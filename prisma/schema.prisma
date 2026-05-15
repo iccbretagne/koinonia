@@ -76,6 +76,10 @@ model Church {
   mediaSettings            MediaSettings?
   // Module mrbs (optionnel)
   mrbsUserLinks            MrbsUserLink[]
+  // Module agenda
+  pastoralProfiles         PastoralProfile[]
+  appointmentRequests      AppointmentRequest[]
+  agendaEntries            AgendaEntry[]
 
   @@map("churches")
 }
@@ -89,6 +93,7 @@ enum Role {
   DISCIPLE_MAKER
   REPORTER
   STAR
+  AGENDA_QUALIFIER
 }
 
 model User {
@@ -124,6 +129,12 @@ model User {
   // Module mrbs (optionnel)
   mrbsUserLinks           MrbsUserLink[]      @relation("MrbsLinkedUser")
   mrbsUserLinksCreated    MrbsUserLink[]      @relation("MrbsLinkCreator")
+  // Module agenda
+  pastoralProfiles        PastoralProfile[]   @relation("UserPastoralProfile")
+  appointmentsMade        AppointmentRequest[] @relation("AppointmentRequester")
+  qualifiedRequests       AppointmentRequest[] @relation("AppointmentQualifier")
+  scheduledRequests       AppointmentRequest[] @relation("AppointmentScheduler")
+  agendaEntriesCreated    AgendaEntry[]        @relation("AgendaEntryCreator")
 
   @@map("users")
 }
@@ -904,4 +915,96 @@ model MediaSettings {
   church Church @relation(fields: [churchId], references: [id])
 
   @@map("media_settings")
+}
+
+// ─── Module agenda ─────────────────────────────────────────────────
+
+enum PastoralRole {
+  PASTEUR
+  ASSISTANT_PASTEUR
+  BERGER
+}
+
+enum AppointmentRequestStatus {
+  PENDING
+  VALIDATED
+  SCHEDULED
+  REJECTED
+}
+
+enum AgendaEntryType {
+  ACTIVITY
+  APPOINTMENT
+}
+
+model PastoralProfile {
+  id        String       @id @default(cuid())
+  churchId  String
+  name      String
+  email     String?
+  role      PastoralRole
+  userId    String?
+  createdAt DateTime     @default(now())
+
+  church   Church               @relation(fields: [churchId], references: [id])
+  user     User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
+  entries  AgendaEntry[]
+  requests AppointmentRequest[]
+
+  @@map("pastoral_profiles")
+}
+
+model AppointmentRequest {
+  id                String                   @id @default(cuid())
+  churchId          String
+  userId            String?
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  subject           String
+  message           String                   @db.Text
+  preferredDays     String?
+  status            AppointmentRequestStatus @default(PENDING)
+  assignedToId      String?
+  qualifiedById     String?
+  qualifiedAt       DateTime?
+  qualificationNote String?
+  rejectReason      String?
+  scheduledById     String?
+  scheduledAt       DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  church      Church           @relation(fields: [churchId], references: [id])
+  user        User?            @relation("AppointmentRequester", fields: [userId], references: [id])
+  assignedTo  PastoralProfile? @relation(fields: [assignedToId], references: [id])
+  qualifiedBy User?            @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
+  scheduledBy User?            @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
+  agendaEntry AgendaEntry?
+
+  @@map("appointment_requests")
+}
+
+model AgendaEntry {
+  id          String          @id @default(cuid())
+  churchId    String
+  recipientId String
+  type        AgendaEntryType
+  title       String
+  description String?         @db.Text
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  requestId   String?         @unique
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  church    Church              @relation(fields: [churchId], references: [id])
+  recipient PastoralProfile     @relation(fields: [recipientId], references: [id])
+  request   AppointmentRequest? @relation(fields: [requestId], references: [id])
+  createdBy User                @relation("AgendaEntryCreator", fields: [createdById], references: [id])
+
+  @@map("agenda_entries")
 }
