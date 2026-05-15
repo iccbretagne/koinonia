@@ -29,6 +29,25 @@ jobs:
       - run: npm run lint:boundaries
       - run: npm run test
 
+  build:
+    needs: lint-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
+      AUTH_SECRET: "ci-placeholder-32-chars-minimum!!"
+      NEXTAUTH_URL: "http://localhost:3000"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
+
   check-version:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest

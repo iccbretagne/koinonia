@@ -23,8 +23,9 @@ export const agendaModule = defineModule({
   dependsOn: ["core"],
 
   permissions: {
-    // Vue lecture : rôles + Protocole (dept function) + profil pastoral lié (vérifié dans les routes)
-    "agenda:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY", "AGENDA_QUALIFIER"],
+    // Vue lecture : rôles admin + Protocole (dept function) + profil pastoral lié (vérifié dans les routes)
+    // AGENDA_QUALIFIER n'a PAS agenda:view — il ne voit que les demandes PENDING via agenda:qualify
+    "agenda:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Saisie directe + planification des demandes validées (+ Protocole via dept function)
     "agenda:manage":  ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Qualification des demandes brutes (PENDING)

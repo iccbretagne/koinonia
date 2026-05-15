@@ -42,11 +42,11 @@ export async function POST(request: Request) {
     await requireChurchPermission("church:manage", data.churchId);
 
     if (data.userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: data.userId },
+      const role = await prisma.userChurchRole.findFirst({
+        where: { userId: data.userId, churchId: data.churchId },
         select: { id: true },
       });
-      if (!user) throw new ApiError(400, "Utilisateur introuvable");
+      if (!role) throw new ApiError(400, "Utilisateur introuvable ou n'appartient pas à cette église");
     }
 
     const profile = await prisma.pastoralProfile.create({

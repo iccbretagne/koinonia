@@ -10,7 +10,10 @@ const scheduleSchema = z.object({
   location: z.string().nullable().optional(),
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-});
+}).refine(
+  (d) => !d.endsAt || new Date(d.endsAt) > new Date(d.startsAt),
+  { message: "L'heure de fin doit être après l'heure de début", path: ["endsAt"] }
+);
 
 export async function PATCH(
   request: Request,

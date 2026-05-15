@@ -10,7 +10,10 @@ const updateSchema = z.object({
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().nullable().optional(),
   location: z.string().nullable().optional(),
-});
+}).refine(
+  (d) => !(d.startsAt && d.endsAt) || new Date(d.endsAt) > new Date(d.startsAt),
+  { message: "L'heure de fin doit être après l'heure de début", path: ["endsAt"] }
+);
 
 export async function PATCH(
   request: Request,

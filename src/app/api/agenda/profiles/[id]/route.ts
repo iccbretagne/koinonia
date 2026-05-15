@@ -23,11 +23,11 @@ export async function PATCH(
     const data = updateSchema.parse(body);
 
     if (data.userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: data.userId },
+      const role = await prisma.userChurchRole.findFirst({
+        where: { userId: data.userId, churchId },
         select: { id: true },
       });
-      if (!user) throw new ApiError(400, "Utilisateur introuvable");
+      if (!role) throw new ApiError(400, "Utilisateur introuvable ou n'appartient pas à cette église");
     }
 
     const profile = await prisma.pastoralProfile.update({

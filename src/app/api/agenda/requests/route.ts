@@ -21,8 +21,15 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
-    const statusParam = searchParams.get("status");
+    const statusRaw = searchParams.get("status");
     if (!churchId) throw new ApiError(400, "churchId requis");
+
+    // Valider l'enum avant toute logique d'autorisation
+    const ALLOWED_STATUSES = ["PENDING", "VALIDATED"] as const;
+    if (statusRaw !== null && !(ALLOWED_STATUSES as readonly string[]).includes(statusRaw)) {
+      throw new ApiError(400, `Statut invalide. Valeurs acceptées : ${ALLOWED_STATUSES.join(", ")}`);
+    }
+    const statusParam = statusRaw as (typeof ALLOWED_STATUSES)[number] | null;
 
     const session = await requireAuth();
 
@@ -43,16 +50,16 @@ export async function GET(request: Request) {
 
     if (!canQualify && !canManage) throw new Error("FORBIDDEN");
 
-    // Valider le filtre status par rapport aux droits de l'appelant
+    // Matrice stricte : chaque statut n'est accessible qu'au rôle autorisé
     if (statusParam === "PENDING" && !canQualify) throw new Error("FORBIDDEN");
     if (statusParam === "VALIDATED" && !canManage) throw new Error("FORBIDDEN");
 
-    const statuses: string[] = statusParam
+    const statuses: Array<"PENDING" | "VALIDATED"> = statusParam
       ? [statusParam]
-      : [...(canQualify ? ["PENDING"] : []), ...(canManage ? ["VALIDATED"] : [])];
+      : [...(canQualify ? (["PENDING"] as const) : []), ...(canManage ? (["VALIDATED"] as const) : [])];
 
     const requests = await prisma.appointmentRequest.findMany({
-      where: { churchId, status: { in: statuses as ("PENDING" | "VALIDATED")[] } },
+      where: { churchId, status: { in: statuses } },
       include: {
         user: { select: { id: true, name: true, displayName: true } },
         assignedTo: { select: { id: true, name: true, role: true } },
