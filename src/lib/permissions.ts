@@ -75,6 +75,10 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   STAR: [
     "planning:view",
   ],
+  AGENDA_QUALIFIER: [
+    "agenda:qualify",
+    "agenda:view",
+  ],
 };
 
 /**
