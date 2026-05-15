@@ -112,3 +112,36 @@ export function createSecretarySession(churchId = "church-1"): Session {
   });
 }
 
+export function createAgendaQualifierSession(churchId = "church-1"): Session {
+  return createSession({
+    churchRoles: [
+      {
+        id: "role-1",
+        churchId,
+        role: "AGENDA_QUALIFIER",
+        ministryId: null,
+        church: { id: churchId, name: "Test Church", slug: "test-church" },
+        departments: [],
+      },
+    ],
+  });
+}
+
+export function createProtocoleMemberSession(
+  protocoleDeptId: string,
+  churchId = "church-1"
+): Session {
+  return createSession({
+    churchRoles: [
+      {
+        id: "role-1",
+        churchId,
+        role: "STAR",
+        ministryId: null,
+        church: { id: churchId, name: "Test Church", slug: "test-church" },
+        departments: [{ department: { id: protocoleDeptId, name: "Protocole" } }],
+      },
+    ],
+  });
+}
+
