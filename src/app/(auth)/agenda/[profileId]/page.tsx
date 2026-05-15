@@ -1,4 +1,5 @@
-import { requireAuth, getCurrentChurchId, requireAgendaView } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAgendaView } from "@/modules/agenda";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 

@@ -1,5 +1,5 @@
-import { requireAgendaQualify, getCurrentChurchId } from "@/lib/auth";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAgendaQualify } from "@/modules/agenda";
 import { prisma } from "@/lib/prisma";
 import QualificationDashboard from "./QualificationDashboard";
 

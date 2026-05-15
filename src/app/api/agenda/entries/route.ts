@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAgendaView, requireAgendaManage } from "@/lib/auth";
+import { requireAgendaView, requireAgendaManage } from "@/modules/agenda";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
