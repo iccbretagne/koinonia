@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireChurchPermission } from "@/lib/auth";
-import { isProtocoleMember } from "@/modules/agenda";
+import { isProtocoleMember } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";

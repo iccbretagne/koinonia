@@ -1,7 +1,5 @@
 import { defineModule } from "@/core/module-registry";
 
-export { isProtocoleMember, requireAgendaView, requireAgendaManage, requireAgendaQualify } from "./auth";
-
 /**
  * Module agenda — Agenda pastoral.
  *

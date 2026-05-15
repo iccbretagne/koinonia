@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
-import { requireAgendaView } from "@/modules/agenda";
+import { requireAgendaView } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 

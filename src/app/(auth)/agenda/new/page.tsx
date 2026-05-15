@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { requireAgendaManage } from "@/modules/agenda";
+import { requireAgendaManage } from "@/modules/agenda/auth";
 import { prisma } from "@/lib/prisma";
 import NewEntryForm from "./NewEntryForm";
 
