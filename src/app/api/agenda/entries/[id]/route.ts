@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -22,7 +23,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("agendaEntry", id);
-    await requireAgendaManage(churchId);
+    const session = await requireAgendaManage(churchId);
 
     const body = await request.json();
     const data = updateSchema.parse(body);
@@ -35,10 +36,20 @@ export async function PATCH(
         ...(data.startsAt !== undefined && { startsAt: new Date(data.startsAt) }),
         ...(data.endsAt !== undefined && { endsAt: data.endsAt ? new Date(data.endsAt) : null }),
         ...(data.location !== undefined && { location: data.location }),
+        updatedById: session.user.id,
       },
       include: {
         recipient: { select: { id: true, name: true, role: true } },
       },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "UPDATE",
+      entityType: "AgendaEntry",
+      entityId: id,
+      details: data,
     });
 
     return successResponse(entry);
@@ -54,11 +65,11 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("agendaEntry", id);
-    await requireAgendaManage(churchId);
+    const session = await requireAgendaManage(churchId);
 
     const entry = await prisma.agendaEntry.findUnique({
       where: { id },
-      select: { requestId: true },
+      select: { requestId: true, title: true },
     });
     if (!entry) throw new ApiError(404, "Entrée agenda introuvable");
 
@@ -71,6 +82,15 @@ export async function DELETE(
         });
       }
       await tx.agendaEntry.delete({ where: { id } });
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "DELETE",
+      entityType: "AgendaEntry",
+      entityId: id,
+      details: { title: entry.title },
     });
 
     return successResponse({ success: true });

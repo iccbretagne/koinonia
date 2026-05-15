@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { resolveChurchId, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -17,7 +18,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("pastoralProfile", id);
-    await requireChurchPermission("church:manage", churchId);
+    const session = await requireChurchPermission("church:manage", churchId);
 
     const body = await request.json();
     const data = updateSchema.parse(body);
@@ -40,6 +41,15 @@ export async function PATCH(
       },
     });
 
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "UPDATE",
+      entityType: "PastoralProfile",
+      entityId: id,
+      details: data,
+    });
+
     return successResponse(profile);
   } catch (error) {
     return errorResponse(error);
@@ -53,7 +63,12 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("pastoralProfile", id);
-    await requireChurchPermission("church:manage", churchId);
+    const session = await requireChurchPermission("church:manage", churchId);
+
+    const profile = await prisma.pastoralProfile.findUnique({
+      where: { id },
+      select: { name: true },
+    });
 
     const hasEntries = await prisma.agendaEntry.count({ where: { recipientId: id } });
     if (hasEntries > 0) {
@@ -61,6 +76,15 @@ export async function DELETE(
     }
 
     await prisma.pastoralProfile.delete({ where: { id } });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "DELETE",
+      entityType: "PastoralProfile",
+      entityId: id,
+      details: { name: profile?.name },
+    });
 
     return successResponse({ success: true });
   } catch (error) {

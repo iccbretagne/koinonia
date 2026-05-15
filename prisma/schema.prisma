@@ -134,7 +134,9 @@ model User {
   appointmentsMade        AppointmentRequest[] @relation("AppointmentRequester")
   qualifiedRequests       AppointmentRequest[] @relation("AppointmentQualifier")
   scheduledRequests       AppointmentRequest[] @relation("AppointmentScheduler")
+  updatedRequests         AppointmentRequest[] @relation("AppointmentUpdater")
   agendaEntriesCreated    AgendaEntry[]        @relation("AgendaEntryCreator")
+  agendaEntriesUpdated    AgendaEntry[]        @relation("AgendaEntryUpdater")
 
   @@map("users")
 }
@@ -973,6 +975,7 @@ model AppointmentRequest {
   rejectReason      String?
   scheduledById     String?
   scheduledAt       DateTime?
+  updatedById       String?
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
 
@@ -981,8 +984,10 @@ model AppointmentRequest {
   assignedTo  PastoralProfile? @relation(fields: [assignedToId], references: [id])
   qualifiedBy User?            @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
   scheduledBy User?            @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
+  updatedBy   User?            @relation("AppointmentUpdater", fields: [updatedById], references: [id])
   agendaEntry AgendaEntry?
 
+  @@index([churchId, status, createdAt])
   @@map("appointment_requests")
 }
 
@@ -998,6 +1003,7 @@ model AgendaEntry {
   location    String?
   requestId   String?         @unique
   createdById String
+  updatedById String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -1005,6 +1011,9 @@ model AgendaEntry {
   recipient PastoralProfile     @relation(fields: [recipientId], references: [id])
   request   AppointmentRequest? @relation(fields: [requestId], references: [id])
   createdBy User                @relation("AgendaEntryCreator", fields: [createdById], references: [id])
+  updatedBy User?               @relation("AgendaEntryUpdater", fields: [updatedById], references: [id])
 
+  @@index([churchId, recipientId, startsAt])
+  @@index([churchId, startsAt])
   @@map("agenda_entries")
 }
