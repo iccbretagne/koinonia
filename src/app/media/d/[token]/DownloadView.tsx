@@ -56,17 +56,25 @@ function Lightbox({
   downloading: boolean;
   isMediaAll: boolean;
 }) {
+  const [currentPhotoId, setCurrentPhotoId] = useState(photo.id);
   const [hdUrl, setHdUrl] = useState<string | null>(null);
   const [hdLoading, setHdLoading] = useState(true);
 
-  useEffect(() => {
+  // Reset state synchronously during render when photo changes (recommended pattern over useEffect reset)
+  if (currentPhotoId !== photo.id) {
+    setCurrentPhotoId(photo.id);
     setHdUrl(null);
     setHdLoading(true);
+  }
+
+  useEffect(() => {
+    let mounted = true;
     fetch(`/api/media/download/${token}/photo/${photo.id}`)
       .then((r) => r.json())
-      .then((j) => { if (j.downloadUrl) setHdUrl(j.downloadUrl); })
+      .then((j) => { if (mounted && j.downloadUrl) setHdUrl(j.downloadUrl); })
       .catch(() => {})
-      .finally(() => setHdLoading(false));
+      .finally(() => { if (mounted) setHdLoading(false); });
+    return () => { mounted = false; };
   }, [photo.id, token]);
 
   useEffect(() => {
