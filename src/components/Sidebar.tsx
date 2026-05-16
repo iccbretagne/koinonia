@@ -322,11 +322,14 @@ export default function Sidebar({
   const isMembersActive = pathname.startsWith("/admin/members");
   const isRequestsActive =
     pathname.startsWith("/requests") ||
-    pathname.startsWith("/secretariat");
+    pathname.startsWith("/secretariat") ||
+    pathname === "/agenda/request";
   const isMediaActive =
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
-  const isAgendaActive = pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles");
+  const isAgendaActive =
+    (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
+    pathname !== "/agenda/request";
   const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
   const isConfigActive =
     pathname.startsWith("/admin") &&
@@ -417,7 +420,52 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 2. Événements */}
+      {/* 2. STAR */}
+      {hasMembersAccess && (
+        <Link
+          href="/admin/members"
+          onClick={onClose}
+          data-tour="sidebar-members"
+          className={`${sectionHeaderBase} ${isMembersActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+        >
+          <IconMembers className="w-4 h-4 shrink-0" />
+          <span className="flex-1">STAR</span>
+        </Link>
+      )}
+
+      {/* 3. Discipolat */}
+      {hasDiscipleship && (
+        <Link
+          href="/admin/discipleship"
+          onClick={onClose}
+          data-tour="sidebar-discipleship"
+          className={`${sectionHeaderBase} ${isDiscipleshipActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+        >
+          <IconDiscipleship className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Discipolat</span>
+        </Link>
+      )}
+
+      {/* 4. Agenda pastoral */}
+      {agendaLinks.length > 0 && (
+        <AccordionSection
+          title="Agenda pastoral"
+          icon={<IconAgenda className="w-4 h-4" />}
+          open={openSection === "agenda"}
+          onToggle={() => toggle("agenda")}
+          isActive={isAgendaActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            {agendaLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 5. Événements */}
       {hasEventsAccess && (
         <AccordionSection
           title="Événements"
@@ -450,20 +498,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 3. Membres */}
-      {hasMembersAccess && (
-        <Link
-          href="/admin/members"
-          onClick={onClose}
-          data-tour="sidebar-members"
-          className={`${sectionHeaderBase} ${isMembersActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
-        >
-          <IconMembers className="w-4 h-4 shrink-0" />
-          <span className="flex-1">Membres</span>
-        </Link>
-      )}
-
-      {/* 4. Demandes */}
+      {/* 6. Demandes */}
       {requestLinks.length > 0 && (
         <AccordionSection
           title="Demandes"
@@ -483,7 +518,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 5. Médias */}
+      {/* 7. Médias */}
       {mediaLinks.length > 0 && (
         <AccordionSection
           title="Médias"
@@ -503,7 +538,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 6. Réservation de salles (module MRBS optionnel) */}
+      {/* 8. Réservation de salles (module MRBS optionnel) */}
       {(mrbsUrl || mrbsAdminLink) && (
         <AccordionSection
           title="Salles"
@@ -533,39 +568,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 7. Agenda pastoral */}
-      {agendaLinks.length > 0 && (
-        <AccordionSection
-          title="Agenda pastoral"
-          icon={<IconAgenda className="w-4 h-4" />}
-          open={openSection === "agenda"}
-          onToggle={() => toggle("agenda")}
-          isActive={isAgendaActive}
-        >
-          <nav className="space-y-0.5 pl-6">
-            {agendaLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </AccordionSection>
-      )}
-
-      {/* 8. Discipolat — lien direct (une seule sous-page) */}
-      {hasDiscipleship && (
-        <Link
-          href="/admin/discipleship"
-          onClick={onClose}
-          data-tour="sidebar-discipleship"
-          className={`${sectionHeaderBase} ${isDiscipleshipActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
-        >
-          <IconDiscipleship className="w-4 h-4 shrink-0" />
-          <span className="flex-1">Discipolat</span>
-        </Link>
-      )}
-
-      {/* 7. Configuration */}
+      {/* 9. Configuration */}
       {configLinks.length > 0 && (
         <AccordionSection
           title="Configuration"

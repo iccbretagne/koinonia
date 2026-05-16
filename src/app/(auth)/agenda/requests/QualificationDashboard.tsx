@@ -91,7 +91,7 @@ export default function QualificationDashboard({ requests: initial, profiles }: 
                   {req.preferredDays && ` · Disponibilités : ${req.preferredDays}`}
                 </p>
                 <p className="text-sm font-medium text-gray-700 mt-1">{req.subject}</p>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{req.message}</p>
+                <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{req.message}</p>
               </div>
               <span className="text-xs text-gray-400 shrink-0">
                 {new Date(req.createdAt).toLocaleDateString("fr-FR")}

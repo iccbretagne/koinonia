@@ -267,10 +267,14 @@ export default function MobileNavSheet({
     pathname.startsWith("/admin/events") ||
     pathname.startsWith("/admin/reports");
   const isRequestsActive =
-    pathname.startsWith("/requests") || pathname.startsWith("/secretariat");
+    pathname.startsWith("/requests") ||
+    pathname.startsWith("/secretariat") ||
+    pathname === "/agenda/request";
   const isMediaActive =
     pathname.startsWith("/media") || pathname.startsWith("/communication");
-  const isAgendaActive = pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles");
+  const isAgendaActive =
+    (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
+    pathname !== "/agenda/request";
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
@@ -302,6 +306,33 @@ export default function MobileNavSheet({
             onClick={() => setView("planning")}
           />
         )}
+        {hasMembersAccess && (
+          <RootRow
+            label="STAR"
+            icon={<IconMembers className="w-5 h-5" />}
+            href="/admin/members"
+            isActive={pathname.startsWith("/admin/members")}
+            onClose={onClose}
+          />
+        )}
+        {hasDiscipleship && (
+          <RootRow
+            label="Discipolat"
+            icon={<IconDiscipleship className="w-5 h-5" />}
+            href="/admin/discipleship"
+            isActive={pathname.startsWith("/admin/discipleship")}
+            onClose={onClose}
+          />
+        )}
+        {agendaLinks.length > 0 && (
+          <RootRow
+            label="Agenda pastoral"
+            icon={<IconDiscipleship className="w-5 h-5" />}
+            hasChildren
+            isActive={isAgendaActive}
+            onClick={() => setView("agenda")}
+          />
+        )}
         {hasEventsAccess && (
           <RootRow
             label="Événements"
@@ -309,15 +340,6 @@ export default function MobileNavSheet({
             hasChildren
             isActive={isEventsActive}
             onClick={() => setView("events")}
-          />
-        )}
-        {hasMembersAccess && (
-          <RootRow
-            label="Membres"
-            icon={<IconMembers className="w-5 h-5" />}
-            href="/admin/members"
-            isActive={pathname.startsWith("/admin/members")}
-            onClose={onClose}
           />
         )}
         {requestLinks.length > 0 && (
@@ -336,24 +358,6 @@ export default function MobileNavSheet({
             hasChildren
             isActive={isMediaActive}
             onClick={() => setView("media")}
-          />
-        )}
-        {agendaLinks.length > 0 && (
-          <RootRow
-            label="Agenda pastoral"
-            icon={<IconDiscipleship className="w-5 h-5" />}
-            hasChildren
-            isActive={isAgendaActive}
-            onClick={() => setView("agenda")}
-          />
-        )}
-        {hasDiscipleship && (
-          <RootRow
-            label="Discipolat"
-            icon={<IconDiscipleship className="w-5 h-5" />}
-            href="/admin/discipleship"
-            isActive={pathname.startsWith("/admin/discipleship")}
-            onClose={onClose}
           />
         )}
         {mrbsUrl && (

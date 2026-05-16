@@ -21,8 +21,8 @@ function FieldError({ errors, field }: { errors: FieldErrors; field: string }) {
 }
 
 function inputClass(errors: FieldErrors, field: string, extra = "") {
-  return `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet ${
-    errors[field] ? "border-red-400 bg-red-50" : "border-gray-200"
+  return `w-full border-2 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
+    errors[field] ? "border-red-500 bg-red-50" : "border-gray-300"
   } ${extra}`;
 }
 
@@ -33,7 +33,7 @@ function RadioGroup({ name, options, value, onChange, errors }: {
   return (
     <div className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-lg border border-red-300 bg-red-50" : ""}`}>
       {options.map((opt) => (
-        <label key={opt} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
+        <label key={opt} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
           value === opt ? "bg-icc-violet text-white border-icc-violet" : "border-gray-200 text-gray-700 hover:border-icc-violet"
         }`}>
           <input type="radio" name={name} value={opt} checked={value === opt}
@@ -143,11 +143,11 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
   if (success) {
     return (
-      <div className="bg-white rounded-xl border border-green-200 p-8 text-center space-y-3">
+      <div className="bg-white rounded-xl border border-green-200 p-6 sm:p-8 text-center space-y-3">
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto text-2xl">✓</div>
         <h2 className="text-lg font-semibold text-gray-900">Demande envoyée !</h2>
         <p className="text-sm text-gray-600">
-          Votre demande de rendez-vous auprès de <strong>{churchName}</strong> a bien été reçue.
+          Votre demande de rendez-vous auprès de <strong>{churchName}</strong>{" "}a bien été reçue.
           Un email de confirmation vous a été envoyé. L&apos;équipe pastorale vous contactera prochainement.
         </p>
       </div>
@@ -158,10 +158,10 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     <form onSubmit={handleSubmit} className="space-y-5">
 
       {/* Coordonnées */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-gray-900">Vos coordonnées</h2>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
             <input type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)}
@@ -199,7 +199,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
       </div>
 
       {/* Profil */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-gray-900">Votre profil</h2>
 
         <div>
@@ -235,7 +235,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
       </div>
 
       {/* Motif */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-gray-900">Votre demande</h2>
 
         <div>
@@ -244,7 +244,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
           </label>
           <div className={`flex flex-wrap gap-2 ${fieldErrors["motifs"] ? "p-2 rounded-lg border border-red-300 bg-red-50" : ""}`}>
             {MOTIFS.map((motif) => (
-              <label key={motif} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
+              <label key={motif} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
                 form.motifs.includes(motif) ? "bg-icc-violet text-white border-icc-violet" : "border-gray-200 text-gray-700 hover:border-icc-violet"
               }`}>
                 <input type="checkbox" checked={form.motifs.includes(motif)}
@@ -278,7 +278,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
       <button type="submit"
         disabled={submitting || (!!turnstileSiteKey && !turnstileToken)}
-        className="w-full bg-icc-violet text-white py-3 rounded-xl font-medium text-sm hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+        className="w-full bg-icc-violet text-white py-3 rounded-lg font-medium text-sm hover:bg-icc-jaune hover:text-icc-violet focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-icc-violet disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}
       </button>
