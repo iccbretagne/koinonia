@@ -5,6 +5,10 @@ import AgendaCalendar from "./AgendaCalendar";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function getWeekBounds(date: Date): { from: Date; to: Date } {
   const from = new Date(date);
   from.setHours(0, 0, 0, 0);
@@ -63,7 +67,7 @@ export default async function AgendaPage({
           <a href="/admin/pastoral-profiles" className="underline">Configurer maintenant →</a>
         </div>
       ) : (
-        <AgendaCalendar profiles={profiles} entries={entries} weekStart={from.toISOString()} />
+        <AgendaCalendar profiles={profiles} entries={entries} weekStart={toLocalISO(from)} />
       )}
     </div>
   );

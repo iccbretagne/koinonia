@@ -139,6 +139,15 @@ export default async function AuthLayout({
   const hasAgendaManage = userPermissions.has("agenda:manage") || isProtocoleMember;
   const hasAgendaQualify = userPermissions.has("agenda:qualify");
 
+  // Profil pastoral lié au compte → lien "Mon agenda" en tête de section
+  if (currentChurchId) {
+    const ownProfile = await prisma.pastoralProfile.findFirst({
+      where: { userId: session.user.id, churchId: currentChurchId },
+      select: { id: true },
+    });
+    if (ownProfile) agendaLinks.push({ href: `/agenda/${ownProfile.id}`, label: "Mon agenda" });
+  }
+
   if (hasAgendaView) agendaLinks.push({ href: "/agenda", label: "Vue agenda" });
   if (hasAgendaQualify) agendaLinks.push({ href: "/agenda/requests", label: "Qualification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
