@@ -18,6 +18,21 @@
 next-auth beta (v5 beta) exige nodemailer@^6.8.0 mais nodemailer@7.x est installé.
 Résolu partiellement : aucune incompatibilité runtime connue. Ticket SEC-001.
 
+## Limitations de scope connues
+
+| Élément | Description | Risque | Plan |
+|---|---|---|---|
+| `user.displayName` global | `POST /api/member-user-links` écrit `displayName` sur le modèle `User` global lors de la liaison STAR↔compte. Si un utilisateur appartient à plusieurs églises, la liaison dans l'église B peut écraser le nom défini par l'église A. | Faible — impact cosmétique limité à l'affichage du nom ; aucun accès ni élévation de privilège. Nécessite que l'utilisateur soit admin dans deux églises simultanément. | Migrer `displayName` vers `MemberUserLink` lors d'une refonte multi-tenant (pas de ticket urgent). |
+| `GET /api/users/search` cross-tenant | Initialement identifié comme risque T11. Vérifié : la requête filtre sur `churchRoles.churchId` et `memberLinkRequests.churchId`, protégée par `requireChurchPermission("members:manage", churchId)`. Pas de fuite cross-tenant. | Aucun | Fermé comme faux positif. |
+
+## `workflow_dispatch` sans vérification CI (SEC-008)
+
+Le déclencheur `workflow_dispatch` du workflow `deploy.yml` permet de lancer un déploiement en spécifiant une version sans vérifier que le SHA cible a passé la CI. Le chemin normal (`workflow_run` déclenché automatiquement après CI verte sur un tag `v*`) est lui protégé.
+
+**Risque accepté** : seuls les mainteneurs disposant d'un accès en écriture au dépôt peuvent déclencher `workflow_dispatch`. C'est intentionnellement une trappe d'urgence (hotfix hors cycle normal). Le step `Check tag matches package.json` garantit que la version déclarée correspond au code checké. La surface d'attaque externe est nulle.
+
+**Conditions de réévaluation** : si le dépôt passe en organisation avec des contributeurs extérieurs disposant du rôle `write`, ajouter une vérification du statut CI du SHA via `gh api repos/{owner}/{repo}/commits/{sha}/check-runs`.
+
 ## Tickets de suivi
 
 - **SEC-001** : Migrer next-auth beta → stable (v5 stable ou équivalent)
@@ -27,3 +42,4 @@ Résolu partiellement : aucune incompatibilité runtime connue. Ticket SEC-001.
 - **SEC-005** : Mettre à jour hono / @hono/node-server via mise à jour Prisma
 - **SEC-006** : Corriger fast-uri (high) — `npm audit fix` dès disponibilité d'un fix non-breaking
 - **SEC-007** : Mettre à jour postcss via upgrade next
+- **SEC-008** : `workflow_dispatch` sans vérification CI — risque accepté (mainteneurs uniquement), réévaluer si accès write élargi
