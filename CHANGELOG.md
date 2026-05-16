@@ -6,6 +6,29 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.0] - 2026-05-17
+
+### Ajouté
+
+- Agenda pastoral : module complet Phase 1 — flux de qualification (PENDING → VALIDATED → SCHEDULED), dashboard Qualificateur, dashboard Protocole, calendrier agenda, saisie directe activités/RDV, vue hebdomadaire par profil pastoral
+- Agenda pastoral : formulaire public de demande de RDV (`/agenda-public/[churchSlug]`) accessible sans compte avec protection Turnstile
+- Agenda pastoral : formulaire interne (`/agenda/request`) aligné sur le formulaire public (mêmes sections, pré-remplissage statut STAR et département depuis le lien membre)
+- Agenda pastoral : email de confirmation envoyé au demandeur lors de la soumission (formulaire public et interne)
+- Agenda pastoral : profils pastoraux configurables depuis `/admin/pastoral-profiles`
+- Agenda pastoral : permissions `agenda:view`, `agenda:manage`, `agenda:qualify` et rôle `AGENDA_QUALIFIER`
+
+### Corrigé
+
+- Sidebar / navigation mobile : détection active de "Demande de RDV pastoral" corrigée (s'ouvrait dans l'accordéon Agenda au lieu de Demandes)
+- Navigation : ordre du menu harmonisé, "Membres" renommé en "STAR"
+- Sécurité : scope enforcement sur `PATCH /users/[userId]/roles` (T10)
+- CI : coverage gate avec seuils minimaux (T09)
+- Lint : react-hooks/set-state-in-effect dans BackupsClient et DownloadView
+
+### Dépendances
+
+- Mise à jour minor+patch de 6 dépendances npm (#317)
+
 ## [v1.3.6] - 2026-05-13
 
 ### Corrigé
