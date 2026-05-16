@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { requireAgendaView } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    await requireChurchPermission("church:manage", data.churchId);
+    const session = await requireChurchPermission("church:manage", data.churchId);
 
     if (data.userId) {
       const role = await prisma.userChurchRole.findFirst({
@@ -57,6 +58,15 @@ export async function POST(request: Request) {
         role: data.role,
         userId: data.userId ?? null,
       },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId: data.churchId,
+      action: "CREATE",
+      entityType: "PastoralProfile",
+      entityId: profile.id,
+      details: { name: data.name, role: data.role },
     });
 
     return successResponse(profile, 201);

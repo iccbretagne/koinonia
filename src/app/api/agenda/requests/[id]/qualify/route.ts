@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaQualify } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const qualifySchema = z.discriminatedUnion("action", [
@@ -52,11 +53,22 @@ export async function PATCH(
           qualifiedById: session.user.id,
           qualifiedAt: new Date(),
           qualificationNote: data.qualificationNote ?? null,
+          updatedById: session.user.id,
         },
         include: {
           assignedTo: { select: { id: true, name: true, role: true } },
         },
       });
+
+      await logAudit({
+        userId: session.user.id,
+        churchId,
+        action: "UPDATE",
+        entityType: "AppointmentRequest",
+        entityId: id,
+        details: { transition: "PENDING→VALIDATED", assignedToId: data.assignedToId },
+      });
+
       return successResponse(updated);
     }
 
@@ -68,8 +80,19 @@ export async function PATCH(
         qualifiedById: session.user.id,
         qualifiedAt: new Date(),
         rejectReason: data.rejectReason ?? null,
+        updatedById: session.user.id,
       },
     });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "UPDATE",
+      entityType: "AppointmentRequest",
+      entityId: id,
+      details: { transition: "PENDING→REJECTED", rejectReason: data.rejectReason ?? null },
+    });
+
     return successResponse(updated);
   } catch (error) {
     return errorResponse(error);

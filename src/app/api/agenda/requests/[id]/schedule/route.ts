@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const scheduleSchema = z.object({
@@ -46,6 +47,7 @@ export async function PATCH(
           status: "SCHEDULED",
           scheduledById: session.user.id,
           scheduledAt: new Date(),
+          updatedById: session.user.id,
         },
       }),
       prisma.agendaEntry.create({
@@ -67,6 +69,15 @@ export async function PATCH(
         },
       }),
     ]);
+
+    await logAudit({
+      userId: session.user.id,
+      churchId,
+      action: "UPDATE",
+      entityType: "AppointmentRequest",
+      entityId: id,
+      details: { transition: "VALIDATED→SCHEDULED", entryId: entry.id, startsAt: data.startsAt },
+    });
 
     return successResponse(entry, 201);
   } catch (error) {

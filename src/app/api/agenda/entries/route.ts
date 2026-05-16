@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAgendaView, requireAgendaManage } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -85,6 +86,15 @@ export async function POST(request: Request) {
       include: {
         recipient: { select: { id: true, name: true, role: true } },
       },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId: data.churchId,
+      action: "CREATE",
+      entityType: "AgendaEntry",
+      entityId: entry.id,
+      details: { type: data.type, title: data.title, recipientId: data.recipientId },
     });
 
     return successResponse(entry, 201);

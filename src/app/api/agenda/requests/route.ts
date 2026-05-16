@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requireChurchPermission } from "@/lib/auth";
 import { isProtocoleMember } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -94,6 +95,15 @@ export async function POST(request: Request) {
         message: data.message,
         preferredDays: data.preferredDays ?? null,
       },
+    });
+
+    await logAudit({
+      userId: session.user.id,
+      churchId: data.churchId,
+      action: "CREATE",
+      entityType: "AppointmentRequest",
+      entityId: req.id,
+      details: { subject: data.subject },
     });
 
     return successResponse(req, 201);
