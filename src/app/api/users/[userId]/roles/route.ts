@@ -164,6 +164,14 @@ export async function PATCH(
     const patchSession = await requireChurchPermission("events:manage", existing.churchId);
     requireRateLimit(request, { prefix: `roles:${patchSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
+    // Scope enforcement : ministryId uniquement pour MINISTER, departments pour DEPARTMENT_HEAD
+    if (ministryId !== undefined && existing.role !== "MINISTER") {
+      throw new ApiError(400, "ministryId n'est applicable qu'au rôle Ministre");
+    }
+    if ((departments?.length || departmentIds?.length) && existing.role !== "DEPARTMENT_HEAD") {
+      throw new ApiError(400, "departments n'est applicable qu'au rôle Responsable de département");
+    }
+
     // Vérifier que le ministryId appartient à cette église
     if (ministryId) {
       const ministry = await prisma.ministry.findUnique({

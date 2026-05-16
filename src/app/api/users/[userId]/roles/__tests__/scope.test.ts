@@ -207,3 +207,90 @@ describe("BLOCKER-1 : POST /api/users/[userId]/roles — RBAC events:manage", ()
     expect(res.status).toBe(201);
   });
 });
+
+const { PATCH } = await import("../route");
+
+describe("PATCH /api/users/[userId]/roles — scope validation (T10)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireRateLimit.mockReturnValue(undefined);
+  });
+
+  it("returns 400 when setting ministryId on a non-MINISTER role", async () => {
+    prismaMock.userChurchRole.findFirst.mockResolvedValue({
+      id: "role-1",
+      userId: "user-1",
+      churchId: "church-1",
+      role: "DEPARTMENT_HEAD",
+    } as never);
+
+    const request = new Request("http://localhost/api/users/user-1/roles", {
+      method: "PATCH",
+      body: JSON.stringify({ roleId: "role-1", ministryId: "min-1" }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ userId: "user-1" }) });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Ministre");
+  });
+
+  it("returns 400 when setting departments on a non-DEPARTMENT_HEAD role", async () => {
+    prismaMock.userChurchRole.findFirst.mockResolvedValue({
+      id: "role-1",
+      userId: "user-1",
+      churchId: "church-1",
+      role: "MINISTER",
+    } as never);
+
+    const request = new Request("http://localhost/api/users/user-1/roles", {
+      method: "PATCH",
+      body: JSON.stringify({ roleId: "role-1", departments: [{ id: "dept-1" }] }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ userId: "user-1" }) });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Responsable");
+  });
+
+  it("allows updating ministryId for MINISTER role", async () => {
+    prismaMock.userChurchRole.findFirst.mockResolvedValue({
+      id: "role-1",
+      userId: "user-1",
+      churchId: "church-1",
+      role: "MINISTER",
+    } as never);
+    prismaMock.ministry.findUnique.mockResolvedValue({ churchId: "church-1" } as never);
+    prismaMock.userChurchRole.update.mockResolvedValue({} as never);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({ id: "role-1" } as never);
+
+    const request = new Request("http://localhost/api/users/user-1/roles", {
+      method: "PATCH",
+      body: JSON.stringify({ roleId: "role-1", ministryId: "min-1" }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ userId: "user-1" }) });
+    expect(res.status).toBe(200);
+  });
+
+  it("allows updating departments for DEPARTMENT_HEAD role", async () => {
+    prismaMock.userChurchRole.findFirst.mockResolvedValue({
+      id: "role-1",
+      userId: "user-1",
+      churchId: "church-1",
+      role: "DEPARTMENT_HEAD",
+    } as never);
+    prismaMock.department.findMany.mockResolvedValue([
+      { id: "dept-1", name: "Son", ministry: { churchId: "church-1" } },
+    ] as never);
+    prismaMock.userDepartment.deleteMany.mockResolvedValue({} as never);
+    prismaMock.userDepartment.createMany.mockResolvedValue({} as never);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({ id: "role-1" } as never);
+
+    const request = new Request("http://localhost/api/users/user-1/roles", {
+      method: "PATCH",
+      body: JSON.stringify({ roleId: "role-1", departments: [{ id: "dept-1" }] }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ userId: "user-1" }) });
+    expect(res.status).toBe(200);
+  });
+});
