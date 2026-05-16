@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 type BackupEntry = {
   key: string;
@@ -133,21 +133,32 @@ export default function BackupsClient() {
   const [restoreTarget, setRestoreTarget] = useState<BackupEntry | null>(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreResult, setRestoreResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [currentRefreshKey, setCurrentRefreshKey] = useState(0);
 
-  const fetchBackups = useCallback(async () => {
+  // Reset loading/error during render when a refresh is requested (avoids synchronous setState in effect)
+  if (currentRefreshKey !== refreshKey) {
+    setCurrentRefreshKey(refreshKey);
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/admin/backups");
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      setError(json.error ?? "Impossible de charger les sauvegardes");
-    } else {
-      setBackups(await res.json());
-    }
-    setLoading(false);
-  }, []);
+  }
 
-  useEffect(() => { fetchBackups(); }, [fetchBackups]);
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/admin/backups")
+      .then(async (res) => {
+        if (!mounted) return;
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          if (mounted) setError(json.error ?? "Impossible de charger les sauvegardes");
+        } else {
+          const data = await res.json();
+          if (mounted) setBackups(data);
+        }
+      })
+      .finally(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, [refreshKey]);
 
   async function triggerBackup() {
     setTriggering(true);
@@ -158,7 +169,7 @@ export default function BackupsClient() {
       setTriggerResult(`Erreur : ${json.error ?? "échec de la sauvegarde"}`);
     } else {
       setTriggerResult(`Sauvegarde créée : ${keyToLabel(json.key)} (${formatBytes(json.sizeBytes)})`);
-      fetchBackups();
+      setRefreshKey((k) => k + 1);
     }
     setTriggering(false);
   }
@@ -221,7 +232,7 @@ export default function BackupsClient() {
             )}
           </h2>
           <button
-            onClick={fetchBackups}
+            onClick={() => setRefreshKey((k) => k + 1)}
             disabled={loading}
             className="text-xs text-gray-400 hover:text-icc-violet transition-colors disabled:opacity-50"
           >
