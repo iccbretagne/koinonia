@@ -4,15 +4,24 @@ import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
 import { requireRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
+const AGE_RANGES = ["18-20 ans", "21-30 ans", "31-40 ans", "41-50 ans", "+50 ans"] as const;
+const DURATIONS = ["Moins de 1 an", "1 à 2 ans", "2 à 3 ans", "3 à 5 ans", "+ 5 ans"] as const;
+const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale", "Croissance spirituelle", "Oppressions", "Maladie", "Service", "Études"] as const;
+const DAYS = ["Mardi", "Dimanche"] as const;
+
 const submitSchema = z.object({
   churchSlug: z.string().min(1),
-  firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
+  firstName: z.string().min(1, "Le prénom est requis"),
+  gender: z.enum(["Homme", "Femme"], { errorMap: () => ({ message: "Veuillez sélectionner votre sexe" }) }),
+  phone: z.string().min(1, "Le téléphone est requis"),
   email: z.string().email("Email invalide"),
-  phone: z.string().nullable().optional(),
-  subject: z.string().min(1, "L'objet est requis"),
-  message: z.string().min(10, "Le message est trop court"),
-  preferredDays: z.string().nullable().optional(),
+  ageRange: z.enum(AGE_RANGES, { errorMap: () => ({ message: "Veuillez sélectionner votre tranche d'âge" }) }),
+  membershipDuration: z.enum(DURATIONS, { errorMap: () => ({ message: "Veuillez sélectionner votre ancienneté à l'église" }) }),
+  isStar: z.enum(["Oui", "Non"], { errorMap: () => ({ message: "Veuillez répondre à cette question" }) }),
+  department: z.string().nullable().optional(),
+  motifs: z.array(z.enum(MOTIFS)).min(1, "Veuillez sélectionner au moins un motif"),
+  preferredDay: z.enum(DAYS, { errorMap: () => ({ message: "Veuillez sélectionner un jour" }) }),
   turnstileToken: z.string().min(1, "Vérification CAPTCHA manquante"),
 });
 
@@ -45,6 +54,15 @@ export async function POST(request: Request) {
     });
     if (!church) throw new ApiError(404, "Église introuvable");
 
+    // Motifs → subject ; contexte démographique → message structuré
+    const subject = data.motifs.join(", ");
+    const message = [
+      `Sexe : ${data.gender}`,
+      `Tranche d'âge : ${data.ageRange}`,
+      `À l'église depuis : ${data.membershipDuration}`,
+      `STAR : ${data.isStar}${data.isStar === "Oui" && data.department ? ` — Département : ${data.department}` : ""}`,
+    ].join("\n");
+
     const req = await prisma.appointmentRequest.create({
       data: {
         churchId: church.id,
@@ -52,21 +70,21 @@ export async function POST(request: Request) {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone ?? null,
-        subject: data.subject,
-        message: data.message,
-        preferredDays: data.preferredDays ?? null,
+        phone: data.phone,
+        subject,
+        message,
+        preferredDays: data.preferredDay,
       },
     });
 
-    const { subject, html } = buildAppointmentConfirmationEmail({
+    const { subject: emailSubject, html } = buildAppointmentConfirmationEmail({
       firstName: data.firstName,
       lastName: data.lastName,
-      subject: data.subject,
+      subject,
       churchName: church.name,
     });
-    await sendEmail({ to: data.email, subject, html }).catch(() => {
-      // Email non bloquant — la demande est enregistrée même si l'envoi échoue
+    await sendEmail({ to: data.email, subject: emailSubject, html }).catch((err) => {
+      console.error("[agenda/requests/public] sendEmail failed:", err?.message ?? err);
     });
 
     return successResponse({ id: req.id }, 201);
