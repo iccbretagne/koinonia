@@ -21,6 +21,10 @@ export function proxy(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith("/api/auth/mrbs/")) {
       return NextResponse.next();
     }
+    // Allow public agenda request form (Turnstile-protected, no session required)
+    if (request.nextUrl.pathname === "/api/agenda/requests/public") {
+      return NextResponse.next();
+    }
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
