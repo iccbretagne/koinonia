@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.1] - 2026-05-17
+
+### Corrigé
+
+- Administration : la fonction système `PROTOCOLE` était absente de la page "Fonctions des départements" — les admins ne pouvaient pas l'assigner à un département
+- Administration : le rôle `AGENDA_QUALIFIER` (Qualificateur Agenda) était absent du sélecteur de rôles dans la gestion des utilisateurs
+- Administration : suppression de la section "Fonctions personnalisées" dans la page Fonctions des départements (labels sans comportement applicatif)
+
 ## [v1.4.0] - 2026-05-17
 
 ### Ajouté
