@@ -47,6 +47,11 @@ export const prismaMock = {
   mediaPhoto: createModelMock(),
   mediaShareToken: createModelMock(),
   mediaSettings: createModelMock(),
+  mrbsUserLink: createModelMock(),
+  // Module agenda
+  pastoralProfile: createModelMock(),
+  appointmentRequest: createModelMock(),
+  agendaEntry: createModelMock(),
   $transaction: vi.fn((fn: (tx: typeof prismaMock) => Promise<unknown>) =>
     fn(prismaMock)
   ),
