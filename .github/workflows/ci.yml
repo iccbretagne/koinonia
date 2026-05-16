@@ -27,7 +27,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run lint:boundaries
-      - run: npm run test
+      - run: npm run test:coverage
 
   build:
     needs: lint-test
