@@ -20,6 +20,10 @@ interface Profile { id: string; name: string; role: string }
 interface Props { profile: Profile; entries: Entry[]; weekStart: string }
 
 
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function fmtTime(d: Date) {
   return new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
@@ -59,14 +63,14 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => router.push(`/agenda/${profile.id}?week=${prevWeek.toISOString().split("T")[0]}`)}
+          onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(prevWeek)}`)}
           className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
         >
           ← Semaine précédente
         </button>
         <span className="text-sm font-medium text-gray-700">{fromLabel} — {toLabel}</span>
         <button
-          onClick={() => router.push(`/agenda/${profile.id}?week=${nextWeek.toISOString().split("T")[0]}`)}
+          onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(nextWeek)}`)}
           className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
         >
           Semaine suivante →

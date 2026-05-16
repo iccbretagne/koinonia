@@ -2,8 +2,13 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { prisma } from "@/lib/prisma";
 import AgendaCalendar from "./AgendaCalendar";
+import PublicUrlBanner from "./PublicUrlBanner";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function getWeekBounds(date: Date): { from: Date; to: Date } {
   const from = new Date(date);
@@ -28,7 +33,8 @@ export default async function AgendaPage({
   const refDate = week ? new Date(week) : new Date();
   const { from, to } = getWeekBounds(refDate);
 
-  const [profiles, entries] = await Promise.all([
+  const [church, profiles, entries] = await Promise.all([
+    prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
     prisma.pastoralProfile.findMany({
       where: { churchId },
       select: { id: true, name: true, role: true },
@@ -57,13 +63,14 @@ export default async function AgendaPage({
           </Link>
         </div>
       </div>
+      {church?.slug && <PublicUrlBanner slug={church.slug} />}
       {profiles.length === 0 ? (
         <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
           Aucun profil pastoral configuré.{" "}
           <a href="/admin/pastoral-profiles" className="underline">Configurer maintenant →</a>
         </div>
       ) : (
-        <AgendaCalendar profiles={profiles} entries={entries} weekStart={from.toISOString()} />
+        <AgendaCalendar profiles={profiles} entries={entries} weekStart={toLocalISO(from)} />
       )}
     </div>
   );

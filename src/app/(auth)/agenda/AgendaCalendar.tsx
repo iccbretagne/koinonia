@@ -35,6 +35,10 @@ function fmtTime(d: Date) {
   return new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function AgendaCalendar({ profiles, entries, weekStart }: Props) {
   const router = useRouter();
   const from = new Date(weekStart);
@@ -67,7 +71,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
       {/* Navigation semaine */}
       <div className="flex items-center justify-between mb-4">
         <button
-          onClick={() => router.push(`/agenda?week=${prevWeek.toISOString().split("T")[0]}`)}
+          onClick={() => router.push(`/agenda?week=${toLocalISO(prevWeek)}`)}
           className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
         >
           ← Semaine précédente
@@ -76,7 +80,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
           {fmtDate(days[0])} — {fmtDate(days[6])}
         </span>
         <button
-          onClick={() => router.push(`/agenda?week=${nextWeek.toISOString().split("T")[0]}`)}
+          onClick={() => router.push(`/agenda?week=${toLocalISO(nextWeek)}`)}
           className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
         >
           Semaine suivante →

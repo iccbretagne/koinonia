@@ -125,6 +125,36 @@ export function buildPlanningDigestEmail(params: {
   };
 }
 
+export function buildAppointmentConfirmationEmail(params: {
+  firstName: string;
+  lastName: string;
+  subject: string;
+  churchName: string;
+}) {
+  const name = escapeHtml(`${params.firstName} ${params.lastName}`);
+  const subject = escapeHtml(params.subject);
+  const church = escapeHtml(params.churchName);
+  return {
+    subject: `Votre demande de RDV pastoral a bien été reçue — ${church}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>Votre demande de rendez-vous pastoral concernant <strong>« ${subject} »</strong> a bien été reçue.</p>
+          <p>Un membre de l'équipe pastorale prendra contact avec vous prochainement pour convenir d'un créneau.</p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous avez soumis une demande de RDV sur le formulaire de ${church}.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmail(params: {
   memberName: string;
   eventTitle: string;

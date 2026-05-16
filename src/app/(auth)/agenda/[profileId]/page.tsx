@@ -5,6 +5,10 @@ import { notFound } from "next/navigation";
 
 import ProfileAgenda from "./ProfileAgenda";
 
+function toLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function getWeekBounds(date: Date): { from: Date; to: Date } {
   const from = new Date(date);
   from.setHours(0, 0, 0, 0);
@@ -63,7 +67,7 @@ export default async function ProfileAgendaPage({
         Agenda — {profile.name}
       </h1>
       <p className="text-sm text-gray-500 mb-6">{ROLE_LABELS[profile.role]}</p>
-      <ProfileAgenda profile={profile} entries={entries} weekStart={from.toISOString()} />
+      <ProfileAgenda profile={profile} entries={entries} weekStart={toLocalISO(from)} />
     </div>
   );
 }

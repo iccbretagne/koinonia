@@ -5,6 +5,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
+import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
 import { z } from "zod";
 
 const submitSchema = z.object({
@@ -83,19 +84,22 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("planning:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
-    const req = await prisma.appointmentRequest.create({
-      data: {
-        churchId: data.churchId,
-        userId: session.user.id,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email ?? null,
-        phone: data.phone ?? null,
-        subject: data.subject,
-        message: data.message,
-        preferredDays: data.preferredDays ?? null,
-      },
-    });
+    const [req, church] = await Promise.all([
+      prisma.appointmentRequest.create({
+        data: {
+          churchId: data.churchId,
+          userId: session.user.id,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email ?? null,
+          phone: data.phone ?? null,
+          subject: data.subject,
+          message: data.message,
+          preferredDays: data.preferredDays ?? null,
+        },
+      }),
+      prisma.church.findUnique({ where: { id: data.churchId }, select: { name: true } }),
+    ]);
 
     await logAudit({
       userId: session.user.id,
@@ -105,6 +109,18 @@ export async function POST(request: Request) {
       entityId: req.id,
       details: { subject: data.subject },
     });
+
+    if (data.email && church) {
+      const { subject: emailSubject, html } = buildAppointmentConfirmationEmail({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        subject: data.subject,
+        churchName: church.name,
+      });
+      sendEmail({ to: data.email, subject: emailSubject, html }).catch((err) => {
+        console.error("[agenda/requests] sendEmail failed:", err?.message ?? err);
+      });
+    }
 
     return successResponse(req, 201);
   } catch (error) {
