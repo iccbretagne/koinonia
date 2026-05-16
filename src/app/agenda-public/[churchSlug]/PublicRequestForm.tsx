@@ -8,6 +8,8 @@ interface Props {
   turnstileSiteKey: string;
 }
 
+type FieldErrors = Partial<Record<string, string>>;
+
 const DAYS = [
   { value: "lundi", label: "Lundi" },
   { value: "mardi", label: "Mardi" },
@@ -17,6 +19,17 @@ const DAYS = [
   { value: "samedi", label: "Samedi" },
   { value: "dimanche", label: "Dimanche" },
 ];
+
+function FieldError({ errors, field }: { errors: FieldErrors; field: string }) {
+  if (!errors[field]) return null;
+  return <p className="text-xs text-red-600 mt-1">{errors[field]}</p>;
+}
+
+function inputClass(errors: FieldErrors, field: string) {
+  return `w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet ${
+    errors[field] ? "border-red-400 bg-red-50" : "border-gray-200"
+  }`;
+}
 
 export default function PublicRequestForm({ churchSlug, churchName, turnstileSiteKey }: Props) {
   const [form, setForm] = useState({
@@ -30,7 +43,8 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
@@ -64,6 +78,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+    if (fieldErrors[field]) setFieldErrors((e) => ({ ...e, [field]: undefined }));
   }
 
   function toggleDay(day: string) {
@@ -78,11 +93,12 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!turnstileToken) {
-      setError("Veuillez compléter la vérification CAPTCHA.");
+      setGlobalError("Veuillez compléter la vérification CAPTCHA.");
       return;
     }
     setSubmitting(true);
-    setError(null);
+    setGlobalError(null);
+    setFieldErrors({});
 
     try {
       const res = await fetch("/api/agenda/requests/public", {
@@ -99,7 +115,17 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Une erreur est survenue. Veuillez réessayer.");
+        // Erreurs de validation Zod → afficher par champ
+        if (json.details?.length) {
+          const errs: FieldErrors = {};
+          for (const d of json.details as { field: string; message: string }[]) {
+            errs[d.field] = d.message;
+          }
+          setFieldErrors(errs);
+          setGlobalError("Veuillez corriger les erreurs ci-dessous.");
+        } else {
+          setGlobalError(json.error ?? "Une erreur est survenue. Veuillez réessayer.");
+        }
         // Reset Turnstile
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (widgetId.current) (window as any).turnstile?.reset(widgetId.current);
@@ -108,7 +134,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
         setSuccess(true);
       }
     } catch {
-      setError("Une erreur réseau est survenue. Veuillez réessayer.");
+      setGlobalError("Une erreur réseau est survenue. Veuillez réessayer.");
     } finally {
       setSubmitting(false);
     }
@@ -140,8 +166,9 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
               required
               value={form.firstName}
               onChange={(e) => set("firstName", e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className={inputClass(fieldErrors, "firstName")}
             />
+            <FieldError errors={fieldErrors} field="firstName" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
@@ -150,8 +177,9 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
               required
               value={form.lastName}
               onChange={(e) => set("lastName", e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className={inputClass(fieldErrors, "lastName")}
             />
+            <FieldError errors={fieldErrors} field="lastName" />
           </div>
         </div>
 
@@ -162,8 +190,9 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
             required
             value={form.email}
             onChange={(e) => set("email", e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            className={inputClass(fieldErrors, "email")}
           />
+          <FieldError errors={fieldErrors} field="email" />
         </div>
 
         <div>
@@ -172,8 +201,9 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
             type="tel"
             value={form.phone}
             onChange={(e) => set("phone", e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            className={inputClass(fieldErrors, "phone")}
           />
+          <FieldError errors={fieldErrors} field="phone" />
         </div>
       </div>
 
@@ -188,20 +218,24 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
             placeholder="Ex : Counseling, accompagnement spirituel…"
             value={form.subject}
             onChange={(e) => set("subject", e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+            className={inputClass(fieldErrors, "subject")}
           />
+          <FieldError errors={fieldErrors} field="subject" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Message * <span className="text-gray-400 font-normal">(10 caractères minimum)</span>
+          </label>
           <textarea
             required
             rows={4}
             placeholder="Décrivez brièvement l'objet de votre demande…"
             value={form.message}
             onChange={(e) => set("message", e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
+            className={`${inputClass(fieldErrors, "message")} resize-none`}
           />
+          <FieldError errors={fieldErrors} field="message" />
         </div>
 
         <div>
@@ -235,8 +269,8 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
         </div>
       )}
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+      {globalError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{globalError}</p>
       )}
 
       <button
