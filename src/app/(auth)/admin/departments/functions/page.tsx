@@ -1,7 +1,6 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DeptFunctionsClient from "./DeptFunctionsClient";
-import { SYSTEM_FUNCTIONS } from "@/lib/department-functions";
 
 export default async function DeptFunctionsPage() {
   const session = await requireAuth();
@@ -15,25 +14,14 @@ export default async function DeptFunctionsPage() {
     orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
   });
 
-  const systemFunctionKeys = SYSTEM_FUNCTIONS.map((f) => f.key);
-
-  // Collect distinct custom function names (non-system, non-null)
-  const customFunctionNames = Array.from(
-    new Set(
-      departments
-        .map((d) => d.function)
-        .filter((fn): fn is string => fn !== null && !systemFunctionKeys.includes(fn as never))
-    )
-  ).sort();
-
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">
         Fonctions des départements
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        Configurez quel département est en charge de chaque fonction. Ces
-        assignations déterminent le routage automatique des demandes d&apos;annonces.
+        Configurez quel département est en charge de chaque fonction système.
+        Ces assignations déterminent le routage des demandes et les accès aux modules spécialisés.
       </p>
       <DeptFunctionsClient
         departments={departments.map((d) => ({
@@ -42,7 +30,6 @@ export default async function DeptFunctionsPage() {
           ministryName: d.ministry.name,
           function: d.function,
         }))}
-        initialCustomFunctions={customFunctionNames}
       />
     </div>
   );
