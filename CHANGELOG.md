@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.4] - 2026-05-18
+
+### Corrigé
+
+- Migration `20260518000000_member_user_link_multi_church` : ordre ADD/DROP corrigé — MariaDB refusait de supprimer l'index `memberId_key` tant que l'index composite n'existait pas pour satisfaire la contrainte FK (#329)
+
 ## [v1.4.3] - 2026-05-18
 
 ### Corrigé
