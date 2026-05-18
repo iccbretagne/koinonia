@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.3] - 2026-05-18
+
+### Corrigé
+
+- Liaison STAR multi-église : migration BDD manquante dans v1.4.2 — la contrainte `memberId @unique` n'était pas supprimée en production, empêchant le lien d'un même STAR dans plusieurs églises (#327)
+
 ## [v1.4.2] - 2026-05-18
 
 ### Corrigé
