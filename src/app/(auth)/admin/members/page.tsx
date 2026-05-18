@@ -75,7 +75,8 @@ export default async function MembersPage() {
         },
         orderBy: { isPrimary: "desc" },
       },
-      userLink: {
+      userLinks: {
+        where: { churchId },
         select: { userId: true, user: { select: { name: true, email: true } } },
       },
     },
@@ -158,8 +159,8 @@ export default async function MembersPage() {
               isPrimary: d.isPrimary,
               ministry: { id: d.department.ministry.id, name: d.department.ministry.name },
             })),
-            userLink: m.userLink
-              ? { userId: m.userLink.userId, userName: m.userLink.user.name, userEmail: m.userLink.user.email }
+            userLink: m.userLinks[0]
+              ? { userId: m.userLinks[0].userId, userName: m.userLinks[0].user.name, userEmail: m.userLinks[0].user.email }
               : null,
             churchId: primaryDept?.department.ministry.churchId ?? "",
           };

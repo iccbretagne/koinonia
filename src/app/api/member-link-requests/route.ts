@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const member = await prisma.member.findUnique({
         where: { id: data.memberId },
         include: {
-          userLink: true,
+          userLinks: { where: { churchId: data.churchId } },
           departments: {
             where: { isPrimary: true },
             include: { department: { include: { ministry: { select: { churchId: true } } } } },
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         },
       });
       if (!member) throw new ApiError(404, "STAR introuvable");
-      if (member.userLink) throw new ApiError(409, "Ce STAR est déjà lié à un compte");
+      if (member.userLinks.length > 0) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
 
       const primaryChurchId = member.departments[0]?.department.ministry.churchId;
       if (primaryChurchId !== data.churchId) {

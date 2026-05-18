@@ -43,16 +43,16 @@ export async function GET(request: Request) {
             },
           },
         },
-        userLink: { select: { id: true } },
+        userLinks: { where: { churchId }, select: { id: true } },
       },
       take: 20,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });
 
     const members = matches
-      .filter((m) => !m.userLink)
+      .filter((m) => m.userLinks.length === 0)
       .slice(0, 10)
-      .map(({ userLink: _, ...m }) => m);
+      .map(({ userLinks: _, ...m }) => m);
 
     return successResponse(members);
   } catch (error) {

@@ -127,20 +127,19 @@ export async function POST(request: Request) {
       await tx.memberLinkRequest.updateMany({ where: { memberId: sourceId }, data: { memberId: targetId } });
 
       // ── MemberUserLink ────────────────────────────────────────────────────────
-      const srcLink = await tx.memberUserLink.findUnique({ where: { memberId: sourceId } });
-      const tgtLink = await tx.memberUserLink.findUnique({ where: { memberId: targetId } });
+      const srcLink = await tx.memberUserLink.findUnique({ where: { memberId_churchId: { memberId: sourceId, churchId: srcChurchId } } });
+      const tgtLink = await tx.memberUserLink.findUnique({ where: { memberId_churchId: { memberId: targetId, churchId: srcChurchId } } });
 
       if (srcLink && tgtLink) {
         // Les deux ont un compte lié — garder celui choisi, supprimer l'autre
-        const userIdToRemove = resolution.keepUserId === srcLink.userId ? tgtLink.userId : srcLink.userId;
-        const memberIdToRemove = userIdToRemove === srcLink.userId ? sourceId : targetId;
-        await tx.memberUserLink.delete({ where: { memberId: memberIdToRemove } });
+        const linkToRemove = resolution.keepUserId === srcLink.userId ? tgtLink : srcLink;
+        await tx.memberUserLink.delete({ where: { id: linkToRemove.id } });
         // Déplacer le lien source vers le target si c'est le lien source qu'on conserve
         if (resolution.keepUserId === srcLink.userId) {
-          await tx.memberUserLink.update({ where: { memberId: sourceId }, data: { memberId: targetId } });
+          await tx.memberUserLink.update({ where: { id: srcLink.id }, data: { memberId: targetId } });
         }
       } else if (srcLink && !tgtLink) {
-        await tx.memberUserLink.update({ where: { memberId: sourceId }, data: { memberId: targetId } });
+        await tx.memberUserLink.update({ where: { id: srcLink.id }, data: { memberId: targetId } });
       }
       // else: tgtLink && !srcLink → rien à faire (target garde son lien)
 
