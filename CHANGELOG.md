@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.5] - 2026-05-18
+
+### Corrigé
+
+- Dashboards Secrétariat, Communication et Production Média : le contenu des annonces était tronqué à 3 lignes sans possibilité de lire la suite — ajout d'un toggle "Voir plus / Voir moins" cohérent avec la vue "Mes demandes" (#331)
+
 ## [v1.4.4] - 2026-05-18
 
 ### Corrigé
