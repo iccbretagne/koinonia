@@ -40,11 +40,11 @@ export async function POST(request: Request) {
       throw new ApiError(403, "Cet utilisateur n'a pas de lien avec cette église");
     }
 
-    // Vérifier qu'il n'y a pas déjà un lien pour ce membre ou cet utilisateur dans cette église
+    // Vérifier qu'il n'y a pas déjà un lien pour ce membre dans cette église
     const existingByMember = await prisma.memberUserLink.findUnique({
-      where: { memberId },
+      where: { memberId_churchId: { memberId, churchId } },
     });
-    if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte");
+    if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
 
     const existingByUser = await prisma.memberUserLink.findFirst({
       where: { userId, churchId },
@@ -86,10 +86,9 @@ export async function DELETE(request: Request) {
     requireRateLimit(request, { prefix: `unlink:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     const link = await prisma.memberUserLink.findUnique({
-      where: { memberId },
+      where: { memberId_churchId: { memberId, churchId } },
     });
-    if (!link) throw new ApiError(404, "Ce STAR n'est lié à aucun compte");
-    if (link.churchId !== churchId) throw new ApiError(403, "Ce lien n'appartient pas à cette église");
+    if (!link) throw new ApiError(404, "Ce STAR n'est lié à aucun compte dans cette église");
 
     await prisma.memberUserLink.delete({ where: { id: link.id } });
 

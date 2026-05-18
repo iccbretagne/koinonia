@@ -18,7 +18,7 @@ export async function GET(request: Request) {
           },
           orderBy: { isPrimary: "desc" },
         },
-        userLink: { select: { userId: true, user: { select: { name: true, email: true } } } },
+        userLinks: { where: { churchId }, select: { userId: true, user: { select: { name: true, email: true } } } },
         _count: { select: { plannings: true, discipleships: true, disciplesMade: true } },
       },
     });

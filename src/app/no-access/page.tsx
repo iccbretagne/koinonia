@@ -14,15 +14,20 @@ export default async function NoAccessPage() {
     redirect("/dashboard");
   }
 
-  // Vérifier si une demande est déjà en attente
-  const pendingRequest = await prisma.memberLinkRequest.findFirst({
-    where: { userId: session.user.id, status: "PENDING" },
-  });
-
-  const churches = await prisma.church.findMany({
+  const allChurches = await prisma.church.findMany({
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
+
+  // Demandes en attente par église — scoped pour ne pas bloquer les autres églises
+  const pendingRequests = await prisma.memberLinkRequest.findMany({
+    where: { userId: session.user.id, status: "PENDING" },
+    select: { churchId: true },
+  });
+  const pendingChurchIds = new Set(pendingRequests.map((r) => r.churchId));
+
+  // Églises disponibles = toutes les églises sans demande en attente
+  const churches = allChurches.filter((c) => !pendingChurchIds.has(c.id));
 
   const ministries = await prisma.ministry.findMany({
     where: { isSystem: false },
@@ -57,18 +62,20 @@ export default async function NoAccessPage() {
           {session.user.email}
         </p>
 
-        {pendingRequest ? (
-          <div className="text-center">
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-gray-600 text-sm">
-              Votre demande d&apos;accès est <strong>en cours de traitement</strong>. Un administrateur va l&apos;examiner prochainement.
+        {pendingRequests.length > 0 && (
+          <div className="mb-5 flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <svg className="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-yellow-800">
+              {churches.length === 0
+                ? "Votre demande d'accès est en cours de traitement. Un administrateur va l'examiner prochainement."
+                : "Une demande est déjà en attente pour certaines de vos églises."}
             </p>
           </div>
-        ) : (
+        )}
+
+        {churches.length > 0 ? (
           <NoAccessClient
             churches={churches}
             ministries={ministries.map((m) => ({
@@ -78,7 +85,9 @@ export default async function NoAccessPage() {
               departments: m.departments,
             }))}
           />
-        )}
+        ) : pendingRequests.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center">Aucune église disponible.</p>
+        ) : null}
 
         <div className="mt-6 pt-4 border-t border-gray-100 text-center">
           <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>

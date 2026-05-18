@@ -216,7 +216,7 @@ model Member {
   plannings       Planning[]
   taskAssignments TaskAssignment[]
   createdAt       DateTime            @default(now())
-  userLink        MemberUserLink?
+  userLinks       MemberUserLink[]
   linkRequests    MemberLinkRequest[]
 
   // Discipolat (un seul enregistrement actif par église grâce au @@unique du modèle)
@@ -243,7 +243,7 @@ model MemberDepartment {
 
 model MemberUserLink {
   id            String    @id @default(cuid())
-  memberId      String    @unique
+  memberId      String
   userId        String
   churchId      String
   validatedAt   DateTime?
@@ -254,6 +254,7 @@ model MemberUserLink {
   church      Church  @relation(fields: [churchId],      references: [id])
   validatedBy User?   @relation("LinkValidator",         fields: [validatedById], references: [id])
 
+  @@unique([memberId, churchId])
   @@unique([userId, churchId])
   @@map("member_user_links")
 }

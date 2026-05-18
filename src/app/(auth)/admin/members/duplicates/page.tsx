@@ -18,7 +18,7 @@ export default async function DuplicatesPage() {
         },
         orderBy: { isPrimary: "desc" },
       },
-      userLink: { select: { userId: true, user: { select: { name: true, email: true } } } },
+      userLinks: { where: { churchId }, select: { userId: true, user: { select: { name: true, email: true } } } },
       _count: { select: { plannings: true, discipleships: true, disciplesMade: true } },
     },
   });
@@ -81,8 +81,8 @@ export default async function DuplicatesPage() {
         ministryName: d.department.ministry.name,
         isPrimary: d.isPrimary,
       })),
-      userLink: m.userLink
-        ? { userId: m.userLink.userId, name: m.userLink.user.name, email: m.userLink.user.email }
+      userLink: m.userLinks[0]
+        ? { userId: m.userLinks[0].userId, name: m.userLinks[0].user.name, email: m.userLinks[0].user.email }
         : null,
       counts: { plannings: m._count.plannings, disciples: m._count.discipleships, disciplesMade: m._count.disciplesMade },
     };
