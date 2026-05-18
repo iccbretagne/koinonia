@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.2] - 2026-05-18
+
+### Corrigé
+
+- Liaison STAR multi-église : un STAR ayant déjà un lien compte dans une église n'apparaissait pas dans l'autocomplete de recherche des autres églises — la contrainte `memberId @unique` sur `MemberUserLink` a été remplacée par `@@unique([memberId, churchId])` pour permettre un lien par église (#325)
+- Page d'accès en attente (`/no-access`) : la détection de demande en attente n'était pas scopée par église, bloquant les nouveaux utilisateurs souhaitant rejoindre plusieurs églises simultanément (#325)
+
 ## [v1.4.1] - 2026-05-17
 
 ### Corrigé
