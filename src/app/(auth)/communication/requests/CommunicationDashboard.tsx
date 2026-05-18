@@ -52,6 +52,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({});
+  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   async function updateRequest(id: string, status: string, deliveryLink?: string) {
     setProcessing(id);
@@ -123,9 +124,31 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
           </span>
         </div>
 
-        {req.announcement && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{req.announcement.content}</p>
-        )}
+        {req.announcement && (() => {
+          const content = req.announcement.content;
+          const PREVIEW = 150;
+          const isLong = content.length > PREVIEW;
+          const isExpanded = expandedContent.has(req.id);
+          return (
+            <div className="mb-3">
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {isLong && !isExpanded ? `${content.slice(0, PREVIEW).trimEnd()}…` : content}
+              </p>
+              {isLong && (
+                <button
+                  onClick={() => setExpandedContent((prev) => {
+                    const next = new Set(prev);
+                    isExpanded ? next.delete(req.id) : next.add(req.id);
+                    return next;
+                  })}
+                  className="mt-1 text-xs text-icc-violet hover:underline"
+                >
+                  {isExpanded ? "Voir moins" : "Voir plus"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {visuelInfo && (
           <div className={`flex items-center gap-2 text-xs mb-3 ${visuelInfo.color}`}>

@@ -83,6 +83,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
   const [processing, setProcessing] = useState<string | null>(null);
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   // "Prendre en charge" inline form state
   const [takingCharge, setTakingCharge] = useState<string | null>(null);
@@ -248,9 +249,30 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
           </p>
         )}
 
-        {brief && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{brief}</p>
-        )}
+        {brief && (() => {
+          const PREVIEW = 150;
+          const isLong = brief.length > PREVIEW;
+          const isExpanded = expandedContent.has(req.id);
+          return (
+            <div className="mb-3">
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {isLong && !isExpanded ? `${brief.slice(0, PREVIEW).trimEnd()}…` : brief}
+              </p>
+              {isLong && (
+                <button
+                  onClick={() => setExpandedContent((prev) => {
+                    const next = new Set(prev);
+                    isExpanded ? next.delete(req.id) : next.add(req.id);
+                    return next;
+                  })}
+                  className="mt-1 text-xs text-icc-violet hover:underline"
+                >
+                  {isExpanded ? "Voir moins" : "Voir plus"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {linkedProject && (req.status === "EN_COURS" || req.status === "LIVRE") && (() => {
           const shareToken = linkedProject.shareTokens[0];

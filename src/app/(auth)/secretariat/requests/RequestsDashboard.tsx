@@ -98,6 +98,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [category, setCategory] = useState<FilterCategory>("all");
   const [showProcessed, setShowProcessed] = useState(false);
+  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   const filtered = requests.filter((r) => {
     if (category === "announcements" && !ANNOUNCEMENT_TYPES.includes(r.type)) return false;
@@ -248,11 +249,31 @@ export default function RequestsDashboard({ requests: initial, canManage = false
         </div>
 
         {/* Announcement content */}
-        {req.announcement?.content && (
-          <p className="text-sm text-gray-700 mb-3 whitespace-pre-wrap line-clamp-3">
-            {req.announcement.content}
-          </p>
-        )}
+        {req.announcement?.content && (() => {
+          const content = req.announcement.content;
+          const PREVIEW = 150;
+          const isLong = content.length > PREVIEW;
+          const isExpanded = expandedContent.has(req.id);
+          return (
+            <div className="mb-3">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                {isLong && !isExpanded ? `${content.slice(0, PREVIEW).trimEnd()}…` : content}
+              </p>
+              {isLong && (
+                <button
+                  onClick={() => setExpandedContent((prev) => {
+                    const next = new Set(prev);
+                    isExpanded ? next.delete(req.id) : next.add(req.id);
+                    return next;
+                  })}
+                  className="mt-1 text-xs text-icc-violet hover:underline"
+                >
+                  {isExpanded ? "Voir moins" : "Voir plus"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Demand payload summary */}
         {isDemand && payloadSummary && (
