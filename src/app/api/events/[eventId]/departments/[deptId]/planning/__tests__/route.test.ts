@@ -119,6 +119,9 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
       const ids = args?.where?.id?.in ?? [];
       return Promise.resolve(ids.map((id: string) => ({ id })));
     });
+    // Mock notification-related queries (no-op by default)
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
   });
 
   it("upserts planning statuses", async () => {
@@ -331,6 +334,8 @@ describe("P0-2 : Department scope — DEPARTMENT_HEAD ne peut pas accéder à un
       return Promise.resolve(ids.map((id: string) => ({ id })));
     });
     prismaMock.planning.upsert.mockResolvedValue({ id: "p-1", memberId: "m-1", status: "EN_SERVICE" });
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
 
     const request = new Request("http://localhost/api/events/evt-1/departments/dept-X/planning", {
       method: "PUT",
