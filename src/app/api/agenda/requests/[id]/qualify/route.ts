@@ -3,6 +3,9 @@ import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaQualify } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { createNotification, notifyDeptMembers } from "@/lib/notifications";
+import { sendEmail, buildAppointmentRejectedEmail } from "@/lib/email";
+import { DEPT_FN } from "@/lib/department-functions";
 import { z } from "zod";
 
 const qualifySchema = z.discriminatedUnion("action", [
@@ -28,7 +31,7 @@ export async function PATCH(
 
     const existing = await prisma.appointmentRequest.findUnique({
       where: { id },
-      select: { status: true },
+      select: { status: true, userId: true, email: true, firstName: true, lastName: true, subject: true, churchId: true },
     });
     if (!existing) throw new ApiError(404, "Demande introuvable");
     if (existing.status !== "PENDING") {
@@ -69,6 +72,14 @@ export async function PATCH(
         details: { transition: "PENDING→VALIDATED", assignedToId: data.assignedToId },
       });
 
+      // Notify Protocole dept members that a request is ready to schedule
+      notifyDeptMembers(churchId, DEPT_FN.PROTOCOLE, {
+        type: "AGENDA_REQUEST_VALIDATED",
+        title: "Demande RDV à planifier",
+        message: `La demande de ${existing.firstName} ${existing.lastName} (« ${existing.subject} ») est prête à être planifiée.`,
+        link: "/agenda/schedule",
+      }).catch(() => {});
+
       return successResponse(updated);
     }
 
@@ -92,6 +103,32 @@ export async function PATCH(
       entityId: id,
       details: { transition: "PENDING→REJECTED", rejectReason: data.rejectReason ?? null },
     });
+
+    // Notify demandeur
+    if (existing.userId) {
+      createNotification({
+        userId: existing.userId,
+        type: "AGENDA_REQUEST_REJECTED",
+        title: "Demande de RDV non retenue",
+        message: `Votre demande « ${existing.subject} » n'a pas pu être retenue.${data.rejectReason ? ` Motif : ${data.rejectReason}` : ""}`,
+        link: "/requests",
+      }).catch(() => {});
+    }
+    if (existing.email) {
+      const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
+      if (church) {
+        const { subject: emailSubject, html } = buildAppointmentRejectedEmail({
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          subject: existing.subject,
+          churchName: church.name,
+          rejectReason: data.rejectReason ?? null,
+        });
+        sendEmail({ to: existing.email, subject: emailSubject, html }).catch((err) => {
+          console.error("[qualify] sendEmail rejected failed:", err?.message ?? err);
+        });
+      }
+    }
 
     return successResponse(updated);
   } catch (error) {

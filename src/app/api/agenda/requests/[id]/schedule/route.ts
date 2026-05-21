@@ -3,6 +3,8 @@ import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { createNotification } from "@/lib/notifications";
+import { sendEmail, buildAppointmentScheduledEmail } from "@/lib/email";
 import { z } from "zod";
 
 const scheduleSchema = z.object({
@@ -27,7 +29,7 @@ export async function PATCH(
 
     const existing = await prisma.appointmentRequest.findUnique({
       where: { id },
-      select: { status: true, subject: true, assignedToId: true },
+      select: { status: true, subject: true, assignedToId: true, userId: true, email: true, firstName: true, lastName: true },
     });
     if (!existing) throw new ApiError(404, "Demande introuvable");
     if (existing.status !== "VALIDATED") {
@@ -78,6 +80,36 @@ export async function PATCH(
       entityId: id,
       details: { transition: "VALIDATED→SCHEDULED", entryId: entry.id, startsAt: data.startsAt },
     });
+
+    // Notify demandeur
+    const startsAt = new Date(data.startsAt);
+    const dateStr = startsAt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    const timeStr = startsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    if (existing.userId) {
+      createNotification({
+        userId: existing.userId,
+        type: "AGENDA_REQUEST_SCHEDULED",
+        title: "Rendez-vous pastoral confirmé",
+        message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
+        link: "/requests",
+      }).catch(() => {});
+    }
+    if (existing.email) {
+      const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
+      if (church) {
+        const { subject: emailSubject, html } = buildAppointmentScheduledEmail({
+          firstName: existing.firstName,
+          lastName: existing.lastName,
+          subject: existing.subject,
+          churchName: church.name,
+          startsAt,
+          location: data.location ?? null,
+        });
+        sendEmail({ to: existing.email, subject: emailSubject, html }).catch((err) => {
+          console.error("[schedule] sendEmail failed:", err?.message ?? err);
+        });
+      }
+    }
 
     return successResponse(entry, 201);
   } catch (error) {

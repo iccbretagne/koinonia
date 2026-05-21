@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
+import { notifyUsersWithRole } from "@/lib/notifications";
 import { z } from "zod";
 
 const submitSchema = z.object({
@@ -109,6 +110,13 @@ export async function POST(request: Request) {
       entityId: req.id,
       details: { subject: data.subject },
     });
+
+    notifyUsersWithRole(data.churchId, "AGENDA_QUALIFIER", {
+      type: "AGENDA_REQUEST_PENDING",
+      title: "Nouvelle demande de RDV",
+      message: `${data.firstName} ${data.lastName} a soumis une demande : « ${data.subject} ».`,
+      link: "/agenda/requests",
+    }).catch(() => {});
 
     if (data.email && church) {
       const { subject: emailSubject, html } = buildAppointmentConfirmationEmail({

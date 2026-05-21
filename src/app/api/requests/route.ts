@@ -4,6 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { DEPT_FN } from "@/lib/department-functions";
+import { notifyDeptMembers } from "@/lib/notifications";
 import { z } from "zod";
 
 const DEMAND_TYPES = [
@@ -167,6 +168,13 @@ async function createVisuel(_request: Request, body: unknown) {
 
   await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Request", entityId: created.id, details: { title: data.title, type: "VISUEL" } });
 
+  notifyDeptMembers(data.churchId, DEPT_FN.PRODUCTION_MEDIA, {
+    type: "REQUEST_SUBMITTED",
+    title: "Nouvelle demande de visuel",
+    message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,
+    link: "/media/requests",
+  }).catch(() => {});
+
   return successResponse(created, 201);
 }
 
@@ -218,6 +226,13 @@ async function createDemand(_request: Request, body: unknown) {
   });
 
   await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Request", entityId: created.id, details: { title: data.title, type: data.type } });
+
+  notifyDeptMembers(data.churchId, DEPT_FN.SECRETARIAT, {
+    type: "REQUEST_SUBMITTED",
+    title: "Nouvelle demande",
+    message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,
+    link: "/secretariat/requests",
+  }).catch(() => {});
 
   return successResponse(created, 201);
 }
