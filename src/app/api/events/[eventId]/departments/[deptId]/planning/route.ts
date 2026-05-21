@@ -8,6 +8,13 @@ import {
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
+const STATUS_LABELS: Record<string, string> = {
+  EN_SERVICE: "En service",
+  EN_SERVICE_DEBRIEF: "En service (débrief)",
+  INDISPONIBLE: "Indisponible",
+  REMPLACANT: "Remplaçant",
+};
+
 export async function GET(
   _request: Request,
   {
@@ -158,7 +165,7 @@ export async function PUT(
     // Check planning deadline
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { planningDeadline: true },
+      select: { planningDeadline: true, title: true },
     });
 
     if (event?.planningDeadline && new Date() > new Date(event.planningDeadline)) {
@@ -226,6 +233,15 @@ export async function PUT(
       );
     }
 
+    // Snapshot état précédent pour détecter les changements à notifier
+    const prevPlannings = memberIds.length > 0
+      ? await prisma.planning.findMany({
+          where: { eventDepartmentId: eventDept!.id, memberId: { in: memberIds } },
+          select: { memberId: true, status: true },
+        })
+      : [];
+    const prevStatusMap = new Map(prevPlannings.map((p) => [p.memberId, p.status]));
+
     const results = await Promise.all(
       plannings.map((p) =>
         prisma.planning.upsert({
@@ -253,6 +269,56 @@ export async function PUT(
       entityId: eventDept!.id,
       details: { eventId, departmentId, count: plannings.length },
     });
+
+    // Notifier les STARs dont le statut a changé
+    if (memberIds.length > 0) {
+      const links = await prisma.memberUserLink.findMany({
+        where: { memberId: { in: memberIds }, churchId: eventChurchId, validatedAt: { not: null } },
+        select: { memberId: true, userId: true },
+      });
+      const userIdByMember = new Map(links.map((l) => [l.memberId, l.userId]));
+      const eventTitle = event?.title ?? "l'événement";
+
+      const notifs: { userId: string; type: string; title: string; message: string; link: string }[] = [];
+      for (const p of plannings) {
+        const userId = userIdByMember.get(p.memberId);
+        if (!userId || userId === session.user.id) continue;
+
+        const prev = prevStatusMap.get(p.memberId) ?? null;
+        const next = p.status;
+        if (prev === next) continue;
+
+        if (prev === null && next !== null) {
+          notifs.push({
+            userId,
+            type: "PLANNING_ASSIGNED",
+            title: "Affectation au planning",
+            message: `Vous êtes affecté(e) à « ${eventTitle} » — statut : ${STATUS_LABELS[next] ?? next}.`,
+            link: "/dashboard",
+          });
+        } else if (prev !== null && next === null) {
+          notifs.push({
+            userId,
+            type: "PLANNING_REMOVED",
+            title: "Retrait du planning",
+            message: `Vous avez été retiré(e) du planning de « ${eventTitle} ».`,
+            link: "/dashboard",
+          });
+        } else if (prev !== null && next !== null) {
+          notifs.push({
+            userId,
+            type: "PLANNING_STATUS_CHANGED",
+            title: "Statut planning modifié",
+            message: `Votre statut pour « ${eventTitle} » : ${STATUS_LABELS[prev] ?? prev} → ${STATUS_LABELS[next] ?? next}.`,
+            link: "/dashboard",
+          });
+        }
+      }
+
+      if (notifs.length > 0) {
+        prisma.notification.createMany({ data: notifs, skipDuplicates: true }).catch(() => {});
+      }
+    }
 
     return successResponse(results);
   } catch (error) {

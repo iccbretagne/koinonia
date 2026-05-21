@@ -7,6 +7,7 @@ import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission }
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles } from "@/lib/s3";
 import { getFileOriginalKey } from "@/modules/media";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -28,7 +29,7 @@ type MediaFileWithContainers = {
   mediaEventId: string | null;
   mediaProjectId: string | null;
   mediaEvent: { churchId: string } | null;
-  mediaProject: { churchId: string } | null;
+  mediaProject: { churchId: string; createdById: string } | null;
 };
 
 async function resolveMediaFileChurchId(fileId: string): Promise<{ churchId: string; file: MediaFileWithContainers }> {
@@ -41,7 +42,7 @@ async function resolveMediaFileChurchId(fileId: string): Promise<{ churchId: str
       mediaEventId: true,
       mediaProjectId: true,
       mediaEvent: { select: { churchId: true } },
-      mediaProject: { select: { churchId: true } },
+      mediaProject: { select: { churchId: true, createdById: true } },
     },
   });
   if (!file) throw new ApiError(404, "Fichier média introuvable");
@@ -121,6 +122,27 @@ export async function PATCH(
         });
         // Update status from DRAFT to IN_REVIEW
         await prisma.mediaFile.update({ where: { id }, data: { status: "IN_REVIEW" } });
+      }
+    }
+
+    // Notify project creator on status change (not for self-reviews)
+    const creatorId = mediaFile.mediaProject?.createdById ?? null;
+    if (creatorId && creatorId !== session.user.id && data.status) {
+      const statusMessages: Partial<Record<string, { title: string; message: string }>> = {
+        APPROVED: { title: "Fichier approuvé", message: "Un fichier de votre projet média a été approuvé." },
+        FINAL_APPROVED: { title: "Fichier validé définitivement", message: "Un fichier de votre projet média a reçu la validation finale." },
+        REJECTED: { title: "Fichier refusé", message: "Un fichier de votre projet média a été refusé." },
+        REVISION_REQUESTED: { title: "Révision demandée", message: "Une révision a été demandée sur un fichier de votre projet média." },
+      };
+      const notif = statusMessages[data.status];
+      if (notif) {
+        createNotification({
+          userId: creatorId,
+          type: `MEDIA_FILE_${data.status}`,
+          title: notif.title,
+          message: notif.message,
+          link: "/media/projects",
+        }).catch(() => {});
       }
     }
 

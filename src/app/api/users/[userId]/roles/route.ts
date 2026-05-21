@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { createNotification } from "@/lib/notifications";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -135,6 +136,17 @@ export async function POST(
     });
 
     await logAudit({ userId: session.user.id, churchId, action: "CREATE", entityType: "UserRole", entityId: userRole.id, details: { targetUserId: userId, role } });
+
+    // Only notify when assigning to someone else
+    if (userId !== session.user.id) {
+      createNotification({
+        userId,
+        type: "ROLE_ASSIGNED",
+        title: "Nouveau rôle attribué",
+        message: `Le rôle ${role} vous a été attribué dans cette église.`,
+        link: "/profile",
+      }).catch(() => {});
+    }
 
     return successResponse(userRole, 201);
   } catch (error) {

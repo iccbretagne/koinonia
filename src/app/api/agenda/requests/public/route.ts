@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
+import { notifyUsersWithRole } from "@/lib/notifications";
 import { requireRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -76,6 +77,13 @@ export async function POST(request: Request) {
         preferredDays: data.preferredDay,
       },
     });
+
+    notifyUsersWithRole(church.id, "AGENDA_QUALIFIER", {
+      type: "AGENDA_REQUEST_PENDING",
+      title: "Nouvelle demande de RDV",
+      message: `${data.firstName} ${data.lastName} a soumis une demande : « ${subject} ».`,
+      link: "/agenda/requests",
+    }).catch(() => {});
 
     const { subject: emailSubject, html } = buildAppointmentConfirmationEmail({
       firstName: data.firstName,

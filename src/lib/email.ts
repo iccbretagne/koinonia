@@ -155,6 +155,77 @@ export function buildAppointmentConfirmationEmail(params: {
   };
 }
 
+export function buildAppointmentRejectedEmail(params: {
+  firstName: string;
+  lastName: string;
+  subject: string;
+  churchName: string;
+  rejectReason?: string | null;
+}) {
+  const name = escapeHtml(`${params.firstName} ${params.lastName}`);
+  const subject = escapeHtml(params.subject);
+  const church = escapeHtml(params.churchName);
+  const reason = params.rejectReason ? `<p>Motif : <em>${escapeHtml(params.rejectReason)}</em></p>` : "";
+  return {
+    subject: `Votre demande de RDV pastoral n'a pas pu être traitée — ${church}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>Votre demande de rendez-vous pastoral concernant <strong>« ${subject} »</strong> n'a malheureusement pas pu être retenue.</p>
+          ${reason}
+          <p>N'hésitez pas à soumettre une nouvelle demande si votre besoin persiste.</p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous avez soumis une demande de RDV sur le formulaire de ${church}.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildAppointmentScheduledEmail(params: {
+  firstName: string;
+  lastName: string;
+  subject: string;
+  churchName: string;
+  startsAt: Date;
+  location?: string | null;
+}) {
+  const name = escapeHtml(`${params.firstName} ${params.lastName}`);
+  const subject = escapeHtml(params.subject);
+  const church = escapeHtml(params.churchName);
+  const dateStr = params.startsAt.toLocaleDateString("fr-FR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+  const timeStr = params.startsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const location = params.location ? `<p>Lieu : <strong>${escapeHtml(params.location)}</strong></p>` : "";
+  return {
+    subject: `Votre rendez-vous pastoral est confirmé — ${church}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>Votre rendez-vous pastoral concernant <strong>« ${subject} »</strong> a été planifié.</p>
+          <p>Date : <strong>${dateStr} à ${timeStr}</strong></p>
+          ${location}
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous avez soumis une demande de RDV sur le formulaire de ${church}.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmail(params: {
   memberName: string;
   eventTitle: string;

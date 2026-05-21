@@ -46,12 +46,25 @@ export async function POST(request: Request) {
         },
       });
 
+      // Batch-lookup des comptes utilisateurs liés aux membres concernés
+      const allMemberIds = events.flatMap((e) =>
+        e.eventDepts.flatMap((ed) => ed.plannings.map((p) => p.memberId))
+      );
+      const memberLinks = allMemberIds.length > 0
+        ? await prisma.memberUserLink.findMany({
+            where: { memberId: { in: allMemberIds }, validatedAt: { not: null } },
+            select: { memberId: true, userId: true, user: { select: { email: true } } },
+          })
+        : [];
+      const userByMember = new Map(memberLinks.map((l) => [l.memberId, { userId: l.userId, email: l.user.email }]));
+
       for (const event of events) {
         for (const eventDept of event.eventDepts) {
           for (const planning of eventDept.plannings) {
             const member = planning.member;
-
             const memberName = `${member.firstName} ${member.lastName}`;
+            const linkedUser = userByMember.get(member.id);
+
             const { subject, html } = buildReminderEmail({
               memberName,
               eventTitle: event.title,
@@ -60,17 +73,32 @@ export async function POST(request: Request) {
               daysUntil: daysAhead,
             });
 
-            // Send email if SMTP is configured
-            if (process.env.SMTP_HOST && member.email) {
+            // Email vers le compte utilisateur lié (priorité) ou member.email en fallback
+            const recipientEmail = linkedUser?.email ?? member.email;
+            if (process.env.SMTP_HOST && recipientEmail) {
               try {
-                await sendEmail({ to: member.email, subject, html });
+                await sendEmail({ to: recipientEmail, subject, html });
                 emailsSent++;
               } catch {
                 console.error("Failed to send reminder email (recipient redacted)");
               }
             }
 
-            // Create in-app notification for department heads
+            // Notification in-app pour le STAR lui-même
+            if (linkedUser) {
+              await prisma.notification.create({
+                data: {
+                  userId: linkedUser.userId,
+                  type: "PLANNING_REMINDER",
+                  title: `Rappel : ${event.title}`,
+                  message: `Vous êtes en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
+                  link: `/dashboard`,
+                },
+              });
+              notificationsCreated++;
+            }
+
+            // Notification in-app pour les responsables de département
             const deptHeads = await prisma.userDepartment.findMany({
               where: { departmentId: eventDept.departmentId },
               include: { userChurchRole: { select: { userId: true } } },
@@ -82,7 +110,7 @@ export async function POST(request: Request) {
                   userId: deptHead.userChurchRole.userId,
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
-                  message: `${memberName} est en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}`,
+                  message: `${memberName} est en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
                   link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
                 },
               });
