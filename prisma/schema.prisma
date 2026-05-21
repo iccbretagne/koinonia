@@ -56,6 +56,7 @@ model Church {
   name                     String
   slug                     String              @unique
   secretariatEmail         String?
+  primaryColor             String  @default("#5E17EB")
   reminderLastSentAt       DateTime?
   planningDigestLastSentAt DateTime?
   createdAt                DateTime            @default(now())

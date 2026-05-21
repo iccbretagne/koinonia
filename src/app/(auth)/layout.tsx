@@ -41,6 +41,10 @@ export default async function AuthLayout({
   const currentChurch = churchRoles.find((r) => r.churchId === currentChurchId);
   const churchName = currentChurch?.church?.name || "Église";
 
+  const churchPrimaryColor = currentChurchId
+    ? (await prisma.church.findUnique({ where: { id: currentChurchId }, select: { primaryColor: true } }))?.primaryColor ?? "#5E17EB"
+    : "#5E17EB";
+
   const churches = Array.from(
     new Map(churchRoles.map((r) => [r.churchId, { id: r.churchId, name: r.church.name }])).values()
   );
@@ -157,15 +161,15 @@ export default async function AuthLayout({
   const headerContent = (
     <>
       <div className="min-w-0">
-        <h1 className="text-lg md:text-xl font-bold text-white truncate">Koinonia</h1>
+        <h1 className="text-lg md:text-xl font-bold text-current truncate">Koinonia</h1>
         {currentChurchId && churches.length > 1 ? (
           <ChurchSwitcher churches={churches} currentChurchId={currentChurchId} />
         ) : (
-          <p className="text-xs md:text-sm text-white/70 truncate">{churchName}</p>
+          <p className="text-xs md:text-sm opacity-70 truncate">{churchName}</p>
         )}
       </div>
       <div className="flex items-center gap-2 md:gap-4 ml-auto">
-        <a href="/guide" title="Guide" data-tour="header-guide" className="text-white hover:text-icc-jaune transition-colors">
+        <a href="/guide" title="Guide" data-tour="header-guide" className="text-current opacity-80 hover:opacity-100 transition-opacity">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
           </svg>
@@ -181,7 +185,7 @@ export default async function AuthLayout({
               className="rounded-full"
             />
           )}
-          <span className="hidden sm:inline text-sm text-white">{session.user.name}</span>
+          <span className="hidden sm:inline text-sm text-current">{session.user.name}</span>
         </a>
         <form
           action={async () => {
@@ -191,7 +195,7 @@ export default async function AuthLayout({
         >
           <button
             type="submit"
-            className="px-2 py-1 md:px-3 text-sm text-white/80 border border-white/30 rounded-md hover:bg-white/10 transition-colors"
+            className="px-2 py-1 md:px-3 text-sm opacity-80 border border-current/30 rounded-md hover:opacity-100 hover:bg-black/10 transition-colors"
           >
             <span className="hidden sm:inline">Déconnexion</span>
             <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,6 +264,7 @@ export default async function AuthLayout({
       hasReports={hasReports}
       hasMyPlanning={hasMyPlanning}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR"}
+      headerColor={churchPrimaryColor}
       header={headerContent}
       footer={footerContent}
     >
