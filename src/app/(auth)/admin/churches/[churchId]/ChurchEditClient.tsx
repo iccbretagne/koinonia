@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 interface Props {
-  church: { id: string; name: string; slug: string; secretariatEmail: string };
+  church: { id: string; name: string; slug: string; secretariatEmail: string; primaryColor: string };
 }
 
 export default function ChurchEditClient({ church }: Props) {
@@ -14,6 +14,7 @@ export default function ChurchEditClient({ church }: Props) {
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
   const [secretariatEmail, setSecretariatEmail] = useState(church.secretariatEmail);
+  const [primaryColor, setPrimaryColor] = useState(church.primaryColor || "#5E17EB");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,7 +29,7 @@ export default function ChurchEditClient({ church }: Props) {
       const res = await fetch(`/api/churches/${church.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null }),
+        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null, primaryColor }),
       });
 
       if (!res.ok) {
@@ -67,6 +68,30 @@ export default function ChurchEditClient({ church }: Props) {
           onChange={(e) => setSecretariatEmail(e.target.value)}
           placeholder="secretariat@eglise.fr"
         />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Couleur principale (bandeau d&apos;entête)
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              className="h-10 w-16 rounded border-2 border-gray-200 cursor-pointer p-0.5"
+            />
+            <input
+              type="text"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              placeholder="#5E17EB"
+              className="w-32 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-icc-violet"
+            />
+            <div
+              className="h-10 w-24 rounded-lg border border-gray-200 shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            />
+          </div>
+        </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && (
           <p className="text-sm text-green-600">Église mise à jour.</p>

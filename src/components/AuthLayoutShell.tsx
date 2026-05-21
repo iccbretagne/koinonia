@@ -10,6 +10,15 @@ import GuidedTour from "@/components/GuidedTour";
 
 type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR";
 
+function hexToLuminance(hex: string): number {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16) / 255;
+  const g = parseInt(clean.slice(2, 4), 16) / 255;
+  const b = parseInt(clean.slice(4, 6), 16) / 255;
+  const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
 interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
@@ -25,6 +34,7 @@ interface AuthLayoutShellProps {
   hasMembersAccess: boolean;
   hasReports: boolean;
   hasMyPlanning?: boolean;
+  headerColor?: string;
   userRole: RoleKey;
   header: React.ReactNode;
   children: React.ReactNode;
@@ -55,6 +65,7 @@ export default function AuthLayoutShell({
   hasMembersAccess,
   hasReports,
   hasMyPlanning = false,
+  headerColor = "#5E17EB",
   userRole,
   header,
   children,
@@ -62,6 +73,10 @@ export default function AuthLayoutShell({
 }: AuthLayoutShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+
+  const isLightHeader = hexToLuminance(headerColor) > 0.4;
+  const headerTextColor = isLightHeader ? "#1f2937" : "#ffffff";
+  const headerBorderColor = isLightHeader ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.25)";
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -74,7 +89,10 @@ export default function AuthLayoutShell({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-icc-violet border-b-2 border-icc-violet-dark">
+      <header
+        className="sticky top-0 z-50 border-b-2"
+        style={{ backgroundColor: headerColor, borderColor: headerBorderColor, color: headerTextColor }}
+      >
         <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 mx-auto max-w-7xl">
           <button
             type="button"
