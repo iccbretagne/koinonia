@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.6] - 2026-05-21
+
+### Ajouté
+
+- Système de notifications complet — in-app + email sur tous les flux métier (#334) :
+  - Demandes (secrétariat, médias) : notif aux équipes à la soumission, notif au demandeur à l'approbation/refus
+  - Agenda pastoral : notif aux qualificateurs à la soumission, notif au demandeur au refus (email), notif Protocole à la validation, notif au demandeur à la planification (email)
+  - Planning STAR : notifications in-app à l'affectation, au retrait et au changement de statut
+  - Rôles : notif à l'utilisateur lors d'une nouvelle attribution
+  - Fichiers médias : notif au créateur du projet sur approbation, refus, révision demandée et validation finale
+  - Cron rappels planning : email vers le compte utilisateur lié (fallback `member.email`) + notif in-app au STAR
+
 ## [v1.4.5] - 2026-05-18
 
 ### Corrigé
