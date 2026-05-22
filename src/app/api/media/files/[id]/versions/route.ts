@@ -11,7 +11,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireMediaAccess, requireMediaUploadAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { getVersionOriginalKey, getVersionThumbnailKey, getSignedOriginalUrl } from "@/modules/media";
+import { getVersionOriginalKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Media, MEDIA_BUCKET } from "@/lib/s3";
@@ -98,14 +98,13 @@ export async function POST(
 
     const ext = data.filename.split(".").pop()?.toLowerCase() ?? "bin";
     const originalKey = getVersionOriginalKey(id, nextVersion, ext);
-    const thumbnailKey = getVersionThumbnailKey(id, nextVersion);
 
     const version = await prisma.mediaFileVersion.create({
       data: {
         mediaFileId: id,
         versionNumber: nextVersion,
         originalKey,
-        thumbnailKey,
+        thumbnailKey: originalKey,
         notes: data.notes,
         createdById: session.user.id,
       },

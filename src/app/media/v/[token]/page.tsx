@@ -69,12 +69,13 @@ async function fetchProjectValidationData(token: string) {
 
     const isPrevalidator = shareToken.type === "PREVALIDATOR";
     const project = shareToken.mediaProject;
+    const hasPrevalidator = project.shareTokens.some((t) => t.type === "PREVALIDATOR");
 
     const filesWithUrls = await Promise.all(
       project.files.map(async (f) => {
         const thumbKey = f.versions[0]?.thumbnailKey;
         let thumbnailUrl: string | null = null;
-        if (thumbKey) {
+        if (thumbKey && f.mimeType.startsWith("image/")) {
           try { thumbnailUrl = await getSignedThumbnailUrl(thumbKey); } catch { /* pas de preview */ }
         }
         return {
@@ -96,10 +97,8 @@ async function fetchProjectValidationData(token: string) {
         id: project.id,
         name: project.name,
         isPrevalidator,
+        hasPrevalidator,
         totalFiles: filesWithUrls.length,
-        approvedCount: filesWithUrls.filter((f) => f.status === "APPROVED" || f.status === "FINAL_APPROVED").length,
-        pendingCount: filesWithUrls.filter((f) => f.status === "IN_REVIEW" || f.status === "DRAFT").length,
-        rejectedCount: filesWithUrls.filter((f) => f.status === "REJECTED").length,
       },
       files: filesWithUrls,
     };

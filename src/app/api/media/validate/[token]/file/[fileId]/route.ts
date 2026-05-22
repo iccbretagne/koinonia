@@ -1,6 +1,6 @@
 /**
  * GET    /api/media/validate/[token]/file/[fileId]  — URL signée de la version courante
- * PATCH  /api/media/validate/[token]/file/[fileId]  — validation/rejet via token public
+ * PATCH  /api/media/validate/[token]/file/[fileId]  — validation/rejet/révision via token public
  */
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
@@ -8,7 +8,8 @@ import { validateMediaShareToken, getSignedOriginalUrl } from "@/modules/media";
 import { z } from "zod";
 
 const patchSchema = z.object({
-  status: z.enum(["APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED"]),
+  status: z.enum(["APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED", "REVISION_REQUESTED"]),
+  comment: z.string().max(2000).optional(),
 });
 
 export async function GET(
@@ -47,13 +48,16 @@ export async function PATCH(
     if (!shareToken.mediaProjectId) throw new ApiError(403, "Token non associé à un projet");
 
     const body = await request.json();
-    const { status } = patchSchema.parse(body);
+    const { status, comment } = patchSchema.parse(body);
 
-    if (shareToken.type === "PREVALIDATOR" && !["PREVALIDATED", "PREREJECTED"].includes(status)) {
-      throw new ApiError(403, "Le prévalidateur ne peut que prévalider ou écarter");
+    const prevalidatorStatuses = ["PREVALIDATED", "PREREJECTED", "REVISION_REQUESTED"];
+    const validatorStatuses    = ["APPROVED", "REJECTED", "REVISION_REQUESTED"];
+
+    if (shareToken.type === "PREVALIDATOR" && !prevalidatorStatuses.includes(status)) {
+      throw new ApiError(403, "Action non autorisée pour un prévalidateur");
     }
-    if (shareToken.type === "VALIDATOR" && !["APPROVED", "REJECTED"].includes(status)) {
-      throw new ApiError(403, "Le validateur ne peut qu'approuver ou rejeter");
+    if (shareToken.type === "VALIDATOR" && !validatorStatuses.includes(status)) {
+      throw new ApiError(403, "Action non autorisée pour un validateur");
     }
 
     const file = await prisma.mediaFile.findUnique({
@@ -68,6 +72,17 @@ export async function PATCH(
       where: { id: fileId },
       data: { status },
     });
+
+    if (comment?.trim()) {
+      await prisma.mediaComment.create({
+        data: {
+          mediaFileId: fileId,
+          content: comment.trim(),
+          authorName: shareToken.label ?? (shareToken.type === "PREVALIDATOR" ? "Prévalidateur" : "Validateur"),
+          type: "GENERAL",
+        },
+      });
+    }
 
     return successResponse(updated);
   } catch (error) {

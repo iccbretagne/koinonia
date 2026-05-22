@@ -48,8 +48,10 @@ export async function validateMediaShareToken(
           id: true,
           name: true,
           churchId: true,
+          shareTokens: { select: { type: true } },
           files: {
             orderBy: { createdAt: "asc" as const },
+            where: { status: { not: "DRAFT" } },
             select: {
               id: true,
               filename: true,
