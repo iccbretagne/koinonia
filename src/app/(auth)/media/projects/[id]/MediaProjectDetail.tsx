@@ -136,7 +136,7 @@ const ALLOWED_TYPES: Record<string, MediaFileType> = {
 };
 
 // Statuts qui comptent comme "traités" pour la barre de progression
-const DONE_STATUSES: MediaFileStatus[] = ["FINAL_APPROVED", "REJECTED"];
+const DONE_STATUSES: MediaFileStatus[] = ["FINAL_APPROVED", "APPROVED", "REJECTED", "PREREJECTED"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = fal
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
@@ -449,8 +449,11 @@ async function uploadToS3(uploadUrl: string, file: File, onProgress?: (p: number
         if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
       };
     }
-    xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`S3 ${xhr.status}`)));
-    xhr.onerror = () => reject(new Error("Erreur réseau"));
+    xhr.onload  = () => {
+      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`S3 ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
+    };
+    xhr.onerror = () => reject(new Error("Erreur réseau (vérifiez CORS)"));
+    xhr.onabort = () => reject(new Error("Upload annulé"));
     xhr.send(file);
   });
 }
@@ -469,7 +472,10 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
 
   async function handleFiles(files: File[]) {
     const valid = files.filter((f) => ALLOWED_TYPES[f.type]);
-    if (valid.length === 0) { setError("Format non supporté (MP4, MOV, WebM, JPEG, PNG, PDF)"); return; }
+    if (valid.length === 0) {
+      setError("Format non supporté (MP4, MOV, WebM, JPEG, PNG, PDF)");
+      return;
+    }
     setUploading(true);
     setError(null);
     const errors: string[] = [];
@@ -478,6 +484,8 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
       try {
         setProgress({ file: file.name, pct: 0 });
         onActivityChange?.(true, file.name);
+
+        // 1. Sign
         const signRes = await fetch("/api/media/files/upload/sign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -491,13 +499,19 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
         });
         const signJson = await signRes.json();
         if (!signRes.ok) throw new Error(signJson.error || "Erreur serveur");
-        const { fileId, uploadUrl, key } = signJson.data;
+        const { fileId, uploadUrl } = signJson;
+
+        // 2. Upload S3
         await uploadToS3(uploadUrl, file, (pct) => setProgress({ file: file.name, pct }));
-        await fetch(`/api/media/files/${fileId}`, {
+
+        // 3. Confirm
+        const confirmRes = await fetch(`/api/media/files/${fileId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ originalKey: key }),
+          body: JSON.stringify({ confirmUpload: true }),
         });
+        const confirmJson = await confirmRes.json();
+        if (!confirmRes.ok) throw new Error(confirmJson.error || "Erreur confirm");
       } catch (err) {
         errors.push(`${file.name}: ${err instanceof Error ? err.message : "Erreur"}`);
       }
@@ -805,7 +819,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                 <p className="text-sm text-gray-500 text-center">Vidéo non disponible<br/><span className="text-xs text-gray-400">Vérifiez la configuration S3</span></p>
               </div>
             )
-          ) : file.thumbnailUrl ? (
+          ) : file.thumbnailUrl && file.mimeType.startsWith("image/") ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
           ) : (
@@ -970,7 +984,7 @@ export default function MediaProjectDetail({
   const [statusFilter, setStatusFilter] = useState<MediaFileStatus | "">("");
   const [typeFilter, setTypeFilter] = useState<MediaFileType | "">("");
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
+  const [showUpload, setShowUpload] = useState(canUpload && initialProject.files.length === 0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activity, setActivity] = useState<{ label: string } | null>(null);
 
@@ -980,7 +994,6 @@ export default function MediaProjectDetail({
     if (res.ok) {
       const updated = json.data ?? json;
       setProject(updated);
-      // Keep the selected file in sync with the refreshed data
       setSelectedFile((prev) => prev ? (updated.files?.find((f: MediaFile) => f.id === prev.id) ?? prev) : null);
     }
     router.refresh();
@@ -1014,20 +1027,26 @@ export default function MediaProjectDetail({
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const allFiles = project.files ?? [];
-  const doneCount    = allFiles.filter((f) => DONE_STATUSES.includes(f.status)).length;
-  const approvedCount = allFiles.filter((f) => f.status === "FINAL_APPROVED").length;
-  const rejectedCount = allFiles.filter((f) => f.status === "REJECTED").length;
-  const inReviewCount = allFiles.filter((f) => f.status === "IN_REVIEW").length;
-  const revisionCount = allFiles.filter((f) => f.status === "REVISION_REQUESTED").length;
-  const progressPct   = allFiles.length > 0 ? Math.round((doneCount / allFiles.length) * 100) : 0;
+  const doneCount        = allFiles.filter((f) => DONE_STATUSES.includes(f.status)).length;
+  const finalApprovedCount = allFiles.filter((f) => f.status === "FINAL_APPROVED").length;
+  const approvedCount    = allFiles.filter((f) => f.status === "APPROVED").length;
+  const prevalidatedCount = allFiles.filter((f) => f.status === "PREVALIDATED").length;
+  const rejectedCount    = allFiles.filter((f) => f.status === "REJECTED").length;
+  const prerejectedCount = allFiles.filter((f) => f.status === "PREREJECTED").length;
+  const inReviewCount    = allFiles.filter((f) => f.status === "IN_REVIEW").length;
+  const revisionCount    = allFiles.filter((f) => f.status === "REVISION_REQUESTED").length;
+  const progressPct      = allFiles.length > 0 ? Math.round((doneCount / allFiles.length) * 100) : 0;
 
   // ── Onglets statut ─────────────────────────────────────────────────────────
   const statusTabs: { label: string; value: MediaFileStatus | ""; count: number }[] = [
     { label: "Tous", value: "", count: allFiles.length },
-    ...(inReviewCount > 0  ? [{ label: "En révision", value: "IN_REVIEW" as MediaFileStatus, count: inReviewCount }] : []),
-    ...(revisionCount > 0  ? [{ label: "Révision demandée", value: "REVISION_REQUESTED" as MediaFileStatus, count: revisionCount }] : []),
-    ...(approvedCount > 0  ? [{ label: "Validé final", value: "FINAL_APPROVED" as MediaFileStatus, count: approvedCount }] : []),
-    ...(rejectedCount > 0  ? [{ label: "Rejeté", value: "REJECTED" as MediaFileStatus, count: rejectedCount }] : []),
+    ...(inReviewCount > 0      ? [{ label: "En révision",       value: "IN_REVIEW"           as MediaFileStatus, count: inReviewCount }]      : []),
+    ...(revisionCount > 0      ? [{ label: "Révision demandée", value: "REVISION_REQUESTED"  as MediaFileStatus, count: revisionCount }]      : []),
+    ...(prevalidatedCount > 0  ? [{ label: "Pré-validé",        value: "PREVALIDATED"         as MediaFileStatus, count: prevalidatedCount }]  : []),
+    ...(prerejectedCount > 0   ? [{ label: "Pré-rejeté",        value: "PREREJECTED"          as MediaFileStatus, count: prerejectedCount }]   : []),
+    ...(approvedCount > 0      ? [{ label: "Approuvé",          value: "APPROVED"             as MediaFileStatus, count: approvedCount }]      : []),
+    ...(finalApprovedCount > 0 ? [{ label: "Validé final",      value: "FINAL_APPROVED"       as MediaFileStatus, count: finalApprovedCount }] : []),
+    ...(rejectedCount > 0      ? [{ label: "Rejeté",            value: "REJECTED"             as MediaFileStatus, count: rejectedCount }]      : []),
   ];
 
   const filteredFiles = allFiles.filter((f) => {
@@ -1121,11 +1140,32 @@ export default function MediaProjectDetail({
                   <span className="text-xs text-amber-700">révision demandée</span>
                 </div>
               )}
+              {prevalidatedCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                  <span className="text-xs font-semibold text-blue-800">{prevalidatedCount}</span>
+                  <span className="text-xs text-blue-700">pré-validé{prevalidatedCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {prerejectedCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                  <span className="text-xs font-semibold text-orange-800">{prerejectedCount}</span>
+                  <span className="text-xs text-orange-700">pré-rejeté{prerejectedCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
               {approvedCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                  <span className="text-xs font-semibold text-green-800">{approvedCount}</span>
+                  <span className="text-xs text-green-700">approuvé{approvedCount > 1 ? "s" : ""}</span>
+                </div>
+              )}
+              {finalApprovedCount > 0 && (
                 <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="text-xs font-semibold text-emerald-800">{approvedCount}</span>
-                  <span className="text-xs text-emerald-700">validé{approvedCount > 1 ? "s" : ""} final</span>
+                  <span className="text-xs font-semibold text-emerald-800">{finalApprovedCount}</span>
+                  <span className="text-xs text-emerald-700">validé{finalApprovedCount > 1 ? "s" : ""} final</span>
                 </div>
               )}
               {rejectedCount > 0 && (
@@ -1148,11 +1188,11 @@ export default function MediaProjectDetail({
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: `${allFiles.length > 0 ? (approvedCount / allFiles.length) * 100 : 0}%` }}
+                  style={{ width: `${allFiles.length > 0 ? ((finalApprovedCount + approvedCount) / allFiles.length) * 100 : 0}%` }}
                 />
                 <div
                   className="h-full bg-red-400 transition-all duration-500"
-                  style={{ width: `${allFiles.length > 0 ? (rejectedCount / allFiles.length) * 100 : 0}%` }}
+                  style={{ width: `${allFiles.length > 0 ? ((rejectedCount + prerejectedCount) / allFiles.length) * 100 : 0}%` }}
                 />
               </div>
             </div>
@@ -1278,6 +1318,7 @@ export default function MediaProjectDetail({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filteredFiles.map((file) => {
                   const thumb = file.thumbnailUrl;
+                  const isImage = file.mimeType.startsWith("image/");
                   const latestV = file.versions[0];
                   return (
                     <div
@@ -1287,25 +1328,18 @@ export default function MediaProjectDetail({
                     >
                       {/* Preview */}
                       <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                        {thumb ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                            {file.type === "VIDEO" && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="bg-black/50 rounded-full p-3 group-hover:bg-black/70 transition-colors">
-                                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z" />
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
-                          </>
+                        {thumb && isImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
                             {file.type === "VIDEO" ? (
                               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            ) : file.mimeType === "application/pdf" ? (
+                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             ) : (
                               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">

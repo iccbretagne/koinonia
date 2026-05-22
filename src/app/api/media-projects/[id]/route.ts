@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { deleteFiles } from "@/lib/s3";
+import { deleteMediaFiles } from "@/lib/s3";
 import { getSignedThumbnailUrl } from "@/modules/media";
 import { z } from "zod";
 
@@ -105,7 +105,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    const session = await requireChurchPermission("media:manage", churchId);
+    const session = await requireMediaManageAccess(churchId);
 
     const project = await prisma.mediaProject.findUnique({
       where: { id },
@@ -121,7 +121,7 @@ export async function DELETE(
     const s3Keys = project.files.flatMap((f) =>
       f.versions.flatMap((v) => [v.originalKey, v.thumbnailKey])
     );
-    if (s3Keys.length > 0) await deleteFiles(s3Keys);
+    if (s3Keys.length > 0) await deleteMediaFiles(s3Keys);
 
     await prisma.mediaProject.delete({ where: { id } });
 

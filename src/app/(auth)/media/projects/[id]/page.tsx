@@ -1,6 +1,6 @@
-import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, resolveChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, resolveChurchId, auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { rolePermissions } from "@/lib/registry";
 import { getSignedThumbnailUrl } from "@/modules/media";
 import MediaProjectDetail from "./MediaProjectDetail";
@@ -11,7 +11,8 @@ export default async function MediaProjectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await requireAuth();
+  const session = await auth();
+  if (!session?.user) redirect("/");
 
   let churchId: string;
   try {

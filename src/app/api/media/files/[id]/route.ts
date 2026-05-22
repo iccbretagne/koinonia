@@ -3,7 +3,7 @@
  * CRUD sur un fichier média (visual/vidéo).
  */
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, requireMediaManageAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles } from "@/lib/s3";
 import { getFileOriginalKey } from "@/modules/media";
@@ -120,7 +120,6 @@ export async function PATCH(
             createdById: session.user.id,
           },
         });
-        // Update status from DRAFT to IN_REVIEW
         await prisma.mediaFile.update({ where: { id }, data: { status: "IN_REVIEW" } });
       }
     }
@@ -159,7 +158,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const { churchId } = await resolveMediaFileChurchId(id);
-    await requireChurchPermission("media:manage", churchId);
+    await requireMediaManageAccess(churchId);
 
     const file = await prisma.mediaFile.findUnique({
       where: { id },
