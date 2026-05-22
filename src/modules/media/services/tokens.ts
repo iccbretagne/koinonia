@@ -43,7 +43,29 @@ export async function validateMediaShareToken(
           shareTokens: { select: { type: true } },
         },
       },
-      mediaProject: { select: { id: true, name: true, churchId: true } },
+      mediaProject: {
+        select: {
+          id: true,
+          name: true,
+          churchId: true,
+          files: {
+            orderBy: { createdAt: "asc" as const },
+            select: {
+              id: true,
+              filename: true,
+              type: true,
+              mimeType: true,
+              size: true,
+              status: true,
+              versions: {
+                orderBy: { versionNumber: "desc" as const },
+                take: 1,
+                select: { thumbnailKey: true, originalKey: true },
+              },
+            },
+          },
+        },
+      },
     },
   });
 

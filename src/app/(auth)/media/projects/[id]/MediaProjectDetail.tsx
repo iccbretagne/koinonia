@@ -491,12 +491,12 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
         });
         const signJson = await signRes.json();
         if (!signRes.ok) throw new Error(signJson.error || "Erreur serveur");
-        const { fileId, uploadUrl, key } = signJson.data;
+        const { fileId, uploadUrl } = signJson.data;
         await uploadToS3(uploadUrl, file, (pct) => setProgress({ file: file.name, pct }));
         await fetch(`/api/media/files/${fileId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ originalKey: key }),
+          body: JSON.stringify({ confirmUpload: true }),
         });
       } catch (err) {
         errors.push(`${file.name}: ${err instanceof Error ? err.message : "Erreur"}`);
@@ -970,7 +970,7 @@ export default function MediaProjectDetail({
   const [statusFilter, setStatusFilter] = useState<MediaFileStatus | "">("");
   const [typeFilter, setTypeFilter] = useState<MediaFileType | "">("");
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
-  const [showUpload, setShowUpload] = useState(false);
+  const [showUpload, setShowUpload] = useState(canUpload && initialProject.files.length === 0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [activity, setActivity] = useState<{ label: string } | null>(null);
 

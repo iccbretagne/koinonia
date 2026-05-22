@@ -1,20 +1,20 @@
 /**
- * Page publique de validation/pré-validation de photos.
+ * Page publique de validation/pré-validation — photos (event) ou fichiers (projet).
  * Accessible via un lien VALIDATOR ou PREVALIDATOR sans authentification.
  */
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateMediaShareToken, getSignedThumbnailUrl } from "@/modules/media";
 import ValidatorView from "./ValidatorView";
+import ProjectValidatorView from "./ProjectValidatorView";
 
-async function fetchValidationData(token: string) {
+async function fetchEventValidationData(token: string) {
   try {
     const shareToken = await validateMediaShareToken(token, ["VALIDATOR", "PREVALIDATOR"]);
+    if (!shareToken.mediaEvent) return null;
+
     const isPrevalidator = shareToken.type === "PREVALIDATOR";
     const event = shareToken.mediaEvent;
-
-    if (!event) return { token: shareToken, event: null, photos: [] };
-
     const hasPrevalidator = event.shareTokens.some((t) => t.type === "PREVALIDATOR");
 
     let statusFilter: string[];
@@ -39,6 +39,7 @@ async function fetchValidationData(token: string) {
     );
 
     return {
+      type: "event" as const,
       token: { id: shareToken.id, type: shareToken.type, label: shareToken.label },
       event: {
         id: event.id,
@@ -61,9 +62,69 @@ async function fetchValidationData(token: string) {
   }
 }
 
+async function fetchProjectValidationData(token: string) {
+  try {
+    const shareToken = await validateMediaShareToken(token, ["VALIDATOR", "PREVALIDATOR"]);
+    if (!shareToken.mediaProject) return null;
+
+    const isPrevalidator = shareToken.type === "PREVALIDATOR";
+    const project = shareToken.mediaProject;
+
+    const filesWithUrls = await Promise.all(
+      project.files.map(async (f) => {
+        const thumbKey = f.versions[0]?.thumbnailKey;
+        let thumbnailUrl: string | null = null;
+        if (thumbKey) {
+          try { thumbnailUrl = await getSignedThumbnailUrl(thumbKey); } catch { /* pas de preview */ }
+        }
+        return {
+          id: f.id,
+          filename: f.filename,
+          type: f.type,
+          mimeType: f.mimeType,
+          size: f.size,
+          status: f.status,
+          thumbnailUrl,
+        };
+      })
+    );
+
+    return {
+      type: "project" as const,
+      token: { id: shareToken.id, type: shareToken.type, label: shareToken.label },
+      project: {
+        id: project.id,
+        name: project.name,
+        isPrevalidator,
+        totalFiles: filesWithUrls.length,
+        approvedCount: filesWithUrls.filter((f) => f.status === "APPROVED" || f.status === "FINAL_APPROVED").length,
+        pendingCount: filesWithUrls.filter((f) => f.status === "IN_REVIEW" || f.status === "DRAFT").length,
+        rejectedCount: filesWithUrls.filter((f) => f.status === "REJECTED").length,
+      },
+      files: filesWithUrls,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default async function ValidatorPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const data = await fetchValidationData(token);
+
+  // Detect project vs event by trying each
+  const shareToken = await (async () => {
+    try { return await validateMediaShareToken(token, ["VALIDATOR", "PREVALIDATOR"]); } catch { return null; }
+  })();
+
+  if (!shareToken) notFound();
+
+  if (shareToken!.mediaProjectId) {
+    const data = await fetchProjectValidationData(token);
+    if (!data) notFound();
+    return <ProjectValidatorView token={token} data={data} />;
+  }
+
+  const data = await fetchEventValidationData(token);
   if (!data) notFound();
-  return <ValidatorView token={token} data={data} />;
+  return <ValidatorView token={token} data={{ token: data.token, event: data.event, photos: data.photos }} />;
 }
