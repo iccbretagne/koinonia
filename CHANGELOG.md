@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.7] - 2026-05-22
+
+### Corrigé
+
+- Projets médias : miniatures non affichées, suppression bloquée, liens de validation projet (#336)
+- Validation projet : refonte UX (swipe, raccourcis clavier, vue mobile/desktop, commentaires obligatoires pour la révision)
+- Validation projet : décomptes fichiers en attente incorrects dans la vue validateur
+- Validation projet : statistiques incomplètes dans la vue projet (statuts APPROVED, PREVALIDATED, PREREJECTED manquants)
+- Upload nouvelle version : miniature non régénérée (`thumbnailKey = originalKey`)
+
 ## [v1.4.6] - 2026-05-21
 
 ### Ajouté
