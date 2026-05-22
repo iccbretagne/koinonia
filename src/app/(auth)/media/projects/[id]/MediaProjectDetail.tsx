@@ -805,7 +805,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                 <p className="text-sm text-gray-500 text-center">Vidéo non disponible<br/><span className="text-xs text-gray-400">Vérifiez la configuration S3</span></p>
               </div>
             )
-          ) : file.thumbnailUrl ? (
+          ) : file.thumbnailUrl && file.mimeType.startsWith("image/") ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
           ) : (
@@ -1278,6 +1278,7 @@ export default function MediaProjectDetail({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filteredFiles.map((file) => {
                   const thumb = file.thumbnailUrl;
+                  const isImage = file.mimeType.startsWith("image/");
                   const latestV = file.versions[0];
                   return (
                     <div
@@ -1287,25 +1288,18 @@ export default function MediaProjectDetail({
                     >
                       {/* Preview */}
                       <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                        {thumb ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                            {file.type === "VIDEO" && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="bg-black/50 rounded-full p-3 group-hover:bg-black/70 transition-colors">
-                                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z" />
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
-                          </>
+                        {thumb && isImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
                             {file.type === "VIDEO" ? (
                               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            ) : file.mimeType === "application/pdf" ? (
+                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
                             ) : (
                               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
