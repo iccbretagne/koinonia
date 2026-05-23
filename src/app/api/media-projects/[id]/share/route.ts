@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken, getTokenUrlPath } from "@/modules/media";
 import { z } from "zod";
@@ -71,7 +71,7 @@ export async function POST(
     // Les tokens VALIDATOR et PREVALIDATOR donnent accès à des actions d'approbation :
     // exiger media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(data.type)) {
-      await requireChurchPermission("media:manage", churchId);
+      await requireMediaManageAccess(churchId);
     }
 
     const token = await createMediaShareToken({
@@ -109,7 +109,7 @@ export async function DELETE(
 
     // Les tokens sensibles (VALIDATOR/PREVALIDATOR) nécessitent media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(existingToken.type)) {
-      await requireChurchPermission("media:manage", churchId);
+      await requireMediaManageAccess(churchId);
     }
 
     await prisma.mediaShareToken.delete({
