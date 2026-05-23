@@ -10,14 +10,14 @@ import NotificationBell from "@/components/NotificationBell";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
-  { href: "/admin/users", label: "Utilisateurs", permissions: ["members:manage"] },
-  { href: "/admin/access", label: "Accès & rôles", permissions: ["departments:manage"] },
-  { href: "/admin/ministries", label: "Ministères", permissions: ["departments:manage"] },
-  { href: "/admin/departments", label: "Départements", permissions: ["departments:manage"] },
+  { href: "/admin/users",               label: "Utilisateurs",    permissions: ["members:manage"] },
+  { href: "/admin/access",              label: "Accès & rôles",   permissions: ["departments:manage"] },
+  { href: "/admin/ministries",          label: "Ministères",      permissions: ["departments:manage"] },
+  { href: "/admin/departments",         label: "Départements",    permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
-  { href: "/admin/churches", label: "Églises", permissions: ["church:manage"] },
-  { href: "/admin/backups", label: "Sauvegardes", permissions: ["church:manage"] },
-  { href: "/admin/audit-logs", label: "Historique", permissions: ["church:manage"] },
+  { href: "/admin/churches",            label: "Églises",         permissions: ["church:manage"] },
+  { href: "/admin/backups",             label: "Sauvegardes",     permissions: [], superAdminOnly: true },
+  { href: "/admin/audit-logs",          label: "Historique",      permissions: ["church:manage"] },
 ];
 
 export default async function AuthLayout({
@@ -83,7 +83,10 @@ export default async function AuthLayout({
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
   }
   const visibleConfigLinks = configLinksDef
-    .filter((link) => link.permissions.some((p) => userPermissions.has(p)))
+    .filter((link) => {
+      if (link.superAdminOnly) return session.user.isSuperAdmin;
+      return link.permissions.some((p) => userPermissions.has(p));
+    })
     .map(({ href, label }) => ({ href, label }));
 
   // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
