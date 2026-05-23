@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaReviewAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
   processImage,
@@ -126,7 +126,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireChurchPermission("media:review", churchId);
+    await requireMediaReviewAccess(churchId);
 
     const body = await request.json();
     const data = patchSchema.parse(body);

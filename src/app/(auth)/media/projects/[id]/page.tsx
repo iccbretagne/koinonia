@@ -68,7 +68,7 @@ export default async function MediaProjectDetailPage({
   const isProductionMember = await isProductionMediaMember(session, churchId!);
   const isCommMember = await isCommunicationMember(session, churchId!);
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
-  const canReview = session.user.isSuperAdmin || churchPerms.has("media:review");
+  const canReview = session.user.isSuperAdmin || churchPerms.has("media:review") || isProductionMember;
   const canManage = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember;
 
   return (

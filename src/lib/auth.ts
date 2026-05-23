@@ -576,6 +576,26 @@ export async function requireMediaManageAccess(churchId: string) {
   throw new Error("FORBIDDEN");
 }
 
+/**
+ * Passe si : permission `media:review` (ADMIN…) OU membre PRODUCTION_MEDIA.
+ * La team Communication n'a pas ce droit.
+ */
+export async function requireMediaReviewAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (userPerms.has("media:review") || await isProductionMediaMember(session, churchId))
+    return session;
+
+  throw new Error("FORBIDDEN");
+}
+
 export async function getCurrentChurchId(
   session: Session
 ): Promise<string | undefined> {
