@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { deleteFiles } from "@/lib/s3";
+import { deleteMediaFiles } from "@/lib/s3";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -101,7 +101,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    const session = await requireChurchPermission("media:manage", churchId);
+    const session = await requireMediaManageAccess(churchId);
 
     // Load all S3 keys before deletion
     const event = await prisma.mediaEvent.findUnique({
@@ -122,7 +122,7 @@ export async function DELETE(
     ];
 
     if (s3Keys.length > 0) {
-      await deleteFiles(s3Keys);
+      await deleteMediaFiles(s3Keys);
     }
 
     // ON DELETE CASCADE handles photos, files, shareTokens
