@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.4.8] - 2026-05-23
+
+### Corrigé
+
+- Permissions médias : l'équipe production peut désormais créer/supprimer les liens VALIDATOR et PREVALIDATOR (#339)
+- Permissions médias : l'équipe production peut supprimer les événements médias (#339)
+- Permissions médias : l'équipe production peut valider les photos et fichiers (APPROVED/REJECTED/FINAL_APPROVED) (#339)
+- Suppression d'événements médias : utilisation du bon bucket S3 (media au lieu de backup) (#339)
+- Sidebar : lien "Sauvegardes" visible uniquement pour les super admins (#339)
+
 ## [v1.4.7] - 2026-05-22
 
 ### Corrigé
