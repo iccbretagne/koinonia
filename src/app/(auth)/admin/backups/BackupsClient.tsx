@@ -133,6 +133,7 @@ export default function BackupsClient() {
   const [restoreTarget, setRestoreTarget] = useState<BackupEntry | null>(null);
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreResult, setRestoreResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentRefreshKey, setCurrentRefreshKey] = useState(0);
 
@@ -172,6 +173,23 @@ export default function BackupsClient() {
       setRefreshKey((k) => k + 1);
     }
     setTriggering(false);
+  }
+
+  async function downloadBackup(b: BackupEntry) {
+    setDownloadingKey(b.key);
+    const res = await fetch(`/api/admin/backups/download?key=${encodeURIComponent(b.key)}`);
+    const json = await res.json().catch(() => ({}));
+    setDownloadingKey(null);
+    if (!res.ok) {
+      setRestoreResult({ success: false, message: json.error ?? "Impossible de générer le lien de téléchargement" });
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = json.url;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   async function confirmRestore() {
@@ -256,12 +274,21 @@ export default function BackupsClient() {
                     {formatDate(b.lastModified)} · {formatBytes(b.sizeBytes)}
                   </p>
                 </div>
-                <button
-                  onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}
-                  className="text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors shrink-0"
-                >
-                  Restaurer
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => downloadBackup(b)}
+                    disabled={downloadingKey === b.key}
+                    className="text-xs text-icc-violet hover:text-icc-violet/80 border border-icc-violet/20 hover:border-icc-violet/40 rounded-lg px-3 py-1.5 hover:bg-icc-violet/5 disabled:opacity-50 transition-colors"
+                  >
+                    {downloadingKey === b.key ? "…" : "Télécharger"}
+                  </button>
+                  <button
+                    onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}
+                    className="text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors"
+                  >
+                    Restaurer
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
