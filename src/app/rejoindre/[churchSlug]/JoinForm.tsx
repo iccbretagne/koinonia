@@ -1,6 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
+interface AddressSuggestion {
+  label: string;
+  context: string;
+}
+
+interface FamilySuggestion {
+  familyId: number | null;
+  familyName: string | null;
+  loading: boolean;
+  searched: boolean;
+}
+
+function useFamilySuggestion(churchId: string) {
+  const [state, setState] = useState<FamilySuggestion>({ familyId: null, familyName: null, loading: false, searched: false });
+
+  async function lookup(address: string) {
+    if (!address) { setState({ familyId: null, familyName: null, loading: false, searched: false }); return; }
+    setState((s) => ({ ...s, loading: true }));
+    try {
+      const res = await fetch(
+        `/api/integration/families/suggest?address=${encodeURIComponent(address)}&churchId=${encodeURIComponent(churchId)}`
+      );
+      if (!res.ok) { setState({ familyId: null, familyName: null, loading: false, searched: true }); return; }
+      const json = await res.json();
+      setState({ familyId: json.familyId ?? null, familyName: json.familyName ?? null, loading: false, searched: true });
+    } catch {
+      setState({ familyId: null, familyName: null, loading: false, searched: true });
+    }
+  }
+
+  function clear() { setState({ familyId: null, familyName: null, loading: false, searched: false }); }
+
+  return { ...state, lookup, clear };
+}
+
+function useAddressSuggestions(query: string) {
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    if (query.trim().length < 3) { setSuggestions([]); return; }
+
+    timer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5&autocomplete=1`
+        );
+        if (!res.ok) return;
+        const json = await res.json();
+        setSuggestions(
+          (json.features ?? []).map((f: { properties: { label: string; context: string } }) => ({
+            label: f.properties.label,
+            context: f.properties.context,
+          }))
+        );
+      } catch { /* silently ignore */ }
+    }, 300);
+
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [query]);
+
+  return { suggestions, clear: () => setSuggestions([]) };
+}
 
 interface Props {
   churchId: string;
@@ -95,6 +160,8 @@ export default function JoinForm({ churchId, churchName }: Props) {
   const [success, setSuccess] = useState<SuccessData | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const { suggestions: addressSuggestions, clear: clearSuggestions } = useAddressSuggestions(form.address);
+  const familySuggestion = useFamilySuggestion(churchId);
 
   function set(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -255,17 +322,60 @@ export default function JoinForm({ churchId, churchName }: Props) {
           </p>
         </div>
 
-        <div>
+        <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
           <input
             type="text"
             value={form.address}
-            onChange={(e) => set("address", e.target.value)}
+            onChange={(e) => { set("address", e.target.value); familySuggestion.clear(); }}
+            onBlur={() => setTimeout(clearSuggestions, 150)}
             placeholder="Ex : 12 rue de la Paix, 35000 Rennes"
             className={inputClass(fieldErrors, "address")}
+            autoComplete="off"
           />
           <FieldError errors={fieldErrors} field="address" />
+          {addressSuggestions.length > 0 && (
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+              {addressSuggestions.map((s) => (
+                <li key={s.label}>
+                  <button
+                    type="button"
+                    onMouseDown={() => {
+                      set("address", s.label);
+                      clearSuggestions();
+                      familySuggestion.lookup(s.label);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-icc-violet/5 hover:text-icc-violet transition-colors"
+                  >
+                    <span className="font-medium">{s.label.split(",")[0]}</span>
+                    <span className="text-gray-400 text-xs ml-1">{s.label.split(",").slice(1).join(",")}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+
+        {familySuggestion.loading && (
+          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 border-2 border-icc-violet border-t-transparent rounded-full animate-spin" />
+            Recherche de ta famille…
+          </p>
+        )}
+        {!familySuggestion.loading && familySuggestion.familyName && (
+          <div className="flex items-center gap-2 bg-icc-violet/5 border border-icc-violet/20 rounded-lg px-3 py-2.5">
+            <svg className="w-4 h-4 text-icc-violet shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <div>
+              <p className="text-xs text-icc-violet font-medium">Famille suggérée</p>
+              <p className="text-sm font-semibold text-gray-900">{familySuggestion.familyName}</p>
+            </div>
+          </div>
+        )}
+        {!familySuggestion.loading && familySuggestion.searched && familySuggestion.familyName === null && (
+          <p className="text-xs text-gray-400">Aucune famille trouvée pour ce secteur — l&apos;équipe te contactera.</p>
+        )}
       </div>
 
       {/* Profil */}
