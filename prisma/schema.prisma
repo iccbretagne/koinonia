@@ -81,6 +81,9 @@ model Church {
   pastoralProfiles         PastoralProfile[]
   appointmentRequests      AppointmentRequest[]
   agendaEntries            AgendaEntry[]
+  // Module intégration familles
+  familyIntegrationRequests FamilyIntegrationRequest[]
+  familyLeaderAssignments   FamilyLeaderAssignment[]
 
   @@map("churches")
 }
@@ -138,6 +141,9 @@ model User {
   updatedRequests         AppointmentRequest[] @relation("AppointmentUpdater")
   agendaEntriesCreated    AgendaEntry[]        @relation("AgendaEntryCreator")
   agendaEntriesUpdated    AgendaEntry[]        @relation("AgendaEntryUpdater")
+  // Module intégration familles
+  familyLeaderAssignments FamilyLeaderAssignment[]
+  familyIntegrationRequestsAssigned FamilyIntegrationRequest[] @relation("IntegrationAssignedBerger")
 
   @@map("users")
 }
@@ -225,6 +231,9 @@ model Member {
   disciplesMade       Discipleship[] @relation("DiscipleMakerOf")
   firstDisciples      Discipleship[] @relation("FirstDiscipleMaker")
   attendances         DiscipleshipAttendance[]
+
+  // Module intégration familles
+  familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
 
   @@map("members")
 }
@@ -989,6 +998,7 @@ model AppointmentRequest {
   scheduledBy User?            @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
   updatedBy   User?            @relation("AppointmentUpdater", fields: [updatedById], references: [id])
   agendaEntry AgendaEntry?
+  familyIntegrationRequest FamilyIntegrationRequest? @relation("IntegrationAppointment")
 
   @@index([churchId, status, createdAt])
   @@map("appointment_requests")
@@ -1019,4 +1029,117 @@ model AgendaEntry {
   @@index([churchId, recipientId, startsAt])
   @@index([churchId, startsAt])
   @@map("agenda_entries")
+}
+
+// ─── Module Intégration Familles ─────────────────────────────────────────────
+
+enum FamilyIntegrationStatus {
+  SUBMITTED       // Demande soumise
+  ASSIGNED        // Famille affectée (auto ou manuelle)
+  CONTACTED       // Berger a pris contact
+  WHATSAPP_ADDED  // Ajouté au groupe WhatsApp
+  INTEGRATED      // Intégration terminée (clôturé)
+  ABANDONED       // Abandonné
+}
+
+enum FamilyAgeRange {
+  YOUTH        // Moins de 18 ans → Famille d'impact jeunes
+  YOUNG_ADULT  // 18–30 ans
+  ADULT        // 30–60 ans
+  SENIOR       // 60 ans et plus
+}
+
+enum FamilyChurchStatus {
+  VISITOR   // Visiteur
+  REGULAR   // Membre régulier
+  ENGAGED   // Membre engagé
+}
+
+enum FamilyLeaderRole {
+  BERGER
+  CO_BERGER
+}
+
+/// Demande d'intégration dans une famille d'impact.
+model FamilyIntegrationRequest {
+  id       String @id @default(cuid())
+  churchId String
+
+  // Informations personnelles
+  firstName  String  @db.VarChar(100)
+  lastName   String  @db.VarChar(100)
+  email      String? @db.VarChar(255)
+  phone      String? @db.VarChar(30)
+  address    String? @db.VarChar(500)
+  city       String? @db.VarChar(100)
+  lat        Float?
+  lng        Float?
+  ageRange   FamilyAgeRange
+  churchStatus FamilyChurchStatus @default(VISITOR)
+
+  // Lien optionnel vers un membre Koinonia existant
+  memberId String?
+  member   Member? @relation("IntegrationMemberLink", fields: [memberId], references: [id], onDelete: SetNull)
+
+  // Demande de soin pastoral
+  pastoralCareRequested  Boolean  @default(false)
+  appointmentRequestId   String?  @unique
+  appointmentRequest     AppointmentRequest? @relation("IntegrationAppointment", fields: [appointmentRequestId], references: [id], onDelete: SetNull)
+
+  // Affectation famille (référentiel externe familles.iccrennes.fr)
+  suggestedFamilyId   Int?     // Suggestion auto via point-in-polygon
+  suggestedFamilyName String?  @db.VarChar(100)
+  assignedFamilyId    Int?     // Famille confirmée
+  assignedFamilyName  String?  @db.VarChar(100)
+
+  // Berger assigné (notifié à l'affectation)
+  assignedBergerId String?
+  assignedBerger   User?   @relation("IntegrationAssignedBerger", fields: [assignedBergerId], references: [id], onDelete: SetNull)
+
+  // Statut et timestamps de workflow
+  status           FamilyIntegrationStatus @default(SUBMITTED)
+  submittedAt      DateTime  @default(now())
+  assignedAt       DateTime?
+  contactedAt      DateTime?
+  whatsappAddedAt  DateTime?
+  integratedAt     DateTime?
+  abandonedAt      DateTime?
+  abandonReason    String?   @db.VarChar(500)
+
+  // Notes internes (équipe intégration)
+  notes String? @db.Text
+
+  // Suppression douce (archivage à 12 mois)
+  archivedAt DateTime?
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, status])
+  @@index([churchId, assignedFamilyId])
+  @@index([churchId, submittedAt])
+  @@index([assignedBergerId])
+  @@index([memberId])
+  @@map("family_integration_requests")
+}
+
+/// Association berger/co-berger à une famille (référentiel externe).
+model FamilyLeaderAssignment {
+  id         String           @id @default(cuid())
+  churchId   String
+  userId     String
+  familyId   Int              // ID dans familles.iccrennes.fr
+  familyName String           @db.VarChar(100)
+  role       FamilyLeaderRole
+
+  church Church @relation(fields: [churchId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([churchId, userId, familyId])
+  @@index([churchId, familyId])
+  @@map("family_leader_assignments")
 }
