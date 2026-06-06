@@ -6,6 +6,22 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.0] - 2026-06-06
+
+### Ajouté
+
+- Module **Intégration familles** : suivi complet du parcours d'intégration des nouveaux membres (#346)
+- Formulaire public `/rejoindre/[churchSlug]` : autocomplétion d'adresse (api-adresse.data.gouv.fr) et suggestion de famille en temps réel par géolocalisation point-in-polygon
+- Workflow de demandes en 5 étapes : `SUBMITTED → ASSIGNED → CONTACTED → WHATSAPP_ADDED → INTEGRATED` + `ABANDONED`
+- Dashboard demandes avec filtres par statut, recherche plein texte, vue table et cartes mobiles
+- Page détail demande : transitions de statut, affectation berger/famille, édition des informations, notes internes
+- Séparation des rôles : membres intégration (assign, rouvrir) vs berger assigné (contacter, WhatsApp, intégrer, abandonner, éditer)
+- Page gestion bergers `/integration/leaders` : affectation berger/co-berger par famille
+- Dashboard statistiques `/integration/stats` : KPIs, entonnoir de progression, tendance mensuelle 12 mois, distributions
+- Cron inactivité 7 jours : notifie le berger (ASSIGNED/CONTACTED) ou les managers (SUBMITTED) avec anti-doublon
+- Bannière lien public avec bouton copier sur le dashboard
+- Notification in-app et email au berger lors de l'affectation d'une demande
+
 ## [v1.4.8] - 2026-05-23
 
 ### Corrigé
