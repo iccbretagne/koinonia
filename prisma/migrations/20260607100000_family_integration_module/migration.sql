@@ -53,7 +53,7 @@ CREATE TABLE `family_integration_requests` (
   INDEX `family_integration_requests_assignedBergerId_idx` (`assignedBergerId`),
   INDEX `family_integration_requests_memberId_idx` (`memberId`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable: family_leader_assignments
 CREATE TABLE `family_leader_assignments` (
@@ -68,7 +68,7 @@ CREATE TABLE `family_leader_assignments` (
   UNIQUE KEY `family_leader_assignments_churchId_userId_familyId_key` (`churchId`, `userId`, `familyId`),
   INDEX `family_leader_assignments_churchId_familyId_idx` (`churchId`, `familyId`),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `family_integration_requests`
