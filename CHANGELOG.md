@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.2] - 2026-06-06
+
+### Corrigé
+
+- Navigation : les sections Intégration et Médias n'apparaissaient pas pour les super admins sans rôle église explicite (`isGlobalManager` ne prenait pas en compte `isSuperAdmin`)
+
 ## [v1.5.1] - 2026-06-06
 
 ### Corrigé
