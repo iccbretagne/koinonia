@@ -165,7 +165,7 @@ export default async function AuthLayout({
   if (userPermissions.has("church:manage")) agendaLinks.push({ href: "/admin/pastoral-profiles", label: "Profils pastoraux" });
 
   const headerContent = (
-    <>
+    <div className="flex items-center w-full min-w-0">
       <div className="min-w-0">
         <h1 className="text-lg md:text-xl font-bold text-current truncate">Koinonia</h1>
         {currentChurchId && churches.length > 1 ? (
@@ -210,7 +210,7 @@ export default async function AuthLayout({
           </button>
         </form>
       </div>
-    </>
+    </div>
   );
 
   const footerContent = (

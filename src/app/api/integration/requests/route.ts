@@ -10,10 +10,9 @@ const createSchema = z.object({
   firstName:    z.string().min(1).max(100),
   lastName:     z.string().min(1).max(100),
   email:        z.string().email().optional().or(z.literal("")),
-  phone:        z.string().max(30).optional().or(z.literal("")),
+  phone:        z.string().min(1, "Le téléphone est obligatoire").max(30),
   // Adresse
   address:      z.string().max(500).optional().or(z.literal("")),
-  city:         z.string().max(100).optional().or(z.literal("")),
   // Profil
   ageRange:     z.enum(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"]),
   churchStatus: z.enum(["VISITOR", "REGULAR", "ENGAGED"]).default("VISITOR"),
@@ -55,9 +54,8 @@ export async function POST(request: Request) {
     let suggestedFamilyId: number | null = null;
     let suggestedFamilyName: string | null = null;
 
-    const fullAddress = [data.address, data.city].filter(Boolean).join(", ");
-    if (fullAddress) {
-      const geo = await geocodeAddress(fullAddress);
+    if (data.address) {
+      const geo = await geocodeAddress(data.address);
       if (geo) {
         lat = geo.lat;
         lng = geo.lng;
@@ -78,7 +76,7 @@ export async function POST(request: Request) {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email || null,
-          phone: data.phone || null,
+          phone: data.phone,
           subject: "Soins pastoraux (demande intégration famille)",
           message: data.pastoralMessage || "Demande de soin pastoral via formulaire d'intégration famille.",
         },
@@ -94,9 +92,8 @@ export async function POST(request: Request) {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email || null,
-        phone: data.phone || null,
+        phone: data.phone,
         address: data.address || null,
-        city: data.city || null,
         lat,
         lng,
         ageRange: data.ageRange as FamilyAgeRange,
@@ -155,11 +152,11 @@ function buildConfirmationEmail(params: {
     <div style="padding:32px">
       <p style="margin:0 0 16px;color:#111827;font-size:15px">Bonjour ${firstName},</p>
       <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6">
-        Nous avons bien reçu ta demande d'intégration dans une famille d'impact. Notre équipe va prendre en charge ton dossier et te contacter très prochainement.
+        Nous avons bien reçu ta demande pour rejoindre une famille. Notre équipe va prendre en charge ton dossier et te contacter très prochainement.
       </p>
       ${suggestedFamilyName ? `
       <div style="background:#f5f3ff;border-left:4px solid #5E17EB;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 16px">
-        <p style="margin:0;color:#5E17EB;font-size:13px;font-weight:600">Famille d'impact suggérée</p>
+        <p style="margin:0;color:#5E17EB;font-size:13px;font-weight:600">Famille suggérée</p>
         <p style="margin:4px 0 0;color:#374151;font-size:14px">${suggestedFamilyName}</p>
       </div>` : ""}
       ${pastoralCare ? `

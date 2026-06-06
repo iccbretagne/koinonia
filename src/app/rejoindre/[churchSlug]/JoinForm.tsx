@@ -86,7 +86,6 @@ export default function JoinForm({ churchId, churchName }: Props) {
     email: "",
     phone: "",
     address: "",
-    city: "",
     ageRange: "",
     churchStatus: "VISITOR",
     pastoralCareRequested: false,
@@ -115,9 +114,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
         body: JSON.stringify({
           ...form,
           email: form.email || undefined,
-          phone: form.phone || undefined,
           address: form.address || undefined,
-          city: form.city || undefined,
           pastoralMessage: form.pastoralMessage || undefined,
           churchId,
         }),
@@ -157,12 +154,12 @@ export default function JoinForm({ churchId, churchName }: Props) {
         </div>
         <h2 className="text-lg font-semibold text-gray-900">Demande envoyée !</h2>
         <p className="text-sm text-gray-600">
-          Ta demande d&apos;intégration à <strong>{churchName}</strong> a bien été reçue. Notre équipe
+          Ta demande pour rejoindre une famille à <strong>{churchName}</strong> a bien été reçue. Notre équipe
           va prendre contact avec toi très prochainement.
         </p>
         {success.suggestedFamilyName && (
           <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-3 text-sm text-left">
-            <p className="font-medium text-icc-violet mb-0.5">Famille d&apos;impact suggérée</p>
+            <p className="font-medium text-icc-violet mb-0.5">Famille suggérée</p>
             <p className="text-gray-700">{success.suggestedFamilyName}</p>
             <p className="text-xs text-gray-500 mt-1">
               L&apos;équipe confirmera cette affectation lors du suivi.
@@ -221,10 +218,11 @@ export default function JoinForm({ churchId, churchName }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Téléphone <span className="text-gray-400 text-xs">(recommandé)</span>
+            Téléphone <span className="text-red-500">*</span>
           </label>
           <input
             type="tel"
+            required
             value={form.phone}
             onChange={(e) => set("phone", e.target.value)}
             placeholder="Ex : 06 12 34 56 78"
@@ -253,7 +251,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
         <div>
           <h2 className="text-base font-semibold text-gray-900">Ton adresse</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Utilisée pour t&apos;orienter vers la famille d&apos;impact la plus proche.
+            Utilisée pour t&apos;orienter vers la famille de ton secteur.
           </p>
         </div>
 
@@ -263,22 +261,10 @@ export default function JoinForm({ churchId, churchName }: Props) {
             type="text"
             value={form.address}
             onChange={(e) => set("address", e.target.value)}
-            placeholder="Ex : 12 rue de la Paix"
+            placeholder="Ex : 12 rue de la Paix, 35000 Rennes"
             className={inputClass(fieldErrors, "address")}
           />
           <FieldError errors={fieldErrors} field="address" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ville</label>
-          <input
-            type="text"
-            value={form.city}
-            onChange={(e) => set("city", e.target.value)}
-            placeholder="Ex : Rennes"
-            className={inputClass(fieldErrors, "city")}
-          />
-          <FieldError errors={fieldErrors} field="city" />
         </div>
       </div>
 

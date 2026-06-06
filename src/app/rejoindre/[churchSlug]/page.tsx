@@ -23,9 +23,9 @@ export default async function RejoindrePublicPage({
           <p className="text-xs font-semibold text-white/60 uppercase tracking-widest mb-1">
             {church.name}
           </p>
-          <h1 className="text-xl font-bold text-white">Rejoindre une famille d&apos;impact</h1>
+          <h1 className="text-xl font-bold text-white">Rejoindre une famille</h1>
           <p className="text-sm text-white/70 mt-1">
-            Remplis ce formulaire pour rejoindre une famille d&apos;impact près de chez toi.
+            Remplis ce formulaire pour rejoindre une famille près de chez toi.
           </p>
         </div>
       </header>
@@ -43,7 +43,7 @@ export default async function RejoindrePublicPage({
             rel="noopener noreferrer"
             className="text-icc-violet underline"
           >
-            Trouve ta famille ici →
+            Trouve ta famille →
           </a>
         </p>
         <p className="mt-2 text-gray-400">Propulsé par <span className="font-medium text-gray-500">Koinonia</span></p>
