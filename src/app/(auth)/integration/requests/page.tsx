@@ -1,6 +1,7 @@
 import { requireAuth, getCurrentChurchId, requireIntegrationAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import IntegrationDashboard from "./IntegrationDashboard";
+import PublicFormBanner from "./PublicFormBanner";
 
 export default async function IntegrationRequestsPage() {
   const session = await requireAuth();
@@ -9,17 +10,20 @@ export default async function IntegrationRequestsPage() {
 
   const { scope } = await requireIntegrationAccess(churchId);
 
-  const requests = await prisma.familyIntegrationRequest.findMany({
-    where: {
-      churchId,
-      archivedAt: null,
-      ...(scope.scoped && { assignedFamilyId: { in: scope.familyIds } }),
-    },
-    include: {
-      assignedBerger: { select: { id: true, name: true } },
-    },
-    orderBy: { submittedAt: "desc" },
-  });
+  const [church, requests] = await Promise.all([
+    prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
+    prisma.familyIntegrationRequest.findMany({
+      where: {
+        churchId,
+        archivedAt: null,
+        ...(scope.scoped && { assignedFamilyId: { in: scope.familyIds } }),
+      },
+      include: {
+        assignedBerger: { select: { id: true, name: true } },
+      },
+      orderBy: { submittedAt: "desc" },
+    }),
+  ]);
 
   const pending = requests.filter((r) => r.status === "SUBMITTED").length;
 
@@ -33,6 +37,11 @@ export default async function IntegrationRequestsPage() {
           </span>
         )}
       </div>
+      {church?.slug && !scope.scoped && (
+        <div className="mb-6">
+          <PublicFormBanner slug={church.slug} />
+        </div>
+      )}
       <IntegrationDashboard requests={requests} isScoped={scope.scoped} />
     </div>
   );
