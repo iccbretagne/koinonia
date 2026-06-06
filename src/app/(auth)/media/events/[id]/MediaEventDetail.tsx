@@ -73,6 +73,7 @@ const TOKEN_TYPE_LABELS: Record<MediaTokenType, string> = {
   MEDIA:        "Téléchargement (validées)",
   MEDIA_ALL:    "Téléchargement (toutes)",
   GALLERY:      "Galerie",
+  COLLECTION:   "Collection",
 };
 
 const TOKEN_TYPE_ICONS: Record<MediaTokenType, string> = {
@@ -81,6 +82,7 @@ const TOKEN_TYPE_ICONS: Record<MediaTokenType, string> = {
   MEDIA:        "⬇️",
   MEDIA_ALL:    "📦",
   GALLERY:      "🖼️",
+  COLLECTION:   "📂",
 };
 
 const EVENT_STATUS_LABELS: Record<MediaEventStatus, string> = {
@@ -273,7 +275,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   }
 
   function getTokenUrl(token: ShareToken) {
-    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g" };
+    const paths: Record<MediaTokenType, string> = { VALIDATOR: "v", PREVALIDATOR: "v", MEDIA: "d", MEDIA_ALL: "d", GALLERY: "g", COLLECTION: "c" };
     return `${origin}/media/${paths[token.type]}/${token.token}`;
   }
 

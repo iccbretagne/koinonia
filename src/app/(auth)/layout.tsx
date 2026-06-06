@@ -133,6 +133,9 @@ export default async function AuthLayout({
       mediaLinks.push({ href: "/media/events", label: "Événements" });
       mediaLinks.push({ href: "/media/projects", label: "Projets" });
     }
+    if (userPermissions.has("media:manage") || isMemberOf("PRODUCTION_MEDIA")) {
+      mediaLinks.push({ href: "/media/collections", label: "Collections" });
+    }
 
     // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
     isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
