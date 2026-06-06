@@ -10,7 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   SUBMITTED:      "En attente",
   ASSIGNED:       "Assigné",
   CONTACTED:      "Contacté",
-  WHATSAPP_ADDED: "WhatsApp ajouté",
+  WHATSAPP_ADDED: "Ajouté dans le groupe WhatsApp famille",
   INTEGRATED:     "Intégré",
   ABANDONED:      "Abandonné",
 };
@@ -41,7 +41,7 @@ const WORKFLOW_STEPS = [
   { status: "SUBMITTED",      label: "Soumise",         tsKey: "submittedAt" },
   { status: "ASSIGNED",       label: "Assignée",         tsKey: "assignedAt" },
   { status: "CONTACTED",      label: "Contacté·e",       tsKey: "contactedAt" },
-  { status: "WHATSAPP_ADDED", label: "WhatsApp ajouté",  tsKey: "whatsappAddedAt" },
+  { status: "WHATSAPP_ADDED", label: "Ajouté dans le groupe WhatsApp famille",  tsKey: "whatsappAddedAt" },
   { status: "INTEGRATED",     label: "Intégré·e",        tsKey: "integratedAt" },
 ];
 
@@ -270,7 +270,7 @@ export default function RequestDetail({ request: initial, churchId, isScoped }: 
               disabled={loading}
               className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              WhatsApp ajouté
+              Ajouté dans le groupe WhatsApp
             </button>
           )}
           {req.status === "WHATSAPP_ADDED" && (

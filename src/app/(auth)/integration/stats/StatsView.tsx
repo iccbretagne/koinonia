@@ -4,7 +4,7 @@ const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Soumise",
   ASSIGNED: "Affectée",
   CONTACTED: "Contactée",
-  WHATSAPP_ADDED: "WhatsApp",
+  WHATSAPP_ADDED: "WhatsApp famille",
   INTEGRATED: "Intégrée",
   ABANDONED: "Abandonnée",
 };
