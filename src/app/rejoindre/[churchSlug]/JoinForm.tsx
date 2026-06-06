@@ -313,29 +313,55 @@ export default function JoinForm({ churchId, churchName }: Props) {
         </div>
       </div>
 
-      {/* Adresse */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-gray-900">Ton adresse</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Utilisée pour t&apos;orienter vers la famille de ton secteur.
-          </p>
+      {/* Trouve ta famille */}
+      <div className={`rounded-xl border-2 p-4 sm:p-6 space-y-4 transition-colors ${familySuggestion.familyName ? "border-icc-violet/30 bg-icc-violet/5" : "border-gray-200 bg-white"}`}>
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-icc-violet/10 flex items-center justify-center shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-icc-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Trouve ta famille</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Saisis ton adresse pour qu&apos;on t&apos;oriente vers la famille la plus proche de chez toi.
+            </p>
+          </div>
         </div>
 
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-          <input
-            type="text"
-            value={form.address}
-            onChange={(e) => { set("address", e.target.value); familySuggestion.clear(); }}
-            onBlur={() => setTimeout(clearSuggestions, 150)}
-            placeholder="Ex : 12 rue de la Paix, 35000 Rennes"
-            className={inputClass(fieldErrors, "address")}
-            autoComplete="off"
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Ton adresse</label>
+          <div className="relative">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => { set("address", e.target.value); familySuggestion.clear(); }}
+              onBlur={() => setTimeout(clearSuggestions, 150)}
+              placeholder="Commence à taper ton adresse…"
+              className={`${inputClass(fieldErrors, "address")} pl-9`}
+              autoComplete="off"
+            />
+          </div>
           <FieldError errors={fieldErrors} field="address" />
+
+          {/* Indice d'utilisation — visible tant que l'utilisateur n'a pas sélectionné */}
+          {!familySuggestion.searched && !familySuggestion.loading && (
+            <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {form.address.length === 0
+                ? "Tape ton adresse puis sélectionne une suggestion."
+                : "Sélectionne une suggestion dans la liste."}
+            </p>
+          )}
+
           {addressSuggestions.length > 0 && (
-            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto max-h-48">
               {addressSuggestions.map((s) => (
                 <li key={s.label}>
                   <button
@@ -345,10 +371,16 @@ export default function JoinForm({ churchId, churchName }: Props) {
                       clearSuggestions();
                       familySuggestion.lookup(s.label);
                     }}
-                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-icc-violet/5 hover:text-icc-violet transition-colors"
+                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-icc-violet/5 hover:text-icc-violet transition-colors flex items-center gap-2"
                   >
-                    <span className="font-medium">{s.label.split(",")[0]}</span>
-                    <span className="text-gray-400 text-xs ml-1">{s.label.split(",").slice(1).join(",")}</span>
+                    <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>
+                      <span className="font-medium">{s.label.split(",")[0]}</span>
+                      <span className="text-gray-400 text-xs ml-1">{s.label.split(",").slice(1).join(",")}</span>
+                    </span>
                   </button>
                 </li>
               ))}
@@ -356,25 +388,33 @@ export default function JoinForm({ churchId, churchName }: Props) {
           )}
         </div>
 
+        {/* Résultat famille */}
         {familySuggestion.loading && (
-          <p className="text-xs text-gray-400 flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 border-2 border-icc-violet border-t-transparent rounded-full animate-spin" />
-            Recherche de ta famille…
-          </p>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="inline-block w-4 h-4 border-2 border-icc-violet border-t-transparent rounded-full animate-spin shrink-0" />
+            Recherche de ta famille en cours…
+          </div>
         )}
         {!familySuggestion.loading && familySuggestion.familyName && (
-          <div className="flex items-center gap-2 bg-icc-violet/5 border border-icc-violet/20 rounded-lg px-3 py-2.5">
-            <svg className="w-4 h-4 text-icc-violet shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <div>
-              <p className="text-xs text-icc-violet font-medium">Famille suggérée</p>
-              <p className="text-sm font-semibold text-gray-900">{familySuggestion.familyName}</p>
+          <div className="flex items-center gap-3 bg-white border border-icc-violet/30 rounded-xl px-4 py-3.5 shadow-sm min-h-[64px]">
+            <div className="w-10 h-10 rounded-full bg-icc-violet flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-icc-violet font-medium uppercase tracking-wide">Ta famille</p>
+              <p className="text-base font-bold text-gray-900 truncate">{familySuggestion.familyName}</p>
             </div>
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.searched && familySuggestion.familyName === null && (
-          <p className="text-xs text-gray-400">Aucune famille trouvée pour ce secteur — l&apos;équipe te contactera.</p>
+          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Aucune famille trouvée pour ce secteur — l&apos;équipe d&apos;intégration te contactera pour t&apos;orienter.
+          </div>
         )}
       </div>
 
