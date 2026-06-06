@@ -51,6 +51,16 @@ const patchSchema = z.discriminatedUnion("action", [
     notes: z.string().max(10000),
   }),
   z.object({ action: z.literal("reopen") }),
+  z.object({
+    action: z.literal("edit"),
+    firstName:    z.string().min(1).max(100).optional(),
+    lastName:     z.string().min(1).max(100).optional(),
+    phone:        z.string().min(1).max(30).optional(),
+    email:        z.string().email().optional().or(z.literal("")).optional(),
+    address:      z.string().max(500).optional().or(z.literal("")).optional(),
+    ageRange:     z.enum(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"]).optional(),
+    churchStatus: z.enum(["VISITOR", "REGULAR", "ENGAGED"]).optional(),
+  }),
 ]);
 
 export async function PATCH(
@@ -79,19 +89,19 @@ export async function PATCH(
     if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
       throw new ApiError(403, "Accès refusé");
 
-    const isManager = !scope.scoped;
+    const isIntegrationMember = !scope.scoped;
     const isAssignedBerger = req.assignedBergerId === session.user.id;
 
     const body = patchSchema.parse(await request.json());
     const now = new Date();
 
     // Vérifications de rôle par action
-    const managerOnly = ["assign", "reopen"];
-    const bergerOrManager = ["contact", "whatsapp", "integrate", "abandon", "note"];
-    if (managerOnly.includes(body.action) && !isManager)
-      throw new ApiError(403, "Cette action est réservée aux managers d'intégration");
-    if (bergerOrManager.includes(body.action) && !isManager && !isAssignedBerger)
-      throw new ApiError(403, "Cette action est réservée au berger assigné ou aux managers");
+    const integrationMemberOnly = ["assign", "reopen"];
+    const bergerOrIntegrationMember = ["contact", "whatsapp", "integrate", "abandon", "note", "edit"];
+    if (integrationMemberOnly.includes(body.action) && !isIntegrationMember)
+      throw new ApiError(403, "Cette action est réservée aux membres de l'équipe intégration");
+    if (bergerOrIntegrationMember.includes(body.action) && !isIntegrationMember && !isAssignedBerger)
+      throw new ApiError(403, "Cette action est réservée au berger assigné ou à l'équipe intégration");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updateData: Record<string, any> = {};
@@ -150,6 +160,18 @@ export async function PATCH(
           status: "SUBMITTED",
           abandonedAt: null,
           abandonReason: null,
+        };
+        break;
+
+      case "edit":
+        updateData = {
+          ...(body.firstName    !== undefined && { firstName:    body.firstName }),
+          ...(body.lastName     !== undefined && { lastName:     body.lastName }),
+          ...(body.phone        !== undefined && { phone:        body.phone || null }),
+          ...(body.email        !== undefined && { email:        body.email || null }),
+          ...(body.address      !== undefined && { address:      body.address || null }),
+          ...(body.ageRange     !== undefined && { ageRange:     body.ageRange }),
+          ...(body.churchStatus !== undefined && { churchStatus: body.churchStatus }),
         };
         break;
     }
