@@ -143,6 +143,36 @@ export default async function AuthLayout({
     requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
   }
 
+  // ── Section "Intégration familles" ──────────────────────────────────────────
+  const integrationLinks: { href: string; label: string }[] = [];
+
+  if (currentChurchId) {
+    const isGlobalManager = userPermissions.has("events:manage");
+    const userDeptIdsSet = new Set(
+      churchRoles
+        .filter((r) => r.churchId === currentChurchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id))
+    );
+    const integrationDept = await prisma.department.findFirst({
+      where: { function: "INTEGRATION", ministry: { churchId: currentChurchId } },
+      select: { id: true },
+    });
+    const isIntegrationMember =
+      isGlobalManager ||
+      (integrationDept ? userDeptIdsSet.has(integrationDept.id) : false);
+
+    const isBerger = await prisma.familyLeaderAssignment.count({
+      where: { churchId: currentChurchId, userId: session.user.id! },
+    }).then((c) => c > 0);
+
+    if (isIntegrationMember || isBerger) {
+      integrationLinks.push({ href: "/integration/requests", label: "Demandes" });
+    }
+    if (isIntegrationMember) {
+      integrationLinks.push({ href: "/integration/leaders", label: "Bergers" });
+    }
+  }
+
   // ── Section "Agenda pastoral" ────────────────────────────────────────────────
   const agendaLinks: { href: string; label: string }[] = [];
   const hasAgendaView = userPermissions.has("agenda:view") || isProtocoleMember;
@@ -260,6 +290,7 @@ export default async function AuthLayout({
       requestLinks={requestLinks}
       mediaLinks={mediaLinks}
       agendaLinks={agendaLinks}
+      integrationLinks={integrationLinks}
       mrbsUrl={mrbsUrl}
       mrbsAdminLink={mrbsAdminLink}
       hasDiscipleship={hasDiscipleship}

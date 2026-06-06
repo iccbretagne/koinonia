@@ -10,6 +10,7 @@ interface SidebarProps {
   requestLinks: { href: string; label: string }[];
   mediaLinks: { href: string; label: string }[];
   agendaLinks?: { href: string; label: string }[];
+  integrationLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
   hasDiscipleship?: boolean;
@@ -101,6 +102,14 @@ function IconMrbs({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function IconIntegration({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
 }
@@ -297,6 +306,7 @@ export default function Sidebar({
   requestLinks,
   mediaLinks,
   agendaLinks = [],
+  integrationLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
   hasDiscipleship = false,
@@ -327,6 +337,7 @@ export default function Sidebar({
   const isMediaActive =
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
+  const isIntegrationActive = pathname.startsWith("/integration");
   const isAgendaActive =
     (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
     pathname !== "/agenda/request";
@@ -344,6 +355,7 @@ export default function Sidebar({
     if (isMembersActive) return "members";
     if (isRequestsActive) return "requests";
     if (isMediaActive) return "media";
+    if (isIntegrationActive) return "integration";
     if (isAgendaActive) return "agenda";
     if (isConfigActive) return "config";
     return "planning";
@@ -538,7 +550,26 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 8. Réservation de salles (module MRBS optionnel) */}
+      {/* 8. Intégration familles */}
+      {integrationLinks.length > 0 && (
+        <AccordionSection
+          title="Intégration"
+          icon={<IconIntegration className="w-4 h-4" />}
+          open={openSection === "integration"}
+          onToggle={() => toggle("integration")}
+          isActive={isIntegrationActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            {integrationLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 9. Réservation de salles (module MRBS optionnel) */}
       {(mrbsUrl || mrbsAdminLink) && (
         <AccordionSection
           title="Salles"
