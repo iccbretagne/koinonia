@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.1] - 2026-06-06
+
+### Corrigé
+
+- Formulaire rejoindre une famille : refonte UX section adresse — guidage visuel explicite, icône loupe dans le champ, message d'aide adaptatif, suggestions avec icône pin, résultat famille plus proéminent, dropdown plafonné pour le mobile
+
 ## [v1.5.0] - 2026-06-06
 
 ### Ajouté
