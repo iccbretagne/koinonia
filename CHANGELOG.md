@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.3] - 2026-06-07
+
+### Corrigé
+
+- Migration intégration familles : collation explicite `utf8mb4_unicode_ci` pour éviter l'erreur errno 150 sur MariaDB 10.11 (qui utilise `utf8mb4_uca1400_ai_ci` par défaut)
+
 ## [v1.5.2] - 2026-06-06
 
 ### Corrigé
