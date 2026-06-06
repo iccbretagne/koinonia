@@ -143,6 +143,37 @@ export default async function AuthLayout({
     requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
   }
 
+  // ── Section "Intégration familles" ──────────────────────────────────────────
+  const integrationLinks: { href: string; label: string }[] = [];
+
+  if (currentChurchId) {
+    const isGlobalManager = userPermissions.has("events:manage");
+    const userDeptIdsSet = new Set(
+      churchRoles
+        .filter((r) => r.churchId === currentChurchId)
+        .flatMap((r) => r.departments.map((d) => d.department.id))
+    );
+    const integrationDept = await prisma.department.findFirst({
+      where: { function: "INTEGRATION", ministry: { churchId: currentChurchId } },
+      select: { id: true },
+    });
+    const isIntegrationMember =
+      isGlobalManager ||
+      (integrationDept ? userDeptIdsSet.has(integrationDept.id) : false);
+
+    const isBerger = await prisma.familyLeaderAssignment.count({
+      where: { churchId: currentChurchId, userId: session.user.id! },
+    }).then((c) => c > 0);
+
+    if (isIntegrationMember || isBerger) {
+      integrationLinks.push({ href: "/integration/requests", label: "Demandes" });
+    }
+    if (isIntegrationMember) {
+      integrationLinks.push({ href: "/integration/leaders", label: "Bergers" });
+      integrationLinks.push({ href: "/integration/stats", label: "Statistiques" });
+    }
+  }
+
   // ── Section "Agenda pastoral" ────────────────────────────────────────────────
   const agendaLinks: { href: string; label: string }[] = [];
   const hasAgendaView = userPermissions.has("agenda:view") || isProtocoleMember;
@@ -165,7 +196,7 @@ export default async function AuthLayout({
   if (userPermissions.has("church:manage")) agendaLinks.push({ href: "/admin/pastoral-profiles", label: "Profils pastoraux" });
 
   const headerContent = (
-    <>
+    <div className="flex items-center w-full min-w-0">
       <div className="min-w-0">
         <h1 className="text-lg md:text-xl font-bold text-current truncate">Koinonia</h1>
         {currentChurchId && churches.length > 1 ? (
@@ -210,7 +241,7 @@ export default async function AuthLayout({
           </button>
         </form>
       </div>
-    </>
+    </div>
   );
 
   const footerContent = (
@@ -260,6 +291,7 @@ export default async function AuthLayout({
       requestLinks={requestLinks}
       mediaLinks={mediaLinks}
       agendaLinks={agendaLinks}
+      integrationLinks={integrationLinks}
       mrbsUrl={mrbsUrl}
       mrbsAdminLink={mrbsAdminLink}
       hasDiscipleship={hasDiscipleship}

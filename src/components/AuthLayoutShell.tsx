@@ -25,6 +25,7 @@ interface AuthLayoutShellProps {
   requestLinks: { href: string; label: string }[];
   mediaLinks: { href: string; label: string }[];
   agendaLinks?: { href: string; label: string }[];
+  integrationLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
   hasDiscipleship: boolean;
@@ -56,6 +57,7 @@ export default function AuthLayoutShell({
   requestLinks,
   mediaLinks,
   agendaLinks = [],
+  integrationLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
   hasDiscipleship,
@@ -116,6 +118,7 @@ export default function AuthLayoutShell({
             requestLinks={requestLinks}
             mediaLinks={mediaLinks}
             agendaLinks={agendaLinks}
+            integrationLinks={integrationLinks}
             mrbsUrl={mrbsUrl}
             mrbsAdminLink={mrbsAdminLink}
             hasDiscipleship={hasDiscipleship}
@@ -136,6 +139,7 @@ export default function AuthLayoutShell({
           requestLinks={requestLinks}
           mediaLinks={mediaLinks}
           agendaLinks={agendaLinks}
+          integrationLinks={integrationLinks}
           mrbsUrl={mrbsUrl}
           mrbsAdminLink={mrbsAdminLink}
           hasDiscipleship={hasDiscipleship}
