@@ -79,8 +79,19 @@ export async function PATCH(
     if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
       throw new ApiError(403, "Accès refusé");
 
+    const isManager = !scope.scoped;
+    const isAssignedBerger = req.assignedBergerId === session.user.id;
+
     const body = patchSchema.parse(await request.json());
     const now = new Date();
+
+    // Vérifications de rôle par action
+    const managerOnly = ["assign", "reopen"];
+    const bergerOrManager = ["contact", "whatsapp", "integrate", "abandon", "note"];
+    if (managerOnly.includes(body.action) && !isManager)
+      throw new ApiError(403, "Cette action est réservée aux managers d'intégration");
+    if (bergerOrManager.includes(body.action) && !isManager && !isAssignedBerger)
+      throw new ApiError(403, "Cette action est réservée au berger assigné ou aux managers");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updateData: Record<string, any> = {};

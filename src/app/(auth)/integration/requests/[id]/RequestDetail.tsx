@@ -86,6 +86,7 @@ interface Props {
   request: Request;
   churchId: string;
   isScoped: boolean;
+  currentUserId: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -122,7 +123,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function RequestDetail({ request: initial, churchId, isScoped }: Props) {
+export default function RequestDetail({ request: initial, churchId, isScoped, currentUserId }: Props) {
   const router = useRouter();
   const [req, setReq] = useState(initial);
   const [loading, setLoading] = useState(false);
@@ -219,6 +220,12 @@ export default function RequestDetail({ request: initial, churchId, isScoped }: 
     ? leaders.filter((l) => l.familyId === parseInt(assignFamilyId))
     : leaders;
 
+  // ── Role helpers ─────────────────────────────────────────────────────────────
+
+  const isManager = !isScoped;
+  const isAssignedBerger = req.assignedBerger?.id === currentUserId;
+  const canActAsBerger = isManager || isAssignedBerger;
+
   // ── Status position ──────────────────────────────────────────────────────────
 
   const currentIdx = STATUS_ORDER.indexOf(req.status);
@@ -244,62 +251,76 @@ export default function RequestDetail({ request: initial, churchId, isScoped }: 
       )}
 
       {/* Actions workflow */}
-      {!isScoped && (
-        <div className="flex flex-wrap gap-2">
-          {(req.status === "SUBMITTED" || req.status === "ASSIGNED") && (
-            <button
-              onClick={openAssignModal}
-              disabled={loading}
-              className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
-            </button>
+      {(isManager || canActAsBerger) && (
+        <div className="space-y-2">
+          {/* Bandeau contextuel pour le berger */}
+          {isAssignedBerger && !isManager && (
+            <div className="flex items-center gap-2 text-xs text-icc-violet bg-icc-violet/5 border border-icc-violet/20 rounded-lg px-3 py-2">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Vous êtes le berger assigné à cette demande.
+            </div>
           )}
-          {req.status === "ASSIGNED" && (
-            <button
-              onClick={() => patch({ action: "contact" })}
-              disabled={loading}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Marquer contacté
-            </button>
-          )}
-          {req.status === "CONTACTED" && (
-            <button
-              onClick={() => patch({ action: "whatsapp" })}
-              disabled={loading}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Ajouté dans le groupe WhatsApp
-            </button>
-          )}
-          {req.status === "WHATSAPP_ADDED" && (
-            <button
-              onClick={() => patch({ action: "integrate" })}
-              disabled={loading}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Marquer intégré ✓
-            </button>
-          )}
-          {req.status === "ABANDONED" && (
-            <button
-              onClick={() => patch({ action: "reopen" })}
-              disabled={loading}
-              className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Rouvrir
-            </button>
-          )}
-          {req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
-            <button
-              onClick={() => setAbandonOpen(true)}
-              disabled={loading}
-              className="px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              Abandonner
-            </button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {/* Actions manager uniquement */}
+            {isManager && (req.status === "SUBMITTED" || req.status === "ASSIGNED") && (
+              <button
+                onClick={openAssignModal}
+                disabled={loading}
+                className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
+              </button>
+            )}
+            {isManager && req.status === "ABANDONED" && (
+              <button
+                onClick={() => patch({ action: "reopen" })}
+                disabled={loading}
+                className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Rouvrir
+              </button>
+            )}
+
+            {/* Actions berger (et manager) */}
+            {canActAsBerger && req.status === "ASSIGNED" && (
+              <button
+                onClick={() => patch({ action: "contact" })}
+                disabled={loading}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Marquer contacté
+              </button>
+            )}
+            {canActAsBerger && req.status === "CONTACTED" && (
+              <button
+                onClick={() => patch({ action: "whatsapp" })}
+                disabled={loading}
+                className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Ajouté dans le groupe WhatsApp
+              </button>
+            )}
+            {canActAsBerger && req.status === "WHATSAPP_ADDED" && (
+              <button
+                onClick={() => patch({ action: "integrate" })}
+                disabled={loading}
+                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                Marquer intégré ✓
+              </button>
+            )}
+            {canActAsBerger && req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
+              <button
+                onClick={() => setAbandonOpen(true)}
+                disabled={loading}
+                className="px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+              >
+                Abandonner
+              </button>
+            )}
+          </div>
         </div>
       )}
 

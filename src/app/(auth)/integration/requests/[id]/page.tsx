@@ -39,7 +39,12 @@ export default async function IntegrationRequestDetailPage({
         <span className="text-gray-300">/</span>
         <span className="text-sm text-gray-600 font-medium">{req.firstName} {req.lastName}</span>
       </div>
-      <RequestDetail request={req} churchId={churchId} isScoped={scope.scoped} />
+      <RequestDetail
+        request={req}
+        churchId={churchId}
+        isScoped={scope.scoped}
+        currentUserId={session.user.id!}
+      />
     </div>
   );
 }
