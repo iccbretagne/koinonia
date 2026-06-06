@@ -101,7 +101,7 @@ export default async function AuthLayout({
   let isProtocoleMember = false;
 
   if (currentChurchId && userPermissions.has("planning:view")) {
-    const isGlobalManager = userPermissions.has("events:manage");
+    const isGlobalManager = session.user.isSuperAdmin || userPermissions.has("events:manage");
 
     // One query for all department functions we need to check
     const serviceDepts = await prisma.department.findMany({
@@ -147,7 +147,7 @@ export default async function AuthLayout({
   const integrationLinks: { href: string; label: string }[] = [];
 
   if (currentChurchId) {
-    const isGlobalManager = userPermissions.has("events:manage");
+    const isGlobalManager = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIdsSet = new Set(
       churchRoles
         .filter((r) => r.churchId === currentChurchId)
