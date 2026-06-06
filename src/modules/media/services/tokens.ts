@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import type { MediaTokenType } from "@/generated/prisma/client";
+import type { MediaTokenType, Prisma } from "@/generated/prisma/client";
 
 export function generateToken(): string {
   return randomBytes(32).toString("hex"); // 64 chars
@@ -16,7 +16,14 @@ export function isTokenExpired(expiresAt: Date | null): boolean {
 export function getTokenUrlPath(type: MediaTokenType): string {
   if (type === "MEDIA" || type === "MEDIA_ALL") return "d";
   if (type === "GALLERY") return "g";
+  if (type === "COLLECTION") return "c";
   return "v";
+}
+
+export interface CollectionConfig {
+  scope: "photos" | "files" | "both";
+  eventIds: string[];
+  projectIds: string[];
 }
 
 interface CreateTokenOptions {
@@ -24,10 +31,15 @@ interface CreateTokenOptions {
   label?: string;
   expiresInDays?: number;
   onlyApproved?: boolean;
+  collectionConfig?: CollectionConfig;
 }
 
 type CreateTokenWithTarget = CreateTokenOptions &
-  ({ mediaEventId: string; mediaProjectId?: never } | { mediaProjectId: string; mediaEventId?: never });
+  (
+    | { mediaEventId: string; mediaProjectId?: never }
+    | { mediaProjectId: string; mediaEventId?: never }
+    | { mediaEventId?: never; mediaProjectId?: never }
+  );
 
 /** Valide un token de partage et retourne ses données + l'événement ou projet lié. */
 export async function validateMediaShareToken(
@@ -89,24 +101,29 @@ export async function validateMediaShareToken(
 }
 
 export async function createMediaShareToken(options: CreateTokenWithTarget) {
-  const { type, label, expiresInDays, onlyApproved, mediaEventId, mediaProjectId } = options;
+  const { type, label, expiresInDays, onlyApproved, collectionConfig, mediaEventId, mediaProjectId } = options;
 
   const token = generateToken();
   const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
     : null;
-  const config = type === "GALLERY" ? { onlyApproved: onlyApproved ?? false } : null;
+  const config =
+    type === "GALLERY"
+      ? { onlyApproved: onlyApproved ?? false }
+      : type === "COLLECTION" && collectionConfig
+        ? collectionConfig
+        : null;
 
+  // Prisma requires exactly one of mediaEventId / mediaProjectId / neither (for COLLECTION)
+  // We must build the data object with a concrete shape to satisfy the union type.
+  const configValue = config as unknown as Prisma.InputJsonValue;
+  const baseData = { token, type, label, expiresAt, ...(config ? { config: configValue } : {}) };
   const shareToken = await prisma.mediaShareToken.create({
-    data: {
-      token,
-      type,
-      label,
-      expiresAt,
-      ...(config && { config }),
-      ...(mediaEventId && { mediaEventId }),
-      ...(mediaProjectId && { mediaProjectId }),
-    },
+    data: mediaEventId
+      ? { ...baseData, mediaEventId }
+      : mediaProjectId
+        ? { ...baseData, mediaProjectId }
+        : baseData,
   });
 
   const baseUrl = process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";

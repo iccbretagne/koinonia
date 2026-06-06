@@ -1,0 +1,2 @@
+-- AlterEnum: Add COLLECTION to MediaTokenType
+ALTER TABLE `media_share_tokens` MODIFY COLUMN `type` ENUM('VALIDATOR', 'MEDIA', 'MEDIA_ALL', 'PREVALIDATOR', 'GALLERY', 'COLLECTION') NOT NULL;
