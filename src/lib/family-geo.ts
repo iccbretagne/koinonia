@@ -33,23 +33,33 @@ interface FamilyGeoResult {
   familyName: string;
 }
 
+interface FamilyApiZone {
+  geojson?: { geometry?: { type: string; coordinates: unknown } };
+}
+
+interface FamilyApiItem {
+  id: number;
+  name: string;
+  communes?: FamilyApiZone[];
+  quartiers?: FamilyApiZone[];
+}
+
 export async function findFamilyByCoords(lat: number, lng: number): Promise<FamilyGeoResult | null> {
   try {
     const res = await fetch(`${FAMILIES_API_URL}/api/geojson`, {
-      next: { revalidate: 3600 }, // cache 1h
+      next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
-    const geojson = await res.json();
+    const data: FamilyApiItem[] = await res.json();
 
-    // geojson.features: each feature has properties.familyId, properties.familyName
-    // We use a simple ray-casting point-in-polygon (no Turf dependency server-side)
-    for (const feature of geojson.features ?? []) {
-      if (!feature.geometry) continue;
-      const { familyId, familyName } = feature.properties ?? {};
-      if (!familyId) continue;
-
-      if (pointInGeometry(lat, lng, feature.geometry)) {
-        return { familyId: Number(familyId), familyName: String(familyName) };
+    for (const family of data) {
+      const zones = [...(family.communes ?? []), ...(family.quartiers ?? [])];
+      for (const zone of zones) {
+        const geom = zone.geojson?.geometry;
+        if (!geom) continue;
+        if (pointInGeometry(lat, lng, geom as { type: string; coordinates: unknown })) {
+          return { familyId: family.id, familyName: family.name };
+        }
       }
     }
     return null;

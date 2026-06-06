@@ -4,14 +4,9 @@ import { requireIntegrationAccess } from "@/lib/auth";
 const FAMILIES_API_URL =
   process.env.FAMILIES_API_URL ?? "https://familles.iccrennes.fr";
 
-interface FamilyFeature {
-  properties: {
-    id?: number;
-    familyId?: number;
-    name?: string;
-    familyName?: string;
-    [key: string]: unknown;
-  };
+interface FamilyItem {
+  id: number;
+  name: string;
 }
 
 export async function GET(request: Request) {
@@ -27,16 +22,11 @@ export async function GET(request: Request) {
     });
     if (!res.ok) throw new ApiError(502, "Impossible de récupérer les familles");
 
-    const geojson = await res.json();
-    const families: { id: number; name: string }[] = (geojson.features ?? [])
-      .map((f: FamilyFeature) => ({
-        id: Number(f.properties.familyId ?? f.properties.id),
-        name: String(f.properties.familyName ?? f.properties.name ?? ""),
-      }))
-      .filter((f: { id: number; name: string }) => f.id && f.name)
-      .sort((a: { id: number; name: string }, b: { id: number; name: string }) =>
-        a.name.localeCompare(b.name, "fr")
-      );
+    const data: FamilyItem[] = await res.json();
+    const families = (Array.isArray(data) ? data : [])
+      .map((f) => ({ id: Number(f.id), name: String(f.name ?? "") }))
+      .filter((f) => f.id && f.name)
+      .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
     return successResponse({ families });
   } catch (error) {
