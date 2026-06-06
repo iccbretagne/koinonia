@@ -1,9 +1,53 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireIntegrationAccess } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
 import { z } from "zod";
-import type { FamilyAgeRange, FamilyChurchStatus } from "@/generated/prisma/client";
+import type { FamilyAgeRange, FamilyChurchStatus, FamilyIntegrationStatus, Prisma } from "@/generated/prisma/client";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const churchId = searchParams.get("churchId");
+    if (!churchId) throw new ApiError(400, "churchId requis");
+
+    const { scope } = await requireIntegrationAccess(churchId);
+
+    const status = searchParams.get("status") as FamilyIntegrationStatus | null;
+    const familyId = searchParams.get("familyId");
+    const search = searchParams.get("search");
+
+    const where: Prisma.FamilyIntegrationRequestWhereInput = {
+      churchId,
+      archivedAt: null,
+      ...(status && { status }),
+      ...(familyId && { assignedFamilyId: parseInt(familyId) }),
+      ...(scope.scoped && { assignedFamilyId: { in: scope.familyIds } }),
+      ...(search && {
+        OR: [
+          { firstName: { contains: search } },
+          { lastName: { contains: search } },
+          { email: { contains: search } },
+          { phone: { contains: search } },
+        ],
+      }),
+    };
+
+    const requests = await prisma.familyIntegrationRequest.findMany({
+      where,
+      include: {
+        assignedBerger: { select: { id: true, name: true, email: true } },
+        member: { select: { id: true, firstName: true, lastName: true } },
+      },
+      orderBy: { submittedAt: "desc" },
+    });
+
+    return successResponse(requests);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
 
 const createSchema = z.object({
   // Identité
