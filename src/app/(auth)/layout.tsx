@@ -170,6 +170,7 @@ export default async function AuthLayout({
     }
     if (isIntegrationMember) {
       integrationLinks.push({ href: "/integration/leaders", label: "Bergers" });
+      integrationLinks.push({ href: "/integration/stats", label: "Statistiques" });
     }
   }
 
