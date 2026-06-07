@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.4] - 2026-06-07
+
+### Corrigé
+
+- Liens de partage collection : l'URL utilisait `localhost` au lieu de l'URL publique — l'origine est maintenant extraite de la requête HTTP entrante
+- Formulaire rejoindre (`/rejoindre/[churchSlug]`) : sur mobile, la sélection d'une suggestion d'adresse ne déclenchait pas la détection de famille — passage de `onMouseDown` à `onPointerDown` avec `e.preventDefault()` pour garantir l'ordre des événements touch/mouse
+- Module intégration : lien vers le formulaire public non cliquable dans la bannière du dashboard — rendu en balise `<a>` avec ouverture dans un nouvel onglet
+- Compatibilité `AUTH_URL` (NextAuth v5) : tous les endpoints générant des URLs (emails berger, rappels inactivité, crons) tombaient sur `localhost` faute de prendre en compte la variable `AUTH_URL`
+
 ## [v1.5.3] - 2026-06-07
 
 ### Corrigé
