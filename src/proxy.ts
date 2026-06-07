@@ -11,10 +11,11 @@ export function proxy(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith("/api/cron")) {
       return NextResponse.next();
     }
-    // Allow public media token routes (validate, gallery, download — token-based auth)
+    // Allow public media token routes (validate, gallery, download, collection — token-based auth)
     if (request.nextUrl.pathname.startsWith("/api/media/validate/") ||
         request.nextUrl.pathname.startsWith("/api/media/gallery/") ||
-        request.nextUrl.pathname.startsWith("/api/media/download/")) {
+        request.nextUrl.pathname.startsWith("/api/media/download/") ||
+        request.nextUrl.pathname.startsWith("/api/media/collection/")) {
       return NextResponse.next();
     }
     // Allow MRBS SSO endpoints (authenticated by Bearer secret, not session cookie)
