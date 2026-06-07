@@ -126,7 +126,7 @@ export async function createMediaShareToken(options: CreateTokenWithTarget & { b
         : baseData,
   });
 
-  const baseUrl = callerBaseUrl ?? process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = callerBaseUrl ?? process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   return {
     ...shareToken,

@@ -131,7 +131,7 @@ function buildInactivityEmail(params: {
     CONTACTED: "Le contact a été établi mais aucune progression n'a été enregistrée.",
   };
   const context = contextMap[status] ?? "Aucune mise à jour récente.";
-  const appUrl = process.env.NEXTAUTH_URL ?? "";
+  const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
   <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">

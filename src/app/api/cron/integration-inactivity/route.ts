@@ -159,7 +159,7 @@ function buildInactivityEmail(params: {
   };
   const context = contextMap[status] ?? "Aucune mise à jour récente.";
 
-  const appUrl = process.env.NEXTAUTH_URL ?? "";
+  const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
 
   return `<!DOCTYPE html>
 <html lang="fr">
