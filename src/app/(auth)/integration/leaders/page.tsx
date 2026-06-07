@@ -19,7 +19,12 @@ export default async function IntegrationLeadersPage() {
       orderBy: [{ familyId: "asc" }, { role: "asc" }],
     }),
     prisma.user.findMany({
-      where: { churchRoles: { some: { churchId } } },
+      where: {
+        OR: [
+          { churchRoles: { some: { churchId } } },
+          { memberLinks: { some: { churchId, validatedAt: { not: null } } } },
+        ],
+      },
       select: { id: true, name: true, email: true, image: true },
       orderBy: { name: "asc" },
     }),
