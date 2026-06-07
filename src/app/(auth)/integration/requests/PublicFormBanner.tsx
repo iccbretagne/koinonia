@@ -20,7 +20,7 @@ export default function PublicFormBanner({ slug }: { slug: string }) {
       </svg>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-icc-violet mb-0.5">Lien public — formulaire de rejoindre une famille</p>
-        <p className="text-xs text-gray-500 truncate">{url}</p>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-icc-violet hover:underline truncate block">{url}</a>
       </div>
       <button
         onClick={copy}

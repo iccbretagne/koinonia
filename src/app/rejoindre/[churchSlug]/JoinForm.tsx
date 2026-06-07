@@ -366,7 +366,8 @@ export default function JoinForm({ churchId, churchName }: Props) {
                 <li key={s.label}>
                   <button
                     type="button"
-                    onMouseDown={() => {
+                    onPointerDown={(e) => {
+                      e.preventDefault();
                       set("address", s.label);
                       clearSuggestions();
                       familySuggestion.lookup(s.label);
