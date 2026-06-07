@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.5] - 2026-06-07
+
+### Corrigé
+
+- Sélection des bergers : inclut désormais les utilisateurs ayant un lien membre validé pour l'église, pas seulement ceux avec un rôle Koinonia explicite
+
 ## [v1.5.4] - 2026-06-07
 
 ### Corrigé
