@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.7] - 2026-06-07
+
+### Corrigé
+
+- Administration : la fonction système "Intégration" était absente de la page "Fonctions des départements" — impossible d'assigner la fonction à un département, bloquant la visibilité de la section Intégration pour les membres de l'équipe (#353)
+
 ## [v1.5.6] - 2026-06-07
 
 ### Corrigé
