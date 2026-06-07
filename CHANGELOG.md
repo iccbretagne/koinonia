@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.6] - 2026-06-07
+
+### Corrigé
+
+- Collections média : l'URL générée utilisait l'origine interne (Traefik ne forward pas le header Host sur `/api/admin/`) au lieu de l'URL publique — `APP_URL` est maintenant utilisé comme base (#351)
+
 ## [v1.5.5] - 2026-06-07
 
 ### Corrigé
