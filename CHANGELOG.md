@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.8] - 2026-06-07
+
+### Corrigé
+
+- Collections média : le téléchargement échouait pour les visiteurs non authentifiés — le middleware bloquait `/api/media/collection/` avec 401, alors que la sécurité est gérée par le token de partage (#355)
+
 ## [v1.5.7] - 2026-06-07
 
 ### Corrigé
