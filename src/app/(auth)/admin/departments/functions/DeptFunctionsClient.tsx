@@ -38,18 +38,24 @@ const FUNCTIONS = [
     description: "Gère l'agenda pastoral et planifie les rendez-vous.",
     icon: "📅",
   },
+  {
+    key: "INTEGRATION" as const,
+    label: "Intégration",
+    description: "Traite les demandes d'intégration dans les familles d'impact.",
+    icon: "🤝",
+  },
 ];
 
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
 
-  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE") {
+  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION") {
     return depts.find((d) => d.function === fn)?.id ?? "";
   }
 
   async function handleChange(
-    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE",
+    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION",
     newDeptId: string
   ) {
     setSaving(fn);
