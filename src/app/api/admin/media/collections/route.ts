@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         eventIds: data.eventIds,
         projectIds: data.projectIds,
       },
+      baseUrl: new URL(request.url).origin,
     });
 
     await logAudit({

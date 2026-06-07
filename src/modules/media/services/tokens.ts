@@ -100,8 +100,8 @@ export async function validateMediaShareToken(
   return shareToken;
 }
 
-export async function createMediaShareToken(options: CreateTokenWithTarget) {
-  const { type, label, expiresInDays, onlyApproved, collectionConfig, mediaEventId, mediaProjectId } = options;
+export async function createMediaShareToken(options: CreateTokenWithTarget & { baseUrl?: string }) {
+  const { type, label, expiresInDays, onlyApproved, collectionConfig, mediaEventId, mediaProjectId, baseUrl: callerBaseUrl } = options;
 
   const token = generateToken();
   const expiresAt = expiresInDays
@@ -126,7 +126,7 @@ export async function createMediaShareToken(options: CreateTokenWithTarget) {
         : baseData,
   });
 
-  const baseUrl = process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const baseUrl = callerBaseUrl ?? process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   return {
     ...shareToken,

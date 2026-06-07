@@ -27,7 +27,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    const baseUrl = process.env.APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const baseUrl = new URL(_request.url).origin;
 
     // Vérifier si l'utilisateur a la permission media:manage pour voir les tokens sensibles
     const { rolePermissions } = await import("@/lib/registry");
@@ -80,6 +80,7 @@ export async function POST(
       label: data.label,
       expiresInDays: data.expiresInDays,
       onlyApproved: data.onlyApproved,
+      baseUrl: new URL(request.url).origin,
     });
 
     return successResponse(token, 201);
