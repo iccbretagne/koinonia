@@ -116,7 +116,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
-      setJourneys((prev) => [json.data, ...prev]);
+      setJourneys((prev) => [json, ...prev]);
       setShowCreate(false);
       setForm({ firstName: "", lastName: "", phone: "", email: "", notes: "" });
     } catch (e: unknown) {
@@ -136,7 +136,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
       });
       if (!res.ok) return;
       const json = await res.json();
-      const updated: Journey = json.data;
+      const updated: Journey = json;
       setJourneys((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
       if (selected?.id === updated.id) setSelected(updated);
     },

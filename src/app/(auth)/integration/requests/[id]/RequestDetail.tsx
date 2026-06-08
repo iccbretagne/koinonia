@@ -510,7 +510,7 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
       });
       const json = await res.json();
       if (!res.ok) { setJourneyError(json.error ?? "Erreur"); return; }
-      setJourneyId(json.data.id);
+      setJourneyId(json.id);
     } catch { setJourneyError("Erreur réseau"); }
     finally { setJourneyLoading(false); }
   }
