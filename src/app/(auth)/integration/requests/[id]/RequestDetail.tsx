@@ -477,7 +477,7 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
         <div className="space-y-4">
           <p className="text-sm text-gray-600">Indiquez l&apos;état du nouveau converti à la clôture du suivi.</p>
           {(["integratedToFamily", "isStar", "followsPcnc"] as const).map((key) => {
-            const labels = { integratedToFamily: "Intégré dans une famille", isStar: "Devenu STAR (sert dans un département)", followsPcnc: "Suit le PCNC (Parcours Chrétien Nouveau Converti)" };
+            const labels = { integratedToFamily: "Intégré dans une famille", isStar: "Devenu STAR (sert dans un département)", followsPcnc: "Suit le PCNC (Parcours de Croissance de la Nouvelle Création)" };
             return (
               <label key={key} className="flex items-center gap-3 cursor-pointer">
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${completeFlags[key] ? "bg-purple-600 border-purple-600" : "border-gray-300"}`}>
