@@ -63,6 +63,8 @@ const createSchema = z.object({
   // Options
   pastoralCareRequested: z.boolean().default(false),
   pastoralMessage:       z.string().max(2000).optional().or(z.literal("")),
+  // Appel au salut
+  salvationCall: z.boolean().default(false),
   // Lien membre optionnel (si connecté)
   memberId:    z.string().optional(),
   churchId:    z.string().min(1),
@@ -144,6 +146,7 @@ export async function POST(request: Request) {
         churchStatus: data.churchStatus as FamilyChurchStatus,
         memberId: data.memberId || null,
         pastoralCareRequested: data.pastoralCareRequested,
+        salvationCall: data.salvationCall,
         appointmentRequestId,
         suggestedFamilyId,
         suggestedFamilyName,

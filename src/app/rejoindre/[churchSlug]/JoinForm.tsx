@@ -155,6 +155,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
     churchStatus: "VISITOR",
     pastoralCareRequested: false,
     pastoralMessage: "",
+    salvationCall: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessData | null>(null);
@@ -498,6 +499,37 @@ export default function JoinForm({ churchId, churchName }: Props) {
             <FieldError errors={fieldErrors} field="pastoralMessage" />
           </div>
         )}
+      </div>
+
+      {/* Appel au salut */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-3">
+        <h2 className="text-base font-semibold text-gray-900">Appel au salut</h2>
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="mt-0.5">
+            <input
+              type="checkbox"
+              checked={form.salvationCall}
+              onChange={(e) => set("salvationCall", e.target.checked)}
+              className="sr-only"
+            />
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                form.salvationCall
+                  ? "bg-icc-violet border-icc-violet"
+                  : "border-gray-300 group-hover:border-icc-violet"
+              }`}
+            >
+              {form.salvationCall && (
+                <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-gray-700">
+            J&apos;ai fait l&apos;appel au salut lors du culte
+          </span>
+        </label>
       </div>
 
       {globalError && (
