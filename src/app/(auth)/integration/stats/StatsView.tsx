@@ -42,7 +42,49 @@ const CHURCH_STATUS_LABELS: Record<string, string> = {
 
 const FUNNEL_STATUSES = ["SUBMITTED", "ASSIGNED", "CONTACTED", "WHATSAPP_ADDED", "INTEGRATED"] as const;
 
+const MSDP_STATUS_LABELS: Record<string, string> = {
+  SUBMITTED:    "Appel reçu",
+  ASSIGNED:     "Conseiller assigné",
+  CONTACTED:    "Contacté",
+  IN_FORMATION: "En formation",
+  COMPLETED:    "Terminé",
+  ABANDONED:    "Abandonné",
+};
+
+const MSDP_STATUS_COLORS: Record<string, string> = {
+  SUBMITTED:    "bg-amber-400",
+  ASSIGNED:     "bg-blue-400",
+  CONTACTED:    "bg-indigo-400",
+  IN_FORMATION: "bg-purple-400",
+  COMPLETED:    "bg-emerald-500",
+  ABANDONED:    "bg-red-400",
+};
+
+const MSDP_STATUS_BADGE: Record<string, string> = {
+  SUBMITTED:    "bg-amber-50 text-amber-700 border-amber-200",
+  ASSIGNED:     "bg-blue-50 text-blue-700 border-blue-200",
+  CONTACTED:    "bg-indigo-50 text-indigo-700 border-indigo-200",
+  IN_FORMATION: "bg-purple-50 text-purple-700 border-purple-200",
+  COMPLETED:    "bg-emerald-50 text-emerald-700 border-emerald-200",
+  ABANDONED:    "bg-red-50 text-red-700 border-red-200",
+};
+
+const MSDP_FUNNEL_STATUSES = ["SUBMITTED", "ASSIGNED", "CONTACTED", "IN_FORMATION", "COMPLETED"] as const;
+
 const MONTH_NAMES = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+
+interface MsdpStats {
+  salvationCalls: number;
+  total: number;
+  byStatus: { status: string; count: number }[];
+  completed: number;
+  abandoned: number;
+  completionRate: number | null;
+  avgDaysToContact: number | null;
+  avgDaysToCompletion: number | null;
+  byMonth: { month: string; count: number }[];
+  completedFlags: { integratedToFamily: number; isStar: number; followsPcnc: number };
+}
 
 interface Props {
   total: number;
@@ -57,6 +99,7 @@ interface Props {
   byChurchStatus: { churchStatus: string; count: number }[];
   byMonth: { month: string; count: number }[];
   pastoralCare: number;
+  msdp: MsdpStats;
 }
 
 function KpiCard({
@@ -116,6 +159,7 @@ export default function StatsView({
   byChurchStatus,
   byMonth,
   pastoralCare,
+  msdp,
 }: Props) {
   const statusMap = Object.fromEntries(byStatus.map((r) => [r.status, r.count]));
   const maxMonth = Math.max(...byMonth.map((m) => m.count), 1);
@@ -261,6 +305,133 @@ export default function StatsView({
           </p>
         </div>
       )}
+
+      {/* ── Section MSDP ──────────────────────────────────────────────────── */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-gray-900">Suivi MSDP</h2>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
+            Nouveaux convertis
+          </span>
+        </div>
+
+        {/* KPI row MSDP */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <KpiCard label="Appels au salut" value={msdp.salvationCalls} sub="total reçus" />
+          <KpiCard label="Suivis démarrés" value={msdp.total} sub={msdp.salvationCalls > 0 ? `${Math.round((msdp.total / msdp.salvationCalls) * 100)}% des appels` : undefined} />
+          <KpiCard label="Terminés" value={msdp.completed} accent />
+          <KpiCard label="Abandonnés" value={msdp.abandoned} />
+          <KpiCard
+            label="Taux complétion"
+            value={msdp.completionRate !== null ? `${msdp.completionRate}%` : "–"}
+            sub="terminés / suivis"
+          />
+          <KpiCard
+            label="Délai 1er contact"
+            value={msdp.avgDaysToContact !== null ? `${msdp.avgDaysToContact}j` : "–"}
+            sub="appel → contact"
+          />
+        </div>
+
+        {msdp.total === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-400">
+            Aucun suivi MSDP démarré. Les suivis apparaissent ici une fois créés depuis une demande avec appel au salut.
+          </div>
+        ) : (
+          <>
+            {/* Entonnoir MSDP */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Entonnoir MSDP</h3>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
+                {MSDP_FUNNEL_STATUSES.map((s) => {
+                  const count = msdp.byStatus.find((r) => r.status === s)?.count ?? 0;
+                  const pct = msdp.total > 0 ? Math.round((count / msdp.total) * 100) : 0;
+                  return (
+                    <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
+                      <span className="text-sm font-bold text-gray-900">{count}</span>
+                      <div className="w-full bg-gray-100 rounded-lg overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
+                        <div
+                          className={`${MSDP_STATUS_COLORS[s]} rounded-lg transition-all`}
+                          style={{ height: `${Math.max(pct, 4)}%`, minHeight: "8px" }}
+                        />
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${MSDP_STATUS_BADGE[s]}`}>
+                        {MSDP_STATUS_LABELS[s]}
+                      </span>
+                      <span className="text-xs text-gray-400">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bottom row MSDP */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tendance mensuelle MSDP */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 className="font-semibold text-gray-900 mb-4">Suivis démarrés par mois (12 derniers mois)</h3>
+                {msdp.byMonth.every((m) => m.count === 0) ? (
+                  <p className="text-sm text-gray-400">Aucun suivi sur la période</p>
+                ) : (() => {
+                  const msdpMaxMonth = Math.max(...msdp.byMonth.map((m) => m.count), 1);
+                  return (
+                    <div className="flex items-end gap-1.5 h-28">
+                      {msdp.byMonth.map((m) => {
+                        const height = Math.max(Math.round((m.count / msdpMaxMonth) * 100), m.count > 0 ? 4 : 0);
+                        const [year, month] = m.month.split("-");
+                        const label = `${MONTH_NAMES[parseInt(month) - 1]} ${year.slice(2)}`;
+                        return (
+                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                            <span className="text-xs text-gray-600 font-medium">{m.count > 0 ? m.count : ""}</span>
+                            <div className="w-full bg-purple-500 rounded-t-md transition-all" style={{ height: `${height}%`, minHeight: m.count > 0 ? "4px" : "0" }} />
+                            <span className="text-[10px] text-gray-400 leading-tight text-center">{label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Résultats à la clôture */}
+              <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+                <h3 className="font-semibold text-gray-900">Résultats à la clôture</h3>
+                {msdp.completed === 0 ? (
+                  <p className="text-sm text-gray-400">Aucun suivi terminé</p>
+                ) : (
+                  <div className="space-y-3">
+                    {[
+                      { label: "Intégré en famille", value: msdp.completedFlags.integratedToFamily },
+                      { label: "Devenu STAR", value: msdp.completedFlags.isStar },
+                      { label: "Suit le PCNC", value: msdp.completedFlags.followsPcnc },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-36 shrink-0">{label}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-2">
+                          <div
+                            className="bg-purple-500 rounded-full h-2 transition-all"
+                            style={{ width: msdp.completed > 0 ? `${Math.round((value / msdp.completed) * 100)}%` : "0%" }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 w-6 text-right shrink-0">{value}</span>
+                        <span className="text-xs text-gray-400 w-8 text-right shrink-0">
+                          {msdp.completed > 0 ? `${Math.round((value / msdp.completed) * 100)}%` : "–"}
+                        </span>
+                      </div>
+                    ))}
+                    {msdp.avgDaysToCompletion !== null && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 font-medium">Délai moyen appel → clôture</p>
+                        <p className="text-2xl font-bold text-purple-700 mt-0.5">{msdp.avgDaysToCompletion}j</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
