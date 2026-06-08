@@ -518,7 +518,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
             </div>
           </div>
           <span className="text-sm text-gray-700">
-            Oui, je souhaite être accompagné par un pasteur
+            Oui, je souhaite être accompagné par l&apos;équipe des soins pastoraux
           </span>
         </label>
 
