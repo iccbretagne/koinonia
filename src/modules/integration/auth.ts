@@ -17,6 +17,17 @@ export async function isIntegrationMember(session: Session, churchId: string): P
   return count > 0;
 }
 
+export async function isMsdpMember(session: Session, churchId: string): Promise<boolean> {
+  const userDeptIds = session.user.churchRoles
+    .filter((r) => r.churchId === churchId)
+    .flatMap((r) => r.departments.map((d) => d.department.id));
+  if (userDeptIds.length === 0) return false;
+  const count = await prisma.department.count({
+    where: { function: "MSDP", ministry: { churchId }, id: { in: userDeptIds } },
+  });
+  return count > 0;
+}
+
 export async function requireIntegrationAccess(
   churchId: string
 ): Promise<{ session: Session; scope: IntegrationScope }> {

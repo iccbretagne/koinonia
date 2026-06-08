@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireAuth } from "@/lib/auth";
+import { isMsdpMember, isIntegrationMember } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
@@ -12,10 +13,15 @@ const createSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = createSchema.parse(await request.json());
-    const { session, scope } = await requireIntegrationAccess(body.churchId);
+    const session = await requireAuth();
 
-    if (scope.scoped)
-      throw new ApiError(403, "Seule l'équipe intégration peut créer un suivi MSDP");
+    const canCreate =
+      session.user.isSuperAdmin ||
+      (await isIntegrationMember(session, body.churchId)) ||
+      (await isMsdpMember(session, body.churchId));
+
+    if (!canCreate)
+      throw new ApiError(403, "Seule l'équipe intégration ou MSDP peut créer un suivi MSDP");
 
     const req = await prisma.familyIntegrationRequest.findUnique({
       where: { id: body.requestId },

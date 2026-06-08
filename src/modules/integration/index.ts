@@ -2,7 +2,7 @@ import { defineModule } from "@/core/module-registry";
 
 export { integrationBus } from "./bus";
 export type { IntegrationEvents } from "./events";
-export { requireIntegrationAccess, isIntegrationMember } from "./auth";
+export { requireIntegrationAccess, isIntegrationMember, isMsdpMember } from "./auth";
 export type { IntegrationScope } from "./auth";
 export {
   buildConfirmationEmail,

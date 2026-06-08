@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireAuth } from "@/lib/auth";
-import { isIntegrationMember } from "@/modules/integration";
+import { isIntegrationMember, isMsdpMember } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 import type { Session } from "next-auth";
@@ -14,7 +14,8 @@ async function hasManagementAccess(session: Session, churchId: string): Promise<
     const perms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
     if (perms.has("members:manage") || perms.has("events:manage")) return true;
   }
-  return isIntegrationMember(session, churchId);
+  if (await isIntegrationMember(session, churchId)) return true;
+  return isMsdpMember(session, churchId);
 }
 
 export async function GET(
