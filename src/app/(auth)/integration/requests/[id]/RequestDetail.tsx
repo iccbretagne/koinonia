@@ -487,6 +487,34 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
   const [notes, setNotes] = useState(initial.notes ?? "");
   const [notesLoading, setNotesLoading] = useState(false);
 
+  // Création dossier parcours
+  const [journeyId, setJourneyId] = useState<string | null>(initial.personJourney?.id ?? null);
+  const [journeyLoading, setJourneyLoading] = useState(false);
+  const [journeyError, setJourneyError] = useState<string | null>(null);
+
+  async function createJourney() {
+    setJourneyLoading(true);
+    setJourneyError(null);
+    try {
+      const res = await fetch("/api/integration/parcours", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          churchId,
+          firstName: req.firstName,
+          lastName: req.lastName,
+          phone: req.phone ?? undefined,
+          email: req.email ?? undefined,
+          sourceRequestId: req.id,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setJourneyError(json.error ?? "Erreur"); return; }
+      setJourneyId(json.data.id);
+    } catch { setJourneyError("Erreur réseau"); }
+    finally { setJourneyLoading(false); }
+  }
+
   // Assign modal state
   const [assignOpen, setAssignOpen] = useState(false);
   const [families, setFamilies] = useState<Family[]>([]);
@@ -616,7 +644,7 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
         <div>
           <h1 className="text-xl font-bold text-gray-900">{req.firstName} {req.lastName}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{fmt(req.submittedAt)}</p>
-          {req.personJourney && (
+          {journeyId ? (
             <a
               href="/integration/parcours"
               className="inline-flex items-center gap-1 mt-1 text-xs text-icc-violet hover:underline"
@@ -626,7 +654,18 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
               </svg>
               Voir le dossier parcours
             </a>
-          )}
+          ) : isIntegrationMember ? (
+            <div className="mt-1 flex items-center gap-2">
+              <button
+                onClick={createJourney}
+                disabled={journeyLoading}
+                className="text-xs text-icc-violet hover:underline disabled:opacity-50"
+              >
+                {journeyLoading ? "Création…" : "+ Créer le dossier parcours"}
+              </button>
+              {journeyError && <span className="text-xs text-red-500">{journeyError}</span>}
+            </div>
+          ) : null}
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
           <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[req.status] ?? "bg-gray-100 text-gray-600"}`}>
