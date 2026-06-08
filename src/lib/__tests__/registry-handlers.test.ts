@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+// next-auth requires Next.js server modules unavailable in Vitest
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn(),
+  requirePermission: vi.fn(),
+}));
 
 /**
  * Vérifie les abonnements cross-module enregistrés dans src/lib/registry.ts.
