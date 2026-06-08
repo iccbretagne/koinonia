@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/lib/auth";
+import { requireIntegrationAccess } from "@/modules/integration";
 
 export async function GET(request: Request) {
   try {

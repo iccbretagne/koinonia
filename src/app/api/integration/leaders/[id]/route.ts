@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/lib/auth";
+import { requireIntegrationAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 
 export async function DELETE(
