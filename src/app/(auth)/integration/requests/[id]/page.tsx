@@ -1,4 +1,5 @@
-import { requireAuth, getCurrentChurchId, requireIntegrationAccess } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireIntegrationAccess } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +21,12 @@ export default async function IntegrationRequestDetailPage({
       assignedBerger: { select: { id: true, name: true, email: true } },
       member: { select: { id: true, firstName: true, lastName: true } },
       appointmentRequest: { select: { id: true, status: true } },
+      msdpFollowUp: {
+        include: {
+          assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
+        },
+      },
+      personJourney: { select: { id: true } },
     },
   });
 

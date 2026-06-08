@@ -45,6 +45,18 @@ module.exports = {
         path: "^src/modules/(?!core/)",
       },
     },
+    {
+      name: "no-integration-imports-other-modules",
+      severity: "error",
+      comment: "Le module integration ne peut pas importer directement depuis un autre module.",
+      from: {
+        path: "^src/modules/integration/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!integration/)",
+      },
+    },
 
     /**
      * Règle 2 — src/core ne dépend d'aucun module applicatif.

@@ -57,6 +57,7 @@ interface Request {
   assignedFamilyName: string | null;
   assignedBerger: { id: string; name: string | null } | null;
   pastoralCareRequested: boolean;
+  salvationCall: boolean;
 }
 
 interface Props {
@@ -160,6 +161,11 @@ export default function IntegrationDashboard({ requests, isScoped }: Props) {
                           Soin pastoral
                         </span>
                       )}
+                      {r.salvationCall && (
+                        <span className="inline-block mt-0.5 text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                          Appel au salut
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">
                       <p>{AGE_LABELS[r.ageRange] ?? r.ageRange}</p>
@@ -212,6 +218,11 @@ export default function IntegrationDashboard({ requests, isScoped }: Props) {
                       {r.pastoralCareRequested && (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-600">
                           Soin pastoral
+                        </span>
+                      )}
+                      {r.salvationCall && (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs bg-purple-50 text-purple-700">
+                          Appel au salut
                         </span>
                       )}
                     </div>

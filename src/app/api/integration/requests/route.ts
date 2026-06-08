@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/lib/auth";
+import { requireIntegrationAccess, buildConfirmationEmail } from "@/modules/integration";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
 import { z } from "zod";
@@ -63,6 +63,8 @@ const createSchema = z.object({
   // Options
   pastoralCareRequested: z.boolean().default(false),
   pastoralMessage:       z.string().max(2000).optional().or(z.literal("")),
+  // Appel au salut
+  salvationCall: z.boolean().default(false),
   // Lien membre optionnel (si connecté)
   memberId:    z.string().optional(),
   churchId:    z.string().min(1),
@@ -144,12 +146,29 @@ export async function POST(request: Request) {
         churchStatus: data.churchStatus as FamilyChurchStatus,
         memberId: data.memberId || null,
         pastoralCareRequested: data.pastoralCareRequested,
+        salvationCall: data.salvationCall,
         appointmentRequestId,
         suggestedFamilyId,
         suggestedFamilyName,
         status: "SUBMITTED",
       },
     });
+
+    // Créer automatiquement un dossier PersonJourney (dédup silencieux si doublon téléphone/email)
+    await prisma.personJourney
+      .create({
+        data: {
+          churchId: data.churchId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email || null,
+          sourceRequestId: integrationRequest.id,
+        },
+      })
+      .catch(() => {
+        // Doublon silencieux : dossier existant conservé
+      });
 
     // Email de confirmation au demandeur
     if (data.email) {
@@ -176,46 +195,3 @@ export async function POST(request: Request) {
   }
 }
 
-function buildConfirmationEmail(params: {
-  firstName: string;
-  churchName: string;
-  suggestedFamilyName: string | null;
-  pastoralCare: boolean;
-}): string {
-  const { firstName, churchName, suggestedFamilyName, pastoralCare } = params;
-
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
-  <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)">
-    <div style="background:#5E17EB;padding:32px 32px 24px">
-      <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700">${churchName}</h1>
-      <p style="margin:6px 0 0;color:rgba(255,255,255,.8);font-size:14px">Demande d'intégration reçue</p>
-    </div>
-    <div style="padding:32px">
-      <p style="margin:0 0 16px;color:#111827;font-size:15px">Bonjour ${firstName},</p>
-      <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6">
-        Nous avons bien reçu ta demande pour rejoindre une famille. Notre équipe va prendre en charge ton dossier et te contacter très prochainement.
-      </p>
-      ${suggestedFamilyName ? `
-      <div style="background:#f5f3ff;border-left:4px solid #5E17EB;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 16px">
-        <p style="margin:0;color:#5E17EB;font-size:13px;font-weight:600">Famille suggérée</p>
-        <p style="margin:4px 0 0;color:#374151;font-size:14px">${suggestedFamilyName}</p>
-      </div>` : ""}
-      ${pastoralCare ? `
-      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 16px">
-        <p style="margin:0;color:#92400e;font-size:13px">Ta demande de rendez-vous pastoral a également été enregistrée. Un pasteur te contactera séparément.</p>
-      </div>` : ""}
-      <p style="margin:24px 0 0;color:#6b7280;font-size:13px">
-        À bientôt,<br>
-        <strong style="color:#111827">L'équipe d'intégration — ${churchName}</strong>
-      </p>
-    </div>
-    <div style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb">
-      <p style="margin:0;color:#9ca3af;font-size:11px">Ce message est automatique. Merci de ne pas y répondre directement.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-}

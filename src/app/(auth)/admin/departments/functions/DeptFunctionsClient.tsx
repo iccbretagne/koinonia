@@ -44,18 +44,24 @@ const FUNCTIONS = [
     description: "Traite les demandes d'intégration dans les familles d'impact.",
     icon: "🤝",
   },
+  {
+    key: "MSDP" as const,
+    label: "Soins Pastoraux (MSDP)",
+    description: "Assure le suivi des nouveaux convertis (appel au salut). Les membres sont proposés comme conseillers dans le workflow MSDP.",
+    icon: "🕊️",
+  },
 ];
 
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
 
-  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION") {
+  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP") {
     return depts.find((d) => d.function === fn)?.id ?? "";
   }
 
   async function handleChange(
-    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION",
+    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP",
     newDeptId: string
   ) {
     setSaving(fn);
