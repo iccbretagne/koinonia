@@ -53,7 +53,7 @@ const MSDP_STATUS_LABELS: Record<string, string> = {
   SUBMITTED:    "Appel reçu",
   ASSIGNED:     "Conseiller assigné",
   CONTACTED:    "Premier contact établi",
-  IN_FORMATION: "En formation PCNC",
+  IN_FORMATION: "En formation",
   COMPLETED:    "Terminé",
   ABANDONED:    "Abandonné",
 };
@@ -71,7 +71,7 @@ const MSDP_WORKFLOW_STEPS = [
   { status: "SUBMITTED",    label: "Appel reçu",          tsKey: "createdAt" },
   { status: "ASSIGNED",     label: "Conseiller assigné",  tsKey: "assignedAt" },
   { status: "CONTACTED",    label: "Premier contact",     tsKey: "contactedAt" },
-  { status: "IN_FORMATION", label: "En formation PCNC",   tsKey: "inFormationAt" },
+  { status: "IN_FORMATION", label: "En formation",   tsKey: "inFormationAt" },
   { status: "COMPLETED",    label: "Terminé",             tsKey: "completedAt" },
 ];
 
@@ -330,7 +330,7 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
                   disabled={loading}
                   className="px-3 py-1.5 bg-purple-700 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
-                  En formation PCNC
+                  En formation
                 </button>
               )}
               {canAct && followUp.status === "IN_FORMATION" && (
