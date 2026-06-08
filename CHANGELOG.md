@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.5.9] - 2026-06-08
+
+### Ajouté
+
+- **Module intégration v2** : suivi complet des nouveaux venus et convertis (#358)
+  - Formulaire public `/rejoindre` : case à cocher "Appel au salut", réorganisation des sections, texte soins pastoraux revu
+  - Workflow MSDP : suivi des nouveaux convertis (SUBMITTED → ASSIGNED → CONTACTED → IN_FORMATION → COMPLETED / ABANDONED), assignation d'un conseiller, notes, accès scopé par rôle
+  - Dossier Parcours (`PersonJourney`) : 4 jalons avec timestamps (famille, PCNC, service STAR, discipolat), déduplication par téléphone/email, création automatique à la soumission du formulaire
+  - Page `/integration/parcours` : liste avec filtres "sans X jalon", barre de progression, toggle inline des jalons
+  - KPIs MSDP dans les statistiques d'intégration : entonnoir, délais moyens, tendance mensuelle, taux de réalisation des jalons
+  - Fonctions INTEGRATION et MSDP dans la page "Fonctions des départements"
+
 ## [v1.5.8] - 2026-06-07
 
 ### Corrigé
