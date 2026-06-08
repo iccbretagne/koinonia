@@ -126,7 +126,7 @@ export default async function IntegrationStatsPage() {
     }),
     prisma.msdpFollowUp.findMany({
       where: { churchId, status: "COMPLETED", completedAt: { not: null } },
-      select: { createdAt: true, completedAt: true, integratedToFamily: true, isStar: true, followsPcnc: true },
+      select: { createdAt: true, completedAt: true },
     }),
     prisma.msdpFollowUp.findMany({
       where: { churchId, createdAt: { gte: msdpSince } },
@@ -170,11 +170,13 @@ export default async function IntegrationStatsPage() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, count]) => ({ month, count }));
 
-  const completedFlags = {
-    integratedToFamily: msdpCompletedRaw.filter((r) => r.integratedToFamily).length,
-    isStar: msdpCompletedRaw.filter((r) => r.isStar).length,
-    followsPcnc: msdpCompletedRaw.filter((r) => r.followsPcnc).length,
-  };
+  // Jalons parcours depuis PersonJourney (dossiers liés à des demandes appel au salut)
+  const [pjIntegratedInFamily, pjFollowsPcnc, pjIsStar, pjInDiscipleship] = await Promise.all([
+    prisma.personJourney.count({ where: { churchId, integratedInFamily: true } }),
+    prisma.personJourney.count({ where: { churchId, followsPcnc: true } }),
+    prisma.personJourney.count({ where: { churchId, isStar: true } }),
+    prisma.personJourney.count({ where: { churchId, inDiscipleship: true } }),
+  ]);
 
   const msdpStats = {
     salvationCalls,
@@ -186,7 +188,12 @@ export default async function IntegrationStatsPage() {
     avgDaysToContact,
     avgDaysToCompletion,
     byMonth: msdpByMonth,
-    completedFlags,
+    journeyMilestones: {
+      integratedInFamily: pjIntegratedInFamily,
+      followsPcnc: pjFollowsPcnc,
+      isStar: pjIsStar,
+      inDiscipleship: pjInDiscipleship,
+    },
   };
 
   return (

@@ -83,7 +83,7 @@ interface MsdpStats {
   avgDaysToContact: number | null;
   avgDaysToCompletion: number | null;
   byMonth: { month: string; count: number }[];
-  completedFlags: { integratedToFamily: number; isStar: number; followsPcnc: number };
+  journeyMilestones: { integratedInFamily: number; followsPcnc: number; isStar: number; inDiscipleship: number };
 }
 
 interface Props {
@@ -393,29 +393,30 @@ export default function StatsView({
                 })()}
               </div>
 
-              {/* Résultats à la clôture */}
+              {/* Résultats jalons parcours */}
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-                <h3 className="font-semibold text-gray-900">Résultats à la clôture</h3>
-                {msdp.completed === 0 ? (
-                  <p className="text-sm text-gray-400">Aucun suivi terminé</p>
+                <h3 className="font-semibold text-gray-900">Jalons parcours (dossiers actifs)</h3>
+                {msdp.total === 0 ? (
+                  <p className="text-sm text-gray-400">Aucun suivi démarré</p>
                 ) : (
                   <div className="space-y-3">
                     {[
-                      { label: "Intégré en famille", value: msdp.completedFlags.integratedToFamily },
-                      { label: "Devenu STAR", value: msdp.completedFlags.isStar },
-                      { label: "Suit le PCNC", value: msdp.completedFlags.followsPcnc },
+                      { label: "Intégré en famille", value: msdp.journeyMilestones.integratedInFamily },
+                      { label: "Devenu STAR", value: msdp.journeyMilestones.isStar },
+                      { label: "Suit le PCNC", value: msdp.journeyMilestones.followsPcnc },
+                      { label: "En discipolat", value: msdp.journeyMilestones.inDiscipleship },
                     ].map(({ label, value }) => (
                       <div key={label} className="flex items-center gap-2">
                         <span className="text-xs text-gray-500 w-36 shrink-0">{label}</span>
                         <div className="flex-1 bg-gray-100 rounded-full h-2">
                           <div
                             className="bg-purple-500 rounded-full h-2 transition-all"
-                            style={{ width: msdp.completed > 0 ? `${Math.round((value / msdp.completed) * 100)}%` : "0%" }}
+                            style={{ width: msdp.total > 0 ? `${Math.round((value / msdp.total) * 100)}%` : "0%" }}
                           />
                         </div>
                         <span className="text-xs font-medium text-gray-700 w-6 text-right shrink-0">{value}</span>
                         <span className="text-xs text-gray-400 w-8 text-right shrink-0">
-                          {msdp.completed > 0 ? `${Math.round((value / msdp.completed) * 100)}%` : "–"}
+                          {msdp.total > 0 ? `${Math.round((value / msdp.total) * 100)}%` : "–"}
                         </span>
                       </div>
                     ))}

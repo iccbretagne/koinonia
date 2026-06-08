@@ -85,6 +85,7 @@ model Church {
   familyIntegrationRequests FamilyIntegrationRequest[]
   familyLeaderAssignments   FamilyLeaderAssignment[]
   msdpFollowUps             MsdpFollowUp[]
+  personJourneys            PersonJourney[]
 
   @@map("churches")
 }
@@ -146,6 +147,7 @@ model User {
   familyLeaderAssignments FamilyLeaderAssignment[]
   familyIntegrationRequestsAssigned FamilyIntegrationRequest[] @relation("IntegrationAssignedBerger")
   msdpFollowUpsAssigned             MsdpFollowUp[]             @relation("MsdpAssignedConseiller")
+  personJourneysCreated             PersonJourney[]            @relation("PersonJourneyCreator")
 
   @@map("users")
 }
@@ -1126,6 +1128,9 @@ model FamilyIntegrationRequest {
   // Suivi MSDP (nouveau converti)
   msdpFollowUp MsdpFollowUp?
 
+  // Dossier de parcours (créé automatiquement à la soumission ou manuellement)
+  personJourney PersonJourney?
+
   church Church @relation(fields: [churchId], references: [id])
 
   createdAt DateTime @default(now())
@@ -1173,11 +1178,6 @@ model MsdpFollowUp {
   completedAt   DateTime?
   abandonedAt   DateTime?
 
-  // Flags de clôture
-  integratedToFamily Boolean @default(false)
-  isStar             Boolean @default(false)
-  followsPcnc        Boolean @default(false)
-
   notes String? @db.Text
 
   church Church @relation(fields: [churchId], references: [id])
@@ -1188,6 +1188,57 @@ model MsdpFollowUp {
   @@index([churchId, status])
   @@index([assignedConseillerMsdpId])
   @@map("msdp_follow_ups")
+}
+
+/// Parcours d'intégration d'une personne dans l'église.
+/// Centralise les 4 jalons clés : famille, PCNC, service (STAR), discipolat.
+model PersonJourney {
+  id       String @id @default(cuid())
+  churchId String
+
+  // Identité
+  firstName String  @db.VarChar(100)
+  lastName  String  @db.VarChar(100)
+  phone     String? @db.VarChar(30)
+  email     String? @db.VarChar(255)
+
+  // Lien optionnel vers la demande d'intégration source
+  sourceRequestId String?                   @unique
+  sourceRequest   FamilyIntegrationRequest? @relation(fields: [sourceRequestId], references: [id], onDelete: SetNull)
+
+  // Jalon 1 : intégration dans une famille d'impact
+  integratedInFamily Boolean   @default(false)
+  familyIntegratedAt DateTime?
+
+  // Jalon 2 : suivi PCNC (Parcours de Croissance de la Nouvelle Création)
+  followsPcnc   Boolean   @default(false)
+  pcncStartedAt DateTime?
+
+  // Jalon 3 : serviteur actif (STAR)
+  isStar    Boolean   @default(false)
+  starSince DateTime?
+
+  // Jalon 4 : suivi de discipolat
+  inDiscipleship    Boolean   @default(false)
+  discipleshipSince DateTime?
+
+  notes String? @db.Text
+
+  // Auteur du dossier (null si créé automatiquement)
+  createdById String?
+  createdBy   User?   @relation("PersonJourneyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, createdAt])
+  @@index([churchId, integratedInFamily])
+  @@index([churchId, followsPcnc])
+  @@index([churchId, isStar])
+  @@index([churchId, inDiscipleship])
+  @@map("person_journeys")
 }
 
 /// Association berger/co-berger à une famille (référentiel externe).

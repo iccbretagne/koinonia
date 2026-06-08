@@ -50,12 +50,7 @@ const patchSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("contact") }),
   z.object({ action: z.literal("in_formation") }),
-  z.object({
-    action: z.literal("complete"),
-    integratedToFamily: z.boolean().default(false),
-    isStar: z.boolean().default(false),
-    followsPcnc: z.boolean().default(false),
-  }),
+  z.object({ action: z.literal("complete") }),
   z.object({ action: z.literal("abandon") }),
   z.object({ action: z.literal("reopen") }),
   z.object({
@@ -121,13 +116,7 @@ export async function PATCH(
       case "complete":
         if (followUp.status !== "IN_FORMATION")
           throw new ApiError(400, "Transition invalide : le suivi doit être IN_FORMATION");
-        updateData = {
-          status: "COMPLETED",
-          completedAt: now,
-          integratedToFamily: body.integratedToFamily,
-          isStar: body.isStar,
-          followsPcnc: body.followsPcnc,
-        };
+        updateData = { status: "COMPLETED", completedAt: now };
         break;
 
       case "abandon":

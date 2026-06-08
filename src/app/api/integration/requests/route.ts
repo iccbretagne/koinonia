@@ -154,6 +154,22 @@ export async function POST(request: Request) {
       },
     });
 
+    // Créer automatiquement un dossier PersonJourney (dédup silencieux si doublon téléphone/email)
+    await prisma.personJourney
+      .create({
+        data: {
+          churchId: data.churchId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email || null,
+          sourceRequestId: integrationRequest.id,
+        },
+      })
+      .catch(() => {
+        // Doublon silencieux : dossier existant conservé
+      });
+
     // Email de confirmation au demandeur
     if (data.email) {
       await sendEmail({

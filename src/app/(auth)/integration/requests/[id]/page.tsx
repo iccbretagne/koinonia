@@ -26,6 +26,7 @@ export default async function IntegrationRequestDetailPage({
           assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
         },
       },
+      personJourney: { select: { id: true } },
     },
   });
 

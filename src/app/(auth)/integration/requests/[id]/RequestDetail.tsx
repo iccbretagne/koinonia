@@ -89,9 +89,6 @@ interface MsdpFollowUpType {
   inFormationAt: Date | string | null;
   completedAt: Date | string | null;
   abandonedAt: Date | string | null;
-  integratedToFamily: boolean;
-  isStar: boolean;
-  followsPcnc: boolean;
   notes: string | null;
   createdAt: Date | string;
 }
@@ -126,6 +123,7 @@ interface Request {
   lat: number | null;
   lng: number | null;
   msdpFollowUp: MsdpFollowUpType | null;
+  personJourney: { id: string } | null;
 }
 
 interface Family { id: number; name: string; }
@@ -196,7 +194,6 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
 
   // Complete modal
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [completeFlags, setCompleteFlags] = useState({ integratedToFamily: false, isStar: false, followsPcnc: false });
   const [completeLoading, setCompleteLoading] = useState(false);
 
   const isCounselor = followUp?.assignedConseillerMsdpId === currentUserId;
@@ -258,7 +255,7 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
 
   async function submitComplete() {
     setCompleteLoading(true);
-    const ok = await patch({ action: "complete", ...completeFlags });
+    const ok = await patch({ action: "complete" });
     setCompleteLoading(false);
     if (ok) setCompleteOpen(false);
   }
@@ -335,7 +332,7 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
               )}
               {canAct && followUp.status === "IN_FORMATION" && (
                 <button
-                  onClick={() => { setCompleteFlags({ integratedToFamily: false, isStar: false, followsPcnc: false }); setCompleteOpen(true); }}
+                  onClick={() => setCompleteOpen(true)}
                   disabled={loading}
                   className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
@@ -390,21 +387,6 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
                 );
               })}
             </ol>
-          )}
-
-          {/* Flags at completion */}
-          {isCompleted && (
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className={`px-2 py-1 rounded-full border ${followUp.integratedToFamily ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-gray-50 border-gray-200 text-gray-400"}`}>
-                {followUp.integratedToFamily ? "✓" : "✗"} Intégré en famille
-              </span>
-              <span className={`px-2 py-1 rounded-full border ${followUp.isStar ? "bg-icc-violet/10 border-icc-violet/20 text-icc-violet" : "bg-gray-50 border-gray-200 text-gray-400"}`}>
-                {followUp.isStar ? "✓" : "✗"} STAR
-              </span>
-              <span className={`px-2 py-1 rounded-full border ${followUp.followsPcnc ? "bg-purple-50 border-purple-200 text-purple-700" : "bg-gray-50 border-gray-200 text-gray-400"}`}>
-                {followUp.followsPcnc ? "✓" : "✗"} Suit le PCNC
-              </span>
-            </div>
           )}
 
           {/* Notes */}
@@ -475,19 +457,10 @@ function MsdpSection({ initialFollowUp, requestId, churchId, isIntegrationMember
       {/* Modal : Terminer */}
       <Modal open={completeOpen} onClose={() => setCompleteOpen(false)} title="Clôturer le suivi MSDP">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Indiquez l&apos;état du nouveau converti à la clôture du suivi.</p>
-          {(["integratedToFamily", "isStar", "followsPcnc"] as const).map((key) => {
-            const labels = { integratedToFamily: "Intégré dans une famille", isStar: "Devenu STAR (sert dans un département)", followsPcnc: "Suit le PCNC (Parcours de Croissance de la Nouvelle Création)" };
-            return (
-              <label key={key} className="flex items-center gap-3 cursor-pointer">
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${completeFlags[key] ? "bg-purple-600 border-purple-600" : "border-gray-300"}`}>
-                  {completeFlags[key] && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                </div>
-                <span className="text-sm text-gray-700">{labels[key]}</span>
-                <input type="checkbox" checked={completeFlags[key]} onChange={(e) => setCompleteFlags((f) => ({ ...f, [key]: e.target.checked }))} className="sr-only" />
-              </label>
-            );
-          })}
+          <p className="text-sm text-gray-600">
+            Le suivi MSDP sera marqué comme terminé. Les jalons du parcours (famille, PCNC, service, discipolat)
+            peuvent être mis à jour depuis la section <strong>Parcours</strong>.
+          </p>
           <div className="flex gap-2 justify-end pt-1">
             <button onClick={() => setCompleteOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
             <button
@@ -643,6 +616,17 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
         <div>
           <h1 className="text-xl font-bold text-gray-900">{req.firstName} {req.lastName}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{fmt(req.submittedAt)}</p>
+          {req.personJourney && (
+            <a
+              href="/integration/parcours"
+              className="inline-flex items-center gap-1 mt-1 text-xs text-icc-violet hover:underline"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Voir le dossier parcours
+            </a>
+          )}
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center">
           <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[req.status] ?? "bg-gray-100 text-gray-600"}`}>
