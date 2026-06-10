@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.6.2] - 2026-06-11
+
+### Corrigé
+
+- **CI** : permissions `accounting:*` manquantes dans `permissions.ts` pour SUPER_ADMIN, ADMIN et DEPARTMENT_HEAD — causait un échec du test de parité (#367)
+- **CI** : shim TypeScript `src/types/sharp.d.ts` pour corriger `TS7016` avec sharp 0.35.0 qui ne bundle plus ses types (#367)
+- **Comptabilité** : MINISTER manquant dans la liste `accounting:view` du module (#367)
+
 ## [v1.6.1] - 2026-06-11
 
 ### Corrigé
