@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.6.1] - 2026-06-11
+
+### Corrigé
+
+- **Comptabilité** : `require()` dans `file-storage.ts` remplacé par `import()` dynamique — corrige l'erreur ESLint `no-require-imports` qui faisait échouer la CI (#365)
+
 ## [v1.6.0] - 2026-06-11
 
 ### Ajouté
