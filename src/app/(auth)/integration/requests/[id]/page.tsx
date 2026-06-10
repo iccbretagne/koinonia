@@ -26,7 +26,19 @@ export default async function IntegrationRequestDetailPage({
           assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
         },
       },
-      personJourney: { select: { id: true } },
+      personJourney: {
+        select: {
+          id: true,
+          integratedInFamily: true,
+          familyIntegratedAt: true,
+          followsPcnc: true,
+          pcncStartedAt: true,
+          isStar: true,
+          starSince: true,
+          inDiscipleship: true,
+          discipleshipSince: true,
+        },
+      },
     },
   });
 

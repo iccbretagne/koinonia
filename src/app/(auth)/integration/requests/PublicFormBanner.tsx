@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function PublicFormBanner({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
-  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/rejoindre/${slug}`;
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const url = `${origin}/rejoindre/${slug}`;
 
   function copy() {
     navigator.clipboard.writeText(url).then(() => {
