@@ -43,7 +43,11 @@ export default async function IntegrationRequestsPage() {
           <PublicFormBanner slug={church.slug} />
         </div>
       )}
-      <IntegrationDashboard requests={requests} isScoped={scope.scoped} />
+      <IntegrationDashboard
+        requests={requests}
+        isScoped={scope.scoped}
+        currentUserId={session.user.id!}
+      />
     </div>
   );
 }
