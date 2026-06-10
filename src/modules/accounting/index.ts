@@ -9,7 +9,7 @@ export const accountingModule = defineModule({
     // Soumettre une demande (resp. et co-resp. de département, admins)
     "accounting:submit":  ["SUPER_ADMIN", "ADMIN", "DEPARTMENT_HEAD"],
     // Consulter les demandes (compta = global, dept_head = son département)
-    "accounting:view":    ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "DEPARTMENT_HEAD"],
+    "accounting:view":    ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "MINISTER", "DEPARTMENT_HEAD"],
     // Traiter les demandes (changer statut, valider, rejeter, saisir paiements)
     "accounting:manage":  ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
   },
