@@ -4,6 +4,7 @@ import { buildRolePermissions, roleHasPermission } from "../permissions";
 import { coreModule } from "@/modules/core";
 import { planningModule } from "@/modules/planning";
 import { discipleshipModule } from "@/modules/discipleship";
+import { accountingModule } from "@/modules/accounting";
 // Matrice de référence (source de vérité actuelle)
 import { hasPermission } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/client";
@@ -23,6 +24,7 @@ function buildFullRegistry() {
   r.register(coreModule);
   r.register(planningModule);
   r.register(discipleshipModule);
+  r.register(accountingModule);
   return r;
 }
 
