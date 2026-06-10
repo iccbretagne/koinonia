@@ -20,6 +20,7 @@ interface SidebarProps {
   hasMembersAccess?: boolean;
   hasReports?: boolean;
   hasMyPlanning?: boolean;
+  hasAccounting?: boolean;
   onClose?: () => void;
 }
 
@@ -94,6 +95,14 @@ function IconAgenda({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  );
+}
+
+function IconAccounting({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
     </svg>
   );
 }
@@ -316,6 +325,7 @@ export default function Sidebar({
   hasMembersAccess = false,
   hasReports = false,
   hasMyPlanning = false,
+  hasAccounting = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -338,6 +348,7 @@ export default function Sidebar({
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
   const isIntegrationActive = pathname.startsWith("/integration");
+  const isAccountingActive = pathname.startsWith("/accounting");
   const isAgendaActive =
     (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
     pathname !== "/agenda/request";
@@ -569,7 +580,19 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 9. Réservation de salles (module MRBS optionnel) */}
+      {/* 9. Comptabilité */}
+      {hasAccounting && (
+        <Link
+          href="/accounting/requests"
+          onClick={onClose}
+          className={`${sectionHeaderBase} ${isAccountingActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
+        >
+          <IconAccounting className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Comptabilité</span>
+        </Link>
+      )}
+
+      {/* 10. Réservation de salles (module MRBS optionnel) */}
       {(mrbsUrl || mrbsAdminLink) && (
         <AccordionSection
           title="Salles"

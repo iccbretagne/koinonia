@@ -22,6 +22,7 @@ interface MobileNavSheetProps {
   hasMembersAccess?: boolean;
   hasReports?: boolean;
   hasMyPlanning?: boolean;
+  hasAccounting?: boolean;
   open: boolean;
   onClose: () => void;
 }
@@ -240,6 +241,7 @@ export default function MobileNavSheet({
   hasMembersAccess = false,
   hasReports = false,
   hasMyPlanning = false,
+  hasAccounting = false,
   open,
   onClose,
 }: MobileNavSheetProps) {
@@ -332,6 +334,15 @@ export default function MobileNavSheet({
             icon={<IconDiscipleship className="w-5 h-5" />}
             href="/admin/discipleship"
             isActive={pathname.startsWith("/admin/discipleship")}
+            onClose={onClose}
+          />
+        )}
+        {hasAccounting && (
+          <RootRow
+            label="Comptabilité"
+            icon={<IconCalendar className="w-5 h-5" />}
+            href="/accounting/requests"
+            isActive={pathname.startsWith("/accounting")}
             onClose={onClose}
           />
         )}

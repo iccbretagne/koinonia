@@ -8,7 +8,7 @@ import MobileNavSheet from "@/components/MobileNavSheet";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR";
+type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT";
 
 function hexToLuminance(hex: string): number {
   const clean = hex.replace("#", "");
@@ -35,6 +35,7 @@ interface AuthLayoutShellProps {
   hasMembersAccess: boolean;
   hasReports: boolean;
   hasMyPlanning?: boolean;
+  hasAccounting?: boolean;
   headerColor?: string;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -67,6 +68,7 @@ export default function AuthLayoutShell({
   hasMembersAccess,
   hasReports,
   hasMyPlanning = false,
+  hasAccounting = false,
   headerColor = "#5E17EB",
   userRole,
   header,
@@ -128,6 +130,7 @@ export default function AuthLayoutShell({
             hasMembersAccess={hasMembersAccess}
             hasReports={hasReports}
             hasMyPlanning={hasMyPlanning}
+            hasAccounting={hasAccounting}
             onClose={closeSidebar}
           />
         </div>
@@ -149,6 +152,7 @@ export default function AuthLayoutShell({
           hasMembersAccess={hasMembersAccess}
           hasReports={hasReports}
           hasMyPlanning={hasMyPlanning}
+          hasAccounting={hasAccounting}
           open={sidebarOpen}
           onClose={closeSidebar}
         />
