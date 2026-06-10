@@ -6,6 +6,22 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.6.0] - 2026-06-11
+
+### Ajouté
+
+- **Module Comptabilité** : gestion des demandes de remboursement et avances de budget (#362)
+  - Soumission de demandes (note de frais, avance) avec description, montant et pièces jointes
+  - Workflows de traitement : SUBMITTED → PROCESSING (priorité normale/urgente) → APPROVED → remise
+  - Plan de paiement multi-tranches avec dates prévisionnelles
+  - Remise partielle : saisie du montant versé, création automatique d'une tranche résiduelle
+  - Gestion des pièces jointes : upload (JPEG/PNG/PDF, max 5 Mo), téléchargement, suppression
+  - Stockage fichiers : S3/MinIO si configuré, sinon système de fichiers local
+  - Rôle `ACCOUNTANT` (accounting:view + accounting:manage)
+  - Accès en lecture (accounting:view) pour `MINISTER` et `DEPARTMENT_HEAD`
+  - Demandes récurrentes via séries (hebdomadaire / mensuel)
+  - Notifications à chaque étape du workflow
+
 ## [v1.5.9] - 2026-06-08
 
 ### Ajouté
