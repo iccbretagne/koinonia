@@ -17,7 +17,7 @@ const LOCAL_BASE = path.join(process.cwd(), "uploads", "accounting");
 export async function storeFile(s3Key: string, buffer: Buffer, _mimeType: string): Promise<void> {
   if (S3_CONFIGURED) {
     const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-    const s3 = makeS3Client();
+    const s3 = await makeS3Client();
     await s3.send(new PutObjectCommand({
       Bucket:      process.env.ACCOUNTING_S3_BUCKET!,
       Key:         s3Key,
@@ -35,7 +35,7 @@ export async function getFileUrl(s3Key: string, filename: string): Promise<strin
   if (S3_CONFIGURED) {
     const { GetObjectCommand } = await import("@aws-sdk/client-s3");
     const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
-    const s3 = makeS3Client();
+    const s3 = await makeS3Client();
     return getSignedUrl(
       s3,
       new GetObjectCommand({
@@ -54,7 +54,7 @@ export async function getFileUrl(s3Key: string, filename: string): Promise<strin
 export async function deleteFile(s3Key: string): Promise<void> {
   if (S3_CONFIGURED) {
     const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
-    const s3 = makeS3Client();
+    const s3 = await makeS3Client();
     await s3.send(new DeleteObjectCommand({ Bucket: process.env.ACCOUNTING_S3_BUCKET!, Key: s3Key }));
   } else {
     const localPath = path.join(LOCAL_BASE, ...s3Key.split("/").slice(1));
@@ -76,8 +76,8 @@ export async function serveLocalFile(s3Key: string): Promise<{ buffer: Buffer; m
   }
 }
 
-function makeS3Client() {
-  const { S3Client } = require("@aws-sdk/client-s3");
+async function makeS3Client() {
+  const { S3Client } = await import("@aws-sdk/client-s3");
   return new S3Client({
     region:   process.env.ACCOUNTING_S3_REGION ?? "eu-west-3",
     endpoint: process.env.ACCOUNTING_S3_ENDPOINT,
