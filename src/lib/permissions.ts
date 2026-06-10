@@ -53,6 +53,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "departments:view",
     "departments:manage",
     "discipleship:view",
+    "accounting:view",
   ],
   DEPARTMENT_HEAD: [
     "planning:view",
@@ -62,6 +63,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "events:view",
     "departments:view",
     "discipleship:view",
+    "accounting:view",
   ],
   DISCIPLE_MAKER: [
     "discipleship:view",
@@ -78,6 +80,10 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   AGENDA_QUALIFIER: [
     "agenda:qualify",
     "agenda:view",
+  ],
+  ACCOUNTANT: [
+    "accounting:view",
+    "accounting:manage",
   ],
 };
 

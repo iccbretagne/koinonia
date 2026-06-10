@@ -267,6 +267,7 @@ export default async function AuthLayout({
       : null;
 
   const hasDiscipleship = userPermissions.has("discipleship:view");
+  const hasAccounting = userPermissions.has("accounting:view");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
   const hasPlanningAccess = userPermissions.has("planning:view");
@@ -296,13 +297,14 @@ export default async function AuthLayout({
       mrbsUrl={mrbsUrl}
       mrbsAdminLink={mrbsAdminLink}
       hasDiscipleship={hasDiscipleship}
+      hasAccounting={hasAccounting}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
       hasMembersAccess={hasMembersAccess}
       hasReports={hasReports}
       hasMyPlanning={hasMyPlanning}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR"}
+      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT"}
       headerColor={churchPrimaryColor}
       header={headerContent}
       footer={footerContent}

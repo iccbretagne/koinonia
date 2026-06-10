@@ -56,6 +56,7 @@ model Church {
   name                     String
   slug                     String              @unique
   secretariatEmail         String?
+  accountingEmail          String?
   primaryColor             String  @default("#5E17EB")
   reminderLastSentAt       DateTime?
   planningDigestLastSentAt DateTime?
@@ -86,6 +87,9 @@ model Church {
   familyLeaderAssignments   FamilyLeaderAssignment[]
   msdpFollowUps             MsdpFollowUp[]
   personJourneys            PersonJourney[]
+  // Module comptabilité
+  financialSeries           FinancialSeries[]
+  financialRequests         FinancialRequest[]
 
   @@map("churches")
 }
@@ -100,6 +104,7 @@ enum Role {
   REPORTER
   STAR
   AGENDA_QUALIFIER
+  ACCOUNTANT
 }
 
 model User {
@@ -148,6 +153,12 @@ model User {
   familyIntegrationRequestsAssigned FamilyIntegrationRequest[] @relation("IntegrationAssignedBerger")
   msdpFollowUpsAssigned             MsdpFollowUp[]             @relation("MsdpAssignedConseiller")
   personJourneysCreated             PersonJourney[]            @relation("PersonJourneyCreator")
+  // Module comptabilité
+  financialSeriesSubmitted  FinancialSeries[]    @relation("FinancialSeriesSubmitter")
+  financialRequestsSubmitted FinancialRequest[]  @relation("FinancialRequestSubmitter")
+  financialRequestsProcessed   FinancialRequest[]   @relation("FinancialRequestProcessor")
+  financialPaymentsReleased    FinancialPayment[]   @relation("FinancialPaymentReleaser")
+  financialAttachmentsUploaded FinancialAttachment[] @relation("AccountingAttachmentsUploaded")
 
   @@map("users")
 }
@@ -213,6 +224,8 @@ model Department {
   reportSections    EventReportSection[]
   notices           DepartmentNotice[]
   linkRequests      MemberLinkRequest[] @relation("LinkRequestDept")
+  financialSeries   FinancialSeries[]
+  financialRequests FinancialRequest[]
 
   @@map("departments")
 }
@@ -1239,6 +1252,145 @@ model PersonJourney {
   @@index([churchId, isStar])
   @@index([churchId, inDiscipleship])
   @@map("person_journeys")
+}
+
+// ─── Module Comptabilité ──────────────────────────────────────────────────────
+
+enum FinancialRequestType {
+  EXPENSE_REPORT  // Note de frais — dépense déjà effectuée
+  BUDGET_ADVANCE  // Avance de budget — dépense à venir
+}
+
+enum FinancialRequestStatus {
+  SUBMITTED   // Soumise, en attente de traitement
+  PROCESSING  // En cours de traitement par la compta
+  APPROVED    // Validée, plan de paiement défini
+  REJECTED    // Rejetée (motif obligatoire)
+  CANCELLED   // Annulée par le demandeur (seulement si SUBMITTED)
+}
+
+enum FinancialPriority {
+  URGENT  // Délai de traitement engagé par la compta
+  NORMAL  // Traitée dans les meilleurs délais
+}
+
+enum RecurrenceUnit {
+  WEEK
+  MONTH
+}
+
+enum SeriesStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+/// Série de demandes récurrentes (avances de budget uniquement).
+/// Chaque occurrence est un FinancialRequest indépendant lié à cette série.
+model FinancialSeries {
+  id                 String         @id @default(cuid())
+  churchId           String
+  departmentId       String
+  submittedById      String
+  type               FinancialRequestType
+  label              String         @db.VarChar(200)
+  description        String?        @db.Text
+  amount             Decimal        @db.Decimal(10, 2)
+  recurrenceEvery    Int
+  recurrenceUnit     RecurrenceUnit
+  status             SeriesStatus   @default(ACTIVE)
+  nextOccurrenceDate DateTime
+
+  church       Church      @relation(fields: [churchId], references: [id])
+  department   Department  @relation(fields: [departmentId], references: [id])
+  submittedBy  User        @relation("FinancialSeriesSubmitter", fields: [submittedById], references: [id])
+  requests     FinancialRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, status])
+  @@index([nextOccurrenceDate, status])
+  @@map("financial_series")
+}
+
+/// Demande financière individuelle (note de frais ou occurrence d'avance).
+model FinancialRequest {
+  id               String                 @id @default(cuid())
+  churchId         String
+  departmentId     String
+  submittedById    String
+  seriesId         String?                // null si demande one-shot
+  occurrenceNumber Int?                   // rang dans la série
+  correctionOfId   String?                // référence à la demande rejetée corrigée
+  type             FinancialRequestType
+  label            String                 @db.VarChar(200)
+  description      String?                @db.Text
+  amount           Decimal                @db.Decimal(10, 2)
+  status           FinancialRequestStatus @default(SUBMITTED)
+  priority         FinancialPriority?
+  priorityNote     String?                @db.VarChar(500)
+  rejectionReason  String?                @db.Text
+  processedById    String?
+  processedAt      DateTime?
+
+  church       Church            @relation(fields: [churchId], references: [id])
+  department   Department        @relation(fields: [departmentId], references: [id])
+  submittedBy  User              @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
+  processedBy  User?             @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
+  series       FinancialSeries?  @relation(fields: [seriesId], references: [id])
+  correctionOf FinancialRequest? @relation("RequestCorrections", fields: [correctionOfId], references: [id])
+  corrections  FinancialRequest[] @relation("RequestCorrections")
+  attachments  FinancialAttachment[]
+  payments     FinancialPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, status])
+  @@index([churchId, departmentId, status])
+  @@index([submittedById])
+  @@index([seriesId])
+  @@map("financial_requests")
+}
+
+/// Pièce jointe d'une demande financière (photo de reçu, PDF devis…).
+model FinancialAttachment {
+  id          String            @id @default(cuid())
+  requestId   String?
+  uploadedById String?
+  s3Key       String            @db.VarChar(512)
+  filename    String            @db.VarChar(255)
+  mimeType    String            @db.VarChar(100)
+  size        Int
+
+  request      FinancialRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy   User?             @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
+  uploadedAt   DateTime          @default(now())
+
+  @@index([requestId])
+  @@map("financial_attachments")
+}
+
+/// Tranche de paiement d'une demande validée.
+/// La compta crée 1..N tranches lors de la validation, puis confirme chaque remise.
+model FinancialPayment {
+  id            String    @id @default(cuid())
+  requestId     String
+  amount        Decimal   @db.Decimal(10, 2)
+  scheduledDate DateTime
+  releasedAt     DateTime?   // null = pas encore versé
+  releasedAmount Decimal?    @db.Decimal(10, 2)  // montant effectivement remis (peut être < amount)
+  releasedById   String?     // comptable ayant confirmé la remise
+  note           String?     @db.VarChar(500)
+
+  request    FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  releasedBy User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+  @@map("financial_payments")
 }
 
 /// Association berger/co-berger à une famille (référentiel externe).

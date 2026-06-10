@@ -1164,7 +1164,7 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
           {activeTab === "profil" && (
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Tranche d'âge</span>
+                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Tranche d&apos;âge</span>
                 <span className="text-sm text-gray-800">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
