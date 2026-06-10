@@ -2,6 +2,7 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
+import { sendEmail, buildAccountingStatusEmail } from "@/lib/email";
 import { z } from "zod";
 
 const patchSchema = z.discriminatedUnion("action", [
@@ -169,7 +170,7 @@ export async function PATCH(
           processedAt:     new Date(),
         },
       });
-      await notifySubmitter(existing, "REJECTED", churchId);
+      await notifySubmitter(existing, "REJECTED", churchId, undefined, undefined, body.rejectionReason);
       return successResponse(updated);
     }
 
@@ -216,11 +217,12 @@ async function createNextOccurrence(
 }
 
 async function notifySubmitter(
-  req: { submittedById: string; id: string; label: string },
+  req: { submittedById: string; id: string; label: string; amount: unknown; churchId: string },
   status: string,
   _churchId: string,
   priority?: string,
-  priorityNote?: string
+  priorityNote?: string,
+  rejectionReason?: string
 ) {
   const messages: Record<string, string> = {
     PROCESSING: priority === "URGENT"
@@ -247,4 +249,26 @@ async function notifySubmitter(
       link:    `/accounting/requests/${req.id}`,
     },
   });
+
+  // Email — fire-and-forget, ne bloque pas la réponse
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  prisma.user.findUnique({ where: { id: req.submittedById }, select: { name: true, email: true } })
+    .then(async (user) => {
+      if (!user?.email) return;
+      const church = await prisma.church.findUnique({ where: { id: req.churchId }, select: { name: true } });
+      const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+      const { subject, html } = buildAccountingStatusEmail({
+        userName:        user.name ?? user.email,
+        requestLabel:    req.label,
+        requestAmount:   amount,
+        status:          status as "PROCESSING" | "APPROVED" | "REJECTED" | "CANCELLED",
+        priority,
+        priorityNote,
+        rejectionReason,
+        churchName:      church?.name ?? "Koinonia",
+        requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
+      });
+      return sendEmail({ to: user.email, subject, html });
+    })
+    .catch((err) => console.error("[accounting] sendEmail failed:", err?.message ?? err));
 }

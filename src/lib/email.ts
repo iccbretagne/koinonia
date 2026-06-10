@@ -226,6 +226,108 @@ export function buildAppointmentScheduledEmail(params: {
   };
 }
 
+export function buildAccountingStatusEmail(params: {
+  userName: string;
+  requestLabel: string;
+  requestAmount: string;
+  status: "PROCESSING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  priority?: string | null;
+  priorityNote?: string | null;
+  rejectionReason?: string | null;
+  churchName: string;
+  requestUrl: string;
+}) {
+  const name = escapeHtml(params.userName);
+  const label = escapeHtml(params.requestLabel);
+  const amount = escapeHtml(params.requestAmount);
+  const church = escapeHtml(params.churchName);
+  const url = params.requestUrl;
+
+  const subjects: Record<string, string> = {
+    PROCESSING: `Votre demande est prise en charge — ${church}`,
+    APPROVED:   `Votre demande a été validée ✓ — ${church}`,
+    REJECTED:   `Votre demande n'a pas pu être retenue — ${church}`,
+    CANCELLED:  `Votre demande a été annulée — ${church}`,
+  };
+
+  const intros: Record<string, string> = {
+    PROCESSING: params.priority === "URGENT"
+      ? `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement en priorité urgente${params.priorityNote ? ` : <em>${escapeHtml(params.priorityNote)}</em>` : ""}.`
+      : `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement. Elle sera traitée dans les meilleurs délais.`,
+    APPROVED:   `Votre demande <strong>« ${label} »</strong> (${amount}) a été validée. Consultez le plan de paiement pour connaître les dates de remise.`,
+    REJECTED:   `Votre demande <strong>« ${label} »</strong> (${amount}) n'a malheureusement pas pu être retenue.${params.rejectionReason ? `<br><br>Motif : <em>${escapeHtml(params.rejectionReason)}</em>` : ""}`,
+    CANCELLED:  `Votre demande <strong>« ${label} »</strong> (${amount}) a été annulée.`,
+  };
+
+  return {
+    subject: subjects[params.status],
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia — Comptabilité</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>${intros[params.status]}</p>
+          <p>
+            <a href="${url}" style="display:inline-block;background:#5E17EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;">
+              Voir ma demande →
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous avez soumis une demande financière sur Koinonia.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildAccountingPaymentEmail(params: {
+  userName: string;
+  requestLabel: string;
+  trancheNumber: number;
+  releasedAmount: string;
+  plannedAmount: string;
+  isPartial: boolean;
+  residualAmount?: string;
+  churchName: string;
+  requestUrl: string;
+}) {
+  const name = escapeHtml(params.userName);
+  const label = escapeHtml(params.requestLabel);
+  const church = escapeHtml(params.churchName);
+
+  const body = params.isPartial
+    ? `Un versement partiel de <strong>${escapeHtml(params.releasedAmount)}</strong> sur <strong>${escapeHtml(params.plannedAmount)}</strong> a été confirmé pour la tranche ${params.trancheNumber} de votre demande <strong>« ${label} »</strong>.${params.residualAmount ? ` Le solde restant de <strong>${escapeHtml(params.residualAmount)}</strong> a été reporté en nouvelle tranche.` : ""}`
+    : `La tranche ${params.trancheNumber} de votre demande <strong>« ${label} »</strong> a été remise : <strong>${escapeHtml(params.releasedAmount)}</strong>.`;
+
+  return {
+    subject: `Fonds remis${params.isPartial ? " (partiel)" : ""} — ${label} — ${church}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia — Comptabilité</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>${body}</p>
+          <p>
+            <a href="${params.requestUrl}" style="display:inline-block;background:#5E17EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;">
+              Voir ma demande →
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous avez soumis une demande financière sur Koinonia.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmail(params: {
   memberName: string;
   eventTitle: string;
