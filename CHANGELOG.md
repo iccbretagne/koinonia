@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.6.4] - 2026-06-11
+
+### Ajouté
+
+- **Comptabilité** : email de réception des nouvelles demandes à l'adresse comptabilité configurée par église (#371)
+  - Récapitulatif complet : type, intitulé, montant, département, demandeur, description
+  - Lien direct vers la demande pour traitement immédiat
+  - Champ "Email comptabilité" configurable dans Administration > Églises
+
 ## [v1.6.3] - 2026-06-11
 
 ### Ajouté
