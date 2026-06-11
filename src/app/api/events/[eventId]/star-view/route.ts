@@ -15,6 +15,10 @@ export async function GET(
       where: { id: eventId },
       include: {
         church: { select: { name: true } },
+        welcomeDutyAssignments: {
+          include: { welcomeDutyFamily: { select: { familyName: true } } },
+          orderBy: { createdAt: "asc" },
+        },
         eventDepts: {
           include: {
             department: {
@@ -59,15 +63,21 @@ export async function GET(
       };
     });
 
+    const welcomeFamilies = event.welcomeDutyAssignments.map(
+      (a) => a.welcomeDutyFamily.familyName
+    );
+
     return successResponse({
       event: {
         id: event.id,
         title: event.title,
         date: event.date.toISOString(),
         church: { name: event.church.name },
+        welcomeDutyEnabled: event.welcomeDutyEnabled,
       },
       departments,
       totalStars,
+      welcomeFamilies,
     });
   } catch (error) {
     return errorResponse(error);

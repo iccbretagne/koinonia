@@ -23,9 +23,11 @@ interface StarViewData {
     title: string;
     date: string;
     church: { name: string };
+    welcomeDutyEnabled: boolean;
   };
   departments: DepartmentItem[];
   totalStars: number;
+  welcomeFamilies: string[];
 }
 
 interface Props {
@@ -247,6 +249,25 @@ export default function StarViewClient({ eventId }: Props) {
               {data.totalStars} Star en service
             </span>
           </div>
+          {data.event.welcomeDutyEnabled && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">
+                Accueil :
+              </span>
+              {data.welcomeFamilies.length === 0 ? (
+                <span className="text-white/30 text-xs italic">Non affecté</span>
+              ) : (
+                data.welcomeFamilies.map((name) => (
+                  <span
+                    key={name}
+                    className="bg-icc-jaune/20 text-icc-jaune text-xs font-semibold px-3 py-1 rounded-full"
+                  >
+                    {name}
+                  </span>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Body */}
