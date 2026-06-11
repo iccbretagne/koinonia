@@ -36,6 +36,8 @@ interface AuthLayoutShellProps {
   hasReports: boolean;
   hasMyPlanning?: boolean;
   hasAccounting?: boolean;
+  hasJobs?: boolean;
+  hasJobsManage?: boolean;
   headerColor?: string;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -69,6 +71,8 @@ export default function AuthLayoutShell({
   hasReports,
   hasMyPlanning = false,
   hasAccounting = false,
+  hasJobs = false,
+  hasJobsManage = false,
   headerColor = "#5E17EB",
   userRole,
   header,
@@ -131,6 +135,8 @@ export default function AuthLayoutShell({
             hasReports={hasReports}
             hasMyPlanning={hasMyPlanning}
             hasAccounting={hasAccounting}
+            hasJobs={hasJobs}
+            hasJobsManage={hasJobsManage}
             onClose={closeSidebar}
           />
         </div>
@@ -153,6 +159,8 @@ export default function AuthLayoutShell({
           hasReports={hasReports}
           hasMyPlanning={hasMyPlanning}
           hasAccounting={hasAccounting}
+          hasJobs={hasJobs}
+          hasJobsManage={hasJobsManage}
           open={sidebarOpen}
           onClose={closeSidebar}
         />

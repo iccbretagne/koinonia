@@ -21,6 +21,8 @@ interface SidebarProps {
   hasReports?: boolean;
   hasMyPlanning?: boolean;
   hasAccounting?: boolean;
+  hasJobs?: boolean;
+  hasJobsManage?: boolean;
   onClose?: () => void;
 }
 
@@ -103,6 +105,14 @@ function IconAccounting({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+    </svg>
+  );
+}
+
+function IconJobs({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
     </svg>
   );
 }
@@ -326,6 +336,8 @@ export default function Sidebar({
   hasReports = false,
   hasMyPlanning = false,
   hasAccounting = false,
+  hasJobs = false,
+  hasJobsManage = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -350,6 +362,7 @@ export default function Sidebar({
     pathname.startsWith("/communication");
   const isIntegrationActive = pathname.startsWith("/integration");
   const isAccountingActive = pathname.startsWith("/accounting");
+  const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
   const isAgendaActive =
     (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
     pathname !== "/agenda/request";
@@ -361,7 +374,8 @@ export default function Sidebar({
     !pathname.startsWith("/admin/members") &&
     !pathname.startsWith("/admin/discipleship") &&
     !pathname.startsWith("/admin/pastoral-profiles") &&
-    !pathname.startsWith("/admin/welcome-duty");
+    !pathname.startsWith("/admin/welcome-duty") &&
+    !pathname.startsWith("/admin/jobs");
 
   function activeSection() {
     if (isEventsActive) return "events";
@@ -370,6 +384,7 @@ export default function Sidebar({
     if (isMediaActive) return "media";
     if (isIntegrationActive) return "integration";
     if (isAgendaActive) return "agenda";
+    if (isJobsActive) return "jobs";
     if (isConfigActive) return "config";
     return "planning";
   }
@@ -599,7 +614,32 @@ export default function Sidebar({
         </Link>
       )}
 
-      {/* 10. Réservation de salles (module MRBS optionnel) */}
+      {/* 10. Emploi */}
+      {hasJobs && (
+        <AccordionSection
+          title="Emploi"
+          icon={<IconJobs className="w-4 h-4" />}
+          open={openSection === "jobs"}
+          onToggle={() => toggle("jobs")}
+          isActive={isJobsActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>
+              Offres
+            </NavLink>
+            <NavLink href="/jobs/new" active={pathname === "/jobs/new"} onClose={onClose}>
+              Publier
+            </NavLink>
+            {hasJobsManage && (
+              <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
+                Modérer
+              </NavLink>
+            )}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 11. Réservation de salles (module MRBS optionnel) */}
       {(mrbsUrl || mrbsAdminLink) && (
         <AccordionSection
           title="Salles"

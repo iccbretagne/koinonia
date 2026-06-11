@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type SheetView = "root" | "planning" | "events" | "requests" | "media" | "agenda" | "integration" | "config";
+type SheetView = "root" | "planning" | "events" | "requests" | "media" | "agenda" | "integration" | "jobs" | "config";
 
 interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
@@ -23,6 +23,8 @@ interface MobileNavSheetProps {
   hasReports?: boolean;
   hasMyPlanning?: boolean;
   hasAccounting?: boolean;
+  hasJobs?: boolean;
+  hasJobsManage?: boolean;
   open: boolean;
   onClose: () => void;
 }
@@ -242,6 +244,8 @@ export default function MobileNavSheet({
   hasReports = false,
   hasMyPlanning = false,
   hasAccounting = false,
+  hasJobs = false,
+  hasJobsManage = false,
   open,
   onClose,
 }: MobileNavSheetProps) {
@@ -391,6 +395,15 @@ export default function MobileNavSheet({
             onClick={() => setView("integration")}
           />
         )}
+        {hasJobs && (
+          <RootRow
+            label="Emploi"
+            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+            hasChildren
+            isActive={pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs")}
+            onClick={() => setView("jobs")}
+          />
+        )}
         {mrbsUrl && (
           <RootRow
             label="Salles"
@@ -518,6 +531,21 @@ export default function MobileNavSheet({
     );
   }
 
+  function renderJobs() {
+    return (
+      <>
+        <SheetSubHeader title="Emploi" onBack={() => setView("root")} />
+        <div>
+          <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
+          <SubRow href="/jobs/new" label="Publier" isActive={pathname === "/jobs/new"} onClose={onClose} />
+          {hasJobsManage && (
+            <SubRow href="/admin/jobs" label="Modérer" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
+          )}
+        </div>
+      </>
+    );
+  }
+
   function renderContent() {
     switch (view) {
       case "planning": return renderPlanning();
@@ -526,6 +554,7 @@ export default function MobileNavSheet({
       case "media":        return renderLinks("Médias", mediaLinks);
       case "integration":  return renderLinks("Intégration", integrationLinks);
       case "agenda":       return renderLinks("Agenda pastoral", agendaLinks);
+      case "jobs":         return renderJobs();
       case "config":   return renderConfigLinks(configLinks);
       default:         return renderRoot();
     }

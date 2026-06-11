@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import ProfileClient from "./ProfileClient";
+import JobSubscriptionClient from "./JobSubscriptionClient";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -151,6 +152,9 @@ export default async function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Abonnements Emploi */}
+      <JobSubscriptionClient />
 
       {/* Nouvelle demande */}
       {unlinkableChurches.length > 0 && (

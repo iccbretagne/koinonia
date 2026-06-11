@@ -377,6 +377,65 @@ export function buildAccountingPaymentEmail(params: {
   };
 }
 
+export function buildJobOfferEmail(params: {
+  subscriberName: string | null;
+  jobTitle: string;
+  company: string;
+  type: string;
+  location: string | null;
+  duration: string | null;
+  deadline: Date | null;
+  description: string;
+  contactEmail: string | null;
+  contactUrl: string | null;
+  jobUrl: string;
+}) {
+  const typeLabel = params.type === "EMPLOI" ? "Emploi" : params.type === "STAGE" ? "Stage" : "Alternance";
+  const title = escapeHtml(params.jobTitle);
+  const company = escapeHtml(params.company);
+  const location = params.location ? `<tr><td style="padding:6px 0;color:#6b7280;width:130px;">Lieu</td><td style="padding:6px 0;">${escapeHtml(params.location)}</td></tr>` : "";
+  const duration = params.duration ? `<tr><td style="padding:6px 0;color:#6b7280;">Durée</td><td style="padding:6px 0;">${escapeHtml(params.duration)}</td></tr>` : "";
+  const deadlineStr = params.deadline ? new Date(params.deadline).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : null;
+  const deadline = deadlineStr ? `<tr><td style="padding:6px 0;color:#6b7280;">Date limite</td><td style="padding:6px 0;">${deadlineStr}</td></tr>` : "";
+  const contact = params.contactEmail
+    ? `<p style="margin-top:16px;font-size:14px;">Candidature : <a href="mailto:${escapeHtml(params.contactEmail)}" style="color:#5E17EB;">${escapeHtml(params.contactEmail)}</a></p>`
+    : params.contactUrl
+      ? `<p style="margin-top:16px;font-size:14px;"><a href="${escapeHtml(params.contactUrl)}" style="color:#5E17EB;">Postuler en ligne →</a></p>`
+      : "";
+  const greeting = params.subscriberName ? `<p>Bonjour <strong>${escapeHtml(params.subscriberName)}</strong>,</p>` : "<p>Bonjour,</p>";
+
+  return {
+    subject: `[Emploi] ${typeLabel} — ${params.jobTitle} chez ${params.company}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia — Nouvelle offre ${typeLabel}</h1>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          ${greeting}
+          <p>Une nouvelle offre a été publiée sur Koinonia :</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+            <tr><td style="padding:6px 0;color:#6b7280;width:130px;">Poste</td><td style="padding:6px 0;font-weight:600;">${title}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Entreprise</td><td style="padding:6px 0;">${company}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Type</td><td style="padding:6px 0;">${typeLabel}</td></tr>
+            ${location}${duration}${deadline}
+          </table>
+          ${contact}
+          <p style="margin-top:20px;">
+            <a href="${params.jobUrl}" style="display:inline-block;background:#5E17EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;">
+              Voir l&apos;offre complète →
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous êtes abonné aux notifications d&apos;offres d&apos;emploi sur Koinonia.
+            Gérez vos préférences depuis votre profil.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmail(params: {
   memberName: string;
   eventTitle: string;
