@@ -55,6 +55,9 @@ export const prismaMock = {
   // Module service d'accueil
   welcomeDutyFamily: createModelMock(),
   welcomeDutyAssignment: createModelMock(),
+  // Module emploi
+  jobOffer: createModelMock(),
+  jobNotificationSubscription: createModelMock(),
   $transaction: vi.fn((fn: (tx: typeof prismaMock) => Promise<unknown>) =>
     fn(prismaMock)
   ),
