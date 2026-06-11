@@ -184,6 +184,7 @@ const patchSchema = z.object({
   trackedForDiscipleship: z.boolean().optional(),
   reportEnabled: z.boolean().optional(),
   statsEnabled: z.boolean().optional(),
+  welcomeDutyEnabled: z.boolean().optional(),
   applyToSeries: z.boolean().optional(),
 });
 
@@ -203,6 +204,7 @@ export async function PATCH(
       ...(rest.trackedForDiscipleship !== undefined && { trackedForDiscipleship: rest.trackedForDiscipleship }),
       ...(rest.reportEnabled !== undefined && { reportEnabled: rest.reportEnabled }),
       ...(rest.statsEnabled !== undefined && { statsEnabled: rest.statsEnabled }),
+      ...(rest.welcomeDutyEnabled !== undefined && { welcomeDutyEnabled: rest.welcomeDutyEnabled }),
     };
 
     if (applyToSeries) {
@@ -229,7 +231,7 @@ export async function PATCH(
     const event = await prisma.event.update({
       where: { id: eventId },
       data: updateData,
-      select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true, reportEnabled: true, statsEnabled: true },
+      select: { id: true, allowAnnouncements: true, trackedForDiscipleship: true, reportEnabled: true, statsEnabled: true, welcomeDutyEnabled: true },
     });
 
     await logAudit({ userId: patchSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: updateData });

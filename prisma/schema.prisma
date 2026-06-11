@@ -375,6 +375,7 @@ model Event {
   trackedForDiscipleship     Boolean                  @default(false)
   reportEnabled              Boolean                  @default(false)
   statsEnabled               Boolean                  @default(false)
+  welcomeDutyEnabled         Boolean                  @default(false)
   discipleshipAttendances    DiscipleshipAttendance[]
   report                     EventReport?
   departmentNotices          DepartmentNotice[]

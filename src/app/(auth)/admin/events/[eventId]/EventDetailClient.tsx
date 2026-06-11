@@ -16,6 +16,7 @@ type PendingAction =
   | { type: "trackedForDiscipleship" }
   | { type: "reportEnabled" }
   | { type: "statsEnabled" }
+  | { type: "welcomeDutyEnabled" }
   | { type: "department"; dept: Department };
 
 interface Props {
@@ -25,10 +26,11 @@ interface Props {
   trackedForDiscipleship: boolean;
   reportEnabled: boolean;
   statsEnabled: boolean;
+  welcomeDutyEnabled: boolean;
   departments: Department[];
 }
 
-export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, reportEnabled: initialReportEnabled, statsEnabled: initialStatsEnabled, departments }: Props) {
+export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, reportEnabled: initialReportEnabled, statsEnabled: initialStatsEnabled, welcomeDutyEnabled: initialWelcomeDutyEnabled, departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [loading, setLoading] = useState<string | null>(null);
   const [allowAnnouncements, setAllowAnnouncements] = useState(initialAllowAnnouncements);
@@ -39,6 +41,8 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
   const [savingReport, setSavingReport] = useState(false);
   const [statsEnabled, setStatsEnabled] = useState(initialStatsEnabled);
   const [savingStats, setSavingStats] = useState(false);
+  const [welcomeDutyEnabled, setWelcomeDutyEnabled] = useState(initialWelcomeDutyEnabled);
+  const [savingWelcomeDuty, setSavingWelcomeDuty] = useState(false);
 
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [seriesScope, setSeriesScope] = useState<"single" | "future">("single");
@@ -99,6 +103,17 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
         setStatsEnabled((v) => !v);
       } catch { alert("Erreur"); } finally { setSavingStats(false); }
+    } else if (action.type === "welcomeDutyEnabled") {
+      setSavingWelcomeDuty(true);
+      try {
+        const res = await fetch(`/api/events/${eventId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ welcomeDutyEnabled: !welcomeDutyEnabled, applyToSeries }),
+        });
+        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+        setWelcomeDutyEnabled((v) => !v);
+      } catch { alert("Erreur"); } finally { setSavingWelcomeDuty(false); }
     } else if (action.type === "department") {
       const dept = action.dept;
       setLoading(dept.id);
@@ -129,6 +144,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     if (action.type === "trackedForDiscipleship") return trackedForDiscipleship ? "désactiver le suivi discipolat" : "activer le suivi discipolat";
     if (action.type === "reportEnabled") return reportEnabled ? "désactiver le compte rendu" : "activer le compte rendu";
     if (action.type === "statsEnabled") return statsEnabled ? "désactiver les statistiques" : "activer les statistiques";
+    if (action.type === "welcomeDutyEnabled") return welcomeDutyEnabled ? "désactiver le service d'accueil" : "activer le service d'accueil";
     if (action.type === "department") return action.dept.linked ? `retirer le département «\u00a0${action.dept.name}\u00a0»` : `ajouter le département «\u00a0${action.dept.name}\u00a0»`;
     return "";
   }
@@ -294,6 +310,36 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Saisir / voir le compte rendu
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="mb-6 p-4 bg-white rounded-lg shadow">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Service d&apos;accueil</h2>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <button
+            role="switch"
+            aria-checked={welcomeDutyEnabled}
+            onClick={() => requestAction({ type: "welcomeDutyEnabled" })}
+            disabled={savingWelcomeDuty}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${welcomeDutyEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${welcomeDutyEnabled ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+          <span className="text-sm font-medium text-gray-700">Familles de service attendues</span>
+          {welcomeDutyEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+        </label>
+        <p className="mt-2 text-xs text-gray-500">
+          Si activé, cet événement apparaît dans le planning d&apos;accueil pour l&apos;affectation des familles.
+        </p>
+        {welcomeDutyEnabled && (
+          <div className="mt-3">
+            <Link
+              href="/admin/welcome-duty"
+              className="inline-flex items-center gap-1.5 text-xs text-icc-violet hover:text-icc-violet/80"
+            >
+              Gérer les affectations →
             </Link>
           </div>
         )}

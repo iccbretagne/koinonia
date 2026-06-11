@@ -7,6 +7,7 @@ interface EventItem {
   title: string;
   type: string;
   date: string;
+  welcomeDutyEnabled: boolean;
 }
 
 interface Assignment {
@@ -72,11 +73,10 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       const asData = await asRes.json();
 
       const allEvents: EventItem[] = Array.isArray(evData) ? evData : [];
-      // Keep only events within the selected month
       const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
       setEvents(
         allEvents
-          .filter((e) => new Date(e.date) <= endOfMonth)
+          .filter((e) => new Date(e.date) <= endOfMonth && e.welcomeDutyEnabled)
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       );
       setAssignments(Array.isArray(asData) ? asData : []);
@@ -183,7 +183,8 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
         <p className="text-sm text-gray-400">Chargement…</p>
       ) : events.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-200">
-          <p className="text-gray-400 text-sm">Aucun événement ce mois-ci.</p>
+          <p className="text-gray-400 text-sm">Aucun événement avec service d&apos;accueil ce mois-ci.</p>
+          <p className="text-gray-400 text-xs mt-1">Activez le flag &laquo;&nbsp;Familles de service attendues&nbsp;&raquo; sur les événements concernés.</p>
         </div>
       ) : (
         <div className="space-y-2">

@@ -53,6 +53,7 @@ export default async function EventDetailPage({
         trackedForDiscipleship={event.trackedForDiscipleship}
         reportEnabled={event.reportEnabled}
         statsEnabled={event.statsEnabled}
+        welcomeDutyEnabled={event.welcomeDutyEnabled}
         departments={allDepartments.map((d) => ({
           id: d.id,
           name: d.name,
