@@ -17,11 +17,25 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
-    if (!eventId) throw new ApiError(400, "eventId requis");
+    const from   = searchParams.get("from");
+    const to     = searchParams.get("to");
+
+    if (!eventId && !from) throw new ApiError(400, "eventId ou from requis");
 
     const assignments = await prisma.welcomeDutyAssignment.findMany({
-      where: { eventId, churchId },
-      include: { welcomeDutyFamily: true },
+      where: {
+        churchId,
+        ...(eventId ? { eventId } : {}),
+        ...(from || to ? {
+          event: {
+            date: {
+              ...(from ? { gte: new Date(from) } : {}),
+              ...(to   ? { lte: new Date(to)   } : {}),
+            },
+          },
+        } : {}),
+      },
+      include: { welcomeDutyFamily: true, event: { select: { id: true } } },
       orderBy: { createdAt: "asc" },
     });
 

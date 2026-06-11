@@ -1,9 +1,11 @@
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, getCurrentChurchId } from "@/lib/auth";
 import Link from "next/link";
-import WelcomeDutyPoolClient from "./WelcomeDutyPoolClient";
+import WelcomeDutyShell from "./WelcomeDutyShell";
 
 export default async function WelcomeDutyPage() {
-  await requirePermission("events:manage");
+  const session = await requirePermission("events:manage");
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p className="text-sm text-gray-500">Aucune église sélectionnée.</p>;
 
   return (
     <div>
@@ -12,12 +14,11 @@ export default async function WelcomeDutyPage() {
           ← Administration
         </Link>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Service d&apos;accueil — Pool de familles</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Service d&apos;accueil</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Gérez les familles qui participent à la rotation du service d&apos;accueil.
-        L&apos;affectation aux événements se fait depuis chaque fiche événement.
+        Gérez le pool de familles en rotation et leurs affectations aux événements.
       </p>
-      <WelcomeDutyPoolClient />
+      <WelcomeDutyShell churchId={churchId} />
     </div>
   );
 }
