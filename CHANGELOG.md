@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.7.0] - 2026-06-12
+
+### Ajouté
+
+- **Module Emploi** : offres d'emploi, stages et alternances accessibles à tous les utilisateurs authentifiés (#374)
+  - Publication directe d'offres avec titre, type, entreprise, lieu, description, durée, date limite, contact
+  - Expiration automatique après la date limite (offre filtrée de la liste publique)
+  - Modération (archivage / suppression) par les administrateurs et secrétaires via `/admin/jobs`
+  - Abonnements aux notifications par type (Emploi / Stage / Alternance) et canal (in-app + email)
+  - Préférences d'abonnement gérables depuis le profil utilisateur
+  - Section "Emploi" dédiée dans la sidebar (Offres, Publier, Modérer)
+
 ## [v1.6.4] - 2026-06-11
 
 ### Ajouté
