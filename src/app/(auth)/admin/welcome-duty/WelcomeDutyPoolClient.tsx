@@ -16,11 +16,7 @@ interface ExternalFamily {
   name: string;
 }
 
-interface Props {
-  churchId?: string;
-}
-
-export default function WelcomeDutyPoolClient({ churchId: _churchId }: Props) {
+export default function WelcomeDutyPoolClient() {
   const [pool, setPool] = useState<PoolFamily[]>([]);
   const [available, setAvailable] = useState<ExternalFamily[]>([]);
   const [loadingPool, setLoadingPool] = useState(true);

@@ -11,7 +11,6 @@ interface Assignment {
 
 interface Suggestion {
   id: string;
-  familyId: number;
   familyName: string;
   lastServedAt: string | null;
 }
