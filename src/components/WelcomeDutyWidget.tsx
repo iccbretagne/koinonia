@@ -36,8 +36,8 @@ export default function WelcomeDutyWidget({ eventId }: Props) {
       ]);
       const aData = await aRes.json();
       const sData = await sRes.json();
-      setAssignments(aData.data ?? []);
-      setSuggestions(sData.data ?? []);
+      setAssignments(Array.isArray(aData) ? aData : []);
+      setSuggestions(Array.isArray(sData) ? sData : []);
     } finally {
       setLoading(false);
     }

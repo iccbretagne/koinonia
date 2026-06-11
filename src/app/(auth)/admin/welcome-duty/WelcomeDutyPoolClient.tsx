@@ -35,7 +35,7 @@ export default function WelcomeDutyPoolClient({ churchId: _churchId }: Props) {
     try {
       const res = await fetch("/api/welcome-duty/families?active=false");
       const data = await res.json();
-      setPool(data.data ?? []);
+      setPool(Array.isArray(data) ? data : []);
     } finally {
       setLoadingPool(false);
     }
@@ -50,7 +50,7 @@ export default function WelcomeDutyPoolClient({ churchId: _churchId }: Props) {
       try {
         const res = await fetch("/api/welcome-duty/available-families");
         const data = await res.json();
-        setAvailable(data.data?.families ?? []);
+        setAvailable(data.families ?? []);
       } finally {
         setLoadingAvailable(false);
       }
