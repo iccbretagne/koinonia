@@ -2,6 +2,7 @@ import { requirePermission, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
+import { sendEmail, buildAccountingNewRequestEmail } from "@/lib/email";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
     });
 
     // Notification email compta + in-app (best-effort)
-    notifyAccountingTeam(churchId, req.id, req.label, req.type).catch(() => {});
+    notifyAccountingTeam(churchId, req).catch(() => {});
 
     return successResponse(req, 201);
   } catch (error) {
@@ -110,9 +111,7 @@ export async function POST(request: Request) {
 
 async function notifyAccountingTeam(
   churchId: string,
-  requestId: string,
-  label: string,
-  type: string
+  req: { id: string; label: string; type: string; description: string | null; amount: unknown; department: { name: string }; submittedBy: { name: string | null; email: string | null } }
 ) {
   const church = await prisma.church.findUnique({
     where: { id: churchId },
@@ -131,15 +130,27 @@ async function notifyAccountingTeam(
         userId,
         type:    "ACCOUNTING_NEW_REQUEST",
         title:   "Nouvelle demande financière",
-        message: `${type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${label}`,
-        link:    `/accounting/requests/${requestId}`,
+        message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
+        link:    `/accounting/requests/${req.id}`,
       })),
     });
   }
 
-  // Email compta (TODO: brancher sur le service email existant)
+  // Email à l'adresse comptabilité configurée
   if (church?.accountingEmail) {
-    // emailService.send(...)
-    void church;
+    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    const { subject, html } = buildAccountingNewRequestEmail({
+      requestLabel:   req.label,
+      requestAmount:  amount,
+      requestType:    req.type,
+      departmentName: req.department.name,
+      submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
+      description:    req.description,
+      churchName:     church.name,
+      requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
+    });
+    sendEmail({ to: church.accountingEmail, subject, html })
+      .catch((err) => console.error("[accounting] sendEmail to accountingEmail failed:", err?.message ?? err));
   }
 }

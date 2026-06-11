@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 interface Props {
-  church: { id: string; name: string; slug: string; secretariatEmail: string; primaryColor: string };
+  church: { id: string; name: string; slug: string; secretariatEmail: string; accountingEmail: string; primaryColor: string };
 }
 
 export default function ChurchEditClient({ church }: Props) {
@@ -14,6 +14,7 @@ export default function ChurchEditClient({ church }: Props) {
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
   const [secretariatEmail, setSecretariatEmail] = useState(church.secretariatEmail);
+  const [accountingEmail, setAccountingEmail] = useState(church.accountingEmail);
   const [primaryColor, setPrimaryColor] = useState(church.primaryColor || "#5E17EB");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export default function ChurchEditClient({ church }: Props) {
       const res = await fetch(`/api/churches/${church.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null, primaryColor }),
+        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null, accountingEmail: accountingEmail || null, primaryColor }),
       });
 
       if (!res.ok) {
@@ -67,6 +68,13 @@ export default function ChurchEditClient({ church }: Props) {
           value={secretariatEmail}
           onChange={(e) => setSecretariatEmail(e.target.value)}
           placeholder="secretariat@eglise.fr"
+        />
+        <Input
+          label="Email comptabilité (réception des demandes)"
+          type="email"
+          value={accountingEmail}
+          onChange={(e) => setAccountingEmail(e.target.value)}
+          placeholder="comptabilite@eglise.fr"
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

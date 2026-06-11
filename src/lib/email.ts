@@ -226,6 +226,55 @@ export function buildAppointmentScheduledEmail(params: {
   };
 }
 
+export function buildAccountingNewRequestEmail(params: {
+  requestLabel: string;
+  requestAmount: string;
+  requestType: string;
+  departmentName: string;
+  submitterName: string;
+  description?: string | null;
+  churchName: string;
+  requestUrl: string;
+}) {
+  const label      = escapeHtml(params.requestLabel);
+  const amount     = escapeHtml(params.requestAmount);
+  const type       = params.requestType === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget";
+  const dept       = escapeHtml(params.departmentName);
+  const submitter  = escapeHtml(params.submitterName);
+  const church     = escapeHtml(params.churchName);
+  const desc       = params.description ? `<p style="color:#374151;font-size:14px;margin-top:12px;"><strong>Description :</strong> ${escapeHtml(params.description)}</p>` : "";
+
+  return {
+    subject: `[Compta] Nouvelle demande — ${label} (${amount}) — ${church}`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia — Nouvelle demande financière</h1>
+          <p style="margin: 4px 0 0; font-size: 13px; opacity: 0.85;">${church}</p>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;">
+            <tr><td style="padding:6px 0;color:#6b7280;width:140px;">Type</td><td style="padding:6px 0;font-weight:600;">${type}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Intitulé</td><td style="padding:6px 0;font-weight:600;">${label}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Montant</td><td style="padding:6px 0;font-weight:600;color:#5E17EB;">${amount}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Département</td><td style="padding:6px 0;">${dept}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Demandeur</td><td style="padding:6px 0;">${submitter}</td></tr>
+          </table>
+          ${desc}
+          <p style="margin-top:20px;">
+            <a href="${params.requestUrl}" style="display:inline-block;background:#5E17EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;">
+              Traiter la demande →
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Vous recevez cet email car vous êtes l'adresse comptabilité de ${church}.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildAccountingStatusEmail(params: {
   userName: string;
   requestLabel: string;

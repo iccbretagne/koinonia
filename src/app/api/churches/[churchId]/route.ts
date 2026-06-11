@@ -8,6 +8,7 @@ const updateSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   slug: z.string().min(1, "Le slug est requis"),
   secretariatEmail: z.string().email("Email invalide").nullish(),
+  accountingEmail:  z.string().email("Email invalide").nullish(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
 });
 
