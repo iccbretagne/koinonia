@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import WelcomeDutyWidget from "@/components/WelcomeDutyWidget";
 
 interface Department {
   id: string;
@@ -298,6 +299,8 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
           </div>
         )}
       </div>
+
+      <WelcomeDutyWidget eventId={eventId} />
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4">
         Départements associés

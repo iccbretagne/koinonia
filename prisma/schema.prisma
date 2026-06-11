@@ -90,6 +90,9 @@ model Church {
   // Module comptabilité
   financialSeries           FinancialSeries[]
   financialRequests         FinancialRequest[]
+  // Module service d'accueil
+  welcomeDutyFamilies       WelcomeDutyFamily[]
+  welcomeDutyAssignments    WelcomeDutyAssignment[]
 
   @@map("churches")
 }
@@ -379,6 +382,8 @@ model Event {
   mediaEvents                MediaEvent[]
   // Module intégration : culte où l'appel au salut a été fait
   integrationRequests        FamilyIntegrationRequest[]
+  // Module service d'accueil
+  welcomeDutyAssignments     WelcomeDutyAssignment[]
 
   @@map("events")
 }
@@ -1391,6 +1396,43 @@ model FinancialPayment {
 
   @@index([requestId])
   @@map("financial_payments")
+}
+
+// ─── Module service d'accueil ──────────────────────────────────────
+
+/// Famille inscrite dans le pool de rotation pour le service d'accueil.
+model WelcomeDutyFamily {
+  id         String   @id @default(cuid())
+  churchId   String
+  familyId   Int              // ID dans familles.iccrennes.fr
+  familyName String   @db.VarChar(100)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  church      Church                  @relation(fields: [churchId], references: [id])
+  assignments WelcomeDutyAssignment[]
+
+  @@unique([churchId, familyId])
+  @@index([churchId])
+  @@map("welcome_duty_families")
+}
+
+/// Affectation d'une famille au service d'accueil pour un événement.
+model WelcomeDutyAssignment {
+  id                  String   @id @default(cuid())
+  churchId            String
+  eventId             String
+  welcomeDutyFamilyId String
+  note                String?  @db.VarChar(500)
+  createdAt           DateTime @default(now())
+
+  church            Church            @relation(fields: [churchId], references: [id])
+  event             Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  welcomeDutyFamily WelcomeDutyFamily @relation(fields: [welcomeDutyFamilyId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, welcomeDutyFamilyId])
+  @@index([churchId])
+  @@map("welcome_duty_assignments")
 }
 
 /// Association berger/co-berger à une famille (référentiel externe).

@@ -338,7 +338,8 @@ export default function Sidebar({
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
-    pathname.startsWith("/admin/reports");
+    pathname.startsWith("/admin/reports") ||
+    pathname.startsWith("/admin/welcome-duty");
   const isMembersActive = pathname.startsWith("/admin/members");
   const isRequestsActive =
     pathname.startsWith("/requests") ||
@@ -359,7 +360,8 @@ export default function Sidebar({
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
     !pathname.startsWith("/admin/discipleship") &&
-    !pathname.startsWith("/admin/pastoral-profiles");
+    !pathname.startsWith("/admin/pastoral-profiles") &&
+    !pathname.startsWith("/admin/welcome-duty");
 
   function activeSection() {
     if (isEventsActive) return "events";
@@ -506,8 +508,13 @@ export default function Sidebar({
               Calendrier
             </NavLink>
             {hasEventsManage && (
-              <NavLink href="/admin/events" active={pathname.startsWith("/admin/events")} onClose={onClose}>
+              <NavLink href="/admin/events" active={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>
                 Gestion
+              </NavLink>
+            )}
+            {hasEventsManage && (
+              <NavLink href="/admin/welcome-duty" active={pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>
+                Service d&apos;accueil
               </NavLink>
             )}
             {hasReports && (
