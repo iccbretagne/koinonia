@@ -14,7 +14,6 @@ interface Assignment {
   id: string;
   eventId: string;
   welcomeDutyFamily: { id: string; familyName: string };
-  event: { id: string };
 }
 
 interface Suggestion {
@@ -97,7 +96,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
   }
 
   function assignmentsFor(eventId: string) {
-    return assignments.filter((a) => a.event.id === eventId);
+    return assignments.filter((a) => a.eventId === eventId);
   }
 
   async function openSuggestions(eventId: string) {
@@ -140,9 +139,9 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       const removed = assignments.find((a) => a.id === assignmentId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
       // Re-add to suggestions if the panel is open for that event
-      if (removed && openEventId === removed.event.id) {
+      if (removed && openEventId === removed.eventId) {
         // Refetch suggestions to restore correct order
-        const res2 = await fetch(`/api/welcome-duty/suggestions?eventId=${removed.event.id}&limit=8`);
+        const res2 = await fetch(`/api/welcome-duty/suggestions?eventId=${removed.eventId}&limit=8`);
         const data = await res2.json();
         setSuggestions(Array.isArray(data) ? data : []);
       }

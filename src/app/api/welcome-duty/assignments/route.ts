@@ -35,7 +35,7 @@ export async function GET(request: Request) {
           },
         } : {}),
       },
-      include: { welcomeDutyFamily: true, event: { select: { id: true } } },
+      include: { welcomeDutyFamily: true },
       orderBy: { createdAt: "asc" },
     });
 
