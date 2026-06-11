@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.6.3] - 2026-06-11
+
+### Ajouté
+
+- **Comptabilité** : emails de notification aux demandeurs à chaque étape du workflow — prise en charge, validation, rejet, annulation, remise (totale ou partielle avec mention du solde reporté) (#369)
+
 ## [v1.6.2] - 2026-06-11
 
 ### Corrigé
