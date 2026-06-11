@@ -247,15 +247,17 @@ export default async function AuthLayout({
 
   const footerContent = (
     <footer className="pt-4 pb-20 md:py-4 text-center text-xs text-gray-400">
-      <a
-        href="https://github.com/iccbretagne/koinonia"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:text-gray-600 transition-colors"
-      >
-        Koinonia
-      </a>{" "}
-      <span>v{pkg.version}</span>
+      <span className="inline-flex items-center gap-1">
+        <a
+          href="https://github.com/iccbretagne/koinonia"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-gray-600 transition-colors"
+        >
+          Koinonia
+        </a>
+        <span>v{pkg.version}</span>
+      </span>
     </footer>
   );
 

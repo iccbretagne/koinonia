@@ -17,10 +17,10 @@ interface ExternalFamily {
 }
 
 interface Props {
-  churchId: string;
+  churchId?: string;
 }
 
-export default function WelcomeDutyPoolClient({ churchId }: Props) {
+export default function WelcomeDutyPoolClient({ churchId: _churchId }: Props) {
   const [pool, setPool] = useState<PoolFamily[]>([]);
   const [available, setAvailable] = useState<ExternalFamily[]>([]);
   const [loadingPool, setLoadingPool] = useState(true);
@@ -48,7 +48,7 @@ export default function WelcomeDutyPoolClient({ churchId }: Props) {
     if (available.length === 0) {
       setLoadingAvailable(true);
       try {
-        const res = await fetch(`/api/integration/families?churchId=${churchId}`);
+        const res = await fetch("/api/welcome-duty/available-families");
         const data = await res.json();
         setAvailable(data.data?.families ?? []);
       } finally {
