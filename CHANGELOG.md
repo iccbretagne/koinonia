@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.7.1] - 2026-06-12
+
+### Corrigé
+
+- **Navigation mobile** : liens "Service d'accueil" et "Emploi" absents ou mal surlignés (#376)
+  - Ajout du lien "Service d'accueil" dans le sous-menu Événements mobile
+  - Correction de la surbrillance sur `/admin/welcome-duty` (Événements actif, Configuration inactif)
+  - Correction de la surbrillance sur `/admin/jobs` (Emploi actif, Configuration inactif)
+
 ## [v1.7.0] - 2026-06-12
 
 ### Ajouté
