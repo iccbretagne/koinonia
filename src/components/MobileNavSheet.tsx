@@ -281,7 +281,8 @@ export default function MobileNavSheet({
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
-    pathname.startsWith("/admin/reports");
+    pathname.startsWith("/admin/reports") ||
+    pathname.startsWith("/admin/welcome-duty");
   const isRequestsActive =
     pathname.startsWith("/requests") ||
     pathname.startsWith("/secretariat") ||
@@ -298,7 +299,9 @@ export default function MobileNavSheet({
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
     !pathname.startsWith("/admin/discipleship") &&
-    !pathname.startsWith("/admin/pastoral-profiles");
+    !pathname.startsWith("/admin/pastoral-profiles") &&
+    !pathname.startsWith("/admin/welcome-duty") &&
+    !pathname.startsWith("/admin/jobs");
 
   /* ── Views ── */
 
@@ -483,7 +486,10 @@ export default function MobileNavSheet({
           <SubRow href="/events" label="Liste" isActive={pathname === "/events"} onClose={onClose} />
           <SubRow href="/events/calendar" label="Calendrier" isActive={pathname === "/events/calendar"} onClose={onClose} />
           {hasEventsManage && (
-            <SubRow href="/admin/events" label="Gestion" isActive={pathname.startsWith("/admin/events")} onClose={onClose} />
+            <SubRow href="/admin/events" label="Gestion" isActive={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />
+          )}
+          {hasEventsManage && (
+            <SubRow href="/admin/welcome-duty" label="Service d'accueil" isActive={pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />
           )}
           {hasReports && (
             <SubRow href="/admin/reports" label="Comptes rendus" isActive={pathname.startsWith("/admin/reports")} onClose={onClose} />
