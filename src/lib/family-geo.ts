@@ -4,8 +4,8 @@
  * - Détermine la famille d'impact correspondante via le GeoJSON de familles.iccrennes.fr
  */
 
-const FAMILIES_API_URL =
-  process.env.FAMILIES_API_URL ?? "https://familles.iccrennes.fr";
+const FAMILLES_URL =
+  process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
 
 interface GeocodedAddress {
   lat: number;
@@ -46,7 +46,7 @@ interface FamilyApiItem {
 
 export async function findFamilyByCoords(lat: number, lng: number): Promise<FamilyGeoResult | null> {
   try {
-    const res = await fetch(`${FAMILIES_API_URL}/api/geojson`, {
+    const res = await fetch(`${FAMILLES_URL}/api/geojson`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;

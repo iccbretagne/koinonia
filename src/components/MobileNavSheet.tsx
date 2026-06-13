@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type SheetView = "root" | "planning" | "events" | "requests" | "media" | "agenda" | "integration" | "jobs" | "config";
+type SheetView = "root" | "planning" | "evenements" | "communaute" | "operations" | "ressources" | "config";
 
 interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
@@ -15,6 +15,7 @@ interface MobileNavSheetProps {
   integrationLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
+  famillesUrl?: string | null;
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
   hasEventsManage?: boolean;
@@ -88,26 +89,10 @@ function IconMegaphone({ className }: { className?: string }) {
   );
 }
 
-function IconMedia({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-
 function IconDiscipleship({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-
-function IconBuilding({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
   );
 }
@@ -121,10 +106,10 @@ function IconConfig({ className }: { className?: string }) {
   );
 }
 
-function IconIntegration({ className }: { className?: string }) {
+function IconResources({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   );
 }
@@ -204,6 +189,23 @@ function SubRow({
   );
 }
 
+function ExternalSubRow({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between px-6 py-4 text-[15px] border-b border-gray-50 last:border-0 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+    >
+      <span>{label}</span>
+    </a>
+  );
+}
+
+function SubDivider() {
+  return <div className="mx-6 border-t border-gray-100" />;
+}
+
 function SheetSubHeader({
   title,
   onBack,
@@ -237,6 +239,7 @@ export default function MobileNavSheet({
   integrationLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
+  famillesUrl = null,
   hasDiscipleship = false,
   hasEventsAccess = true,
   hasEventsManage = false,
@@ -256,7 +259,6 @@ export default function MobileNavSheet({
   const activeDept = searchParams.get("dept");
   const [view, setView] = useState<SheetView>("root");
 
-  // Reset view to root after close animation completes
   useEffect(() => {
     if (!open) {
       const t = setTimeout(() => setView("root"), 300);
@@ -264,7 +266,6 @@ export default function MobileNavSheet({
     }
   }, [open]);
 
-  // Group departments by ministry
   const grouped: { ministry: string; depts: typeof departments }[] = [];
   const seen = new Map<string, number>();
   for (const dept of departments) {
@@ -285,6 +286,7 @@ export default function MobileNavSheet({
     pathname.startsWith("/admin/events") ||
     pathname.startsWith("/admin/reports") ||
     pathname.startsWith("/admin/welcome-duty");
+  const isAgendaActive = pathname.startsWith("/agenda") && pathname !== "/agenda/request";
   const isRequestsActive =
     pathname.startsWith("/requests") ||
     pathname.startsWith("/secretariat") ||
@@ -292,18 +294,30 @@ export default function MobileNavSheet({
   const isMediaActive =
     pathname.startsWith("/media") || pathname.startsWith("/communication");
   const isIntegrationActive = pathname.startsWith("/integration");
-  const isAgendaActive =
-    (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
-    pathname !== "/agenda/request";
+  const isAccountingActive = pathname.startsWith("/accounting");
+  const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
+  const isMrbsActive = pathname.startsWith("/admin/mrbs");
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
     !pathname.startsWith("/admin/discipleship") &&
-    !pathname.startsWith("/admin/pastoral-profiles") &&
     !pathname.startsWith("/admin/welcome-duty") &&
     !pathname.startsWith("/admin/jobs");
+
+  const isCommunauteActive =
+    pathname.startsWith("/admin/members") ||
+    pathname.startsWith("/admin/discipleship") ||
+    isIntegrationActive;
+  const isEvenementsActive = isEventsActive || isAgendaActive;
+  const isOperationsActive = isRequestsActive || isMediaActive;
+  const isRessourcesActive = isAccountingActive || isJobsActive || isMrbsActive;
+
+  const hasCommunaute =
+    hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
+  const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0;
+  const hasRessources = !!(mrbsUrl || mrbsAdminLink || hasAccounting || hasJobs);
 
   /* ── Views ── */
 
@@ -330,7 +344,7 @@ export default function MobileNavSheet({
             icon={<IconDiscipleship className="w-5 h-5" />}
             hasChildren
             isActive={isAgendaActive}
-            onClick={() => setView("agenda")}
+            onClick={() => setView("evenements")}
           />
         )}
         {hasDiscipleship && (
@@ -348,16 +362,16 @@ export default function MobileNavSheet({
             icon={<IconCalendar className="w-5 h-5" />}
             hasChildren
             isActive={isEventsActive}
-            onClick={() => setView("events")}
+            onClick={() => setView("evenements")}
           />
         )}
         {hasJobs && (
           <RootRow
             label="Emploi"
-            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+            icon={<IconResources className="w-5 h-5" />}
             hasChildren
-            isActive={pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs")}
-            onClick={() => setView("jobs")}
+            isActive={isJobsActive}
+            onClick={() => setView("ressources")}
           />
         )}
         {configLinks.length > 0 && (
@@ -395,40 +409,13 @@ export default function MobileNavSheet({
             onClick={() => setView("planning")}
           />
         )}
-        {hasMembersAccess && (
+        {hasCommunaute && (
           <RootRow
-            label="STAR"
-            icon={<IconMembers className="w-5 h-5" />}
-            href="/admin/members"
-            isActive={pathname.startsWith("/admin/members")}
-            onClose={onClose}
-          />
-        )}
-        {hasDiscipleship && (
-          <RootRow
-            label="Discipolat"
-            icon={<IconDiscipleship className="w-5 h-5" />}
-            href="/admin/discipleship"
-            isActive={pathname.startsWith("/admin/discipleship")}
-            onClose={onClose}
-          />
-        )}
-        {hasAccounting && (
-          <RootRow
-            label="Comptabilité"
-            icon={<IconCalendar className="w-5 h-5" />}
-            href="/accounting/requests"
-            isActive={pathname.startsWith("/accounting")}
-            onClose={onClose}
-          />
-        )}
-        {agendaLinks.length > 0 && (
-          <RootRow
-            label="Agenda pastoral"
+            label="Communauté"
             icon={<IconDiscipleship className="w-5 h-5" />}
             hasChildren
-            isActive={isAgendaActive}
-            onClick={() => setView("agenda")}
+            isActive={isCommunauteActive}
+            onClick={() => setView("communaute")}
           />
         )}
         {hasEventsAccess && (
@@ -436,62 +423,26 @@ export default function MobileNavSheet({
             label="Événements"
             icon={<IconCalendar className="w-5 h-5" />}
             hasChildren
-            isActive={isEventsActive}
-            onClick={() => setView("events")}
+            isActive={isEvenementsActive}
+            onClick={() => setView("evenements")}
           />
         )}
-        {requestLinks.length > 0 && (
+        {hasOperations && (
           <RootRow
-            label="Demandes"
+            label="Opérations"
             icon={<IconMegaphone className="w-5 h-5" />}
             hasChildren
-            isActive={isRequestsActive}
-            onClick={() => setView("requests")}
+            isActive={isOperationsActive}
+            onClick={() => setView("operations")}
           />
         )}
-        {mediaLinks.length > 0 && (
+        {hasRessources && (
           <RootRow
-            label="Médias"
-            icon={<IconMedia className="w-5 h-5" />}
+            label="Ressources"
+            icon={<IconResources className="w-5 h-5" />}
             hasChildren
-            isActive={isMediaActive}
-            onClick={() => setView("media")}
-          />
-        )}
-        {integrationLinks.length > 0 && (
-          <RootRow
-            label="Intégration"
-            icon={<IconIntegration className="w-5 h-5" />}
-            hasChildren
-            isActive={isIntegrationActive}
-            onClick={() => setView("integration")}
-          />
-        )}
-        {hasJobs && (
-          <RootRow
-            label="Emploi"
-            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-            hasChildren
-            isActive={pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs")}
-            onClick={() => setView("jobs")}
-          />
-        )}
-        {mrbsUrl && (
-          <RootRow
-            label="Salles"
-            icon={<IconBuilding className="w-5 h-5" />}
-            href={mrbsUrl}
-            isActive={false}
-            onClose={onClose}
-          />
-        )}
-        {!mrbsUrl && mrbsAdminLink && (
-          <RootRow
-            label="Salles"
-            icon={<IconBuilding className="w-5 h-5" />}
-            href={mrbsAdminLink}
-            isActive={pathname.startsWith(mrbsAdminLink)}
-            onClose={onClose}
+            isActive={isRessourcesActive}
+            onClick={() => setView("ressources")}
           />
         )}
         {configLinks.length > 0 && (
@@ -547,7 +498,37 @@ export default function MobileNavSheet({
     );
   }
 
-  function renderEvents() {
+  function renderCommunaute() {
+    return (
+      <>
+        <SheetSubHeader title="Communauté" onBack={() => setView("root")} />
+        <div>
+          {hasMembersAccess && (
+            <SubRow href="/admin/members" label="STAR" isActive={pathname.startsWith("/admin/members")} onClose={onClose} />
+          )}
+          {hasDiscipleship && (
+            <SubRow href="/admin/discipleship" label="Discipolat" isActive={pathname.startsWith("/admin/discipleship")} onClose={onClose} />
+          )}
+          {integrationLinks.length > 0 && (
+            <>
+              {(hasMembersAccess || hasDiscipleship) && <SubDivider />}
+              {integrationLinks.map((link) => (
+                <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+              ))}
+            </>
+          )}
+          {famillesUrl && (
+            <>
+              {(hasMembersAccess || hasDiscipleship || integrationLinks.length > 0) && <SubDivider />}
+              <ExternalSubRow href={famillesUrl} label="Familles ↗" />
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  function renderEvenements() {
     return (
       <>
         <SheetSubHeader title="Événements" onBack={() => setView("root")} />
@@ -563,59 +544,74 @@ export default function MobileNavSheet({
           {hasReports && (
             <SubRow href="/admin/reports" label="Comptes rendus" isActive={pathname.startsWith("/admin/reports")} onClose={onClose} />
           )}
+          {agendaLinks.length > 0 && (
+            <>
+              <SubDivider />
+              {agendaLinks.map((link) => (
+                <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+              ))}
+            </>
+          )}
         </div>
       </>
     );
   }
 
-  function renderLinks(title: string, links: { href: string; label: string }[]) {
+  function renderOperations() {
     return (
       <>
-        <SheetSubHeader title={title} onBack={() => setView("root")} />
+        <SheetSubHeader title="Opérations" onBack={() => setView("root")} />
         <div>
-          {links.map((link) => (
-            <SubRow
-              key={link.href}
-              href={link.href}
-              label={link.label}
-              isActive={pathname.startsWith(link.href)}
-              onClose={onClose}
-            />
+          {requestLinks.map((link) => (
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+          ))}
+          {mediaLinks.length > 0 && requestLinks.length > 0 && <SubDivider />}
+          {mediaLinks.map((link) => (
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
           ))}
         </div>
       </>
     );
   }
 
-  function renderConfigLinks(links: { href: string; label: string }[]) {
+  function renderRessources() {
+    return (
+      <>
+        <SheetSubHeader title="Ressources" onBack={() => setView("root")} />
+        <div>
+          {mrbsUrl && <ExternalSubRow href={mrbsUrl} label="Réserver une salle ↗" />}
+          {mrbsAdminLink && (
+            <SubRow href={mrbsAdminLink} label="Liaison comptes" isActive={pathname.startsWith(mrbsAdminLink)} onClose={onClose} />
+          )}
+          {hasAccounting && (
+            <>
+              {(mrbsUrl || mrbsAdminLink) && <SubDivider />}
+              <SubRow href="/accounting/requests" label="Comptabilité" isActive={isAccountingActive} onClose={onClose} />
+            </>
+          )}
+          {hasJobs && (
+            <>
+              {(mrbsUrl || mrbsAdminLink || hasAccounting) && <SubDivider />}
+              <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
+              <SubRow href="/jobs/new" label="Publier" isActive={pathname === "/jobs/new"} onClose={onClose} />
+              {hasJobsManage && (
+                <SubRow href="/admin/jobs" label="Modérer" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
+              )}
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  function renderConfig() {
     return (
       <>
         <SheetSubHeader title="Configuration" onBack={() => setView("root")} />
         <div>
-          {links.map((link) => (
-            <SubRow
-              key={link.href}
-              href={link.href}
-              label={link.label}
-              isActive={pathname === link.href}
-              onClose={onClose}
-            />
+          {configLinks.map((link) => (
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname === link.href} onClose={onClose} />
           ))}
-        </div>
-      </>
-    );
-  }
-
-  function renderJobs() {
-    return (
-      <>
-        <SheetSubHeader title="Emploi" onBack={() => setView("root")} />
-        <div>
-          <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
-          <SubRow href="/jobs/new" label="Publier" isActive={pathname === "/jobs/new"} onClose={onClose} />
-          {hasJobsManage && (
-            <SubRow href="/admin/jobs" label="Modérer" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
-          )}
         </div>
       </>
     );
@@ -623,15 +619,13 @@ export default function MobileNavSheet({
 
   function renderContent() {
     switch (view) {
-      case "planning": return renderPlanning();
-      case "events":   return renderEvents();
-      case "requests": return renderLinks("Demandes", requestLinks);
-      case "media":        return renderLinks("Médias", mediaLinks);
-      case "integration":  return renderLinks("Intégration", integrationLinks);
-      case "agenda":       return renderLinks("Agenda pastoral", agendaLinks);
-      case "jobs":         return renderJobs();
-      case "config":   return renderConfigLinks(configLinks);
-      default:         return isPastoral ? renderPastoralRoot() : renderRoot();
+      case "planning":    return renderPlanning();
+      case "communaute":  return renderCommunaute();
+      case "evenements":  return renderEvenements();
+      case "operations":  return renderOperations();
+      case "ressources":  return renderRessources();
+      case "config":      return renderConfig();
+      default:            return renderRoot();
     }
   }
 

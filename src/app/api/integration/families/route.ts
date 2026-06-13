@@ -1,8 +1,8 @@
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireIntegrationAccess } from "@/modules/integration";
 
-const FAMILIES_API_URL =
-  process.env.FAMILIES_API_URL ?? "https://familles.iccrennes.fr";
+const FAMILLES_URL =
+  process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
 
 interface FamilyItem {
   id: number;
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     await requireIntegrationAccess(churchId);
 
-    const res = await fetch(`${FAMILIES_API_URL}/api/geojson`, {
+    const res = await fetch(`${FAMILLES_URL}/api/geojson`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) throw new ApiError(502, "Impossible de récupérer les familles");
