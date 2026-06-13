@@ -12,6 +12,7 @@ export function createSession(overrides: Partial<Session["user"]> = {}): Session
       isSuperAdmin: false,
       hasSeenTour: false,
       pastoralProfileId: null,
+      pastoralChurchIds: [],
       churchRoles: [
         {
           id: "role-1",

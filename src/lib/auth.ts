@@ -30,6 +30,7 @@ declare module "next-auth" {
       isSuperAdmin: boolean;
       hasSeenTour: boolean;
       pastoralProfileId: string | null;
+      pastoralChurchIds: string[];
       churchRoles: {
         id: string;
         churchId: string;
@@ -185,25 +186,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      // Détection du profil pastoral : d'abord par userId, puis par email (auto-liaison)
-      let pastoralProfile = await prisma.pastoralProfile.findFirst({
+      // Détection des profils pastoraux (multi-église) : par userId, puis par email (auto-liaison)
+      let pastoralProfiles = await prisma.pastoralProfile.findMany({
         where: { userId: user.id },
-        select: { id: true },
+        select: { id: true, churchId: true },
       });
-      if (!pastoralProfile && user.email) {
-        const byEmail = await prisma.pastoralProfile.findFirst({
+      if (user.email) {
+        const unlinkedByEmail = await prisma.pastoralProfile.findMany({
           where: { email: user.email, userId: null },
-          select: { id: true },
+          select: { id: true, churchId: true },
         });
-        if (byEmail) {
-          await prisma.pastoralProfile.update({
-            where: { id: byEmail.id },
+        if (unlinkedByEmail.length > 0) {
+          await prisma.pastoralProfile.updateMany({
+            where: { id: { in: unlinkedByEmail.map((p) => p.id) } },
             data: { userId: user.id },
           });
-          pastoralProfile = byEmail;
+          const existingIds = new Set(pastoralProfiles.map((p) => p.id));
+          for (const p of unlinkedByEmail) {
+            if (!existingIds.has(p.id)) pastoralProfiles.push(p);
+          }
         }
       }
-      session.user.pastoralProfileId = pastoralProfile?.id ?? null;
+      // Inclure également les églises supervisées par les profils de cet utilisateur
+      const profileIds = pastoralProfiles.map((p) => p.id);
+      const supervisedChurchIds = profileIds.length > 0
+        ? (await prisma.church.findMany({
+            where: { supervisorProfileId: { in: profileIds } },
+            select: { id: true },
+          })).map((c) => c.id)
+        : [];
+      const directChurchIds = new Set(pastoralProfiles.map((p) => p.churchId));
+      const allPastoralChurchIds = [
+        ...directChurchIds,
+        ...supervisedChurchIds.filter((id) => !directChurchIds.has(id)),
+      ];
+
+      session.user.pastoralProfileId = pastoralProfiles[0]?.id ?? null;
+      session.user.pastoralChurchIds = allPastoralChurchIds;
 
       session.user.churchRoles = churchRoles.map((cr) => {
         const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
@@ -302,6 +321,9 @@ export async function getDiscipleshipScope(
   );
   if (hasGlobalRole) return { scoped: false };
 
+  // Un profil pastoral dans cette église a une vue globale (lecture seule)
+  if ((session.user.pastoralChurchIds ?? []).includes(churchId)) return { scoped: false };
+
   // DISCIPLE_MAKER : résoudre le membre lié au compte
   const link = await prisma.memberUserLink.findUnique({
     where: { userId_churchId: { userId: session.user.id, churchId } },
@@ -336,6 +358,14 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
  * Vérifie qu'un utilisateur possède une permission donnée **dans une église précise**.
  * Contrairement à requirePermission, le churchId est obligatoire.
  */
+// Permissions accordées aux utilisateurs ayant un profil pastoral dans une église
+// (lire mais pas écrire)
+const PASTORAL_READ_PERMISSIONS = new Set([
+  "events:view",
+  "discipleship:view",
+  "planning:view",
+]);
+
 export async function requireChurchPermission(
   permission: string,
   churchId: string
@@ -349,6 +379,13 @@ export async function requireChurchPermission(
   );
 
   if (roles.length === 0) {
+    // Pas de rôle dans cette église — vérifier si un profil pastoral donne accès
+    if (
+      PASTORAL_READ_PERMISSIONS.has(permission) &&
+      (session.user.pastoralChurchIds ?? []).includes(churchId)
+    ) {
+      return session;
+    }
     throw new Error("FORBIDDEN");
   }
 
@@ -372,11 +409,14 @@ export async function requireChurchAccess(churchId: string) {
 
   if (session.user.isSuperAdmin) return session;
 
-  const hasAccess = session.user.churchRoles.some(
+  const hasRoleAccess = session.user.churchRoles.some(
     (r) => r.churchId === churchId
   );
+  // Un profil pastoral donne aussi accès à la zone admin (les pages individuelles
+  // restent protégées par requireChurchPermission)
+  const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(churchId);
 
-  if (!hasAccess) {
+  if (!hasRoleAccess && !hasPastoralAccess) {
     throw new Error("FORBIDDEN");
   }
 
@@ -623,13 +663,14 @@ export async function getCurrentChurchId(
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const preferred = cookieStore.get("current-church")?.value;
+  const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
 
   if (preferred) {
-    const hasAccess = session.user.churchRoles.some(
-      (r) => r.churchId === preferred
-    );
-    if (hasAccess) return preferred;
+    const hasRoleAccess = session.user.churchRoles.some((r) => r.churchId === preferred);
+    if (hasRoleAccess) return preferred;
+    // Accepter aussi une église pastorale/supervisée comme contexte courant
+    if (pastoralChurchIds.includes(preferred)) return preferred;
   }
 
-  return session.user.churchRoles[0]?.churchId;
+  return session.user.churchRoles[0]?.churchId ?? pastoralChurchIds[0];
 }

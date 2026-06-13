@@ -1,6 +1,7 @@
-import { auth } from "@/lib/auth";
+import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import SwitchChurchLink from "@/components/SwitchChurchLink";
 
 const roleLabel: Record<string, string> = {
   PASTEUR: "Pasteur",
@@ -15,12 +16,17 @@ function formatDate(d: Date) {
 export default async function PastoralDashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/");
-  if (!session.user.pastoralProfileId) redirect("/dashboard");
+  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
 
   const now = new Date();
+  const currentChurchId = await getCurrentChurchId(session);
 
-  const profile = await prisma.pastoralProfile.findUnique({
-    where: { id: session.user.pastoralProfileId },
+  // Cherche d'abord un profil direct dans l'église courante
+  let profile = await prisma.pastoralProfile.findFirst({
+    where: {
+      userId: session.user.id,
+      ...(currentChurchId ? { churchId: currentChurchId } : {}),
+    },
     select: {
       id: true,
       role: true,
@@ -31,11 +37,30 @@ export default async function PastoralDashboardPage() {
     },
   });
 
+  // Si l'église courante est une église supervisée (pas de profil direct là),
+  // on utilise le profil qui en est superviseur
+  if (!profile && currentChurchId) {
+    profile = await prisma.pastoralProfile.findFirst({
+      where: {
+        userId: session.user.id,
+        supervisorForChurches: { some: { id: currentChurchId } },
+      },
+      select: {
+        id: true,
+        role: true,
+        name: true,
+        churchId: true,
+        church: { select: { id: true, name: true } },
+        responsibleForChurch: { select: { id: true, name: true } },
+      },
+    });
+  }
+
   if (!profile) redirect("/dashboard");
 
   // Églises supervisées par ce profil pastoral
   const supervisedChurches = await prisma.church.findMany({
-    where: { supervisorProfileId: session.user.pastoralProfileId },
+    where: { supervisorProfileId: profile.id },
     select: {
       id: true,
       name: true,
@@ -134,12 +159,13 @@ export default async function PastoralDashboardPage() {
                     Resp. : {church.responsible.name} ({roleLabel[church.responsible.role]})
                   </p>
                 )}
-                <a
-                  href={`/pastoral/members?church=${church.id}`}
+                <SwitchChurchLink
+                  churchId={church.id}
+                  href="/pastoral/members"
                   className="text-xs text-icc-violet hover:underline"
                 >
                   Voir les membres →
-                </a>
+                </SwitchChurchLink>
               </div>
             ))}
           </div>

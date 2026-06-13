@@ -13,10 +13,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { churchId } = schema.parse(body);
 
-    const hasAccess = session.user.churchRoles.some(
-      (r) => r.churchId === churchId
-    );
-    if (!hasAccess) {
+    const hasRoleAccess = session.user.churchRoles.some((r) => r.churchId === churchId);
+    const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(churchId);
+    if (!hasRoleAccess && !hasPastoralAccess) {
       throw new ApiError(403, "Vous n'avez pas accès à cette église");
     }
 
