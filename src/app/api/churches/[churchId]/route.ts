@@ -7,9 +7,11 @@ import { z } from "zod";
 const updateSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   slug: z.string().min(1, "Le slug est requis"),
-  secretariatEmail: z.string().email("Email invalide").nullish(),
-  accountingEmail:  z.string().email("Email invalide").nullish(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
+  secretariatEmail:     z.string().email("Email invalide").nullish(),
+  accountingEmail:      z.string().email("Email invalide").nullish(),
+  primaryColor:         z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
+  responsibleProfileId: z.string().nullish(),
+  supervisorProfileId:  z.string().nullish(),
 });
 
 export async function PUT(
@@ -21,6 +23,26 @@ export async function PUT(
     const session = await requireChurchPermission("church:manage", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
+
+    // Vérifier que le profil responsable appartient à cette église
+    if (data.responsibleProfileId) {
+      const profile = await prisma.pastoralProfile.findUnique({
+        where: { id: data.responsibleProfileId },
+        select: { churchId: true },
+      });
+      if (!profile || profile.churchId !== churchId) {
+        throw new ApiError(400, "Profil pastoral introuvable pour cette église");
+      }
+    }
+
+    // Vérifier que le profil superviseur existe (peut être d'une autre église)
+    if (data.supervisorProfileId) {
+      const exists = await prisma.pastoralProfile.findUnique({
+        where: { id: data.supervisorProfileId },
+        select: { id: true },
+      });
+      if (!exists) throw new ApiError(400, "Profil superviseur introuvable");
+    }
 
     const church = await prisma.church.update({
       where: { id: churchId },

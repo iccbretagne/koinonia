@@ -38,6 +38,7 @@ interface AuthLayoutShellProps {
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
+  isPastoral?: boolean;
   headerColor?: string;
   userRole: RoleKey;
   header: React.ReactNode;
@@ -73,6 +74,7 @@ export default function AuthLayoutShell({
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
+  isPastoral = false,
   headerColor = "#5E17EB",
   userRole,
   header,
@@ -137,6 +139,7 @@ export default function AuthLayoutShell({
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
             hasJobsManage={hasJobsManage}
+            isPastoral={isPastoral}
             onClose={closeSidebar}
           />
         </div>
@@ -161,6 +164,7 @@ export default function AuthLayoutShell({
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
           hasJobsManage={hasJobsManage}
+          isPastoral={isPastoral}
           open={sidebarOpen}
           onClose={closeSidebar}
         />
@@ -178,6 +182,7 @@ export default function AuthLayoutShell({
       <BottomNav
         hasMembersAccess={hasMembersAccess}
         hasMyPlanning={hasMyPlanning}
+        isPastoral={isPastoral}
         onMenuOpen={() => setSidebarOpen(true)}
       />
 

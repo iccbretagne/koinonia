@@ -17,6 +17,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
+  // Les utilisateurs avec un profil pastoral ont leur propre dashboard
+  if (session.user.pastoralProfileId) redirect("/pastoral");
+
   const {
     dept: selectedDeptId,
     event: selectedEventId,

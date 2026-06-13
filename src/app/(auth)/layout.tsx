@@ -10,14 +10,18 @@ import NotificationBell from "@/components/NotificationBell";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
-  { href: "/admin/users",               label: "Utilisateurs",    permissions: ["members:manage"] },
-  { href: "/admin/access",              label: "Accès & rôles",   permissions: ["departments:manage"] },
-  { href: "/admin/ministries",          label: "Ministères",      permissions: ["departments:manage"] },
-  { href: "/admin/departments",         label: "Départements",    permissions: ["departments:manage"] },
-  { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
-  { href: "/admin/churches",            label: "Églises",         permissions: ["church:manage"] },
-  { href: "/admin/backups",             label: "Sauvegardes",     permissions: [], superAdminOnly: true },
-  { href: "/admin/audit-logs",          label: "Historique",      permissions: ["church:manage"] },
+  // Structure organisationnelle
+  { href: "/admin/churches",              label: "Églises",           permissions: ["church:manage"] },
+  { href: "/admin/ministries",            label: "Ministères",        permissions: ["departments:manage"] },
+  { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
+  { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
+  // Personnes
+  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"] },
+  { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
+  { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:manage"] },
+  // Système
+  { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:manage"] },
+  { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
 ];
 
 export default async function AuthLayout({
@@ -33,7 +37,9 @@ export default async function AuthLayout({
 
   const churchRoles = session.user.churchRoles;
 
-  if (!session.user.isSuperAdmin && churchRoles.length === 0) {
+  const isPastoral = session.user.pastoralProfileId !== null;
+
+  if (!session.user.isSuperAdmin && churchRoles.length === 0 && !isPastoral) {
     redirect("/no-access");
   }
 
@@ -81,6 +87,13 @@ export default async function AuthLayout({
   // Super admins have all permissions regardless of church roles
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
+  }
+  // Utilisateurs avec un profil pastoral : permissions transversales
+  if (isPastoral) {
+    userPermissions.add("pastoral:view");
+    userPermissions.add("events:view");
+    userPermissions.add("discipleship:view");
+    userPermissions.add("planning:view"); // permet "Mes demandes"
   }
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
@@ -194,7 +207,6 @@ export default async function AuthLayout({
   if (hasAgendaQualify) agendaLinks.push({ href: "/agenda/requests", label: "Qualification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/new", label: "Nouvelle entrée" });
-  if (userPermissions.has("church:manage")) agendaLinks.push({ href: "/admin/pastoral-profiles", label: "Profils pastoraux" });
 
   const headerContent = (
     <div className="flex items-center w-full min-w-0">
@@ -304,6 +316,7 @@ export default async function AuthLayout({
       hasAccounting={hasAccounting}
       hasJobs={hasJobs}
       hasJobsManage={hasJobsManage}
+      isPastoral={isPastoral}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
