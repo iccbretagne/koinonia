@@ -365,11 +365,13 @@ export default function Sidebar({
 
   // ── Sections composites ─────────────────────────────────
   const isCommunauteActive = isMembersActive || isDiscipleshipActive || isIntegrationActive;
-  const isEvenementsActive = isEventsActive || isAgendaActive;
+  const isEvenementsActive = isEventsActive;
+  const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
   const isRessourcesActive = isAccountingActive || isJobsActive || pathname.startsWith("/admin/mrbs");
 
   function activeSection() {
+    if (isGestionPastoraleActive) return "pastoral";
     if (isEvenementsActive) return "evenements";
     if (isCommunauteActive) return "communaute";
     if (isOperationsActive) return "operations";
@@ -580,7 +582,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 3. Événements — Événements + Agenda pastoral */}
+      {/* 3. Événements */}
       {hasEventsAccess && (
         <AccordionSection
           title="Événements"
@@ -610,21 +612,30 @@ export default function Sidebar({
                 </NavLink>
               </span>
             )}
-            {agendaLinks.length > 0 && (
-              <>
-                <hr className="my-1 border-gray-100" />
-                {agendaLinks.map((link) => (
-                  <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                    {link.label}
-                  </NavLink>
-                ))}
-              </>
-            )}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 4. Opérations — Demandes + Médias */}
+      {/* 4. Gestion pastorale — Agenda pastoral */}
+      {agendaLinks.length > 0 && (
+        <AccordionSection
+          title="Gestion pastorale"
+          icon={<IconAgenda className="w-4 h-4" />}
+          open={openSection === "pastoral"}
+          onToggle={() => toggle("pastoral")}
+          isActive={isGestionPastoraleActive}
+        >
+          <nav className="space-y-0.5 pl-6">
+            {agendaLinks.map((link) => (
+              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </AccordionSection>
+      )}
+
+      {/* 5. Opérations — Demandes + Médias */}
       {hasOperations && (
         <AccordionSection
           title="Opérations"
@@ -690,10 +701,9 @@ export default function Sidebar({
               <>
                 {(mrbsUrl || mrbsAdminLink || hasAccounting) && <hr className="my-1 border-gray-100" />}
                 <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>Offres</NavLink>
-                <NavLink href="/jobs/new" active={pathname === "/jobs/new"} onClose={onClose}>Publier</NavLink>
                 {hasJobsManage && (
                   <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
-                    Modérer
+                    Modération offres
                   </NavLink>
                 )}
               </>
