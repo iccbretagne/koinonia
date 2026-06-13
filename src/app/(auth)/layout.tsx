@@ -10,15 +10,18 @@ import NotificationBell from "@/components/NotificationBell";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
-  { href: "/admin/users",               label: "Utilisateurs",    permissions: ["members:manage"] },
-  { href: "/admin/access",              label: "Accès & rôles",   permissions: ["departments:manage"] },
-  { href: "/admin/ministries",          label: "Ministères",      permissions: ["departments:manage"] },
-  { href: "/admin/departments",         label: "Départements",    permissions: ["departments:manage"] },
-  { href: "/admin/departments/functions", label: "Fonctions dép.", permissions: ["events:manage"] },
-  { href: "/admin/churches",            label: "Églises",         permissions: ["church:manage"] },
-  { href: "/admin/backups",             label: "Sauvegardes",     permissions: [], superAdminOnly: true },
-  { href: "/admin/audit-logs",          label: "Historique",      permissions: ["church:manage"] },
-  { href: "/admin/pastoral-profiles",   label: "Profils pastoraux", permissions: ["church:manage"] },
+  // Structure organisationnelle
+  { href: "/admin/churches",              label: "Églises",           permissions: ["church:manage"] },
+  { href: "/admin/ministries",            label: "Ministères",        permissions: ["departments:manage"] },
+  { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
+  { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
+  // Personnes
+  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"] },
+  { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
+  { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:manage"] },
+  // Système
+  { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:manage"] },
+  { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
 ];
 
 export default async function AuthLayout({
