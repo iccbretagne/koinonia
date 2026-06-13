@@ -6,6 +6,30 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.8.0] - 2026-06-14
+
+### Ajouté
+
+- **Module pastoral multi-église** : un pasteur peut désormais être rattaché à plusieurs églises et superviser des églises tierces (#379, #381)
+  - `PastoralProfile` par église, supervision via `Church.supervisorProfileId`
+  - `pastoralChurchIds[]` en session — inclut les églises directes et supervisées
+  - ChurchSwitcher disponible pour les utilisateurs pastoral-only
+  - Page `/pastoral/members` avec barre de recherche, alignée sur le ChurchSwitcher
+  - Composant `SwitchChurchLink` pour changer d'église depuis les liens du dashboard pastoral
+
+### Modifié
+
+- **Navigation — clarté des sections** (#382)
+  - Labels intégration renommés : Demandes→Intégration, Bergers→Bergers de famille, Parcours→Parcours d'intégration, Statistiques→Statistiques intégration
+  - Nouvelle section « Gestion pastorale » (entre Événements et Opérations) regroupant les liens agenda pastoral
+  - Section Ressources : suppression du lien « Publier une offre », renommage « Modérer » → « Modération offres »
+  - Correction : "Vue agenda" ne reste plus actif en naviguant sur les sous-pages de l'agenda
+
+- **Réorganisation menu** (#380)
+  - 6 sections principales : Planning, Communauté, Événements, Opérations, Ressources, Configuration
+  - Lien « Familles » intégré dans la section Communauté
+  - Navigation mobile refactorisée (bottom nav + sheet drilldown)
+
 ## [v1.7.1] - 2026-06-12
 
 ### Corrigé
