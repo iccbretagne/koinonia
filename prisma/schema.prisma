@@ -95,9 +95,9 @@ model Church {
   welcomeDutyAssignments    WelcomeDutyAssignment[]
   // Module pastoral
   responsibleProfileId      String?  @unique
-  supervisorUserId          String?
+  supervisorProfileId       String?
   responsible               PastoralProfile?     @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
-  supervisor                User?                @relation("ChurchSupervisorUser", fields: [supervisorUserId], references: [id])
+  supervisor                PastoralProfile?     @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
   @@map("churches")
 }
@@ -170,8 +170,7 @@ model User {
   // Module emploi
   jobOffers                    JobOffer[]
   jobNotificationSubscription  JobNotificationSubscription?
-  // Module pastoral
-  supervisedChurches           Church[]   @relation("ChurchSupervisorUser")
+  // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
 }
@@ -1000,6 +999,7 @@ model PastoralProfile {
   entries              AgendaEntry[]
   requests             AppointmentRequest[]
   responsibleForChurch Church?              @relation("ChurchResponsibleProfile")
+  supervisorForChurches Church[]            @relation("ChurchSupervisorProfile")
 
   @@map("pastoral_profiles")
 }

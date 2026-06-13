@@ -21,7 +21,7 @@ export default async function ChurchDetailPage({
       accountingEmail: true,
       primaryColor: true,
       responsibleProfileId: true,
-      supervisorUserId: true,
+      supervisorProfileId: true,
     },
   });
 
@@ -34,11 +34,10 @@ export default async function ChurchDetailPage({
     orderBy: [{ role: "asc" }, { name: "asc" }],
   });
 
-  // Utilisateurs ayant un profil pastoral (potentiels superviseurs)
-  const supervisorCandidates = await prisma.user.findMany({
-    where: { pastoralProfiles: { some: {} } },
-    select: { id: true, name: true, displayName: true, email: true },
-    orderBy: { name: "asc" },
+  // Tous les profils pastoraux (potentiels superviseurs, toutes églises)
+  const supervisorCandidates = await prisma.pastoralProfile.findMany({
+    select: { id: true, name: true, role: true, church: { select: { name: true } } },
+    orderBy: [{ role: "asc" }, { name: "asc" }],
   });
 
   const roleLabel: Record<string, string> = {
@@ -61,12 +60,12 @@ export default async function ChurchDetailPage({
           accountingEmail: church.accountingEmail ?? "",
           primaryColor: church.primaryColor ?? "#5E17EB",
           responsibleProfileId: church.responsibleProfileId ?? "",
-          supervisorUserId: church.supervisorUserId ?? "",
+          supervisorProfileId: church.supervisorProfileId ?? "",
         }}
         profiles={profiles.map((p) => ({ id: p.id, label: `${p.name} (${roleLabel[p.role]})` }))}
-        supervisors={supervisorCandidates.map((u) => ({
-          id: u.id,
-          label: u.displayName ?? u.name ?? u.email,
+        supervisors={supervisorCandidates.map((s) => ({
+          id: s.id,
+          label: `${s.name} (${roleLabel[s.role]}) — ${s.church.name}`,
         }))}
       />
     </div>

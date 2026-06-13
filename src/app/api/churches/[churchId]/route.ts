@@ -11,7 +11,7 @@ const updateSchema = z.object({
   accountingEmail:      z.string().email("Email invalide").nullish(),
   primaryColor:         z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
   responsibleProfileId: z.string().nullish(),
-  supervisorUserId:     z.string().nullish(),
+  supervisorProfileId:  z.string().nullish(),
 });
 
 export async function PUT(
@@ -33,6 +33,15 @@ export async function PUT(
       if (!profile || profile.churchId !== churchId) {
         throw new ApiError(400, "Profil pastoral introuvable pour cette église");
       }
+    }
+
+    // Vérifier que le profil superviseur existe (peut être d'une autre église)
+    if (data.supervisorProfileId) {
+      const exists = await prisma.pastoralProfile.findUnique({
+        where: { id: data.supervisorProfileId },
+        select: { id: true },
+      });
+      if (!exists) throw new ApiError(400, "Profil superviseur introuvable");
     }
 
     const church = await prisma.church.update({

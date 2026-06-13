@@ -14,7 +14,7 @@ interface Church {
   accountingEmail: string;
   primaryColor: string;
   responsibleProfileId: string;
-  supervisorUserId: string;
+  supervisorProfileId: string;
 }
 
 interface Option {
@@ -36,7 +36,7 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
   const [accountingEmail, setAccountingEmail] = useState(church.accountingEmail);
   const [primaryColor, setPrimaryColor] = useState(church.primaryColor || "#5E17EB");
   const [responsibleProfileId, setResponsibleProfileId] = useState(church.responsibleProfileId);
-  const [supervisorUserId, setSupervisorUserId] = useState(church.supervisorUserId);
+  const [supervisorProfileId, setSupervisorProfileId] = useState(church.supervisorProfileId);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -58,7 +58,7 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           accountingEmail: accountingEmail || null,
           primaryColor,
           responsibleProfileId: responsibleProfileId || null,
-          supervisorUserId: supervisorUserId || null,
+          supervisorProfileId: supervisorProfileId || null,
         }),
       });
 
@@ -151,8 +151,8 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
             />
             <Select
               label="Superviseur (pasteur superviseur)"
-              value={supervisorUserId}
-              onChange={(e) => setSupervisorUserId(e.target.value)}
+              value={supervisorProfileId}
+              onChange={(e) => setSupervisorProfileId(e.target.value)}
               options={supervisorOptions}
             />
           </div>

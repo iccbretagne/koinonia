@@ -33,9 +33,9 @@ export default async function PastoralDashboardPage() {
 
   if (!profile) redirect("/dashboard");
 
-  // Églises supervisées par cet utilisateur (en tant que superviseur externe)
+  // Églises supervisées par ce profil pastoral
   const supervisedChurches = await prisma.church.findMany({
-    where: { supervisorUserId: session.user.id },
+    where: { supervisorProfileId: session.user.pastoralProfileId },
     select: {
       id: true,
       name: true,

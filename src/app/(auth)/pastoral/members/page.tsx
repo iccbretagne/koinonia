@@ -23,7 +23,7 @@ export default async function PastoralMembersPage({ searchParams }: Props) {
   if (!profile) redirect("/pastoral");
 
   const supervisedChurches = await prisma.church.findMany({
-    where: { supervisorUserId: session.user.id },
+    where: { supervisorProfileId: session.user.pastoralProfileId },
     select: { id: true, name: true },
   });
 
