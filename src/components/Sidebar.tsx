@@ -405,7 +405,7 @@ export default function Sidebar({
   // ── Mode pastoral : navigation simplifiée ────────────────
   if (isPastoral) {
     const isPastoralHome = pathname === "/pastoral";
-    const isPastoralMembers = pathname.startsWith("/admin/members");
+    const isPastoralMembers = pathname.startsWith("/pastoral/members");
     const isPastoralAgenda = pathname.startsWith("/agenda") && pathname !== "/agenda/request";
     const isPastoralDiscipleship = pathname.startsWith("/admin/discipleship");
     const isPastoralEvents = pathname.startsWith("/events") || pathname.startsWith("/admin/events") || pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/welcome-duty");
@@ -422,7 +422,7 @@ export default function Sidebar({
           <span className="flex-1">Accueil</span>
         </Link>
 
-        <Link href="/admin/members" onClick={onClose}
+        <Link href="/pastoral/members" onClick={onClose}
           className={`${sectionHeaderBase} ${isPastoralMembers ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
           <IconMembers className="w-4 h-4 shrink-0" />
           <span className="flex-1">Mes membres</span>

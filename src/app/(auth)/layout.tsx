@@ -84,8 +84,13 @@ export default async function AuthLayout({
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
   }
-  // Utilisateurs avec un profil pastoral : permission transversale pastoral:view
-  if (isPastoral) userPermissions.add("pastoral:view");
+  // Utilisateurs avec un profil pastoral : permissions transversales
+  if (isPastoral) {
+    userPermissions.add("pastoral:view");
+    userPermissions.add("events:view");
+    userPermissions.add("discipleship:view");
+    userPermissions.add("planning:view"); // permet "Mes demandes"
+  }
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
       if (link.superAdminOnly) return session.user.isSuperAdmin;

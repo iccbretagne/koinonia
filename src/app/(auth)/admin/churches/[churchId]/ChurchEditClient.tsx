@@ -4,18 +4,39 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 
-interface Props {
-  church: { id: string; name: string; slug: string; secretariatEmail: string; accountingEmail: string; primaryColor: string };
+interface Church {
+  id: string;
+  name: string;
+  slug: string;
+  secretariatEmail: string;
+  accountingEmail: string;
+  primaryColor: string;
+  responsibleProfileId: string;
+  supervisorUserId: string;
 }
 
-export default function ChurchEditClient({ church }: Props) {
+interface Option {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  church: Church;
+  profiles: Option[];
+  supervisors: Option[];
+}
+
+export default function ChurchEditClient({ church, profiles, supervisors }: Props) {
   const router = useRouter();
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
   const [secretariatEmail, setSecretariatEmail] = useState(church.secretariatEmail);
   const [accountingEmail, setAccountingEmail] = useState(church.accountingEmail);
   const [primaryColor, setPrimaryColor] = useState(church.primaryColor || "#5E17EB");
+  const [responsibleProfileId, setResponsibleProfileId] = useState(church.responsibleProfileId);
+  const [supervisorUserId, setSupervisorUserId] = useState(church.supervisorUserId);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -30,7 +51,15 @@ export default function ChurchEditClient({ church }: Props) {
       const res = await fetch(`/api/churches/${church.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, secretariatEmail: secretariatEmail || null, accountingEmail: accountingEmail || null, primaryColor }),
+        body: JSON.stringify({
+          name,
+          slug,
+          secretariatEmail: secretariatEmail || null,
+          accountingEmail: accountingEmail || null,
+          primaryColor,
+          responsibleProfileId: responsibleProfileId || null,
+          supervisorUserId: supervisorUserId || null,
+        }),
       });
 
       if (!res.ok) {
@@ -46,6 +75,16 @@ export default function ChurchEditClient({ church }: Props) {
       setLoading(false);
     }
   }
+
+  const profileOptions = [
+    { value: "", label: "— Aucun —" },
+    ...profiles.map((p) => ({ value: p.id, label: p.label })),
+  ];
+
+  const supervisorOptions = [
+    { value: "", label: "— Aucun —" },
+    ...supervisors.map((s) => ({ value: s.id, label: s.label })),
+  ];
 
   return (
     <div className="max-w-md">
@@ -100,6 +139,25 @@ export default function ChurchEditClient({ church }: Props) {
             />
           </div>
         </div>
+
+        <div className="pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-500 mb-3">Supervision pastorale</p>
+          <div className="space-y-4">
+            <Select
+              label="Responsable pastoral de l'église"
+              value={responsibleProfileId}
+              onChange={(e) => setResponsibleProfileId(e.target.value)}
+              options={profileOptions}
+            />
+            <Select
+              label="Superviseur (pasteur superviseur)"
+              value={supervisorUserId}
+              onChange={(e) => setSupervisorUserId(e.target.value)}
+              options={supervisorOptions}
+            />
+          </div>
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
         {success && (
           <p className="text-sm text-green-600">Église mise à jour.</p>

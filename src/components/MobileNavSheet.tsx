@@ -317,15 +317,13 @@ export default function MobileNavSheet({
           isActive={pathname === "/pastoral"}
           onClose={onClose}
         />
-        {hasMembersAccess && (
-          <RootRow
-            label="Mes membres"
-            icon={<IconMembers className="w-5 h-5" />}
-            href="/admin/members"
-            isActive={pathname.startsWith("/admin/members")}
-            onClose={onClose}
-          />
-        )}
+        <RootRow
+          label="Mes membres"
+          icon={<IconMembers className="w-5 h-5" />}
+          href="/pastoral/members"
+          isActive={pathname.startsWith("/pastoral/members")}
+          onClose={onClose}
+        />
         {agendaLinks.length > 0 && (
           <RootRow
             label="Agenda pastoral"
