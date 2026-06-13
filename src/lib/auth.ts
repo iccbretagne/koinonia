@@ -187,7 +187,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       // Détection des profils pastoraux (multi-église) : par userId, puis par email (auto-liaison)
-      let pastoralProfiles = await prisma.pastoralProfile.findMany({
+      const pastoralProfiles = await prisma.pastoralProfile.findMany({
         where: { userId: user.id },
         select: { id: true, churchId: true },
       });
