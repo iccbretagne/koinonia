@@ -1,14 +1,14 @@
 import { requirePermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
-const FAMILIES_API_URL =
-  process.env.FAMILIES_API_URL ?? "https://familles.iccrennes.fr";
+const FAMILLES_URL =
+  process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
 
 export async function GET(_request: Request) {
   try {
     await requirePermission("events:manage");
 
-    const res = await fetch(`${FAMILIES_API_URL}/api/geojson`, {
+    const res = await fetch(`${FAMILLES_URL}/api/geojson`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) throw new ApiError(502, "Impossible de récupérer les familles");

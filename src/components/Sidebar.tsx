@@ -13,6 +13,7 @@ interface SidebarProps {
   integrationLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
+  famillesUrl?: string | null;
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
   hasEventsManage?: boolean;
@@ -77,14 +78,6 @@ function IconDiscipleship({ className }: { className?: string }) {
   );
 }
 
-function IconMedia({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-
 function IconConfig({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,14 +95,6 @@ function IconAgenda({ className }: { className?: string }) {
   );
 }
 
-function IconAccounting({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-    </svg>
-  );
-}
-
 function IconJobs({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,18 +103,18 @@ function IconJobs({ className }: { className?: string }) {
   );
 }
 
-function IconMrbs({ className }: { className?: string }) {
+function IconFamilles({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   );
 }
 
-function IconIntegration({ className }: { className?: string }) {
+function IconResources({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   );
 }
@@ -329,6 +314,7 @@ export default function Sidebar({
   integrationLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
+  famillesUrl = null,
   hasDiscipleship = false,
   hasEventsAccess = true,
   hasEventsManage = false,
@@ -354,7 +340,11 @@ export default function Sidebar({
     pathname.startsWith("/admin/events") ||
     pathname.startsWith("/admin/reports") ||
     pathname.startsWith("/admin/welcome-duty");
+  const isAgendaActive =
+    pathname.startsWith("/agenda") && pathname !== "/agenda/request";
   const isMembersActive = pathname.startsWith("/admin/members");
+  const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
+  const isIntegrationActive = pathname.startsWith("/integration");
   const isRequestsActive =
     pathname.startsWith("/requests") ||
     pathname.startsWith("/secretariat") ||
@@ -362,31 +352,28 @@ export default function Sidebar({
   const isMediaActive =
     pathname.startsWith("/media") ||
     pathname.startsWith("/communication");
-  const isIntegrationActive = pathname.startsWith("/integration");
   const isAccountingActive = pathname.startsWith("/accounting");
   const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
-  const isAgendaActive =
-    (pathname.startsWith("/agenda") || pathname.startsWith("/admin/pastoral-profiles")) &&
-    pathname !== "/agenda/request";
-  const isDiscipleshipActive = pathname.startsWith("/admin/discipleship");
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
     !pathname.startsWith("/admin/reports") &&
     !pathname.startsWith("/admin/members") &&
     !pathname.startsWith("/admin/discipleship") &&
-    !pathname.startsWith("/admin/pastoral-profiles") &&
     !pathname.startsWith("/admin/welcome-duty") &&
     !pathname.startsWith("/admin/jobs");
 
+  // ── Sections composites ─────────────────────────────────
+  const isCommunauteActive = isMembersActive || isDiscipleshipActive || isIntegrationActive;
+  const isEvenementsActive = isEventsActive || isAgendaActive;
+  const isOperationsActive = isRequestsActive || isMediaActive;
+  const isRessourcesActive = isAccountingActive || isJobsActive || pathname.startsWith("/admin/mrbs");
+
   function activeSection() {
-    if (isEventsActive) return "events";
-    if (isMembersActive) return "members";
-    if (isRequestsActive) return "requests";
-    if (isMediaActive) return "media";
-    if (isIntegrationActive) return "integration";
-    if (isAgendaActive) return "agenda";
-    if (isJobsActive) return "jobs";
+    if (isEvenementsActive) return "evenements";
+    if (isCommunauteActive) return "communaute";
+    if (isOperationsActive) return "operations";
+    if (isRessourcesActive) return "ressources";
     if (isConfigActive) return "config";
     return "planning";
   }
@@ -406,11 +393,11 @@ export default function Sidebar({
   if (isPastoral) {
     const isPastoralHome = pathname === "/pastoral";
     const isPastoralMembers = pathname.startsWith("/pastoral/members");
-    const isPastoralAgenda = pathname.startsWith("/agenda") && pathname !== "/agenda/request";
-    const isPastoralDiscipleship = pathname.startsWith("/admin/discipleship");
-    const isPastoralEvents = pathname.startsWith("/events") || pathname.startsWith("/admin/events") || pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/welcome-duty");
-    const isPastoralJobs = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
-    const isPastoralConfig = pathname.startsWith("/admin") && !pathname.startsWith("/admin/discipleship") && !pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/reports") && !pathname.startsWith("/admin/welcome-duty") && !pathname.startsWith("/admin/jobs") && !pathname.startsWith("/admin/pastoral-profiles");
+    const isPastoralAgenda = isAgendaActive;
+    const isPastoralDiscipleship = isDiscipleshipActive;
+    const isPastoralEvents = isEventsActive;
+    const isPastoralJobs = isJobsActive;
+    const isPastoralConfig = isConfigActive;
 
     return (
       <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -484,10 +471,14 @@ export default function Sidebar({
     );
   }
 
+  const hasCommunaute = hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
+  const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0;
+  const hasRessources = !!(mrbsUrl || mrbsAdminLink || hasAccounting || hasJobs);
+
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
 
-      {/* 0. Mon planning (STAR uniquement) */}
+      {/* Mon planning (STAR uniquement) */}
       {hasMyPlanning && (
         <Link
           href="/planning"
@@ -514,15 +505,9 @@ export default function Sidebar({
           dataTour="sidebar-planning"
         >
           {departments.length === 0 ? (
-            <p className="px-3 text-sm text-gray-400">
-              Aucun département assigné.
-            </p>
+            <p className="px-3 text-sm text-gray-400">Aucun département assigné.</p>
           ) : departments.some((d) => d.ministryName) ? (
-            <MinistryGroupedDepartments
-              departments={departments}
-              activeDept={activeDept}
-              onClose={onClose}
-            />
+            <MinistryGroupedDepartments departments={departments} activeDept={activeDept} onClose={onClose} />
           ) : (
             <nav className="space-y-0.5 pl-6">
               {departments.map((dept) => (
@@ -544,68 +529,70 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 2. STAR */}
-      {hasMembersAccess && (
-        <Link
-          href="/admin/members"
-          onClick={onClose}
-          data-tour="sidebar-members"
-          className={`${sectionHeaderBase} ${isMembersActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
-        >
-          <IconMembers className="w-4 h-4 shrink-0" />
-          <span className="flex-1">STAR</span>
-        </Link>
-      )}
-
-      {/* 3. Discipolat */}
-      {hasDiscipleship && (
-        <Link
-          href="/admin/discipleship"
-          onClick={onClose}
-          data-tour="sidebar-discipleship"
-          className={`${sectionHeaderBase} ${isDiscipleshipActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
-        >
-          <IconDiscipleship className="w-4 h-4 shrink-0" />
-          <span className="flex-1">Discipolat</span>
-        </Link>
-      )}
-
-      {/* 4. Agenda pastoral */}
-      {agendaLinks.length > 0 && (
+      {/* 2. Communauté — STAR + Discipolat + Intégration + Familles */}
+      {hasCommunaute && (
         <AccordionSection
-          title="Agenda pastoral"
-          icon={<IconAgenda className="w-4 h-4" />}
-          open={openSection === "agenda"}
-          onToggle={() => toggle("agenda")}
-          isActive={isAgendaActive}
+          title="Communauté"
+          icon={<IconDiscipleship className="w-4 h-4" />}
+          open={openSection === "communaute"}
+          onToggle={() => toggle("communaute")}
+          isActive={isCommunauteActive}
+          dataTour="sidebar-members"
         >
           <nav className="space-y-0.5 pl-6">
-            {agendaLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                {link.label}
+            {hasMembersAccess && (
+              <NavLink href="/admin/members" active={isMembersActive} onClose={onClose}>
+                STAR
               </NavLink>
-            ))}
+            )}
+            {hasDiscipleship && (
+              <NavLink href="/admin/discipleship" active={isDiscipleshipActive} onClose={onClose}>
+                Discipolat
+              </NavLink>
+            )}
+            {integrationLinks.length > 0 && (
+              <>
+                {(hasMembersAccess || hasDiscipleship) && <hr className="my-1 border-gray-100" />}
+                {integrationLinks.map((link) => (
+                  <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                    {link.label}
+                  </NavLink>
+                ))}
+              </>
+            )}
+            {famillesUrl && (
+              <>
+                {(hasMembersAccess || hasDiscipleship || integrationLinks.length > 0) && (
+                  <hr className="my-1 border-gray-100" />
+                )}
+                <a
+                  href={famillesUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 w-full text-sm px-3 py-2.5 md:py-1.5 rounded-md text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5 transition-colors"
+                >
+                  <IconFamilles className="w-3.5 h-3.5 shrink-0" />
+                  Familles ↗
+                </a>
+              </>
+            )}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 5. Événements */}
+      {/* 3. Événements — Événements + Agenda pastoral */}
       {hasEventsAccess && (
         <AccordionSection
           title="Événements"
           icon={<IconCalendar className="w-4 h-4" />}
-          open={openSection === "events"}
-          onToggle={() => toggle("events")}
-          isActive={isEventsActive}
+          open={openSection === "evenements"}
+          onToggle={() => toggle("evenements")}
+          isActive={isEvenementsActive}
           dataTour="sidebar-events"
         >
           <nav className="space-y-0.5 pl-6">
-            <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>
-              Liste
-            </NavLink>
-            <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>
-              Calendrier
-            </NavLink>
+            <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
+            <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
             {hasEventsManage && (
               <NavLink href="/admin/events" active={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>
                 Gestion
@@ -623,18 +610,28 @@ export default function Sidebar({
                 </NavLink>
               </span>
             )}
+            {agendaLinks.length > 0 && (
+              <>
+                <hr className="my-1 border-gray-100" />
+                {agendaLinks.map((link) => (
+                  <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                    {link.label}
+                  </NavLink>
+                ))}
+              </>
+            )}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 6. Demandes */}
-      {requestLinks.length > 0 && (
+      {/* 4. Opérations — Demandes + Médias */}
+      {hasOperations && (
         <AccordionSection
-          title="Demandes"
+          title="Opérations"
           icon={<IconMegaphone className="w-4 h-4" />}
-          open={openSection === "requests"}
-          onToggle={() => toggle("requests")}
-          isActive={isRequestsActive}
+          open={openSection === "operations"}
+          onToggle={() => toggle("operations")}
+          isActive={isOperationsActive}
           dataTour="sidebar-service"
         >
           <nav className="space-y-0.5 pl-6">
@@ -643,21 +640,9 @@ export default function Sidebar({
                 {link.label}
               </NavLink>
             ))}
-          </nav>
-        </AccordionSection>
-      )}
-
-      {/* 7. Médias */}
-      {mediaLinks.length > 0 && (
-        <AccordionSection
-          title="Médias"
-          icon={<IconMedia className="w-4 h-4" />}
-          open={openSection === "media"}
-          onToggle={() => toggle("media")}
-          isActive={isMediaActive}
-          dataTour="sidebar-media"
-        >
-          <nav className="space-y-0.5 pl-6">
+            {mediaLinks.length > 0 && requestLinks.length > 0 && (
+              <hr className="my-1 border-gray-100" />
+            )}
             {mediaLinks.map((link) => (
               <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
                 {link.label}
@@ -667,70 +652,14 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 8. Intégration familles */}
-      {integrationLinks.length > 0 && (
+      {/* 5. Ressources — Salles + Comptabilité + Emploi */}
+      {hasRessources && (
         <AccordionSection
-          title="Intégration"
-          icon={<IconIntegration className="w-4 h-4" />}
-          open={openSection === "integration"}
-          onToggle={() => toggle("integration")}
-          isActive={isIntegrationActive}
-        >
-          <nav className="space-y-0.5 pl-6">
-            {integrationLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </AccordionSection>
-      )}
-
-      {/* 9. Comptabilité */}
-      {hasAccounting && (
-        <Link
-          href="/accounting/requests"
-          onClick={onClose}
-          className={`${sectionHeaderBase} ${isAccountingActive ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}
-        >
-          <IconAccounting className="w-4 h-4 shrink-0" />
-          <span className="flex-1">Comptabilité</span>
-        </Link>
-      )}
-
-      {/* 10. Emploi */}
-      {hasJobs && (
-        <AccordionSection
-          title="Emploi"
-          icon={<IconJobs className="w-4 h-4" />}
-          open={openSection === "jobs"}
-          onToggle={() => toggle("jobs")}
-          isActive={isJobsActive}
-        >
-          <nav className="space-y-0.5 pl-6">
-            <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>
-              Offres
-            </NavLink>
-            <NavLink href="/jobs/new" active={pathname === "/jobs/new"} onClose={onClose}>
-              Publier
-            </NavLink>
-            {hasJobsManage && (
-              <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
-                Modérer
-              </NavLink>
-            )}
-          </nav>
-        </AccordionSection>
-      )}
-
-      {/* 11. Réservation de salles (module MRBS optionnel) */}
-      {(mrbsUrl || mrbsAdminLink) && (
-        <AccordionSection
-          title="Salles"
-          icon={<IconMrbs className="w-4 h-4" />}
-          open={openSection === "mrbs"}
-          onToggle={() => toggle("mrbs")}
-          isActive={pathname.startsWith("/admin/mrbs")}
+          title="Ressources"
+          icon={<IconResources className="w-4 h-4" />}
+          open={openSection === "ressources"}
+          onToggle={() => toggle("ressources")}
+          isActive={isRessourcesActive}
           dataTour="sidebar-mrbs"
         >
           <nav className="space-y-0.5 pl-6">
@@ -739,7 +668,7 @@ export default function Sidebar({
                 href={mrbsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-sm px-3 py-1.5 rounded-md text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5 transition-colors"
+                className="block text-sm px-3 py-2.5 md:py-1.5 rounded-md text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5 transition-colors"
               >
                 Réserver une salle ↗
               </a>
@@ -749,11 +678,31 @@ export default function Sidebar({
                 Liaison comptes
               </NavLink>
             )}
+            {hasAccounting && (
+              <>
+                {(mrbsUrl || mrbsAdminLink) && <hr className="my-1 border-gray-100" />}
+                <NavLink href="/accounting/requests" active={isAccountingActive} onClose={onClose}>
+                  Comptabilité
+                </NavLink>
+              </>
+            )}
+            {hasJobs && (
+              <>
+                {(mrbsUrl || mrbsAdminLink || hasAccounting) && <hr className="my-1 border-gray-100" />}
+                <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>Offres</NavLink>
+                <NavLink href="/jobs/new" active={pathname === "/jobs/new"} onClose={onClose}>Publier</NavLink>
+                {hasJobsManage && (
+                  <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
+                    Modérer
+                  </NavLink>
+                )}
+              </>
+            )}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 9. Configuration */}
+      {/* 6. Configuration */}
       {configLinks.length > 0 && (
         <AccordionSection
           title="Configuration"

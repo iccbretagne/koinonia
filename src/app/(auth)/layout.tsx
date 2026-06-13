@@ -296,6 +296,8 @@ export default async function AuthLayout({
       ? "/admin/mrbs-links"
       : null;
 
+  const famillesUrl = process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
+
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasAccounting = userPermissions.has("accounting:view");
   const hasJobs = userPermissions.has("jobs:view");
@@ -328,6 +330,7 @@ export default async function AuthLayout({
       integrationLinks={integrationLinks}
       mrbsUrl={mrbsUrl}
       mrbsAdminLink={mrbsAdminLink}
+      famillesUrl={famillesUrl}
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}
       hasJobs={hasJobs}

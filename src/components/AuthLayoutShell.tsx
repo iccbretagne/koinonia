@@ -28,6 +28,7 @@ interface AuthLayoutShellProps {
   integrationLinks?: { href: string; label: string }[];
   mrbsUrl?: string | null;
   mrbsAdminLink?: string | null;
+  famillesUrl?: string | null;
   hasDiscipleship: boolean;
   hasEventsAccess: boolean;
   hasEventsManage: boolean;
@@ -64,6 +65,7 @@ export default function AuthLayoutShell({
   integrationLinks = [],
   mrbsUrl = null,
   mrbsAdminLink = null,
+  famillesUrl = null,
   hasDiscipleship,
   hasEventsAccess,
   hasEventsManage,
@@ -129,6 +131,7 @@ export default function AuthLayoutShell({
             integrationLinks={integrationLinks}
             mrbsUrl={mrbsUrl}
             mrbsAdminLink={mrbsAdminLink}
+            famillesUrl={famillesUrl}
             hasDiscipleship={hasDiscipleship}
             hasEventsAccess={hasEventsAccess}
             hasEventsManage={hasEventsManage}
@@ -154,6 +157,7 @@ export default function AuthLayoutShell({
           integrationLinks={integrationLinks}
           mrbsUrl={mrbsUrl}
           mrbsAdminLink={mrbsAdminLink}
+          famillesUrl={famillesUrl}
           hasDiscipleship={hasDiscipleship}
           hasEventsAccess={hasEventsAccess}
           hasEventsManage={hasEventsManage}
