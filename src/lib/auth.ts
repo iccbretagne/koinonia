@@ -29,6 +29,7 @@ declare module "next-auth" {
       image: string | null;
       isSuperAdmin: boolean;
       hasSeenTour: boolean;
+      pastoralProfileId: string | null;
       churchRoles: {
         id: string;
         churchId: string;
@@ -183,6 +184,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         }
       }
+
+      // Détection du profil pastoral : d'abord par userId, puis par email (auto-liaison)
+      let pastoralProfile = await prisma.pastoralProfile.findFirst({
+        where: { userId: user.id },
+        select: { id: true },
+      });
+      if (!pastoralProfile && user.email) {
+        const byEmail = await prisma.pastoralProfile.findFirst({
+          where: { email: user.email, userId: null },
+          select: { id: true },
+        });
+        if (byEmail) {
+          await prisma.pastoralProfile.update({
+            where: { id: byEmail.id },
+            data: { userId: user.id },
+          });
+          pastoralProfile = byEmail;
+        }
+      }
+      session.user.pastoralProfileId = pastoralProfile?.id ?? null;
 
       session.user.churchRoles = churchRoles.map((cr) => {
         const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);

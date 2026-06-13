@@ -79,7 +79,7 @@ model Church {
   // Module mrbs (optionnel)
   mrbsUserLinks            MrbsUserLink[]
   // Module agenda
-  pastoralProfiles         PastoralProfile[]
+  pastoralProfiles         PastoralProfile[]    @relation("ChurchPastoralProfiles")
   appointmentRequests      AppointmentRequest[]
   agendaEntries            AgendaEntry[]
   // Module intégration familles
@@ -93,6 +93,11 @@ model Church {
   // Module service d'accueil
   welcomeDutyFamilies       WelcomeDutyFamily[]
   welcomeDutyAssignments    WelcomeDutyAssignment[]
+  // Module pastoral
+  responsibleProfileId      String?  @unique
+  supervisorUserId          String?
+  responsible               PastoralProfile?     @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
+  supervisor                User?                @relation("ChurchSupervisorUser", fields: [supervisorUserId], references: [id])
 
   @@map("churches")
 }
@@ -165,6 +170,8 @@ model User {
   // Module emploi
   jobOffers                    JobOffer[]
   jobNotificationSubscription  JobNotificationSubscription?
+  // Module pastoral
+  supervisedChurches           Church[]   @relation("ChurchSupervisorUser")
 
   @@map("users")
 }
@@ -988,10 +995,11 @@ model PastoralProfile {
   userId    String?
   createdAt DateTime     @default(now())
 
-  church   Church               @relation(fields: [churchId], references: [id])
-  user     User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
-  entries  AgendaEntry[]
-  requests AppointmentRequest[]
+  church               Church               @relation("ChurchPastoralProfiles", fields: [churchId], references: [id])
+  user                 User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
+  entries              AgendaEntry[]
+  requests             AppointmentRequest[]
+  responsibleForChurch Church?              @relation("ChurchResponsibleProfile")
 
   @@map("pastoral_profiles")
 }

@@ -33,7 +33,9 @@ export default async function AuthLayout({
 
   const churchRoles = session.user.churchRoles;
 
-  if (!session.user.isSuperAdmin && churchRoles.length === 0) {
+  const isPastoral = session.user.pastoralProfileId !== null;
+
+  if (!session.user.isSuperAdmin && churchRoles.length === 0 && !isPastoral) {
     redirect("/no-access");
   }
 
@@ -82,6 +84,8 @@ export default async function AuthLayout({
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
   }
+  // Utilisateurs avec un profil pastoral : permission transversale pastoral:view
+  if (isPastoral) userPermissions.add("pastoral:view");
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
       if (link.superAdminOnly) return session.user.isSuperAdmin;
