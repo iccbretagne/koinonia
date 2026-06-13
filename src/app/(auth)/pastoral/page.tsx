@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
@@ -15,12 +15,16 @@ function formatDate(d: Date) {
 export default async function PastoralDashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/");
-  if (!session.user.pastoralProfileId) redirect("/dashboard");
+  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
 
   const now = new Date();
+  const currentChurchId = await getCurrentChurchId(session);
 
-  const profile = await prisma.pastoralProfile.findUnique({
-    where: { id: session.user.pastoralProfileId },
+  const profile = await prisma.pastoralProfile.findFirst({
+    where: {
+      userId: session.user.id,
+      ...(currentChurchId ? { churchId: currentChurchId } : {}),
+    },
     select: {
       id: true,
       role: true,
@@ -35,7 +39,7 @@ export default async function PastoralDashboardPage() {
 
   // Églises supervisées par ce profil pastoral
   const supervisedChurches = await prisma.church.findMany({
-    where: { supervisorProfileId: session.user.pastoralProfileId },
+    where: { supervisorProfileId: profile.id },
     select: {
       id: true,
       name: true,

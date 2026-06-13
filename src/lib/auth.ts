@@ -30,6 +30,7 @@ declare module "next-auth" {
       isSuperAdmin: boolean;
       hasSeenTour: boolean;
       pastoralProfileId: string | null;
+      pastoralChurchIds: string[];
       churchRoles: {
         id: string;
         churchId: string;
@@ -185,25 +186,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      // Détection du profil pastoral : d'abord par userId, puis par email (auto-liaison)
-      let pastoralProfile = await prisma.pastoralProfile.findFirst({
+      // Détection des profils pastoraux (multi-église) : par userId, puis par email (auto-liaison)
+      let pastoralProfiles = await prisma.pastoralProfile.findMany({
         where: { userId: user.id },
-        select: { id: true },
+        select: { id: true, churchId: true },
       });
-      if (!pastoralProfile && user.email) {
-        const byEmail = await prisma.pastoralProfile.findFirst({
+      if (user.email) {
+        const unlinkedByEmail = await prisma.pastoralProfile.findMany({
           where: { email: user.email, userId: null },
-          select: { id: true },
+          select: { id: true, churchId: true },
         });
-        if (byEmail) {
-          await prisma.pastoralProfile.update({
-            where: { id: byEmail.id },
+        if (unlinkedByEmail.length > 0) {
+          await prisma.pastoralProfile.updateMany({
+            where: { id: { in: unlinkedByEmail.map((p) => p.id) } },
             data: { userId: user.id },
           });
-          pastoralProfile = byEmail;
+          const existingIds = new Set(pastoralProfiles.map((p) => p.id));
+          for (const p of unlinkedByEmail) {
+            if (!existingIds.has(p.id)) pastoralProfiles.push(p);
+          }
         }
       }
-      session.user.pastoralProfileId = pastoralProfile?.id ?? null;
+      session.user.pastoralProfileId = pastoralProfiles[0]?.id ?? null;
+      session.user.pastoralChurchIds = pastoralProfiles.map((p) => p.churchId);
 
       session.user.churchRoles = churchRoles.map((cr) => {
         const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
@@ -625,11 +630,10 @@ export async function getCurrentChurchId(
   const preferred = cookieStore.get("current-church")?.value;
 
   if (preferred) {
-    const hasAccess = session.user.churchRoles.some(
-      (r) => r.churchId === preferred
-    );
-    if (hasAccess) return preferred;
+    const hasRoleAccess = session.user.churchRoles.some((r) => r.churchId === preferred);
+    const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(preferred);
+    if (hasRoleAccess || hasPastoralAccess) return preferred;
   }
 
-  return session.user.churchRoles[0]?.churchId;
+  return session.user.churchRoles[0]?.churchId ?? session.user.pastoralChurchIds?.[0];
 }

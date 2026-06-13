@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
@@ -9,13 +9,18 @@ interface Props {
 export default async function PastoralMembersPage({ searchParams }: Props) {
   const session = await auth();
   if (!session?.user) redirect("/");
-  if (!session.user.pastoralProfileId) redirect("/dashboard");
+  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
 
   const { church: churchFilter } = await searchParams;
+  const currentChurchId = await getCurrentChurchId(session);
 
-  const profile = await prisma.pastoralProfile.findUnique({
-    where: { id: session.user.pastoralProfileId },
+  const profile = await prisma.pastoralProfile.findFirst({
+    where: {
+      userId: session.user.id,
+      ...(currentChurchId ? { churchId: currentChurchId } : {}),
+    },
     select: {
+      id: true,
       churchId: true,
       responsibleForChurch: { select: { id: true, name: true } },
     },
@@ -23,7 +28,7 @@ export default async function PastoralMembersPage({ searchParams }: Props) {
   if (!profile) redirect("/pastoral");
 
   const supervisedChurches = await prisma.church.findMany({
-    where: { supervisorProfileId: session.user.pastoralProfileId },
+    where: { supervisorProfileId: profile.id },
     select: { id: true, name: true },
   });
 

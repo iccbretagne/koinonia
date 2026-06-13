@@ -36,14 +36,21 @@ export default async function AuthLayout({
   }
 
   const churchRoles = session.user.churchRoles;
+  const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
 
-  const isPastoral = session.user.pastoralProfileId !== null;
+  const hasPastoralProfile = pastoralChurchIds.length > 0;
 
-  if (!session.user.isSuperAdmin && churchRoles.length === 0 && !isPastoral) {
+  if (!session.user.isSuperAdmin && churchRoles.length === 0 && !hasPastoralProfile) {
     redirect("/no-access");
   }
 
   const currentChurchId = await getCurrentChurchId(session);
+
+  // isPastoral : n'afficher la section pastorale que si l'utilisateur a un profil dans l'église courante
+  const isPastoral = currentChurchId
+    ? pastoralChurchIds.includes(currentChurchId)
+    : hasPastoralProfile;
+
   const currentChurch = churchRoles.find((r) => r.churchId === currentChurchId);
   const churchName = currentChurch?.church?.name || "Église";
 
@@ -51,9 +58,19 @@ export default async function AuthLayout({
     ? (await prisma.church.findUnique({ where: { id: currentChurchId }, select: { primaryColor: true } }))?.primaryColor ?? "#5E17EB"
     : "#5E17EB";
 
-  const churches = Array.from(
-    new Map(churchRoles.map((r) => [r.churchId, { id: r.churchId, name: r.church.name }])).values()
+  // Inclure les églises des profils pastoraux dans le switcher
+  const churchMap = new Map(
+    churchRoles.map((r) => [r.churchId, { id: r.churchId, name: r.church.name }])
   );
+  const pastoralOnlyIds = pastoralChurchIds.filter((id) => !churchMap.has(id));
+  if (pastoralOnlyIds.length > 0) {
+    const pastoralChurchData = await prisma.church.findMany({
+      where: { id: { in: pastoralOnlyIds } },
+      select: { id: true, name: true },
+    });
+    for (const c of pastoralChurchData) churchMap.set(c.id, c);
+  }
+  const churches = Array.from(churchMap.values());
 
   // Get departments the user has access to
   const userDepartmentIds = churchRoles
