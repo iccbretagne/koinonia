@@ -1,6 +1,7 @@
 import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import SwitchChurchLink from "@/components/SwitchChurchLink";
 
 const roleLabel: Record<string, string> = {
   PASTEUR: "Pasteur",
@@ -158,12 +159,13 @@ export default async function PastoralDashboardPage() {
                     Resp. : {church.responsible.name} ({roleLabel[church.responsible.role]})
                   </p>
                 )}
-                <a
-                  href={`/pastoral/members?church=${church.id}`}
+                <SwitchChurchLink
+                  churchId={church.id}
+                  href="/pastoral/members"
                   className="text-xs text-icc-violet hover:underline"
                 >
                   Voir les membres →
-                </a>
+                </SwitchChurchLink>
               </div>
             ))}
           </div>
