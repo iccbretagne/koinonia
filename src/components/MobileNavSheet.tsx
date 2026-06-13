@@ -564,9 +564,14 @@ export default function MobileNavSheet({
       <>
         <SheetSubHeader title="Gestion pastorale" onBack={() => setView("root")} />
         <div>
-          {agendaLinks.map((link) => (
-            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
-          ))}
+          {agendaLinks.map((link) => {
+            const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
+            return (
+              <SubRow key={link.href} href={link.href} label={link.label}
+                isActive={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
+                onClose={onClose} />
+            );
+          })}
         </div>
       </>
     );

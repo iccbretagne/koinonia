@@ -421,11 +421,16 @@ export default function Sidebar({
           <AccordionSection title="Agenda pastoral" icon={<IconAgenda className="w-4 h-4" />}
             open={openSection === "agenda"} onToggle={() => toggle("agenda")} isActive={isPastoralAgenda}>
             <nav className="space-y-0.5 pl-6">
-              {agendaLinks.map((link) => (
-                <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                  {link.label}
-                </NavLink>
-              ))}
+              {agendaLinks.map((link) => {
+                const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
+                return (
+                  <NavLink key={link.href} href={link.href}
+                    active={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
+                    onClose={onClose}>
+                    {link.label}
+                  </NavLink>
+                );
+              })}
             </nav>
           </AccordionSection>
         )}
@@ -626,11 +631,16 @@ export default function Sidebar({
           isActive={isGestionPastoraleActive}
         >
           <nav className="space-y-0.5 pl-6">
-            {agendaLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
-                {link.label}
-              </NavLink>
-            ))}
+            {agendaLinks.map((link) => {
+              const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
+              return (
+                <NavLink key={link.href} href={link.href}
+                  active={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
+                  onClose={onClose}>
+                  {link.label}
+                </NavLink>
+              );
+            })}
           </nav>
         </AccordionSection>
       )}
