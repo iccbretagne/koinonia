@@ -23,6 +23,7 @@ interface SidebarProps {
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
+  isPastoral?: boolean;
   onClose?: () => void;
 }
 
@@ -338,6 +339,7 @@ export default function Sidebar({
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
+  isPastoral = false,
   onClose,
 }: SidebarProps) {
   const searchParams = useSearchParams();
@@ -398,6 +400,88 @@ export default function Sidebar({
 
   function toggle(section: string) {
     setOpenSection((prev) => (prev === section ? "" : section));
+  }
+
+  // ── Mode pastoral : navigation simplifiée ────────────────
+  if (isPastoral) {
+    const isPastoralHome = pathname === "/pastoral";
+    const isPastoralMembers = pathname.startsWith("/admin/members");
+    const isPastoralAgenda = pathname.startsWith("/agenda") && pathname !== "/agenda/request";
+    const isPastoralDiscipleship = pathname.startsWith("/admin/discipleship");
+    const isPastoralEvents = pathname.startsWith("/events") || pathname.startsWith("/admin/events") || pathname.startsWith("/admin/reports") || pathname.startsWith("/admin/welcome-duty");
+    const isPastoralJobs = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
+    const isPastoralConfig = pathname.startsWith("/admin") && !pathname.startsWith("/admin/discipleship") && !pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/reports") && !pathname.startsWith("/admin/welcome-duty") && !pathname.startsWith("/admin/jobs") && !pathname.startsWith("/admin/pastoral-profiles");
+
+    return (
+      <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
+        <Link href="/pastoral" onClick={onClose}
+          className={`${sectionHeaderBase} ${isPastoralHome ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span className="flex-1">Accueil</span>
+        </Link>
+
+        <Link href="/admin/members" onClick={onClose}
+          className={`${sectionHeaderBase} ${isPastoralMembers ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+          <IconMembers className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Mes membres</span>
+        </Link>
+
+        {agendaLinks.length > 0 && (
+          <AccordionSection title="Agenda pastoral" icon={<IconAgenda className="w-4 h-4" />}
+            open={openSection === "agenda"} onToggle={() => toggle("agenda")} isActive={isPastoralAgenda}>
+            <nav className="space-y-0.5 pl-6">
+              {agendaLinks.map((link) => (
+                <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </AccordionSection>
+        )}
+
+        {hasDiscipleship && (
+          <Link href="/admin/discipleship" onClick={onClose}
+            className={`${sectionHeaderBase} ${isPastoralDiscipleship ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+            <IconDiscipleship className="w-4 h-4 shrink-0" />
+            <span className="flex-1">Discipolat</span>
+          </Link>
+        )}
+
+        {hasEventsAccess && (
+          <AccordionSection title="Événements" icon={<IconCalendar className="w-4 h-4" />}
+            open={openSection === "events"} onToggle={() => toggle("events")} isActive={isPastoralEvents}>
+            <nav className="space-y-0.5 pl-6">
+              <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
+              <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
+            </nav>
+          </AccordionSection>
+        )}
+
+        {hasJobs && (
+          <AccordionSection title="Emploi" icon={<IconJobs className="w-4 h-4" />}
+            open={openSection === "jobs"} onToggle={() => toggle("jobs")} isActive={isPastoralJobs}>
+            <nav className="space-y-0.5 pl-6">
+              <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>Offres</NavLink>
+            </nav>
+          </AccordionSection>
+        )}
+
+        {configLinks.length > 0 && (
+          <AccordionSection title="Administration" icon={<IconConfig className="w-4 h-4" />}
+            open={openSection === "config"} onToggle={() => toggle("config")} isActive={isPastoralConfig}>
+            <nav className="space-y-0.5 pl-6">
+              {configLinks.map((link) => (
+                <NavLink key={link.href} href={link.href} active={pathname === link.href} onClose={onClose}>
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </AccordionSection>
+        )}
+      </aside>
+    );
   }
 
   return (

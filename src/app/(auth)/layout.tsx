@@ -308,6 +308,7 @@ export default async function AuthLayout({
       hasAccounting={hasAccounting}
       hasJobs={hasJobs}
       hasJobsManage={hasJobsManage}
+      isPastoral={isPastoral}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
