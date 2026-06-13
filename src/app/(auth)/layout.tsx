@@ -51,12 +51,11 @@ export default async function AuthLayout({
     ? pastoralChurchIds.includes(currentChurchId)
     : hasPastoralProfile;
 
-  const currentChurch = churchRoles.find((r) => r.churchId === currentChurchId);
-  const churchName = currentChurch?.church?.name || "Église";
-
-  const churchPrimaryColor = currentChurchId
-    ? (await prisma.church.findUnique({ where: { id: currentChurchId }, select: { primaryColor: true } }))?.primaryColor ?? "#5E17EB"
-    : "#5E17EB";
+  const currentChurchDb = currentChurchId
+    ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
+    : null;
+  const churchName = currentChurchDb?.name ?? "Église";
+  const churchPrimaryColor = currentChurchDb?.primaryColor ?? "#5E17EB";
 
   // Inclure les églises des profils pastoraux dans le switcher
   const churchMap = new Map(
