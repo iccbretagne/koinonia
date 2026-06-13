@@ -321,6 +321,9 @@ export async function getDiscipleshipScope(
   );
   if (hasGlobalRole) return { scoped: false };
 
+  // Un profil pastoral dans cette église a une vue globale (lecture seule)
+  if ((session.user.pastoralChurchIds ?? []).includes(churchId)) return { scoped: false };
+
   // DISCIPLE_MAKER : résoudre le membre lié au compte
   const link = await prisma.memberUserLink.findUnique({
     where: { userId_churchId: { userId: session.user.id, churchId } },
