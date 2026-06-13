@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-type SheetView = "root" | "planning" | "evenements" | "communaute" | "operations" | "ressources" | "config";
+type SheetView = "root" | "planning" | "evenements" | "pastoral" | "communaute" | "operations" | "ressources" | "config";
 
 interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
@@ -310,7 +310,8 @@ export default function MobileNavSheet({
     pathname.startsWith("/admin/members") ||
     pathname.startsWith("/admin/discipleship") ||
     isIntegrationActive;
-  const isEvenementsActive = isEventsActive || isAgendaActive;
+  const isEvenementsActive = isEventsActive;
+  const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
   const isRessourcesActive = isAccountingActive || isJobsActive || isMrbsActive;
 
@@ -340,11 +341,11 @@ export default function MobileNavSheet({
         />
         {agendaLinks.length > 0 && (
           <RootRow
-            label="Agenda pastoral"
+            label="Gestion pastorale"
             icon={<IconDiscipleship className="w-5 h-5" />}
             hasChildren
-            isActive={isAgendaActive}
-            onClick={() => setView("evenements")}
+            isActive={isGestionPastoraleActive}
+            onClick={() => setView("pastoral")}
           />
         )}
         {hasDiscipleship && (
@@ -425,6 +426,15 @@ export default function MobileNavSheet({
             hasChildren
             isActive={isEvenementsActive}
             onClick={() => setView("evenements")}
+          />
+        )}
+        {agendaLinks.length > 0 && (
+          <RootRow
+            label="Gestion pastorale"
+            icon={<IconDiscipleship className="w-5 h-5" />}
+            hasChildren
+            isActive={isGestionPastoraleActive}
+            onClick={() => setView("pastoral")}
           />
         )}
         {hasOperations && (
@@ -544,14 +554,24 @@ export default function MobileNavSheet({
           {hasReports && (
             <SubRow href="/admin/reports" label="Comptes rendus" isActive={pathname.startsWith("/admin/reports")} onClose={onClose} />
           )}
-          {agendaLinks.length > 0 && (
-            <>
-              <SubDivider />
-              {agendaLinks.map((link) => (
-                <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
-              ))}
-            </>
-          )}
+        </div>
+      </>
+    );
+  }
+
+  function renderGestionPastorale() {
+    return (
+      <>
+        <SheetSubHeader title="Gestion pastorale" onBack={() => setView("root")} />
+        <div>
+          {agendaLinks.map((link) => {
+            const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
+            return (
+              <SubRow key={link.href} href={link.href} label={link.label}
+                isActive={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
+                onClose={onClose} />
+            );
+          })}
         </div>
       </>
     );
@@ -593,9 +613,8 @@ export default function MobileNavSheet({
             <>
               {(mrbsUrl || mrbsAdminLink || hasAccounting) && <SubDivider />}
               <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
-              <SubRow href="/jobs/new" label="Publier" isActive={pathname === "/jobs/new"} onClose={onClose} />
               {hasJobsManage && (
-                <SubRow href="/admin/jobs" label="Modérer" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
+                <SubRow href="/admin/jobs" label="Modération offres" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
               )}
             </>
           )}
@@ -622,6 +641,7 @@ export default function MobileNavSheet({
       case "planning":    return renderPlanning();
       case "communaute":  return renderCommunaute();
       case "evenements":  return renderEvenements();
+      case "pastoral":    return renderGestionPastorale();
       case "operations":  return renderOperations();
       case "ressources":  return renderRessources();
       case "config":      return renderConfig();

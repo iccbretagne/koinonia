@@ -195,12 +195,12 @@ export default async function AuthLayout({
     }).then((c) => c > 0);
 
     if (isIntegrationMember || isBerger) {
-      integrationLinks.push({ href: "/integration/requests", label: "Demandes" });
+      integrationLinks.push({ href: "/integration/requests", label: "Intégration" });
     }
     if (isIntegrationMember) {
-      integrationLinks.push({ href: "/integration/leaders", label: "Bergers" });
-      integrationLinks.push({ href: "/integration/parcours", label: "Parcours" });
-      integrationLinks.push({ href: "/integration/stats", label: "Statistiques" });
+      integrationLinks.push({ href: "/integration/leaders", label: "Bergers de famille" });
+      integrationLinks.push({ href: "/integration/parcours", label: "Parcours d'intégration" });
+      integrationLinks.push({ href: "/integration/stats", label: "Statistiques intégration" });
     }
   }
 
