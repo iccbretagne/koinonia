@@ -18,6 +18,7 @@ const configLinksDef = [
   { href: "/admin/churches",            label: "Églises",         permissions: ["church:manage"] },
   { href: "/admin/backups",             label: "Sauvegardes",     permissions: [], superAdminOnly: true },
   { href: "/admin/audit-logs",          label: "Historique",      permissions: ["church:manage"] },
+  { href: "/admin/pastoral-profiles",   label: "Profils pastoraux", permissions: ["church:manage"] },
 ];
 
 export default async function AuthLayout({
@@ -203,7 +204,6 @@ export default async function AuthLayout({
   if (hasAgendaQualify) agendaLinks.push({ href: "/agenda/requests", label: "Qualification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/new", label: "Nouvelle entrée" });
-  if (userPermissions.has("church:manage")) agendaLinks.push({ href: "/admin/pastoral-profiles", label: "Profils pastoraux" });
 
   const headerContent = (
     <div className="flex items-center w-full min-w-0">
