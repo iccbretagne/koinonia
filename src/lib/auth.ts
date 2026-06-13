@@ -207,8 +207,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         }
       }
+      // Inclure également les églises supervisées par les profils de cet utilisateur
+      const profileIds = pastoralProfiles.map((p) => p.id);
+      const supervisedChurchIds = profileIds.length > 0
+        ? (await prisma.church.findMany({
+            where: { supervisorProfileId: { in: profileIds } },
+            select: { id: true },
+          })).map((c) => c.id)
+        : [];
+      const directChurchIds = new Set(pastoralProfiles.map((p) => p.churchId));
+      const allPastoralChurchIds = [
+        ...directChurchIds,
+        ...supervisedChurchIds.filter((id) => !directChurchIds.has(id)),
+      ];
+
       session.user.pastoralProfileId = pastoralProfiles[0]?.id ?? null;
-      session.user.pastoralChurchIds = pastoralProfiles.map((p) => p.churchId);
+      session.user.pastoralChurchIds = allPastoralChurchIds;
 
       session.user.churchRoles = churchRoles.map((cr) => {
         const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
@@ -341,6 +355,14 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
  * Vérifie qu'un utilisateur possède une permission donnée **dans une église précise**.
  * Contrairement à requirePermission, le churchId est obligatoire.
  */
+// Permissions accordées aux utilisateurs ayant un profil pastoral dans une église
+// (lire mais pas écrire)
+const PASTORAL_READ_PERMISSIONS = new Set([
+  "events:view",
+  "discipleship:view",
+  "planning:view",
+]);
+
 export async function requireChurchPermission(
   permission: string,
   churchId: string
@@ -354,6 +376,13 @@ export async function requireChurchPermission(
   );
 
   if (roles.length === 0) {
+    // Pas de rôle dans cette église — vérifier si un profil pastoral donne accès
+    if (
+      PASTORAL_READ_PERMISSIONS.has(permission) &&
+      (session.user.pastoralChurchIds ?? []).includes(churchId)
+    ) {
+      return session;
+    }
     throw new Error("FORBIDDEN");
   }
 
@@ -377,11 +406,14 @@ export async function requireChurchAccess(churchId: string) {
 
   if (session.user.isSuperAdmin) return session;
 
-  const hasAccess = session.user.churchRoles.some(
+  const hasRoleAccess = session.user.churchRoles.some(
     (r) => r.churchId === churchId
   );
+  // Un profil pastoral donne aussi accès à la zone admin (les pages individuelles
+  // restent protégées par requireChurchPermission)
+  const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(churchId);
 
-  if (!hasAccess) {
+  if (!hasRoleAccess && !hasPastoralAccess) {
     throw new Error("FORBIDDEN");
   }
 
@@ -628,12 +660,14 @@ export async function getCurrentChurchId(
   const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const preferred = cookieStore.get("current-church")?.value;
+  const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
 
   if (preferred) {
     const hasRoleAccess = session.user.churchRoles.some((r) => r.churchId === preferred);
-    const hasPastoralAccess = (session.user.pastoralChurchIds ?? []).includes(preferred);
-    if (hasRoleAccess || hasPastoralAccess) return preferred;
+    if (hasRoleAccess) return preferred;
+    // Accepter aussi une église pastorale/supervisée comme contexte courant
+    if (pastoralChurchIds.includes(preferred)) return preferred;
   }
 
-  return session.user.churchRoles[0]?.churchId ?? session.user.pastoralChurchIds?.[0];
+  return session.user.churchRoles[0]?.churchId ?? pastoralChurchIds[0];
 }

@@ -14,7 +14,7 @@ export default async function PastoralMembersPage({ searchParams }: Props) {
   const { church: churchFilter } = await searchParams;
   const currentChurchId = await getCurrentChurchId(session);
 
-  const profile = await prisma.pastoralProfile.findFirst({
+  let profile = await prisma.pastoralProfile.findFirst({
     where: {
       userId: session.user.id,
       ...(currentChurchId ? { churchId: currentChurchId } : {}),
@@ -25,6 +25,21 @@ export default async function PastoralMembersPage({ searchParams }: Props) {
       responsibleForChurch: { select: { id: true, name: true } },
     },
   });
+
+  // Église supervisée : utiliser le profil superviseur
+  if (!profile && currentChurchId) {
+    profile = await prisma.pastoralProfile.findFirst({
+      where: {
+        userId: session.user.id,
+        supervisorForChurches: { some: { id: currentChurchId } },
+      },
+      select: {
+        id: true,
+        churchId: true,
+        responsibleForChurch: { select: { id: true, name: true } },
+      },
+    });
+  }
   if (!profile) redirect("/pastoral");
 
   const supervisedChurches = await prisma.church.findMany({

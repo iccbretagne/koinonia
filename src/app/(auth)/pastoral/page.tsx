@@ -20,7 +20,8 @@ export default async function PastoralDashboardPage() {
   const now = new Date();
   const currentChurchId = await getCurrentChurchId(session);
 
-  const profile = await prisma.pastoralProfile.findFirst({
+  // Cherche d'abord un profil direct dans l'église courante
+  let profile = await prisma.pastoralProfile.findFirst({
     where: {
       userId: session.user.id,
       ...(currentChurchId ? { churchId: currentChurchId } : {}),
@@ -34,6 +35,25 @@ export default async function PastoralDashboardPage() {
       responsibleForChurch: { select: { id: true, name: true } },
     },
   });
+
+  // Si l'église courante est une église supervisée (pas de profil direct là),
+  // on utilise le profil qui en est superviseur
+  if (!profile && currentChurchId) {
+    profile = await prisma.pastoralProfile.findFirst({
+      where: {
+        userId: session.user.id,
+        supervisorForChurches: { some: { id: currentChurchId } },
+      },
+      select: {
+        id: true,
+        role: true,
+        name: true,
+        churchId: true,
+        church: { select: { id: true, name: true } },
+        responsibleForChurch: { select: { id: true, name: true } },
+      },
+    });
+  }
 
   if (!profile) redirect("/dashboard");
 
