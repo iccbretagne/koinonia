@@ -159,13 +159,36 @@ export default async function PastoralDashboardPage() {
                     Resp. : {church.responsible.name} ({roleLabel[church.responsible.role]})
                   </p>
                 )}
-                <SwitchChurchLink
-                  churchId={church.id}
-                  href="/pastoral/members"
-                  className="text-xs text-icc-violet hover:underline"
-                >
-                  Voir les membres →
-                </SwitchChurchLink>
+                <div className="flex flex-wrap gap-2">
+                  <SwitchChurchLink
+                    churchId={church.id}
+                    href="/pastoral/members"
+                    className="text-xs text-icc-violet hover:underline"
+                  >
+                    Membres →
+                  </SwitchChurchLink>
+                  <SwitchChurchLink
+                    churchId={church.id}
+                    href="/pastoral/events"
+                    className="text-xs text-icc-violet hover:underline"
+                  >
+                    Événements →
+                  </SwitchChurchLink>
+                  <SwitchChurchLink
+                    churchId={church.id}
+                    href="/pastoral/reports"
+                    className="text-xs text-icc-violet hover:underline"
+                  >
+                    Comptes rendus →
+                  </SwitchChurchLink>
+                  <SwitchChurchLink
+                    churchId={church.id}
+                    href="/pastoral/accounting"
+                    className="text-xs text-icc-violet hover:underline"
+                  >
+                    Comptabilité →
+                  </SwitchChurchLink>
+                </div>
               </div>
             ))}
           </div>
