@@ -3,6 +3,7 @@ import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import AccountingDashboard from "./AccountingDashboard";
+import AccountingNav from "../AccountingNav";
 
 export default async function AccountingRequestsPage() {
   const session = await requireAuth();
@@ -17,6 +18,7 @@ export default async function AccountingRequestsPage() {
 
   const canManage = perms.includes("accounting:manage");
   const canSubmit = perms.includes("accounting:submit");
+  const canViewStats = perms.includes("accounting:stats") || (session.user.pastoralChurchIds ?? []).includes(churchId);
 
   // Scope : DEPARTMENT_HEAD → ses départements uniquement
   let deptFilter: string[] | undefined;
@@ -76,6 +78,8 @@ export default async function AccountingRequestsPage() {
           </Link>
         )}
       </div>
+
+      <AccountingNav canViewStats={canViewStats} active="requests" />
 
       <AccountingDashboard
         requests={requests.map((r) => ({

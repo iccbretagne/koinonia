@@ -19,6 +19,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "reports:edit",
     "accounting:view",
     "accounting:manage",
+    "accounting:stats",
     "accounting:submit",
   ],
   ADMIN: [
@@ -36,6 +37,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "reports:edit",
     "accounting:view",
     "accounting:manage",
+    "accounting:stats",
     "accounting:submit",
   ],
   SECRETARY: [
@@ -49,6 +51,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "discipleship:export",
     "reports:view",
     "reports:edit",
+    "accounting:stats",
   ],
   MINISTER: [
     "planning:view",
@@ -91,6 +94,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   ACCOUNTANT: [
     "accounting:view",
     "accounting:manage",
+    "accounting:stats",
   ],
 };
 
