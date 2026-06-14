@@ -12,17 +12,21 @@ export default async function AccountingRequestsPage() {
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
-  if (!perms.includes("accounting:view")) {
+  const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
+
+  if (!perms.includes("accounting:view") && !isPastoral) {
     return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
   }
 
   const canManage = perms.includes("accounting:manage");
-  const canSubmit = perms.includes("accounting:submit");
-  const canViewStats = perms.includes("accounting:stats") || (session.user.pastoralChurchIds ?? []).includes(churchId);
+  const canSubmit = perms.includes("accounting:submit") || isPastoral;
+  const canViewStats = perms.includes("accounting:stats") || isPastoral;
 
-  // Scope : DEPARTMENT_HEAD → ses départements uniquement
+  // Scope des demandes visibles :
+  // - canManage ou isPastoral → toutes les demandes de l'église
+  // - autres → leurs départements assignés uniquement
   let deptFilter: string[] | undefined;
-  if (!canManage) {
+  if (!canManage && !isPastoral) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
       include: { departments: { select: { departmentId: true } } },

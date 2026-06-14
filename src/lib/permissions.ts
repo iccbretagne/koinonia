@@ -63,6 +63,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "departments:manage",
     "discipleship:view",
     "accounting:view",
+    "accounting:submit",
   ],
   DEPARTMENT_HEAD: [
     "planning:view",
