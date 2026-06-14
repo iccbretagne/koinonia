@@ -32,7 +32,7 @@ interface Request {
   status: string;
   priority: string | null;
   createdAt: string | Date;
-  department: { id: string; name: string };
+  department: { id: string; name: string } | null;
   submittedBy: { id: string; name: string | null };
   payments: { id: string; amount: number | string; scheduledDate: string | Date; releasedAt: string | Date | null }[];
   _count: { attachments: number };
@@ -86,7 +86,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       if (statusFilter && r.status !== statusFilter) return false;
       if (typeFilter && r.type !== typeFilter) return false;
       if (q) {
-        const hay = `${r.label} ${r.department.name} ${r.submittedBy.name ?? ""}`.toLowerCase();
+        const hay = `${r.label} ${r.department?.name ?? ""} ${r.submittedBy.name ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -131,7 +131,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 text-sm truncate">{r.label}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {r.department.name} · {fmtAmount(r.amount)} ·{" "}
+                      {r.department?.name ?? "Personnel"} · {fmtAmount(r.amount)} ·{" "}
                       <span className={days >= 7 ? "text-amber-600 font-medium" : ""}>{days}j</span>
                     </p>
                   </div>
@@ -233,7 +233,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{r.department.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{r.department?.name ?? "Personnel"}</td>
                       <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{fmtAmount(r.amount)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"}`}>
@@ -275,7 +275,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                           {STATUS_LABELS[r.status]}
                         </span>
                         <span className="text-xs text-gray-500">{fmtAmount(r.amount)}</span>
-                        <span className="text-xs text-gray-400">{r.department.name}</span>
+                        <span className="text-xs text-gray-400">{r.department?.name ?? "Personnel"}</span>
                       </div>
                     </div>
                     <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-amber-600 font-semibold" : "text-gray-400"}`}>{days}j</span>

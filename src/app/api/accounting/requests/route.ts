@@ -6,11 +6,11 @@ import { sendEmail, buildAccountingNewRequestEmail } from "@/lib/email";
 import { z } from "zod";
 
 const createSchema = z.object({
-  type:        z.enum(["EXPENSE_REPORT", "BUDGET_ADVANCE"]),
-  label:       z.string().min(1).max(200),
-  description: z.string().optional(),
-  amount:      z.number().positive(),
-  departmentId: z.string().min(1),
+  type:          z.enum(["EXPENSE_REPORT", "BUDGET_ADVANCE"]),
+  label:         z.string().min(1).max(200),
+  description:   z.string().optional(),
+  amount:        z.number().positive(),
+  departmentId:  z.string().min(1).optional(), // null/omis = note de frais personnelle
   attachmentIds: z.array(z.string()).optional(),
 });
 
@@ -25,25 +25,45 @@ export async function GET(request: Request) {
     const departmentId = searchParams.get("departmentId") ?? undefined;
     const type       = searchParams.get("type") ?? undefined;
 
-    // Scope : DEPARTMENT_HEAD voit uniquement ses départements
     const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
     const canManage = roles.flatMap((r) => rolePermissions[r] ?? []).includes("accounting:manage");
+    const isMinister = roles.includes("MINISTER");
+
+    // Scope : managers voient tout ; ministres voient leur(s) ministère(s) ; autres voient leurs départements.
+    // Dans tous les cas, chacun voit ses propres demandes personnelles (departmentId null).
     let deptFilter: string[] | undefined;
     if (!canManage) {
       const userRoles = await prisma.userChurchRole.findMany({
         where: { userId: session.user.id!, churchId },
         include: { departments: { select: { departmentId: true } } },
       });
-      deptFilter = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
-      if (deptFilter.length === 0) return successResponse([]);
+      if (isMinister) {
+        const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
+        if (ministryIds.length > 0) {
+          const depts = await prisma.department.findMany({
+            where: { ministryId: { in: ministryIds } },
+            select: { id: true },
+          });
+          deptFilter = depts.map((d) => d.id);
+        } else {
+          deptFilter = [];
+        }
+      } else {
+        deptFilter = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
+      }
     }
+
+    // Filtre scope : département(s) assigné(s) OU propres demandes personnelles (sans département)
+    const scopeCondition = deptFilter
+      ? { OR: [{ departmentId: { in: deptFilter } }, { submittedById: session.user.id!, departmentId: null }] }
+      : {};
 
     const requests = await prisma.financialRequest.findMany({
       where: {
         churchId,
         ...(status ? { status: status as never } : {}),
         ...(type ? { type: type as never } : {}),
-        ...(departmentId ? { departmentId } : deptFilter ? { departmentId: { in: deptFilter } } : {}),
+        ...(departmentId ? { departmentId } : scopeCondition),
       },
       include: {
         department:  { select: { id: true, name: true } },
@@ -72,16 +92,18 @@ export async function POST(request: Request) {
 
     const body = createSchema.parse(await request.json());
 
-    // Vérifier que le département appartient à l'église
-    const dept = await prisma.department.findFirst({
-      where: { id: body.departmentId, ministry: { churchId } },
-    });
-    if (!dept) throw new ApiError(404, "Département introuvable");
+    // Vérifier que le département appartient à l'église (si fourni)
+    if (body.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: { id: body.departmentId, ministry: { churchId } },
+      });
+      if (!dept) throw new ApiError(404, "Département introuvable");
+    }
 
     const req = await prisma.financialRequest.create({
       data: {
         churchId,
-        departmentId: body.departmentId,
+        departmentId: body.departmentId ?? null,
         submittedById: session.user.id!,
         type:        body.type,
         label:       body.label,
@@ -111,7 +133,7 @@ export async function POST(request: Request) {
 
 async function notifyAccountingTeam(
   churchId: string,
-  req: { id: string; label: string; type: string; description: string | null; amount: unknown; department: { name: string }; submittedBy: { name: string | null; email: string | null } }
+  req: { id: string; label: string; type: string; description: string | null; amount: unknown; department: { name: string } | null; submittedBy: { name: string | null; email: string | null } }
 ) {
   const church = await prisma.church.findUnique({
     where: { id: churchId },
@@ -144,7 +166,7 @@ async function notifyAccountingTeam(
       requestLabel:   req.label,
       requestAmount:  amount,
       requestType:    req.type,
-      departmentName: req.department.name,
+      departmentName: req.department?.name ?? "—",
       submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
       description:    req.description,
       churchName:     church.name,

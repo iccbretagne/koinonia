@@ -91,8 +91,9 @@ export default async function AccountingStatsPage() {
   const deptMap: Record<string, { name: string; count: number; amount: number; released: number }> =
     {};
   for (const r of requests) {
-    const key = r.departmentId;
-    if (!deptMap[key]) deptMap[key] = { name: r.department.name, count: 0, amount: 0, released: 0 };
+    const key = r.departmentId ?? "__personal__";
+    const name = r.department?.name ?? "Personnel";
+    if (!deptMap[key]) deptMap[key] = { name, count: 0, amount: 0, released: 0 };
     deptMap[key].count++;
     deptMap[key].amount += Number(r.amount);
     deptMap[key].released += r.payments

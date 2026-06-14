@@ -48,7 +48,7 @@ interface Request {
   rejectionReason: string | null;
   createdAt: string | Date;
   processedAt: string | Date | null;
-  department: { id: string; name: string; ministry: { name: string } };
+  department: { id: string; name: string; ministry: { name: string } } | null;
   submittedBy: { id: string; name: string | null; email: string | null };
   processedBy: { id: string; name: string | null } | null;
   payments: Payment[];
@@ -206,7 +206,10 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
               )}
             </div>
             <h1 className="text-xl font-bold text-gray-900">{req.label}</h1>
-            <p className="text-sm text-gray-400">{req.department.ministry.name} — {req.department.name}</p>
+            {req.department
+              ? <p className="text-sm text-gray-400">{req.department.ministry.name} — {req.department.name}</p>
+              : <p className="text-sm text-gray-400 italic">Personnel / sans département</p>
+            }
             <p className="text-sm text-gray-400">Par {req.submittedBy.name ?? req.submittedBy.email} · {fmt(req.createdAt)}</p>
           </div>
           <div className="flex items-center gap-2 self-start flex-wrap">

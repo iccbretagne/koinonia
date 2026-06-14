@@ -1335,7 +1335,7 @@ model FinancialSeries {
 model FinancialRequest {
   id               String                 @id @default(cuid())
   churchId         String
-  departmentId     String
+  departmentId     String?                // null = note de frais personnelle (sans département)
   submittedById    String
   seriesId         String?                // null si demande one-shot
   occurrenceNumber Int?                   // rang dans la série
@@ -1352,7 +1352,7 @@ model FinancialRequest {
   processedAt      DateTime?
 
   church       Church            @relation(fields: [churchId], references: [id])
-  department   Department        @relation(fields: [departmentId], references: [id])
+  department   Department?       @relation(fields: [departmentId], references: [id])
   submittedBy  User              @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
   processedBy  User?             @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
   series       FinancialSeries?  @relation(fields: [seriesId], references: [id])
