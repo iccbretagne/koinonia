@@ -364,6 +364,7 @@ const PASTORAL_READ_PERMISSIONS = new Set([
   "events:view",
   "discipleship:view",
   "planning:view",
+  "accounting:stats",
 ]);
 
 export async function requireChurchPermission(

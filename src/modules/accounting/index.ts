@@ -12,6 +12,8 @@ export const accountingModule = defineModule({
     "accounting:view":    ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "MINISTER", "DEPARTMENT_HEAD"],
     // Traiter les demandes (changer statut, valider, rejeter, saisir paiements)
     "accounting:manage":  ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT"],
+    // Consulter les statistiques financières (compta, admins, secrétaires)
+    "accounting:stats":   ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "SECRETARY"],
   },
 
   navigation: [
