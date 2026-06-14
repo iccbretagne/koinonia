@@ -12,28 +12,51 @@ export default async function AccountingRequestsPage() {
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
-  if (!perms.includes("accounting:view")) {
+  const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
+
+  if (!perms.includes("accounting:view") && !isPastoral) {
     return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
   }
 
   const canManage = perms.includes("accounting:manage");
-  const canSubmit = perms.includes("accounting:submit");
-  const canViewStats = perms.includes("accounting:stats") || (session.user.pastoralChurchIds ?? []).includes(churchId);
+  const canSubmit = perms.includes("accounting:submit") || isPastoral;
+  const canViewStats = perms.includes("accounting:stats") || isPastoral;
 
-  // Scope : DEPARTMENT_HEAD → ses départements uniquement
+  // Scope des demandes visibles :
+  // - canManage ou isPastoral → toutes les demandes de l'église
+  // - MINISTER → tous les départements de son/ses ministère(s) + ses demandes personnelles
+  // - autres → leurs départements assignés + leurs demandes personnelles
+  const isMinister = roles.includes("MINISTER");
   let deptFilter: string[] | undefined;
-  if (!canManage) {
+  if (!canManage && !isPastoral) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
       include: { departments: { select: { departmentId: true } } },
     });
-    deptFilter = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
+    if (isMinister) {
+      const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
+      if (ministryIds.length > 0) {
+        const depts = await prisma.department.findMany({
+          where: { ministryId: { in: ministryIds } },
+          select: { id: true },
+        });
+        deptFilter = depts.map((d) => d.id);
+      } else {
+        deptFilter = [];
+      }
+    } else {
+      deptFilter = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
+    }
   }
+
+  const scopeCondition = deptFilter !== undefined
+    ? { OR: [{ departmentId: { in: deptFilter } }, { submittedById: session.user.id!, departmentId: null }] }
+    : {};
 
   const requests = await prisma.financialRequest.findMany({
     where: {
       churchId,
-      ...(deptFilter ? { departmentId: { in: deptFilter } } : {}),
+      ...scopeCondition,
     },
     include: {
       department:  { select: { id: true, name: true } },
