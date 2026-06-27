@@ -52,12 +52,11 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading]         = useState(true);
 
-  // Per-event suggestion panel
-  const [openEventId, setOpenEventId]     = useState<string | null>(null);
-  const [suggestions, setSuggestions]     = useState<Suggestion[]>([]);
-  const [loadingSugg, setLoadingSugg]     = useState(false);
-  const [assigning, setAssigning]         = useState<string | null>(null);
-  const [removing, setRemoving]           = useState<string | null>(null);
+  const [openEventId, setOpenEventId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [loadingSugg, setLoadingSugg] = useState(false);
+  const [assigning, setAssigning]     = useState<string | null>(null);
+  const [removing, setRemoving]       = useState<string | null>(null);
 
   const fetchMonth = useCallback(async () => {
     setLoading(true);
@@ -124,7 +123,6 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
       const created: Assignment = await res.json();
       setAssignments((prev) => [...prev, created]);
-      // Remove from suggestions
       setSuggestions((prev) => prev.filter((s) => s.id !== familyId));
     } finally {
       setAssigning(null);
@@ -138,9 +136,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
       const removed = assignments.find((a) => a.id === assignmentId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
-      // Re-add to suggestions if the panel is open for that event
       if (removed && openEventId === removed.eventId) {
-        // Refetch suggestions to restore correct order
         const res2 = await fetch(`/api/welcome-duty/suggestions?eventId=${removed.eventId}&limit=8`);
         const data = await res2.json();
         setSuggestions(Array.isArray(data) ? data : []);
@@ -151,8 +147,8 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
   }
 
   function formatLastServed(date: string | null) {
-    if (!date) return "Jamais servi";
-    return new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+    if (!date) return "Jamais";
+    return new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
   }
 
   return (
@@ -161,7 +157,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={prevMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
           aria-label="Mois précédent"
         >
           ‹
@@ -171,7 +167,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
         </span>
         <button
           onClick={nextMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
           aria-label="Mois suivant"
         >
           ›
@@ -193,54 +189,54 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
 
             return (
               <div key={event.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
-                {/* Event row */}
-                <div className="flex items-center gap-3 px-4 py-3">
-                  {/* Date */}
-                  <span className="text-xs text-gray-400 w-28 shrink-0 capitalize">
-                    {formatDate(event.date)}
-                  </span>
-
-                  {/* Title + type */}
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-gray-800 truncate block">{event.title}</span>
-                    <span className="text-xs text-gray-400">{event.type}</span>
+                {/* Event row — stacked on mobile, inline on desktop */}
+                <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                  {/* Date + title */}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <span className="text-xs text-gray-400 shrink-0 capitalize pt-0.5 w-24">
+                      {formatDate(event.date)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-gray-800 truncate block">{event.title}</span>
+                      <span className="text-xs text-gray-400">{event.type}</span>
+                    </div>
                   </div>
 
-                  {/* Assigned families */}
-                  <div className="flex flex-wrap gap-1.5 justify-end">
-                    {eventAssignments.length === 0 ? (
-                      <span className="text-xs text-gray-300 italic">Non affecté</span>
-                    ) : (
-                      eventAssignments.map((a) => (
-                        <span
-                          key={a.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-icc-violet/10 text-icc-violet text-xs rounded-full font-medium"
-                        >
-                          {a.welcomeDutyFamily.familyName}
-                          <button
-                            onClick={() => remove(a.id)}
-                            disabled={removing === a.id}
-                            className="text-icc-violet/50 hover:text-icc-violet disabled:opacity-40 leading-none ml-0.5"
-                            aria-label="Retirer"
+                  {/* Families + assign button */}
+                  <div className="flex items-center gap-2 justify-between sm:justify-end">
+                    <div className="flex flex-wrap gap-1.5">
+                      {eventAssignments.length === 0 ? (
+                        <span className="text-xs text-gray-300 italic">Non affecté</span>
+                      ) : (
+                        eventAssignments.map((a) => (
+                          <span
+                            key={a.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-icc-violet/10 text-icc-violet text-xs rounded-full font-medium"
                           >
-                            ✕
-                          </button>
-                        </span>
-                      ))
-                    )}
+                            {a.welcomeDutyFamily.familyName}
+                            <button
+                              onClick={() => remove(a.id)}
+                              disabled={removing === a.id}
+                              className="text-icc-violet/50 hover:text-icc-violet disabled:opacity-40 leading-none ml-0.5"
+                              aria-label="Retirer"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                    <button
+                      onClick={() => openSuggestions(event.id)}
+                      className={`shrink-0 text-sm px-3 py-2 rounded-lg border transition-colors ${
+                        isOpen
+                          ? "border-icc-violet bg-icc-violet text-white"
+                          : "border-gray-200 text-gray-500 hover:border-icc-violet hover:text-icc-violet"
+                      }`}
+                    >
+                      {isOpen ? "Fermer" : "+ Affecter"}
+                    </button>
                   </div>
-
-                  {/* Assign button */}
-                  <button
-                    onClick={() => openSuggestions(event.id)}
-                    className={`shrink-0 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                      isOpen
-                        ? "border-icc-violet bg-icc-violet text-white"
-                        : "border-gray-200 text-gray-500 hover:border-icc-violet hover:text-icc-violet"
-                    }`}
-                  >
-                    {isOpen ? "Fermer" : "+ Affecter"}
-                  </button>
                 </div>
 
                 {/* Suggestion panel */}
@@ -260,12 +256,12 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                             key={s.id}
                             onClick={() => assign(event.id, s.id)}
                             disabled={assigning === s.id}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs text-gray-700 hover:border-icc-violet hover:text-icc-violet disabled:opacity-50 transition-colors"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-icc-violet hover:text-icc-violet disabled:opacity-50 transition-colors"
                           >
                             <span className="font-medium">{s.familyName}</span>
-                            <span className="text-gray-400">{formatLastServed(s.lastServedAt)}</span>
+                            <span className="text-gray-400 text-xs">{formatLastServed(s.lastServedAt)}</span>
                             {assigning === s.id ? (
-                              <span className="text-gray-400">…</span>
+                              <span className="text-gray-400 text-xs">…</span>
                             ) : (
                               <span className="text-icc-violet">+</span>
                             )}
