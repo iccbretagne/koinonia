@@ -402,7 +402,6 @@ export default function Sidebar({
     const isPastoralDiscipleship = isDiscipleshipActive;
     const isPastoralEvents = isEventsActive;
     const isPastoralJobs = isJobsActive;
-    const isPastoralConfig = isConfigActive;
 
     return (
       <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -487,18 +486,6 @@ export default function Sidebar({
           </AccordionSection>
         )}
 
-        {configLinks.length > 0 && (
-          <AccordionSection title="Administration" icon={<IconConfig className="w-4 h-4" />}
-            open={openSection === "config"} onToggle={() => toggle("config")} isActive={isPastoralConfig}>
-            <nav className="space-y-0.5 pl-6">
-              {configLinks.map((link) => (
-                <NavLink key={link.href} href={link.href} active={pathname === link.href} onClose={onClose}>
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </AccordionSection>
-        )}
       </aside>
     );
   }
