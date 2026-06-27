@@ -94,7 +94,8 @@ export default async function PastoralEventsPage() {
     const allPlannings = event.eventDepts.flatMap((d) => d.plannings);
     if (allPlannings.length === 0) return null;
     const filled = allPlannings.filter((p) => p.status !== null).length;
-    return Math.round((filled / allPlannings.length) * 100);
+    const total = allPlannings.length;
+    return { filled, total, pct: Math.round((filled / total) * 100) };
   }
 
   return (
@@ -147,15 +148,23 @@ export default async function PastoralEventsPage() {
                       </div>
                     </div>
                     {progress !== null && (
-                      <div className="space-y-0.5">
-                        <div className="flex items-center justify-between text-xs text-gray-400">
-                          <span>Planning ({deptCount} dept.)</span>
-                          <span>{progress}%</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-gray-400">
+                            {deptCount} département{deptCount > 1 ? "s" : ""} · service affecté
+                          </span>
+                          <span className={`text-xs font-medium ${
+                            progress.pct === 100 ? "text-emerald-600" : progress.pct > 50 ? "text-icc-violet" : "text-amber-600"
+                          }`}>
+                            {progress.filled} / {progress.total} postes
+                          </span>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="w-full bg-gray-100 rounded-full h-1">
                           <div
-                            className={`h-1.5 rounded-full ${progress === 100 ? "bg-emerald-500" : progress > 50 ? "bg-icc-violet" : "bg-amber-400"}`}
-                            style={{ width: `${progress}%` }}
+                            className={`h-1 rounded-full transition-all ${
+                              progress.pct === 100 ? "bg-emerald-500" : progress.pct > 50 ? "bg-icc-violet" : "bg-amber-400"
+                            }`}
+                            style={{ width: `${progress.pct}%` }}
                           />
                         </div>
                       </div>
