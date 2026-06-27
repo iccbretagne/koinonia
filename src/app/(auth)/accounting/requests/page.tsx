@@ -50,6 +50,7 @@ export default async function AccountingRequestsPage() {
     submitted:  requests.filter((r) => r.status === "SUBMITTED").length,
     processing: requests.filter((r) => r.status === "PROCESSING").length,
     approved:   requests.filter((r) => r.status === "APPROVED").length,
+    rejected:   requests.filter((r) => r.status === "REJECTED").length,
     totalAmount: requests
       .filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")
       .reduce((sum, r) => sum + Number(r.amount), 0),
