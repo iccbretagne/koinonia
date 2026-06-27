@@ -6,6 +6,38 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.9.0] - 2026-06-28
+
+### Ajouté
+
+- **Vues pastorale** : espace pastoral enrichi avec vues événements, comptes rendus et comptabilité (#386)
+  - Toggle sidebar pastoral ↔ classique persistent via cookie (30 jours)
+  - Bouton de switch dans le header, labels courts sur mobile (Classique / Pastorale)
+  - Suppression de la section Administration redondante dans la sidebar pastorale
+- **Comptabilité — statistiques financières** : KPIs dédiés (#384)
+  - Montant total engagé, délai moyen de traitement, répartition par statut/type
+  - Carte « Rejetées » dans le dashboard comptabilité
+
+### Corrigé
+
+- **Comptabilité** : soumission étendue aux profils MINISTER, ADMIN et pastoral (#385)
+  - Fix type Prisma `departmentId ?? undefined` (Prisma v7)
+  - Scope des demandes visibles corrigé pour les pasteurs
+- **Comptabilité** : notification in-app à la création automatique d'une occurrence récurrente (#389)
+- **Mobile** : scroll horizontal tableaux, menu messages et formulaire responsive (#387)
+- **Mobile** : EventsClient — barre de filtres et boutons d'action cartes responsive (#388)
+
+### Modifié
+
+- **Refactoring MSDP** : logique métier extraite dans `msdp-service.ts` (#390)
+  - `hasMsdpManagementAccess`, `computeMsdpTransitionData`, `notifyMsdpCounselorAssigned`
+  - Notification in-app au conseiller MSDP à l'assignation (#357)
+
+### Dépendances
+
+- Mise à jour des dépendances npm (mineures et correctifs) (#378)
+- `actions/checkout` 6.0.2 → 6.0.3 (#343)
+
 ## [v1.8.0] - 2026-06-14
 
 ### Ajouté
