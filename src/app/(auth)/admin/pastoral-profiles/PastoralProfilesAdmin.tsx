@@ -90,7 +90,7 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
       {/* Formulaire */}
       <div className="bg-white rounded-lg shadow border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-900 mb-4">{editId ? "Modifier le profil" : "Nouveau profil"}</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
             <input
@@ -147,6 +147,7 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
         <p className="text-sm text-gray-500 text-center py-6">Aucun profil pastoral configuré.</p>
       ) : (
         <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -176,6 +177,7 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

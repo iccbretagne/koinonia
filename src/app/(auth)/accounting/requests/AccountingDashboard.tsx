@@ -42,6 +42,7 @@ interface Stats {
   submitted: number;
   processing: number;
   approved: number;
+  rejected: number;
   totalAmount: number;
   pendingPayments: number;
 }
@@ -97,11 +98,12 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
     <div className="space-y-5">
 
       {/* Statistiques */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: "En attente",     value: stats.submitted,     color: "text-amber-600" },
-          { label: "En traitement",  value: stats.processing,    color: "text-blue-600" },
-          { label: "Validées",       value: stats.approved,      color: "text-emerald-600" },
+          { label: "En attente",     value: stats.submitted,       color: "text-amber-600" },
+          { label: "En traitement",  value: stats.processing,      color: "text-blue-600" },
+          { label: "Validées",       value: stats.approved,        color: "text-emerald-600" },
+          { label: "Rejetées",       value: stats.rejected,        color: "text-red-500" },
           { label: "Paiements dus",  value: stats.pendingPayments, color: "text-purple-600" },
         ].map((s) => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-200 px-4 py-3">

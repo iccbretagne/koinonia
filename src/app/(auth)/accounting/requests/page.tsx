@@ -13,7 +13,6 @@ export default async function AccountingRequestsPage() {
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
-
   if (!perms.includes("accounting:view") && !isPastoral) {
     return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
   }
@@ -72,6 +71,7 @@ export default async function AccountingRequestsPage() {
     submitted:  requests.filter((r) => r.status === "SUBMITTED").length,
     processing: requests.filter((r) => r.status === "PROCESSING").length,
     approved:   requests.filter((r) => r.status === "APPROVED").length,
+    rejected:   requests.filter((r) => r.status === "REJECTED").length,
     totalAmount: requests
       .filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")
       .reduce((sum, r) => sum + Number(r.amount), 0),

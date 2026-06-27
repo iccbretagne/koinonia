@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     const req = await prisma.financialRequest.create({
       data: {
         churchId,
-        departmentId: body.departmentId ?? null,
+        departmentId: body.departmentId ?? undefined,
         submittedById: session.user.id!,
         type:        body.type,
         label:       body.label,

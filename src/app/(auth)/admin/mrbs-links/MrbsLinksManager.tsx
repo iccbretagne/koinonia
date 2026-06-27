@@ -130,6 +130,7 @@ export default function MrbsLinksManager({ mrbsUsers, koinoniaUsers, linkedByKoi
         <p className="text-sm text-gray-400 text-center py-8">Aucun compte MRBS trouvé dans la base de données.</p>
       ) : (
         <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -206,6 +207,7 @@ export default function MrbsLinksManager({ mrbsUsers, koinoniaUsers, linkedByKoi
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

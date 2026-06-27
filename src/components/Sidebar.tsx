@@ -395,11 +395,13 @@ export default function Sidebar({
   if (isPastoral) {
     const isPastoralHome = pathname === "/pastoral";
     const isPastoralMembers = pathname.startsWith("/pastoral/members");
+    const isPastoralAccounting = pathname.startsWith("/pastoral/accounting");
+    const isPastoralReports = pathname.startsWith("/pastoral/reports");
+    const isPastoralEventsPage = pathname.startsWith("/pastoral/events");
     const isPastoralAgenda = isAgendaActive;
     const isPastoralDiscipleship = isDiscipleshipActive;
     const isPastoralEvents = isEventsActive;
     const isPastoralJobs = isJobsActive;
-    const isPastoralConfig = isConfigActive;
 
     return (
       <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -415,6 +417,28 @@ export default function Sidebar({
           className={`${sectionHeaderBase} ${isPastoralMembers ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
           <IconMembers className="w-4 h-4 shrink-0" />
           <span className="flex-1">Mes membres</span>
+        </Link>
+
+        <Link href="/pastoral/events" onClick={onClose}
+          className={`${sectionHeaderBase} ${isPastoralEventsPage ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+          <IconCalendar className="w-4 h-4 shrink-0" />
+          <span className="flex-1">Événements</span>
+        </Link>
+
+        <Link href="/pastoral/reports" onClick={onClose}
+          className={`${sectionHeaderBase} ${isPastoralReports ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span className="flex-1">Comptes rendus</span>
+        </Link>
+
+        <Link href="/pastoral/accounting" onClick={onClose}
+          className={`${sectionHeaderBase} ${isPastoralAccounting ? sectionHeaderActive : sectionHeaderIdle} rounded-md`}>
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="flex-1">Comptabilité</span>
         </Link>
 
         {agendaLinks.length > 0 && (
@@ -444,7 +468,7 @@ export default function Sidebar({
         )}
 
         {hasEventsAccess && (
-          <AccordionSection title="Événements" icon={<IconCalendar className="w-4 h-4" />}
+          <AccordionSection title="Agenda événements" icon={<IconCalendar className="w-4 h-4" />}
             open={openSection === "events"} onToggle={() => toggle("events")} isActive={isPastoralEvents}>
             <nav className="space-y-0.5 pl-6">
               <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
@@ -462,18 +486,6 @@ export default function Sidebar({
           </AccordionSection>
         )}
 
-        {configLinks.length > 0 && (
-          <AccordionSection title="Administration" icon={<IconConfig className="w-4 h-4" />}
-            open={openSection === "config"} onToggle={() => toggle("config")} isActive={isPastoralConfig}>
-            <nav className="space-y-0.5 pl-6">
-              {configLinks.map((link) => (
-                <NavLink key={link.href} href={link.href} active={pathname === link.href} onClose={onClose}>
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </AccordionSection>
-        )}
       </aside>
     );
   }
@@ -498,6 +510,20 @@ export default function Sidebar({
         >
           <IconMyPlanning className="w-4 h-4" />
           Mon planning
+        </Link>
+      )}
+
+      {/* Vue pastorale — si l'utilisateur a aussi un profil pastoral dans cette église */}
+      {isPastoral && (
+        <Link
+          href="/pastoral"
+          onClick={onClose}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors text-gray-600 hover:bg-gray-50"
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Vue pastorale
         </Link>
       )}
 
