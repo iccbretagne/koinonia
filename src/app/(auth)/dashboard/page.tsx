@@ -10,24 +10,28 @@ import DepartmentTasksView from "@/components/DepartmentTasksView";
 import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 
 interface DashboardProps {
-  searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
+  searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string; mode?: string }>;
 }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  // Les utilisateurs avec un profil pastoral ont leur propre dashboard
-  if (session.user.pastoralProfileId) redirect("/pastoral");
-
   const {
     dept: selectedDeptId,
     event: selectedEventId,
     view = "event",
     tour,
+    mode,
   } = await searchParams;
 
   const currentChurchId = await getCurrentChurchId(session);
+
+  // Rediriger vers le dashboard pastoral si l'utilisateur a un profil dans l'église courante,
+  // sauf si mode=admin (bascule explicite depuis la vue pastorale)
+  const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
+  const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
+  if (isPastoralChurch && mode !== "admin") redirect("/pastoral");
   const userPermissions = new Set(
     session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
