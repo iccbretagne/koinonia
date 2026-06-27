@@ -12,7 +12,8 @@ export default async function AccountingRequestsPage() {
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
-  if (!perms.includes("accounting:view")) {
+  const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
+  if (!perms.includes("accounting:view") && !isPastoral) {
     return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
   }
 
