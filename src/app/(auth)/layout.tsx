@@ -258,7 +258,7 @@ export default async function AuthLayout({
           <form action={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}>
             <button
               type="submit"
-              title={isInPastoralMode ? "Basculer vers la vue administration" : "Basculer vers la vue pastorale"}
+              title={isInPastoralMode ? "Basculer vers la vue classique" : "Basculer vers la vue pastorale"}
               className="flex items-center gap-1.5 text-xs border border-current/30 rounded-md px-2 py-1.5 sm:px-3 opacity-80 hover:opacity-100 hover:bg-black/10 transition-all whitespace-nowrap"
             >
               {isInPastoralMode ? (
@@ -266,7 +266,7 @@ export default async function AuthLayout({
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  <span className="hidden sm:inline">Vue admin</span>
+                  <span className="hidden sm:inline">Vue classique</span>
                 </>
               ) : (
                 <>
