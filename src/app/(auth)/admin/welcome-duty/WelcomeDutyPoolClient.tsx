@@ -128,6 +128,7 @@ export default function WelcomeDutyPoolClient() {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -154,6 +155,7 @@ export default function WelcomeDutyPoolClient() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -161,6 +163,7 @@ export default function WelcomeDutyPoolClient() {
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-gray-500 mb-3">Familles désactivées</h3>
           <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-gray-50">
                 {inactive.map((f) => (
@@ -187,6 +190,7 @@ export default function WelcomeDutyPoolClient() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

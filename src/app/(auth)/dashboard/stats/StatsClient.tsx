@@ -318,6 +318,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                   <h3 className="text-sm font-semibold text-gray-700 px-4 py-3 border-b">
                     Détail par STAR
                   </h3>
+                  <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-50">
@@ -364,6 +365,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </>

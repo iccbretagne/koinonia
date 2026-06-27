@@ -79,6 +79,7 @@ export default function AuditLogsClient() {
   return (
     <div>
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b">
@@ -121,6 +122,7 @@ export default function AuditLogsClient() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
