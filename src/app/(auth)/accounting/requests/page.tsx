@@ -12,7 +12,8 @@ export default async function AccountingRequestsPage() {
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
-  if (!perms.includes("accounting:view")) {
+  const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
+  if (!perms.includes("accounting:view") && !isPastoral) {
     return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
   }
 
@@ -20,9 +21,9 @@ export default async function AccountingRequestsPage() {
   const canSubmit = perms.includes("accounting:submit");
   const canViewStats = perms.includes("accounting:stats") || (session.user.pastoralChurchIds ?? []).includes(churchId);
 
-  // Scope : DEPARTMENT_HEAD → ses départements uniquement
+  // Scope : DEPARTMENT_HEAD → ses départements uniquement ; pastoral → toute l'église
   let deptFilter: string[] | undefined;
-  if (!canManage) {
+  if (!canManage && !isPastoral) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
       include: { departments: { select: { departmentId: true } } },
@@ -49,6 +50,7 @@ export default async function AccountingRequestsPage() {
     submitted:  requests.filter((r) => r.status === "SUBMITTED").length,
     processing: requests.filter((r) => r.status === "PROCESSING").length,
     approved:   requests.filter((r) => r.status === "APPROVED").length,
+    rejected:   requests.filter((r) => r.status === "REJECTED").length,
     totalAmount: requests
       .filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")
       .reduce((sum, r) => sum + Number(r.amount), 0),

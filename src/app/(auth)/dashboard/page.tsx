@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { auth, getCurrentChurchId } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -17,9 +18,6 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  // Les utilisateurs avec un profil pastoral ont leur propre dashboard
-  if (session.user.pastoralProfileId) redirect("/pastoral");
-
   const {
     dept: selectedDeptId,
     event: selectedEventId,
@@ -28,6 +26,14 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   } = await searchParams;
 
   const currentChurchId = await getCurrentChurchId(session);
+
+  // Rediriger vers le dashboard pastoral si l'utilisateur a un profil dans l'église courante,
+  // sauf si le cookie indique explicitement le mode admin
+  const cookieStore = await cookies();
+  const viewMode = cookieStore.get("koinonia-view-mode")?.value;
+  const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
+  const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
+  if (isPastoralChurch && viewMode !== "admin") redirect("/pastoral");
   const userPermissions = new Set(
     session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
