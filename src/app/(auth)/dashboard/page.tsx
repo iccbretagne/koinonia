@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { auth, getCurrentChurchId } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -10,7 +11,7 @@ import DepartmentTasksView from "@/components/DepartmentTasksView";
 import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 
 interface DashboardProps {
-  searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string; mode?: string }>;
+  searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
 }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
@@ -22,16 +23,17 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     event: selectedEventId,
     view = "event",
     tour,
-    mode,
   } = await searchParams;
 
   const currentChurchId = await getCurrentChurchId(session);
 
   // Rediriger vers le dashboard pastoral si l'utilisateur a un profil dans l'église courante,
-  // sauf si mode=admin (bascule explicite depuis la vue pastorale)
+  // sauf si le cookie indique explicitement le mode admin
+  const cookieStore = await cookies();
+  const viewMode = cookieStore.get("koinonia-view-mode")?.value;
   const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
   const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
-  if (isPastoralChurch && mode !== "admin") redirect("/pastoral");
+  if (isPastoralChurch && viewMode !== "admin") redirect("/pastoral");
   const userPermissions = new Set(
     session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
@@ -79,7 +81,6 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       if (view !== "event") qs.set("view", view);
       if (tour) qs.set("tour", tour);
       if (shouldTriggerTour) qs.set("tour", "1");
-      if (mode) qs.set("mode", mode);
       redirect(`/dashboard?${qs.toString()}`);
     }
   }
@@ -91,7 +92,6 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     if (selectedEventId) qs.set("event", selectedEventId);
     if (view !== "event") qs.set("view", view);
     qs.set("tour", "1");
-    if (mode) qs.set("mode", mode);
     redirect(`/dashboard?${qs.toString()}`);
   }
 

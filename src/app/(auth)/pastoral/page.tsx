@@ -1,7 +1,6 @@
 import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import SwitchChurchLink from "@/components/SwitchChurchLink";
 
 const roleLabel: Record<string, string> = {
@@ -58,11 +57,6 @@ export default async function PastoralDashboardPage() {
   }
 
   if (!profile) redirect("/dashboard");
-
-  // L'utilisateur a-t-il un rôle classique dans l'église courante (en plus du profil pastoral) ?
-  const hasClassicRole = currentChurchId
-    ? session.user.churchRoles.some((r) => r.churchId === currentChurchId)
-    : false;
 
   // Églises supervisées par ce profil pastoral
   const supervisedChurches = await prisma.church.findMany({
@@ -125,22 +119,9 @@ export default async function PastoralDashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900">
           Bonjour, {session.user.displayName ?? session.user.name}
         </h1>
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <p className="text-sm text-gray-500">
-            {roleLabel[profile.role]} · {profile.church.name}
-          </p>
-          {hasClassicRole && (
-            <Link
-              href="/dashboard?mode=admin"
-              className="text-xs text-icc-violet hover:underline flex items-center gap-1"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-              </svg>
-              Vue administration
-            </Link>
-          )}
-        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          {roleLabel[profile.role]} · {profile.church.name}
+        </p>
       </div>
 
       {/* Cartes d'églises */}

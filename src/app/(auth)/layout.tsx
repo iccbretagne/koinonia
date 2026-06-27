@@ -1,5 +1,6 @@
 import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -46,10 +47,28 @@ export default async function AuthLayout({
 
   const currentChurchId = await getCurrentChurchId(session);
 
-  // isPastoral : n'afficher la section pastorale que si l'utilisateur a un profil dans l'église courante
+  // isPastoral : l'utilisateur a un profil pastoral dans l'église courante
   const isPastoral = currentChurchId
     ? pastoralChurchIds.includes(currentChurchId)
     : hasPastoralProfile;
+
+  // Mode d'affichage : cookie pour persister le choix entre vue pastorale et vue admin
+  const cookieStore = await cookies();
+  const viewModeCookie = cookieStore.get("koinonia-view-mode")?.value;
+  const isInPastoralMode = isPastoral && viewModeCookie !== "admin";
+  // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
+  const hasBothRoles = isPastoral && churchRoles.some((r) => r.churchId === currentChurchId);
+
+  async function switchToAdminMode() {
+    "use server";
+    (await cookies()).set("koinonia-view-mode", "admin", { path: "/", maxAge: 2592000 });
+    redirect("/dashboard");
+  }
+  async function switchToPastoralMode() {
+    "use server";
+    (await cookies()).set("koinonia-view-mode", "pastoral", { path: "/", maxAge: 2592000 });
+    redirect("/pastoral");
+  }
 
   const currentChurchDb = currentChurchId
     ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
@@ -235,6 +254,31 @@ export default async function AuthLayout({
         )}
       </div>
       <div className="flex items-center gap-2 md:gap-4 ml-auto">
+        {hasBothRoles && (
+          <form action={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}>
+            <button
+              type="submit"
+              title={isInPastoralMode ? "Basculer vers la vue administration" : "Basculer vers la vue pastorale"}
+              className="flex items-center gap-1.5 text-xs border border-current/30 rounded-md px-2 py-1.5 sm:px-3 opacity-80 hover:opacity-100 hover:bg-black/10 transition-all whitespace-nowrap"
+            >
+              {isInPastoralMode ? (
+                <>
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  <span className="hidden sm:inline">Vue admin</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span className="hidden sm:inline">Vue pastorale</span>
+                </>
+              )}
+            </button>
+          </form>
+        )}
         <a href="/guide" title="Guide" data-tour="header-guide" className="text-current opacity-80 hover:opacity-100 transition-opacity">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -335,7 +379,7 @@ export default async function AuthLayout({
       hasAccounting={hasAccounting}
       hasJobs={hasJobs}
       hasJobsManage={hasJobsManage}
-      isPastoral={isPastoral}
+      isPastoral={isInPastoralMode}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
       hasPlanningAccess={hasPlanningAccess}
