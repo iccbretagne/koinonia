@@ -11,6 +11,13 @@ export {
   notifyBergerAssigned,
   runInactivityNotifications,
 } from "./services/family-service";
+export {
+  msdpPatchSchema,
+  hasMsdpManagementAccess,
+  computeMsdpTransitionData,
+  notifyMsdpCounselorAssigned,
+} from "./services/msdp-service";
+export type { MsdpPatchBody } from "./services/msdp-service";
 
 /**
  * Module intégration — suivi des parcours d'intégration.
