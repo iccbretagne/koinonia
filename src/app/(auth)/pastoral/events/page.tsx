@@ -91,11 +91,15 @@ export default async function PastoralEventsPage() {
   const totalThisYear = yearStats.reduce((s, g) => s + g._count, 0);
 
   function planningProgress(event: typeof upcoming[0]) {
-    const allPlannings = event.eventDepts.flatMap((d) => d.plannings);
-    if (allPlannings.length === 0) return null;
-    const filled = allPlannings.filter((p) => p.status !== null).length;
-    const total = allPlannings.length;
-    return { filled, total, pct: Math.round((filled / total) * 100) };
+    if (event.eventDepts.length === 0) return null;
+    const deptsWithStar = event.eventDepts.filter(
+      (d) => d.plannings.some((p) => p.status !== null)
+    ).length;
+    const totalStars = event.eventDepts.flatMap((d) =>
+      d.plannings.filter((p) => p.status !== null)
+    ).length;
+    const totalDepts = event.eventDepts.length;
+    return { deptsWithStar, totalDepts, totalStars, pct: Math.round((deptsWithStar / totalDepts) * 100) };
   }
 
   return (
@@ -138,7 +142,6 @@ export default async function PastoralEventsPage() {
             <div className="space-y-2">
               {upcoming.map((e) => {
                 const progress = planningProgress(e);
-                const deptCount = e.eventDepts.length;
                 return (
                   <div key={e.id} className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
@@ -150,13 +153,13 @@ export default async function PastoralEventsPage() {
                     {progress !== null && (
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs text-gray-400">
-                            {deptCount} département{deptCount > 1 ? "s" : ""} · service affecté
-                          </span>
                           <span className={`text-xs font-medium ${
                             progress.pct === 100 ? "text-emerald-600" : progress.pct > 50 ? "text-icc-violet" : "text-amber-600"
                           }`}>
-                            {progress.filled} / {progress.total} postes
+                            {progress.deptsWithStar} / {progress.totalDepts} équipe{progress.totalDepts > 1 ? "s" : ""} prête{progress.totalDepts > 1 ? "s" : ""}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {progress.totalStars} STAR en service
                           </span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-1">
