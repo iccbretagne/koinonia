@@ -21,9 +21,9 @@ export default async function AccountingRequestsPage() {
   const canSubmit = perms.includes("accounting:submit");
   const canViewStats = perms.includes("accounting:stats") || (session.user.pastoralChurchIds ?? []).includes(churchId);
 
-  // Scope : DEPARTMENT_HEAD → ses départements uniquement
+  // Scope : DEPARTMENT_HEAD → ses départements uniquement ; pastoral → toute l'église
   let deptFilter: string[] | undefined;
-  if (!canManage) {
+  if (!canManage && !isPastoral) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
       include: { departments: { select: { departmentId: true } } },
