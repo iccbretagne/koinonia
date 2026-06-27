@@ -62,15 +62,31 @@ export async function GET(
 
     if (!req || req.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
-    // Scope dept_head : seulement ses départements
+    // Scope : managers voient tout ; sinon vérifier que la demande est dans le périmètre
     if (!hasPermission(perms, "accounting:manage")) {
-      const userRoles = await prisma.userChurchRole.findMany({
-        where: { userId: session.user.id!, churchId },
-        include: { departments: { select: { departmentId: true } } },
-      });
-      const deptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
-      if (!deptIds.includes(req.departmentId) && req.submittedById !== session.user.id!) {
-        throw new ApiError(403, "Accès refusé");
+      // Propre demande → toujours accessible
+      if (req.submittedById !== session.user.id!) {
+        const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
+        const isMinister = roles.includes("MINISTER");
+        const userRoles = await prisma.userChurchRole.findMany({
+          where: { userId: session.user.id!, churchId },
+          include: { departments: { select: { departmentId: true } } },
+        });
+
+        let allowedDeptIds: string[];
+        if (isMinister) {
+          const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
+          const depts = ministryIds.length > 0
+            ? await prisma.department.findMany({ where: { ministryId: { in: ministryIds } }, select: { id: true } })
+            : [];
+          allowedDeptIds = depts.map((d) => d.id);
+        } else {
+          allowedDeptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
+        }
+
+        if (!req.departmentId || !allowedDeptIds.includes(req.departmentId)) {
+          throw new ApiError(403, "Accès refusé");
+        }
       }
     }
 
@@ -182,7 +198,7 @@ export async function PATCH(
 
 async function createNextOccurrence(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  current: { seriesId: string | null; churchId: string; departmentId: string; submittedById: string; type: string; label: string; description: string | null; amount: unknown; occurrenceNumber: number | null }
+  current: { seriesId: string | null; churchId: string; departmentId: string | null; submittedById: string; type: string; label: string; description: string | null; amount: unknown; occurrenceNumber: number | null }
 ) {
   if (!current.seriesId) return;
   const series = await tx.financialSeries.findUnique({ where: { id: current.seriesId } });
@@ -203,7 +219,7 @@ async function createNextOccurrence(
   await tx.financialRequest.create({
     data: {
       churchId:        current.churchId,
-      departmentId:    current.departmentId,
+      departmentId:    series.departmentId, // toujours défini pour les séries
       submittedById:   current.submittedById,
       seriesId:        current.seriesId,
       occurrenceNumber: (current.occurrenceNumber ?? 1) + 1,

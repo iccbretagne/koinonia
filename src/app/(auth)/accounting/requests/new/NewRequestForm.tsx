@@ -37,6 +37,9 @@ export default function NewRequestForm({ departments }: Props) {
     firstDate: "",
   });
 
+  // Pour les avances récurrentes (série), un département est obligatoire
+  const isRecurringMode = mode === "recurring";
+
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
@@ -70,7 +73,7 @@ export default function NewRequestForm({ departments }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             type,
-            departmentId:  form.departmentId,
+            departmentId:  form.departmentId || undefined, // undefined = personnel sans département
             label:         form.label,
             description:   form.description || undefined,
             amount,
@@ -124,13 +127,19 @@ export default function NewRequestForm({ departments }: Props) {
 
       {/* Département */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">Département</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Département
+          {!isRecurringMode && <span className="text-gray-400 font-normal ml-1">(facultatif pour les notes de frais personnelles)</span>}
+        </label>
         <select
           value={form.departmentId}
           onChange={(e) => set("departmentId", e.target.value)}
-          required
+          required={isRecurringMode}
           className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
         >
+          {!isRecurringMode && (
+            <option value="">— Personnel (sans département)</option>
+          )}
           {departments.map((d) => (
             <option key={d.id} value={d.id}>{d.ministry.name} — {d.name}</option>
           ))}

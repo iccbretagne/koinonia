@@ -41,14 +41,24 @@ export default async function AccountingRequestDetailPage({
   const canManage = perms.includes("accounting:manage");
   const isOwn = req.submittedById === session.user.id!;
 
-  // Scope dept_head
+  // Scope : gestionnaires voient tout ; propriétaire aussi ; sinon vérifier le périmètre
+  const isMinister = roles.includes("MINISTER");
   if (!canManage && !isOwn) {
     const userRoles = await prisma.userChurchRole.findMany({
       where: { userId: session.user.id!, churchId },
       include: { departments: { select: { departmentId: true } } },
     });
-    const deptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
-    if (!deptIds.includes(req.departmentId)) return notFound();
+    let allowedDeptIds: string[];
+    if (isMinister) {
+      const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
+      const depts = ministryIds.length > 0
+        ? await prisma.department.findMany({ where: { ministryId: { in: ministryIds } }, select: { id: true } })
+        : [];
+      allowedDeptIds = depts.map((d) => d.id);
+    } else {
+      allowedDeptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
+    }
+    if (!req.departmentId || !allowedDeptIds.includes(req.departmentId)) return notFound();
   }
 
   // Prisma returns Decimal objects for amount fields — serialize before passing to Client Component
