@@ -79,6 +79,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       if (view !== "event") qs.set("view", view);
       if (tour) qs.set("tour", tour);
       if (shouldTriggerTour) qs.set("tour", "1");
+      if (mode) qs.set("mode", mode);
       redirect(`/dashboard?${qs.toString()}`);
     }
   }
@@ -90,6 +91,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     if (selectedEventId) qs.set("event", selectedEventId);
     if (view !== "event") qs.set("view", view);
     qs.set("tour", "1");
+    if (mode) qs.set("mode", mode);
     redirect(`/dashboard?${qs.toString()}`);
   }
 

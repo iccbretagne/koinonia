@@ -121,26 +121,26 @@ export default async function PastoralDashboardPage() {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       {/* En-tête */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Bonjour, {session.user.displayName ?? session.user.name}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Bonjour, {session.user.displayName ?? session.user.name}
+        </h1>
+        <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <p className="text-sm text-gray-500">
             {roleLabel[profile.role]} · {profile.church.name}
           </p>
+          {hasClassicRole && (
+            <Link
+              href="/dashboard?mode=admin"
+              className="text-xs text-icc-violet hover:underline flex items-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              Vue administration
+            </Link>
+          )}
         </div>
-        {hasClassicRole && (
-          <Link
-            href="/dashboard?mode=admin"
-            className="shrink-0 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 hover:border-gray-300 rounded-lg px-3 py-2 transition-colors flex items-center gap-1.5"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            Vue administration
-          </Link>
-        )}
       </div>
 
       {/* Cartes d'églises */}
