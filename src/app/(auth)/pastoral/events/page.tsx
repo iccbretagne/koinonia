@@ -156,7 +156,7 @@ export default async function PastoralEventsPage() {
                           <span className={`text-xs font-medium ${
                             progress.pct === 100 ? "text-emerald-600" : progress.pct > 50 ? "text-icc-violet" : "text-amber-600"
                           }`}>
-                            {progress.deptsWithStar} / {progress.totalDepts} équipe{progress.totalDepts > 1 ? "s" : ""} prête{progress.totalDepts > 1 ? "s" : ""}
+                            {progress.deptsWithStar} / {progress.totalDepts} département{progress.totalDepts > 1 ? "s" : ""} prêt{progress.totalDepts > 1 ? "s" : ""}
                           </span>
                           <span className="text-xs text-gray-400">
                             {progress.totalStars} STAR en service
