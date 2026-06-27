@@ -216,7 +216,7 @@ async function createNextOccurrence(
     data: { nextOccurrenceDate: nextDate },
   });
 
-  await tx.financialRequest.create({
+  const nextReq = await tx.financialRequest.create({
     data: {
       churchId:        current.churchId,
       departmentId:    series.departmentId, // toujours défini pour les séries
@@ -228,6 +228,17 @@ async function createNextOccurrence(
       description:     current.description,
       amount:          current.amount as never,
       status:          "SUBMITTED",
+    },
+    select: { id: true },
+  });
+
+  await tx.notification.create({
+    data: {
+      userId:  current.submittedById,
+      type:    "ACCOUNTING_NEW_OCCURRENCE",
+      title:   "Nouvelle occurrence créée",
+      message: `Une nouvelle occurrence de "${current.label}" a été soumise automatiquement.`,
+      link:    `/accounting/requests/${nextReq.id}`,
     },
   });
 }
