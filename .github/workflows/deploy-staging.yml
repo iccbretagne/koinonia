@@ -1,0 +1,139 @@
+# Workflow de deploiement de l'environnement de RECETTE (staging).
+#
+# Independant de deploy.yml (production) : ce workflow ne se declenche
+# JAMAIS automatiquement, uniquement a la demande (workflow_dispatch).
+#
+# Pour deployer une branche sur la VM de recette :
+#   GitHub -> Actions -> "Deploy Staging" -> "Run workflow"
+#   -> choisir la branche a valider -> Run workflow
+#
+# Le build part de la ref selectionnee dans l'UI (comportement par defaut
+# de actions/checkout en workflow_dispatch). Voir docs/staging.md.
+
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: "Note libre (raison du deploiement, ex: validation feat/X)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Determine version
+        id: version
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "version=${PKG}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
+
+      - name: Package artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar czf "koinonia-${VERSION}.tar.gz" \
+            --exclude='prisma/scripts' \
+            .next/standalone .next/static \
+            prisma prisma.config.ts public package.json \
+            node_modules
+          echo "Built koinonia-${VERSION}.tar.gz"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: koinonia-${{ steps.version.outputs.version }}
+          path: koinonia-${{ steps.version.outputs.version }}.tar.gz
+          retention-days: 14
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: koinonia-${{ needs.build.outputs.version }}
+
+      - name: Upload artifact to server
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: koinonia-${{ needs.build.outputs.version }}.tar.gz
+          target: /tmp
+
+      - name: Deploy artifact via SSH
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: VERSION,DEPLOY_PATH
+          script: |
+            set -e
+            DEPLOY_PATH="${DEPLOY_PATH:-/opt/koinonia}"
+
+            echo "Deploying staging v${VERSION}..."
+
+            # 1. Prepare release directory
+            mkdir -p "$DEPLOY_PATH/releases/koinonia-${VERSION}"
+            cd "$DEPLOY_PATH/releases/koinonia-${VERSION}"
+
+            # 2. Extract pre-built artifact
+            tar xzf "/tmp/koinonia-${VERSION}.tar.gz"
+            rm "/tmp/koinonia-${VERSION}.tar.gz"
+
+            # 3. Assemble standalone bundle (Next.js standalone output)
+            cp -r .next/static .next/standalone/.next/static
+            cp -r public .next/standalone/public
+            ln -sf "$DEPLOY_PATH/shared/.env" .next/standalone/.env
+
+            # 4. Run migrations
+            set -a; source "$DEPLOY_PATH/shared/.env"; set +a
+            ./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma
+
+            # 5. Activate release
+            ln -sfn "$DEPLOY_PATH/releases/koinonia-${VERSION}" "$DEPLOY_PATH/current"
+
+            # 6. Restart
+            sudo systemctl restart koinonia
+
+            # 7. Cleanup: keep last 3 releases
+            cd "$DEPLOY_PATH/releases"
+            ls -1dt koinonia-*/ | tail -n +4 | xargs rm -rf || true
+
+            echo "Deploy staging v${VERSION} OK"
