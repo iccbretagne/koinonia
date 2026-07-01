@@ -821,6 +821,12 @@ Pour mettre à jour une instance existante, consulter le guide de migration corr
 
 - [Migration v0.19.x → v1.0.0](migration-v1.0.md)
 
+## Environnement de recette
+
+Avant de tagger une version et de la deployer en production, il est recommande de la valider sur un **environnement de recette dedie** (VM separee, identique a la production). Le deploiement s'y fait manuellement via le workflow GitHub Actions `Deploy Staging` (`workflow_dispatch`), independamment du pipeline de production decrit ci-dessus.
+
+Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionnement, secrets, declenchement).
+
 ## Checklist de production
 
 - [ ] Variables d'environnement configurees dans `shared/.env`
