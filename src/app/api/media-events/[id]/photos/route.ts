@@ -72,7 +72,7 @@ export async function POST(
       try {
         validatePhotoFile(file.name, file.type, file.size);
 
-        const buffer = Buffer.from(await file.arrayBuffer());
+        const buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
         const processed = await processImage(buffer);
         const ext = getExtensionFromMimeType(file.type);
 

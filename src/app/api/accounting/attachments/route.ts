@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
     const s3Key = `accounting/${churchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
 
     await storeFile(s3Key, buffer, file.type);
 
