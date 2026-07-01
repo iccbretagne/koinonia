@@ -19,16 +19,19 @@ export async function processImage(buffer: Buffer): Promise<ProcessedImage> {
     throw new ApiError(400, "Impossible de lire les métadonnées de l'image");
   }
 
-  const original = await image.rotate().jpeg({ quality: 90 }).toBuffer();
-  const thumbnail = await sharp(buffer)
+  // Node.js 22 : sharp.toBuffer() peut retourner un Buffer backed par SharedArrayBuffer.
+  // Buffer.from(new Uint8Array(x)) force une copie vers un ArrayBuffer ordinaire,
+  // nécessaire pour le AWS SDK (PutObjectCommand accède à buffer.buffer en interne).
+  const originalRaw = await image.rotate().jpeg({ quality: 90 }).toBuffer();
+  const thumbnailRaw = await sharp(buffer)
     .rotate()
     .resize(1200, null, { withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
 
   return {
-    original,
-    thumbnail,
+    original: Buffer.from(new Uint8Array(originalRaw)),
+    thumbnail: Buffer.from(new Uint8Array(thumbnailRaw)),
     metadata: { width: metadata.width, height: metadata.height, format: metadata.format },
   };
 }
