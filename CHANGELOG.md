@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.9.1] - 2026-07-01
+
+### Corrigé
+
+- **Upload médias / pièces jointes** : crash SIGSEGV de libvips sur Node.js 22 (#392)
+  - `File.arrayBuffer()` et les chunks du streaming S3 SDK peuvent retourner des `SharedArrayBuffer`
+  - `Buffer.from(new Uint8Array(...))` force une copie vers `ArrayBuffer` ordinaire avant sharp
+  - Fichiers corrigés : upload photos média, pièces jointes comptabilité, `downloadFile` S3
+
 ## [v1.9.0] - 2026-06-28
 
 ### Ajouté
