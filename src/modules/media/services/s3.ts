@@ -87,9 +87,11 @@ export async function fileExists(key: string): Promise<boolean> {
 export async function downloadFile(key: string): Promise<Buffer> {
   const resp = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET, Key: key }));
   if (!resp.Body) throw new Error(`S3 object not found: ${key}`);
-  const chunks: Uint8Array[] = [];
+  const chunks: Buffer[] = [];
   for await (const chunk of resp.Body as AsyncIterable<Uint8Array>) {
-    chunks.push(chunk);
+    // Node.js 22 : les chunks du SDK S3 peuvent être backed par SharedArrayBuffer
+    // Buffer.from(new Uint8Array(chunk)) force une copie vers un ArrayBuffer ordinaire
+    chunks.push(Buffer.from(new Uint8Array(chunk)));
   }
   return Buffer.concat(chunks);
 }
