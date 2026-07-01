@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.9.2] - 2026-07-01
+
+### Corrigé
+
+- **Upload médias** : crash silencieux restant sur Node.js 22 (#394)
+  - `sharp.toBuffer()` peut aussi retourner un Buffer backed par `SharedArrayBuffer`
+  - Les sorties de `processImage()` (original JPEG + miniature WebP) sont maintenant wrappées avec `Buffer.from(new Uint8Array(...))` avant passage au AWS SDK
+
 ## [v1.9.1] - 2026-07-01
 
 ### Corrigé
