@@ -6,6 +6,20 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.10.0] - 2026-07-03
+
+### Ajouté
+
+- **Collections média — option « toutes les photos »** (#398)
+  - À la création d'une collection, choix binaire : « photos validées uniquement » (défaut, comportement inchangé) ou « toutes les photos » (intégralité, tous statuts)
+  - Photos uniquement (les visuels/fichiers restent limités aux éléments approuvés) ; aucune mention de statut côté destinataire ; choix journalisé
+  - Rétrocompatible : les collections existantes restent en « validées uniquement »
+- **Environnement de recette (staging)** (#397)
+  - Workflow GitHub Actions `Deploy Staging` à déclenchement manuel (`workflow_dispatch`) vers une VM dédiée
+  - Guide `docs/staging.md` (provisionnement, Environment GitHub `staging`, garde-fous)
+- **Workflow spec-driven development** (#396)
+  - Slash commands `/specify`, `/plan`, `/tasks`, `/implement` + `specs/constitution.md` et templates
+
 ## [v1.9.2] - 2026-07-01
 
 ### Corrigé
