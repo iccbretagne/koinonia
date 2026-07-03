@@ -6,6 +6,17 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.11.0] - 2026-07-04
+
+### Ajouté
+
+- **Onboarding — liaison compte/STAR par email (anti-doublon)** (#403)
+  - Réconciliation par email à la connexion : les fiches non liées correspondant à l'email vérifié du compte sont proposées → liaison directe (rôle STAR) sur confirmation, sans validation admin (garde-fou serveur : égalité email, fiche non liée, cohérence église)
+  - Parcours par nom fiabilisé : matching flou (tolérance aux fautes, tokens), candidats classés par pertinence avec badges « Forte » / « Correspondance possible »
+  - Confirmation anti-doublon obligatoire avant de créer une nouvelle fiche, et garde-fou serveur si email/nom déjà présent dans l'église (à la création admin et à l'approbation)
+  - Capture de l'email à la création d'une fiche membre
+  - Conçu en spec-driven (specs/002-onboarding-liaison-email/), livré en 3 phases (#400, #401, #402)
+
 ## [v1.10.0] - 2026-07-03
 
 ### Ajouté
