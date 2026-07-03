@@ -83,4 +83,80 @@ doublon (même email ou même nom dans l'église) en proposant de rattacher à l
 - [x] `npm run test`
 - [ ] Test manuel : créer une fiche avec un email/nom déjà présent → alerte + candidats ; forcer →
       création ; créer une fiche distincte → OK
+- [x] PR ouverte vers `feat/onboarding-liaison-email` (pas vers `main`) — **#400 mergée**
+
+---
+
+## Phase 2 — Réconciliation par email + auto-liaison STAR (proposition à confirmer)
+
+**Objectif** : à l'arrivée dans l'onboarding, proposer à la personne les fiches STAR **non liées**
+dont l'email correspond à son **email de compte vérifié** ; sur **confirmation**, établir le lien
+directement (rôle STAR), **sans validation admin** — le serveur vérifiant l'égalité des emails.
+
+> **Sécurité** : `assertSelfLinkAllowed` doit être infaillible (email normalisé identique, fiche non
+> liée dans l'église visée, cohérence église). Aucune attribution de rôle autre que `STAR`.
+> Sous-branche : `feat/onboarding-p2-reconciliation` (depuis `feat/onboarding-liaison-email`).
+
+### Prérequis
+
+- [x] Sous-branche créée : `feat/onboarding-p2-reconciliation`
+- [ ] ~~Migration Prisma~~ — **index `Member.email` différé** (simple optimisation ; la réconciliation
+      fonctionne sans, à l'échelle d'une personne/église). À ajouter dans une petite migration
+      dédiée quand une base de dev est disponible. **P2 reste sans migration ni changement de
+      `schema.prisma`.**
+
+### Tâches
+
+#### 1. Logique métier (helper `src/lib/onboarding.ts`)
+
+- [x] **T2** — `findUnlinkedMembersByEmail(email): Promise<CandidateMember[]>` — fiches dont l'email
+      normalisé correspond, **et qui n'ont pas de `MemberUserLink`** (non liées), avec leur église
+      (via département principal) et leur département principal. Toutes églises confondues.
+- [x] **T3** — `assertSelfLinkAllowed(sessionEmail, member, churchId)` — lève `ApiError(403)` si :
+      email de session normalisé ≠ email fiche normalisé, OU fiche déjà liée dans cette église, OU
+      la fiche n'appartient pas à `churchId`. Sinon retourne OK.
+
+#### 3. API
+
+- [x] **T4** — `GET /api/onboarding/candidates` (nouveau) : `requireAuth` ; retourne
+      `findUnlinkedMembersByEmail(session.user.email)`. Ne fuite rien d'autre que les fiches
+      correspondant à l'email du demandeur.
+- [x] **T5** — `POST /api/member-user-links/self` (nouveau) : `requireAuth` ; body Zod
+      `{ memberId, churchId }` ; charge la fiche ; `assertSelfLinkAllowed(session.user.email, member,
+      churchId)` ; transaction : crée le `MemberUserLink` (validé) + `UserChurchRole` STAR si absent ;
+      `logAudit`. **Aucune** validation admin, **aucun** rôle autre que STAR.
+
+#### 4. UI (`src/app/no-access/NoAccessClient.tsx`)
+
+- [x] **T6** — Nouvelle **première étape « réconciliation email »** : à l'entrée, appeler
+      `GET /api/onboarding/candidates`. Si résultat(s) : afficher « Cette fiche vous correspond-elle ? »
+      (nom, église, département) avec **Confirmer** → `POST /api/member-user-links/self` puis
+      rafraîchir la session / rediriger vers `/dashboard`. Bouton « Aucune de ces fiches » → bascule
+      vers le parcours par nom existant. Si aucun candidat : parcours par nom inchangé.
+
+#### 5. Tests
+
+- [x] **T7** — Unitaires (`src/lib/__tests__/onboarding.test.ts`) : `findUnlinkedMembersByEmail`
+      (match email, exclusion des fiches déjà liées, multi-église) ; `assertSelfLinkAllowed` (succès +
+      chaque refus : email différent, fiche déjà liée, mauvaise église).
+- [x] **T8** — Routes : `POST /api/member-user-links/self` (succès crée lien + rôle STAR ; refus 403
+      sur email différent / fiche liée / mauvaise église) ; `GET /api/onboarding/candidates` (renvoie
+      les fiches de l'email de session, rien d'autre).
+
+### Couverture des critères d'acceptation (P2)
+
+| Critère (spec) | Tâche(s) |
+|---|---|
+| Rapprochement d'abord par l'email vérifié, toutes églises | T2, T4, T6 |
+| Fiche proposée → confirmation → lien établi directement (sans validation admin) | T5, T6 |
+| Multi-tenant : rattachements par église sur un même compte | T2, T3, T5 |
+| Journalisation des rattachements établis | T5 |
+
+*(Index `Member.email` — optimisation différée, hors P2.)*
+
+### Vérification finale (P2)
+
+- [x] `npm run typecheck` · `npm run lint` · `npm run lint:boundaries` · `npm run test`
+- [ ] Test manuel (recette) : fiche avec email == compte → proposée → confirmée → accès STAR ;
+      email différent → refus ; fiche déjà liée → non proposée
 - [ ] PR ouverte vers `feat/onboarding-liaison-email` (pas vers `main`)

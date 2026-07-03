@@ -28,7 +28,16 @@ type RequestedRole =
   | "REPORTER"
   | null;
 
-type Step = "identity" | "match" | "department" | "role" | "confirm" | "pending";
+type Candidate = {
+  memberId: string;
+  firstName: string;
+  lastName: string;
+  churchId: string;
+  churchName: string;
+  department: string;
+};
+
+type Step = "reconcile" | "identity" | "match" | "department" | "role" | "confirm" | "pending";
 
 const ROLE_LABELS: Record<NonNullable<RequestedRole>, string> = {
   DEPARTMENT_HEAD: "Responsable de département",
@@ -49,6 +58,12 @@ export default function NoAccessClient({
 }) {
   const [step, setStep] = useState<Step>("identity");
   const [churchId, setChurchId] = useState(churches[0]?.id ?? "");
+
+  // Étape 0 — réconciliation par email (P2)
+  const [bootLoading, setBootLoading] = useState(true);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   // Étape 1 — identité
   const [firstName, setFirstName] = useState("");
@@ -74,6 +89,52 @@ export default function NoAccessClient({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Réconciliation par email au chargement de l'assistant (P2)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/onboarding/candidates");
+        const json = await res.json();
+        const found: Candidate[] = res.ok && Array.isArray(json?.candidates) ? json.candidates : [];
+        if (cancelled) return;
+        setCandidates(found);
+        if (found.length > 0) setStep("reconcile");
+      } catch {
+        // En cas d'échec, on retombe sur le parcours par nom
+      } finally {
+        if (!cancelled) setBootLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function confirmCandidate(candidate: Candidate) {
+    setLinkError(null);
+    setLinking(true);
+    try {
+      const res = await fetch("/api/member-user-links/self", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: candidate.memberId, churchId: candidate.churchId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur lors de la liaison");
+      // Rechargement complet : la session serveur (stratégie DB) recharge les rôles
+      window.location.assign("/dashboard");
+    } catch (e) {
+      setLinkError(e instanceof Error ? e.message : "Une erreur est survenue");
+      setLinking(false);
+    }
+  }
+
+  function skipReconcile() {
+    setLinkError(null);
+    setStep("identity");
+  }
 
   // Auto-search quand prénom/nom changent (étape identity)
   useEffect(() => {
@@ -186,6 +247,62 @@ export default function NoAccessClient({
   }
 
   // ── Rendu ────────────────────────────────────────────────────────────────────
+
+  if (bootLoading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-icc-violet border-t-transparent" />
+      </div>
+    );
+  }
+
+  // ── Étape 0 : Réconciliation par email ─────────────────────────────────────
+  if (step === "reconcile") {
+    return (
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Cette fiche vous correspond-elle ?</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Une fiche enregistrée avec votre adresse email a été trouvée. Confirmez pour lier votre
+            compte directement.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          {candidates.map((c) => (
+            <div
+              key={`${c.memberId}-${c.churchId}`}
+              className="rounded-lg border-2 border-gray-200 px-4 py-3"
+            >
+              <p className="text-sm font-semibold text-gray-900">
+                {c.firstName} {c.lastName}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                {c.churchName} · {c.department}
+              </p>
+              <button
+                onClick={() => confirmCandidate(c)}
+                disabled={linking}
+                className="mt-3 w-full rounded-lg bg-icc-violet px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-icc-violet/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {linking ? "Liaison en cours..." : "Confirmer, c'est moi"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
+
+        <button
+          onClick={skipReconcile}
+          disabled={linking}
+          className="text-sm text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+        >
+          Aucune de ces fiches ne me correspond →
+        </button>
+      </div>
+    );
+  }
 
   if (step === "pending") {
     return (
