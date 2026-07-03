@@ -8,6 +8,7 @@ type MemberResult = {
   id: string;
   firstName: string;
   lastName: string;
+  matchStrength?: "strong" | "possible";
   departments: {
     department: { name: string; ministry: { name: string } };
   }[];
@@ -28,7 +29,16 @@ type RequestedRole =
   | "REPORTER"
   | null;
 
-type Step = "identity" | "match" | "department" | "role" | "confirm" | "pending";
+type Candidate = {
+  memberId: string;
+  firstName: string;
+  lastName: string;
+  churchId: string;
+  churchName: string;
+  department: string;
+};
+
+type Step = "reconcile" | "identity" | "match" | "department" | "role" | "confirm" | "pending";
 
 const ROLE_LABELS: Record<NonNullable<RequestedRole>, string> = {
   DEPARTMENT_HEAD: "Responsable de département",
@@ -50,6 +60,12 @@ export default function NoAccessClient({
   const [step, setStep] = useState<Step>("identity");
   const [churchId, setChurchId] = useState(churches[0]?.id ?? "");
 
+  // Étape 0 — réconciliation par email (P2)
+  const [bootLoading, setBootLoading] = useState(true);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
   // Étape 1 — identité
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -60,6 +76,8 @@ export default function NoAccessClient({
   const [searching, setSearching] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberResult | null>(null);
   const [isNewStar, setIsNewStar] = useState(false);
+  // Cran de vérification anti-doublon avant « aucune ne me correspond »
+  const [noMatchStage, setNoMatchStage] = useState<"hidden" | "confirming" | "options">("hidden");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Étape 3 — département
@@ -75,9 +93,57 @@ export default function NoAccessClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Réconciliation par email au chargement de l'assistant (P2)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/onboarding/candidates");
+        const json = await res.json();
+        const found: Candidate[] = res.ok && Array.isArray(json?.candidates) ? json.candidates : [];
+        if (cancelled) return;
+        setCandidates(found);
+        if (found.length > 0) setStep("reconcile");
+      } catch {
+        // En cas d'échec, on retombe sur le parcours par nom
+      } finally {
+        if (!cancelled) setBootLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function confirmCandidate(candidate: Candidate) {
+    setLinkError(null);
+    setLinking(true);
+    try {
+      const res = await fetch("/api/member-user-links/self", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: candidate.memberId, churchId: candidate.churchId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Erreur lors de la liaison");
+      // Rechargement complet : la session serveur (stratégie DB) recharge les rôles
+      window.location.assign("/dashboard");
+    } catch (e) {
+      setLinkError(e instanceof Error ? e.message : "Une erreur est survenue");
+      setLinking(false);
+    }
+  }
+
+  function skipReconcile() {
+    setLinkError(null);
+    setStep("identity");
+  }
+
   // Auto-search quand prénom/nom changent (étape identity)
   useEffect(() => {
     const q = `${firstName} ${lastName}`.trim();
+    // Toute nouvelle recherche réinitialise le cran de vérification anti-doublon
+    setNoMatchStage("hidden");
     if (q.length < 2) { setResults([]); return; }
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
@@ -187,6 +253,62 @@ export default function NoAccessClient({
 
   // ── Rendu ────────────────────────────────────────────────────────────────────
 
+  if (bootLoading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-icc-violet border-t-transparent" />
+      </div>
+    );
+  }
+
+  // ── Étape 0 : Réconciliation par email ─────────────────────────────────────
+  if (step === "reconcile") {
+    return (
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Cette fiche vous correspond-elle ?</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Une fiche enregistrée avec votre adresse email a été trouvée. Confirmez pour lier votre
+            compte directement.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          {candidates.map((c) => (
+            <div
+              key={`${c.memberId}-${c.churchId}`}
+              className="rounded-lg border-2 border-gray-200 px-4 py-3"
+            >
+              <p className="text-sm font-semibold text-gray-900">
+                {c.firstName} {c.lastName}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-500">
+                {c.churchName} · {c.department}
+              </p>
+              <button
+                onClick={() => confirmCandidate(c)}
+                disabled={linking}
+                className="mt-3 w-full rounded-lg bg-icc-violet px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-icc-violet/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {linking ? "Liaison en cours..." : "Confirmer, c'est moi"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
+
+        <button
+          onClick={skipReconcile}
+          disabled={linking}
+          className="text-sm text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+        >
+          Aucune de ces fiches ne me correspond →
+        </button>
+      </div>
+    );
+  }
+
   if (step === "pending") {
     return (
       <div className="text-center">
@@ -273,7 +395,7 @@ export default function NoAccessClient({
           {results.length > 0 ? (
             <>
               <p className="text-xs text-gray-500">
-                Nous avons trouvé {results.length} fiche{results.length > 1 ? "s" : ""} correspondante{results.length > 1 ? "s" : ""}. Cliquez sur la vôtre :
+                Nous avons trouvé {results.length} fiche{results.length > 1 ? "s" : ""} à votre nom. Laquelle est la vôtre ?
               </p>
               <div className="space-y-2">
                 {results.map((m) => (
@@ -282,7 +404,18 @@ export default function NoAccessClient({
                     onClick={() => selectExisting(m)}
                     className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
                   >
-                    <p className="text-sm font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
+                      {m.matchStrength === "strong" ? (
+                        <span className="shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                          Forte correspondance
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
+                          Correspondance possible
+                        </span>
+                      )}
+                    </div>
                     {m.departments[0] && (
                       <p className="text-xs text-gray-500 mt-0.5">
                         {m.departments[0].department.ministry.name} / {m.departments[0].department.name}
@@ -291,9 +424,41 @@ export default function NoAccessClient({
                   </button>
                 ))}
               </div>
-              <div className="border-t border-gray-100 pt-3">
-                <p className="text-xs text-gray-400 mb-2">Aucune ne me correspond</p>
-                <div className="flex gap-2">
+
+              {noMatchStage === "hidden" && (
+                <button
+                  onClick={() => setNoMatchStage("confirming")}
+                  className="text-xs text-gray-400 underline decoration-dotted underline-offset-2 hover:text-gray-600 transition-colors"
+                >
+                  Aucune de ces fiches n&apos;est la mienne
+                </button>
+              )}
+
+              {noMatchStage === "confirming" && (
+                <div className="rounded-lg border-2 border-icc-jaune bg-icc-jaune/10 p-4 space-y-3">
+                  <p className="text-xs text-gray-700">
+                    <span aria-hidden="true">⚠ </span>
+                    Avez-vous bien vérifié les {results.length} fiche{results.length > 1 ? "s" : ""} ci-dessus ? Si l&apos;une d&apos;elles est la vôtre, en créer une nouvelle créerait un doublon.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNoMatchStage("hidden")}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Revoir les fiches
+                    </button>
+                    <button
+                      onClick={() => setNoMatchStage("options")}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors"
+                    >
+                      Oui, aucune n&apos;est la mienne
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {noMatchStage === "options" && (
+                <div className="border-t border-gray-100 pt-3 flex gap-2">
                   <button
                     onClick={selectNewStar}
                     className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
@@ -307,7 +472,7 @@ export default function NoAccessClient({
                     Je souhaite accéder à l&apos;application dans un autre rôle
                   </button>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <>
@@ -333,7 +498,7 @@ export default function NoAccessClient({
             </>
           )}
 
-          <button onClick={() => setStep("identity")} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             ← Modifier mon nom
           </button>
         </div>

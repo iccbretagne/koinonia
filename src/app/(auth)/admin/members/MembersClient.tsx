@@ -20,11 +20,14 @@ interface Member {
   id: string;
   firstName: string;
   lastName: string;
+  email?: string | null;
   churchId: string;
   primaryDepartment: { id: string; name: string; ministry: { id: string; name: string } } | null;
   allDepartments: DeptRef[];
   userLink: { userId: string; userName: string | null; userEmail: string } | null;
 }
+
+type DuplicateCandidate = { id: string; firstName: string; lastName: string; email: string | null };
 
 interface Props {
   initialMembers: Member[];
@@ -41,10 +44,12 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [editing, setEditing] = useState<Member | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [departmentId, setDepartmentId] = useState(departments[0]?.id || "");
   const [additionalDeptIds, setAdditionalDeptIds] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[] | null>(null);
   const [filterDept, setFilterDept] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem(LS_FILTER_DEPT) ?? "";
     return "";
@@ -125,9 +130,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setEditing(null);
     setFirstName("");
     setLastName("");
+    setEmail("");
     setDepartmentId(departments[0]?.id || "");
     setAdditionalDeptIds([]);
     setError("");
+    setDuplicateCandidates(null);
     setModalOpen(true);
   }
 
@@ -135,15 +142,21 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setEditing(m);
     setFirstName(m.firstName);
     setLastName(m.lastName);
+    setEmail(m.email ?? "");
     const primaryId = m.primaryDepartment?.id ?? m.allDepartments[0]?.id ?? departments[0]?.id ?? "";
     setDepartmentId(primaryId);
     setAdditionalDeptIds(m.allDepartments.filter((d) => !d.isPrimary).map((d) => d.id));
     setError("");
+    setDuplicateCandidates(null);
     setModalOpen(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    await submitMember(false);
+  }
+
+  async function submitMember(confirmDuplicate: boolean) {
     setLoading(true);
     setError("");
 
@@ -157,10 +170,18 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         body: JSON.stringify({
           firstName,
           lastName,
+          email: email || undefined,
           departmentId,
           additionalDepartmentIds: additionalDeptIds.filter((id) => id !== departmentId),
+          ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
         }),
       });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        setDuplicateCandidates(data.duplicates ?? []);
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json();
@@ -176,6 +197,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         setMembers((prev) => [...prev, normalizedMember]);
       }
 
+      setDuplicateCandidates(null);
       setModalOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
@@ -188,6 +210,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     id: string;
     firstName: string;
     lastName: string;
+    email?: string | null;
     departments?: { isPrimary: boolean; department: { id: string; name: string; ministry: { id: string; name: string; churchId?: string } } }[];
     userLink?: { userId: string; userName?: string | null; userEmail?: string; user?: { name: string | null; email: string } } | null;
     churchId?: string;
@@ -198,6 +221,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       id: raw.id,
       firstName: raw.firstName,
       lastName: raw.lastName,
+      email: raw.email ?? null,
       churchId: raw.churchId ?? primaryDept?.department.ministry.churchId ?? "",
       primaryDepartment: primaryDept
         ? { id: primaryDept.department.id, name: primaryDept.department.name, ministry: primaryDept.department.ministry }
@@ -534,6 +558,13 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             onChange={(e) => setLastName(e.target.value)}
             required
           />
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Fortement recommandé — fiabilise le rattachement du compte"
+          />
           <Select
             label="Département principal"
             value={departmentId}
@@ -567,6 +598,43 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 ))}
             </div>
           </div>
+          {duplicateCandidates && duplicateCandidates.length > 0 && (
+            <div className="rounded-lg border-2 border-icc-jaune bg-icc-jaune/10 p-3 space-y-2">
+              <p className="text-sm font-medium text-gray-800">
+                Ces fiches existent déjà dans l&apos;église — rattacher ou créer quand même ?
+              </p>
+              <ul className="space-y-1">
+                {duplicateCandidates.map((d) => (
+                  <li key={d.id} className="text-sm text-gray-700 flex items-center justify-between gap-2">
+                    <span>
+                      {d.lastName} {d.firstName}
+                      {d.email && <span className="text-gray-400 ml-1 text-xs">{d.email}</span>}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-xs text-icc-violet hover:underline whitespace-nowrap"
+                      onClick={() => {
+                        setModalOpen(false);
+                        setDuplicateCandidates(null);
+                        setSearch(`${d.firstName} ${d.lastName}`);
+                      }}
+                    >
+                      Voir la fiche
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={loading}
+                onClick={() => submitMember(true)}
+              >
+                Créer quand même
+              </Button>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
