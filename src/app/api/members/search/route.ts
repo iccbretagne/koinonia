@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchAccess } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rankMembersByName } from "@/lib/onboarding";
 
 // Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete.
+// IMPORTANT : un nouvel arrivant en onboarding n'a AUCUN accès à l'église (il est
+// justement sur /no-access), donc `requireAuth()` et non `requireChurchAccess()` —
+// sinon la recherche renvoie 403 pour exactement ceux qui en ont besoin. L'endpoint
+// ne renvoie que des noms + département (ni email ni téléphone), même niveau d'accès
+// que /api/onboarding/candidates.
 // Matching flou (tokens + tolérance aux fautes) scoré côté application : on récupère
 // les fiches non liées de l'église puis on les classe par pertinence via
 // rankMembersByName (MariaDB n'offre pas de recherche trigramme).
@@ -14,7 +19,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchAccess(churchId);
+    await requireAuth();
     if (q.length < 2) return successResponse([]);
 
     const candidates = await prisma.member.findMany({
