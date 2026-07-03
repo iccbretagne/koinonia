@@ -318,6 +318,20 @@ npm run dev
 
 ## Workflow contributeur
 
+### Spec-Driven Development
+
+Les fonctionnalites non triviales sont specifiees avant d'etre codees. Le flux :
+
+```
+/specify <description>  →  /plan  →  /tasks  →  /implement
+     spec.md                plan.md   tasks.md    code + PR
+```
+
+- Les specs vivent dans `specs/NNN-nom-feature/` (voir `specs/README.md`).
+- `specs/constitution.md` = principes non-negociables que toute spec/plan/implementation respecte.
+- La `spec.md` decrit QUOI/POURQUOI (aucune technique) ; le `plan.md` decrit COMMENT ; le `tasks.md` decoupe.
+- Un fix trivial ne necessite pas de spec.
+
 ### Conventions de branches
 
 | Prefixe | Usage |
