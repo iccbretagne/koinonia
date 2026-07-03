@@ -11,6 +11,9 @@ const {
   findDuplicateCandidates,
   findUnlinkedMembersByEmail,
   assertSelfLinkAllowed,
+  levenshtein,
+  tokenMatchScore,
+  rankMembersByName,
 } = await import("../onboarding");
 
 // Fabrique une fiche telle que renvoyée par findMany (avec département principal)
@@ -219,5 +222,88 @@ describe("assertSelfLinkAllowed", () => {
     await expect(
       assertSelfLinkAllowed("alice@example.com", { id: "m1", email: "alice@example.com" }, "c1")
     ).rejects.toMatchObject({ statusCode: 403 });
+  });
+});
+
+describe("levenshtein", () => {
+  it("returns 0 for identical strings", () => {
+    expect(levenshtein("dupont", "dupont")).toBe(0);
+    expect(levenshtein("", "")).toBe(0);
+  });
+
+  it("returns the length when one string is empty", () => {
+    expect(levenshtein("", "abc")).toBe(3);
+    expect(levenshtein("abc", "")).toBe(3);
+  });
+
+  it("counts a single substitution", () => {
+    expect(levenshtein("chat", "chot")).toBe(1);
+  });
+
+  it("counts a single insertion/deletion", () => {
+    expect(levenshtein("dupnt", "dupont")).toBe(1);
+    expect(levenshtein("dupont", "dupnt")).toBe(1);
+  });
+
+  it("handles the classic kitten/sitting case", () => {
+    expect(levenshtein("kitten", "sitting")).toBe(3);
+  });
+});
+
+describe("tokenMatchScore", () => {
+  it("scores an exact full-name match 1.0", () => {
+    expect(tokenMatchScore("Jean Dupont", "Jean", "Dupont")).toBe(1);
+  });
+
+  it("is order-insensitive", () => {
+    expect(tokenMatchScore("Dupont Jean", "Jean", "Dupont")).toBe(1);
+  });
+
+  it("scores a single matching token highly", () => {
+    expect(tokenMatchScore("Jean", "Jean", "Dupont")).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("tolerates a typo above the threshold", () => {
+    const score = tokenMatchScore("Dupnt", "Jean", "Dupont");
+    expect(score).toBeGreaterThanOrEqual(0.7);
+    expect(score).toBeCloseTo(0.833, 2);
+  });
+
+  it("is accent-insensitive via normalizeName", () => {
+    expect(tokenMatchScore("Elodie", "Élodie", "Martin")).toBe(1);
+  });
+
+  it("excludes a false positive (score 0)", () => {
+    expect(tokenMatchScore("Xavier Bernard", "Jean", "Dupont")).toBe(0);
+  });
+
+  it("returns 0 for empty inputs", () => {
+    expect(tokenMatchScore("", "Jean", "Dupont")).toBe(0);
+    expect(tokenMatchScore("Jean", "", "")).toBe(0);
+  });
+});
+
+describe("rankMembersByName", () => {
+  const members = [
+    { firstName: "Jean", lastName: "Dupont" },
+    { firstName: "Jeanne", lastName: "Dupond" },
+    { firstName: "Xavier", lastName: "Bernard" },
+  ];
+
+  it("ranks by score descending and excludes below threshold", () => {
+    const ranked = rankMembersByName("Jean Dupont", members);
+    expect(ranked.map((m) => m.lastName)).not.toContain("Bernard");
+    expect(ranked[0].lastName).toBe("Dupont");
+    expect(ranked[0]._score).toBeGreaterThanOrEqual(ranked[1]._score);
+  });
+
+  it("respects the limit option", () => {
+    const ranked = rankMembersByName("Jean Dupont", members, { limit: 1 });
+    expect(ranked).toHaveLength(1);
+    expect(ranked[0].lastName).toBe("Dupont");
+  });
+
+  it("returns an empty array when nothing matches", () => {
+    expect(rankMembersByName("Zorglub", members)).toHaveLength(0);
   });
 });

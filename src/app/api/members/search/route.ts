@@ -1,15 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { rankMembersByName } from "@/lib/onboarding";
 
-function normalize(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
-}
-
-// Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete
+// Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete.
+// Matching flou (tokens + tolérance aux fautes) scoré côté application : on récupère
+// les fiches non liées de l'église puis on les classe par pertinence via
+// rankMembersByName (MariaDB n'offre pas de recherche trigramme).
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -20,16 +17,10 @@ export async function GET(request: Request) {
     await requireChurchAccess(churchId);
     if (q.length < 2) return successResponse([]);
 
-    const norm = normalize(q);
-    const terms = norm === q.toLowerCase() ? [q] : [q, norm];
-
-    const matches = await prisma.member.findMany({
+    const candidates = await prisma.member.findMany({
       where: {
         departments: { some: { department: { ministry: { churchId } } } },
-        OR: terms.flatMap((t) => [
-          { firstName: { contains: t } },
-          { lastName: { contains: t } },
-        ]),
+        userLinks: { none: { churchId } },
       },
       select: {
         id: true,
@@ -43,16 +34,13 @@ export async function GET(request: Request) {
             },
           },
         },
-        userLinks: { where: { churchId }, select: { id: true } },
       },
-      take: 20,
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      take: 500,
     });
 
-    const members = matches
-      .filter((m) => m.userLinks.length === 0)
-      .slice(0, 10)
-      .map(({ userLinks: _, ...m }) => m);
+    const members = rankMembersByName(q, candidates, { limit: 10 }).map(
+      ({ _score: _, ...m }) => m
+    );
 
     return successResponse(members);
   } catch (error) {
