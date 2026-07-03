@@ -14,6 +14,8 @@ const {
   levenshtein,
   tokenMatchScore,
   rankMembersByName,
+  matchStrength,
+  STRONG_MATCH_THRESHOLD,
 } = await import("../onboarding");
 
 // Fabrique une fiche telle que renvoyée par findMany (avec département principal)
@@ -280,6 +282,20 @@ describe("tokenMatchScore", () => {
   it("returns 0 for empty inputs", () => {
     expect(tokenMatchScore("", "Jean", "Dupont")).toBe(0);
     expect(tokenMatchScore("Jean", "", "")).toBe(0);
+  });
+});
+
+describe("matchStrength", () => {
+  it("classes a score at or above the threshold as strong", () => {
+    expect(matchStrength(STRONG_MATCH_THRESHOLD)).toBe("strong");
+    expect(matchStrength(0.95)).toBe("strong");
+    expect(matchStrength(1)).toBe("strong");
+  });
+
+  it("classes a score below the threshold as possible", () => {
+    expect(matchStrength(STRONG_MATCH_THRESHOLD - 0.0001)).toBe("possible");
+    expect(matchStrength(0.7)).toBe("possible");
+    expect(matchStrength(0)).toBe("possible");
   });
 });
 

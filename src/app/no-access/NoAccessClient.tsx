@@ -8,6 +8,7 @@ type MemberResult = {
   id: string;
   firstName: string;
   lastName: string;
+  matchStrength?: "strong" | "possible";
   departments: {
     department: { name: string; ministry: { name: string } };
   }[];
@@ -75,6 +76,8 @@ export default function NoAccessClient({
   const [searching, setSearching] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberResult | null>(null);
   const [isNewStar, setIsNewStar] = useState(false);
+  // Cran de vérification anti-doublon avant « aucune ne me correspond »
+  const [noMatchStage, setNoMatchStage] = useState<"hidden" | "confirming" | "options">("hidden");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Étape 3 — département
@@ -139,6 +142,8 @@ export default function NoAccessClient({
   // Auto-search quand prénom/nom changent (étape identity)
   useEffect(() => {
     const q = `${firstName} ${lastName}`.trim();
+    // Toute nouvelle recherche réinitialise le cran de vérification anti-doublon
+    setNoMatchStage("hidden");
     if (q.length < 2) { setResults([]); return; }
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
@@ -390,7 +395,7 @@ export default function NoAccessClient({
           {results.length > 0 ? (
             <>
               <p className="text-xs text-gray-500">
-                Nous avons trouvé {results.length} fiche{results.length > 1 ? "s" : ""} correspondante{results.length > 1 ? "s" : ""}. Cliquez sur la vôtre :
+                Nous avons trouvé {results.length} fiche{results.length > 1 ? "s" : ""} à votre nom. Laquelle est la vôtre ?
               </p>
               <div className="space-y-2">
                 {results.map((m) => (
@@ -399,7 +404,18 @@ export default function NoAccessClient({
                     onClick={() => selectExisting(m)}
                     className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
                   >
-                    <p className="text-sm font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
+                      {m.matchStrength === "strong" ? (
+                        <span className="shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                          Forte correspondance
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
+                          Correspondance possible
+                        </span>
+                      )}
+                    </div>
                     {m.departments[0] && (
                       <p className="text-xs text-gray-500 mt-0.5">
                         {m.departments[0].department.ministry.name} / {m.departments[0].department.name}
@@ -408,9 +424,41 @@ export default function NoAccessClient({
                   </button>
                 ))}
               </div>
-              <div className="border-t border-gray-100 pt-3">
-                <p className="text-xs text-gray-400 mb-2">Aucune ne me correspond</p>
-                <div className="flex gap-2">
+
+              {noMatchStage === "hidden" && (
+                <button
+                  onClick={() => setNoMatchStage("confirming")}
+                  className="text-xs text-gray-400 underline decoration-dotted underline-offset-2 hover:text-gray-600 transition-colors"
+                >
+                  Aucune de ces fiches n&apos;est la mienne
+                </button>
+              )}
+
+              {noMatchStage === "confirming" && (
+                <div className="rounded-lg border-2 border-icc-jaune bg-icc-jaune/10 p-4 space-y-3">
+                  <p className="text-xs text-gray-700">
+                    <span aria-hidden="true">⚠ </span>
+                    Avez-vous bien vérifié les {results.length} fiche{results.length > 1 ? "s" : ""} ci-dessus ? Si l&apos;une d&apos;elles est la vôtre, en créer une nouvelle créerait un doublon.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setNoMatchStage("hidden")}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Revoir les fiches
+                    </button>
+                    <button
+                      onClick={() => setNoMatchStage("options")}
+                      className="flex-1 px-3 py-2 text-xs font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors"
+                    >
+                      Oui, aucune n&apos;est la mienne
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {noMatchStage === "options" && (
+                <div className="border-t border-gray-100 pt-3 flex gap-2">
                   <button
                     onClick={selectNewStar}
                     className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
@@ -424,7 +472,7 @@ export default function NoAccessClient({
                     Je souhaite accéder à l&apos;application dans un autre rôle
                   </button>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <>
@@ -450,7 +498,7 @@ export default function NoAccessClient({
             </>
           )}
 
-          <button onClick={() => setStep("identity")} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
             ← Modifier mon nom
           </button>
         </div>

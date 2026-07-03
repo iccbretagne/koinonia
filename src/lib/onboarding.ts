@@ -72,6 +72,17 @@ function tokenize(s: string): string[] {
 /** Seuil de similarité par token de requête (en-deçà → exclusion). */
 export const TOKEN_MATCH_THRESHOLD = 0.7;
 
+/** Seuil au-delà duquel une correspondance est jugée « forte ». */
+export const STRONG_MATCH_THRESHOLD = 0.9;
+
+/**
+ * Traduit un score de correspondance flou (0..1) en une force grossière,
+ * exploitable côté UI (badge de pertinence).
+ */
+export function matchStrength(score: number): "strong" | "possible" {
+  return score >= STRONG_MATCH_THRESHOLD ? "strong" : "possible";
+}
+
 /**
  * Score de correspondance flou 0..1 entre une requête libre et un nom
  * (prénom + nom), tolérant à l'ordre des mots, aux accents et aux fautes de

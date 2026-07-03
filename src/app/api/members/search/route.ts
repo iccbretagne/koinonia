@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { rankMembersByName } from "@/lib/onboarding";
+import { rankMembersByName, matchStrength } from "@/lib/onboarding";
 
 // Recherche de STAR sans rôle requis — utilisé depuis /no-access pour l'autocomplete.
 // IMPORTANT : un nouvel arrivant en onboarding n'a AUCUN accès à l'église (il est
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     });
 
     const members = rankMembersByName(q, candidates, { limit: 10 }).map(
-      ({ _score: _, ...m }) => m
+      ({ _score, ...m }) => ({ ...m, matchStrength: matchStrength(_score) })
     );
 
     return successResponse(members);
