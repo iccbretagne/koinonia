@@ -3,6 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
+import { findDuplicateCandidates } from "@/lib/onboarding";
 import { z } from "zod";
 
 // Helper : inclure les départements d'un membre (principal en premier)
@@ -182,14 +183,16 @@ export async function PATCH(request: Request) {
 const createSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
+  email: z.string().email("Email invalide").optional(),
   departmentId: z.string().min(1, "Le département principal est requis"),
   additionalDepartmentIds: z.array(z.string()).optional(),
+  confirmDuplicate: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { departmentId, additionalDepartmentIds = [], ...memberData } = createSchema.parse(body);
+    const { departmentId, additionalDepartmentIds = [], confirmDuplicate, ...memberData } = createSchema.parse(body);
 
     // Résoudre l'église du département cible
     const { resolveChurchId } = await import("@/lib/auth");
@@ -219,6 +222,17 @@ export async function POST(request: Request) {
       const wrongChurch = depts.some((d) => d.ministry.churchId !== deptChurchId);
       if (wrongChurch || depts.length !== allDeptIds.length) {
         throw new ApiError(400, "Tous les départements doivent appartenir à la même église");
+      }
+    }
+
+    if (!confirmDuplicate) {
+      const duplicates = await findDuplicateCandidates(deptChurchId, {
+        email: memberData.email,
+        firstName: memberData.firstName,
+        lastName: memberData.lastName,
+      });
+      if (duplicates.length > 0) {
+        return successResponse({ duplicates }, 409);
       }
     }
 

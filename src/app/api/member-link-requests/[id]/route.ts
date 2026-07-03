@@ -3,12 +3,14 @@ import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { Role } from "@/generated/prisma/client";
+import { findDuplicateCandidates } from "@/lib/onboarding";
 import { z } from "zod";
 
 const schema = z.object({
   action: z.enum(["approve", "reject", "reconsider"]),
   rejectReason: z.string().optional(),
   departmentId: z.string().optional(), // override admin si besoin
+  confirmDuplicate: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -22,7 +24,7 @@ export async function PATCH(
     const session = await requireChurchPermission("members:manage", churchId);
 
     const body = await request.json();
-    const { action, rejectReason, departmentId: adminDeptOverride } = schema.parse(body);
+    const { action, rejectReason, departmentId: adminDeptOverride, confirmDuplicate } = schema.parse(body);
 
     const linkRequest = await prisma.memberLinkRequest.findUnique({
       where: { id },
@@ -30,6 +32,7 @@ export async function PATCH(
         member: true,
         department: true,
         ministry: true,
+        user: true,
       },
     });
     if (!linkRequest) throw new ApiError(404, "Demande introuvable");
@@ -92,6 +95,18 @@ export async function PATCH(
 
     if (isNewStar && !isNoStarRole && !effectiveDeptId) {
       throw new ApiError(400, "Le département est requis pour créer un STAR");
+    }
+
+    // ── Garde-fou anti-doublon avant création d'une nouvelle fiche ─────────────
+    if (isNewStar && !isNoStarRole && !confirmDuplicate) {
+      const duplicates = await findDuplicateCandidates(linkRequest.churchId, {
+        email: linkRequest.user.email,
+        firstName: linkRequest.firstName!,
+        lastName: linkRequest.lastName!,
+      });
+      if (duplicates.length > 0) {
+        return successResponse({ duplicates }, 409);
+      }
     }
 
     await prisma.$transaction(async (tx) => {
