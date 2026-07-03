@@ -12,6 +12,7 @@ const createSchema = z.object({
   eventIds: z.array(z.string()).default([]),
   projectIds: z.array(z.string()).default([]),
   expiresInDays: z.number().int().positive().optional(),
+  includeAllPhotos: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
         scope: data.scope,
         eventIds: data.eventIds,
         projectIds: data.projectIds,
+        includeAllPhotos: data.includeAllPhotos,
       },
     });
 
@@ -64,7 +66,13 @@ export async function POST(request: Request) {
       action: "CREATE",
       entityType: "MediaShareToken",
       entityId: token.id,
-      details: { type: "COLLECTION", scope: data.scope, eventIds: data.eventIds, projectIds: data.projectIds },
+      details: {
+        type: "COLLECTION",
+        scope: data.scope,
+        eventIds: data.eventIds,
+        projectIds: data.projectIds,
+        includeAllPhotos: data.includeAllPhotos ?? false,
+      },
     });
 
     return successResponse(token, 201);

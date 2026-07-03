@@ -9,7 +9,7 @@ export default async function CollectionsPage() {
 
   await requireMediaManageAccess(churchId);
 
-  const [events, projects] = await Promise.all([
+  const [events, projects, totalPhotoCounts] = await Promise.all([
     prisma.mediaEvent.findMany({
       where: { churchId },
       orderBy: { date: "desc" },
@@ -30,13 +30,24 @@ export default async function CollectionsPage() {
         _count: { select: { files: { where: { status: { in: ["APPROVED", "FINAL_APPROVED"] } } } } },
       },
     }),
+    // Total toutes photos (tous statuts) par événement — pour informer le créateur du périmètre
+    // possible avec "toutes les photos" (Prisma ne permet pas deux compteurs filtrés différents
+    // sur la même relation dans un seul `_count`).
+    prisma.mediaPhoto.groupBy({
+      by: ["mediaEventId"],
+      where: { mediaEvent: { churchId } },
+      _count: { _all: true },
+    }),
   ]);
+
+  const totalPhotoByEventId = new Map(totalPhotoCounts.map((c) => [c.mediaEventId, c._count._all]));
 
   const serializedEvents = events.map((e) => ({
     id: e.id,
     name: e.name,
     date: e.date.toISOString(),
     approvedPhotoCount: e._count.photos,
+    totalPhotoCount: totalPhotoByEventId.get(e.id) ?? 0,
   }));
 
   const serializedProjects = projects.map((p) => ({

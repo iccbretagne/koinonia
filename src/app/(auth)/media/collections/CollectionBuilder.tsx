@@ -7,6 +7,7 @@ type EventItem = {
   name: string;
   date: string;
   approvedPhotoCount: number;
+  totalPhotoCount: number;
 };
 
 type ProjectItem = {
@@ -32,6 +33,7 @@ export default function CollectionBuilder({
   projects: ProjectItem[];
 }) {
   const [scope, setScope]           = useState<Scope>("both");
+  const [includeAllPhotos, setIncludeAllPhotos] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [label, setLabel]           = useState("");
@@ -89,7 +91,7 @@ export default function CollectionBuilder({
 
   const totalPhotos = filteredEvents
     .filter((e) => selectedEvents.has(e.id))
-    .reduce((n, e) => n + e.approvedPhotoCount, 0);
+    .reduce((n, e) => n + (includeAllPhotos ? e.totalPhotoCount : e.approvedPhotoCount), 0);
   const totalFiles = projects
     .filter((p) => selectedProjects.has(p.id))
     .reduce((n, p) => n + p.approvedFileCount, 0);
@@ -115,6 +117,7 @@ export default function CollectionBuilder({
           eventIds:   showEvents   ? Array.from(selectedEvents)   : [],
           projectIds: showProjects ? Array.from(selectedProjects) : [],
           expiresInDays: expiresInDays !== "" ? expiresInDays : undefined,
+          includeAllPhotos: showEvents ? includeAllPhotos : undefined,
         }),
       });
 
@@ -156,6 +159,32 @@ export default function CollectionBuilder({
             </button>
           ))}
         </div>
+
+        {showEvents && (
+          <div className="pt-2 border-t border-gray-100 space-y-2">
+            <p className="text-xs font-medium text-gray-600">Périmètre des photos</p>
+            <div className="flex gap-2 flex-wrap">
+              {([false, true] as const).map((allPhotos) => (
+                <button
+                  key={String(allPhotos)}
+                  onClick={() => setIncludeAllPhotos(allPhotos)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                    includeAllPhotos === allPhotos
+                      ? "bg-icc-violet text-white border-icc-violet"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-icc-violet/40 hover:bg-icc-violet/5"
+                  }`}
+                >
+                  {allPhotos ? "Toutes les photos" : "Photos validées uniquement"}
+                </button>
+              ))}
+            </div>
+            {includeAllPhotos && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Attention : ce lien diffusera aussi les photos en attente ou non validées, sans distinction de statut.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Events filter + selection ──────────────────────────────────────── */}
@@ -225,7 +254,7 @@ export default function CollectionBuilder({
                       <p className="text-xs text-gray-400">{formatDate(e.date)}</p>
                     </div>
                     <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${e.approvedPhotoCount > 0 ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                      {e.approvedPhotoCount} validée{e.approvedPhotoCount !== 1 ? "s" : ""}
+                      {e.approvedPhotoCount} validée{e.approvedPhotoCount !== 1 ? "s" : ""} / {e.totalPhotoCount} au total
                     </span>
                   </li>
                 ))}

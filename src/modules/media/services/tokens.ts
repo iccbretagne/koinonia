@@ -24,6 +24,13 @@ export interface CollectionConfig {
   scope: "photos" | "files" | "both";
   eventIds: string[];
   projectIds: string[];
+  /** Défaut absent = faux = photos validées uniquement. */
+  includeAllPhotos?: boolean;
+}
+
+/** Filtre Prisma des photos d'une collection selon son périmètre. */
+export function collectionPhotoWhere(config: CollectionConfig): Prisma.MediaPhotoWhereInput {
+  return config.includeAllPhotos ? {} : { status: "APPROVED" };
 }
 
 interface CreateTokenOptions {

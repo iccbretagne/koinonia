@@ -24,7 +24,7 @@ export async function GET(
 
     if (!photo) throw new ApiError(404, "Photo introuvable");
     if (!config.eventIds.includes(photo.mediaEventId)) throw new ApiError(403, "Photo hors périmètre");
-    if (photo.status !== "APPROVED") throw new ApiError(403, "Photo non approuvée");
+    if (!config.includeAllPhotos && photo.status !== "APPROVED") throw new ApiError(403, "Photo non approuvée");
 
     const downloadUrl = await getSignedDownloadUrl(photo.originalKey, photo.filename);
     return successResponse({ id: photo.id, filename: photo.filename, downloadUrl });

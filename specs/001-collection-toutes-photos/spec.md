@@ -1,7 +1,7 @@
 # Spec — Téléchargement de toutes les photos (même non validées) dans une collection
 
 - **Numéro** : 001
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-03
 - **Branche suggérée** : `feat/collection-toutes-photos`
 

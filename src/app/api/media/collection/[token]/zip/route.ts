@@ -5,7 +5,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { errorResponse, ApiError } from "@/lib/api-utils";
-import { validateMediaShareToken, getS3ObjectStream } from "@/modules/media";
+import { validateMediaShareToken, getS3ObjectStream, collectionPhotoWhere } from "@/modules/media";
 import type { CollectionConfig } from "@/modules/media";
 import archiver from "archiver";
 import { PassThrough } from "node:stream";
@@ -46,7 +46,7 @@ export async function POST(
           name: true,
           photos: {
             where: {
-              status: "APPROVED",
+              ...collectionPhotoWhere(config),
               ...(body.photoIds?.length ? { id: { in: body.photoIds } } : {}),
             },
             select: { filename: true, originalKey: true },
