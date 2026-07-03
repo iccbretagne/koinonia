@@ -4,7 +4,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { validateMediaShareToken, getSignedThumbnailUrl } from "@/modules/media";
+import { validateMediaShareToken, getSignedThumbnailUrl, collectionPhotoWhere } from "@/modules/media";
 import type { CollectionConfig } from "@/modules/media";
 
 export async function GET(
@@ -35,7 +35,7 @@ export async function GET(
         orderBy: { date: "desc" },
         include: {
           photos: {
-            where: { status: "APPROVED" },
+            where: collectionPhotoWhere(config),
             orderBy: { uploadedAt: "asc" },
             select: { id: true, filename: true, size: true, width: true, height: true, thumbnailKey: true },
           },

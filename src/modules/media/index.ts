@@ -1,6 +1,6 @@
 import { defineModule } from "@/core/module-registry";
 
-export { createMediaShareToken, validateMediaShareToken, getTokenUrlPath, isTokenExpired, generateToken } from "./services/tokens";
+export { createMediaShareToken, validateMediaShareToken, getTokenUrlPath, isTokenExpired, generateToken, collectionPhotoWhere } from "./services/tokens";
 export type { CollectionConfig } from "./services/tokens";
 export { processImage, validatePhotoFile, getExtensionFromMimeType, ALLOWED_PHOTO_MIME_TYPES, MAX_PHOTO_SIZE } from "./services/image";
 export {
