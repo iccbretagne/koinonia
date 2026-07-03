@@ -159,4 +159,24 @@ directement (rôle STAR), **sans validation admin** — le serveur vérifiant l'
 - [x] `npm run typecheck` · `npm run lint` · `npm run lint:boundaries` · `npm run test`
 - [ ] Test manuel (recette) : fiche avec email == compte → proposée → confirmée → accès STAR ;
       email différent → refus ; fiche déjà liée → non proposée
-- [ ] PR ouverte vers `feat/onboarding-liaison-email` (pas vers `main`)
+- [x] PR ouverte vers `feat/onboarding-liaison-email` (pas vers `main`) — **#401 mergée**
+
+---
+
+## Phase 3 — Parcours self-service refondu
+
+- **Statut** : **Couverte par P1 + P2 + le flux existant — aucun développement structurel requis.**
+
+Après revue de `src/app/no-access/NoAccessClient.tsx` (post-P2), tous les critères d'acceptation
+« P3 » de la spec sont déjà satisfaits :
+
+| Critère (spec) | Couvert par | Preuve |
+|---|---|---|
+| « Je suis un STAR » recherche-d'abord, jamais de création directe | flux existant | recherche auto dès l'étape identité ; « nouveau STAR » uniquement sous « aucune ne correspond » ou si 0 résultat ; `type:"new"` en fin de parcours |
+| Réconciliation email tentée en premier quelle que soit l'intention | **P2** | étape `reconcile` au boot, avant tout |
+| Rôle sans STAR toujours validé par un admin | flux existant | `POST /api/member-link-requests` → approbation admin ; `/self` ne crée que STAR |
+| Backstop anti-doublon à la création | **P1** | `findDuplicateCandidates` à l'approbation |
+| Identité ≠ autorisation | **P2** + flux | réconciliation (identité) vs demande de rôle (autorisation) |
+
+**Conclusion** : pas de tâches P3. La refonte est fonctionnellement complète avec P1 + P2. Reste la
+**validation manuelle en recette** puis la **PR finale `feat/onboarding-liaison-email` → `main`**.
