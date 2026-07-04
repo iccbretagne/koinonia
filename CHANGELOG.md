@@ -6,6 +6,18 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.13.0] - 2026-07-04
+
+### Ajouté
+
+- **Sauvegarde partielle — export et restauration de la configuration** (#409)
+  - Nouveau panneau sur `/admin/backups` : export JSON à la demande de la configuration structurelle (églises, ministères, départements, membres, liaisons utilisateurs)
+  - Import avec résumé avant confirmation (counts, existence en cible) et 3 stratégies de fusion : SKIP (ignorer les doublons) / UPDATE (mettre à jour) / REPLACE (tout remplacer + suppression des orphelins)
+  - Import transactionnel : une erreur annule toutes les modifications de la session
+  - Rapport post-import détaillé (créés / mis à jour / ignorés / warnings FK)
+  - Réservé aux Super Admin, journalisé en audit
+  - Conçu en spec-driven (`specs/005-sauvegarde-partielle/`)
+
 ## [v1.12.0] - 2026-07-04
 
 ### Ajouté
