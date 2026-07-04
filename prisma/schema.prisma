@@ -171,6 +171,8 @@ model User {
   jobOffers                    JobOffer[]
   jobSeekers                   JobSeeker[]
   jobNotificationSubscription  JobNotificationSubscription?
+  freelanceMissions            FreelanceMission[]
+  freelanceProfiles            FreelanceProfile[]
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
@@ -1493,8 +1495,10 @@ model JobNotificationSubscription {
   wantEmploi     Boolean @default(true)
   wantStage      Boolean @default(true)
   wantAlternance Boolean @default(true)
-  wantSeekers    Boolean @default(false)
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wantSeekers              Boolean @default(false)
+  wantFreelanceMissions    Boolean @default(false)
+  wantFreelanceProfiles    Boolean @default(false)
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("job_notification_subscriptions")
 }
@@ -1528,6 +1532,74 @@ model JobSeeker {
   @@index([status])
   @@index([authorId])
   @@map("job_seekers")
+}
+
+// ─── Module emploi — freelance ────────────────────────────────────
+
+enum FreelanceModality {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum FreelanceMissionStatus {
+  ACTIVE
+  FILLED
+  ARCHIVED
+}
+
+enum FreelanceProfileStatus {
+  ACTIVE
+  UNAVAILABLE
+  ARCHIVED
+}
+
+/// Mission freelance à confier, publiée par un donneur d'ordre.
+model FreelanceMission {
+  id           String                 @id @default(cuid())
+  title        String                 @db.VarChar(200)
+  domain       String                 @db.VarChar(150)
+  duration     String?                @db.VarChar(100)
+  dailyRate    String?                @db.VarChar(100)
+  hourlyRate   String?                @db.VarChar(100)
+  modality     FreelanceModality      @default(REMOTE)
+  location     String?                @db.VarChar(150)
+  description  String                 @db.Text
+  contactEmail String?                @db.VarChar(150)
+  contactUrl   String?                @db.VarChar(500)
+  status       FreelanceMissionStatus @default(ACTIVE)
+  authorId     String
+  author       User                   @relation(fields: [authorId], references: [id])
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([status])
+  @@index([authorId])
+  @@map("freelance_missions")
+}
+
+/// Profil freelance publié par un prestataire qui se rend disponible.
+model FreelanceProfile {
+  id            String                 @id @default(cuid())
+  title         String                 @db.VarChar(200)
+  domain        String                 @db.VarChar(150)
+  dailyRate     String?                @db.VarChar(100)
+  hourlyRate    String?                @db.VarChar(100)
+  modality      FreelanceModality      @default(REMOTE)
+  location      String?                @db.VarChar(150)
+  availableFrom DateTime?
+  description   String                 @db.Text
+  contactEmail  String?                @db.VarChar(150)
+  contactUrl    String?                @db.VarChar(500)
+  status        FreelanceProfileStatus @default(ACTIVE)
+  authorId      String
+  author        User                   @relation(fields: [authorId], references: [id])
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([status])
+  @@index([authorId])
+  @@map("freelance_profiles")
 }
 
 /// Association berger/co-berger à une famille (référentiel externe).

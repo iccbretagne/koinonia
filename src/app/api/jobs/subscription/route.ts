@@ -20,12 +20,14 @@ export async function GET() {
 }
 
 const subSchema = z.object({
-  inApp:          z.boolean().optional(),
-  email:          z.boolean().optional(),
-  wantEmploi:     z.boolean().optional(),
-  wantStage:      z.boolean().optional(),
-  wantAlternance: z.boolean().optional(),
-  wantSeekers:    z.boolean().optional(),
+  inApp:                 z.boolean().optional(),
+  email:                 z.boolean().optional(),
+  wantEmploi:            z.boolean().optional(),
+  wantStage:             z.boolean().optional(),
+  wantAlternance:        z.boolean().optional(),
+  wantSeekers:           z.boolean().optional(),
+  wantFreelanceMissions: z.boolean().optional(),
+  wantFreelanceProfiles: z.boolean().optional(),
 });
 
 export async function PUT(request: Request) {
