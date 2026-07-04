@@ -6,6 +6,25 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.12.0] - 2026-07-04
+
+### Ajouté
+
+- **Module emploi — missions freelance** (#407)
+  - Troisième onglet "Freelance" sur `/jobs` avec deux sous-flux : missions à confier (donneur d'ordre → prestataire) et profils freelance disponibles (prestataire → donneur d'ordre)
+  - Champs spécifiques : TJM (taux journalier) + taux horaire (deux champs distincts, texte libre), modalité (remote/hybride/présentiel), domaine/stack, durée, localisation
+  - Statuts : `ACTIVE` / `FILLED` (mission pourvue) / `UNAVAILABLE` (freelance indisponible) / `ARCHIVED` (modération)
+  - Notifications in-app fire-and-forget avec deux nouveaux flags d'abonnement (`wantFreelanceMissions`, `wantFreelanceProfiles`)
+  - Modération admin/secrétaire via onglet dédié dans `/admin/jobs`
+  - Conçu en spec-driven (`specs/004-emploi-missions-freelance/`)
+
+- **Module emploi — profils de recherche d'emploi** (#406)
+  - Deuxième onglet "En recherche" sur `/jobs` : les membres peuvent publier leur recherche d'emploi (CDI/CDD/Stage/Alternance)
+  - Champs : titre, types de contrat (3 booleans), secteur, localisation, télétravail, disponibilité, description, contacts
+  - Statuts : `ACTIVE` / `FOUND` (emploi trouvé) / `ARCHIVED` (modération)
+  - Notification in-app aux abonnés (`wantSeekers`)
+  - Conçu en spec-driven (`specs/003-emploi-profils-recherche/`)
+
 ## [v1.11.0] - 2026-07-04
 
 ### Ajouté
