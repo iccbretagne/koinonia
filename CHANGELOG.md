@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.13.1] - 2026-07-04
+
+### Corrigé
+
+- **Import config — conflit de slug cross-instance** (#411) : lors d'un import cross-instance (ex. prod → recette), `church.create()` échouait avec `Unique constraint on churches_slug_key` si la church existait avec le même slug mais un ID différent. L'import recherche maintenant par slug en fallback et utilise l'ID effectif de la cible pour toute la transaction.
+- **Import config — FK violation sur `memberUserLink`** (#412) : `link.churchId` (ID de l'instance source) était utilisé dans `memberUserLink.create/findFirst`, provoquant `Foreign key constraint violated on churchId`. Remplacé par `church.id` (ID effectif résolu en début de transaction).
+
 ## [v1.13.0] - 2026-07-04
 
 ### Ajouté
