@@ -6,6 +6,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.13.3] - 2026-07-05
+
+### Corrigé
+
+- **Gestion des STAR multi-départements par les responsables et ministres** (#416) : les responsables de département et ministres recevaient des erreurs 403 lors de l'affectation/désaffectation de STAR appartenant aussi à d'autres départements. Le contrôle de périmètre s'appuyait sur le seul département principal du STAR, incohérent avec la liste (filtrée sur « au moins un département partagé »).
+  - Un responsable/ministre peut désormais gérer un STAR dès qu'il partage au moins un département avec lui ; il n'agit que sur ses propres départements, les autres affiliations (dont un principal hors périmètre) restent intactes.
+  - La suppression d'un STAR est réservée aux STAR entièrement dans le périmètre (supprimer efface toutes les affiliations).
+  - Le sélecteur « département principal » reste cohérent même quand le vrai principal est hors périmètre.
+
 ## [v1.13.2] - 2026-07-04
 
 ### Corrigé
