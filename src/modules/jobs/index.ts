@@ -5,6 +5,7 @@ import { defineModule } from "@/core/module-registry";
  *
  * Périmètre :
  *   - Offres d'emploi, de stage et d'alternance
+ *   - Profils de recherche d'emploi (flux candidat)
  *   - Abonnements aux notifications par type
  *   - Modération (archivage) par les admins et secrétaires
  *
@@ -18,6 +19,7 @@ export const jobsModule = defineModule({
   permissions: {
     "jobs:view":   ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
     "jobs:post":   ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
+    "jobs:seek":   ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
     "jobs:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
 });

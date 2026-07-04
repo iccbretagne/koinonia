@@ -169,6 +169,7 @@ model User {
   financialAttachmentsUploaded FinancialAttachment[] @relation("AccountingAttachmentsUploaded")
   // Module emploi
   jobOffers                    JobOffer[]
+  jobSeekers                   JobSeeker[]
   jobNotificationSubscription  JobNotificationSubscription?
   // (relation superviseur église déplacée vers PastoralProfile)
 
@@ -1483,7 +1484,7 @@ model JobOffer {
   @@map("job_offers")
 }
 
-/// Préférences de notifications pour les offres d'emploi.
+/// Préférences de notifications pour les offres d'emploi et profils de recherche.
 model JobNotificationSubscription {
   id             String  @id @default(cuid())
   userId         String  @unique
@@ -1492,9 +1493,41 @@ model JobNotificationSubscription {
   wantEmploi     Boolean @default(true)
   wantStage      Boolean @default(true)
   wantAlternance Boolean @default(true)
+  wantSeekers    Boolean @default(false)
   user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("job_notification_subscriptions")
+}
+
+enum JobSeekerStatus {
+  ACTIVE
+  FOUND
+  ARCHIVED
+}
+
+/// Profil de recherche d'emploi publié par un utilisateur.
+model JobSeeker {
+  id             String          @id @default(cuid())
+  title          String          @db.VarChar(200)
+  wantEmploi     Boolean         @default(false)
+  wantStage      Boolean         @default(false)
+  wantAlternance Boolean         @default(false)
+  sector         String?         @db.VarChar(150)
+  location       String?         @db.VarChar(150)
+  remote         Boolean         @default(false)
+  availableFrom  DateTime?
+  description    String          @db.Text
+  contactEmail   String?         @db.VarChar(150)
+  contactUrl     String?         @db.VarChar(500)
+  status         JobSeekerStatus @default(ACTIVE)
+  authorId       String
+  author         User            @relation(fields: [authorId], references: [id])
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status])
+  @@index([authorId])
+  @@map("job_seekers")
 }
 
 /// Association berger/co-berger à une famille (référentiel externe).

@@ -9,6 +9,7 @@ interface Subscription {
   wantEmploi: boolean;
   wantStage: boolean;
   wantAlternance: boolean;
+  wantSeekers: boolean;
 }
 
 export default function JobSubscriptionClient() {
@@ -57,7 +58,7 @@ export default function JobSubscriptionClient() {
   return (
     <div className="bg-white rounded-lg border-2 border-gray-200 p-6 mb-6">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Notifications — Emploi</h2>
-      <p className="text-xs text-gray-400 mb-5">Recevez une notification quand une nouvelle offre est publiée.</p>
+      <p className="text-xs text-gray-400 mb-5">Recevez une notification quand une offre ou un profil de recherche est publié.</p>
 
       {/* Channels */}
       <div className="space-y-3 mb-5">
@@ -96,6 +97,7 @@ export default function JobSubscriptionClient() {
           { key: "wantEmploi",     label: "Emploi" },
           { key: "wantStage",      label: "Stage" },
           { key: "wantAlternance", label: "Alternance" },
+          { key: "wantSeekers",    label: "Profils en recherche" },
         ] as const).map(({ key, label }) => (
           <label
             key={key}
