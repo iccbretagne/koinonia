@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.13.2] - 2026-07-04
+
+### Corrigé
+
+- **Vue planning personnelle — filtrage des lignes** (#414) : seuls les services EN_SERVICE et EN_SERVICE_DEBRIEF s'affichent ; les lignes INDISPONIBLE et non-assignées sont masquées.
+- **Vue planning personnelle — département en gras** (#414) : le nom du département est affiché en `font-semibold` pour le distinguer de la date.
+- **Vue planning personnelle — tâches affichées sur le mauvais département** (#414) : les tâches (ex. Zone A/B) apparaissaient sur des départements qui n'en avaient pas, car elles étaient indexées par `eventId` seul. Corrigé avec une clé composite `eventId_departmentId`.
+
 ## [v1.13.1] - 2026-07-04
 
 ### Corrigé
