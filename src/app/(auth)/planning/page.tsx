@@ -34,7 +34,10 @@ export default async function MyPlanningPage() {
 
   const [plannings, taskAssignments] = await Promise.all([
     prisma.planning.findMany({
-      where: { memberId: link.memberId },
+      where: {
+        memberId: link.memberId,
+        status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] },
+      },
       include: {
         eventDepartment: {
           include: {
@@ -47,16 +50,17 @@ export default async function MyPlanningPage() {
     }),
     prisma.taskAssignment.findMany({
       where: { memberId: link.memberId },
-      select: { eventId: true, task: { select: { name: true } } },
+      select: { eventId: true, task: { select: { name: true, departmentId: true } } },
     }),
   ]);
 
-  // Map eventId → task names
+  // Map eventId_departmentId → task names (clé composite pour éviter les croisements)
   const tasksByEvent = new Map<string, string[]>();
   for (const ta of taskAssignments) {
-    const arr = tasksByEvent.get(ta.eventId) ?? [];
+    const key = `${ta.eventId}_${ta.task.departmentId}`;
+    const arr = tasksByEvent.get(key) ?? [];
     arr.push(ta.task.name);
-    tasksByEvent.set(ta.eventId, arr);
+    tasksByEvent.set(key, arr);
   }
 
   const memberName = `${link.member.firstName} ${link.member.lastName}`;

@@ -150,7 +150,7 @@ export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) 
             const event = p.eventDepartment.event;
             const dept = p.eventDepartment.department;
             const isPast = new Date(event.date) < new Date();
-            const tasks = tasksByEvent[event.id] ?? [];
+            const tasks = tasksByEvent[`${event.id}_${dept.id}`] ?? [];
             return (
               <div
                 key={p.id}
@@ -164,7 +164,7 @@ export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) 
                     <p className="text-xs text-gray-500 mt-0.5">
                       {formatDate(event.date)}
                       <span className="mx-1.5">·</span>
-                      {dept.name}
+                      <span className="font-semibold text-gray-700">{dept.name}</span>
                     </p>
                     {tasks.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
