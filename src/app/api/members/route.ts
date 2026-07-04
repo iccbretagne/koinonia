@@ -99,21 +99,32 @@ export async function PATCH(request: Request) {
       : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
 
     if (scopedDeptIds) {
+      const manageable = new Set(scopedDeptIds);
       const members = await prisma.member.findMany({
         where: { id: { in: ids } },
-        include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
+        include: { departments: { select: { departmentId: true } } },
       });
 
-      const allInScope = members.every((m) => {
-        const primaryDeptId = m.departments[0]?.departmentId;
-        return primaryDeptId ? scopedDeptIds.includes(primaryDeptId) : false;
-      });
-      if (!allInScope) {
-        throw new ApiError(403, "Certains STAR sont hors de votre périmètre");
-      }
-
-      if (action === "update" && data?.primaryDepartmentId && !scopedDeptIds.includes(data.primaryDepartmentId)) {
-        throw new ApiError(403, "Département cible non autorisé");
+      if (action === "delete") {
+        // Supprimer efface toutes les affiliations : réservé aux STAR exclusivement dans le périmètre
+        const allFullyInScope = members.every(
+          (m) => m.departments.length > 0 && m.departments.every((d) => manageable.has(d.departmentId))
+        );
+        if (!allFullyInScope) {
+          throw new ApiError(
+            403,
+            "Certains STAR appartiennent à des départements hors de votre périmètre et ne peuvent pas être supprimés"
+          );
+        }
+      } else {
+        // Modifier : autorisé dès qu'au moins un département est partagé avec l'utilisateur
+        const allShareScope = members.every((m) => m.departments.some((d) => manageable.has(d.departmentId)));
+        if (!allShareScope) {
+          throw new ApiError(403, "Certains STAR sont hors de votre périmètre");
+        }
+        if (data?.primaryDepartmentId && !manageable.has(data.primaryDepartmentId)) {
+          throw new ApiError(403, "Département cible non autorisé");
+        }
       }
     }
 
