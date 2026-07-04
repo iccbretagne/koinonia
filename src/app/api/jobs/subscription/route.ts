@@ -25,6 +25,7 @@ const subSchema = z.object({
   wantEmploi:     z.boolean().optional(),
   wantStage:      z.boolean().optional(),
   wantAlternance: z.boolean().optional(),
+  wantSeekers:    z.boolean().optional(),
 });
 
 export async function PUT(request: Request) {
