@@ -354,14 +354,14 @@ async function applyLinks(
         data: {
           memberId: link.memberId,
           userId: user.id,
-          churchId: link.churchId,
+          churchId: church.id,
           validatedAt: link.validatedAt ? new Date(link.validatedAt) : null,
         },
       });
       result.created++;
     } else {
       const exists = await tx.memberUserLink.findFirst({
-        where: { memberId: link.memberId, churchId: link.churchId },
+        where: { memberId: link.memberId, churchId: church.id },
       });
       if (exists) {
         if (strategy === "UPDATE") {
@@ -378,7 +378,7 @@ async function applyLinks(
           data: {
             memberId: link.memberId,
             userId: user.id,
-            churchId: link.churchId,
+            churchId: church.id,
             validatedAt: link.validatedAt ? new Date(link.validatedAt) : null,
           },
         });
