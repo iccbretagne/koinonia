@@ -23,6 +23,11 @@ describe("PUT /api/members/[memberId] — cross-tenant isolation", () => {
   });
 
   it("rejects update with cross-church departmentId", async () => {
+    // Existing member in church-1
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "m-1",
+      departments: [{ departmentId: "dept-1", isPrimary: true }],
+    });
     // Target department belongs to church-2
     prismaMock.department.findMany.mockResolvedValue([{
       id: "dept-other",

@@ -143,9 +143,20 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setFirstName(m.firstName);
     setLastName(m.lastName);
     setEmail(m.email ?? "");
-    const primaryId = m.primaryDepartment?.id ?? m.allDepartments[0]?.id ?? departments[0]?.id ?? "";
+    // `departments` = départements gérables par l'utilisateur (scopé côté serveur).
+    // Si le principal réel du STAR est hors périmètre, on retombe sur un département géré
+    // pour le sélecteur ; le serveur préserve de toute façon le vrai principal hors scope.
+    const manageableIds = new Set(departments.map((d) => d.id));
+    const actualPrimary = m.primaryDepartment?.id ?? m.allDepartments[0]?.id;
+    const primaryId =
+      actualPrimary && manageableIds.has(actualPrimary)
+        ? actualPrimary
+        : m.allDepartments.find((d) => manageableIds.has(d.id))?.id ?? departments[0]?.id ?? "";
     setDepartmentId(primaryId);
-    setAdditionalDeptIds(m.allDepartments.filter((d) => !d.isPrimary).map((d) => d.id));
+    // Ne pré-cocher que les départements gérés ; les affiliations hors périmètre restent intactes
+    setAdditionalDeptIds(
+      m.allDepartments.filter((d) => d.id !== primaryId && manageableIds.has(d.id)).map((d) => d.id)
+    );
     setError("");
     setDuplicateCandidates(null);
     setModalOpen(true);

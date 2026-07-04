@@ -46,70 +46,102 @@ export async function PUT(
     const body = await request.json();
     const { departmentId, additionalDepartmentIds = [], ...memberData } = updateSchema.parse(body);
 
-    if (scopedDeptIds) {
-      const existing = await prisma.member.findUnique({
-        where: { id: memberId },
-        include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
-      });
+    // Charger le membre avec toutes ses affiliations actuelles
+    const existing = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { departments: { select: { departmentId: true, isPrimary: true } } },
+    });
+    if (!existing) throw new ApiError(404, "STAR introuvable");
 
-      if (!existing) throw new ApiError(404, "STAR introuvable");
+    // Périmètre géré : null = accès global (admin), sinon ensemble des départements de l'utilisateur
+    const manageable = scopedDeptIds ? new Set(scopedDeptIds) : null;
 
-      const primaryDeptId = existing.departments[0]?.departmentId;
-      if (!primaryDeptId || !scopedDeptIds.includes(primaryDeptId)) {
-        throw new ApiError(403, "Ce STAR est hors de votre périmètre");
-      }
-
-      if (!scopedDeptIds.includes(departmentId)) {
-        throw new ApiError(403, "Département cible non autorisé");
-      }
+    // Un utilisateur scoped doit partager au moins un département avec le STAR
+    if (manageable && !existing.departments.some((d) => manageable.has(d.departmentId))) {
+      throw new ApiError(403, "Ce STAR est hors de votre périmètre");
     }
 
-    // Valider que tous les départements appartiennent à la même église
-    const allDeptIds = [departmentId, ...additionalDepartmentIds.filter((id) => id !== departmentId)];
+    // Départements soumis (principal + secondaires), dédupliqués
+    const submittedIds = Array.from(new Set([departmentId, ...additionalDepartmentIds]));
+
+    // Valider que tous les départements soumis appartiennent à la même église
     const depts = await prisma.department.findMany({
-      where: { id: { in: allDeptIds } },
+      where: { id: { in: submittedIds } },
       include: { ministry: { select: { churchId: true } } },
     });
-    if (depts.length !== allDeptIds.length || depts.some((d) => d.ministry.churchId !== churchId)) {
+    if (depts.length !== submittedIds.length || depts.some((d) => d.ministry.churchId !== churchId)) {
       throw new ApiError(403, "Tous les départements doivent appartenir à la même église");
     }
+
+    // Un utilisateur scoped n'agit que sur SES départements ; les affiliations
+    // hors périmètre (y compris un département principal hors scope) sont préservées.
+    const preserved = manageable
+      ? existing.departments.filter((d) => !manageable.has(d.departmentId))
+      : [];
+    const submittedManageable = manageable
+      ? submittedIds.filter((id) => manageable.has(id))
+      : submittedIds;
+
+    const finalIds = Array.from(
+      new Set([...preserved.map((d) => d.departmentId), ...submittedManageable])
+    );
+
+    // Déterminer le département principal
+    let primaryId: string;
+    if (manageable) {
+      const preservedPrimary = preserved.find((d) => d.isPrimary)?.departmentId;
+      // Si le principal est hors périmètre, on le conserve intact ;
+      // sinon l'utilisateur choisit le principal parmi ses départements.
+      primaryId =
+        preservedPrimary ??
+        (manageable.has(departmentId) ? departmentId : submittedManageable[0]);
+    } else {
+      primaryId = departmentId;
+    }
+
+    // Départements réellement retirés (uniquement dans le périmètre géré)
+    const finalSet = new Set(finalIds);
+    const removedIds = existing.departments
+      .map((d) => d.departmentId)
+      .filter((id) => !finalSet.has(id));
 
     const member = await prisma.$transaction(async (tx) => {
       // Mettre à jour les champs scalaires
       await tx.member.update({ where: { id: memberId }, data: memberData });
 
-      // Reconstruire les affiliations départementales
-      // 1. Retirer les affiliations qui ne sont plus dans la liste
-      await tx.memberDepartment.deleteMany({
-        where: { memberId, departmentId: { notIn: allDeptIds } },
-      });
+      if (removedIds.length > 0) {
+        // 1. Retirer les affiliations retirées
+        await tx.memberDepartment.deleteMany({
+          where: { memberId, departmentId: { in: removedIds } },
+        });
 
-      // Supprimer les affectations planning et tâches futures dans les départements retirés
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      await tx.planning.deleteMany({
-        where: {
-          memberId,
-          eventDepartment: {
-            departmentId: { notIn: allDeptIds },
-            event: { date: { gte: today } },
+        // Supprimer les affectations planning et tâches futures dans les départements retirés
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        await tx.planning.deleteMany({
+          where: {
+            memberId,
+            eventDepartment: {
+              departmentId: { in: removedIds },
+              event: { date: { gte: today } },
+            },
           },
-        },
-      });
-      await tx.taskAssignment.deleteMany({
-        where: {
-          memberId,
-          event: { date: { gte: today } },
-          task: { departmentId: { notIn: allDeptIds } },
-        },
-      });
+        });
+        await tx.taskAssignment.deleteMany({
+          where: {
+            memberId,
+            event: { date: { gte: today } },
+            task: { departmentId: { in: removedIds } },
+          },
+        });
+      }
 
-      // 2. Upsert chaque département avec le bon flag isPrimary
-      for (const deptId of allDeptIds) {
+      // 2. Upsert chaque département final avec le bon flag isPrimary
+      for (const deptId of finalIds) {
         await tx.memberDepartment.upsert({
           where: { memberId_departmentId: { memberId, departmentId: deptId } },
-          update: { isPrimary: deptId === departmentId },
-          create: { memberId, departmentId: deptId, isPrimary: deptId === departmentId },
+          update: { isPrimary: deptId === primaryId },
+          create: { memberId, departmentId: deptId, isPrimary: deptId === primaryId },
         });
       }
 
@@ -136,14 +168,24 @@ export async function DELETE(
 
     const member = await prisma.member.findUnique({
       where: { id: memberId },
-      include: { departments: { where: { isPrimary: true }, select: { departmentId: true } } },
+      include: { departments: { select: { departmentId: true } } },
     });
 
     if (!member) throw new ApiError(404, "STAR introuvable");
 
-    const primaryDeptId = member.departments[0]?.departmentId;
-    if (scopedDeptIds && (!primaryDeptId || !scopedDeptIds.includes(primaryDeptId))) {
-      throw new ApiError(403, "Ce STAR est hors de votre périmètre");
+    // Supprimer un STAR efface toutes ses affiliations : un utilisateur scoped
+    // ne peut le faire que si le STAR appartient exclusivement à ses départements.
+    if (scopedDeptIds) {
+      const manageable = new Set(scopedDeptIds);
+      const fullyInScope =
+        member.departments.length > 0 &&
+        member.departments.every((d) => manageable.has(d.departmentId));
+      if (!fullyInScope) {
+        throw new ApiError(
+          403,
+          "Ce STAR appartient à des départements hors de votre périmètre. Retirez-le de votre département plutôt que de le supprimer."
+        );
+      }
     }
 
     // Delete dependent records before member to avoid FK constraint errors
