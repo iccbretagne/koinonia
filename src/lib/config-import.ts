@@ -14,11 +14,13 @@ export async function previewImport(data: KoinoniaConfigExport): Promise<ImportP
   }
 
   const churchIds = data.churches.map((c) => c.id);
+  const churchSlugs = data.churches.map((c) => c.slug);
   const existing = await prisma.church.findMany({
-    where: { id: { in: churchIds } },
-    select: { id: true },
+    where: { OR: [{ id: { in: churchIds } }, { slug: { in: churchSlugs } }] },
+    select: { id: true, slug: true },
   });
   const existingIds = new Set(existing.map((c) => c.id));
+  const existingSlugs = new Set(existing.map((c) => c.slug));
 
   let ministries = 0;
   let departments = 0;
@@ -43,7 +45,7 @@ export async function previewImport(data: KoinoniaConfigExport): Promise<ImportP
       id: c.id,
       name: c.name,
       slug: c.slug,
-      existsInTarget: existingIds.has(c.id),
+      existsInTarget: existingIds.has(c.id) || existingSlugs.has(c.slug),
     })),
     counts: { ministries, departments, members, userLinks, userRoles },
   };
@@ -63,11 +65,18 @@ export async function applyImport(
   await prisma.$transaction(async (tx) => {
     for (const church of data.churches) {
       // ── Upsert church ────────────────────────────────────────
-      const churchExists = await tx.church.findUnique({ where: { id: church.id }, select: { id: true } });
-      if (churchExists) {
+      // Recherche par ID d'abord, puis par slug (cas cross-instance où l'ID diffère)
+      let existingChurch = await tx.church.findUnique({ where: { id: church.id }, select: { id: true } });
+      if (!existingChurch) {
+        existingChurch = await tx.church.findUnique({ where: { slug: church.slug }, select: { id: true } });
+      }
+      // L'ID effectif utilisé pour les opérations suivantes (structure, membres, liens)
+      const effectiveChurchId = existingChurch?.id ?? church.id;
+
+      if (existingChurch) {
         if (strategy !== "SKIP") {
           await tx.church.update({
-            where: { id: church.id },
+            where: { id: existingChurch.id },
             data: {
               name: church.name,
               slug: church.slug,
@@ -94,19 +103,22 @@ export async function applyImport(
         result.created++;
       }
 
+      // Réécrit church.id avec l'ID effectif pour les opérations suivantes
+      const churchWithEffectiveId = { ...church, id: effectiveChurchId };
+
       // ── Structure ─────────────────────────────────────────────
       if (categories.includes("structure")) {
-        await applyStructure(tx, church, strategy, result);
+        await applyStructure(tx, churchWithEffectiveId, strategy, result);
       }
 
       // ── Members ───────────────────────────────────────────────
       if (categories.includes("members")) {
-        await applyMembers(tx, church, strategy, result);
+        await applyMembers(tx, churchWithEffectiveId, strategy, result);
       }
 
       // ── Links & roles ─────────────────────────────────────────
       if (categories.includes("links")) {
-        await applyLinks(tx, church, strategy, result);
+        await applyLinks(tx, churchWithEffectiveId, strategy, result);
       }
     }
   }, { timeout: 60_000 });
