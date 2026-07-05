@@ -6,6 +6,7 @@ import {
   createDepartmentHeadSession,
   createStarSession,
   createSecretarySession,
+  createSession,
 } from "@/__mocks__/auth";
 
 // Mock auth() to return a configurable session
@@ -125,6 +126,22 @@ describe("requireChurchPermission", () => {
     await expect(
       requireChurchPermission("members:view", "church-1")
     ).resolves.toBeDefined();
+  });
+
+  // Un profil pastoral (sans rôle classique) conserve l'accès à "Mes demandes"
+  // via members:view accordé par PASTORAL_READ_PERMISSIONS, mais pas l'écriture.
+  it("a pastoral-only profile is granted members:view (Mes demandes) but not members:manage", async () => {
+    mockAuth.mockResolvedValue(
+      createSession({ churchRoles: [], pastoralChurchIds: ["church-1"] })
+    );
+
+    await expect(
+      requireChurchPermission("members:view", "church-1")
+    ).resolves.toBeDefined();
+
+    await expect(
+      requireChurchPermission("members:manage", "church-1")
+    ).rejects.toThrow("FORBIDDEN");
   });
 });
 

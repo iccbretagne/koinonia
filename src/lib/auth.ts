@@ -364,6 +364,7 @@ const PASTORAL_READ_PERMISSIONS = new Set([
   "events:view",
   "discipleship:view",
   "planning:view",
+  "members:view", // accès en lecture aux membres + section "Mes demandes"
   "accounting:stats",
 ]);
 
