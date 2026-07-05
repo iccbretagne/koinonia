@@ -6,6 +6,21 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.14.0] - 2026-07-05
+
+### Ajouté
+
+- **Espace STAR — agenda hebdomadaire des événements** (#418) : les STAR disposent d'une nouvelle entrée « Événements » présentant tous les événements de l'église de la semaine en cours (intitulé, date, horaire, type), avec navigation entre les semaines. Vue en lecture seule. Conçu en spec-driven (`specs/006-star-navigation-evenements/`).
+
+### Modifié
+
+- **Recentrage de la navigation STAR** (#418) : « Mes demandes » est désormais réservé aux profils de gestion (Admin, Super Admin, Secrétaire, Ministre, Responsable de département) et « Réservation de salles » est masqué pour le STAR « pur » (conservé pour les autres rôles). Un utilisateur cumulant STAR + rôle de gestion conserve l'ensemble.
+
+### Corrigé
+
+- **Navigation mobile** (#418) : le lien « Événements » de la barre inférieure pointait vers une page interdite pour les STAR ; sa destination est désormais conditionnelle.
+- **Accès pastoral à « Mes demandes »** (#419) : suite au recentrage, les profils pastoraux avaient perdu l'accès au périmètre « Mes demandes » ; il est rétabli via `members:view` (lecture des membres accordée, écriture toujours refusée).
+
 ## [v1.13.3] - 2026-07-05
 
 ### Corrigé
