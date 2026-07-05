@@ -129,6 +129,7 @@ export default async function AuthLayout({
     userPermissions.add("events:view");
     userPermissions.add("discipleship:view");
     userPermissions.add("planning:view");
+    userPermissions.add("members:view"); // accès lecture membres + section "Mes demandes"
   }
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
