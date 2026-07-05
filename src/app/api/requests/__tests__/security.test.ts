@@ -17,13 +17,67 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 vi.mock("@/lib/request-executor", () => ({ executeRequest: vi.fn() }));
 
-const { POST } = await import("../route");
+const { GET, POST } = await import("../route");
 const { PATCH } = await import("../../requests/[id]/route");
+
+describe("GET /api/requests — authorization", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequirePermission.mockResolvedValue(createAdminSession());
+    prismaMock.request.findMany.mockResolvedValue([]);
+  });
+
+  it("gates the list on members:view (not planning:view)", async () => {
+    const request = new Request("http://localhost/api/requests?churchId=church-1");
+    await GET(request);
+
+    expect(mockRequirePermission).toHaveBeenCalledWith("members:view", "church-1");
+  });
+
+  it("returns 403 (FORBIDDEN) for a STAR without members:view", async () => {
+    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const request = new Request("http://localhost/api/requests?churchId=church-1");
+    const res = await GET(request);
+
+    expect(res.status).toBe(403);
+  });
+});
 
 describe("POST /api/requests — validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
+  });
+
+  it("gates VISUEL creation on members:view (not planning:view)", async () => {
+    const request = new Request("http://localhost/api/requests", {
+      method: "POST",
+      body: JSON.stringify({
+        churchId: "church-1",
+        type: "VISUEL",
+        title: "Test visuel",
+      }),
+    });
+    await POST(request);
+
+    expect(mockRequirePermission).toHaveBeenCalledWith("members:view", "church-1");
+  });
+
+  it("returns 403 (FORBIDDEN) for a STAR without members:view", async () => {
+    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const request = new Request("http://localhost/api/requests", {
+      method: "POST",
+      body: JSON.stringify({
+        churchId: "church-1",
+        type: "VISUEL",
+        title: "Test visuel",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(403);
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -97,6 +151,31 @@ describe("PATCH /api/requests/[id] — authorization", () => {
     const res = await PATCH(request, { params: Promise.resolve({ id: "req-1" }) });
 
     expect(res.status).toBe(401);
+  });
+
+  it("gates PATCH on members:view (not planning:view)", async () => {
+    prismaMock.request.findUnique.mockResolvedValue(existingRequest);
+
+    const request = new Request("http://localhost/api/requests/req-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "EN_COURS" }),
+    });
+    await PATCH(request, { params: Promise.resolve({ id: "req-1" }) });
+
+    expect(mockRequirePermission).toHaveBeenCalledWith("members:view", "church-1");
+  });
+
+  it("returns 403 (FORBIDDEN) for a STAR without members:view", async () => {
+    prismaMock.request.findUnique.mockResolvedValue(existingRequest);
+    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const request = new Request("http://localhost/api/requests/req-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "EN_COURS" }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ id: "req-1" }) });
+
+    expect(res.status).toBe(403);
   });
 
   it("returns 404 when request doesn't exist", async () => {

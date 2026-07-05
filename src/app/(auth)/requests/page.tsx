@@ -8,7 +8,7 @@ export default async function MyRequestsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("planning:view", churchId);
+  await requireChurchPermission("members:view", churchId);
 
   // All requests submitted by the user (both announcement-linked and standalone)
   const requests = await prisma.request.findMany({

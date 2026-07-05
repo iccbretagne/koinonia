@@ -26,8 +26,32 @@ vi.mock("@/lib/department-functions", () => ({
   },
 }));
 
-const { POST } = await import("../route");
+const { GET, POST } = await import("../route");
 const { PATCH } = await import("../../announcements/[id]/route");
+
+describe("GET /api/announcements — authorization", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequirePermission.mockResolvedValue(createAdminSession());
+    prismaMock.announcement.findMany.mockResolvedValue([]);
+  });
+
+  it("gates the list on members:view (not planning:view)", async () => {
+    const request = new Request("http://localhost/api/announcements?churchId=church-1");
+    await GET(request);
+
+    expect(mockRequirePermission).toHaveBeenCalledWith("members:view", "church-1");
+  });
+
+  it("returns 403 (FORBIDDEN) for a STAR without members:view", async () => {
+    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const request = new Request("http://localhost/api/announcements?churchId=church-1");
+    const res = await GET(request);
+
+    expect(res.status).toBe(403);
+  });
+});
 
 const basePostBody = {
   churchId: "church-1",
@@ -114,6 +138,28 @@ describe("POST /api/announcements — cross-tenant validation", () => {
     const res = await POST(request);
 
     expect(res.status).toBe(401);
+  });
+
+  it("gates creation on members:view (not planning:view)", async () => {
+    const request = new Request("http://localhost/api/announcements", {
+      method: "POST",
+      body: JSON.stringify(basePostBody),
+    });
+    await POST(request);
+
+    expect(mockRequirePermission).toHaveBeenCalledWith("members:view", "church-1");
+  });
+
+  it("returns 403 (FORBIDDEN) for a STAR without members:view", async () => {
+    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const request = new Request("http://localhost/api/announcements", {
+      method: "POST",
+      body: JSON.stringify(basePostBody),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(403);
   });
 });
 

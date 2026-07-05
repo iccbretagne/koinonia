@@ -128,7 +128,7 @@ export default async function AuthLayout({
     userPermissions.add("pastoral:view");
     userPermissions.add("events:view");
     userPermissions.add("discipleship:view");
-    userPermissions.add("planning:view"); // permet "Mes demandes"
+    userPermissions.add("planning:view");
   }
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
@@ -140,7 +140,7 @@ export default async function AuthLayout({
   // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
   const requestLinks: { href: string; label: string }[] = [];
 
-  if (userPermissions.has("planning:view")) {
+  if (userPermissions.has("members:view")) {
     requestLinks.push({ href: "/requests", label: "Mes demandes" });
   }
 
@@ -335,8 +335,17 @@ export default async function AuthLayout({
     </footer>
   );
 
-  // ── Module MRBS (optionnel) ───────────────────────────────────────────────
-  const mrbsUrl = registry.has("mrbs") ? (process.env.MRBS_URL ?? null) : null;
+  // STAR "pur" : uniquement des rôles STAR dans l'église courante (hors super admin / pastoral)
+  const churchRolesInCurrentChurch = churchRoles.filter((r) => r.churchId === currentChurchId);
+  const isStarOnly =
+    !session.user.isSuperAdmin &&
+    !isPastoral &&
+    churchRolesInCurrentChurch.length > 0 &&
+    churchRolesInCurrentChurch.every((r) => r.role === "STAR");
+
+  // ── Module MRBS (optionnel) — masqué pour le STAR "pur" ──────────────────
+  const mrbsUrl =
+    registry.has("mrbs") && !isStarOnly ? (process.env.MRBS_URL ?? null) : null;
   const mrbsAdminLink =
     registry.has("mrbs") && userPermissions.has("mrbs:manage")
       ? "/admin/mrbs-links"
@@ -353,6 +362,9 @@ export default async function AuthLayout({
   const hasPlanningAccess = userPermissions.has("planning:view");
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
+  // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
+  // section Événements existante (Liste/Calendrier), réservée à events:view.
+  const showStarEvents = hasPlanningAccess && !hasEventsAccess;
 
   // "Mon planning" — visible pour tout utilisateur lié à un STAR dans l'église courante
   const memberLink = currentChurchId
@@ -388,6 +400,7 @@ export default async function AuthLayout({
       hasMembersAccess={hasMembersAccess}
       hasReports={hasReports}
       hasMyPlanning={hasMyPlanning}
+      showStarEvents={showStarEvents}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT"}
       headerColor={churchPrimaryColor}
       header={headerContent}

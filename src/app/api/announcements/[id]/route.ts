@@ -33,7 +33,7 @@ export async function GET(
     });
     if (!minimal) throw new ApiError(404, "Annonce introuvable");
 
-    const session = await requireChurchPermission("planning:view", minimal.churchId);
+    const session = await requireChurchPermission("members:view", minimal.churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles
@@ -94,7 +94,7 @@ export async function PATCH(
     });
     if (!announcement) throw new ApiError(404, "Annonce introuvable");
 
-    const session = await requireChurchPermission("planning:view", announcement.churchId);
+    const session = await requireChurchPermission("members:view", announcement.churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles
@@ -183,7 +183,7 @@ export async function DELETE(
     });
     if (!announcement) throw new ApiError(404, "Annonce introuvable");
 
-    const session = await requireChurchPermission("planning:view", announcement.churchId);
+    const session = await requireChurchPermission("members:view", announcement.churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles

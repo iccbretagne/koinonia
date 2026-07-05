@@ -36,6 +36,7 @@ interface AuthLayoutShellProps {
   hasMembersAccess: boolean;
   hasReports: boolean;
   hasMyPlanning?: boolean;
+  showStarEvents?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -73,6 +74,7 @@ export default function AuthLayoutShell({
   hasMembersAccess,
   hasReports,
   hasMyPlanning = false,
+  showStarEvents = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -139,6 +141,7 @@ export default function AuthLayoutShell({
             hasMembersAccess={hasMembersAccess}
             hasReports={hasReports}
             hasMyPlanning={hasMyPlanning}
+            showStarEvents={showStarEvents}
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
             hasJobsManage={hasJobsManage}
@@ -165,6 +168,7 @@ export default function AuthLayoutShell({
           hasMembersAccess={hasMembersAccess}
           hasReports={hasReports}
           hasMyPlanning={hasMyPlanning}
+          showStarEvents={showStarEvents}
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
           hasJobsManage={hasJobsManage}
@@ -186,6 +190,7 @@ export default function AuthLayoutShell({
       <BottomNav
         hasMembersAccess={hasMembersAccess}
         hasMyPlanning={hasMyPlanning}
+        showStarEvents={showStarEvents}
         isPastoral={isPastoral}
         onMenuOpen={() => setSidebarOpen(true)}
       />

@@ -14,7 +14,7 @@ export default async function EditRequestPage({ params }: Props) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("planning:view", churchId);
+  await requireChurchPermission("members:view", churchId);
 
   // Fetch the request with its announcement relation
   const request = await prisma.request.findUnique({

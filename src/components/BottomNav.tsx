@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 interface BottomNavProps {
   hasMembersAccess?: boolean;
   hasMyPlanning?: boolean;
+  showStarEvents?: boolean;
   isPastoral?: boolean;
   onMenuOpen?: () => void;
 }
@@ -56,6 +57,7 @@ function IconMembers({ className }: { className?: string }) {
 
 export default function BottomNav({
   hasMyPlanning = false,
+  showStarEvents = false,
   isPastoral = false,
   onMenuOpen,
 }: BottomNavProps) {
@@ -112,9 +114,9 @@ export default function BottomNav({
       icon: <IconPerson className="w-5 h-5" />,
     },
     {
-      href: "/events",
+      href: showStarEvents ? "/planning/events" : "/events",
       label: "Événements",
-      matchPrefix: "/events",
+      matchPrefix: showStarEvents ? "/planning/events" : "/events",
       icon: <IconCalendar className="w-5 h-5" />,
     },
   ].filter(Boolean) as { href: string; label: string; matchPrefix: string; icon: React.ReactNode }[];

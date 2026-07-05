@@ -4,6 +4,8 @@ import {
   createAdminSession,
   createSuperAdminSession,
   createDepartmentHeadSession,
+  createStarSession,
+  createSecretarySession,
 } from "@/__mocks__/auth";
 
 // Mock auth() to return a configurable session
@@ -101,6 +103,28 @@ describe("requireChurchPermission", () => {
     await expect(
       requireChurchPermission("events:view", "church-1")
     ).rejects.toThrow("UNAUTHORIZED");
+  });
+
+  // Feature 006 — recentrage de l'espace STAR : le périmètre "Mes demandes"
+  // (requests/announcements) est réservé aux profils de gestion via members:view.
+  it("STAR keeps planning:view (Mon planning) but loses members:view (Mes demandes)", async () => {
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+
+    await expect(
+      requireChurchPermission("planning:view", "church-1")
+    ).resolves.toBeDefined();
+
+    await expect(
+      requireChurchPermission("members:view", "church-1")
+    ).rejects.toThrow("FORBIDDEN");
+  });
+
+  it("a management profile (Secretary) has members:view and can access the requests scope", async () => {
+    mockAuth.mockResolvedValue(createSecretarySession("church-1"));
+
+    await expect(
+      requireChurchPermission("members:view", "church-1")
+    ).resolves.toBeDefined();
   });
 });
 

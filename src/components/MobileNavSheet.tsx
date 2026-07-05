@@ -23,6 +23,7 @@ interface MobileNavSheetProps {
   hasMembersAccess?: boolean;
   hasReports?: boolean;
   hasMyPlanning?: boolean;
+  showStarEvents?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -247,6 +248,7 @@ export default function MobileNavSheet({
   hasMembersAccess = false,
   hasReports = false,
   hasMyPlanning = false,
+  showStarEvents = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -398,6 +400,15 @@ export default function MobileNavSheet({
             icon={<IconMyPlanning className="w-5 h-5" />}
             href="/planning"
             isActive={pathname === "/planning"}
+            onClose={onClose}
+          />
+        )}
+        {showStarEvents && (
+          <RootRow
+            label="Événements"
+            icon={<IconCalendar className="w-5 h-5" />}
+            href="/planning/events"
+            isActive={pathname.startsWith("/planning/events")}
             onClose={onClose}
           />
         )}
