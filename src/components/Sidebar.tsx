@@ -21,6 +21,7 @@ interface SidebarProps {
   hasMembersAccess?: boolean;
   hasReports?: boolean;
   hasMyPlanning?: boolean;
+  showStarEvents?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -322,6 +323,7 @@ export default function Sidebar({
   hasMembersAccess = false,
   hasReports = false,
   hasMyPlanning = false,
+  showStarEvents = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -335,6 +337,7 @@ export default function Sidebar({
   // ── Active detection ────────────────────────────────────
   const isDashboardActive = pathname === "/dashboard";
   const isMyPlanningActive = pathname === "/planning";
+  const isStarEventsActive = pathname.startsWith("/planning/events");
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
@@ -510,6 +513,22 @@ export default function Sidebar({
         >
           <IconMyPlanning className="w-4 h-4" />
           Mon planning
+        </Link>
+      )}
+
+      {/* Événements (STAR uniquement — vue hebdomadaire en lecture seule) */}
+      {showStarEvents && (
+        <Link
+          href="/planning/events"
+          onClick={onClose}
+          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
+            isStarEventsActive
+              ? "bg-icc-violet-light text-icc-violet"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <IconCalendar className="w-4 h-4" />
+          Événements
         </Link>
       )}
 

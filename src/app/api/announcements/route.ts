@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    const session = await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("members:view", churchId);
 
     const userPermissions = new Set(
       session.user.churchRoles
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = createSchema.parse(body);
-    const session = await requireChurchPermission("planning:view", data.churchId);
+    const session = await requireChurchPermission("members:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     // Validate departmentId belongs to churchId

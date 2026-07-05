@@ -7,7 +7,7 @@ export default async function NewRequestPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("planning:view", churchId);
+  await requireChurchPermission("members:view", churchId);
 
   const churchPermissions = new Set(
     session.user.churchRoles

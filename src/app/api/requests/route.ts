@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     const submittedByMe = searchParams.get("submittedByMe");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    const session = await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("members:view", churchId);
 
     const churchPermissions = new Set(
       session.user.churchRoles
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
 
 async function createVisuel(_request: Request, body: unknown) {
   const data = createVisuelSchema.parse(body);
-  const session = await requireChurchPermission("planning:view", data.churchId);
+  const session = await requireChurchPermission("members:view", data.churchId);
 
   // Validate cross-tenant references
   if (data.departmentId) {
