@@ -1,7 +1,10 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
+import { getSignedThumbnailUrl } from "./s3";
 import type { MediaTokenType, Prisma } from "@/generated/prisma/client";
+
+const APPROVED_FILE_STATUSES = new Set<string>(["APPROVED", "FINAL_APPROVED"]);
 
 export function generateToken(): string {
   return randomBytes(32).toString("hex"); // 64 chars
@@ -106,6 +109,150 @@ export async function validateMediaShareToken(
   });
 
   return shareToken;
+}
+
+export type ResolvedMediaEntry = {
+  id: string;
+  filename: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  status: string;
+  thumbnailUrl: string;
+};
+
+export type ResolvedMediaData = {
+  token: { id: string; type: MediaTokenType; label: string | null };
+  event: { id: string; name: string; date: Date; photoCount: number } | null;
+  photos: ResolvedMediaEntry[];
+};
+
+/**
+ * Résout les médias accessibles pour un token MEDIA / MEDIA_ALL déjà validé
+ * (événement → photos, projet → fichiers validés). Partagé entre la route API
+ * et la page SSR publique pour éviter toute divergence entre les deux.
+ */
+export async function resolveDownloadData(
+  shareToken: Awaited<ReturnType<typeof validateMediaShareToken>>
+): Promise<ResolvedMediaData> {
+  const allStatuses = shareToken.type === "MEDIA_ALL";
+  const tokenInfo = { id: shareToken.id, type: shareToken.type, label: shareToken.label };
+
+  if (shareToken.mediaEvent) {
+    const event = shareToken.mediaEvent;
+    const photos = await prisma.mediaPhoto.findMany({
+      where: { mediaEventId: event.id, ...(!allStatuses && { status: "APPROVED" }) },
+      orderBy: { uploadedAt: "asc" },
+    });
+    const photosWithUrls = await Promise.all(
+      photos.map(async (p) => ({
+        id: p.id,
+        filename: p.filename,
+        size: p.size,
+        width: p.width,
+        height: p.height,
+        status: p.status,
+        thumbnailUrl: await getSignedThumbnailUrl(p.thumbnailKey),
+      }))
+    );
+    return {
+      token: tokenInfo,
+      event: { id: event.id, name: event.name, date: event.date, photoCount: photosWithUrls.length },
+      photos: photosWithUrls,
+    };
+  }
+
+  if (shareToken.mediaProject) {
+    const project = shareToken.mediaProject;
+    const files = project.files.filter((f) => allStatuses || APPROVED_FILE_STATUSES.has(f.status));
+    const filesWithUrls = await Promise.all(
+      files.map(async (f) => ({
+        id: f.id,
+        filename: f.filename,
+        size: f.size,
+        width: null,
+        height: null,
+        status: f.status,
+        thumbnailUrl: f.versions[0]?.thumbnailKey
+          ? await getSignedThumbnailUrl(f.versions[0].thumbnailKey)
+          : "",
+      }))
+    );
+    return {
+      token: tokenInfo,
+      event: { id: project.id, name: project.name, date: project.createdAt, photoCount: filesWithUrls.length },
+      photos: filesWithUrls,
+    };
+  }
+
+  return { token: tokenInfo, event: null, photos: [] };
+}
+
+export type ResolvedGalleryData = {
+  token: { id: string; type: MediaTokenType; label: string | null; config: Prisma.JsonValue };
+  event: { id: string; name: string; date: Date; photoCount: number } | null;
+  photos: ResolvedMediaEntry[];
+};
+
+/**
+ * Résout les médias accessibles pour un token GALLERY déjà validé
+ * (événement → photos, projet → fichiers). Partagé entre la route API
+ * et la page SSR publique pour éviter toute divergence entre les deux.
+ */
+export async function resolveGalleryData(
+  shareToken: Awaited<ReturnType<typeof validateMediaShareToken>>
+): Promise<ResolvedGalleryData> {
+  const onlyApproved = (shareToken.config as { onlyApproved?: boolean } | null)?.onlyApproved ?? false;
+  const tokenInfo = { id: shareToken.id, type: shareToken.type, label: shareToken.label, config: shareToken.config };
+
+  if (shareToken.mediaEvent) {
+    const event = shareToken.mediaEvent;
+    const photos = await prisma.mediaPhoto.findMany({
+      where: { mediaEventId: event.id, ...(onlyApproved ? { status: "APPROVED" } : {}) },
+      orderBy: { uploadedAt: "asc" },
+    });
+    const photosWithUrls = await Promise.all(
+      photos.map(async (p) => ({
+        id: p.id,
+        filename: p.filename,
+        size: p.size,
+        width: p.width,
+        height: p.height,
+        status: p.status,
+        thumbnailUrl: await getSignedThumbnailUrl(p.thumbnailKey),
+      }))
+    );
+    return {
+      token: tokenInfo,
+      event: { id: event.id, name: event.name, date: event.date, photoCount: photosWithUrls.length },
+      photos: photosWithUrls,
+    };
+  }
+
+  if (shareToken.mediaProject) {
+    const project = shareToken.mediaProject;
+    const files = project.files.filter((f) => !onlyApproved || APPROVED_FILE_STATUSES.has(f.status));
+    const filesWithUrls = await Promise.all(
+      files.map(async (f) => ({
+        id: f.id,
+        filename: f.filename,
+        size: f.size,
+        width: null,
+        height: null,
+        status: f.status,
+        thumbnailUrl: f.versions[0]?.thumbnailKey
+          ? await getSignedThumbnailUrl(f.versions[0].thumbnailKey)
+          : "",
+      }))
+    );
+    return {
+      token: tokenInfo,
+      event: { id: project.id, name: project.name, date: project.createdAt, photoCount: filesWithUrls.length },
+      photos: filesWithUrls,
+    };
+  }
+
+  return { token: tokenInfo, event: null, photos: [] };
 }
 
 export async function createMediaShareToken(options: CreateTokenWithTarget & { baseUrl?: string }) {

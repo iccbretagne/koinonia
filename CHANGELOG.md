@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.14.2] - 2026-07-18
+
+### Corrigé
+
+- **Pages publiques de téléchargement/galerie toujours vides sur les projets** : le correctif v1.14.1 avait bien réparé les routes API `/api/media/download` et `/api/media/gallery`, mais les pages publiques SSR (`/media/d/[token]`, `/media/g/[token]`) dupliquaient la même logique de récupération dans leur propre `page.tsx` — sans jamais avoir été alignées sur le fix. Un lien de partage sur un projet continuait donc d'afficher 0 média à l'ouverture. La logique de résolution (événement → photos, projet → fichiers) est désormais centralisée dans `resolveDownloadData`/`resolveGalleryData` (module `media`) et partagée par les routes API et les pages SSR, pour éviter toute nouvelle divergence.
+
 ## [v1.14.1] - 2026-07-18
 
 ### Corrigé
