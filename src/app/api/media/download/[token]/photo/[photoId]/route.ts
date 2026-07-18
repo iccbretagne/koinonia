@@ -14,6 +14,43 @@ export async function GET(
     const { token, photoId } = await params;
     const shareToken = await validateMediaShareToken(token, ["MEDIA", "MEDIA_ALL"]);
 
+    // ── Projet : le "photoId" désigne un fichier du projet ──────────────────────
+    if (shareToken.mediaProjectId) {
+      const file = await prisma.mediaFile.findUnique({
+        where: { id: photoId },
+        select: {
+          id: true,
+          filename: true,
+          mediaProjectId: true,
+          status: true,
+          versions: {
+            orderBy: { versionNumber: "desc" },
+            take: 1,
+            select: { originalKey: true },
+          },
+        },
+      });
+
+      if (!file) throw new ApiError(404, "Fichier introuvable");
+      if (file.mediaProjectId !== shareToken.mediaProjectId) {
+        throw new ApiError(403, "Fichier hors périmètre");
+      }
+      if (
+        shareToken.type === "MEDIA" &&
+        !["APPROVED", "FINAL_APPROVED"].includes(file.status)
+      ) {
+        throw new ApiError(403, "Fichier non validé");
+      }
+      if (file.status === "DRAFT") throw new ApiError(403, "Fichier non validé");
+
+      const originalKey = file.versions[0]?.originalKey;
+      if (!originalKey) throw new ApiError(404, "Fichier S3 introuvable");
+
+      const downloadUrl = await getSignedDownloadUrl(originalKey, file.filename);
+      return successResponse({ id: file.id, filename: file.filename, downloadUrl });
+    }
+
+    // ── Événement : photo ───────────────────────────────────────────────────────
     const photo = await prisma.mediaPhoto.findUnique({
       where: { id: photoId },
       select: { id: true, filename: true, mediaEventId: true, originalKey: true, status: true },
