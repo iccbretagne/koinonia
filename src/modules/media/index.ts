@@ -1,7 +1,7 @@
 import { defineModule } from "@/core/module-registry";
 
-export { createMediaShareToken, validateMediaShareToken, getTokenUrlPath, isTokenExpired, generateToken, collectionPhotoWhere, resolveDownloadData, resolveGalleryData } from "./services/tokens";
-export type { CollectionConfig, ResolvedMediaData, ResolvedGalleryData, ResolvedMediaEntry } from "./services/tokens";
+export { createMediaShareToken, validateMediaShareToken, getTokenUrlPath, isTokenExpired, generateToken, collectionPhotoWhere, resolveDownloadData, resolveGalleryData, resolveCollectionData, resolveValidatorData } from "./services/tokens";
+export type { CollectionConfig, ResolvedMediaData, ResolvedGalleryData, ResolvedMediaEntry, ResolvedCollectionData, ResolvedValidatorEventData, ResolvedValidatorProjectData } from "./services/tokens";
 export { processImage, validatePhotoFile, getExtensionFromMimeType, ALLOWED_PHOTO_MIME_TYPES, MAX_PHOTO_SIZE } from "./services/image";
 export {
   uploadFile as uploadMediaFile,

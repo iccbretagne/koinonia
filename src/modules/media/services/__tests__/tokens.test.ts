@@ -19,7 +19,7 @@ vi.mock("../s3", () => ({
   getSignedThumbnailUrl: (key: string) => Promise.resolve(`signed://${key}`),
 }));
 
-const { collectionPhotoWhere, resolveDownloadData, resolveGalleryData } = await import("../tokens");
+const { collectionPhotoWhere, resolveDownloadData, resolveGalleryData, resolveCollectionData, resolveValidatorData } = await import("../tokens");
 type CollectionConfig = Parameters<typeof collectionPhotoWhere>[0];
 
 const baseConfig: CollectionConfig = {
@@ -117,5 +117,114 @@ describe("resolveGalleryData — projet média (GALLERY)", () => {
 
     expect(data.event?.photoCount).toBe(4);
     expect(data.photos.map((p) => p.id)).toEqual(["f-approved", "f-final", "f-review", "f-pending"]);
+  });
+});
+
+describe("resolveCollectionData — respecte includeAllPhotos (COLLECTION)", () => {
+  it("includeAllPhotos: true — inclut les photos non approuvées de l'événement", async () => {
+    prismaMock.mediaEvent.findMany.mockResolvedValue([
+      {
+        id: "evt-1",
+        name: "Culte",
+        date: new Date("2026-07-01"),
+        photos: [
+          { id: "p-approved", filename: "a.jpg", size: 100, width: null, height: null, thumbnailKey: "t/p-approved" },
+          { id: "p-pending", filename: "b.jpg", size: 100, width: null, height: null, thumbnailKey: "t/p-pending" },
+        ],
+      },
+    ] as never);
+
+    const data = await resolveCollectionData({
+      id: "tok-1",
+      type: "COLLECTION",
+      label: null,
+      config: { scope: "photos", eventIds: ["evt-1"], projectIds: [], includeAllPhotos: true },
+    } as never);
+
+    expect(data?.photoGroups[0].photos.map((p) => p.id)).toEqual(["p-approved", "p-pending"]);
+    expect(prismaMock.mediaEvent.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({ photos: expect.objectContaining({ where: {} }) }),
+      })
+    );
+  });
+
+  it("includeAllPhotos absent — filtre sur APPROVED uniquement", async () => {
+    prismaMock.mediaEvent.findMany.mockResolvedValue([]);
+
+    await resolveCollectionData({
+      id: "tok-2",
+      type: "COLLECTION",
+      label: null,
+      config: { scope: "photos", eventIds: ["evt-1"], projectIds: [] },
+    } as never);
+
+    expect(prismaMock.mediaEvent.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({ photos: expect.objectContaining({ where: { status: "APPROVED" } }) }),
+      })
+    );
+  });
+
+  it("config manquante : retourne null", async () => {
+    const data = await resolveCollectionData({ id: "tok-3", type: "COLLECTION", label: null, config: null } as never);
+    expect(data).toBeNull();
+  });
+});
+
+describe("resolveValidatorData — événement vs projet (VALIDATOR/PREVALIDATOR)", () => {
+  it("token lié à un projet : retourne les fichiers du projet (pas de requête mediaPhoto)", async () => {
+    const data = await resolveValidatorData({
+      id: "tok-1",
+      type: "VALIDATOR",
+      label: null,
+      mediaEvent: null,
+      mediaProject: {
+        id: "proj-1",
+        name: "Affiche Culte",
+        shareTokens: [],
+        files: [
+          { id: "f-1", filename: "a.jpg", type: "VISUAL", mimeType: "image/jpeg", size: 100, status: "PENDING", versions: [] },
+        ],
+      },
+    } as never);
+
+    expect(data?.type).toBe("project");
+    expect(prismaMock.mediaPhoto.findMany).not.toHaveBeenCalled();
+  });
+
+  it("token lié à un événement PREVALIDATOR : ne retourne que les photos PENDING", async () => {
+    prismaMock.mediaPhoto.findMany.mockResolvedValue([]);
+
+    const data = await resolveValidatorData({
+      id: "tok-2",
+      type: "PREVALIDATOR",
+      label: null,
+      mediaEvent: {
+        id: "evt-1",
+        name: "Culte",
+        date: new Date("2026-07-01"),
+        status: "ACTIVE",
+        shareTokens: [],
+        photos: [],
+      },
+      mediaProject: null,
+    } as never);
+
+    expect(data?.type).toBe("event");
+    expect(prismaMock.mediaPhoto.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: { in: ["PENDING"] } }) })
+    );
+  });
+
+  it("ni événement ni projet : retourne null", async () => {
+    const data = await resolveValidatorData({
+      id: "tok-3",
+      type: "VALIDATOR",
+      label: null,
+      mediaEvent: null,
+      mediaProject: null,
+    } as never);
+    expect(data).toBeNull();
   });
 });
