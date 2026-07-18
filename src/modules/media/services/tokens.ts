@@ -67,6 +67,7 @@ export async function validateMediaShareToken(
           id: true,
           name: true,
           churchId: true,
+          createdAt: true,
           shareTokens: { select: { type: true } },
           files: {
             orderBy: { createdAt: "asc" as const },
