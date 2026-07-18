@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.14.1] - 2026-07-18
+
+### Corrigé
+
+- **Liens de partage des projets médias** : les liens « Téléchargement (validées) », « Téléchargement (toutes) » et « Galerie » créés sur un projet média n'affichaient aucun contenu. Ces flux ne lisaient que les photos d'un événement et ignoraient les fichiers d'un projet ; ils exploitent désormais les fichiers du projet (validés `APPROVED`/`FINAL_APPROVED` pour les liens « validées »/galerie approuvée, tous les non-brouillons pour « toutes »). Les liens déjà partagés fonctionnent sans avoir à les recréer.
+
 ## [v1.14.0] - 2026-07-05
 
 ### Ajouté
