@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.14.3] - 2026-07-18
+
+### Corrigé
+
+- **Consolidation préventive des liens de partage média** (suite à v1.14.1/v1.14.2) : les pages publiques « Collection » et « Validateur »/« Pré-validateur » dupliquaient elles aussi leur logique de récupération de données depuis leur route API, avec le même risque de divergence silencieuse. La logique est désormais centralisée (`resolveCollectionData`, `resolveValidatorData`) et partagée entre routes API et pages SSR.
+  - Bug latent corrigé au passage : la page « Collection » ignorait le paramètre `includeAllPhotos` d'un token (elle filtrait toujours sur les photos approuvées, contrairement à sa route API) — un lien collection configuré pour tout afficher masquait les photos non validées.
+  - La page « Validateur »/« Pré-validateur » appelait deux fois la validation du token à chaque chargement, comptabilisant deux usages au lieu d'un dans les statistiques du lien.
+
 ## [v1.14.2] - 2026-07-18
 
 ### Corrigé
