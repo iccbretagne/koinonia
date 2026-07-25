@@ -243,29 +243,31 @@ export default function PlanningGrid({
           return (
             <div
               key={member.id}
-              className={`flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 ${current.color}`}
+              className={`flex flex-col gap-1.5 p-3 rounded-lg border border-gray-200 ${current.color}`}
             >
-              <span className="flex items-center gap-1.5 text-sm font-medium truncate min-w-0">
-                <span className="truncate">{member.firstName} {member.lastName}</span>
-                {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
-              </span>
-              {isReadOnly ? (
-                <span className="text-xs font-semibold shrink-0">{current.label}</span>
-              ) : (
-                <select
-                  value={member.status || ""}
-                  onChange={(e) =>
-                    handleStatusChange(member.id, e.target.value || null)
-                  }
-                  className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white shrink-0"
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value || "none"} value={option.value || ""}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium truncate min-w-0">
+                  {member.firstName} {member.lastName}
+                </span>
+                {isReadOnly ? (
+                  <span className="text-xs font-semibold shrink-0">{current.label}</span>
+                ) : (
+                  <select
+                    value={member.status || ""}
+                    onChange={(e) =>
+                      handleStatusChange(member.id, e.target.value || null)
+                    }
+                    className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white shrink-0"
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value || "none"} value={option.value || ""}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
             </div>
           );
         })}
