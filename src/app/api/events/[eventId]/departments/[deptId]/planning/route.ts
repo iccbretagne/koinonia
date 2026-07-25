@@ -15,6 +15,31 @@ const STATUS_LABELS: Record<string, string> = {
   REMPLACANT: "Remplaçant",
 };
 
+/**
+ * Absences actives chevauchant la date de l'événement, par membre — permet
+ * d'afficher un badge dans la grille de planning avant toute affectation.
+ */
+async function findActiveAbsencesByMember(
+  churchId: string,
+  memberIds: string[],
+  eventDate: Date | undefined
+): Promise<Map<string, { startDate: Date; endDate: Date }>> {
+  if (!eventDate || memberIds.length === 0) return new Map();
+
+  const absences = await prisma.absence.findMany({
+    where: {
+      churchId,
+      status: "ACTIVE",
+      memberId: { in: memberIds },
+      startDate: { lte: eventDate },
+      endDate: { gte: eventDate },
+    },
+    select: { memberId: true, startDate: true, endDate: true },
+  });
+
+  return new Map(absences.map((a) => [a.memberId, { startDate: a.startDate, endDate: a.endDate }]));
+}
+
 export async function GET(
   _request: Request,
   {
@@ -54,7 +79,7 @@ export async function GET(
         eventId_departmentId: { eventId, departmentId },
       },
       include: {
-        event: { select: { planningDeadline: true } },
+        event: { select: { date: true, planningDeadline: true } },
         plannings: {
           include: { member: true },
         },
@@ -87,12 +112,18 @@ export async function GET(
 
       const event = await prisma.event.findUnique({
         where: { id: eventId },
-        select: { planningDeadline: true },
+        select: { date: true, planningDeadline: true },
       });
 
       const deadlinePassed = event?.planningDeadline
         ? new Date() > new Date(event.planningDeadline)
         : false;
+
+      const absenceByMember = await findActiveAbsencesByMember(
+        churchId,
+        department.memberDepts.map(({ member }) => member.id),
+        event?.date
+      );
 
       return successResponse({
         eventDepartment: null,
@@ -100,12 +131,19 @@ export async function GET(
           ...m,
           status: null,
           planningId: null,
+          activeAbsence: absenceByMember.get(m.id) ?? null,
         })),
         planningDeadline: event?.planningDeadline ?? null,
         deadlinePassed,
         canBypassDeadline,
       });
     }
+
+    const absenceByMember = await findActiveAbsencesByMember(
+      churchId,
+      eventDept.department.memberDepts.map(({ member }) => member.id),
+      eventDept.event.date
+    );
 
     const members = eventDept.department.memberDepts.map(({ member }) => {
       const planning = eventDept.plannings.find(
@@ -115,6 +153,7 @@ export async function GET(
         ...member,
         status: planning?.status || null,
         planningId: planning?.id || null,
+        activeAbsence: absenceByMember.get(member.id) ?? null,
       };
     });
 

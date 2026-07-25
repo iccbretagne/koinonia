@@ -5,6 +5,15 @@ export type { PlanningEvents } from "./events";
 export { executeRequest } from "./services/request-executor";
 export type { ExecutionResult } from "./services/request-executor";
 export { deleteEvents } from "./services/event.service";
+export {
+  declareAbsence,
+  cancelAbsence,
+  findAbsenceConflicts,
+  resolveResponsibleUserIds,
+  isMemberLinkedToUser,
+  getMemberScope,
+} from "./services/absence.service";
+export type { AbsenceConflict } from "./services/absence.service";
 
 /**
  * Module planning — ex-Koinonia.
@@ -40,6 +49,9 @@ export const planningModule = defineModule({
     // Comptes rendus
     "reports:view":        ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"],
     "reports:edit":        ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"],
+    // Absences des STAR
+    "absences:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
+    "absences:manage":     ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
   },
 
   navigation: [
