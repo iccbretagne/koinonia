@@ -37,6 +37,7 @@ interface AuthLayoutShellProps {
   hasReports: boolean;
   hasMyPlanning?: boolean;
   showStarEvents?: boolean;
+  hasAbsences?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -75,6 +76,7 @@ export default function AuthLayoutShell({
   hasReports,
   hasMyPlanning = false,
   showStarEvents = false,
+  hasAbsences = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -142,6 +144,7 @@ export default function AuthLayoutShell({
             hasReports={hasReports}
             hasMyPlanning={hasMyPlanning}
             showStarEvents={showStarEvents}
+            hasAbsences={hasAbsences}
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
             hasJobsManage={hasJobsManage}
@@ -169,6 +172,7 @@ export default function AuthLayoutShell({
           hasReports={hasReports}
           hasMyPlanning={hasMyPlanning}
           showStarEvents={showStarEvents}
+          hasAbsences={hasAbsences}
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
           hasJobsManage={hasJobsManage}

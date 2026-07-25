@@ -22,6 +22,7 @@ interface SidebarProps {
   hasReports?: boolean;
   hasMyPlanning?: boolean;
   showStarEvents?: boolean;
+  hasAbsences?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -59,6 +60,15 @@ function IconMembers({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  );
+}
+
+function IconAbsence({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 16l2 2 4-4" />
     </svg>
   );
 }
@@ -324,6 +334,7 @@ export default function Sidebar({
   hasReports = false,
   hasMyPlanning = false,
   showStarEvents = false,
+  hasAbsences = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -338,6 +349,7 @@ export default function Sidebar({
   const isDashboardActive = pathname === "/dashboard";
   const isMyPlanningActive = pathname === "/planning";
   const isStarEventsActive = pathname.startsWith("/planning/events");
+  const isAbsencesActive = pathname.startsWith("/absences");
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
@@ -513,6 +525,22 @@ export default function Sidebar({
         >
           <IconMyPlanning className="w-4 h-4" />
           Mon planning
+        </Link>
+      )}
+
+      {/* Absences (STAR liés à une fiche, ou responsables/ministres/admin) */}
+      {hasAbsences && (
+        <Link
+          href="/absences"
+          onClick={onClose}
+          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
+            isAbsencesActive
+              ? "bg-icc-violet-light text-icc-violet"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <IconAbsence className="w-4 h-4" />
+          Absences
         </Link>
       )}
 

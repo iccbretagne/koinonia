@@ -21,6 +21,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "accounting:manage",
     "accounting:stats",
     "accounting:submit",
+    "absences:view",
+    "absences:manage",
   ],
   ADMIN: [
     "planning:view",
@@ -39,6 +41,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "accounting:manage",
     "accounting:stats",
     "accounting:submit",
+    "absences:view",
+    "absences:manage",
   ],
   SECRETARY: [
     "planning:view",
@@ -52,6 +56,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "reports:view",
     "reports:edit",
     "accounting:stats",
+    "absences:view",
   ],
   MINISTER: [
     "planning:view",
@@ -64,6 +69,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "discipleship:view",
     "accounting:view",
     "accounting:submit",
+    "absences:view",
+    "absences:manage",
   ],
   DEPARTMENT_HEAD: [
     "planning:view",
@@ -75,6 +82,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "discipleship:view",
     "accounting:view",
     "accounting:submit",
+    "absences:view",
+    "absences:manage",
   ],
   DISCIPLE_MAKER: [
     "discipleship:view",

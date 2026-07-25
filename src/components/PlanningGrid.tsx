@@ -9,6 +9,24 @@ interface MemberPlanning {
   lastName: string;
   status: string | null;
   planningId: string | null;
+  activeAbsence?: { startDate: string; endDate: string } | null;
+}
+
+function formatAbsencePeriod(activeAbsence: { startDate: string; endDate: string }): string {
+  const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
+  return `Absence déclarée du ${fmt.format(new Date(activeAbsence.startDate))} au ${fmt.format(new Date(activeAbsence.endDate))}`;
+}
+
+function AbsenceBadge({ activeAbsence }: { activeAbsence: { startDate: string; endDate: string } }) {
+  return (
+    <span
+      title={formatAbsencePeriod(activeAbsence)}
+      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0"
+      aria-label={formatAbsencePeriod(activeAbsence)}
+    >
+      ⚠
+    </span>
+  );
 }
 
 interface PlanningGridProps {
@@ -219,8 +237,9 @@ export default function PlanningGrid({
               key={member.id}
               className={`flex items-center justify-between gap-3 p-3 rounded-lg border border-gray-200 ${current.color}`}
             >
-              <span className="text-sm font-medium truncate min-w-0">
-                {member.firstName} {member.lastName}
+              <span className="flex items-center gap-1.5 text-sm font-medium truncate min-w-0">
+                <span className="truncate">{member.firstName} {member.lastName}</span>
+                {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
               </span>
               {isReadOnly ? (
                 <span className="text-xs font-semibold shrink-0">{current.label}</span>
@@ -261,7 +280,10 @@ export default function PlanningGrid({
             {members.map((member) => (
               <tr key={member.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm text-gray-900">
-                  {member.firstName} {member.lastName}
+                  <span className="flex items-center gap-1.5">
+                    <span>{member.firstName} {member.lastName}</span>
+                    {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center gap-1">

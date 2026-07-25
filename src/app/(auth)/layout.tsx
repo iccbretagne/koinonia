@@ -376,6 +376,10 @@ export default async function AuthLayout({
     : null;
   const hasMyPlanning = hasPlanningAccess && memberLink !== null;
 
+  // "Absences" — visible pour tout STAR lié (auto-déclaration) ou tout
+  // responsable/ministre/admin ayant la permission de vue transverse.
+  const hasAbsences = memberLink !== null || userPermissions.has("absences:view");
+
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
 
@@ -402,6 +406,7 @@ export default async function AuthLayout({
       hasReports={hasReports}
       hasMyPlanning={hasMyPlanning}
       showStarEvents={showStarEvents}
+      hasAbsences={hasAbsences}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT"}
       headerColor={churchPrimaryColor}
       header={headerContent}

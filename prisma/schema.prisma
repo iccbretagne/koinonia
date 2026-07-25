@@ -52,36 +52,37 @@ model VerificationToken {
 // ─── Domain models ─────────────────────────────────────────────────
 
 model Church {
-  id                       String              @id @default(cuid())
-  name                     String
-  slug                     String              @unique
-  secretariatEmail         String?
-  accountingEmail          String?
-  primaryColor             String  @default("#5E17EB")
-  reminderLastSentAt       DateTime?
-  planningDigestLastSentAt DateTime?
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
-  users                    UserChurchRole[]
-  ministries               Ministry[]
-  events                   Event[]
-  auditLogs                AuditLog[]
-  announcements            Announcement[]
-  requests                 Request[]
-  memberUserLinks          MemberUserLink[]
-  memberLinkRequests       MemberLinkRequest[]
-  discipleships            Discipleship[]
-  eventReports             EventReport[]
+  id                        String                     @id @default(cuid())
+  name                      String
+  slug                      String                     @unique
+  secretariatEmail          String?
+  accountingEmail           String?
+  primaryColor              String                     @default("#5E17EB")
+  reminderLastSentAt        DateTime?
+  planningDigestLastSentAt  DateTime?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  users                     UserChurchRole[]
+  ministries                Ministry[]
+  events                    Event[]
+  auditLogs                 AuditLog[]
+  announcements             Announcement[]
+  requests                  Request[]
+  memberUserLinks           MemberUserLink[]
+  memberLinkRequests        MemberLinkRequest[]
+  discipleships             Discipleship[]
+  eventReports              EventReport[]
+  absences                  Absence[]
   // Module media
-  mediaEvents              MediaEvent[]
-  mediaProjects            MediaProject[]
-  mediaSettings            MediaSettings?
+  mediaEvents               MediaEvent[]
+  mediaProjects             MediaProject[]
+  mediaSettings             MediaSettings?
   // Module mrbs (optionnel)
-  mrbsUserLinks            MrbsUserLink[]
+  mrbsUserLinks             MrbsUserLink[]
   // Module agenda
-  pastoralProfiles         PastoralProfile[]    @relation("ChurchPastoralProfiles")
-  appointmentRequests      AppointmentRequest[]
-  agendaEntries            AgendaEntry[]
+  pastoralProfiles          PastoralProfile[]          @relation("ChurchPastoralProfiles")
+  appointmentRequests       AppointmentRequest[]
+  agendaEntries             AgendaEntry[]
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[]
   familyLeaderAssignments   FamilyLeaderAssignment[]
@@ -94,10 +95,10 @@ model Church {
   welcomeDutyFamilies       WelcomeDutyFamily[]
   welcomeDutyAssignments    WelcomeDutyAssignment[]
   // Module pastoral
-  responsibleProfileId      String?  @unique
+  responsibleProfileId      String?                    @unique
   supervisorProfileId       String?
-  responsible               PastoralProfile?     @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
-  supervisor                PastoralProfile?     @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
+  responsible               PastoralProfile?           @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
+  supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
   @@map("churches")
 }
@@ -116,63 +117,65 @@ enum Role {
 }
 
 model User {
-  id                      String              @id @default(cuid())
-  email                   String              @unique
-  name                    String?
-  displayName             String?
-  image                   String?
-  emailVerified           DateTime?
-  isSuperAdmin            Boolean             @default(false)
-  hasSeenTour             Boolean             @default(false)
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
-  churchRoles             UserChurchRole[]
-  accounts                Account[]
-  sessions                Session[]
-  auditLogs               AuditLog[]
-  notifications           Notification[]
-  submittedAnnouncements  Announcement[]      @relation("AnnouncementSubmittedBy")
-  submittedRequests       Request[]           @relation("RequestSubmittedBy")
-  reviewedRequests        Request[]           @relation("RequestReviewedBy")
-  memberLinks             MemberUserLink[]    @relation("UserMemberLink")
-  validatedLinks          MemberUserLink[]    @relation("LinkValidator")
-  memberLinkRequests      MemberLinkRequest[] @relation("LinkRequester")
-  reviewedLinkRequests    MemberLinkRequest[] @relation("LinkRequestReviewer")
-  eventReports            EventReport[]       @relation("ReportAuthor")
-  departmentNotices       DepartmentNotice[]
+  id                                String                       @id @default(cuid())
+  email                             String                       @unique
+  name                              String?
+  displayName                       String?
+  image                             String?
+  emailVerified                     DateTime?
+  isSuperAdmin                      Boolean                      @default(false)
+  hasSeenTour                       Boolean                      @default(false)
+  createdAt                         DateTime                     @default(now())
+  updatedAt                         DateTime                     @updatedAt
+  churchRoles                       UserChurchRole[]
+  accounts                          Account[]
+  sessions                          Session[]
+  auditLogs                         AuditLog[]
+  notifications                     Notification[]
+  submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
+  submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
+  reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
+  memberLinks                       MemberUserLink[]             @relation("UserMemberLink")
+  validatedLinks                    MemberUserLink[]             @relation("LinkValidator")
+  absencesCreated                   Absence[]                    @relation("AbsenceCreatedBy")
+  absencesCancelled                 Absence[]                    @relation("AbsenceCancelledBy")
+  memberLinkRequests                MemberLinkRequest[]          @relation("LinkRequester")
+  reviewedLinkRequests              MemberLinkRequest[]          @relation("LinkRequestReviewer")
+  eventReports                      EventReport[]                @relation("ReportAuthor")
+  departmentNotices                 DepartmentNotice[]
   // Module media
-  mediaEventsCreated      MediaEvent[]        @relation("MediaEventCreator")
-  mediaProjectsCreated    MediaProject[]      @relation("MediaProjectCreator")
-  mediaFileVersions       MediaFileVersion[]  @relation("MediaFileVersionCreator")
-  mediaComments           MediaComment[]      @relation("MediaCommentAuthor")
+  mediaEventsCreated                MediaEvent[]                 @relation("MediaEventCreator")
+  mediaProjectsCreated              MediaProject[]               @relation("MediaProjectCreator")
+  mediaFileVersions                 MediaFileVersion[]           @relation("MediaFileVersionCreator")
+  mediaComments                     MediaComment[]               @relation("MediaCommentAuthor")
   // Module mrbs (optionnel)
-  mrbsUserLinks           MrbsUserLink[]      @relation("MrbsLinkedUser")
-  mrbsUserLinksCreated    MrbsUserLink[]      @relation("MrbsLinkCreator")
+  mrbsUserLinks                     MrbsUserLink[]               @relation("MrbsLinkedUser")
+  mrbsUserLinksCreated              MrbsUserLink[]               @relation("MrbsLinkCreator")
   // Module agenda
-  pastoralProfiles        PastoralProfile[]   @relation("UserPastoralProfile")
-  appointmentsMade        AppointmentRequest[] @relation("AppointmentRequester")
-  qualifiedRequests       AppointmentRequest[] @relation("AppointmentQualifier")
-  scheduledRequests       AppointmentRequest[] @relation("AppointmentScheduler")
-  updatedRequests         AppointmentRequest[] @relation("AppointmentUpdater")
-  agendaEntriesCreated    AgendaEntry[]        @relation("AgendaEntryCreator")
-  agendaEntriesUpdated    AgendaEntry[]        @relation("AgendaEntryUpdater")
+  pastoralProfiles                  PastoralProfile[]            @relation("UserPastoralProfile")
+  appointmentsMade                  AppointmentRequest[]         @relation("AppointmentRequester")
+  qualifiedRequests                 AppointmentRequest[]         @relation("AppointmentQualifier")
+  scheduledRequests                 AppointmentRequest[]         @relation("AppointmentScheduler")
+  updatedRequests                   AppointmentRequest[]         @relation("AppointmentUpdater")
+  agendaEntriesCreated              AgendaEntry[]                @relation("AgendaEntryCreator")
+  agendaEntriesUpdated              AgendaEntry[]                @relation("AgendaEntryUpdater")
   // Module intégration familles
-  familyLeaderAssignments FamilyLeaderAssignment[]
-  familyIntegrationRequestsAssigned FamilyIntegrationRequest[] @relation("IntegrationAssignedBerger")
-  msdpFollowUpsAssigned             MsdpFollowUp[]             @relation("MsdpAssignedConseiller")
-  personJourneysCreated             PersonJourney[]            @relation("PersonJourneyCreator")
+  familyLeaderAssignments           FamilyLeaderAssignment[]
+  familyIntegrationRequestsAssigned FamilyIntegrationRequest[]   @relation("IntegrationAssignedBerger")
+  msdpFollowUpsAssigned             MsdpFollowUp[]               @relation("MsdpAssignedConseiller")
+  personJourneysCreated             PersonJourney[]              @relation("PersonJourneyCreator")
   // Module comptabilité
-  financialSeriesSubmitted  FinancialSeries[]    @relation("FinancialSeriesSubmitter")
-  financialRequestsSubmitted FinancialRequest[]  @relation("FinancialRequestSubmitter")
-  financialRequestsProcessed   FinancialRequest[]   @relation("FinancialRequestProcessor")
-  financialPaymentsReleased    FinancialPayment[]   @relation("FinancialPaymentReleaser")
-  financialAttachmentsUploaded FinancialAttachment[] @relation("AccountingAttachmentsUploaded")
+  financialSeriesSubmitted          FinancialSeries[]            @relation("FinancialSeriesSubmitter")
+  financialRequestsSubmitted        FinancialRequest[]           @relation("FinancialRequestSubmitter")
+  financialRequestsProcessed        FinancialRequest[]           @relation("FinancialRequestProcessor")
+  financialPaymentsReleased         FinancialPayment[]           @relation("FinancialPaymentReleaser")
+  financialAttachmentsUploaded      FinancialAttachment[]        @relation("AccountingAttachmentsUploaded")
   // Module emploi
-  jobOffers                    JobOffer[]
-  jobSeekers                   JobSeeker[]
-  jobNotificationSubscription  JobNotificationSubscription?
-  freelanceMissions            FreelanceMission[]
-  freelanceProfiles            FreelanceProfile[]
+  jobOffers                         JobOffer[]
+  jobSeekers                        JobSeeker[]
+  jobNotificationSubscription       JobNotificationSubscription?
+  freelanceMissions                 FreelanceMission[]
+  freelanceProfiles                 FreelanceProfile[]
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
@@ -206,39 +209,39 @@ model UserDepartment {
 }
 
 model Ministry {
-  id              String           @id @default(cuid())
-  name            String
-  churchId        String
-  isSystem        Boolean          @default(false)
-  church          Church           @relation(fields: [churchId], references: [id])
-  departments     Department[]
-  userRoles       UserChurchRole[]
-  createdAt       DateTime         @default(now())
-  announcements   Announcement[]      @relation("AnnouncementMinistry")
-  requests        Request[]           @relation("RequestMinistry")
-  linkRequests    MemberLinkRequest[] @relation("LinkRequestMinistry")
+  id            String              @id @default(cuid())
+  name          String
+  churchId      String
+  isSystem      Boolean             @default(false)
+  church        Church              @relation(fields: [churchId], references: [id])
+  departments   Department[]
+  userRoles     UserChurchRole[]
+  createdAt     DateTime            @default(now())
+  announcements Announcement[]      @relation("AnnouncementMinistry")
+  requests      Request[]           @relation("RequestMinistry")
+  linkRequests  MemberLinkRequest[] @relation("LinkRequestMinistry")
 
   @@map("ministries")
 }
 
 model Department {
-  id                String             @id @default(cuid())
+  id                String               @id @default(cuid())
   name              String
   ministryId        String
-  isSystem          Boolean            @default(false)
+  isSystem          Boolean              @default(false)
   function          String?
-  ministry          Ministry           @relation(fields: [ministryId], references: [id])
+  ministry          Ministry             @relation(fields: [ministryId], references: [id])
   memberDepts       MemberDepartment[]
   eventDepts        EventDepartment[]
   userDepts         UserDepartment[]
   tasks             Task[]
-  createdAt         DateTime           @default(now())
-  announcements     Announcement[]      @relation("AnnouncementDepartment")
-  submittedRequests Request[]           @relation("RequestDepartment")
-  assignedRequests  Request[]           @relation("RequestAssigned")
+  createdAt         DateTime             @default(now())
+  announcements     Announcement[]       @relation("AnnouncementDepartment")
+  submittedRequests Request[]            @relation("RequestDepartment")
+  assignedRequests  Request[]            @relation("RequestAssigned")
   reportSections    EventReportSection[]
   notices           DepartmentNotice[]
-  linkRequests      MemberLinkRequest[] @relation("LinkRequestDept")
+  linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
   financialSeries   FinancialSeries[]
   financialRequests FinancialRequest[]
 
@@ -259,24 +262,26 @@ model Member {
   linkRequests    MemberLinkRequest[]
 
   // Discipolat (un seul enregistrement actif par église grâce au @@unique du modèle)
-  discipleships       Discipleship[] @relation("DiscipleOf")
-  disciplesMade       Discipleship[] @relation("DiscipleMakerOf")
-  firstDisciples      Discipleship[] @relation("FirstDiscipleMaker")
-  attendances         DiscipleshipAttendance[]
+  discipleships  Discipleship[]           @relation("DiscipleOf")
+  disciplesMade  Discipleship[]           @relation("DiscipleMakerOf")
+  firstDisciples Discipleship[]           @relation("FirstDiscipleMaker")
+  attendances    DiscipleshipAttendance[]
 
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
+
+  absences Absence[]
 
   @@map("members")
 }
 
 model MemberDepartment {
-  id           String     @id @default(cuid())
+  id           String  @id @default(cuid())
   memberId     String
   departmentId String
-  isPrimary    Boolean    @default(false)
+  isPrimary    Boolean @default(false)
 
-  member     Member     @relation(fields: [memberId],     references: [id], onDelete: Cascade)
+  member     Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
   department Department @relation(fields: [departmentId], references: [id])
 
   @@unique([memberId, departmentId])
@@ -291,10 +296,10 @@ model MemberUserLink {
   validatedAt   DateTime?
   validatedById String?
 
-  member      Member  @relation(fields: [memberId],      references: [id], onDelete: Cascade)
-  user        User    @relation("UserMemberLink",        fields: [userId],  references: [id])
-  church      Church  @relation(fields: [churchId],      references: [id])
-  validatedBy User?   @relation("LinkValidator",         fields: [validatedById], references: [id])
+  member      Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  user        User   @relation("UserMemberLink", fields: [userId], references: [id])
+  church      Church @relation(fields: [churchId], references: [id])
+  validatedBy User?  @relation("LinkValidator", fields: [validatedById], references: [id])
 
   @@unique([memberId, churchId])
   @@unique([userId, churchId])
@@ -320,17 +325,17 @@ model MemberLinkRequest {
   // Champs onboarding enrichi
   departmentId  String?
   ministryId    String?
-  requestedRole String?                 // DEPARTMENT_HEAD | DEPUTY | MINISTER | DISCIPLE_MAKER | REPORTER | null
+  requestedRole String? // DEPARTMENT_HEAD | DEPUTY | MINISTER | DISCIPLE_MAKER | REPORTER | null
   notes         String?                 @db.Text
   createdAt     DateTime                @default(now())
   reviewedAt    DateTime?
   reviewedById  String?
 
-  user       User        @relation("LinkRequester",       fields: [userId],       references: [id])
-  member     Member?     @relation(fields: [memberId],    references: [id])
-  church     Church      @relation(fields: [churchId],    references: [id])
-  department Department? @relation("LinkRequestDept",     fields: [departmentId], references: [id])
-  ministry   Ministry?   @relation("LinkRequestMinistry", fields: [ministryId],   references: [id])
+  user       User        @relation("LinkRequester", fields: [userId], references: [id])
+  member     Member?     @relation(fields: [memberId], references: [id])
+  church     Church      @relation(fields: [churchId], references: [id])
+  department Department? @relation("LinkRequestDept", fields: [departmentId], references: [id])
+  ministry   Ministry?   @relation("LinkRequestMinistry", fields: [ministryId], references: [id])
   reviewedBy User?       @relation("LinkRequestReviewer", fields: [reviewedById], references: [id])
 
   @@map("member_link_requests")
@@ -342,14 +347,14 @@ model Discipleship {
   id              String   @id @default(cuid())
   discipleId      String
   discipleMakerId String
-  firstMakerId    String   // premier FD — ne change jamais, sert pour la lignée
+  firstMakerId    String // premier FD — ne change jamais, sert pour la lignée
   churchId        String
   startedAt       DateTime @default(now())
 
-  disciple      Member @relation("DiscipleOf",        fields: [discipleId],      references: [id])
-  discipleMaker Member @relation("DiscipleMakerOf",   fields: [discipleMakerId], references: [id])
-  firstMaker    Member @relation("FirstDiscipleMaker", fields: [firstMakerId],    references: [id])
-  church        Church @relation(fields: [churchId],  references: [id])
+  disciple      Member @relation("DiscipleOf", fields: [discipleId], references: [id])
+  discipleMaker Member @relation("DiscipleMakerOf", fields: [discipleMakerId], references: [id])
+  firstMaker    Member @relation("FirstDiscipleMaker", fields: [firstMakerId], references: [id])
+  church        Church @relation(fields: [churchId], references: [id])
 
   @@unique([discipleId, churchId]) // un seul FD courant par disciple par église
   @@map("discipleships")
@@ -362,41 +367,41 @@ model DiscipleshipAttendance {
   present  Boolean @default(true)
 
   member Member @relation(fields: [memberId], references: [id])
-  event  Event  @relation(fields: [eventId],  references: [id])
+  event  Event  @relation(fields: [eventId], references: [id])
 
   @@unique([memberId, eventId])
   @@map("discipleship_attendances")
 }
 
 model Event {
-  id                 String              @id @default(cuid())
-  title              String
-  type               String
-  date               DateTime
-  churchId           String
-  church             Church              @relation(fields: [churchId], references: [id])
-  eventDepts         EventDepartment[]
-  taskAssignments    TaskAssignment[]
-  planningDeadline   DateTime?
-  recurrenceRule     String?
-  seriesId           String?
-  isRecurrenceParent Boolean             @default(false)
-  allowAnnouncements Boolean             @default(false)
-  createdAt          DateTime            @default(now())
-  announcementTargets        AnnouncementEvent[]
-  trackedForDiscipleship     Boolean                  @default(false)
-  reportEnabled              Boolean                  @default(false)
-  statsEnabled               Boolean                  @default(false)
-  welcomeDutyEnabled         Boolean                  @default(false)
-  discipleshipAttendances    DiscipleshipAttendance[]
-  report                     EventReport?
-  departmentNotices          DepartmentNotice[]
+  id                      String                     @id @default(cuid())
+  title                   String
+  type                    String
+  date                    DateTime
+  churchId                String
+  church                  Church                     @relation(fields: [churchId], references: [id])
+  eventDepts              EventDepartment[]
+  taskAssignments         TaskAssignment[]
+  planningDeadline        DateTime?
+  recurrenceRule          String?
+  seriesId                String?
+  isRecurrenceParent      Boolean                    @default(false)
+  allowAnnouncements      Boolean                    @default(false)
+  createdAt               DateTime                   @default(now())
+  announcementTargets     AnnouncementEvent[]
+  trackedForDiscipleship  Boolean                    @default(false)
+  reportEnabled           Boolean                    @default(false)
+  statsEnabled            Boolean                    @default(false)
+  welcomeDutyEnabled      Boolean                    @default(false)
+  discipleshipAttendances DiscipleshipAttendance[]
+  report                  EventReport?
+  departmentNotices       DepartmentNotice[]
   // Module media : galeries photos liées à cet événement planning
-  mediaEvents                MediaEvent[]
+  mediaEvents             MediaEvent[]
   // Module intégration : culte où l'appel au salut a été fait
-  integrationRequests        FamilyIntegrationRequest[]
+  integrationRequests     FamilyIntegrationRequest[]
   // Module service d'accueil
-  welcomeDutyAssignments     WelcomeDutyAssignment[]
+  welcomeDutyAssignments  WelcomeDutyAssignment[]
 
   @@map("events")
 }
@@ -413,9 +418,9 @@ model EventReport {
   updatedAt    DateTime @updatedAt
   authorId     String?
 
-  event    Event                @relation(fields: [eventId],   references: [id])
-  church   Church               @relation(fields: [churchId],  references: [id])
-  author   User?                @relation("ReportAuthor", fields: [authorId],  references: [id])
+  event    Event                @relation(fields: [eventId], references: [id])
+  church   Church               @relation(fields: [churchId], references: [id])
+  author   User?                @relation("ReportAuthor", fields: [authorId], references: [id])
   sections EventReportSection[]
 
   @@map("event_reports")
@@ -430,7 +435,7 @@ model EventReportSection {
   stats        Json?
   notes        String? @db.Text
 
-  report     EventReport @relation(fields: [reportId],     references: [id], onDelete: Cascade)
+  report     EventReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   department Department? @relation(fields: [departmentId], references: [id])
 
   @@map("event_report_sections")
@@ -468,6 +473,35 @@ model Planning {
   @@map("plannings")
 }
 
+enum AbsenceStatus {
+  ACTIVE
+  CANCELLED
+}
+
+model Absence {
+  id            String        @id @default(cuid())
+  memberId      String
+  churchId      String
+  startDate     DateTime
+  endDate       DateTime
+  reason        String?       @db.Text
+  status        AbsenceStatus @default(ACTIVE)
+  createdById   String
+  cancelledById String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  cancelledAt   DateTime?
+
+  member      Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  church      Church @relation(fields: [churchId], references: [id])
+  createdBy   User   @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
+  cancelledBy User?  @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
+
+  @@index([churchId, startDate, endDate])
+  @@index([memberId, status])
+  @@map("absences")
+}
+
 model Task {
   id           String           @id @default(cuid())
   departmentId String
@@ -499,8 +533,8 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String
   churchId   String?
-  action     String   // CREATE, UPDATE, DELETE
-  entityType String   // Event, Planning, Member, etc.
+  action     String // CREATE, UPDATE, DELETE
+  entityType String // Event, Planning, Member, etc.
   entityId   String
   details    Json?
   createdAt  DateTime @default(now())
@@ -515,7 +549,7 @@ model AuditLog {
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  type      String   // PLANNING_REMINDER, PLANNING_UPDATED, etc.
+  type      String // PLANNING_REMINDER, PLANNING_UPDATED, etc.
   title     String
   message   String   @db.Text
   read      Boolean  @default(false)
@@ -530,17 +564,17 @@ model Notification {
 // ─── Notices de service ────────────────────────────────────────────
 
 model DepartmentNotice {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   departmentId String
   eventId      String
-  content      String     @db.Text
+  content      String   @db.Text
   authorId     String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  event        Event      @relation(fields: [eventId],      references: [id], onDelete: Cascade)
-  author       User       @relation(fields: [authorId],     references: [id])
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  event      Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  author     User       @relation(fields: [authorId], references: [id])
 
   @@unique([departmentId, eventId])
   @@index([eventId])
@@ -557,28 +591,28 @@ enum AnnouncementStatus {
 }
 
 model Announcement {
-  id              String             @id @default(cuid())
-  churchId        String
-  submittedById   String
-  departmentId    String?
-  ministryId      String?
-  title           String
-  content         String             @db.Text
-  eventDate       DateTime?
-  isSaveTheDate   Boolean            @default(false)
-  isUrgent        Boolean            @default(false)
-  channelInterne  Boolean            @default(false)
-  channelExterne  Boolean            @default(false)
-  status          AnnouncementStatus @default(EN_ATTENTE)
-  submittedAt     DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id             String             @id @default(cuid())
+  churchId       String
+  submittedById  String
+  departmentId   String?
+  ministryId     String?
+  title          String
+  content        String             @db.Text
+  eventDate      DateTime?
+  isSaveTheDate  Boolean            @default(false)
+  isUrgent       Boolean            @default(false)
+  channelInterne Boolean            @default(false)
+  channelExterne Boolean            @default(false)
+  status         AnnouncementStatus @default(EN_ATTENTE)
+  submittedAt    DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
-  church          Church             @relation(fields: [churchId], references: [id])
-  submittedBy     User               @relation("AnnouncementSubmittedBy", fields: [submittedById], references: [id])
-  department      Department?        @relation("AnnouncementDepartment", fields: [departmentId], references: [id])
-  ministry        Ministry?          @relation("AnnouncementMinistry", fields: [ministryId], references: [id])
-  targetEvents    AnnouncementEvent[]
-  requests        Request[]
+  church       Church              @relation(fields: [churchId], references: [id])
+  submittedBy  User                @relation("AnnouncementSubmittedBy", fields: [submittedById], references: [id])
+  department   Department?         @relation("AnnouncementDepartment", fields: [departmentId], references: [id])
+  ministry     Ministry?           @relation("AnnouncementMinistry", fields: [ministryId], references: [id])
+  targetEvents AnnouncementEvent[]
+  requests     Request[]
 
   @@index([churchId, status])
   @@map("announcements")
@@ -639,15 +673,15 @@ model Request {
   submittedAt     DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  church          Church        @relation(fields: [churchId], references: [id])
-  submittedBy     User          @relation("RequestSubmittedBy", fields: [submittedById], references: [id])
-  department      Department?   @relation("RequestDepartment", fields: [departmentId], references: [id])
-  ministry        Ministry?     @relation("RequestMinistry", fields: [ministryId], references: [id])
-  assignedDept    Department?   @relation("RequestAssigned", fields: [assignedDeptId], references: [id])
-  announcement    Announcement? @relation(fields: [announcementId], references: [id])
-  parentRequest   Request?      @relation("RequestChildren", fields: [parentRequestId], references: [id])
-  childRequests   Request[]     @relation("RequestChildren")
-  reviewedBy      User?         @relation("RequestReviewedBy", fields: [reviewedById], references: [id])
+  church        Church        @relation(fields: [churchId], references: [id])
+  submittedBy   User          @relation("RequestSubmittedBy", fields: [submittedById], references: [id])
+  department    Department?   @relation("RequestDepartment", fields: [departmentId], references: [id])
+  ministry      Ministry?     @relation("RequestMinistry", fields: [ministryId], references: [id])
+  assignedDept  Department?   @relation("RequestAssigned", fields: [assignedDeptId], references: [id])
+  announcement  Announcement? @relation(fields: [announcementId], references: [id])
+  parentRequest Request?      @relation("RequestChildren", fields: [parentRequestId], references: [id])
+  childRequests Request[]     @relation("RequestChildren")
+  reviewedBy    User?         @relation("RequestReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([churchId, type, status])
   @@index([assignedDeptId, status])
@@ -662,7 +696,7 @@ model Request {
 /// Utilisée quand le username MRBS n'est pas l'email Koinonia (ex : "jdupont" → jean.dupont@mail.com).
 model MrbsUserLink {
   id           String   @id @default(cuid())
-  mrbsUsername String   @unique               // mrbs_users.name dans la BDD MRBS
+  mrbsUsername String   @unique // mrbs_users.name dans la BDD MRBS
   userId       String
   churchId     String
   linkedAt     DateTime @default(now())
@@ -682,50 +716,50 @@ model MrbsUserLink {
 // ============================================================================
 
 enum MediaEventStatus {
-  DRAFT          // En cours d'upload
+  DRAFT // En cours d'upload
   PENDING_REVIEW // En attente de validation
-  REVIEWED       // Validation terminée
-  ARCHIVED       // Archivé
+  REVIEWED // Validation terminée
+  ARCHIVED // Archivé
 }
 
 enum MediaPhotoStatus {
-  PENDING      // En attente de validation
-  APPROVED     // Validée
-  REJECTED     // Rejetée
+  PENDING // En attente de validation
+  APPROVED // Validée
+  REJECTED // Rejetée
   PREVALIDATED // Pré-validée (filtrée par le prévalidateur)
-  PREREJECTED  // Écartée par le prévalidateur
+  PREREJECTED // Écartée par le prévalidateur
 }
 
 enum MediaFileType {
-  PHOTO  // Images événements
+  PHOTO // Images événements
   VISUAL // Visuels (PNG, SVG, PDF)
-  VIDEO  // Vidéos (MP4, MOV)
+  VIDEO // Vidéos (MP4, MOV)
 }
 
 enum MediaFileStatus {
-  PENDING            // Photos: en attente
-  APPROVED           // Photos: validée
-  REJECTED           // Rejetée (photos et médias)
-  PREVALIDATED       // Photos: pré-validée
-  PREREJECTED        // Photos: écartée
-  DRAFT              // Médias: brouillon
-  IN_REVIEW          // Médias: en révision
+  PENDING // Photos: en attente
+  APPROVED // Photos: validée
+  REJECTED // Rejetée (photos et médias)
+  PREVALIDATED // Photos: pré-validée
+  PREREJECTED // Photos: écartée
+  DRAFT // Médias: brouillon
+  IN_REVIEW // Médias: en révision
   REVISION_REQUESTED // Médias: révision demandée
-  FINAL_APPROVED     // Médias: approuvé définitivement
+  FINAL_APPROVED // Médias: approuvé définitivement
 }
 
 enum MediaCommentType {
-  GENERAL  // Commentaire général
+  GENERAL // Commentaire général
   TIMECODE // Commentaire avec timecode (vidéos)
 }
 
 enum MediaTokenType {
-  VALIDATOR    // Accès validation (lecture + modification status)
-  MEDIA        // Accès téléchargement (photos approuvées uniquement)
-  MEDIA_ALL    // Accès téléchargement (toutes photos, validées ou non)
+  VALIDATOR // Accès validation (lecture + modification status)
+  MEDIA // Accès téléchargement (photos approuvées uniquement)
+  MEDIA_ALL // Accès téléchargement (toutes photos, validées ou non)
   PREVALIDATOR // Accès prévalidation (filtrage avant validation finale)
-  GALLERY      // Accès galerie (téléchargement photo par photo)
-  COLLECTION   // Collection multi-sources (plusieurs événements/projets)
+  GALLERY // Accès galerie (téléchargement photo par photo)
+  COLLECTION // Collection multi-sources (plusieurs événements/projets)
 }
 
 enum MediaJobStatus {
@@ -749,8 +783,8 @@ model MediaEvent {
   planningEvent   Event?  @relation(fields: [planningEventId], references: [id], onDelete: SetNull)
 
   // Multi-tenant
-  churchId    String
-  church      Church @relation(fields: [churchId], references: [id])
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id])
 
   // Créateur (utilisateur Koinonia)
   createdById String
@@ -777,8 +811,8 @@ model MediaProject {
   name        String  @db.VarChar(255)
   description String? @db.Text
 
-  churchId    String
-  church      Church @relation(fields: [churchId], references: [id])
+  churchId String
+  church   Church @relation(fields: [churchId], references: [id])
 
   createdById String
   createdBy   User   @relation("MediaProjectCreator", fields: [createdById], references: [id])
@@ -796,11 +830,11 @@ model MediaProject {
 
 /// Photo associée à un événement média.
 model MediaPhoto {
-  id           String           @id @default(cuid())
-  filename     String           @db.VarChar(255)
-  originalKey  String           @db.VarChar(512)
-  thumbnailKey String           @db.VarChar(512)
-  mimeType     String           @db.VarChar(100)
+  id           String @id @default(cuid())
+  filename     String @db.VarChar(255)
+  originalKey  String @db.VarChar(512)
+  thumbnailKey String @db.VarChar(512)
+  mimeType     String @db.VarChar(100)
   size         Int
   width        Int?
   height       Int?
@@ -830,7 +864,7 @@ model MediaFile {
   size     Int
   width    Int?
   height   Int?
-  duration Int?            // Durée en secondes (vidéos)
+  duration Int? // Durée en secondes (vidéos)
 
   scheduledDeletionAt DateTime?
 
@@ -856,10 +890,10 @@ model MediaFile {
 
 /// Version d'un fichier média.
 model MediaFileVersion {
-  id            String @id @default(cuid())
-  versionNumber Int    @default(1)
-  originalKey   String @db.VarChar(512)
-  thumbnailKey  String @db.VarChar(512)
+  id            String  @id @default(cuid())
+  versionNumber Int     @default(1)
+  originalKey   String  @db.VarChar(512)
+  thumbnailKey  String  @db.VarChar(512)
   notes         String? @db.Text
 
   mediaFileId String
@@ -952,13 +986,13 @@ model MediaZipJob {
 
 /// Paramètres du module média par église (logo, favicon, rétention).
 model MediaSettings {
-  id              String   @id @default(cuid())
-  churchId        String   @unique
-  logoKey         String?  @db.VarChar(512)
-  faviconKey      String?  @db.VarChar(512)
-  logoFilename    String?  @db.VarChar(255)
-  faviconFilename String?  @db.VarChar(255)
-  retentionDays   Int      @default(30)
+  id              String  @id @default(cuid())
+  churchId        String  @unique
+  logoKey         String? @db.VarChar(512)
+  faviconKey      String? @db.VarChar(512)
+  logoFilename    String? @db.VarChar(255)
+  faviconFilename String? @db.VarChar(255)
+  retentionDays   Int     @default(30)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -997,12 +1031,12 @@ model PastoralProfile {
   userId    String?
   createdAt DateTime     @default(now())
 
-  church               Church               @relation("ChurchPastoralProfiles", fields: [churchId], references: [id])
-  user                 User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
-  entries              AgendaEntry[]
-  requests             AppointmentRequest[]
-  responsibleForChurch Church?              @relation("ChurchResponsibleProfile")
-  supervisorForChurches Church[]            @relation("ChurchSupervisorProfile")
+  church                Church               @relation("ChurchPastoralProfiles", fields: [churchId], references: [id])
+  user                  User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
+  entries               AgendaEntry[]
+  requests              AppointmentRequest[]
+  responsibleForChurch  Church?              @relation("ChurchResponsibleProfile")
+  supervisorForChurches Church[]             @relation("ChurchSupervisorProfile")
 
   @@map("pastoral_profiles")
 }
@@ -1030,13 +1064,13 @@ model AppointmentRequest {
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
 
-  church      Church           @relation(fields: [churchId], references: [id])
-  user        User?            @relation("AppointmentRequester", fields: [userId], references: [id])
-  assignedTo  PastoralProfile? @relation(fields: [assignedToId], references: [id])
-  qualifiedBy User?            @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
-  scheduledBy User?            @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
-  updatedBy   User?            @relation("AppointmentUpdater", fields: [updatedById], references: [id])
-  agendaEntry AgendaEntry?
+  church                   Church                    @relation(fields: [churchId], references: [id])
+  user                     User?                     @relation("AppointmentRequester", fields: [userId], references: [id])
+  assignedTo               PastoralProfile?          @relation(fields: [assignedToId], references: [id])
+  qualifiedBy              User?                     @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
+  scheduledBy              User?                     @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
+  updatedBy                User?                     @relation("AppointmentUpdater", fields: [updatedById], references: [id])
+  agendaEntry              AgendaEntry?
   familyIntegrationRequest FamilyIntegrationRequest? @relation("IntegrationAppointment")
 
   @@index([churchId, status, createdAt])
@@ -1073,25 +1107,25 @@ model AgendaEntry {
 // ─── Module Intégration Familles ─────────────────────────────────────────────
 
 enum FamilyIntegrationStatus {
-  SUBMITTED       // Demande soumise
-  ASSIGNED        // Famille affectée (auto ou manuelle)
-  CONTACTED       // Berger a pris contact
-  WHATSAPP_ADDED  // Ajouté au groupe WhatsApp
-  INTEGRATED      // Intégration terminée (clôturé)
-  ABANDONED       // Abandonné
+  SUBMITTED // Demande soumise
+  ASSIGNED // Famille affectée (auto ou manuelle)
+  CONTACTED // Berger a pris contact
+  WHATSAPP_ADDED // Ajouté au groupe WhatsApp
+  INTEGRATED // Intégration terminée (clôturé)
+  ABANDONED // Abandonné
 }
 
 enum FamilyAgeRange {
-  YOUTH        // Moins de 18 ans → Famille d'impact jeunes
-  YOUNG_ADULT  // 18–30 ans
-  ADULT        // 30–60 ans
-  SENIOR       // 60 ans et plus
+  YOUTH // Moins de 18 ans → Famille d'impact jeunes
+  YOUNG_ADULT // 18–30 ans
+  ADULT // 30–60 ans
+  SENIOR // 60 ans et plus
 }
 
 enum FamilyChurchStatus {
-  VISITOR   // Visiteur
-  REGULAR   // Membre régulier
-  ENGAGED   // Membre engagé
+  VISITOR // Visiteur
+  REGULAR // Membre régulier
+  ENGAGED // Membre engagé
 }
 
 enum FamilyLeaderRole {
@@ -1105,15 +1139,15 @@ model FamilyIntegrationRequest {
   churchId String
 
   // Informations personnelles
-  firstName  String  @db.VarChar(100)
-  lastName   String  @db.VarChar(100)
-  email      String? @db.VarChar(255)
-  phone      String? @db.VarChar(30)
-  address    String? @db.VarChar(500)
-  city       String? @db.VarChar(100)
-  lat        Float?
-  lng        Float?
-  ageRange   FamilyAgeRange
+  firstName    String             @db.VarChar(100)
+  lastName     String             @db.VarChar(100)
+  email        String?            @db.VarChar(255)
+  phone        String?            @db.VarChar(30)
+  address      String?            @db.VarChar(500)
+  city         String?            @db.VarChar(100)
+  lat          Float?
+  lng          Float?
+  ageRange     FamilyAgeRange
   churchStatus FamilyChurchStatus @default(VISITOR)
 
   // Lien optionnel vers un membre Koinonia existant
@@ -1125,32 +1159,32 @@ model FamilyIntegrationRequest {
 
   // Événement (culte) lié — pour corrélation avec les comptes rendus
   eventId String?
-  event   Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
   // Demande de soin pastoral
-  pastoralCareRequested  Boolean  @default(false)
-  appointmentRequestId   String?  @unique
-  appointmentRequest     AppointmentRequest? @relation("IntegrationAppointment", fields: [appointmentRequestId], references: [id], onDelete: SetNull)
+  pastoralCareRequested Boolean             @default(false)
+  appointmentRequestId  String?             @unique
+  appointmentRequest    AppointmentRequest? @relation("IntegrationAppointment", fields: [appointmentRequestId], references: [id], onDelete: SetNull)
 
   // Affectation famille (référentiel externe familles.iccrennes.fr)
-  suggestedFamilyId   Int?     // Suggestion auto via point-in-polygon
-  suggestedFamilyName String?  @db.VarChar(100)
-  assignedFamilyId    Int?     // Famille confirmée
-  assignedFamilyName  String?  @db.VarChar(100)
+  suggestedFamilyId   Int? // Suggestion auto via point-in-polygon
+  suggestedFamilyName String? @db.VarChar(100)
+  assignedFamilyId    Int? // Famille confirmée
+  assignedFamilyName  String? @db.VarChar(100)
 
   // Berger assigné (notifié à l'affectation)
   assignedBergerId String?
   assignedBerger   User?   @relation("IntegrationAssignedBerger", fields: [assignedBergerId], references: [id], onDelete: SetNull)
 
   // Statut et timestamps de workflow
-  status           FamilyIntegrationStatus @default(SUBMITTED)
-  submittedAt      DateTime  @default(now())
-  assignedAt       DateTime?
-  contactedAt      DateTime?
-  whatsappAddedAt  DateTime?
-  integratedAt     DateTime?
-  abandonedAt      DateTime?
-  abandonReason    String?   @db.VarChar(500)
+  status          FamilyIntegrationStatus @default(SUBMITTED)
+  submittedAt     DateTime                @default(now())
+  assignedAt      DateTime?
+  contactedAt     DateTime?
+  whatsappAddedAt DateTime?
+  integratedAt    DateTime?
+  abandonedAt     DateTime?
+  abandonReason   String?                 @db.VarChar(500)
 
   // Notes internes (équipe intégration)
   notes String? @db.Text
@@ -1179,11 +1213,11 @@ model FamilyIntegrationRequest {
 }
 
 enum MsdpStatus {
-  SUBMITTED     // Appel reçu, en attente d'assignation
-  ASSIGNED      // Conseiller MSDP assigné
-  CONTACTED     // Premier contact établi
-  IN_FORMATION  // Intégré à la formation nouveaux convertis (PCNC)
-  COMPLETED     // Suivi terminé
+  SUBMITTED // Appel reçu, en attente d'assignation
+  ASSIGNED // Conseiller MSDP assigné
+  CONTACTED // Premier contact établi
+  IN_FORMATION // Intégré à la formation nouveaux convertis (PCNC)
+  COMPLETED // Suivi terminé
   ABANDONED
 }
 
@@ -1202,7 +1236,7 @@ model MsdpFollowUp {
 
   // Conseiller MSDP assigné (membre du département MSDP)
   assignedConseillerMsdpId String?
-  assignedConseillerMsdp   User? @relation("MsdpAssignedConseiller", fields: [assignedConseillerMsdpId], references: [id], onDelete: SetNull)
+  assignedConseillerMsdp   User?   @relation("MsdpAssignedConseiller", fields: [assignedConseillerMsdpId], references: [id], onDelete: SetNull)
 
   // Timestamps pour KPIs délais
   assignedAt    DateTime?
@@ -1277,21 +1311,21 @@ model PersonJourney {
 // ─── Module Comptabilité ──────────────────────────────────────────────────────
 
 enum FinancialRequestType {
-  EXPENSE_REPORT  // Note de frais — dépense déjà effectuée
-  BUDGET_ADVANCE  // Avance de budget — dépense à venir
+  EXPENSE_REPORT // Note de frais — dépense déjà effectuée
+  BUDGET_ADVANCE // Avance de budget — dépense à venir
 }
 
 enum FinancialRequestStatus {
-  SUBMITTED   // Soumise, en attente de traitement
-  PROCESSING  // En cours de traitement par la compta
-  APPROVED    // Validée, plan de paiement défini
-  REJECTED    // Rejetée (motif obligatoire)
-  CANCELLED   // Annulée par le demandeur (seulement si SUBMITTED)
+  SUBMITTED // Soumise, en attente de traitement
+  PROCESSING // En cours de traitement par la compta
+  APPROVED // Validée, plan de paiement défini
+  REJECTED // Rejetée (motif obligatoire)
+  CANCELLED // Annulée par le demandeur (seulement si SUBMITTED)
 }
 
 enum FinancialPriority {
-  URGENT  // Délai de traitement engagé par la compta
-  NORMAL  // Traitée dans les meilleurs délais
+  URGENT // Délai de traitement engagé par la compta
+  NORMAL // Traitée dans les meilleurs délais
 }
 
 enum RecurrenceUnit {
@@ -1308,23 +1342,23 @@ enum SeriesStatus {
 /// Série de demandes récurrentes (avances de budget uniquement).
 /// Chaque occurrence est un FinancialRequest indépendant lié à cette série.
 model FinancialSeries {
-  id                 String         @id @default(cuid())
+  id                 String               @id @default(cuid())
   churchId           String
   departmentId       String
   submittedById      String
   type               FinancialRequestType
-  label              String         @db.VarChar(200)
-  description        String?        @db.Text
-  amount             Decimal        @db.Decimal(10, 2)
+  label              String               @db.VarChar(200)
+  description        String?              @db.Text
+  amount             Decimal              @db.Decimal(10, 2)
   recurrenceEvery    Int
   recurrenceUnit     RecurrenceUnit
-  status             SeriesStatus   @default(ACTIVE)
+  status             SeriesStatus         @default(ACTIVE)
   nextOccurrenceDate DateTime
 
-  church       Church      @relation(fields: [churchId], references: [id])
-  department   Department  @relation(fields: [departmentId], references: [id])
-  submittedBy  User        @relation("FinancialSeriesSubmitter", fields: [submittedById], references: [id])
-  requests     FinancialRequest[]
+  church      Church             @relation(fields: [churchId], references: [id])
+  department  Department         @relation(fields: [departmentId], references: [id])
+  submittedBy User               @relation("FinancialSeriesSubmitter", fields: [submittedById], references: [id])
+  requests    FinancialRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1338,11 +1372,11 @@ model FinancialSeries {
 model FinancialRequest {
   id               String                 @id @default(cuid())
   churchId         String
-  departmentId     String?                // null = note de frais personnelle (sans département)
+  departmentId     String? // null = note de frais personnelle (sans département)
   submittedById    String
-  seriesId         String?                // null si demande one-shot
-  occurrenceNumber Int?                   // rang dans la série
-  correctionOfId   String?                // référence à la demande rejetée corrigée
+  seriesId         String? // null si demande one-shot
+  occurrenceNumber Int? // rang dans la série
+  correctionOfId   String? // référence à la demande rejetée corrigée
   type             FinancialRequestType
   label            String                 @db.VarChar(200)
   description      String?                @db.Text
@@ -1354,13 +1388,13 @@ model FinancialRequest {
   processedById    String?
   processedAt      DateTime?
 
-  church       Church            @relation(fields: [churchId], references: [id])
-  department   Department?       @relation(fields: [departmentId], references: [id])
-  submittedBy  User              @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
-  processedBy  User?             @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
-  series       FinancialSeries?  @relation(fields: [seriesId], references: [id])
-  correctionOf FinancialRequest? @relation("RequestCorrections", fields: [correctionOfId], references: [id])
-  corrections  FinancialRequest[] @relation("RequestCorrections")
+  church       Church                @relation(fields: [churchId], references: [id])
+  department   Department?           @relation(fields: [departmentId], references: [id])
+  submittedBy  User                  @relation("FinancialRequestSubmitter", fields: [submittedById], references: [id])
+  processedBy  User?                 @relation("FinancialRequestProcessor", fields: [processedById], references: [id])
+  series       FinancialSeries?      @relation(fields: [seriesId], references: [id])
+  correctionOf FinancialRequest?     @relation("RequestCorrections", fields: [correctionOfId], references: [id])
+  corrections  FinancialRequest[]    @relation("RequestCorrections")
   attachments  FinancialAttachment[]
   payments     FinancialPayment[]
 
@@ -1376,17 +1410,17 @@ model FinancialRequest {
 
 /// Pièce jointe d'une demande financière (photo de reçu, PDF devis…).
 model FinancialAttachment {
-  id          String            @id @default(cuid())
-  requestId   String?
+  id           String  @id @default(cuid())
+  requestId    String?
   uploadedById String?
-  s3Key       String            @db.VarChar(512)
-  filename    String            @db.VarChar(255)
-  mimeType    String            @db.VarChar(100)
-  size        Int
+  s3Key        String  @db.VarChar(512)
+  filename     String  @db.VarChar(255)
+  mimeType     String  @db.VarChar(100)
+  size         Int
 
-  request      FinancialRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  uploadedBy   User?             @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
-  uploadedAt   DateTime          @default(now())
+  request    FinancialRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploadedBy User?             @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
+  uploadedAt DateTime          @default(now())
 
   @@index([requestId])
   @@map("financial_attachments")
@@ -1395,14 +1429,14 @@ model FinancialAttachment {
 /// Tranche de paiement d'une demande validée.
 /// La compta crée 1..N tranches lors de la validation, puis confirme chaque remise.
 model FinancialPayment {
-  id            String    @id @default(cuid())
-  requestId     String
-  amount        Decimal   @db.Decimal(10, 2)
-  scheduledDate DateTime
-  releasedAt     DateTime?   // null = pas encore versé
-  releasedAmount Decimal?    @db.Decimal(10, 2)  // montant effectivement remis (peut être < amount)
-  releasedById   String?     // comptable ayant confirmé la remise
-  note           String?     @db.VarChar(500)
+  id             String    @id @default(cuid())
+  requestId      String
+  amount         Decimal   @db.Decimal(10, 2)
+  scheduledDate  DateTime
+  releasedAt     DateTime? // null = pas encore versé
+  releasedAmount Decimal?  @db.Decimal(10, 2) // montant effectivement remis (peut être < amount)
+  releasedById   String? // comptable ayant confirmé la remise
+  note           String?   @db.VarChar(500)
 
   request    FinancialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   releasedBy User?            @relation("FinancialPaymentReleaser", fields: [releasedById], references: [id])
@@ -1419,7 +1453,7 @@ model FinancialPayment {
 model WelcomeDutyFamily {
   id         String   @id @default(cuid())
   churchId   String
-  familyId   Int              // ID dans familles.iccrennes.fr
+  familyId   Int // ID dans familles.iccrennes.fr
   familyName String   @db.VarChar(100)
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
@@ -1488,17 +1522,17 @@ model JobOffer {
 
 /// Préférences de notifications pour les offres d'emploi et profils de recherche.
 model JobNotificationSubscription {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  inApp          Boolean @default(true)
-  email          Boolean @default(false)
-  wantEmploi     Boolean @default(true)
-  wantStage      Boolean @default(true)
-  wantAlternance Boolean @default(true)
-  wantSeekers              Boolean @default(false)
-  wantFreelanceMissions    Boolean @default(false)
-  wantFreelanceProfiles    Boolean @default(false)
-  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  inApp                 Boolean @default(true)
+  email                 Boolean @default(false)
+  wantEmploi            Boolean @default(true)
+  wantStage             Boolean @default(true)
+  wantAlternance        Boolean @default(true)
+  wantSeekers           Boolean @default(false)
+  wantFreelanceMissions Boolean @default(false)
+  wantFreelanceProfiles Boolean @default(false)
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("job_notification_subscriptions")
 }
@@ -1607,7 +1641,7 @@ model FamilyLeaderAssignment {
   id         String           @id @default(cuid())
   churchId   String
   userId     String
-  familyId   Int              // ID dans familles.iccrennes.fr
+  familyId   Int // ID dans familles.iccrennes.fr
   familyName String           @db.VarChar(100)
   role       FamilyLeaderRole
 

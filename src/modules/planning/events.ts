@@ -64,4 +64,24 @@ export type PlanningEvents = {
     /** Payload brut de la Request, pour utilisation par les handlers cross-module. */
     payload: Record<string, unknown>;
   };
+
+  /** Une absence a été déclarée pour un STAR (par lui-même ou son responsable/ministre). */
+  "planning:absence:declared": {
+    absenceId: string;
+    churchId: string;
+    memberId: string;
+    startDate: string;
+    endDate: string;
+    createdById: string;
+    hasConflict: boolean;
+  };
+
+  /** Une absence a été annulée. */
+  "planning:absence:cancelled": {
+    absenceId: string;
+    churchId: string;
+    memberId: string;
+    cancelledById: string;
+    hadConflict: boolean;
+  };
 }

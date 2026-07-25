@@ -38,6 +38,8 @@ describe("Manifestes des modules", () => {
     const permNames = Object.keys(perms).sort();
 
     expect(permNames).toEqual([
+      "absences:manage",
+      "absences:view",
       "church:manage",
       "departments:manage",
       "departments:view",

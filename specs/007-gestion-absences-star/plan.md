@@ -1,7 +1,7 @@
 # Plan technique — Gestion des absences des STAR
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-07-25
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.

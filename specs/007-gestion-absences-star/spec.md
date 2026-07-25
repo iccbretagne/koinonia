@@ -1,7 +1,7 @@
 # Spec — Gestion des absences des STAR
 
 - **Numéro** : 007
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-25
 - **Branche suggérée** : `feat/gestion-absences-star`
 
