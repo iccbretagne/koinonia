@@ -17,14 +17,22 @@ function formatAbsencePeriod(activeAbsence: { startDate: string; endDate: string
   return `Absence déclarée du ${fmt.format(new Date(activeAbsence.startDate))} au ${fmt.format(new Date(activeAbsence.endDate))}`;
 }
 
+function formatAbsencePeriodShort(activeAbsence: { startDate: string; endDate: string }): string {
+  const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
+  return `${fmt.format(new Date(activeAbsence.startDate))}–${fmt.format(new Date(activeAbsence.endDate))}`;
+}
+
+// La période est affichée en texte (pas seulement via `title`) car les tooltips
+// hover ne sont pas accessibles au toucher sur mobile.
 function AbsenceBadge({ activeAbsence }: { activeAbsence: { startDate: string; endDate: string } }) {
   return (
     <span
       title={formatAbsencePeriod(activeAbsence)}
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0"
       aria-label={formatAbsencePeriod(activeAbsence)}
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap"
     >
-      ⚠
+      <span aria-hidden="true">⚠</span>
+      {formatAbsencePeriodShort(activeAbsence)}
     </span>
   );
 }
