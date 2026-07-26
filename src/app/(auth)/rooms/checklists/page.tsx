@@ -27,7 +27,10 @@ export default async function RoomChecklistsPage() {
     where: {
       churchId,
       status: "CONFIRMED",
-      checklist: { status: { in: ["OPENED", "CLOSED_DECLARED", "ISSUE_REPORTED", "VALIDATED"] } },
+      OR: [
+        { checklist: { status: { in: ["OPENED", "CLOSED_DECLARED", "ISSUE_REPORTED", "VALIDATED"] } } },
+        { checklist: { status: "PENDING" }, endAt: { lt: new Date() } },
+      ],
     },
     include: {
       room: { select: { id: true, name: true } },
@@ -58,9 +61,12 @@ export default async function RoomChecklistsPage() {
                 closedAt: r.checklist.closedAt?.toISOString() ?? null,
                 closedProperly: r.checklist.closedProperly,
                 cleaned: r.checklist.cleaned,
+                equipmentOk: r.checklist.equipmentOk,
+                equipmentNotes: r.checklist.equipmentNotes,
                 keyReturnedToName: r.checklist.keyReturnedToName,
                 closingNotes: r.checklist.closingNotes,
                 incidentNotes: r.checklist.incidentNotes,
+                closedWithoutDeclaration: r.checklist.closedWithoutDeclaration,
               }
             : null,
         }))}

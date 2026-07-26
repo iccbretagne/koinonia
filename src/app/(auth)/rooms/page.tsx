@@ -13,6 +13,7 @@ export default async function RoomsPage() {
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const permissions = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
   const canReserve = session.user.isSuperAdmin || permissions.has("rooms:reserve");
+  const canManage = session.user.isSuperAdmin || permissions.has("rooms:manage");
 
   let isControlTeam = session.user.isSuperAdmin || permissions.has("rooms:manage");
   if (!isControlTeam) {
@@ -30,7 +31,12 @@ export default async function RoomsPage() {
           </Link>
         )}
       </div>
-      <RoomsBookingClient churchId={churchId} canReserve={canReserve} />
+      <RoomsBookingClient
+        churchId={churchId}
+        canReserve={canReserve}
+        canManage={canManage}
+        currentUserId={session.user.id}
+      />
     </div>
   );
 }

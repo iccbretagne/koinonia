@@ -1759,6 +1759,8 @@ model RoomChecklist {
   closedAt            DateTime?
   closedProperly      Boolean?
   cleaned             Boolean?
+  equipmentOk         Boolean?
+  equipmentNotes      String?   @db.Text
   keyReturnedToId     String?
   keyReturnedToName   String?
   closingNotes        String?   @db.Text
@@ -1767,7 +1769,10 @@ model RoomChecklist {
   validatedAt             DateTime?
   validatedClosedProperly Boolean?
   validatedCleaned        Boolean?
+  validatedEquipmentOk    Boolean?
   incidentNotes           String?   @db.Text
+
+  closedWithoutDeclaration Boolean @default(false)
 
   reservation     RoomReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
   openedBy        User?           @relation("RoomChecklistOpenedBy", fields: [openedById], references: [id])

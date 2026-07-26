@@ -4,6 +4,7 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
 
 interface Checklist {
@@ -14,9 +15,12 @@ interface Checklist {
   closedAt: string | null;
   closedProperly: boolean | null;
   cleaned: boolean | null;
+  equipmentOk: boolean | null;
+  equipmentNotes: string | null;
   keyReturnedToName: string | null;
   closingNotes: string | null;
   incidentNotes: string | null;
+  closedWithoutDeclaration: boolean;
 }
 
 interface Reservation {
@@ -49,18 +53,37 @@ function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 }
 
+/** Réservation dont l'ouverture/fermeture n'a jamais été déclarée et déjà terminée. */
+function isUndeclaredAndPastDue(r: Reservation): boolean {
+  const status = r.checklist?.status ?? "PENDING";
+  return (status === "PENDING" || status === "OPENED") && new Date(r.endAt) < new Date();
+}
+
 export default function RoomChecklistsClient({ initialReservations }: { initialReservations: Reservation[] }) {
   const [reservations, setReservations] = useState(initialReservations);
   const [target, setTarget] = useState<Reservation | null>(null);
   const [closedProperly, setClosedProperly] = useState(true);
   const [cleaned, setCleaned] = useState(true);
+  const [validatedEquipmentOk, setValidatedEquipmentOk] = useState(true);
   const [incidentNotes, setIncidentNotes] = useState("");
+
+  const [followUpTarget, setFollowUpTarget] = useState<{ reservation: Reservation; mode: "report-issue" | "close-manually" } | null>(null);
+  const [followUpNotes, setFollowUpNotes] = useState("");
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
+  const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
 
   function openControl(reservation: Reservation) {
     setTarget(reservation);
     setClosedProperly(reservation.checklist?.closedProperly ?? true);
     setCleaned(reservation.checklist?.cleaned ?? true);
+    setValidatedEquipmentOk(reservation.checklist?.equipmentOk ?? true);
     setIncidentNotes("");
+  }
+
+  function updateReservationChecklist(id: string, checklist: Partial<Checklist>) {
+    setReservations((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, checklist: { ...(r.checklist as Checklist), ...checklist } } : r))
+    );
   }
 
   async function submitValidation() {
@@ -69,30 +92,51 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        action: "validate",
         validatedClosedProperly: closedProperly,
         validatedCleaned: cleaned,
+        validatedEquipmentOk,
         incidentNotes: incidentNotes || undefined,
       }),
     });
     if (res.ok) {
       const updated = await res.json();
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.id === target.id
-            ? {
-                ...r,
-                checklist: {
-                  ...r.checklist!,
-                  status: updated.status,
-                  validatedClosedProperly: updated.validatedClosedProperly,
-                  validatedCleaned: updated.validatedCleaned,
-                  incidentNotes: updated.incidentNotes,
-                },
-              }
-            : r
-        )
-      );
+      updateReservationChecklist(target.id, updated);
       setTarget(null);
+    }
+  }
+
+  function openFollowUp(reservation: Reservation, mode: "report-issue" | "close-manually") {
+    setFollowUpTarget({ reservation, mode });
+    setFollowUpNotes("");
+    setFollowUpError(null);
+  }
+
+  async function submitFollowUp() {
+    if (!followUpTarget) return;
+    if (followUpTarget.mode === "report-issue" && !followUpNotes.trim()) {
+      setFollowUpError("Merci de décrire l'écart constaté.");
+      return;
+    }
+    setFollowUpError(null);
+    setFollowUpSubmitting(true);
+    try {
+      const body =
+        followUpTarget.mode === "report-issue"
+          ? { action: "report-issue", incidentNotes: followUpNotes.trim() }
+          : { action: "close-manually", notes: followUpNotes.trim() || undefined };
+      const res = await fetch(`/api/room-reservations/${followUpTarget.reservation.id}/checklist/validate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        updateReservationChecklist(followUpTarget.reservation.id, updated);
+        setFollowUpTarget(null);
+      }
+    } finally {
+      setFollowUpSubmitting(false);
     }
   }
 
@@ -117,13 +161,25 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
         ]}
         data={reservations}
         emptyMessage="Aucune main courante à contrôler."
-        actions={(r) =>
-          r.checklist?.status === "CLOSED_DECLARED" ? (
-            <Button size="sm" variant="info" onClick={() => openControl(r)}>
-              Contrôler
-            </Button>
-          ) : null
-        }
+        actions={(r) => (
+          <div className="flex gap-2 justify-end flex-wrap">
+            {r.checklist?.status === "CLOSED_DECLARED" && (
+              <Button size="sm" variant="info" onClick={() => openControl(r)}>
+                Contrôler
+              </Button>
+            )}
+            {isUndeclaredAndPastDue(r) && (
+              <>
+                <Button size="sm" variant="danger" onClick={() => openFollowUp(r, "report-issue")}>
+                  Signaler un écart
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => openFollowUp(r, "close-manually")}>
+                  Clôturer sans déclaration
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       />
 
       <Modal open={!!target} onClose={() => setTarget(null)} title={`Contrôle — ${target?.title ?? ""}`}>
@@ -133,8 +189,10 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
               <p>
                 <span className="font-medium">Déclaré par l&apos;utilisateur :</span>{" "}
                 {target.checklist.closedProperly ? "fermée correctement" : "non fermée correctement"},{" "}
-                {target.checklist.cleaned ? "nettoyée" : "non nettoyée"}
+                {target.checklist.cleaned ? "nettoyée" : "non nettoyée"},{" "}
+                {target.checklist.equipmentOk ? "matériel en bon état" : "problème de matériel signalé"}
               </p>
+              {target.checklist.equipmentNotes && <p>Matériel : {target.checklist.equipmentNotes}</p>}
               {target.checklist.closingNotes && <p>Notes : {target.checklist.closingNotes}</p>}
               {target.checklist.keyReturnedToName && <p>Clés remises à : {target.checklist.keyReturnedToName}</p>}
             </div>
@@ -147,6 +205,14 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
                 <input type="checkbox" checked={cleaned} onChange={(e) => setCleaned(e.target.checked)} />
                 Constaté : salle nettoyée
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={validatedEquipmentOk}
+                  onChange={(e) => setValidatedEquipmentOk(e.target.checked)}
+                />
+                Constaté : salle/matériel en bon état
+              </label>
             </div>
             <Input
               label="Signaler un écart (optionnel)"
@@ -154,14 +220,36 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
               onChange={(e) => setIncidentNotes(e.target.value)}
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setTarget(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
-                Annuler
-              </button>
+              <Button variant="secondary" onClick={() => setTarget(null)}>
+                Retour
+              </Button>
               <Button onClick={submitValidation}>Valider le contrôle</Button>
             </div>
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        open={!!followUpTarget}
+        title={followUpTarget?.mode === "report-issue" ? "Signaler un écart" : "Clôturer sans déclaration"}
+        message={
+          followUpTarget?.mode === "report-issue"
+            ? `La réservation « ${followUpTarget?.reservation.title} » est terminée sans déclaration d'ouverture/fermeture. Décrivez l'écart constaté ; le créateur sera notifié.`
+            : `La réservation « ${followUpTarget?.reservation.title} » est terminée sans déclaration d'ouverture/fermeture. Elle sera clôturée manuellement, sans signalement ni notification.`
+        }
+        confirmLabel={followUpTarget?.mode === "report-issue" ? "Signaler l'écart" : "Clôturer"}
+        variant={followUpTarget?.mode === "report-issue" ? "danger" : "primary"}
+        confirming={followUpSubmitting}
+        onConfirm={submitFollowUp}
+        onCancel={() => setFollowUpTarget(null)}
+      >
+        <Input
+          label={followUpTarget?.mode === "report-issue" ? "Écart constaté" : "Notes (optionnel)"}
+          value={followUpNotes}
+          onChange={(e) => setFollowUpNotes(e.target.value)}
+          error={followUpError ?? undefined}
+        />
+      </ConfirmModal>
     </div>
   );
 }

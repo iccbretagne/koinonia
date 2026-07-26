@@ -21,7 +21,14 @@ export async function isControlTeamMember(departmentIds: string[], db?: DbClient
 async function getReservationOwnership(reservationId: string, db: DbClient) {
   const reservation = await db.roomReservation.findUnique({
     where: { id: reservationId },
-    select: { id: true, churchId: true, title: true, createdById: true, checklist: { select: { id: true, status: true } } },
+    select: {
+      id: true,
+      churchId: true,
+      title: true,
+      createdById: true,
+      endAt: true,
+      checklist: { select: { id: true, status: true } },
+    },
   });
   if (!reservation) throw new ApiError(404, "Réservation introuvable");
   if (!reservation.checklist) throw new ApiError(404, "Main courante introuvable");
@@ -64,6 +71,8 @@ interface DeclareClosingParams {
   userId: string;
   closedProperly: boolean;
   cleaned: boolean;
+  equipmentOk: boolean;
+  equipmentNotes?: string | null;
   keyReturnedToId?: string | null;
   keyReturnedToName?: string | null;
   notes?: string | null;
@@ -71,7 +80,17 @@ interface DeclareClosingParams {
 
 /** Déclare la fermeture d'une réservation. Ownership : `userId === reservation.createdById`. */
 export async function declareClosing(params: DeclareClosingParams): Promise<RoomChecklist> {
-  const { reservationId, userId, closedProperly, cleaned, keyReturnedToId, keyReturnedToName, notes } = params;
+  const {
+    reservationId,
+    userId,
+    closedProperly,
+    cleaned,
+    equipmentOk,
+    equipmentNotes,
+    keyReturnedToId,
+    keyReturnedToName,
+    notes,
+  } = params;
   const { prisma } = await import("@/lib/prisma");
 
   const reservation = await getReservationOwnership(reservationId, prisma);
@@ -87,6 +106,8 @@ export async function declareClosing(params: DeclareClosingParams): Promise<Room
       closedAt: new Date(),
       closedProperly,
       cleaned,
+      equipmentOk,
+      equipmentNotes: equipmentNotes ?? null,
       keyReturnedToId: keyReturnedToId ?? null,
       keyReturnedToName: keyReturnedToName ?? null,
       closingNotes: notes ?? null,
@@ -99,6 +120,7 @@ interface ValidateChecklistParams {
   validatorId: string;
   validatedClosedProperly: boolean;
   validatedCleaned: boolean;
+  validatedEquipmentOk: boolean;
   incidentNotes?: string | null;
 }
 
@@ -107,7 +129,7 @@ interface ValidateChecklistParams {
  * écart (ou `incidentNotes` renseigné) → `ISSUE_REPORTED`, avec notification du créateur.
  */
 export async function validateChecklist(params: ValidateChecklistParams): Promise<RoomChecklist> {
-  const { reservationId, validatorId, validatedClosedProperly, validatedCleaned, incidentNotes } = params;
+  const { reservationId, validatorId, validatedClosedProperly, validatedCleaned, validatedEquipmentOk, incidentNotes } = params;
   const { prisma } = await import("@/lib/prisma");
 
   return prisma.$transaction(async (tx) => {
@@ -118,11 +140,13 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
 
     const declared = await tx.roomChecklist.findUnique({
       where: { reservationId },
-      select: { closedProperly: true, cleaned: true },
+      select: { closedProperly: true, cleaned: true, equipmentOk: true },
     });
 
     const matches =
-      declared?.closedProperly === validatedClosedProperly && declared?.cleaned === validatedCleaned;
+      declared?.closedProperly === validatedClosedProperly &&
+      declared?.cleaned === validatedCleaned &&
+      declared?.equipmentOk === validatedEquipmentOk;
     const hasIssue = !matches || !!incidentNotes;
 
     const updated = await tx.roomChecklist.update({
@@ -133,6 +157,7 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
         validatedAt: new Date(),
         validatedClosedProperly,
         validatedCleaned,
+        validatedEquipmentOk,
         incidentNotes: incidentNotes ?? null,
       },
     });
@@ -150,5 +175,91 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
     }
 
     return updated;
+  });
+}
+
+/** Réservé aux réservations jamais déclarées (ouverture/fermeture) et déjà terminées. */
+function assertUndeclaredAndPastDue(checklistStatus: string, endAt: Date) {
+  if (checklistStatus !== "PENDING" && checklistStatus !== "OPENED") {
+    throw new ApiError(409, "Cette main courante a déjà été déclarée ou contrôlée");
+  }
+  if (endAt > new Date()) {
+    throw new ApiError(409, "Cette réservation n'est pas encore terminée");
+  }
+}
+
+interface ReportIssueWithoutDeclarationParams {
+  reservationId: string;
+  validatorId: string;
+  incidentNotes: string;
+}
+
+/**
+ * Signale un écart sur une réservation passée dont l'ouverture ou la fermeture n'a jamais été
+ * déclarée — contourne le parcours normal (déclaration puis contrôle).
+ */
+export async function reportIssueWithoutDeclaration(
+  params: ReportIssueWithoutDeclarationParams
+): Promise<RoomChecklist> {
+  const { reservationId, validatorId, incidentNotes } = params;
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma.$transaction(async (tx) => {
+    const reservation = await getReservationOwnership(reservationId, tx);
+    assertUndeclaredAndPastDue(reservation.checklist.status, reservation.endAt);
+
+    const updated = await tx.roomChecklist.update({
+      where: { reservationId },
+      data: {
+        status: "ISSUE_REPORTED",
+        validatedById: validatorId,
+        validatedAt: new Date(),
+        incidentNotes,
+        closedWithoutDeclaration: true,
+      },
+    });
+
+    await tx.notification.create({
+      data: {
+        userId: reservation.createdById,
+        type: "ROOM_CHECKLIST_ISSUE",
+        title: "Écart constaté sur une salle",
+        message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} », dont la main courante n'avait pas été déclarée.`,
+        link: "/rooms",
+      },
+    });
+
+    return updated;
+  });
+}
+
+interface CloseWithoutDeclarationParams {
+  reservationId: string;
+  validatorId: string;
+  notes?: string | null;
+}
+
+/**
+ * Clôture manuellement une réservation passée dont la main courante n'a jamais été déclarée,
+ * sans signalement d'écart ni notification.
+ */
+export async function closeWithoutDeclaration(params: CloseWithoutDeclarationParams): Promise<RoomChecklist> {
+  const { reservationId, validatorId, notes } = params;
+  const { prisma } = await import("@/lib/prisma");
+
+  return prisma.$transaction(async (tx) => {
+    const reservation = await getReservationOwnership(reservationId, tx);
+    assertUndeclaredAndPastDue(reservation.checklist.status, reservation.endAt);
+
+    return tx.roomChecklist.update({
+      where: { reservationId },
+      data: {
+        status: "VALIDATED",
+        validatedById: validatorId,
+        validatedAt: new Date(),
+        incidentNotes: notes ?? null,
+        closedWithoutDeclaration: true,
+      },
+    });
   });
 }

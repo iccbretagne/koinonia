@@ -1,18 +1,37 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { validateChecklist, isControlTeamMember } from "@/modules/rooms";
+import {
+  validateChecklist,
+  reportIssueWithoutDeclaration,
+  closeWithoutDeclaration,
+  isControlTeamMember,
+} from "@/modules/rooms";
 import { z } from "zod";
 
-const bodySchema = z.object({
-  validatedClosedProperly: z.boolean(),
-  validatedCleaned: z.boolean(),
-  incidentNotes: z.string().max(1000).optional(),
-});
+const bodySchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("validate"),
+    validatedClosedProperly: z.boolean(),
+    validatedCleaned: z.boolean(),
+    validatedEquipmentOk: z.boolean(),
+    incidentNotes: z.string().max(1000).optional(),
+  }),
+  z.object({
+    action: z.literal("report-issue"),
+    incidentNotes: z.string().min(1).max(1000),
+  }),
+  z.object({
+    action: z.literal("close-manually"),
+    notes: z.string().max(1000).optional(),
+  }),
+]);
 
 /**
- * PATCH /api/room-reservations/[id]/checklist/validate — contrôle une main courante déclarée
- * fermée. Réservé à l'équipe dédiée (fonction de département SECURITE/ENTRETIEN) ou `rooms:manage`.
+ * PATCH /api/room-reservations/[id]/checklist/validate — contrôle une main courante (fermeture
+ * déclarée), ou traite une réservation passée jamais déclarée (signalement d'écart ou clôture
+ * manuelle). Réservé à l'équipe dédiée (fonction de département SECURITE/ENTRETIEN) ou
+ * `rooms:manage`.
  */
 export async function PATCH(
   request: Request,
@@ -45,14 +64,33 @@ export async function PATCH(
     }
 
     const data = bodySchema.parse(await request.json());
-    const checklist = await validateChecklist({
+
+    if (data.action === "validate") {
+      const checklist = await validateChecklist({
+        reservationId: id,
+        validatorId: session.user.id,
+        validatedClosedProperly: data.validatedClosedProperly,
+        validatedCleaned: data.validatedCleaned,
+        validatedEquipmentOk: data.validatedEquipmentOk,
+        incidentNotes: data.incidentNotes,
+      });
+      return successResponse(checklist);
+    }
+
+    if (data.action === "report-issue") {
+      const checklist = await reportIssueWithoutDeclaration({
+        reservationId: id,
+        validatorId: session.user.id,
+        incidentNotes: data.incidentNotes,
+      });
+      return successResponse(checklist);
+    }
+
+    const checklist = await closeWithoutDeclaration({
       reservationId: id,
       validatorId: session.user.id,
-      validatedClosedProperly: data.validatedClosedProperly,
-      validatedCleaned: data.validatedCleaned,
-      incidentNotes: data.incidentNotes,
+      notes: data.notes,
     });
-
     return successResponse(checklist);
   } catch (error) {
     return errorResponse(error);

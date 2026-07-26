@@ -8,7 +8,14 @@ export {
   generateRoomRecurrenceDates,
 } from "./services/reservation.service";
 export type { CreateReservationResult } from "./services/reservation.service";
-export { declareOpening, declareClosing, validateChecklist, isControlTeamMember } from "./services/checklist.service";
+export {
+  declareOpening,
+  declareClosing,
+  validateChecklist,
+  reportIssueWithoutDeclaration,
+  closeWithoutDeclaration,
+  isControlTeamMember,
+} from "./services/checklist.service";
 
 /**
  * Module rooms — réservation de salles et main courante.
