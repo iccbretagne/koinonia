@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { rolePermissions, registry } from "@/lib/registry";
+import { rolePermissions } from "@/lib/registry";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
@@ -16,6 +16,7 @@ const configLinksDef = [
   { href: "/admin/ministries",            label: "Ministères",        permissions: ["departments:manage"] },
   { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
+  { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
   // Personnes
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
@@ -336,22 +337,6 @@ export default async function AuthLayout({
     </footer>
   );
 
-  // STAR "pur" : uniquement des rôles STAR dans l'église courante (hors super admin / pastoral)
-  const churchRolesInCurrentChurch = churchRoles.filter((r) => r.churchId === currentChurchId);
-  const isStarOnly =
-    !session.user.isSuperAdmin &&
-    !isPastoral &&
-    churchRolesInCurrentChurch.length > 0 &&
-    churchRolesInCurrentChurch.every((r) => r.role === "STAR");
-
-  // ── Module MRBS (optionnel) — masqué pour le STAR "pur" ──────────────────
-  const mrbsUrl =
-    registry.has("mrbs") && !isStarOnly ? (process.env.MRBS_URL ?? null) : null;
-  const mrbsAdminLink =
-    registry.has("mrbs") && userPermissions.has("mrbs:manage")
-      ? "/admin/mrbs-links"
-      : null;
-
   const famillesUrl = process.env.FAMILLES_URL ?? "https://familles.iccrennes.fr";
 
   const hasDiscipleship = userPermissions.has("discipleship:view");
@@ -363,6 +348,7 @@ export default async function AuthLayout({
   const hasPlanningAccess = userPermissions.has("planning:view");
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
+  const hasRooms = userPermissions.has("rooms:view");
   // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
   // section Événements existante (Liste/Calendrier), réservée à events:view.
   const showStarEvents = hasPlanningAccess && !hasEventsAccess;
@@ -391,8 +377,6 @@ export default async function AuthLayout({
       mediaLinks={mediaLinks}
       agendaLinks={agendaLinks}
       integrationLinks={integrationLinks}
-      mrbsUrl={mrbsUrl}
-      mrbsAdminLink={mrbsAdminLink}
       famillesUrl={famillesUrl}
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}
@@ -407,6 +391,7 @@ export default async function AuthLayout({
       hasMyPlanning={hasMyPlanning}
       showStarEvents={showStarEvents}
       hasAbsences={hasAbsences}
+      hasRooms={hasRooms}
       userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT"}
       headerColor={churchPrimaryColor}
       header={headerContent}

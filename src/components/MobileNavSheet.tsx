@@ -13,8 +13,6 @@ interface MobileNavSheetProps {
   mediaLinks: { href: string; label: string }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
-  mrbsUrl?: string | null;
-  mrbsAdminLink?: string | null;
   famillesUrl?: string | null;
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
@@ -25,6 +23,7 @@ interface MobileNavSheetProps {
   hasMyPlanning?: boolean;
   showStarEvents?: boolean;
   hasAbsences?: boolean;
+  hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -248,8 +247,6 @@ export default function MobileNavSheet({
   mediaLinks,
   agendaLinks = [],
   integrationLinks = [],
-  mrbsUrl = null,
-  mrbsAdminLink = null,
   famillesUrl = null,
   hasDiscipleship = false,
   hasEventsAccess = true,
@@ -259,6 +256,7 @@ export default function MobileNavSheet({
   hasReports = false,
   hasMyPlanning = false,
   hasAbsences = false,
+  hasRooms = false,
   showStarEvents = false,
   hasAccounting = false,
   hasJobs = false,
@@ -309,7 +307,7 @@ export default function MobileNavSheet({
   const isIntegrationActive = pathname.startsWith("/integration");
   const isAccountingActive = pathname.startsWith("/accounting");
   const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
-  const isMrbsActive = pathname.startsWith("/admin/mrbs");
+  const isRoomsActive = pathname.startsWith("/rooms");
   const isConfigActive =
     pathname.startsWith("/admin") &&
     !pathname.startsWith("/admin/events") &&
@@ -326,12 +324,12 @@ export default function MobileNavSheet({
   const isEvenementsActive = isEventsActive;
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
-  const isRessourcesActive = isAccountingActive || isJobsActive || isMrbsActive;
+  const isRessourcesActive = isAccountingActive || isJobsActive || isRoomsActive;
 
   const hasCommunaute =
     hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
   const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0;
-  const hasRessources = !!(mrbsUrl || mrbsAdminLink || hasAccounting || hasJobs);
+  const hasRessources = !!(hasRooms || hasAccounting || hasJobs);
 
   /* ── Views ── */
 
@@ -630,19 +628,16 @@ export default function MobileNavSheet({
       <>
         <SheetSubHeader title="Ressources" onBack={() => setView("root")} />
         <div>
-          {mrbsUrl && <ExternalSubRow href={mrbsUrl} label="Réserver une salle ↗" />}
-          {mrbsAdminLink && (
-            <SubRow href={mrbsAdminLink} label="Liaison comptes" isActive={pathname.startsWith(mrbsAdminLink)} onClose={onClose} />
-          )}
+          {hasRooms && <SubRow href="/rooms" label="Salles" isActive={isRoomsActive} onClose={onClose} />}
           {hasAccounting && (
             <>
-              {(mrbsUrl || mrbsAdminLink) && <SubDivider />}
+              {hasRooms && <SubDivider />}
               <SubRow href="/accounting/requests" label="Comptabilité" isActive={isAccountingActive} onClose={onClose} />
             </>
           )}
           {hasJobs && (
             <>
-              {(mrbsUrl || mrbsAdminLink || hasAccounting) && <SubDivider />}
+              {(hasRooms || hasAccounting) && <SubDivider />}
               <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
               {hasJobsManage && (
                 <SubRow href="/admin/jobs" label="Modération offres" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />

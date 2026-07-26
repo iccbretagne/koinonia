@@ -12,6 +12,8 @@ export const DEPT_FN = {
   PRODUCTION_MEDIA: "PRODUCTION_MEDIA",
   PROTOCOLE: "PROTOCOLE",
   INTEGRATION: "INTEGRATION",
+  SECURITE: "SECURITE",
+  ENTRETIEN: "ENTRETIEN",
 } as const;
 
 export type SystemFunction = (typeof DEPT_FN)[keyof typeof DEPT_FN];
@@ -45,6 +47,16 @@ export const SYSTEM_FUNCTIONS: {
     key: DEPT_FN.INTEGRATION,
     label: "Intégration",
     description: "Traite les demandes d'intégration dans les familles d'impact",
+  },
+  {
+    key: DEPT_FN.SECURITE,
+    label: "Sécurité",
+    description: "Contrôle les mains courantes de réservation de salles",
+  },
+  {
+    key: DEPT_FN.ENTRETIEN,
+    label: "Entretien",
+    description: "Contrôle les mains courantes de réservation de salles",
   },
 ];
 

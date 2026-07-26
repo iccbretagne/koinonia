@@ -9,6 +9,7 @@ import { agendaModule } from "@/modules/agenda";
 import { integrationModule } from "@/modules/integration";
 import { accountingModule } from "@/modules/accounting";
 import { jobsModule } from "@/modules/jobs";
+import { roomsModule } from "@/modules/rooms";
 
 /**
  * Registry singleton — chargé une fois au démarrage du process.
@@ -16,8 +17,13 @@ import { jobsModule } from "@/modules/jobs";
  * Contient tous les modules activés selon ENABLED_MODULES (ou tous si absent).
  * Source de vérité pour les permissions dans les contrôles d'accès API.
  */
+// L'ordre du tableau n'a pas de portée sémantique (le vrai ordre de chargement est
+// résolu par tri topologique dans boot()) mais `roomsModule` doit rester avant
+// `integrationModule` : dans l'ordre inverse, le build Turbopack production échoue
+// (ReferenceError "Cannot access 'c' before initialization" lors du bundling de
+// integrationModule — bug de chunking Turbopack, cf. Next.js 16.2.6).
 export const registry = boot({
-  modules: [coreModule, planningModule, discipleshipModule, mediaModule, mrbsModule, agendaModule, integrationModule, accountingModule, jobsModule],
+  modules: [coreModule, planningModule, discipleshipModule, mediaModule, mrbsModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule],
 });
 
 /**

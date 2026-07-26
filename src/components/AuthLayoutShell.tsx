@@ -26,8 +26,6 @@ interface AuthLayoutShellProps {
   mediaLinks: { href: string; label: string }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
-  mrbsUrl?: string | null;
-  mrbsAdminLink?: string | null;
   famillesUrl?: string | null;
   hasDiscipleship: boolean;
   hasEventsAccess: boolean;
@@ -38,6 +36,7 @@ interface AuthLayoutShellProps {
   hasMyPlanning?: boolean;
   showStarEvents?: boolean;
   hasAbsences?: boolean;
+  hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -65,8 +64,6 @@ export default function AuthLayoutShell({
   mediaLinks,
   agendaLinks = [],
   integrationLinks = [],
-  mrbsUrl = null,
-  mrbsAdminLink = null,
   famillesUrl = null,
   hasDiscipleship,
   hasEventsAccess,
@@ -77,6 +74,7 @@ export default function AuthLayoutShell({
   hasMyPlanning = false,
   showStarEvents = false,
   hasAbsences = false,
+  hasRooms = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -133,8 +131,6 @@ export default function AuthLayoutShell({
             mediaLinks={mediaLinks}
             agendaLinks={agendaLinks}
             integrationLinks={integrationLinks}
-            mrbsUrl={mrbsUrl}
-            mrbsAdminLink={mrbsAdminLink}
             famillesUrl={famillesUrl}
             hasDiscipleship={hasDiscipleship}
             hasEventsAccess={hasEventsAccess}
@@ -145,6 +141,7 @@ export default function AuthLayoutShell({
             hasMyPlanning={hasMyPlanning}
             showStarEvents={showStarEvents}
             hasAbsences={hasAbsences}
+            hasRooms={hasRooms}
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
             hasJobsManage={hasJobsManage}
@@ -161,8 +158,6 @@ export default function AuthLayoutShell({
           mediaLinks={mediaLinks}
           agendaLinks={agendaLinks}
           integrationLinks={integrationLinks}
-          mrbsUrl={mrbsUrl}
-          mrbsAdminLink={mrbsAdminLink}
           famillesUrl={famillesUrl}
           hasDiscipleship={hasDiscipleship}
           hasEventsAccess={hasEventsAccess}
@@ -173,6 +168,7 @@ export default function AuthLayoutShell({
           hasMyPlanning={hasMyPlanning}
           showStarEvents={showStarEvents}
           hasAbsences={hasAbsences}
+          hasRooms={hasRooms}
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
           hasJobsManage={hasJobsManage}
