@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
@@ -71,6 +72,25 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [followUpError, setFollowUpError] = useState<string | null>(null);
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
+
+  const [filterRoomId, setFilterRoomId] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
+  const roomOptions = useMemo(() => {
+    const rooms = new Map<string, string>();
+    for (const r of reservations) rooms.set(r.room.id, r.room.name);
+    return Array.from(rooms, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [reservations]);
+
+  const displayedReservations = useMemo(() => {
+    let list = reservations;
+    if (filterRoomId) list = list.filter((r) => r.room.id === filterRoomId);
+    if (filterStatus) list = list.filter((r) => (r.checklist?.status ?? "PENDING") === filterStatus);
+    return [...list].sort((a, b) =>
+      sortOrder === "asc" ? a.startAt.localeCompare(b.startAt) : b.startAt.localeCompare(a.startAt)
+    );
+  }, [reservations, filterRoomId, filterStatus, sortOrder]);
 
   function openControl(reservation: Reservation) {
     setTarget(reservation);
@@ -142,6 +162,38 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
 
   return (
     <div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="w-full sm:w-56">
+          <Select
+            label="Filtrer par salle"
+            value={filterRoomId}
+            onChange={(e) => setFilterRoomId(e.target.value)}
+            placeholder="Toutes les salles"
+            options={roomOptions}
+          />
+        </div>
+        <div className="w-full sm:w-64">
+          <Select
+            label="Filtrer par statut de main courante"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            placeholder="Tous les statuts"
+            options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+          />
+        </div>
+        <div className="w-full sm:w-48">
+          <Select
+            label="Trier par date"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+            options={[
+              { value: "desc", label: "Plus récentes d'abord" },
+              { value: "asc", label: "Plus anciennes d'abord" },
+            ]}
+          />
+        </div>
+      </div>
+
       <DataTable<Reservation>
         columns={[
           { header: "Salle", accessor: (r) => r.room.name },
@@ -159,7 +211,7 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
             ),
           },
         ]}
-        data={reservations}
+        data={displayedReservations}
         emptyMessage="Aucune main courante à contrôler."
         actions={(r) => (
           <div className="flex gap-2 justify-end flex-wrap">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -44,6 +44,15 @@ export default function RoomsAdminClient({
 
   const [accessRoom, setAccessRoom] = useState<Room | null>(null);
   const [newAccessChurch, setNewAccessChurch] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  const displayedRooms = useMemo(() => {
+    let list = rooms;
+    if (statusFilter === "active") list = list.filter((r) => r.isActive);
+    if (statusFilter === "inactive") list = list.filter((r) => !r.isActive);
+    return [...list].sort((a, b) => a.name.localeCompare(b.name));
+  }, [rooms, statusFilter]);
 
   function openCreate() {
     setEditing(null);
@@ -153,7 +162,19 @@ export default function RoomsAdminClient({
 
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+        <div className="w-full sm:w-56">
+          <Select
+            label="Filtrer par statut"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+            options={[
+              { value: "all", label: "Toutes" },
+              { value: "active", label: "Actives" },
+              { value: "inactive", label: "Désactivées" },
+            ]}
+          />
+        </div>
         <Button onClick={openCreate}>Nouvelle salle</Button>
       </div>
 
@@ -181,7 +202,7 @@ export default function RoomsAdminClient({
             ),
           },
         ]}
-        data={rooms}
+        data={displayedRooms}
         emptyMessage="Aucune salle."
         actions={(room) => (
           <div className="flex gap-2 justify-end">
