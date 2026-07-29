@@ -94,6 +94,10 @@ model Church {
   // Module service d'accueil
   welcomeDutyFamilies       WelcomeDutyFamily[]
   welcomeDutyAssignments    WelcomeDutyAssignment[]
+  // Module rooms (réservation de salles)
+  rooms                     Room[]
+  roomAccesses              RoomAccess[]
+  roomReservations          RoomReservation[]
   // Module pastoral
   responsibleProfileId      String?                    @unique
   supervisorProfileId       String?
@@ -176,6 +180,14 @@ model User {
   jobNotificationSubscription       JobNotificationSubscription?
   freelanceMissions                 FreelanceMission[]
   freelanceProfiles                 FreelanceProfile[]
+  // Module rooms (réservation de salles)
+  roomReservationsCreated           RoomReservation[]            @relation("RoomReservationCreatedBy")
+  roomReservationsCancelled         RoomReservation[]            @relation("RoomReservationCancelledBy")
+  roomChecklistsOpened              RoomChecklist[]              @relation("RoomChecklistOpenedBy")
+  roomChecklistsKeyReceivedFrom     RoomChecklist[]              @relation("RoomChecklistKeyReceivedFrom")
+  roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
+  roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
+  roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
@@ -402,6 +414,8 @@ model Event {
   integrationRequests     FamilyIntegrationRequest[]
   // Module service d'accueil
   welcomeDutyAssignments  WelcomeDutyAssignment[]
+  // Module rooms (réservation de salles)
+  roomReservations        RoomReservation[]
 
   @@map("events")
 }
@@ -1653,4 +1667,119 @@ model FamilyLeaderAssignment {
   @@unique([churchId, userId, familyId])
   @@index([churchId, familyId])
   @@map("family_leader_assignments")
+}
+
+// ─── Module Rooms (réservation de salles) ────────────────────────────────────
+
+model Room {
+  id         String   @id @default(cuid())
+  name       String
+  churchId   String
+  capacity   Int?
+  location   String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  church       Church            @relation(fields: [churchId], references: [id])
+  sharedWith   RoomAccess[]
+  reservations RoomReservation[]
+
+  @@index([churchId])
+  @@map("rooms")
+}
+
+model RoomAccess {
+  id       String @id @default(cuid())
+  roomId   String
+  churchId String // église autorisée (autre que la propriétaire)
+
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  church Church @relation(fields: [churchId], references: [id])
+
+  @@unique([roomId, churchId])
+  @@map("room_accesses")
+}
+
+enum RoomReservationStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model RoomReservation {
+  id                 String                @id @default(cuid())
+  roomId             String
+  churchId           String // église qui réserve
+  eventId            String?
+  title              String
+  startAt            DateTime
+  endAt              DateTime
+  status             RoomReservationStatus @default(CONFIRMED)
+  recurrenceRule     String? // "weekly" | "biweekly" | "monthly" — utilisé seulement si non lié
+                                            // à un Event lui-même récurrent
+  seriesId           String?
+  isRecurrenceParent Boolean               @default(false)
+  createdById        String
+  createdAt          DateTime              @default(now())
+  cancelledAt        DateTime?
+  cancelledById      String?
+
+  room        Room           @relation(fields: [roomId], references: [id])
+  church      Church         @relation(fields: [churchId], references: [id])
+  event       Event?         @relation(fields: [eventId], references: [id])
+  createdBy   User           @relation("RoomReservationCreatedBy", fields: [createdById], references: [id])
+  cancelledBy User?          @relation("RoomReservationCancelledBy", fields: [cancelledById], references: [id])
+  checklist   RoomChecklist?
+
+  @@index([roomId, startAt, endAt])
+  @@index([churchId, startAt])
+  @@index([seriesId])
+  @@map("room_reservations")
+}
+
+enum RoomChecklistStatus {
+  PENDING
+  OPENED
+  CLOSED_DECLARED
+  VALIDATED
+  ISSUE_REPORTED
+}
+
+model RoomChecklist {
+  id            String              @id @default(cuid())
+  reservationId String              @unique
+  status        RoomChecklistStatus @default(PENDING)
+
+  openedById          String?
+  openedAt            DateTime?
+  keyReceivedFromId   String?
+  keyReceivedFromName String?
+  openingNotes        String?   @db.Text
+
+  closedById          String?
+  closedAt            DateTime?
+  closedProperly      Boolean?
+  cleaned             Boolean?
+  equipmentOk         Boolean?
+  equipmentNotes      String?   @db.Text
+  keyReturnedToId     String?
+  keyReturnedToName   String?
+  closingNotes        String?   @db.Text
+
+  validatedById           String?
+  validatedAt             DateTime?
+  validatedClosedProperly Boolean?
+  validatedCleaned        Boolean?
+  validatedEquipmentOk    Boolean?
+  incidentNotes           String?   @db.Text
+
+  closedWithoutDeclaration Boolean @default(false)
+
+  reservation     RoomReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  openedBy        User?           @relation("RoomChecklistOpenedBy", fields: [openedById], references: [id])
+  keyReceivedFrom User?           @relation("RoomChecklistKeyReceivedFrom", fields: [keyReceivedFromId], references: [id])
+  closedBy        User?           @relation("RoomChecklistClosedBy", fields: [closedById], references: [id])
+  keyReturnedTo   User?           @relation("RoomChecklistKeyReturnedTo", fields: [keyReturnedToId], references: [id])
+  validatedBy     User?           @relation("RoomChecklistValidatedBy", fields: [validatedById], references: [id])
+
+  @@map("room_checklists")
 }

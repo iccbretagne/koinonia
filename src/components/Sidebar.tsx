@@ -11,8 +11,6 @@ interface SidebarProps {
   mediaLinks: { href: string; label: string }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
-  mrbsUrl?: string | null;
-  mrbsAdminLink?: string | null;
   famillesUrl?: string | null;
   hasDiscipleship?: boolean;
   hasEventsAccess?: boolean;
@@ -23,6 +21,7 @@ interface SidebarProps {
   hasMyPlanning?: boolean;
   showStarEvents?: boolean;
   hasAbsences?: boolean;
+  hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
@@ -323,8 +322,6 @@ export default function Sidebar({
   mediaLinks,
   agendaLinks = [],
   integrationLinks = [],
-  mrbsUrl = null,
-  mrbsAdminLink = null,
   famillesUrl = null,
   hasDiscipleship = false,
   hasEventsAccess = true,
@@ -335,6 +332,7 @@ export default function Sidebar({
   hasMyPlanning = false,
   showStarEvents = false,
   hasAbsences = false,
+  hasRooms = false,
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
@@ -350,6 +348,7 @@ export default function Sidebar({
   const isMyPlanningActive = pathname === "/planning";
   const isStarEventsActive = pathname.startsWith("/planning/events");
   const isAbsencesActive = pathname.startsWith("/absences");
+  const isRoomsActive = pathname.startsWith("/rooms");
   const isEventsActive =
     pathname.startsWith("/events") ||
     pathname.startsWith("/admin/events") ||
@@ -383,7 +382,7 @@ export default function Sidebar({
   const isEvenementsActive = isEventsActive;
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
-  const isRessourcesActive = isAccountingActive || isJobsActive || pathname.startsWith("/admin/mrbs");
+  const isRessourcesActive = isAccountingActive || isJobsActive || isRoomsActive;
 
   function activeSection() {
     if (isGestionPastoraleActive) return "pastoral";
@@ -507,7 +506,7 @@ export default function Sidebar({
 
   const hasCommunaute = hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
   const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0;
-  const hasRessources = !!(mrbsUrl || mrbsAdminLink || hasAccounting || hasJobs);
+  const hasRessources = !!(hasRooms || hasAccounting || hasJobs);
 
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -754,27 +753,17 @@ export default function Sidebar({
           open={openSection === "ressources"}
           onToggle={() => toggle("ressources")}
           isActive={isRessourcesActive}
-          dataTour="sidebar-mrbs"
+          dataTour="sidebar-ressources"
         >
           <nav className="space-y-0.5 pl-6">
-            {mrbsUrl && (
-              <a
-                href={mrbsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-sm px-3 py-2.5 md:py-1.5 rounded-md text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5 transition-colors"
-              >
-                Réserver une salle ↗
-              </a>
-            )}
-            {mrbsAdminLink && (
-              <NavLink href={mrbsAdminLink} active={pathname.startsWith(mrbsAdminLink)} onClose={onClose}>
-                Liaison comptes
+            {hasRooms && (
+              <NavLink href="/rooms" active={isRoomsActive} onClose={onClose}>
+                Salles
               </NavLink>
             )}
             {hasAccounting && (
               <>
-                {(mrbsUrl || mrbsAdminLink) && <hr className="my-1 border-gray-100" />}
+                {hasRooms && <hr className="my-1 border-gray-100" />}
                 <NavLink href="/accounting/requests" active={isAccountingActive} onClose={onClose}>
                   Comptabilité
                 </NavLink>
@@ -782,7 +771,7 @@ export default function Sidebar({
             )}
             {hasJobs && (
               <>
-                {(mrbsUrl || mrbsAdminLink || hasAccounting) && <hr className="my-1 border-gray-100" />}
+                {(hasRooms || hasAccounting) && <hr className="my-1 border-gray-100" />}
                 <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>Offres</NavLink>
                 {hasJobsManage && (
                   <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
