@@ -50,6 +50,7 @@ export default function QualificationDashboard({ requests: initial, profiles }: 
       alert("Veuillez sélectionner un profil pastoral.");
       return;
     }
+    if (action === "REJECT" && !confirm("Rejeter définitivement cette demande ?")) return;
     setProcessing(id);
     try {
       const res = await fetch(`/api/agenda/requests/${id}/qualify`, {

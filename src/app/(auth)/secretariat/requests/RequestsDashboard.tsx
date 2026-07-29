@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 
+const DESTRUCTIVE_STATUSES = new Set(["REFUSEE", "ANNULE"]);
+
 const ANNOUNCEMENT_TYPES = ["DIFFUSION_INTERNE", "RESEAUX_SOCIAUX", "VISUEL"];
 const DEMAND_TYPES = [
   "AJOUT_EVENEMENT",
@@ -128,6 +130,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   }
 
   async function updateRequest(id: string, status: string, note?: string) {
+    if (DESTRUCTIVE_STATUSES.has(status) && !confirm("Confirmer cette action ? Elle est définitive.")) return;
     setProcessing(id);
     try {
       const res = await fetch(`/api/requests/${id}`, {

@@ -125,6 +125,7 @@ export default function WeeklyPlanningView({
   }
 
   async function deleteNotice(eventId: string) {
+    if (!confirm("Supprimer cette note ?")) return;
     setSaving(true);
     setSaveError(null);
     try {

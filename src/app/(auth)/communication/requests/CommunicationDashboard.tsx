@@ -55,6 +55,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
   const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   async function updateRequest(id: string, status: string, deliveryLink?: string) {
+    if (status === "ANNULE" && !confirm("Annuler définitivement cette demande ?")) return;
     setProcessing(id);
     try {
       const res = await fetch(`/api/requests/${id}`, {
