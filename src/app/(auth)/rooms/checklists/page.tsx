@@ -44,7 +44,7 @@ export default async function RoomChecklistsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Contrôle des mains courantes</h1>
         <Link href="/rooms" className="text-sm text-icc-violet hover:underline font-medium">
           ← Réservation des salles
