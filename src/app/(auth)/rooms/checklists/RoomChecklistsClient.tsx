@@ -160,50 +160,56 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
-        <div className="w-full sm:w-56">
-          <Select
-            label="Filtrer par salle"
-            value={filterRoomId}
-            onChange={(e) => setFilterRoomId(e.target.value)}
-            placeholder="Toutes les salles"
-            options={roomOptions}
-          />
+      <div className="space-y-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="w-full sm:w-56">
+            <Select
+              label="Filtrer par salle"
+              value={filterRoomId}
+              onChange={(e) => setFilterRoomId(e.target.value)}
+              placeholder="Toutes les salles"
+              options={roomOptions}
+            />
+          </div>
+          <div className="w-full sm:w-64">
+            <Select
+              label="Filtrer par statut de main courante"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              placeholder="Tous les statuts"
+              options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <Select
+              label="Filtrer par responsable"
+              value={filterCreatedById}
+              onChange={(e) => setFilterCreatedById(e.target.value)}
+              placeholder="Tous les responsables"
+              options={createdByOptions}
+            />
+          </div>
         </div>
-        <div className="w-full sm:w-64">
-          <Select
-            label="Filtrer par statut de main courante"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            placeholder="Tous les statuts"
-            options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
-          />
-        </div>
-        <div className="w-full sm:w-56">
-          <Select
-            label="Filtrer par responsable"
-            value={filterCreatedById}
-            onChange={(e) => setFilterCreatedById(e.target.value)}
-            placeholder="Tous les responsables"
-            options={createdByOptions}
-          />
-        </div>
-        <div className="w-full sm:w-40">
-          <Input label="Du" type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
-        </div>
-        <div className="w-full sm:w-40">
-          <Input label="Au" type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
-        </div>
-        <div className="w-full sm:w-48">
-          <Select
-            label="Trier par date"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-            options={[
-              { value: "desc", label: "Plus récentes d'abord" },
-              { value: "asc", label: "Plus anciennes d'abord" },
-            ]}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex gap-2">
+            <div className="w-1/2 sm:w-36">
+              <Input label="Du" type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+            </div>
+            <div className="w-1/2 sm:w-36">
+              <Input label="Au" type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
+            </div>
+          </div>
+          <div className="w-full sm:w-52 sm:ml-auto">
+            <Select
+              label="Trier par date"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+              options={[
+                { value: "desc", label: "Plus récentes d'abord" },
+                { value: "asc", label: "Plus anciennes d'abord" },
+              ]}
+            />
+          </div>
         </div>
       </div>
 
