@@ -91,6 +91,7 @@ export default function AttachmentManager({
   }
 
   async function handleDelete(id: string) {
+    if (!confirm("Supprimer définitivement cette pièce jointe ?")) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/accounting/attachments/${id}`, { method: "DELETE" });

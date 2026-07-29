@@ -165,6 +165,7 @@ export default function AbsencesClient({
   }
 
   async function cancelAbsence(id: string) {
+    if (!confirm("Annuler définitivement cette absence ?")) return;
     try {
       const res = await fetch(`/api/absences/${id}`, {
         method: "PATCH",

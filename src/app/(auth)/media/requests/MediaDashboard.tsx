@@ -146,6 +146,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
     deliveryLink?: string,
     reviewNotes?: string
   ) {
+    if (status === "ANNULE" && !confirm("Annuler définitivement cette demande ?")) return;
     setProcessing(id);
     try {
       const res = await fetch(`/api/requests/${id}`, {
