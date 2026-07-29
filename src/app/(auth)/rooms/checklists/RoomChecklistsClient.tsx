@@ -234,7 +234,7 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
         emptyMessage="Aucune main courante à contrôler."
         actions={(r) => (
           <div className="flex gap-2 justify-end flex-wrap">
-            <Button size="sm" variant={r.checklist?.status === "CLOSED_DECLARED" ? "info" : "ghost"} onClick={() => openControl(r)}>
+            <Button size="sm" variant={r.checklist?.status === "CLOSED_DECLARED" ? "primary" : "ghost"} onClick={() => openControl(r)}>
               {r.checklist?.status === "CLOSED_DECLARED" ? "Contrôler" : "Détails"}
             </Button>
             {isUndeclaredAndPastDue(r) && (
@@ -242,7 +242,7 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
                 <Button size="sm" variant="danger" onClick={() => openFollowUp(r, "report-issue")}>
                   Signaler un écart
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => openFollowUp(r, "close-manually")}>
+                <Button size="sm" variant="secondary" onClick={() => openFollowUp(r, "close-manually")}>
                   Clôturer sans déclaration
                 </Button>
               </>

@@ -206,7 +206,7 @@ export default function RoomsAdminClient({
         emptyMessage="Aucune salle."
         actions={(room) => (
           <div className="flex gap-2 justify-end">
-            <Button size="sm" variant="ghost" onClick={() => setAccessRoom(room)}>
+            <Button size="sm" variant="secondary" onClick={() => setAccessRoom(room)}>
               Partage
             </Button>
             <Button size="sm" variant="edit" onClick={() => openEdit(room)}>

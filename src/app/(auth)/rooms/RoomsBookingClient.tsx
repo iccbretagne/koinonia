@@ -397,12 +397,12 @@ function ReservationDetailModal({
           {(actions.canDeclareOpen || actions.canDeclareClose || actions.canCancelOccurrence) && (
             <div className="flex gap-2 justify-end flex-wrap pt-3 border-t border-gray-100">
               {actions.canDeclareOpen && (
-                <Button size="sm" variant="info" onClick={() => onDeclareOpen(reservation)}>
+                <Button size="sm" variant="primary" onClick={() => onDeclareOpen(reservation)}>
                   Déclarer l&apos;ouverture
                 </Button>
               )}
               {actions.canDeclareClose && (
-                <Button size="sm" variant="info" onClick={() => onDeclareClose(reservation)}>
+                <Button size="sm" variant="primary" onClick={() => onDeclareClose(reservation)}>
                   Déclarer la fermeture
                 </Button>
               )}
@@ -412,7 +412,7 @@ function ReservationDetailModal({
                 </Button>
               )}
               {actions.canCancelSeries && (
-                <Button size="sm" variant="ghost" onClick={() => onCancelSeries(reservation)}>
+                <Button size="sm" variant="secondary" onClick={() => onCancelSeries(reservation)}>
                   Annuler la série
                 </Button>
               )}
@@ -735,12 +735,12 @@ export default function RoomsBookingClient({
                     Détails
                   </Button>
                   {actions.canDeclareOpen && (
-                    <Button size="sm" variant="info" onClick={() => openChecklist(r, "open")}>
+                    <Button size="sm" variant="primary" onClick={() => openChecklist(r, "open")}>
                       Déclarer l&apos;ouverture
                     </Button>
                   )}
                   {actions.canDeclareClose && (
-                    <Button size="sm" variant="info" onClick={() => openChecklist(r, "close")}>
+                    <Button size="sm" variant="primary" onClick={() => openChecklist(r, "close")}>
                       Déclarer la fermeture
                     </Button>
                   )}
@@ -750,7 +750,7 @@ export default function RoomsBookingClient({
                     </Button>
                   )}
                   {actions.canCancelSeries && (
-                    <Button size="sm" variant="ghost" onClick={() => setCancelTarget({ reservation: r, scope: "series" })}>
+                    <Button size="sm" variant="secondary" onClick={() => setCancelTarget({ reservation: r, scope: "series" })}>
                       Annuler la série
                     </Button>
                   )}
