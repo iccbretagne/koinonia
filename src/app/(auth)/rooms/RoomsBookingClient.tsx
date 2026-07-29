@@ -731,6 +731,9 @@ export default function RoomsBookingClient({
               const actions = getAvailableActions(r, { currentUserId, canManage });
               return (
                 <div className="flex gap-2 justify-end flex-wrap">
+                  <Button size="sm" variant="ghost" onClick={() => setDetailTarget(r)}>
+                    Détails
+                  </Button>
                   {actions.canDeclareOpen && (
                     <Button size="sm" variant="info" onClick={() => openChecklist(r, "open")}>
                       Déclarer l&apos;ouverture
