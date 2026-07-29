@@ -75,7 +75,27 @@ export async function GET(request: Request) {
       include: {
         room: { select: { id: true, name: true } },
         createdBy: { select: { id: true, name: true, displayName: true } },
-        checklist: { select: { status: true } },
+        checklist: {
+          select: {
+            status: true,
+            openedAt: true,
+            keyReceivedFromName: true,
+            openingNotes: true,
+            closedAt: true,
+            closedProperly: true,
+            cleaned: true,
+            equipmentOk: true,
+            equipmentNotes: true,
+            keyReturnedToName: true,
+            closingNotes: true,
+            incidentNotes: true,
+            closedWithoutDeclaration: true,
+            validatedAt: true,
+            validatedClosedProperly: true,
+            validatedCleaned: true,
+            validatedEquipmentOk: true,
+          },
+        },
       },
       orderBy: { startAt: "desc" },
     });
@@ -92,6 +112,7 @@ export async function GET(request: Request) {
         isRecurrenceParent: r.isRecurrenceParent,
         createdBy: { id: r.createdBy.id, name: r.createdBy.displayName ?? r.createdBy.name },
         checklistStatus: r.checklist?.status ?? "PENDING",
+        checklist: r.checklist,
       })),
     });
   } catch (error) {

@@ -3,26 +3,12 @@
 import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
-
-interface Checklist {
-  status: "PENDING" | "OPENED" | "CLOSED_DECLARED" | "VALIDATED" | "ISSUE_REPORTED";
-  openedAt: string | null;
-  keyReceivedFromName: string | null;
-  openingNotes: string | null;
-  closedAt: string | null;
-  closedProperly: boolean | null;
-  cleaned: boolean | null;
-  equipmentOk: boolean | null;
-  equipmentNotes: string | null;
-  keyReturnedToName: string | null;
-  closingNotes: string | null;
-  incidentNotes: string | null;
-  closedWithoutDeclaration: boolean;
-}
+import ChecklistDetail, { type Checklist } from "../ChecklistDetail";
 
 interface Reservation {
   id: string;
@@ -75,6 +61,9 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
 
   const [filterRoomId, setFilterRoomId] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterCreatedById, setFilterCreatedById] = useState("");
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
 
   const roomOptions = useMemo(() => {
@@ -83,14 +72,23 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
     return Array.from(rooms, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [reservations]);
 
+  const createdByOptions = useMemo(() => {
+    const people = new Map<string, string>();
+    for (const r of reservations) people.set(r.createdBy.id, r.createdBy.name ?? "—");
+    return Array.from(people, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [reservations]);
+
   const displayedReservations = useMemo(() => {
     let list = reservations;
     if (filterRoomId) list = list.filter((r) => r.room.id === filterRoomId);
     if (filterStatus) list = list.filter((r) => (r.checklist?.status ?? "PENDING") === filterStatus);
+    if (filterCreatedById) list = list.filter((r) => r.createdBy.id === filterCreatedById);
+    if (filterFrom) list = list.filter((r) => r.startAt.slice(0, 10) >= filterFrom);
+    if (filterTo) list = list.filter((r) => r.startAt.slice(0, 10) <= filterTo);
     return [...list].sort((a, b) =>
       sortOrder === "asc" ? a.startAt.localeCompare(b.startAt) : b.startAt.localeCompare(a.startAt)
     );
-  }, [reservations, filterRoomId, filterStatus, sortOrder]);
+  }, [reservations, filterRoomId, filterStatus, filterCreatedById, filterFrom, filterTo, sortOrder]);
 
   function openControl(reservation: Reservation) {
     setTarget(reservation);
@@ -162,7 +160,7 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-4">
         <div className="w-full sm:w-56">
           <Select
             label="Filtrer par salle"
@@ -180,6 +178,21 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
             placeholder="Tous les statuts"
             options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
           />
+        </div>
+        <div className="w-full sm:w-56">
+          <Select
+            label="Filtrer par responsable"
+            value={filterCreatedById}
+            onChange={(e) => setFilterCreatedById(e.target.value)}
+            placeholder="Tous les responsables"
+            options={createdByOptions}
+          />
+        </div>
+        <div className="w-full sm:w-40">
+          <Input label="Du" type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+        </div>
+        <div className="w-full sm:w-40">
+          <Input label="Au" type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
         </div>
         <div className="w-full sm:w-48">
           <Select
@@ -215,11 +228,9 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
         emptyMessage="Aucune main courante à contrôler."
         actions={(r) => (
           <div className="flex gap-2 justify-end flex-wrap">
-            {r.checklist?.status === "CLOSED_DECLARED" && (
-              <Button size="sm" variant="info" onClick={() => openControl(r)}>
-                Contrôler
-              </Button>
-            )}
+            <Button size="sm" variant={r.checklist?.status === "CLOSED_DECLARED" ? "info" : "ghost"} onClick={() => openControl(r)}>
+              {r.checklist?.status === "CLOSED_DECLARED" ? "Contrôler" : "Détails"}
+            </Button>
             {isUndeclaredAndPastDue(r) && (
               <>
                 <Button size="sm" variant="danger" onClick={() => openFollowUp(r, "report-issue")}>
@@ -234,48 +245,47 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
         )}
       />
 
-      <Modal open={!!target} onClose={() => setTarget(null)} title={`Contrôle — ${target?.title ?? ""}`}>
-        {target?.checklist && (
+      <Modal
+        open={!!target}
+        onClose={() => setTarget(null)}
+        title={target?.checklist?.status === "CLOSED_DECLARED" ? `Contrôle — ${target?.title ?? ""}` : `Détail — ${target?.title ?? ""}`}
+      >
+        {target && (
           <div className="space-y-4">
-            <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 space-y-1">
-              <p>
-                <span className="font-medium">Déclaré par l&apos;utilisateur :</span>{" "}
-                {target.checklist.closedProperly ? "fermée correctement" : "non fermée correctement"},{" "}
-                {target.checklist.cleaned ? "nettoyée" : "non nettoyée"},{" "}
-                {target.checklist.equipmentOk ? "matériel en bon état" : "problème de matériel signalé"}
-              </p>
-              {target.checklist.equipmentNotes && <p>Matériel : {target.checklist.equipmentNotes}</p>}
-              {target.checklist.closingNotes && <p>Notes : {target.checklist.closingNotes}</p>}
-              {target.checklist.keyReturnedToName && <p>Clés remises à : {target.checklist.keyReturnedToName}</p>}
-            </div>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={closedProperly} onChange={(e) => setClosedProperly(e.target.checked)} />
-                Constaté : salle correctement fermée
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={cleaned} onChange={(e) => setCleaned(e.target.checked)} />
-                Constaté : salle nettoyée
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={validatedEquipmentOk}
-                  onChange={(e) => setValidatedEquipmentOk(e.target.checked)}
+            <ChecklistDetail checklist={target.checklist} />
+
+            {target.checklist?.status === "CLOSED_DECLARED" && (
+              <>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={closedProperly} onChange={(e) => setClosedProperly(e.target.checked)} />
+                    Constaté : salle correctement fermée
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={cleaned} onChange={(e) => setCleaned(e.target.checked)} />
+                    Constaté : salle nettoyée
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={validatedEquipmentOk}
+                      onChange={(e) => setValidatedEquipmentOk(e.target.checked)}
+                    />
+                    Constaté : salle/matériel en bon état
+                  </label>
+                </div>
+                <Textarea
+                  label="Signaler un écart (optionnel)"
+                  value={incidentNotes}
+                  onChange={(e) => setIncidentNotes(e.target.value)}
                 />
-                Constaté : salle/matériel en bon état
-              </label>
-            </div>
-            <Input
-              label="Signaler un écart (optionnel)"
-              value={incidentNotes}
-              onChange={(e) => setIncidentNotes(e.target.value)}
-            />
+              </>
+            )}
             <div className="flex gap-2 justify-end">
               <Button variant="secondary" onClick={() => setTarget(null)}>
                 Retour
               </Button>
-              <Button onClick={submitValidation}>Valider le contrôle</Button>
+              {target.checklist?.status === "CLOSED_DECLARED" && <Button onClick={submitValidation}>Valider le contrôle</Button>}
             </div>
           </div>
         )}
@@ -295,7 +305,7 @@ export default function RoomChecklistsClient({ initialReservations }: { initialR
         onConfirm={submitFollowUp}
         onCancel={() => setFollowUpTarget(null)}
       >
-        <Input
+        <Textarea
           label={followUpTarget?.mode === "report-issue" ? "Écart constaté" : "Notes (optionnel)"}
           value={followUpNotes}
           onChange={(e) => setFollowUpNotes(e.target.value)}

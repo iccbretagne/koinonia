@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId, getUserDepartmentScope } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
@@ -43,7 +44,12 @@ export default async function RoomChecklistsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Contrôle des mains courantes</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Contrôle des mains courantes</h1>
+        <Link href="/rooms" className="text-sm text-icc-violet hover:underline font-medium">
+          ← Réservation des salles
+        </Link>
+      </div>
       <RoomChecklistsClient
         initialReservations={reservations.map((r) => ({
           id: r.id,
@@ -67,6 +73,10 @@ export default async function RoomChecklistsPage() {
                 closingNotes: r.checklist.closingNotes,
                 incidentNotes: r.checklist.incidentNotes,
                 closedWithoutDeclaration: r.checklist.closedWithoutDeclaration,
+                validatedAt: r.checklist.validatedAt?.toISOString() ?? null,
+                validatedClosedProperly: r.checklist.validatedClosedProperly,
+                validatedCleaned: r.checklist.validatedCleaned,
+                validatedEquipmentOk: r.checklist.validatedEquipmentOk,
               }
             : null,
         }))}

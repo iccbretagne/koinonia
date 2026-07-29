@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
+import ChecklistDetail, { type Checklist } from "./ChecklistDetail";
 
 interface Room {
   id: string;
@@ -29,6 +31,7 @@ interface Reservation {
   isRecurrenceParent: boolean;
   createdBy: { id: string; name: string | null };
   checklistStatus: "PENDING" | "OPENED" | "CLOSED_DECLARED" | "VALIDATED" | "ISSUE_REPORTED";
+  checklist: Checklist | null;
 }
 
 interface KeyHolder {
@@ -389,6 +392,8 @@ function ReservationDetailModal({
             </div>
           </dl>
 
+          <ChecklistDetail checklist={reservation.checklist} />
+
           {(actions.canDeclareOpen || actions.canDeclareClose || actions.canCancelOccurrence) && (
             <div className="flex gap-2 justify-end flex-wrap pt-3 border-t border-gray-100">
               {actions.canDeclareOpen && (
@@ -444,6 +449,7 @@ export default function RoomsBookingClient({
   const [sortBy, setSortBy] = useState<"date" | "room">("date");
   const [filterRoomId, setFilterRoomId] = useState("");
   const [filterChecklistStatus, setFilterChecklistStatus] = useState("");
+  const [filterMine, setFilterMine] = useState(false);
 
   const [detailTarget, setDetailTarget] = useState<Reservation | null>(null);
 
@@ -600,6 +606,7 @@ export default function RoomsBookingClient({
 
   const displayedReservations = useMemo(() => {
     let list = activeReservations;
+    if (filterMine) list = list.filter((r) => r.createdBy.id === currentUserId);
     if (filterRoomId) list = list.filter((r) => r.room.id === filterRoomId);
     if (filterChecklistStatus) list = list.filter((r) => r.checklistStatus === filterChecklistStatus);
     list = [...list].sort((a, b) =>
@@ -608,7 +615,7 @@ export default function RoomsBookingClient({
         : a.startAt.localeCompare(b.startAt)
     );
     return list;
-  }, [activeReservations, filterRoomId, filterChecklistStatus, sortBy]);
+  }, [activeReservations, filterMine, currentUserId, filterRoomId, filterChecklistStatus, sortBy]);
 
   function handleCancelOccurrence(r: Reservation) {
     setDetailTarget(null);
@@ -696,6 +703,10 @@ export default function RoomsBookingClient({
                 options={Object.entries(CHECKLIST_LABELS).map(([value, label]) => ({ value, label }))}
               />
             </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700 sm:self-end sm:pb-2.5">
+              <input type="checkbox" checked={filterMine} onChange={(e) => setFilterMine(e.target.checked)} />
+              Mes réservations uniquement
+            </label>
           </div>
 
           <DataTable<Reservation>
@@ -834,7 +845,7 @@ export default function RoomsBookingClient({
                   Salle/matériel en bon état
                 </label>
                 {!equipmentOk && (
-                  <Input
+                  <Textarea
                     label="Préciser le problème (dégât, matériel manquant/déplacé, panne)"
                     value={equipmentNotes}
                     onChange={(e) => setEquipmentNotes(e.target.value)}
@@ -848,7 +859,7 @@ export default function RoomsBookingClient({
               value={keyPerson}
               onChange={setKeyPerson}
             />
-            <Input label="Notes (optionnel)" value={checklistNotes} onChange={(e) => setChecklistNotes(e.target.value)} />
+            <Textarea label="Notes (optionnel)" value={checklistNotes} onChange={(e) => setChecklistNotes(e.target.value)} />
             <div className="flex gap-2 justify-end">
               <button onClick={() => setChecklistTarget(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
                 Annuler
