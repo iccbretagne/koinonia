@@ -6,10 +6,17 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
-## [v1.14.3] - 2026-07-18
+## [v1.15.0] - 2026-07-29
+
+### Ajouté
+
+- **Gestion des absences des STAR** : un STAR peut déclarer ses absences prévues (ou son resp. de département/ministre pour son périmètre), avec détection de conflit à la volée avec le planning existant (badge visuel, notifications), vue transverse filtrable par ministère/département/rôle, et annulation. Nouvelles permissions `absences:view`/`absences:manage`.
+- **Gestion des salles et de leur réservation** : réservation de salles multi-église (salles possédées + partagées via liste blanche), récurrence propre ou alignée sur un événement, refus immédiat en cas de conflit, main courante par réservation (déclaration d'ouverture/fermeture, contrôle par une équipe dédiée Sécurité/Entretien). Vue calendrier par salle, filtres/tri sur toutes les vues (liste, admin salles, contrôle des mains courantes), détail complet d'une main courante consultable à tout moment, saisie multi-lignes pour les notes/écarts.
+- **Harmonisation et ergonomie du module Absences** : recherche par nom, filtre statut (historique des absences annulées accessible), filtre de période et tri sur la vue d'ensemble ; signal de conflit uniforme et cliquable depuis le planning, menant directement au détail de l'absence concernée ; ergonomie mobile des filtres.
 
 ### Corrigé
 
+- **Confirmation avant les actions destructives non protégées** : plusieurs actions irréversibles (annulation d'une absence, suppression d'une pièce jointe comptable, refus/annulation d'une demande, rejet d'une demande d'agenda, suppression d'une note de planning) s'exécutaient au premier clic sans confirmation. Une confirmation est désormais requise, cohérente avec le reste de l'application.
 - **Consolidation préventive des liens de partage média** (suite à v1.14.1/v1.14.2) : les pages publiques « Collection » et « Validateur »/« Pré-validateur » dupliquaient elles aussi leur logique de récupération de données depuis leur route API, avec le même risque de divergence silencieuse. La logique est désormais centralisée (`resolveCollectionData`, `resolveValidatorData`) et partagée entre routes API et pages SSR.
   - Bug latent corrigé au passage : la page « Collection » ignorait le paramètre `includeAllPhotos` d'un token (elle filtrait toujours sur les photos approuvées, contrairement à sa route API) — un lien collection configuré pour tout afficher masquait les photos non validées.
   - La page « Validateur »/« Pré-validateur » appelait deux fois la validation du token à chaque chargement, comptabilisant deux usages au lieu d'un dans les statistiques du lien.
