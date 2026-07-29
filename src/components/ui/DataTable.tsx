@@ -15,6 +15,8 @@ interface DataTableProps<T> {
   selectable?: boolean;
   selectedIds?: Set<string>;
   onSelectionChange?: (ids: Set<string>) => void;
+  /** Id de ligne à mettre en évidence visuellement (ex. arrivée depuis un lien externe). */
+  highlightedId?: string;
 }
 
 function getCellValue<T>(row: T, accessor: Column<T>["accessor"]): ReactNode {
@@ -29,6 +31,7 @@ export default function DataTable<T extends { id: string }>({
   selectable = false,
   selectedIds,
   onSelectionChange,
+  highlightedId,
 }: DataTableProps<T>) {
   const allSelected = selectable && data.length > 0 && data.every((row) => selectedIds?.has(row.id));
   const someSelected = selectable && data.some((row) => selectedIds?.has(row.id)) && !allSelected;
@@ -68,8 +71,13 @@ export default function DataTable<T extends { id: string }>({
         {data.map((row) => (
           <div
             key={row.id}
+            id={`row-${row.id}`}
             className={`rounded-lg border border-gray-200 bg-white p-4 shadow-sm ${
-              selectedIds?.has(row.id) ? "ring-2 ring-icc-violet bg-icc-violet-light" : ""
+              row.id === highlightedId
+                ? "ring-2 ring-icc-jaune bg-yellow-50"
+                : selectedIds?.has(row.id)
+                  ? "ring-2 ring-icc-violet bg-icc-violet-light"
+                  : ""
             }`}
           >
             {selectable && (
@@ -135,7 +143,17 @@ export default function DataTable<T extends { id: string }>({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {data.map((row) => (
-              <tr key={row.id} className={`hover:bg-gray-50 ${selectedIds?.has(row.id) ? "bg-icc-violet-light" : ""}`}>
+              <tr
+                key={row.id}
+                id={`row-${row.id}`}
+                className={`hover:bg-gray-50 ${
+                  row.id === highlightedId
+                    ? "ring-2 ring-inset ring-icc-jaune bg-yellow-50"
+                    : selectedIds?.has(row.id)
+                      ? "bg-icc-violet-light"
+                      : ""
+                }`}
+              >
                 {selectable && (
                   <td className="px-4 py-3 w-10">
                     <input
