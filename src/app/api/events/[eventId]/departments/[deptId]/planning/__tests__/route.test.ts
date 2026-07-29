@@ -89,6 +89,59 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     expect(body.members[0].status).toBeNull();
   });
 
+  it("includes the absence id in activeAbsence (eventDept path)", async () => {
+    const eventDept = {
+      id: "ed-1",
+      eventId: "evt-1",
+      departmentId: "dept-1",
+      event: { date: new Date("2026-08-01"), planningDeadline: null },
+      plannings: [],
+      department: {
+        memberDepts: [{ member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } }],
+      },
+    };
+    prismaMock.eventDepartment.findUnique.mockResolvedValue(eventDept);
+    prismaMock.absence.findMany.mockResolvedValue([
+      {
+        id: "abs-1",
+        memberId: "m-1",
+        startDate: new Date("2026-07-30"),
+        endDate: new Date("2026-08-05"),
+      },
+    ] as never);
+
+    const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");
+    const res = await GET(request, { params: makeParams("evt-1", "dept-1") });
+
+    const body = await res.json();
+    expect(body.members[0].activeAbsence).toMatchObject({ id: "abs-1" });
+  });
+
+  it("includes the absence id in activeAbsence (fallback path, no event-department link)", async () => {
+    prismaMock.eventDepartment.findUnique.mockResolvedValue(null);
+    prismaMock.department.findUnique
+      .mockResolvedValueOnce(mockDeptChurchCheck as never)
+      .mockResolvedValueOnce({
+        id: "dept-1",
+        memberDepts: [{ member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } }],
+      } as never);
+    prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", date: new Date("2026-08-01"), planningDeadline: null } as never);
+    prismaMock.absence.findMany.mockResolvedValue([
+      {
+        id: "abs-2",
+        memberId: "m-1",
+        startDate: new Date("2026-07-30"),
+        endDate: new Date("2026-08-05"),
+      },
+    ] as never);
+
+    const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");
+    const res = await GET(request, { params: makeParams("evt-1", "dept-1") });
+
+    const body = await res.json();
+    expect(body.members[0].activeAbsence).toMatchObject({ id: "abs-2" });
+  });
+
   it("detects deadline passed", async () => {
     const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
     prismaMock.eventDepartment.findUnique.mockResolvedValue({

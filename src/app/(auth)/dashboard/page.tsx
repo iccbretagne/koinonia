@@ -38,6 +38,9 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canEditPlanning = userPermissions.has("planning:edit");
+  const canViewAbsences = session.user.churchRoles.some(
+    (r) => r.churchId === currentChurchId && (rolePermissions[r.role] ?? []).includes("absences:view")
+  );
 
   // Auto-trigger guided tour on first visit with a role
   const shouldTriggerTour =
@@ -190,7 +193,12 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
           </div>
         )
       ) : selectedEventId && selectedDeptId ? (
-        <PlanningGrid eventId={selectedEventId} departmentId={selectedDeptId} readOnly={!canEditPlanning} />
+        <PlanningGrid
+          eventId={selectedEventId}
+          departmentId={selectedDeptId}
+          readOnly={!canEditPlanning}
+          canViewAbsences={canViewAbsences}
+        />
       ) : (
         <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
           {!selectedDeptId

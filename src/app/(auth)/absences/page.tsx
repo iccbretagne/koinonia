@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { requireAuth, getCurrentChurchId, getUserDepartmentScope } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -59,14 +60,16 @@ export default async function AbsencesPage() {
   }
 
   return (
-    <AbsencesClient
-      churchId={churchId}
-      canView={canView}
-      canManage={canManage}
-      selfMembers={selfMembers}
-      manageableMembers={manageableMembers}
-      ministries={ministries}
-      departments={departments}
-    />
+    <Suspense>
+      <AbsencesClient
+        churchId={churchId}
+        canView={canView}
+        canManage={canManage}
+        selfMembers={selfMembers}
+        manageableMembers={manageableMembers}
+        ministries={ministries}
+        departments={departments}
+      />
+    </Suspense>
   );
 }

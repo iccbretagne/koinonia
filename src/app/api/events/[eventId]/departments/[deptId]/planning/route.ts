@@ -23,7 +23,7 @@ async function findActiveAbsencesByMember(
   churchId: string,
   memberIds: string[],
   eventDate: Date | undefined
-): Promise<Map<string, { startDate: Date; endDate: Date }>> {
+): Promise<Map<string, { id: string; startDate: Date; endDate: Date }>> {
   if (!eventDate || memberIds.length === 0) return new Map();
 
   const absences = await prisma.absence.findMany({
@@ -34,10 +34,10 @@ async function findActiveAbsencesByMember(
       startDate: { lte: eventDate },
       endDate: { gte: eventDate },
     },
-    select: { memberId: true, startDate: true, endDate: true },
+    select: { id: true, memberId: true, startDate: true, endDate: true },
   });
 
-  return new Map(absences.map((a) => [a.memberId, { startDate: a.startDate, endDate: a.endDate }]));
+  return new Map(absences.map((a) => [a.memberId, { id: a.id, startDate: a.startDate, endDate: a.endDate }]));
 }
 
 export async function GET(

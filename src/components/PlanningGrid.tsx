@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import TaskPanel from "./TaskPanel";
 
 interface MemberPlanning {
@@ -9,7 +10,7 @@ interface MemberPlanning {
   lastName: string;
   status: string | null;
   planningId: string | null;
-  activeAbsence?: { startDate: string; endDate: string } | null;
+  activeAbsence?: { id: string; startDate: string; endDate: string } | null;
 }
 
 function formatAbsencePeriod(activeAbsence: { startDate: string; endDate: string }): string {
@@ -24,15 +25,38 @@ function formatAbsencePeriodShort(activeAbsence: { startDate: string; endDate: s
 
 // La période est affichée en texte (pas seulement via `title`) car les tooltips
 // hover ne sont pas accessibles au toucher sur mobile.
-function AbsenceBadge({ activeAbsence }: { activeAbsence: { startDate: string; endDate: string } }) {
-  return (
-    <span
-      title={formatAbsencePeriod(activeAbsence)}
-      aria-label={formatAbsencePeriod(activeAbsence)}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap"
-    >
+function AbsenceBadge({
+  activeAbsence,
+  canViewAbsences,
+}: {
+  activeAbsence: { id: string; startDate: string; endDate: string };
+  canViewAbsences: boolean;
+}) {
+  const className =
+    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap";
+  const content = (
+    <>
       <span aria-hidden="true">⚠</span>
       {formatAbsencePeriodShort(activeAbsence)}
+    </>
+  );
+
+  if (canViewAbsences) {
+    return (
+      <Link
+        href={`/absences?highlightId=${activeAbsence.id}`}
+        title={formatAbsencePeriod(activeAbsence)}
+        aria-label={`${formatAbsencePeriod(activeAbsence)} — voir le détail`}
+        className={`${className} hover:bg-orange-200`}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <span title={formatAbsencePeriod(activeAbsence)} aria-label={formatAbsencePeriod(activeAbsence)} className={className}>
+      {content}
     </span>
   );
 }
@@ -41,6 +65,7 @@ interface PlanningGridProps {
   eventId: string;
   departmentId: string;
   readOnly?: boolean;
+  canViewAbsences?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -71,6 +96,7 @@ export default function PlanningGrid({
   eventId,
   departmentId,
   readOnly = false,
+  canViewAbsences = false,
 }: PlanningGridProps) {
   const [members, setMembers] = useState<MemberPlanning[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,7 +293,9 @@ export default function PlanningGrid({
                   </select>
                 )}
               </div>
-              {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
+              {member.activeAbsence && (
+                <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
+              )}
             </div>
           );
         })}
@@ -292,7 +320,9 @@ export default function PlanningGrid({
                 <td className="px-4 py-3 text-sm text-gray-900">
                   <span className="flex items-center gap-1.5">
                     <span>{member.firstName} {member.lastName}</span>
-                    {member.activeAbsence && <AbsenceBadge activeAbsence={member.activeAbsence} />}
+                    {member.activeAbsence && (
+                      <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
+                    )}
                   </span>
                 </td>
                 <td className="px-4 py-3">

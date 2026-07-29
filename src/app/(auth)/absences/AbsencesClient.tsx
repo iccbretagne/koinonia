@@ -1,11 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import DataTable from "@/components/ui/DataTable";
+
+type StatusFilter = "ACTIVE" | "ALL" | "CANCELLED";
+type SortOption = "startDateDesc" | "startDateAsc" | "member";
+
+function memberName(a: { member: { firstName: string; lastName: string } }): string {
+  return `${a.member.firstName} ${a.member.lastName}`;
+}
+
+function ConflictBadge({ hasConflict }: { hasConflict: boolean }) {
+  return hasConflict ? <span className="text-orange-700 font-medium">⚠ Conflit planning</span> : <>—</>;
+}
+
+function StatusBadge({ status }: { status: "ACTIVE" | "CANCELLED" }) {
+  return status === "ACTIVE" ? (
+    <span className="text-green-700 font-medium">Active</span>
+  ) : (
+    <span className="text-gray-400">Annulée</span>
+  );
+}
 
 interface MemberRef {
   id: string;
@@ -61,6 +81,14 @@ export default function AbsencesClient({
   const [ministryFilter, setMinistryFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ACTIVE");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("startDateDesc");
+
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlightId") ?? undefined;
 
   const [declareOpen, setDeclareOpen] = useState(false);
   const [declareMode, setDeclareMode] = useState<"self" | "manage">("self");
@@ -111,6 +139,42 @@ export default function AbsencesClient({
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  const displayedAbsences = useMemo(() => {
+    let rows = allAbsences;
+    if (statusFilter !== "ALL") {
+      rows = rows.filter((a) => a.status === statusFilter);
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter((a) => memberName(a).toLowerCase().includes(q));
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      rows = rows.filter((a) => new Date(a.endDate) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      rows = rows.filter((a) => new Date(a.startDate) <= to);
+    }
+
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      if (sortBy === "member") return memberName(a).localeCompare(memberName(b));
+      const diff = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      return sortBy === "startDateAsc" ? diff : -diff;
+    });
+    return sorted;
+  }, [allAbsences, statusFilter, search, dateFrom, dateTo, sortBy]);
+
+  const hasScrolledToHighlight = useRef(false);
+  useEffect(() => {
+    if (!highlightId || hasScrolledToHighlight.current) return;
+    const el = document.getElementById(`row-${highlightId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    hasScrolledToHighlight.current = true;
+  }, [highlightId, displayedAbsences]);
 
   function openDeclareForSelf() {
     setDeclareMode("self");
@@ -207,12 +271,7 @@ export default function AbsencesClient({
                 { header: "Motif", accessor: (a) => a.reason ?? "—" },
                 {
                   header: "Conflit",
-                  accessor: (a) =>
-                    a.hasConflict ? (
-                      <span className="text-orange-700 font-medium">⚠ Conflit planning</span>
-                    ) : (
-                      "—"
-                    ),
+                  accessor: (a) => <ConflictBadge hasConflict={a.hasConflict} />,
                 },
               ]}
               actions={(a) => (
@@ -234,45 +293,94 @@ export default function AbsencesClient({
             )}
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Select
-              label="Ministère"
-              placeholder="Tous"
-              value={ministryFilter}
-              onChange={(e) => {
-                setMinistryFilter(e.target.value);
-                setDepartmentFilter("");
-              }}
-              options={ministries.map((m) => ({ value: m.id, label: m.name }))}
-            />
-            <Select
-              label="Département"
-              placeholder="Tous"
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-              options={visibleDepartments.map((d) => ({ value: d.id, label: d.name }))}
-            />
-            <Select
-              label="Rôle du déclarant"
-              placeholder="Tous"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              options={[
-                { value: "STAR", label: "STAR" },
-                { value: "DEPARTMENT_HEAD", label: "Resp. département" },
-                { value: "MINISTER", label: "Ministre" },
-              ]}
-            />
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1 min-w-0">
+                <Input
+                  label="Rechercher un membre"
+                  placeholder="Nom, prénom..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="sm:w-48">
+                <Select
+                  label="Statut"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+                  options={[
+                    { value: "ACTIVE", label: "Actives" },
+                    { value: "ALL", label: "Toutes" },
+                    { value: "CANCELLED", label: "Annulées" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-3 flex-1">
+                <div className="w-1/2 sm:w-40">
+                  <Input type="date" label="Du" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                </div>
+                <div className="w-1/2 sm:w-40">
+                  <Input type="date" label="Au" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+              <Select
+                label="Ministère"
+                placeholder="Tous"
+                value={ministryFilter}
+                onChange={(e) => {
+                  setMinistryFilter(e.target.value);
+                  setDepartmentFilter("");
+                }}
+                options={ministries.map((m) => ({ value: m.id, label: m.name }))}
+              />
+              <Select
+                label="Département"
+                placeholder="Tous"
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+                options={visibleDepartments.map((d) => ({ value: d.id, label: d.name }))}
+              />
+              <Select
+                label="Rôle du déclarant"
+                placeholder="Tous"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                options={[
+                  { value: "STAR", label: "STAR" },
+                  { value: "DEPARTMENT_HEAD", label: "Resp. département" },
+                  { value: "MINISTER", label: "Ministre" },
+                ]}
+              />
+              <div className="sm:ml-auto sm:w-56">
+                <Select
+                  label="Trier par"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  options={[
+                    { value: "startDateDesc", label: "Date de début (récent d'abord)" },
+                    { value: "startDateAsc", label: "Date de début (ancien d'abord)" },
+                    { value: "member", label: "Nom du membre" },
+                  ]}
+                />
+              </div>
+            </div>
           </div>
 
           {loadingAll ? (
             <p className="text-gray-500 text-sm">Chargement...</p>
           ) : (
             <DataTable
-              data={allAbsences.filter((a) => a.status === "ACTIVE")}
-              emptyMessage="Aucune absence."
+              data={displayedAbsences}
+              highlightedId={highlightId}
+              emptyMessage="Aucune absence ne correspond à ces filtres."
               columns={[
-                { header: "Membre", accessor: (a) => `${a.member.firstName} ${a.member.lastName}` },
+                { header: "Membre", accessor: (a) => memberName(a) },
                 {
                   header: "Département",
                   accessor: (a) => a.member.departments.map((d) => d.name).join(", ") || "—",
@@ -284,18 +392,20 @@ export default function AbsencesClient({
                 },
                 { header: "Période", accessor: (a) => `${formatDate(a.startDate)} → ${formatDate(a.endDate)}` },
                 { header: "Déclaré par", accessor: (a) => a.createdBy.name ?? "—" },
+                { header: "Statut", accessor: (a) => <StatusBadge status={a.status} /> },
                 {
                   header: "Conflit",
-                  accessor: (a) => (a.hasConflict ? <span className="text-orange-700 font-medium">⚠</span> : "—"),
+                  accessor: (a) => <ConflictBadge hasConflict={a.hasConflict} />,
                 },
               ]}
               actions={
                 canManage
-                  ? (a) => (
-                      <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
-                        Annuler
-                      </Button>
-                    )
+                  ? (a) =>
+                      a.status === "ACTIVE" ? (
+                        <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
+                          Annuler
+                        </Button>
+                      ) : null
                   : undefined
               }
             />
