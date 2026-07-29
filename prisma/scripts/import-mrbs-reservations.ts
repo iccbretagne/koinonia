@@ -17,7 +17,9 @@
  * - Salle MRBS → salle Koinonia : mapping manuel (voir ROOM_MAPPING ci-dessous).
  * - Créateur MRBS → utilisateur Koinonia : résolu via `mrbs_user_links`
  *   (déjà alimenté par /admin/mrbs-links). Les entrées sans lien sont
- *   listées à part et ne sont PAS importées automatiquement.
+ *   importées sous FALLBACK_USER_EMAIL si renseigné (signalées à part dans
+ *   le rapport, avec le nom MRBS d'origine conservé pour traçabilité) ;
+ *   sinon elles sont ignorées.
  * - Idempotent : une réservation déjà présente (même salle + mêmes horaires)
  *   est ignorée, on peut relancer le script sans risque de doublon.
  * - --dry-run : affiche ce qui serait créé/ignoré sans toucher la BDD Koinonia.
@@ -46,9 +48,17 @@ const CHURCH_SLUG = "icc-rennes";
 // Clé = room_name MRBS (mrbs_room.room_name), valeur = name Room Koinonia.
 // Toute salle MRBS absente de ce mapping est ignorée (et listée dans le rapport).
 const ROOM_MAPPING: Record<string, string> = {
-  // "Auditoriun": "Bethanie",
-  // "Salle 01": "Canaan",
+  "Auditorium": "Auditorium",
+  "Salle 01": "Bethleem",
+  "Salle 02": "Nazareth",
+  "Salle ado": "Béthanie",
+  "Salle intégration": "Canaan"
 };
+
+// Email d'un compte Koinonia (ex. un Admin) sous lequel importer les réservations
+// dont le créateur MRBS n'a pas de lien dans mrbs_user_links. Laisser vide pour
+// ignorer ces réservations au lieu de les attribuer à ce compte.
+const FALLBACK_USER_EMAIL: string | null = null; // ex: "admin@example.com"
 
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -91,22 +101,32 @@ async function main() {
   const links = await prisma.mrbsUserLink.findMany({ where: { churchId: church.id }, select: { mrbsUsername: true, userId: true } });
   const userIdByMrbsName = new Map(links.map((l) => [l.mrbsUsername, l.userId]));
 
+  let fallbackUserId: string | null = null;
+  if (FALLBACK_USER_EMAIL) {
+    const fallbackUser = await prisma.user.findUnique({ where: { email: FALLBACK_USER_EMAIL }, select: { id: true } });
+    if (!fallbackUser) throw new Error(`FALLBACK_USER_EMAIL introuvable : ${FALLBACK_USER_EMAIL}`);
+    fallbackUserId = fallbackUser.id;
+  }
+
   const entries = await fetchFutureMrbsEntries();
   console.log(`Réservations MRBS futures : ${entries.length}\n`);
 
-  const toImport: { entry: MrbsEntry; roomId: string; createdById: string }[] = [];
+  const toImport: { entry: MrbsEntry; roomId: string; createdById: string; usedFallback: boolean }[] = [];
   const unmappedRoom: MrbsEntry[] = [];
   const unmappedUser: MrbsEntry[] = [];
+  const fallbackUsed: MrbsEntry[] = [];
 
   for (const entry of entries) {
     const roomName = ROOM_MAPPING[entry.room_name];
     const roomId = roomName ? roomIdByName.get(roomName) : undefined;
     if (!roomId) { unmappedRoom.push(entry); continue; }
 
-    const createdById = userIdByMrbsName.get(entry.create_by);
-    if (!createdById) { unmappedUser.push(entry); continue; }
+    const linkedUserId = userIdByMrbsName.get(entry.create_by);
+    if (!linkedUserId && !fallbackUserId) { unmappedUser.push(entry); continue; }
 
-    toImport.push({ entry, roomId, createdById });
+    const usedFallback = !linkedUserId;
+    if (usedFallback) fallbackUsed.push(entry);
+    toImport.push({ entry, roomId, createdById: (linkedUserId ?? fallbackUserId)!, usedFallback });
   }
 
   if (unmappedRoom.length > 0) {
@@ -125,13 +145,22 @@ async function main() {
     console.log();
   }
 
+  if (fallbackUsed.length > 0) {
+    console.log(`↪ Créateurs MRBS sans lien, importés sous ${FALLBACK_USER_EMAIL} : ${fallbackUsed.length} réservation(s)`);
+    for (const name of new Set(fallbackUsed.map((e) => e.create_by))) {
+      console.log(`  - ${name}`);
+    }
+    console.log();
+  }
+
   console.log(`À importer : ${toImport.length}\n`);
 
   let created = 0, skippedExisting = 0, skippedConflict = 0;
 
-  for (const { entry, roomId, createdById } of toImport) {
+  for (const { entry, roomId, createdById, usedFallback } of toImport) {
     const startAt = new Date(entry.start_time * 1000);
     const endAt = new Date(entry.end_time * 1000);
+    const title = usedFallback ? `${entry.name || "(sans titre)"} (MRBS: ${entry.create_by})` : (entry.name || "(sans titre)");
 
     const already = await prisma.roomReservation.findFirst({
       where: { roomId, startAt, endAt, status: "CONFIRMED" },
@@ -140,7 +169,7 @@ async function main() {
     if (already) { skippedExisting++; continue; }
 
     if (DRY_RUN) {
-      console.log(`[DRY-RUN] ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name.padEnd(20)}  ${entry.name}`);
+      console.log(`[DRY-RUN] ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name.padEnd(20)}  ${title}`);
       created++;
       continue;
     }
@@ -148,17 +177,17 @@ async function main() {
     const result = await createReservation({
       churchId: church.id,
       roomId,
-      title: entry.name || "(sans titre)",
+      title,
       startAt,
       endAt,
       createdById,
     });
 
     if (result.reservations.length > 0) {
-      console.log(`✓ ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name.padEnd(20)}  ${entry.name}`);
+      console.log(`✓ ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name.padEnd(20)}  ${title}`);
       created++;
     } else {
-      console.log(`✗ Conflit ignoré : ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name}  ${entry.name}`);
+      console.log(`✗ Conflit ignoré : ${startAt.toISOString()} → ${endAt.toISOString()}  ${entry.room_name}  ${title}`);
       skippedConflict++;
     }
   }
