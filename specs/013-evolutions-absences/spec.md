@@ -1,7 +1,7 @@
 # Spec — Évolutions du module Absences
 
 - **Numéro** : 013
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-30
 - **Branche suggérée** : `feat/evolutions-absences`
 
@@ -185,36 +185,36 @@ Rôles non concernés : Faiseur de Disciples, Reporter (déjà hors périmètre 
 
 ## Critères d'acceptation
 
-- [ ] Un Resp. département peut désigner en backup, lors de la déclaration de **sa propre**
+- [x] Un Resp. département peut désigner en backup, lors de la déclaration de **sa propre**
       absence, un ou plusieurs STAR de son département, le Ministre dont il dépend et/ou un autre
       Resp. département du même ministère.
-- [ ] Un Resp. département ne peut pas désigner en backup un Resp. département d'un autre
+- [x] Un Resp. département ne peut pas désigner en backup un Resp. département d'un autre
       ministère que le sien.
-- [ ] Un Ministre peut désigner en backup, lors de la déclaration de **sa propre** absence, un ou
+- [x] Un Ministre peut désigner en backup, lors de la déclaration de **sa propre** absence, un ou
       plusieurs STAR de n'importe quel département de son ministère et/ou un autre Ministre de
       l'église.
-- [ ] L'option de désigner un backup n'est jamais proposée à un STAR simple (sans rôle Resp.
+- [x] L'option de désigner un backup n'est jamais proposée à un STAR simple (sans rôle Resp.
       département ni Ministre), y compris pour sa propre absence.
-- [ ] L'option de désigner un backup n'est jamais proposée lorsqu'un responsable déclare une
+- [x] L'option de désigner un backup n'est jamais proposée lorsqu'un responsable déclare une
       absence pour un tiers — uniquement pour sa propre absence.
-- [ ] Les backups désignés sont notifiés de leur désignation avec la période concernée.
-- [ ] Les backups d'une absence sont visibles dans la vue transverse.
-- [ ] Une absence sans backup se comporte exactement comme avant cette feature.
-- [ ] Un STAR peut modifier sa propre absence tant que sa date de fin n'est pas passée.
-- [ ] Un Resp. département ou un Ministre peut modifier une absence de son périmètre tant que sa
+- [x] Les backups désignés sont notifiés de leur désignation avec la période concernée.
+- [x] Les backups d'une absence sont visibles dans la vue transverse.
+- [x] Une absence sans backup se comporte exactement comme avant cette feature.
+- [x] Un STAR peut modifier sa propre absence tant que sa date de fin n'est pas passée.
+- [x] Un Resp. département ou un Ministre peut modifier une absence de son périmètre tant que sa
       date de fin n'est pas passée.
-- [ ] Une absence dont la date de fin est passée n'est plus modifiable.
-- [ ] La modification d'une absence réévalue les conflits avec le planning sur la nouvelle
+- [x] Une absence dont la date de fin est passée n'est plus modifiable.
+- [x] La modification d'une absence réévalue les conflits avec le planning sur la nouvelle
       période et notifie les nouveaux conflits comme à la création.
-- [ ] La modification d'une absence notifie les responsables et backups déjà notifiés de la
+- [x] La modification d'une absence notifie les responsables et backups déjà notifiés de la
       déclaration initiale.
-- [ ] Une vue « frise temporelle » est disponible en alternative à la vue tableau, avec le même
+- [x] Une vue « frise temporelle » est disponible en alternative à la vue tableau, avec le même
       périmètre de visibilité et les mêmes filtres.
-- [ ] Un export Excel des absences est disponible depuis la vue transverse, respectant les
+- [x] Un export Excel des absences est disponible depuis la vue transverse, respectant les
       filtres actifs et le périmètre de visibilité de l'utilisateur.
-- [ ] Lors de la déclaration ou modification d'une absence, la date de fin se pré-remplit sur la
+- [x] Lors de la déclaration ou modification d'une absence, la date de fin se pré-remplit sur la
       date de début et ne peut pas être choisie antérieure à celle-ci.
-- [ ] Changer la date de début après coup réaligne automatiquement une date de fin devenue
+- [x] Changer la date de début après coup réaligne automatiquement une date de fin devenue
       antérieure, sans modifier une date de fin restée valide.
 
 ## Hors périmètre

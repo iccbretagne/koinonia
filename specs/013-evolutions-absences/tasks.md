@@ -1,7 +1,7 @@
 # Tâches — Évolutions du module Absences
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -102,18 +102,18 @@
 
 ### 5. Tests
 
-- [ ] **T16** — Tests unitaires `declareAbsence` avec backups : crée les `AbsenceBackup` attendus
+- [x] **T16** — Tests unitaires `declareAbsence` avec backups : crée les `AbsenceBackup` attendus
       pour `STAR` (avec/sans `MemberUserLink`) et `RESPONSIBLE`, notifie chaque destinataire
       résolu ; vérifie la non-régression sans backups *(fichier :
       `src/modules/planning/services/absence.service.test.ts`)*
-- [ ] **T17** — Tests unitaires `updateAbsence` : modification de période avec recalcul de
+- [x] **T17** — Tests unitaires `updateAbsence` : modification de période avec recalcul de
       conflits et notification des nouveaux conflits, notification de l'union des destinataires
       (anciens + nouveaux backups), `409` si déjà passée, `400` si `startDate` reculée alors que
       l'absence est en cours, remplacement complet des backups quand fournis / inchangés quand
       omis *(même fichier que T16)*
-- [ ] **T18** [P] — Tests unitaires `cancelAbsence` : notifie aussi les backups de l'absence
+- [x] **T18** [P] — Tests unitaires `cancelAbsence` : notifie aussi les backups de l'absence
       annulée *(même fichier que T16)*
-- [ ] **T19** [P] — Tests d'intégration routes : `POST /api/absences` avec `backups` — `403` si
+- [x] **T19** [P] — Tests d'intégration routes : `POST /api/absences` avec `backups` — `403` si
       `!isSelf`, `403` si rôle non éligible, `403` si backup hors périmètre (autre ministère pour
       un Resp. département, auto-désignation pour un Ministre), `201` sinon ; `PATCH
       .../[id]` `action: "update"` — mêmes codes d'autorisation que `cancel`, `409` si déjà
@@ -126,10 +126,10 @@
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test`
-- [ ] Cohérence de la vue mobile vérifiée (T15b) sur l'ensemble des écrans touchés
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test`
+- [x] Cohérence de la vue mobile vérifiée par revue de code (T15b) — vérification visuelle réelle non effectuée (pas d'outil de navigateur disponible)
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] PR ouverte vers `main`
