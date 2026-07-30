@@ -1,16 +1,29 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { cancelAbsence, getMemberScope, isMemberLinkedToUser } from "@/modules/planning";
+import { cancelAbsence, updateAbsence, getMemberScope, isMemberLinkedToUser } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
+import { assertBackupsAllowed, backupSchema } from "../route";
 import { z } from "zod";
 
-const patchSchema = z.object({
-  action: z.literal("cancel"),
-});
+const patchSchema = z
+  .discriminatedUnion("action", [
+    z.object({ action: z.literal("cancel") }),
+    z.object({
+      action: z.literal("update"),
+      startDate: z.string().datetime().optional(),
+      endDate: z.string().datetime().optional(),
+      reason: z.string().max(500).nullable().optional(),
+      backups: z.array(backupSchema).max(10).optional(),
+    }),
+  ])
+  .refine(
+    (d) => d.action !== "update" || !d.startDate || !d.endDate || new Date(d.endDate) >= new Date(d.startDate),
+    { message: "endDate doit être postérieure ou égale à startDate", path: ["endDate"] }
+  );
 
 /**
- * PATCH /api/absences/[id] — annulation uniquement (aucune autre mutation supportée).
+ * PATCH /api/absences/[id] — `cancel` (annulation) ou `update` (modification tant que non passée).
  *
  * Autorisé : le créateur, la fiche STAR liée elle-même, un resp./ministre du
  * périmètre du membre, ou un manager global (absences:manage sans scope).
@@ -22,7 +35,7 @@ export async function PATCH(
   try {
     const session = await requireAuth();
     const { id } = await params;
-    patchSchema.parse(await request.json());
+    const data = patchSchema.parse(await request.json());
 
     const absence = await prisma.absence.findUnique({ where: { id } });
     if (!absence) throw new ApiError(404, "Absence introuvable");
@@ -40,10 +53,35 @@ export async function PATCH(
       }
     }
 
-    const updated = await cancelAbsence({
+    if (data.action === "cancel") {
+      const updated = await cancelAbsence({
+        absenceId: id,
+        churchId: absence.churchId,
+        cancelledById: session.user.id,
+      });
+
+      await logAudit({
+        userId: session.user.id,
+        churchId: absence.churchId,
+        action: "UPDATE",
+        entityType: "Absence",
+        entityId: id,
+        details: { status: "CANCELLED" },
+      });
+
+      return successResponse(updated);
+    }
+
+    await assertBackupsAllowed(data.backups, isSelf, session.user.id, absence.churchId);
+
+    const updated = await updateAbsence({
       absenceId: id,
       churchId: absence.churchId,
-      cancelledById: session.user.id,
+      updatedById: session.user.id,
+      startDate: data.startDate ? new Date(data.startDate) : undefined,
+      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      reason: data.reason,
+      backups: data.backups,
     });
 
     await logAudit({
@@ -52,7 +90,7 @@ export async function PATCH(
       action: "UPDATE",
       entityType: "Absence",
       entityId: id,
-      details: { status: "CANCELLED" },
+      details: { startDate: data.startDate, endDate: data.endDate },
     });
 
     return successResponse(updated);

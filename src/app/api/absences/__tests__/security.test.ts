@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
+import { ApiError } from "@/lib/api-utils";
 
 const mockRequireAuth = vi.fn();
 const mockRequireChurchPermission = vi.fn();
@@ -13,14 +14,18 @@ vi.mock("@/lib/auth", () => ({
 
 const mockDeclareAbsence = vi.fn();
 const mockCancelAbsence = vi.fn();
+const mockUpdateAbsence = vi.fn();
 const mockGetMemberScope = vi.fn();
 const mockIsMemberLinkedToUser = vi.fn();
+const mockValidateBackupTargets = vi.fn();
 vi.mock("@/modules/planning", () => ({
   declareAbsence: (...args: unknown[]) => mockDeclareAbsence(...args),
   cancelAbsence: (...args: unknown[]) => mockCancelAbsence(...args),
+  updateAbsence: (...args: unknown[]) => mockUpdateAbsence(...args),
   findAbsenceConflicts: vi.fn().mockResolvedValue([]),
   getMemberScope: (...args: unknown[]) => mockGetMemberScope(...args),
   isMemberLinkedToUser: (...args: unknown[]) => mockIsMemberLinkedToUser(...args),
+  validateBackupTargets: (...args: unknown[]) => mockValidateBackupTargets(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -54,6 +59,49 @@ describe("GET /api/absences", () => {
 
     expect(res.status).toBe(200);
     expect(mockRequireChurchPermission).not.toHaveBeenCalled();
+  });
+
+  it("scope=all enriches each absence with its backups", async () => {
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockGetUserDepartmentScope.mockReturnValue({ scoped: false });
+    prismaMock.absence.findMany.mockResolvedValue([
+      {
+        id: "abs-1",
+        churchId: "church-1",
+        memberId: "member-1",
+        startDate: new Date("2026-08-01"),
+        endDate: new Date("2026-08-10"),
+        reason: null,
+        status: "ACTIVE",
+        createdById: "user-1",
+        createdAt: new Date(),
+        member: { id: "member-1", firstName: "Jean", lastName: "Dupont", departments: [] },
+        createdBy: { id: "user-1", name: "Jean Dupont", displayName: null },
+        backups: [
+          {
+            id: "backup-1",
+            type: "STAR",
+            member: { id: "member-2", firstName: "Marie", lastName: "Martin" },
+            userChurchRole: null,
+          },
+          {
+            id: "backup-2",
+            type: "RESPONSIBLE",
+            member: null,
+            userChurchRole: { id: "role-1", role: "MINISTER", user: { name: "Paul Petit", displayName: null } },
+          },
+        ],
+      },
+    ] as never);
+
+    const res = await GET(new Request("http://localhost/api/absences?churchId=church-1&scope=all"));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.absences[0].backups).toEqual([
+      { id: "backup-1", type: "STAR", targetId: "member-2", name: "Marie Martin", role: undefined },
+      { id: "backup-2", type: "RESPONSIBLE", targetId: "role-1", name: "Paul Petit", role: "MINISTER" },
+    ]);
   });
 
   it("scope=all requires absences:view and returns 403 when missing", async () => {
@@ -158,6 +206,52 @@ describe("POST /api/absences — authorization", () => {
   });
 });
 
+describe("POST /api/absences — backups", () => {
+  const bodyWithBackup = { ...validBody, backups: [{ type: "STAR", memberId: "member-backup" }] };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    mockGetMemberScope.mockResolvedValue({ churchId: "church-1", departmentIds: ["dept-1"] });
+    mockDeclareAbsence.mockResolvedValue({ id: "abs-1" });
+  });
+
+  it("returns 403 for backups on an absence declared for a third party", async () => {
+    mockIsMemberLinkedToUser.mockResolvedValue(false);
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockGetUserDepartmentScope.mockReturnValue({ scoped: false });
+
+    const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(bodyWithBackup) }));
+
+    expect(res.status).toBe(403);
+    expect(mockValidateBackupTargets).not.toHaveBeenCalled();
+    expect(mockDeclareAbsence).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 when validateBackupTargets rejects (backup out of scope / role ineligible)", async () => {
+    mockIsMemberLinkedToUser.mockResolvedValue(true);
+    mockValidateBackupTargets.mockRejectedValue(new ApiError(403, "forbidden"));
+
+    const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(bodyWithBackup) }));
+
+    expect(res.status).toBe(403);
+    expect(mockDeclareAbsence).not.toHaveBeenCalled();
+  });
+
+  it("passes backups to declareAbsence when self and validated", async () => {
+    mockIsMemberLinkedToUser.mockResolvedValue(true);
+    mockValidateBackupTargets.mockResolvedValue(undefined);
+
+    const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(bodyWithBackup) }));
+
+    expect(res.status).toBe(201);
+    expect(mockValidateBackupTargets).toHaveBeenCalled();
+    expect(mockDeclareAbsence).toHaveBeenCalledWith(
+      expect.objectContaining({ backups: bodyWithBackup.backups })
+    );
+  });
+});
+
 describe("PATCH /api/absences/[id] — authorization", () => {
   const existingAbsence = { id: "abs-1", churchId: "church-1", memberId: "member-1", createdById: "user-owner", status: "ACTIVE" };
 
@@ -248,5 +342,77 @@ describe("PATCH /api/absences/[id] — authorization", () => {
 
     expect(res.status).toBe(200);
     expect(mockCancelAbsence).toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/absences/[id] — action update", () => {
+  const existingAbsence = { id: "abs-1", churchId: "church-1", memberId: "member-1", createdById: "user-owner", status: "ACTIVE" };
+  const updateBody = { action: "update", startDate: "2026-09-02T00:00:00.000Z", endDate: "2026-09-12T00:00:00.000Z" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue({ ...createAdminSession(), user: { ...createAdminSession().user, id: "user-owner" } });
+    prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
+    mockUpdateAbsence.mockResolvedValue({ ...existingAbsence });
+    mockIsMemberLinkedToUser.mockResolvedValue(false);
+  });
+
+  it("allows the creator to update", async () => {
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", { method: "PATCH", body: JSON.stringify(updateBody) }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockUpdateAbsence).toHaveBeenCalled();
+  });
+
+  it("returns 403 for an unrelated user without absences:manage", async () => {
+    mockRequireAuth.mockResolvedValue({ ...createAdminSession(), user: { ...createAdminSession().user, id: "user-stranger" } });
+    mockRequireChurchPermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", { method: "PATCH", body: JSON.stringify(updateBody) }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockUpdateAbsence).not.toHaveBeenCalled();
+  });
+
+  it("propagates a 409 from the service (absence already passed)", async () => {
+    mockUpdateAbsence.mockRejectedValue(new ApiError(409, "Absence déjà passée, non modifiable"));
+
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", { method: "PATCH", body: JSON.stringify(updateBody) }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(res.status).toBe(409);
+  });
+
+  it("returns 403 for backups on an update when not self", async () => {
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", {
+        method: "PATCH",
+        body: JSON.stringify({ ...updateBody, backups: [{ type: "STAR", memberId: "member-backup" }] }),
+      }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockUpdateAbsence).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when endDate is before startDate", async () => {
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", {
+        method: "PATCH",
+        body: JSON.stringify({ action: "update", startDate: "2026-09-12T00:00:00.000Z", endDate: "2026-09-02T00:00:00.000Z" }),
+      }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(res.status).toBe(400);
   });
 });

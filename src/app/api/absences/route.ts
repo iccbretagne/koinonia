@@ -6,9 +6,15 @@ import {
   findAbsenceConflicts,
   getMemberScope,
   isMemberLinkedToUser,
+  validateBackupTargets,
 } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
+
+export const backupSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("STAR"), memberId: z.string().min(1) }),
+  z.object({ type: z.literal("RESPONSIBLE"), userChurchRoleId: z.string().min(1) }),
+]);
 
 const createSchema = z
   .object({
@@ -17,11 +23,28 @@ const createSchema = z
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
     reason: z.string().max(500).nullable().optional(),
+    backups: z.array(backupSchema).max(10).optional(),
   })
   .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
     message: "endDate doit être postérieure ou égale à startDate",
     path: ["endDate"],
   });
+
+/**
+ * Vérifie qu'une déclaration/modification avec backups est autorisée : uniquement pour sa
+ * propre absence (`isSelf`), et uniquement si le déclarant a le rôle Resp. département ou
+ * Ministre pour `churchId`. Ne fait rien si `backups` est vide/absent.
+ */
+export async function assertBackupsAllowed(
+  backups: z.infer<typeof backupSchema>[] | undefined,
+  isSelf: boolean,
+  userId: string,
+  churchId: string
+) {
+  if (!backups || backups.length === 0) return;
+  if (!isSelf) throw new ApiError(403, "Le backup n'est proposé que pour sa propre absence");
+  await validateBackupTargets(userId, churchId, backups);
+}
 
 /**
  * GET /api/absences?churchId=...&scope=self|all&ministryId=&departmentId=&role=
@@ -95,6 +118,16 @@ export async function GET(request: Request) {
           },
         },
         createdBy: { select: { id: true, name: true, displayName: true } },
+        backups: {
+          select: {
+            id: true,
+            type: true,
+            member: { select: { id: true, firstName: true, lastName: true } },
+            userChurchRole: {
+              select: { id: true, role: true, user: { select: { name: true, displayName: true } } },
+            },
+          },
+        },
       },
       orderBy: { startDate: "desc" },
     });
@@ -132,6 +165,16 @@ export async function GET(request: Request) {
           createdAt: a.createdAt,
           hasConflict: conflicts.length > 0,
           conflicts,
+          backups: a.backups.map((b) => ({
+            id: b.id,
+            type: b.type,
+            targetId: b.type === "STAR" ? b.member!.id : b.userChurchRole!.id,
+            name:
+              b.type === "STAR"
+                ? `${b.member!.firstName} ${b.member!.lastName}`
+                : (b.userChurchRole!.user.displayName ?? b.userChurchRole!.user.name ?? "—"),
+            role: b.type === "RESPONSIBLE" ? b.userChurchRole!.role : undefined,
+          })),
         };
       })
     );
@@ -171,6 +214,8 @@ export async function POST(request: Request) {
       }
     }
 
+    await assertBackupsAllowed(data.backups, isSelf, session.user.id, churchId);
+
     const absence = await declareAbsence({
       churchId,
       memberId,
@@ -178,6 +223,7 @@ export async function POST(request: Request) {
       endDate: new Date(data.endDate),
       reason: data.reason,
       createdById: session.user.id,
+      backups: data.backups,
     });
 
     await logAudit({

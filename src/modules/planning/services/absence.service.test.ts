@@ -3,8 +3,14 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-const { declareAbsence, cancelAbsence, findAbsenceConflicts, resolveResponsibleUserIds } =
-  await import("@/modules/planning");
+const {
+  declareAbsence,
+  cancelAbsence,
+  updateAbsence,
+  findAbsenceConflicts,
+  resolveResponsibleUserIds,
+  validateBackupTargets,
+} = await import("@/modules/planning");
 const { planningBus } = await import("@/modules/planning");
 
 function notifiedUserIds() {
@@ -231,6 +237,7 @@ describe("cancelAbsence", () => {
     updatedAt: new Date(),
     cancelledAt: null,
     member: { firstName: "Jean", lastName: "Dupont" },
+    backups: [],
   };
 
   beforeEach(() => {
@@ -289,5 +296,415 @@ describe("cancelAbsence", () => {
     await expect(
       cancelAbsence({ absenceId: "unknown", churchId: "church-1", cancelledById: "user-1" })
     ).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+describe("declareAbsence avec backups", () => {
+  const baseParams = {
+    churchId: "church-1",
+    memberId: "member-1",
+    startDate: new Date("2026-08-01"),
+    endDate: new Date("2026-08-10"),
+    reason: null,
+    createdById: "user-1",
+  };
+
+  const createdAbsence = {
+    id: "abs-1",
+    churchId: "church-1",
+    memberId: "member-1",
+    startDate: baseParams.startDate,
+    endDate: baseParams.endDate,
+    reason: null,
+    status: "ACTIVE",
+    createdById: "user-1",
+    cancelledById: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    cancelledAt: null,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    planningBus.clear();
+    prismaMock.member.findUnique.mockResolvedValue({ firstName: "Jean", lastName: "Dupont" } as never);
+    prismaMock.absence.create.mockResolvedValue(createdAbsence as never);
+    prismaMock.memberDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.absenceBackup.createMany.mockResolvedValue({ count: 1 } as never);
+    prismaMock.notification.create.mockResolvedValue({} as never);
+  });
+
+  it("crée les AbsenceBackup et notifie un backup STAR lié à un compte", async () => {
+    prismaMock.memberUserLink.findMany.mockImplementation(({ where }: never) =>
+      Promise.resolve((where as { memberId: string }).memberId === "member-backup" ? [{ userId: "user-backup" }] : [])
+    );
+
+    await declareAbsence({ ...baseParams, backups: [{ type: "STAR", memberId: "member-backup" }] });
+
+    expect(prismaMock.absenceBackup.createMany).toHaveBeenCalledWith({
+      data: [{ absenceId: "abs-1", type: "STAR", memberId: "member-backup", userChurchRoleId: null }],
+    });
+    expect(notificationsOfType("ABSENCE_BACKUP_ASSIGNED").map((n) => n.userId)).toEqual(["user-backup"]);
+  });
+
+  it("ne notifie personne pour un backup STAR sans compte lié (silencieux)", async () => {
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+
+    await declareAbsence({ ...baseParams, backups: [{ type: "STAR", memberId: "member-backup" }] });
+
+    expect(notificationsOfType("ABSENCE_BACKUP_ASSIGNED")).toHaveLength(0);
+  });
+
+  it("crée un AbsenceBackup RESPONSIBLE et notifie directement le user cible", async () => {
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({ userId: "user-minister-backup" } as never);
+
+    await declareAbsence({ ...baseParams, backups: [{ type: "RESPONSIBLE", userChurchRoleId: "role-1" }] });
+
+    expect(prismaMock.absenceBackup.createMany).toHaveBeenCalledWith({
+      data: [{ absenceId: "abs-1", type: "RESPONSIBLE", memberId: null, userChurchRoleId: "role-1" }],
+    });
+    expect(notificationsOfType("ABSENCE_BACKUP_ASSIGNED").map((n) => n.userId)).toEqual(["user-minister-backup"]);
+  });
+
+  it("ne crée aucun AbsenceBackup sans backups fournis (non-régression)", async () => {
+    await declareAbsence(baseParams);
+
+    expect(prismaMock.absenceBackup.createMany).not.toHaveBeenCalled();
+    expect(notificationsOfType("ABSENCE_BACKUP_ASSIGNED")).toHaveLength(0);
+  });
+});
+
+describe("validateBackupTargets", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("refuse (403) si le déclarant n'a ni rôle Resp. département ni Ministre", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+
+    await expect(
+      validateBackupTargets("user-star-only", "church-1", [{ type: "STAR", memberId: "member-x" }])
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("autorise un backup STAR appartenant au département du Resp. département déclarant", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+    ] as never);
+    prismaMock.member.findUnique.mockResolvedValue({
+      departments: [{ department: { id: "dept-1", ministry: { churchId: "church-1" } } }],
+    } as never);
+
+    await expect(
+      validateBackupTargets("user-resp", "church-1", [{ type: "STAR", memberId: "member-x" }])
+    ).resolves.toBeUndefined();
+  });
+
+  it("refuse un backup STAR hors du périmètre du Resp. département déclarant", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+    ] as never);
+    prismaMock.member.findUnique.mockResolvedValue({
+      departments: [{ department: { id: "dept-other", ministry: { churchId: "church-1" } } }],
+    } as never);
+
+    await expect(
+      validateBackupTargets("user-resp", "church-1", [{ type: "STAR", memberId: "member-x" }])
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("un Resp. département peut désigner le Ministre de son ministère en backup", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+    ] as never);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-minister",
+      role: "MINISTER",
+      churchId: "church-1",
+      ministryId: "min-1",
+      departments: [],
+    } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ ministryId: "min-1" }] as never);
+
+    await expect(
+      validateBackupTargets("user-resp", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-min" }])
+    ).resolves.toBeUndefined();
+  });
+
+  it("un Resp. département peut désigner un autre Resp. département du même ministère", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+    ] as never);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-peer",
+      role: "DEPARTMENT_HEAD",
+      churchId: "church-1",
+      ministryId: null,
+      departments: [{ department: { ministryId: "min-1" } }],
+    } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ ministryId: "min-1" }] as never);
+
+    await expect(
+      validateBackupTargets("user-resp", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-peer" }])
+    ).resolves.toBeUndefined();
+  });
+
+  it("refuse un Resp. département d'un autre ministère que le déclarant", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+    ] as never);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-other",
+      role: "DEPARTMENT_HEAD",
+      churchId: "church-1",
+      ministryId: null,
+      departments: [{ department: { ministryId: "min-2" } }],
+    } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ ministryId: "min-1" }] as never);
+
+    await expect(
+      validateBackupTargets("user-resp", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-other" }])
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("un Ministre peut désigner un autre Ministre en backup", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "MINISTER", ministryId: "min-1", departments: [] },
+    ] as never);
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-minister-2",
+      role: "MINISTER",
+      churchId: "church-1",
+      ministryId: "min-2",
+      departments: [],
+    } as never);
+
+    await expect(
+      validateBackupTargets("user-min", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-min2" }])
+    ).resolves.toBeUndefined();
+  });
+
+  it("refuse qu'un Ministre se désigne lui-même en backup", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "MINISTER", ministryId: "min-1", departments: [] },
+    ] as never);
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-min",
+      role: "MINISTER",
+      churchId: "church-1",
+      ministryId: "min-1",
+      departments: [],
+    } as never);
+
+    await expect(
+      validateBackupTargets("user-min", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-self" }])
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("refuse qu'un Ministre désigne un Resp. département en backup", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([
+      { role: "MINISTER", ministryId: "min-1", departments: [] },
+    ] as never);
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({
+      userId: "user-depthead",
+      role: "DEPARTMENT_HEAD",
+      churchId: "church-1",
+      ministryId: null,
+      departments: [{ department: { ministryId: "min-1" } }],
+    } as never);
+
+    await expect(
+      validateBackupTargets("user-min", "church-1", [{ type: "RESPONSIBLE", userChurchRoleId: "role-depthead" }])
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+});
+
+describe("cancelAbsence notifie les backups", () => {
+  const existingAbsence = {
+    id: "abs-1",
+    churchId: "church-1",
+    memberId: "member-1",
+    startDate: new Date("2026-08-01"),
+    endDate: new Date("2026-08-10"),
+    reason: null,
+    status: "ACTIVE",
+    createdById: "user-1",
+    cancelledById: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    cancelledAt: null,
+    member: { firstName: "Jean", lastName: "Dupont" },
+    backups: [
+      { type: "STAR", memberId: "member-backup", userChurchRoleId: null },
+      { type: "RESPONSIBLE", memberId: null, userChurchRoleId: "role-1" },
+    ],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    planningBus.clear();
+    prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
+    prismaMock.absence.update.mockResolvedValue({ ...existingAbsence, status: "CANCELLED" } as never);
+    prismaMock.memberDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.notification.create.mockResolvedValue({} as never);
+  });
+
+  it("notifie les backups STAR et RESPONSIBLE de l'absence annulée", async () => {
+    prismaMock.memberUserLink.findMany.mockImplementation(({ where }: never) =>
+      Promise.resolve((where as { memberId: string }).memberId === "member-backup" ? [{ userId: "user-backup" }] : [])
+    );
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({ userId: "user-responsible-backup" } as never);
+
+    await cancelAbsence({ absenceId: "abs-1", churchId: "church-1", cancelledById: "user-1" });
+
+    expect(new Set(notifiedUserIds())).toEqual(new Set(["user-backup", "user-responsible-backup"]));
+  });
+});
+
+describe("updateAbsence", () => {
+  const existingAbsence = {
+    id: "abs-1",
+    churchId: "church-1",
+    memberId: "member-1",
+    startDate: new Date("2026-09-01"),
+    endDate: new Date("2026-09-10"),
+    reason: null,
+    status: "ACTIVE",
+    createdById: "user-1",
+    cancelledById: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    cancelledAt: null,
+    member: { firstName: "Jean", lastName: "Dupont" },
+    backups: [],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    planningBus.clear();
+    prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
+    prismaMock.absence.update.mockResolvedValue({ ...existingAbsence, startDate: new Date("2026-09-02") } as never);
+    prismaMock.memberDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.absenceBackup.deleteMany.mockResolvedValue({ count: 0 } as never);
+    prismaMock.absenceBackup.createMany.mockResolvedValue({ count: 0 } as never);
+    prismaMock.notification.create.mockResolvedValue({} as never);
+  });
+
+  it("modifie la période et notifie ABSENCE_UPDATED", async () => {
+    await updateAbsence({
+      absenceId: "abs-1",
+      churchId: "church-1",
+      updatedById: "user-1",
+      startDate: new Date("2026-09-02"),
+      endDate: new Date("2026-09-12"),
+    });
+
+    expect(prismaMock.absence.update).toHaveBeenCalledWith({
+      where: { id: "abs-1" },
+      data: { startDate: new Date("2026-09-02"), endDate: new Date("2026-09-12") },
+    });
+  });
+
+  it("notifie les backups déjà notifiés à la déclaration initiale (backups inchangés)", async () => {
+    prismaMock.absence.findUnique.mockResolvedValue({
+      ...existingAbsence,
+      backups: [{ type: "STAR", memberId: "member-backup", userChurchRoleId: null }],
+    } as never);
+    prismaMock.memberUserLink.findMany.mockImplementation(({ where }: never) =>
+      Promise.resolve((where as { memberId: string }).memberId === "member-backup" ? [{ userId: "user-backup" }] : [])
+    );
+
+    await updateAbsence({
+      absenceId: "abs-1",
+      churchId: "church-1",
+      updatedById: "user-1",
+      reason: "nouveau motif",
+    });
+
+    expect(notificationsOfType("ABSENCE_UPDATED").map((n) => n.userId)).toEqual(["user-backup"]);
+  });
+
+  it("notifie ABSENCE_CONFLICT si un nouveau conflit apparaît suite à la modification", async () => {
+    prismaMock.planning.findMany
+      .mockResolvedValueOnce([]) // conflits avant (période actuelle)
+      .mockResolvedValueOnce([
+        { eventDepartment: { departmentId: "dept-1", event: { id: "evt-1", title: "Culte", date: new Date("2026-09-05") } } },
+      ] as never); // conflits après (nouvelle période)
+    prismaMock.memberUserLink.findMany.mockResolvedValue([{ userId: "user-star" }] as never);
+
+    await updateAbsence({
+      absenceId: "abs-1",
+      churchId: "church-1",
+      updatedById: "user-1",
+      startDate: new Date("2026-09-02"),
+      endDate: new Date("2026-09-12"),
+    });
+
+    expect(notificationsOfType("ABSENCE_CONFLICT")).toHaveLength(1);
+  });
+
+  it("refuse (409) une absence déjà passée", async () => {
+    prismaMock.absence.findUnique.mockResolvedValue({
+      ...existingAbsence,
+      endDate: new Date("2020-01-01"),
+    } as never);
+
+    await expect(
+      updateAbsence({ absenceId: "abs-1", churchId: "church-1", updatedById: "user-1", reason: "x" })
+    ).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("refuse (400) une nouvelle date de début antérieure à celle déjà enregistrée si l'absence est en cours", async () => {
+    prismaMock.absence.findUnique.mockResolvedValue({
+      ...existingAbsence,
+      startDate: new Date("2020-01-01"), // déjà commencée
+      endDate: new Date("2027-01-01"), // pas encore terminée
+    } as never);
+
+    await expect(
+      updateAbsence({
+        absenceId: "abs-1",
+        churchId: "church-1",
+        updatedById: "user-1",
+        startDate: new Date("2019-01-01"),
+      })
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("remplace intégralement les backups quand une nouvelle liste est fournie", async () => {
+    prismaMock.userChurchRole.findUnique.mockResolvedValue({ userId: "user-new-backup" } as never);
+
+    await updateAbsence({
+      absenceId: "abs-1",
+      churchId: "church-1",
+      updatedById: "user-1",
+      backups: [{ type: "RESPONSIBLE", userChurchRoleId: "role-new" }],
+    });
+
+    expect(prismaMock.absenceBackup.deleteMany).toHaveBeenCalledWith({ where: { absenceId: "abs-1" } });
+    expect(prismaMock.absenceBackup.createMany).toHaveBeenCalledWith({
+      data: [{ absenceId: "abs-1", type: "RESPONSIBLE", memberId: null, userChurchRoleId: "role-new" }],
+    });
+  });
+
+  it("laisse les backups inchangés quand `backups` est omis", async () => {
+    await updateAbsence({ absenceId: "abs-1", churchId: "church-1", updatedById: "user-1", reason: "x" });
+
+    expect(prismaMock.absenceBackup.deleteMany).not.toHaveBeenCalled();
+    expect(prismaMock.absenceBackup.createMany).not.toHaveBeenCalled();
   });
 });
