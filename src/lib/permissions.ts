@@ -57,6 +57,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "reports:edit",
     "accounting:stats",
     "absences:view",
+    "absences:manage",
   ],
   MINISTER: [
     "planning:view",

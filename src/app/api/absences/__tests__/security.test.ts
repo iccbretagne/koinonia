@@ -18,6 +18,7 @@ const mockUpdateAbsence = vi.fn();
 const mockGetMemberScope = vi.fn();
 const mockIsMemberLinkedToUser = vi.fn();
 const mockValidateBackupTargets = vi.fn();
+const mockResolveSubjectUserId = vi.fn();
 vi.mock("@/modules/planning", () => ({
   declareAbsence: (...args: unknown[]) => mockDeclareAbsence(...args),
   cancelAbsence: (...args: unknown[]) => mockCancelAbsence(...args),
@@ -26,6 +27,7 @@ vi.mock("@/modules/planning", () => ({
   getMemberScope: (...args: unknown[]) => mockGetMemberScope(...args),
   isMemberLinkedToUser: (...args: unknown[]) => mockIsMemberLinkedToUser(...args),
   validateBackupTargets: (...args: unknown[]) => mockValidateBackupTargets(...args),
+  resolveSubjectUserId: (...args: unknown[]) => mockResolveSubjectUserId(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -216,16 +218,37 @@ describe("POST /api/absences — backups", () => {
     mockDeclareAbsence.mockResolvedValue({ id: "abs-1" });
   });
 
-  it("returns 403 for backups on an absence declared for a third party", async () => {
+  it("returns 403 for backups on a third-party absence when the target has no linked account", async () => {
     mockIsMemberLinkedToUser.mockResolvedValue(false);
     mockRequireChurchPermission.mockResolvedValue(createAdminSession());
     mockGetUserDepartmentScope.mockReturnValue({ scoped: false });
+    mockResolveSubjectUserId.mockResolvedValue(null);
 
     const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(bodyWithBackup) }));
 
     expect(res.status).toBe(403);
     expect(mockValidateBackupTargets).not.toHaveBeenCalled();
     expect(mockDeclareAbsence).not.toHaveBeenCalled();
+  });
+
+  it("passes backups to declareAbsence for a third party whose linked account is Resp. département/Ministre", async () => {
+    mockIsMemberLinkedToUser.mockResolvedValue(false);
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockGetUserDepartmentScope.mockReturnValue({ scoped: false });
+    mockResolveSubjectUserId.mockResolvedValue("user-target-responsable");
+    mockValidateBackupTargets.mockResolvedValue(undefined);
+
+    const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(bodyWithBackup) }));
+
+    expect(res.status).toBe(201);
+    expect(mockValidateBackupTargets).toHaveBeenCalledWith(
+      "user-target-responsable",
+      "church-1",
+      bodyWithBackup.backups
+    );
+    expect(mockDeclareAbsence).toHaveBeenCalledWith(
+      expect.objectContaining({ backups: bodyWithBackup.backups })
+    );
   });
 
   it("returns 403 when validateBackupTargets rejects (backup out of scope / role ineligible)", async () => {
@@ -355,6 +378,7 @@ describe("PATCH /api/absences/[id] — action update", () => {
     prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
     mockUpdateAbsence.mockResolvedValue({ ...existingAbsence });
     mockIsMemberLinkedToUser.mockResolvedValue(false);
+    mockResolveSubjectUserId.mockResolvedValue(null);
   });
 
   it("allows the creator to update", async () => {

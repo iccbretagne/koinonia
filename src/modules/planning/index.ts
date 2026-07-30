@@ -15,8 +15,10 @@ export {
   getMemberScope,
   getDeclarerBackupScope,
   validateBackupTargets,
+  resolveSubjectUserId,
+  listBackupOptions,
 } from "./services/absence.service";
-export type { AbsenceConflict, BackupInput } from "./services/absence.service";
+export type { AbsenceConflict, BackupInput, BackupOption } from "./services/absence.service";
 
 /**
  * Module planning — ex-Koinonia.
@@ -54,7 +56,7 @@ export const planningModule = defineModule({
     "reports:edit":        ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"],
     // Absences des STAR
     "absences:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
-    "absences:manage":     ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
+    "absences:manage":     ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
   },
 
   navigation: [

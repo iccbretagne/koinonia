@@ -1,7 +1,7 @@
 # Spec — Backup pour un tiers et gestion des absences par le Secrétariat
 
 - **Numéro** : 014
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-30
 - **Branche suggérée** : `feat/backup-tiers-secretariat`
 
@@ -97,20 +97,20 @@ Cette spec couvre deux évolutions liées :
 
 ## Critères d'acceptation
 
-- [ ] Le rôle Secrétaire peut déclarer une absence pour n'importe quel STAR de l'église.
-- [ ] Le rôle Secrétaire peut modifier une absence non passée de n'importe quel STAR de l'église.
-- [ ] Le rôle Secrétaire peut annuler une absence active de n'importe quel STAR de l'église.
-- [ ] Quand un Super Admin, Admin, Ministre, Resp. département ou Secrétaire déclare une absence
+- [x] Le rôle Secrétaire peut déclarer une absence pour n'importe quel STAR de l'église.
+- [x] Le rôle Secrétaire peut modifier une absence non passée de n'importe quel STAR de l'église.
+- [x] Le rôle Secrétaire peut annuler une absence active de n'importe quel STAR de l'église.
+- [x] Quand un Super Admin, Admin, Ministre, Resp. département ou Secrétaire déclare une absence
       pour un STAR qui est lui-même Resp. département ou Ministre (avec compte lié), l'option de
       désigner un backup est proposée.
-- [ ] Le choix de backups proposé dans ce cas respecte le périmètre de la **personne absente**
+- [x] Le choix de backups proposé dans ce cas respecte le périmètre de la **personne absente**
       (son département/ministère), pas celui du déclarant.
-- [ ] Quand le STAR cible n'a ni rôle Resp. département ni Ministre, ou n'a pas de compte lié,
+- [x] Quand le STAR cible n'a ni rôle Resp. département ni Ministre, ou n'a pas de compte lié,
       l'option de backup n'est pas proposée.
-- [ ] La même règle de périmètre (celui de la personne absente) s'applique à la modification d'une
+- [x] La même règle de périmètre (celui de la personne absente) s'applique à la modification d'une
       absence déclarée pour un tiers.
-- [ ] Les backups désignés dans ce contexte sont notifiés, comme pour une auto-déclaration.
-- [ ] Une absence déclarée pour un STAR simple (sans rôle Resp. département/Ministre) se comporte
+- [x] Les backups désignés dans ce contexte sont notifiés, comme pour une auto-déclaration.
+- [x] Une absence déclarée pour un STAR simple (sans rôle Resp. département/Ministre) se comporte
       exactement comme avant cette feature (aucune option de backup).
 
 ## Hors périmètre

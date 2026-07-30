@@ -147,6 +147,9 @@ export default function AbsencesClient({
   const [formBackups, setFormBackups] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [manageBackupEligible, setManageBackupEligible] = useState(false);
+  const [manageBackupOptions, setManageBackupOptions] = useState<BackupOption[]>([]);
+  const [loadingManageBackupOptions, setLoadingManageBackupOptions] = useState(false);
 
   const fetchSelf = useCallback(async () => {
     setLoadingSelf(true);
@@ -188,6 +191,35 @@ export default function AbsencesClient({
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  useEffect(() => {
+    if (!declareOpen || declareMode !== "manage" || !formMemberId) {
+      setManageBackupEligible(false);
+      setManageBackupOptions([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingManageBackupOptions(true);
+    fetch(`/api/absences/backup-options?churchId=${churchId}&memberId=${formMemberId}`)
+      .then((res) => (res.ok ? res.json() : { eligible: false, options: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        setManageBackupEligible(!!data.eligible);
+        setManageBackupOptions(data.options ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setManageBackupEligible(false);
+          setManageBackupOptions([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingManageBackupOptions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [declareOpen, declareMode, formMemberId, churchId]);
 
   const displayedAbsences = useMemo(() => {
     let rows = allAbsences;
@@ -275,7 +307,10 @@ export default function AbsencesClient({
     setSubmitting(true);
     setFormError(null);
     try {
-      const includeBackups = canDesignateBackup && declareMode === "self" && (!editingId || editingIsSelf);
+      const includeBackups =
+        declareMode === "self"
+          ? canDesignateBackup && (!editingId || editingIsSelf)
+          : manageBackupEligible;
       const backups = includeBackups ? parseBackupSelection(formBackups) : undefined;
 
       const res = editingId
@@ -363,7 +398,11 @@ export default function AbsencesClient({
   const visibleDepartments = ministryFilter
     ? departments.filter((d) => d.ministryId === ministryFilter)
     : departments;
-  const showBackupField = canDesignateBackup && declareMode === "self" && (!editingId || editingIsSelf);
+  const showBackupField =
+    declareMode === "self"
+      ? canDesignateBackup && (!editingId || editingIsSelf)
+      : manageBackupEligible;
+  const activeBackupOptions = declareMode === "self" ? backupOptions : manageBackupOptions;
 
   return (
     <div className="space-y-8">
@@ -588,7 +627,10 @@ export default function AbsencesClient({
               label="STAR"
               placeholder="Sélectionner..."
               value={formMemberId}
-              onChange={(e) => setFormMemberId(e.target.value)}
+              onChange={(e) => {
+                setFormMemberId(e.target.value);
+                setFormBackups([]);
+              }}
               options={manageableMembers.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` }))}
             />
           )}
@@ -612,10 +654,13 @@ export default function AbsencesClient({
             onChange={(e) => setFormReason(e.target.value)}
           />
 
-          {showBackupField && backupOptions.length > 0 && (
+          {declareMode === "manage" && loadingManageBackupOptions && (
+            <p className="text-xs text-gray-400">Vérification du backup possible...</p>
+          )}
+          {showBackupField && activeBackupOptions.length > 0 && (
             <CheckboxGroup
               label="Backup (optionnel)"
-              options={backupOptions}
+              options={activeBackupOptions}
               selected={formBackups}
               onChange={setFormBackups}
             />
