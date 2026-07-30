@@ -40,6 +40,7 @@ export default function StarViewClient({ eventId }: Props) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -62,19 +63,31 @@ export default function StarViewClient({ eventId }: Props) {
     return `STAR-${data?.event.title || "export"}`;
   }
 
-  // Force A4 landscape layout (1122px wide, desktop breakpoints) before html2canvas capture,
-  // regardless of the current mobile viewport — restores original width in all cases.
+  // Force A4 landscape layout (1122px wide) before html2canvas capture, regardless of the
+  // current viewport. Forcing `el.style.width` alone does NOT make Tailwind's `md:`/`lg:`
+  // classes activate — those respond to the real browser viewport width, not this element's
+  // width. On a narrower viewport (mobile, or a non-maximized desktop window), the live DOM
+  // therefore keeps its mobile/tablet column count while html2canvas's clone (rendered at
+  // `windowWidth: 1440`) applies the desktop column count — a mismatch that made the captured
+  // image truncated with blank gaps. Forcing a single fixed column count on the grid during
+  // capture removes that mismatch entirely.
   async function captureForExport(): Promise<HTMLCanvasElement | null> {
     if (!printRef.current) return null;
     const html2canvas = (await import("html2canvas-pro")).default;
     const el = printRef.current;
     const savedWidth = el.style.width;
     el.style.width = "1122px";
+
+    const grid = gridRef.current;
+    const savedGridClassName = grid?.className;
+    if (grid) grid.className = "grid grid-cols-4 gap-3";
+
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
       return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
     } finally {
       el.style.width = savedWidth;
+      if (grid && savedGridClassName !== undefined) grid.className = savedGridClassName;
     }
   }
 
@@ -273,7 +286,7 @@ export default function StarViewClient({ eventId }: Props) {
         {/* Body */}
         <div className="bg-gray-50 px-5 py-5">
           {/* Active departments */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div ref={gridRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {data.departments.filter((d) => d.members.length > 0).map((dept) => (
               <div
                 key={dept.id}
