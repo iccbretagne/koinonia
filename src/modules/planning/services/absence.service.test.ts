@@ -10,6 +10,8 @@ const {
   findAbsenceConflicts,
   resolveResponsibleUserIds,
   validateBackupTargets,
+  resolveSubjectUserId,
+  listBackupOptions,
 } = await import("@/modules/planning");
 const { planningBus } = await import("@/modules/planning");
 
@@ -706,5 +708,88 @@ describe("updateAbsence", () => {
 
     expect(prismaMock.absenceBackup.deleteMany).not.toHaveBeenCalled();
     expect(prismaMock.absenceBackup.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("resolveSubjectUserId", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retourne l'userId lié au membre", async () => {
+    prismaMock.memberUserLink.findFirst.mockResolvedValue({ userId: "user-x" } as never);
+
+    const id = await resolveSubjectUserId("member-1", "church-1");
+
+    expect(id).toBe("user-x");
+  });
+
+  it("retourne null si aucun compte n'est lié", async () => {
+    prismaMock.memberUserLink.findFirst.mockResolvedValue(null);
+
+    const id = await resolveSubjectUserId("member-1", "church-1");
+
+    expect(id).toBeNull();
+  });
+});
+
+describe("listBackupOptions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retourne eligible:false et aucune option sans rôle Resp. département/Ministre", async () => {
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+
+    const result = await listBackupOptions("user-star-only", "church-1");
+
+    expect(result.eligible).toBe(false);
+    expect(result.options).toEqual([]);
+    expect(prismaMock.member.findMany).not.toHaveBeenCalled();
+  });
+
+  it("retourne les options d'un Resp. département (STAR de son département + Ministre/pairs de son ministère)", async () => {
+    prismaMock.userChurchRole.findMany.mockImplementation(({ where }: never) => {
+      if ((where as { OR?: unknown }).OR) {
+        return Promise.resolve([
+          { id: "role-min", role: "MINISTER", user: { name: "Ministre X", displayName: null } },
+        ]);
+      }
+      return Promise.resolve([
+        { role: "DEPARTMENT_HEAD", ministryId: null, departments: [{ departmentId: "dept-1" }] },
+      ]);
+    });
+    prismaMock.department.findMany.mockResolvedValue([{ ministryId: "min-1" }] as never);
+    prismaMock.member.findMany.mockResolvedValue([
+      { id: "member-x", firstName: "Jean", lastName: "Dupont" },
+    ] as never);
+
+    const result = await listBackupOptions("user-resp", "church-1");
+
+    expect(result.eligible).toBe(true);
+    expect(result.options).toEqual([
+      { value: "STAR:member-x", label: "Jean Dupont (STAR)" },
+      { value: "RESPONSIBLE:role-min", label: "Ministre X (Ministre)" },
+    ]);
+  });
+
+  it("exclut le sujet lui-même des options RESPONSIBLE (requête Ministre)", async () => {
+    let ministersQueryWhere: unknown;
+    prismaMock.userChurchRole.findMany.mockImplementation(({ where }: never) => {
+      const w = where as { role?: unknown; userId?: { not: string } };
+      if (w.role && typeof w.role === "object" && "in" in (w.role as object)) {
+        // getDeclarerBackupScope : rôles du sujet
+        return Promise.resolve([{ role: "MINISTER", ministryId: "min-1", departments: [] }]);
+      }
+      // listBackupOptions : requête des autres Ministres
+      ministersQueryWhere = w;
+      return Promise.resolve([]);
+    });
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.member.findMany.mockResolvedValue([]);
+
+    await listBackupOptions("user-min", "church-1");
+
+    expect(ministersQueryWhere).toMatchObject({ userId: { not: "user-min" } });
   });
 });

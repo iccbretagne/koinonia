@@ -72,7 +72,7 @@ export async function PATCH(
       return successResponse(updated);
     }
 
-    await assertBackupsAllowed(data.backups, isSelf, session.user.id, absence.churchId);
+    await assertBackupsAllowed(data.backups, isSelf, session.user.id, absence.memberId, absence.churchId);
 
     const updated = await updateAbsence({
       absenceId: id,

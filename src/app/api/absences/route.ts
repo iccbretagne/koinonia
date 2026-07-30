@@ -7,6 +7,7 @@ import {
   getMemberScope,
   isMemberLinkedToUser,
   validateBackupTargets,
+  resolveSubjectUserId,
 } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -31,19 +32,27 @@ const createSchema = z
   });
 
 /**
- * Vérifie qu'une déclaration/modification avec backups est autorisée : uniquement pour sa
- * propre absence (`isSelf`), et uniquement si le déclarant a le rôle Resp. département ou
- * Ministre pour `churchId`. Ne fait rien si `backups` est vide/absent.
+ * Vérifie qu'une déclaration/modification avec backups est autorisée, et avec quel périmètre.
+ *
+ * Le périmètre de backup est toujours celui de la **personne absente** (`memberId`) — en
+ * auto-déclaration (`isSelf`), c'est le déclarant lui-même ; pour un tiers, c'est le compte lié
+ * à ce STAR (s'il existe et a un rôle Resp. département/Ministre — sinon aucun backup n'est
+ * disponible, cf. spec 014). Ne fait rien si `backups` est vide/absent.
  */
 export async function assertBackupsAllowed(
   backups: z.infer<typeof backupSchema>[] | undefined,
   isSelf: boolean,
-  userId: string,
+  declarerUserId: string,
+  memberId: string,
   churchId: string
 ) {
   if (!backups || backups.length === 0) return;
-  if (!isSelf) throw new ApiError(403, "Le backup n'est proposé que pour sa propre absence");
-  await validateBackupTargets(userId, churchId, backups);
+
+  const subjectUserId = isSelf ? declarerUserId : await resolveSubjectUserId(memberId, churchId);
+  if (!subjectUserId) {
+    throw new ApiError(403, "Backup indisponible : cette fiche n'a pas de compte lié avec un rôle responsable");
+  }
+  await validateBackupTargets(subjectUserId, churchId, backups);
 }
 
 /**
@@ -214,7 +223,7 @@ export async function POST(request: Request) {
       }
     }
 
-    await assertBackupsAllowed(data.backups, isSelf, session.user.id, churchId);
+    await assertBackupsAllowed(data.backups, isSelf, session.user.id, memberId, churchId);
 
     const absence = await declareAbsence({
       churchId,
