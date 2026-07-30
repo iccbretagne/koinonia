@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.17.0] - 2026-07-30
+
+### Ajouté
+
+- **Backup pour un tiers et gestion des absences par le Secrétariat** : quand un Super Admin, Admin, Secrétaire, Ministre ou Resp. département déclare ou modifie l'absence d'un STAR qui est lui-même Resp. département ou Ministre, l'option de désigner un backup est désormais proposée — avec le périmètre de la personne absente, jamais celui du déclarant. Le rôle Secrétaire peut désormais déclarer, modifier et annuler une absence pour n'importe quel STAR de l'église (comme Admin/Super Admin), plus seulement consulter la vue transverse.
+
+### Corrigé
+
+- **Export du planning STAR tronqué (copier image / télécharger PNG / export PDF)** : régression introduite par une mise à jour automatique de la librairie `html2canvas-pro` (2.3.1), corrigée en amont par l'éditeur — mise à jour vers 2.3.2.
+
 ## [v1.16.0] - 2026-07-30
 
 ### Ajouté
