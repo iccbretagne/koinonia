@@ -6,6 +6,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.16.0] - 2026-07-30
+
+### Ajouté
+
+- **Évolutions du module Absences** : lors de la déclaration de sa propre absence, un Resp. département ou un Ministre peut désigner un ou plusieurs backups (STAR de son périmètre, Ministre de son ministère, ou pair Resp. département du même ministère) — notifiés de leur désignation et visibles dans la vue transverse. Une absence non passée peut désormais être modifiée (période, motif, backups) plutôt qu'annulée puis recréée, avec réévaluation des conflits. Nouvelle vue « frise temporelle » en alternative au tableau. Export Excel de la vue d'ensemble, respectant les filtres actifs. À la déclaration, la date de fin se pré-remplit sur la date de début.
+- **Import des réservations futures MRBS vers Koinonia** : script d'import ponctuel (`prisma/scripts/import-mrbs-reservations.ts`) réutilisant le service métier de réservation (conflits, main courante), idempotent, avec option de rattachement des réservations sans créateur lié à un compte de repli.
+
 ## [v1.15.0] - 2026-07-29
 
 ### Ajouté
