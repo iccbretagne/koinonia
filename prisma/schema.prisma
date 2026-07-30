@@ -204,6 +204,8 @@ model UserChurchRole {
   ministry    Ministry?        @relation(fields: [ministryId], references: [id])
   departments UserDepartment[]
 
+  absenceBackups AbsenceBackup[]
+
   @@unique([userId, churchId, role])
   @@map("user_church_roles")
 }
@@ -282,7 +284,8 @@ model Member {
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
 
-  absences Absence[]
+  absences       Absence[]
+  absenceBackups AbsenceBackup[]
 
   @@map("members")
 }
@@ -510,10 +513,33 @@ model Absence {
   church      Church @relation(fields: [churchId], references: [id])
   createdBy   User   @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
   cancelledBy User?  @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
+  backups     AbsenceBackup[]
 
   @@index([churchId, startDate, endDate])
   @@index([memberId, status])
   @@map("absences")
+}
+
+enum AbsenceBackupType {
+  STAR
+  RESPONSIBLE
+}
+
+model AbsenceBackup {
+  id               String            @id @default(cuid())
+  absenceId        String
+  type             AbsenceBackupType
+  memberId         String?
+  userChurchRoleId String?
+  createdAt        DateTime          @default(now())
+
+  absence        Absence         @relation(fields: [absenceId], references: [id], onDelete: Cascade)
+  member         Member?         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  userChurchRole UserChurchRole? @relation(fields: [userChurchRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([absenceId, memberId])
+  @@unique([absenceId, userChurchRoleId])
+  @@map("absence_backups")
 }
 
 model Task {

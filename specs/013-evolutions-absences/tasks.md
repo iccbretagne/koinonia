@@ -9,62 +9,62 @@
 ## Prérequis
 
 - [x] Branche créée : `feat/evolutions-absences`
-- [ ] Migration Prisma générée (T2)
+- [x] Migration Prisma générée (T2)
 
 ## Tâches
 
 ### 1. Données & migration
 
-- [ ] **T1** — Ajouter l'enum `AbsenceBackupType` (`STAR`/`RESPONSIBLE`), le modèle
+- [x] **T1** — Ajouter l'enum `AbsenceBackupType` (`STAR`/`RESPONSIBLE`), le modèle
       `AbsenceBackup` (`absenceId`, `type`, `memberId?`, `userChurchRoleId?`) et les relations
       inverses (`Absence.backups`, `Member.absenceBackups`, `UserChurchRole.absenceBackups`)
       *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Générer et vérifier la migration (`npm run db:migrate` — nom
+- [x] **T2** — Générer et vérifier la migration (`npm run db:migrate` — nom
       `add_absence_backups`) ; contrôler le SQL généré *(fichier : `prisma/migrations/…`)*
 
 ### 2. Logique métier (services)
 
-- [ ] **T3** — Implémenter `validateBackupTargets(declarerRole, declarerScope, backups)` :
+- [x] **T3** — Implémenter `validateBackupTargets(declarerRole, declarerScope, backups)` :
       vérifie pour chaque entrée `STAR` l'appartenance au département (Resp. département) ou au
       ministère (Ministre) du déclarant, et pour chaque entrée `RESPONSIBLE` la cible autorisée
       (Ministre du ministère ou autre Resp. département du même ministère pour un Resp.
       département ; autre Ministre de l'église, jamais lui-même, pour un Ministre) ; lève
       `ApiError(403)` sinon *(fichier : `src/modules/planning/services/absence.service.ts`)*
-- [ ] **T4** — Étendre `declareAbsence(params)` : accepte `backups?: BackupInput[]`, crée les
+- [x] **T4** — Étendre `declareAbsence(params)` : accepte `backups?: BackupInput[]`, crée les
       lignes `AbsenceBackup` dans la même transaction, notifie chaque backup
       (`ABSENCE_BACKUP_ASSIGNED`) — via `MemberUserLink` pour `STAR` (silencieux si non lié),
       directement via `userChurchRole.userId` pour `RESPONSIBLE` *(même fichier que T3)*
-- [ ] **T5** — Implémenter `updateAbsence(params)` : recharge l'absence, refuse (`409`) si déjà
+- [x] **T5** — Implémenter `updateAbsence(params)` : recharge l'absence, refuse (`409`) si déjà
       passée, refuse (`400`) une nouvelle `startDate` antérieure à celle déjà enregistrée si
       l'absence est en cours, recalcule les conflits avant/après via `findAbsenceConflicts`,
       applique les champs fournis (`startDate`/`endDate`/`reason`), remplace intégralement les
       `AbsenceBackup` si `backups` est fourni, notifie `ABSENCE_UPDATED` à l'union des
       destinataires (anciens + nouveaux), notifie `ABSENCE_CONFLICT` si un nouveau conflit
       apparaît, émet `planning:absence:updated` *(même fichier que T3)*
-- [ ] **T6** [P] — Étendre `cancelAbsence` : inclut dans `recipients` les utilisateurs résolus
+- [x] **T6** [P] — Étendre `cancelAbsence` : inclut dans `recipients` les utilisateurs résolus
       depuis les backups de l'absence annulée *(même fichier que T3)*
-- [ ] **T7** [P] — Ajouter le type `planning:absence:updated` à `PlanningEvents` *(fichier :
+- [x] **T7** [P] — Ajouter le type `planning:absence:updated` à `PlanningEvents` *(fichier :
       `src/modules/planning/events.ts`)*
-- [ ] **T8** [P] — Exporter `updateAbsence` et `validateBackupTargets` depuis l'index public du
+- [x] **T8** [P] — Exporter `updateAbsence` et `validateBackupTargets` depuis l'index public du
       module *(fichier : `src/modules/planning/index.ts`)*
 
 ### 3. API (route handlers)
 
-- [ ] **T9** — `POST /api/absences` : ajoute `backupSchema` (union discriminée `STAR`/
+- [x] **T9** — `POST /api/absences` : ajoute `backupSchema` (union discriminée `STAR`/
       `RESPONSIBLE`) et le champ `backups?` à `createSchema` ; si `backups` non vide, refuse
       (`403`) quand `!isSelf` ou quand le déclarant n'a ni rôle `DEPARTMENT_HEAD` ni `MINISTER`
       pour `churchId`, sinon appelle `validateBackupTargets` (T3) puis passe `backups` à
       `declareAbsence` (T4) *(fichier : `src/app/api/absences/route.ts`)*
-- [ ] **T10** — `PATCH /api/absences/[id]` : remplace le schéma par une union discriminée
+- [x] **T10** — `PATCH /api/absences/[id]` : remplace le schéma par une union discriminée
       `{ action: "cancel" }` / `{ action: "update", startDate?, endDate?, reason?, backups? }` ;
       réutilise l'autorisation existante (créateur, self, resp/ministre scopé, manager global) ;
       pour `action: "update"` avec `backups`, mêmes règles de validation que T9 (`isSelf` requis,
       rôle requis, `validateBackupTargets`) puis appelle `updateAbsence` (T5) *(fichier :
       `src/app/api/absences/[id]/route.ts`)*
-- [ ] **T11** [P] — `GET /api/absences` : enrichit chaque absence retournée d'un champ
+- [x] **T11** [P] — `GET /api/absences` : enrichit chaque absence retournée d'un champ
       `backups: Array<{ id, type, name, role? }>` (résolu depuis `AbsenceBackup` + `Member`/
       `UserChurchRole.user`) *(même fichier que T9)*
-- [ ] **T12** — `POST /api/absences/export` *(nouveau fichier)* : valide `{ churchId,
+- [x] **T12** — `POST /api/absences/export` *(nouveau fichier)* : valide `{ churchId,
       absenceIds }` (Zod), `requireChurchPermission("absences:view", churchId)`, filtre
       `absenceIds` à ceux dans le périmètre de l'appelant (`getUserDepartmentScope`), charge les
       absences correspondantes (avec backups), génère un classeur `ExcelJS` (colonnes STAR,

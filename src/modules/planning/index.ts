@@ -8,12 +8,15 @@ export { deleteEvents } from "./services/event.service";
 export {
   declareAbsence,
   cancelAbsence,
+  updateAbsence,
   findAbsenceConflicts,
   resolveResponsibleUserIds,
   isMemberLinkedToUser,
   getMemberScope,
+  getDeclarerBackupScope,
+  validateBackupTargets,
 } from "./services/absence.service";
-export type { AbsenceConflict } from "./services/absence.service";
+export type { AbsenceConflict, BackupInput } from "./services/absence.service";
 
 /**
  * Module planning — ex-Koinonia.

@@ -84,4 +84,15 @@ export type PlanningEvents = {
     cancelledById: string;
     hadConflict: boolean;
   };
+
+  /** Une absence non passée a été modifiée (période, motif et/ou backups). */
+  "planning:absence:updated": {
+    absenceId: string;
+    churchId: string;
+    memberId: string;
+    updatedById: string;
+    startDate: string;
+    endDate: string;
+    hasConflict: boolean;
+  };
 }
