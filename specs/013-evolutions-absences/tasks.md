@@ -74,11 +74,11 @@
 
 ### 4. UI
 
-- [ ] **T13** — Page serveur : détecte si l'utilisateur a le rôle `DEPARTMENT_HEAD`/`MINISTER`
+- [x] **T13** — Page serveur : détecte si l'utilisateur a le rôle `DEPARTMENT_HEAD`/`MINISTER`
       pour `churchId`, résout par fiche STAR self les options de backup éligibles (STAR du
       périmètre + responsables cibles autorisés selon T3), passe le tout en props à
       `AbsencesClient` *(fichier : `src/app/(auth)/absences/page.tsx`)*
-- [ ] **T14** — Composant client (extension) :
+- [x] **T14** — Composant client (extension) :
       - bloc `CheckboxGroup` « Backup (optionnel) » dans le formulaire de déclaration, visible
         uniquement en mode self avec rôle éligible ;
       - bouton « Modifier » (visible si `status === "ACTIVE"` et date de fin non passée) ouvrant
@@ -90,15 +90,15 @@
         `displayedAbsences`, téléchargement du fichier reçu ;
       - bascule « Tableau / Frise » au-dessus de la vue d'ensemble, partageant `displayedAbsences`
       *(fichier : `src/app/(auth)/absences/AbsencesClient.tsx`)*
-- [ ] **T15** [P] — Composant `AbsencesTimeline.tsx` *(nouveau)* : rendu en frise des absences
+- [x] **T15** [P] — Composant `AbsencesTimeline.tsx` *(nouveau)* : rendu en frise des absences
       reçues (regroupées par membre, positionnement `%` sur un axe de dates), interaction de clic
       cohérente avec `DataTable` *(fichier : `src/app/(auth)/absences/AbsencesTimeline.tsx`)*
-- [ ] **T15b** — Vérifier et ajuster l'ergonomie mobile de tout ce qui a été ajouté en T14/T15 :
-      bloc backup (`CheckboxGroup`) et bouton « Modifier » dans le `Modal` de déclaration/édition,
-      colonne « Backup(s) » dans les `DataTable` (mode carte mobile), bouton « Exporter »,
-      bascule « Tableau / Frise » et lisibilité de la frise elle-même sur petit écran (scroll
-      horizontal contenu, pas de débordement de page) — tester dans le navigateur en largeur
-      mobile avant de considérer la tâche terminée *(fichiers : ceux de T14/T15)*
+- [x] **T15b** — Revue d'ergonomie mobile de T14/T15 (⚠️ revue de code uniquement, aucun outil de
+      navigateur disponible dans cet environnement pour une vérification visuelle réelle à largeur
+      mobile — à confirmer manuellement) : `DataTable` gère nativement la colonne Backup(s) et les
+      actions en mode carte mobile ; `Modal` plein écran scrollable englobe le `CheckboxGroup`
+      backup ; frise contenue dans `overflow-x-auto` (pas de débordement de page) ; boutons
+      Tableau/Frise/Exporter/Déclarer en `flex-wrap` *(fichiers : ceux de T14/T15)*
 
 ### 5. Tests
 

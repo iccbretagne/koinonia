@@ -2,7 +2,13 @@ import { Suspense } from "react";
 import { requireAuth, getCurrentChurchId, getUserDepartmentScope } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
+import { getDeclarerBackupScope } from "@/modules/planning";
 import AbsencesClient from "./AbsencesClient";
+
+interface BackupOption {
+  value: string;
+  label: string;
+}
 
 export default async function AbsencesPage() {
   const session = await requireAuth();
@@ -59,6 +65,59 @@ export default async function AbsencesPage() {
     manageableMembers = members;
   }
 
+  const declarerScope = await getDeclarerBackupScope(session.user.id, churchId);
+  const canDesignateBackup = declarerScope.isDepartmentHead || declarerScope.isMinister;
+
+  let backupOptions: BackupOption[] = [];
+  if (canDesignateBackup) {
+    const starMembers = await prisma.member.findMany({
+      where: { departments: { some: { departmentId: { in: declarerScope.departmentIds } } } },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    });
+    const starOptions: BackupOption[] = starMembers.map((m) => ({
+      value: `STAR:${m.id}`,
+      label: `${m.firstName} ${m.lastName} (STAR)`,
+    }));
+
+    const responsibleRoles: { id: string; role: string; user: { name: string | null; displayName: string | null } }[] = [];
+    if (declarerScope.isMinister) {
+      const ministers = await prisma.userChurchRole.findMany({
+        where: { churchId, role: "MINISTER", userId: { not: session.user.id } },
+        select: { id: true, role: true, user: { select: { name: true, displayName: true } } },
+      });
+      responsibleRoles.push(...ministers);
+    }
+    if (declarerScope.isDepartmentHead) {
+      const depts = await prisma.department.findMany({
+        where: { id: { in: declarerScope.departmentIds } },
+        select: { ministryId: true },
+      });
+      const ministryIds = Array.from(new Set(depts.map((d) => d.ministryId)));
+      const peers = await prisma.userChurchRole.findMany({
+        where: {
+          churchId,
+          userId: { not: session.user.id },
+          OR: [
+            { role: "MINISTER", ministryId: { in: ministryIds } },
+            { role: "DEPARTMENT_HEAD", departments: { some: { department: { ministryId: { in: ministryIds } } } } },
+          ],
+        },
+        select: { id: true, role: true, user: { select: { name: true, displayName: true } } },
+      });
+      responsibleRoles.push(...peers);
+    }
+
+    const responsibleOptions: BackupOption[] = Array.from(
+      new Map(responsibleRoles.map((r) => [r.id, r])).values()
+    ).map((r) => ({
+      value: `RESPONSIBLE:${r.id}`,
+      label: `${r.user.displayName ?? r.user.name} (${r.role === "MINISTER" ? "Ministre" : "Resp. département"})`,
+    }));
+
+    backupOptions = [...starOptions, ...responsibleOptions];
+  }
+
   return (
     <Suspense>
       <AbsencesClient
@@ -69,6 +128,8 @@ export default async function AbsencesPage() {
         manageableMembers={manageableMembers}
         ministries={ministries}
         departments={departments}
+        canDesignateBackup={canDesignateBackup}
+        backupOptions={backupOptions}
       />
     </Suspense>
   );

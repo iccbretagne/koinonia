@@ -122,8 +122,10 @@ export async function GET(request: Request) {
           select: {
             id: true,
             type: true,
-            member: { select: { firstName: true, lastName: true } },
-            userChurchRole: { select: { role: true, user: { select: { name: true, displayName: true } } } },
+            member: { select: { id: true, firstName: true, lastName: true } },
+            userChurchRole: {
+              select: { id: true, role: true, user: { select: { name: true, displayName: true } } },
+            },
           },
         },
       },
@@ -166,6 +168,7 @@ export async function GET(request: Request) {
           backups: a.backups.map((b) => ({
             id: b.id,
             type: b.type,
+            targetId: b.type === "STAR" ? b.member!.id : b.userChurchRole!.id,
             name:
               b.type === "STAR"
                 ? `${b.member!.firstName} ${b.member!.lastName}`
