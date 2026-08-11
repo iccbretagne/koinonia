@@ -20,6 +20,7 @@ function createModelMock() {
 export const prismaMock = {
   church: createModelMock(),
   user: createModelMock(),
+  session: createModelMock(),
   userChurchRole: createModelMock(),
   userDepartment: createModelMock(),
   ministry: createModelMock(),

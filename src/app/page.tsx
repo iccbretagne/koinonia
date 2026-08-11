@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/lib/auth";
+import { auth, signIn, isDevLoginEnabled } from "@/lib/auth";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
+import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 
 export default async function LoginPage() {
   const session = await auth();
@@ -7,6 +10,8 @@ export default async function LoginPage() {
   if (session?.user) {
     redirect("/dashboard");
   }
+
+  const devLoginEnabled = isDevLoginEnabled(process.env);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-icc-violet/35 via-white to-icc-jaune/30">
@@ -48,6 +53,28 @@ export default async function LoginPage() {
             Se connecter avec Google
           </button>
         </form>
+
+        {devLoginEnabled && (
+          <div className="pt-6 mt-6 border-t border-dashed border-gray-300">
+            <p className="mb-3 text-xs text-center text-gray-400">
+              Développement uniquement
+            </p>
+            <form action="/api/auth/dev-login" method="POST" className="space-y-3">
+              <Select
+                label="Compte de test"
+                name="devUserKey"
+                placeholder="Choisir un compte de test…"
+                options={DEV_USERS.map((u) => ({
+                  value: u.key,
+                  label: `${u.displayName} (${u.role})`,
+                }))}
+              />
+              <Button type="submit" variant="secondary" className="w-full">
+                Se connecter avec ce compte
+              </Button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

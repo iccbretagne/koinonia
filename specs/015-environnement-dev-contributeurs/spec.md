@@ -1,7 +1,7 @@
 # Spec — Environnement de développement conteneurisé pour contributeurs
 
 - **Numéro** : 015
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-08-11
 - **Branche suggérée** : `feat/environnement-dev-contributeurs`
 

@@ -30,6 +30,10 @@ npm run db:seed                # donnees ICC Rennes
 npm run dev                    # http://localhost:3000
 ```
 
+> **Nouveau contributeur ?** Pour un environnement 100% conteneurisé (app + BDD), avec
+> un jeu de données fictif riche et une connexion locale sans compte Google, suivre le
+> guide pas à pas : [`docs/dev-onboarding.md`](docs/dev-onboarding.md).
+
 ## Prerequis
 
 - Node.js 18+
@@ -62,6 +66,7 @@ Next.js 15 &middot; React 19 &middot; Tailwind CSS v4 &middot; NextAuth v5 &midd
 | [Base de donnees](docs/database.md) | Schema Prisma, modeles, relations |
 | [API](docs/api.md) | Endpoints, requetes, reponses |
 | [Authentification & roles](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
+| [Environnement de developpement](docs/dev-onboarding.md) | Setup conteneurise, jeu de donnees fictif, connexion sans Google OAuth |
 | [Deploiement production](docs/production.md) | Debian, Traefik, systemd |
 | [Changelog](CHANGELOG.md) | Historique des modifications |
 

@@ -291,6 +291,7 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 | [API](docs/api.md) | Endpoints, requetes, reponses |
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
 | [Production](docs/production.md) | Deploiement Debian, Traefik, systemd |
+| [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurise, jeu de donnees fictif, connexion sans Google OAuth |
 | [Roadmap](docs/roadmap.md) | Evolutions prevues |
 
 ## Setup local
