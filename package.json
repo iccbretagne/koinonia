@@ -11,6 +11,10 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:dev": "tsx prisma/seed-dev.ts",
+    "dev:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+    "dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
+    "dev:reset": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:migrate:deploy && docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:seed:dev",
     "lint": "eslint .",
     "lint:boundaries": "depcruise src/core src/modules src/app --config .dependency-cruiser.cjs",
     "typecheck": "tsc --noEmit",
@@ -42,6 +46,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.5.0",
     "@types/archiver": "^7.0.0",
     "@types/node": "^25.9.5",
     "@types/nodemailer": "^7.0.11",

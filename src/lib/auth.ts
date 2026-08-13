@@ -4,6 +4,25 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import type { Role } from "@/generated/prisma/client";
 
+/**
+ * Le mode de connexion développement (choix d'un compte de test généré par
+ * `npm run db:seed:dev`, sans mot de passe ni service externe — voir
+ * `POST /api/auth/dev-login`) n'est actif que si les DEUX conditions suivantes
+ * sont réunies : `AUTH_DEV_LOGIN=true` ET `NODE_ENV` différent de `"production"`.
+ * Double garde volontaire — même si `AUTH_DEV_LOGIN` fuitait dans une configuration
+ * de production, `NODE_ENV=production` (toujours positionné par le build/déploiement,
+ * voir docs/production.md) bloque quand même son activation.
+ *
+ * Ce mode n'est PAS un provider NextAuth : un provider Credentials force une session
+ * JWT, incompatible avec la stratégie de session "database" utilisée ici pour Google
+ * (voir plan.md, section Décisions). La route `dev-login` crée directement une ligne
+ * `Session` via Prisma, exactement comme le ferait l'adapter pour une connexion Google —
+ * le provider Google et la stratégie de session restent donc strictement inchangés.
+ */
+export function isDevLoginEnabled(env: { AUTH_DEV_LOGIN?: string; NODE_ENV?: string }) {
+  return env.AUTH_DEV_LOGIN === "true" && env.NODE_ENV !== "production";
+}
+
 const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
   .split(",")
   .map((e) => e.trim().toLowerCase())
@@ -49,11 +68,14 @@ declare module "next-auth" {
 // session est posé sur le domaine parent et devient lisible par tous les
 // sous-domaines (ex: booking.iccrennes.fr pour le plugin MRBS).
 const cookieDomain = process.env.AUTH_COOKIE_DOMAIN || undefined;
+export const SESSION_COOKIE_NAME = cookieDomain
+  ? "__Secure-authjs.session-token"
+  : "authjs.session-token";
 const cookieOptions = cookieDomain
   ? {
       cookies: {
         sessionToken: {
-          name: "__Secure-authjs.session-token",
+          name: SESSION_COOKIE_NAME,
           options: {
             domain: cookieDomain,
             httpOnly: true,

@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "prisma/**/*.test.ts"],
     coverage: {
       provider: "v8",
       include: ["src/lib/**", "src/app/api/**", "src/modules/**"],
