@@ -89,10 +89,13 @@ export async function PATCH(
         select: { firstName: true, lastName: true },
       });
       if (integrationReq) {
+        const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
         notifyMsdpCounselorAssigned({
           counselorId: body.counselorId,
           followUpId: id,
+          requestId: followUp.requestId,
           personName: `${integrationReq.firstName} ${integrationReq.lastName}`,
+          appUrl,
         });
       }
     }
