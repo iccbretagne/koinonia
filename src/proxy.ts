@@ -26,6 +26,13 @@ export function proxy(request: NextRequest) {
     if (request.nextUrl.pathname === "/api/agenda/requests/public") {
       return NextResponse.next();
     }
+    // Allow public "rejoindre" form (page /rejoindre/[churchSlug], hors session)
+    if (
+      (request.nextUrl.pathname === "/api/integration/requests" && request.method === "POST") ||
+      request.nextUrl.pathname === "/api/integration/families/suggest"
+    ) {
+      return NextResponse.next();
+    }
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
