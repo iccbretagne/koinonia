@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.17.1] - 2026-08-16
+
+### Corrigé
+
+- **Formulaire public « rejoindre l'église » inaccessible aux visiteurs non connectés** : le middleware bloquait les appels API du formulaire `/rejoindre/[churchSlug]` (création de demande, suggestion de famille) faute d'authentification, alors que ces routes sont conçues pour être publiques. Ajout d'un rate-limit par IP sur ces deux routes désormais accessibles sans session.
+
 ## [v1.17.0] - 2026-07-30
 
 ### Ajouté
