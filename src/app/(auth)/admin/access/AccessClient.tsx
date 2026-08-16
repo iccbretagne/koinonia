@@ -65,18 +65,22 @@ interface Props {
 
 type Tab = "requests" | "roles" | "transverse" | "reporters" | "stars";
 
-type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER";
+type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
 
 const TRANSVERSE_ROLE_LABELS: Record<TransverseRole, string> = {
   ADMIN: "Admin",
   SECRETARY: "Secrétaire",
   DISCIPLE_MAKER: "Faiseur de Disciples",
+  AGENDA_QUALIFIER: "Qualificateur Agenda",
+  ACCOUNTANT: "Comptable",
 };
 
 const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
   ADMIN: "bg-red-100 text-red-700 border-red-200",
   SECRETARY: "bg-blue-100 text-blue-700 border-blue-200",
   DISCIPLE_MAKER: "bg-green-100 text-green-700 border-green-200",
+  AGENDA_QUALIFIER: "bg-purple-100 text-purple-700 border-purple-200",
+  ACCOUNTANT: "bg-yellow-100 text-yellow-700 border-yellow-200",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -931,7 +935,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
             className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
           />
           {filteredTransverseUsers.map((user) => {
-            const userTransverseRoles = (["ADMIN", "SECRETARY", "DISCIPLE_MAKER"] as TransverseRole[]).filter(
+            const userTransverseRoles = (["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT"] as TransverseRole[]).filter(
               (role) => {
                 if (role === "ADMIN" || role === "SECRETARY") return isSuperAdmin;
                 return true;
@@ -946,7 +950,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                   <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {(["ADMIN", "SECRETARY", "DISCIPLE_MAKER"] as TransverseRole[])
+                    {(["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT"] as TransverseRole[])
                       .filter((role) => user.churchRoles.some((r) => r.role === role))
                       .map((role) => (
                         <span
