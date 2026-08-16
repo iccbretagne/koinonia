@@ -75,6 +75,31 @@ module.exports = {
     },
 
     /**
+     * Règle 2bis — src/lib/registry.ts est la racine de composition : elle importe
+     * tous les modules, donc aucun module ne doit l'importer statiquement (cycle
+     * d'import qui provoque des ReferenceError "Cannot access ... before
+     * initialization" intermittents au build Turbopack — cf. issue #446).
+     *
+     * L'import dynamique (`await import("@/lib/registry")`) reste autorisé : il crée
+     * une frontière de chunk asynchrone qui évite le TDZ (voir modules/integration/auth.ts
+     * et modules/integration/services/msdp-service.ts pour le pattern).
+     */
+    {
+      name: "no-modules-static-import-registry",
+      severity: "error",
+      comment:
+        "src/modules/ ne doit pas importer src/lib/registry.ts statiquement (cycle avec la racine de composition). Utiliser `await import(\"@/lib/registry\")` si rolePermissions est nécessaire.",
+      from: {
+        path: "^src/modules/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/lib/registry\\.ts$",
+        dynamic: false,
+      },
+    },
+
+    /**
      * Règle 3 — src/app ne peut importer que les points d'entrée publics d'un module.
      *
      * Points d'entrée autorisés :
