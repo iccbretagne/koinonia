@@ -15,6 +15,7 @@ export {
   msdpPatchSchema,
   hasMsdpManagementAccess,
   computeMsdpTransitionData,
+  buildMsdpCounselorNotifEmail,
   notifyMsdpCounselorAssigned,
 } from "./services/msdp-service";
 export type { MsdpPatchBody } from "./services/msdp-service";
