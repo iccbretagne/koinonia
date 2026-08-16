@@ -17,6 +17,7 @@ const ROLES = [
   { value: "DISCIPLE_MAKER", label: "Faiseur de Disciples" },
   { value: "REPORTER", label: "Reporter (Comptes rendus)" },
   { value: "AGENDA_QUALIFIER", label: "Qualificateur Agenda" },
+  { value: "ACCOUNTANT", label: "Comptable" },
 ];
 
 const ROLE_LABELS: Record<string, string> = Object.fromEntries(
