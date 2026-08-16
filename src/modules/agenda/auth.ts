@@ -1,6 +1,5 @@
 import { requireAuth, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { rolePermissions } from "@/lib/registry";
 import type { Session } from "next-auth";
 
 /**
@@ -31,6 +30,7 @@ export async function requireAgendaView(churchId: string) {
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   if (roles.length === 0) throw new Error("FORBIDDEN");
 
+  const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
   if (userPerms.has("agenda:view") || await isProtocoleMember(session, churchId))
@@ -51,6 +51,7 @@ export async function requireAgendaManage(churchId: string) {
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   if (roles.length === 0) throw new Error("FORBIDDEN");
 
+  const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
   if (userPerms.has("agenda:manage") || await isProtocoleMember(session, churchId))
