@@ -51,6 +51,7 @@ export const prismaMock = {
   mediaShareToken: createModelMock(),
   mediaSettings: createModelMock(),
   mrbsUserLink: createModelMock(),
+  msdpFollowUp: createModelMock(),
   // Module agenda
   pastoralProfile: createModelMock(),
   appointmentRequest: createModelMock(),
