@@ -18,10 +18,7 @@ import { roomsModule } from "@/modules/rooms";
  * Source de vérité pour les permissions dans les contrôles d'accès API.
  */
 // L'ordre du tableau n'a pas de portée sémantique (le vrai ordre de chargement est
-// résolu par tri topologique dans boot()) mais `roomsModule` doit rester avant
-// `integrationModule` : dans l'ordre inverse, le build Turbopack production échoue
-// (ReferenceError "Cannot access 'c' before initialization" lors du bundling de
-// integrationModule — bug de chunking Turbopack, cf. Next.js 16.2.6).
+// résolu par tri topologique dans boot()).
 export const registry = boot({
   modules: [coreModule, planningModule, discipleshipModule, mediaModule, mrbsModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule],
 });
