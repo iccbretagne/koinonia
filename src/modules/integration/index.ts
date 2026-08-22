@@ -17,6 +17,8 @@ export {
   computeMsdpTransitionData,
   buildMsdpCounselorNotifEmail,
   notifyMsdpCounselorAssigned,
+  buildMsdpInactivityEmail,
+  runMsdpInactivityNotifications,
 } from "./services/msdp-service";
 export type { MsdpPatchBody } from "./services/msdp-service";
 

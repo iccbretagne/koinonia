@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail, buildPlanningDigestEmail } from "@/lib/email";
-import { runInactivityNotifications } from "@/modules/integration";
+import { runInactivityNotifications, runMsdpInactivityNotifications } from "@/modules/integration";
 
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -211,16 +211,18 @@ export async function POST(request: Request) {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [remindersResult, digestResult, integrationInactivityResult] = await Promise.all([
+    const [remindersResult, digestResult, integrationInactivityResult, msdpInactivityResult] = await Promise.all([
       runReminders(),
       runPlanningDigest(),
       runInactivityNotifications(appUrl),
+      runMsdpInactivityNotifications(appUrl),
     ]);
 
     return successResponse({
       reminders: remindersResult,
       planningDigest: digestResult,
       integrationInactivity: integrationInactivityResult,
+      msdpInactivity: msdpInactivityResult,
     });
   } catch (error) {
     return errorResponse(error);
