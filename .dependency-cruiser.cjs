@@ -59,6 +59,32 @@ module.exports = {
     },
 
     /**
+     * Règle 1bis — src/modules/** ne peut pas importer statiquement src/lib/registry.ts.
+     *
+     * registry.ts est la racine de composition : il importe TOUS les modules pour
+     * calculer rolePermissions. Un import statique dans le sens inverse (un module
+     * important registry.ts) crée un cycle qui peut provoquer un ReferenceError
+     * "Cannot access '<var>' before initialization" (TDZ) non déterministe au build
+     * Turbopack — cf. issue #446. Un import dynamique (`await import("@/lib/registry")`,
+     * résolu à l'exécution plutôt qu'à l'évaluation du module) est le pattern déjà
+     * utilisé dans src/lib/auth.ts et reste autorisé.
+     */
+    {
+      name: "no-modules-static-import-registry",
+      severity: "error",
+      comment:
+        "Un module ne peut pas importer statiquement src/lib/registry.ts (cycle avec la racine de composition) — utiliser un import dynamique si nécessaire.",
+      from: {
+        path: "^src/modules/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/lib/registry\\.ts$",
+        dependencyTypesNot: ["dynamic-import"],
+      },
+    },
+
+    /**
      * Règle 2 — src/core ne dépend d'aucun module applicatif.
      *
      * Le noyau (ModuleRegistry, EventBus, boot) doit rester indépendant.

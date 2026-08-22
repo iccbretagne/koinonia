@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { rolePermissions } from "@/lib/registry";
 import { ApiError } from "@/lib/api-utils";
 import { isIntegrationMember, isMsdpMember } from "../auth";
 import { z } from "zod";
@@ -31,6 +30,10 @@ export async function hasMsdpManagementAccess(session: Session, churchId: string
   if (session.user.isSuperAdmin) return true;
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   if (roles.length > 0) {
+    // Import dynamique : registry.ts importe tous les modules (dont integration),
+    // un import statique ici créerait un cycle qui provoque un ReferenceError
+    // TDZ non déterministe au build Turbopack (cf. issue #446).
+    const { rolePermissions } = await import("@/lib/registry");
     const perms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
     if (perms.has("members:manage") || perms.has("events:manage")) return true;
   }
