@@ -63,9 +63,11 @@ interface Props {
   rejectedRequests?: RejectedRequest[];
 }
 
-type Tab = "requests" | "roles" | "transverse" | "reporters" | "stars";
+type Tab = "requests" | "roles" | "transverse" | "stars";
 
-type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
+type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER" | "AGENDA_QUALIFIER" | "ACCOUNTANT" | "REPORTER";
+
+const TRANSVERSE_ROLES: TransverseRole[] = ["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT", "REPORTER"];
 
 const TRANSVERSE_ROLE_LABELS: Record<TransverseRole, string> = {
   ADMIN: "Admin",
@@ -73,6 +75,7 @@ const TRANSVERSE_ROLE_LABELS: Record<TransverseRole, string> = {
   DISCIPLE_MAKER: "Faiseur de Disciples",
   AGENDA_QUALIFIER: "Qualificateur Agenda",
   ACCOUNTANT: "Comptable",
+  REPORTER: "Reporter",
 };
 
 const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
@@ -81,6 +84,7 @@ const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
   DISCIPLE_MAKER: "bg-green-100 text-green-700 border-green-200",
   AGENDA_QUALIFIER: "bg-purple-100 text-purple-700 border-purple-200",
   ACCOUNTANT: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  REPORTER: "bg-icc-violet/10 text-icc-violet border-icc-violet/20",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -133,9 +137,6 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
 
-  // Reporter loading
-  const [reporterLoading, setReporterLoading] = useState<string | null>(null);
-
   // STAR loading
   const [starLoading, setStarLoading] = useState<string | null>(null);
 
@@ -144,7 +145,6 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
 
   // Search filters
   const [transverseSearch, setTransverseSearch] = useState("");
-  const [reporterSearch, setReporterSearch] = useState("");
   const [starSearch, setStarSearch] = useState("");
 
   // ── Helpers locaux ─────────────────────────────────────────────────────────
@@ -399,53 +399,6 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     }
   }
 
-  // ── Toggle Reporter ────────────────────────────────────────────────────────
-
-  async function toggleReporter(user: UserItem) {
-    const has = user.churchRoles.some((r) => r.role === "REPORTER");
-    setReporterLoading(user.id);
-    try {
-      if (has) {
-        await fetch(`/api/users/${user.id}/roles`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "REPORTER" }),
-        });
-        setLocalUsers((prev) =>
-          prev.map((u) =>
-            u.id === user.id
-              ? { ...u, churchRoles: u.churchRoles.filter((r) => r.role !== "REPORTER") }
-              : u
-          )
-        );
-      } else {
-        const res = await fetch(`/api/users/${user.id}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "REPORTER" }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setLocalUsers((prev) =>
-            prev.map((u) =>
-              u.id === user.id
-                ? {
-                    ...u,
-                    churchRoles: [
-                      ...u.churchRoles,
-                      { id: data.id, role: "REPORTER", ministryId: null, ministryName: null, departments: [] },
-                    ],
-                  }
-                : u
-            )
-          );
-        }
-      }
-    } finally {
-      setReporterLoading(null);
-    }
-  }
-
   // ── Toggle transverse roles ────────────────────────────────────────────────
 
   async function toggleTransverseRole(user: UserItem, role: TransverseRole) {
@@ -617,10 +570,6 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     ? localUsers.filter((u) => matchesSearch(u, transverseSearch))
     : localUsers;
 
-  const filteredReporterUsers = reporterSearch
-    ? localUsers.filter((u) => matchesSearch(u, reporterSearch))
-    : localUsers;
-
   const filteredStarUsers = starSearch
     ? localUsers.filter((u) => matchesSearch(u, starSearch))
     : localUsers;
@@ -631,7 +580,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     <div>
       {/* Onglets */}
       <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-        {(["requests", "roles", "transverse", "reporters", "stars"] as Tab[]).map((t) => (
+        {(["requests", "roles", "transverse", "stars"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -641,7 +590,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                 : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "requests" ? "Demandes" : t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : t === "reporters" ? "Comptes rendus" : "STAR"}
+            {t === "requests" ? "Demandes" : t === "roles" ? "Rôles" : t === "transverse" ? "Rôles transverses" : "STAR"}
             {t === "requests" && localRequests.length > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-icc-violet rounded-full">
                 {localRequests.length}
@@ -935,12 +884,10 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
             className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
           />
           {filteredTransverseUsers.map((user) => {
-            const userTransverseRoles = (["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT"] as TransverseRole[]).filter(
-              (role) => {
-                if (role === "ADMIN" || role === "SECRETARY") return isSuperAdmin;
-                return true;
-              }
-            );
+            const userTransverseRoles = TRANSVERSE_ROLES.filter((role) => {
+              if (role === "ADMIN" || role === "SECRETARY") return isSuperAdmin;
+              return true;
+            });
             return (
               <div key={user.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-start gap-3 flex-wrap">
                 <div className="flex items-center gap-2 shrink-0 pt-0.5">
@@ -950,7 +897,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                   <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {(["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT"] as TransverseRole[])
+                    {TRANSVERSE_ROLES
                       .filter((role) => user.churchRoles.some((r) => r.role === role))
                       .map((role) => (
                         <span
@@ -981,53 +928,6 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
                       </button>
                     );
                   })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Onglet Comptes rendus ─────────────────────────────────────────── */}
-      {tab === "reporters" && (
-        <div className="space-y-3">
-          <p className="text-xs text-gray-400 mb-4">
-            Les utilisateurs avec le rôle <strong>Reporter</strong> peuvent consulter les comptes rendus et statistiques des événements.
-          </p>
-          <input
-            type="text"
-            value={reporterSearch}
-            onChange={(e) => setReporterSearch(e.target.value)}
-            placeholder="Rechercher un utilisateur..."
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet mb-2"
-          />
-          {filteredReporterUsers.map((user) => {
-            const isReporter = user.churchRoles.some((r) => r.role === "REPORTER");
-            const loading = reporterLoading === user.id;
-            return (
-              <div key={user.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-                <Avatar user={user} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {isReporter && (
-                    <span className="text-xs bg-icc-violet/10 text-icc-violet border border-icc-violet/20 px-2 py-0.5 rounded-full font-medium">
-                      Reporter
-                    </span>
-                  )}
-                  <button
-                    onClick={() => toggleReporter(user)}
-                    disabled={loading}
-                    className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-50 ${
-                      isReporter
-                        ? "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                        : "bg-icc-violet text-white hover:bg-icc-violet-dark"
-                    }`}
-                  >
-                    {loading ? "…" : isReporter ? "Retirer" : "Accorder"}
-                  </button>
                 </div>
               </div>
             );
