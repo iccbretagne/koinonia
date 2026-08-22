@@ -29,10 +29,12 @@ export interface DevDepartmentDef {
 
 // Église principale, enrichie — sert de terrain de jeu par défaut.
 // Deux églises secondaires, plus petites — permettent de tester l'isolation multi-tenant.
+// Trois villes bretonnes (une par département historique représenté) —
+// aucune ne correspond à une implantation ICC réelle connue.
 export const DEV_CHURCHES: DevChurchDef[] = [
   { key: "kervignac", name: "ICC Kervignac", slug: "icc-kervignac", primaryColor: "#5E17EB" },
-  { key: "argoat", name: "ICC Argoat", slug: "icc-argoat", primaryColor: "#38B6FF" },
-  { key: "cornouaille", name: "ICC Cornouaille", slug: "icc-cornouaille", primaryColor: "#FF3131" },
+  { key: "guingamp", name: "ICC Guingamp", slug: "icc-guingamp", primaryColor: "#38B6FF" },
+  { key: "landerneau", name: "ICC Landerneau", slug: "icc-landerneau", primaryColor: "#FF3131" },
 ];
 
 export const DEV_MINISTRIES: DevMinistryDef[] = [
@@ -42,12 +44,12 @@ export const DEV_MINISTRIES: DevMinistryDef[] = [
   { key: "coordination", churchKey: "kervignac", name: "Coordination générale" },
   { key: "jeunesse", churchKey: "kervignac", name: "Jeunesse" },
   { key: "communication", churchKey: "kervignac", name: "Communication" },
-  // ICC Argoat
-  { key: "louange-argoat", churchKey: "argoat", name: "Louange" },
-  { key: "coordination-argoat", churchKey: "argoat", name: "Coordination générale" },
-  // ICC Cornouaille
-  { key: "louange-cornouaille", churchKey: "cornouaille", name: "Louange" },
-  { key: "jeunesse-cornouaille", churchKey: "cornouaille", name: "Jeunesse" },
+  // ICC Guingamp
+  { key: "louange-guingamp", churchKey: "guingamp", name: "Louange" },
+  { key: "coordination-guingamp", churchKey: "guingamp", name: "Coordination générale" },
+  // ICC Landerneau
+  { key: "louange-landerneau", churchKey: "landerneau", name: "Louange" },
+  { key: "jeunesse-landerneau", churchKey: "landerneau", name: "Jeunesse" },
 ];
 
 export const DEV_DEPARTMENTS: DevDepartmentDef[] = [
@@ -71,15 +73,15 @@ export const DEV_DEPARTMENTS: DevDepartmentDef[] = [
   { key: "production-media", ministryKey: "communication", name: "Production média", function: "PRODUCTION_MEDIA" },
   { key: "regie-technique", ministryKey: "communication", name: "Régie technique" },
 
-  // ICC Argoat
-  { key: "choristes-argoat", ministryKey: "louange-argoat", name: "Choristes" },
-  { key: "musiciens-argoat", ministryKey: "louange-argoat", name: "Musiciens" },
-  { key: "secretariat-argoat", ministryKey: "coordination-argoat", name: "Secrétariat", function: "SECRETARIAT" },
-  { key: "accueil-argoat", ministryKey: "coordination-argoat", name: "Accueil" },
+  // ICC Guingamp
+  { key: "choristes-guingamp", ministryKey: "louange-guingamp", name: "Choristes" },
+  { key: "musiciens-guingamp", ministryKey: "louange-guingamp", name: "Musiciens" },
+  { key: "secretariat-guingamp", ministryKey: "coordination-guingamp", name: "Secrétariat", function: "SECRETARIAT" },
+  { key: "accueil-guingamp", ministryKey: "coordination-guingamp", name: "Accueil" },
 
-  // ICC Cornouaille
-  { key: "choristes-cornouaille", ministryKey: "louange-cornouaille", name: "Choristes" },
-  { key: "son-cornouaille", ministryKey: "louange-cornouaille", name: "Son" },
-  { key: "ados-cornouaille", ministryKey: "jeunesse-cornouaille", name: "Ados" },
-  { key: "enfants-cornouaille", ministryKey: "jeunesse-cornouaille", name: "Enfants" },
+  // ICC Landerneau
+  { key: "choristes-landerneau", ministryKey: "louange-landerneau", name: "Choristes" },
+  { key: "son-landerneau", ministryKey: "louange-landerneau", name: "Son" },
+  { key: "ados-landerneau", ministryKey: "jeunesse-landerneau", name: "Ados" },
+  { key: "enfants-landerneau", ministryKey: "jeunesse-landerneau", name: "Enfants" },
 ];
