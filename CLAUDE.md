@@ -144,6 +144,7 @@ koinonia/
 │   │   └── permissions.ts       # DEPRECATED — utiliser rolePermissions de @/lib/registry
 │   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
+│   └── adr/                     # Architecture Decision Records (decisions structurantes)
 ├── docker-compose.yml           # MariaDB locale
 └── package.json
 ```
@@ -293,6 +294,7 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 | [Production](docs/production.md) | Deploiement Debian, Traefik, systemd |
 | [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurise, jeu de donnees fictif, connexion sans Google OAuth |
 | [Roadmap](docs/roadmap.md) | Evolutions prevues |
+| [ADR](docs/adr/README.md) | Decisions architecturales structurantes (Architecture Decision Records) |
 
 ## Setup local
 
@@ -405,3 +407,4 @@ Creer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `f
 10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry` (PAS `hasPermission` de `@/lib/permissions` qui est deprecated)
 11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
 12. **Frontieres modules** : verifier `npm run lint:boundaries` apres tout ajout de dependance entre modules
+13. **ADR** : toute decision architecturale/structurante (cross-module, difficile a revenir en arriere, choix de stack ou de pattern durable) est documentee dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une decision de `plan.md` (portee a une seule feature)
