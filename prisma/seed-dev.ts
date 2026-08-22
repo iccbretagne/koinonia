@@ -45,6 +45,25 @@ function daysFrom(base: Date, days: number) {
 }
 
 async function wipe() {
+  await prisma.msdpFollowUp.deleteMany();
+  await prisma.familyIntegrationRequest.deleteMany();
+  await prisma.familyLeaderAssignment.deleteMany();
+  await prisma.agendaEntry.deleteMany();
+  await prisma.roomChecklist.deleteMany();
+  await prisma.roomReservation.deleteMany();
+  await prisma.roomAccess.deleteMany();
+  await prisma.room.deleteMany();
+  await prisma.financialAttachment.deleteMany();
+  await prisma.financialPayment.deleteMany();
+  await prisma.financialRequest.deleteMany();
+  await prisma.financialSeries.deleteMany();
+  await prisma.jobOffer.deleteMany();
+  await prisma.jobSeeker.deleteMany();
+  await prisma.freelanceMission.deleteMany();
+  await prisma.freelanceProfile.deleteMany();
+  await prisma.appointmentRequest.deleteMany();
+  await prisma.pastoralProfile.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.planning.deleteMany();
   await prisma.discipleshipAttendance.deleteMany();
   await prisma.discipleship.deleteMany();
@@ -372,6 +391,282 @@ async function main() {
     }
   }
   console.log(`${discipleCandidates.length} relations de discipolat créées`);
+
+  // ── Salles ────────────────────────────────────────────────────────────
+  const admin = userByKey["admin"];
+  const secretaireUser = userByKey["secretaire"];
+  const room = await prisma.room.create({
+    data: {
+      name: "Salle polyvalente",
+      churchId: churchByKey[mainChurchKey].id,
+      capacity: 40,
+      location: "Rez-de-chaussée",
+    },
+  });
+  await prisma.roomReservation.create({
+    data: {
+      roomId: room.id,
+      churchId: churchByKey[mainChurchKey].id,
+      title: "Réunion d'équipe Accueil",
+      startAt: daysFrom(TODAY, 4),
+      endAt: daysFrom(TODAY, 4),
+      createdById: respAccueil?.id ?? admin.id,
+    },
+  });
+  const pastReservation = await prisma.roomReservation.create({
+    data: {
+      roomId: room.id,
+      churchId: churchByKey[mainChurchKey].id,
+      title: "Formation nouveaux membres",
+      startAt: daysFrom(TODAY, -6),
+      endAt: daysFrom(TODAY, -6),
+      createdById: secretaireUser?.id ?? admin.id,
+    },
+  });
+  await prisma.roomChecklist.create({
+    data: {
+      reservationId: pastReservation.id,
+      status: "CLOSED_DECLARED",
+      openedById: secretaireUser?.id ?? admin.id,
+      openedAt: daysFrom(TODAY, -6),
+      keyReceivedFromName: "Gardien",
+      closedById: secretaireUser?.id ?? admin.id,
+      closedAt: daysFrom(TODAY, -6),
+      closedProperly: true,
+      cleaned: true,
+      equipmentOk: true,
+      keyReturnedToName: "Gardien",
+      closingNotes: "RAS, tout est en ordre.",
+    },
+  });
+  console.log("Salle et réservations créées");
+
+  // ── Agenda pastoral ──────────────────────────────────────────────────────
+  const pastoralProfile = await prisma.pastoralProfile.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      name: "Pasteur Kervignac",
+      email: "pasteur@dev.local",
+      role: "PASTEUR",
+      // Volontairement non lié à un compte de test (userId) : un profil pastoral lié
+      // bascule automatiquement l'interface de connexion en "vue pastorale" par défaut
+      // (voir src/app/(auth)/layout.tsx), ce qui casse les captures admin standards.
+    },
+  });
+  await prisma.appointmentRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      firstName: "Julie",
+      lastName: "Fontaine",
+      email: "julie.fontaine@dev.local",
+      phone: "0612345678",
+      subject: "Accompagnement familial",
+      message: "Je souhaiterais échanger avec un pasteur au sujet d'une difficulté familiale.",
+      status: "PENDING",
+    },
+  });
+  await prisma.appointmentRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      firstName: "Marc",
+      lastName: "Rousseau",
+      email: "marc.rousseau@dev.local",
+      phone: "0698765432",
+      subject: "Préparation au mariage",
+      message: "Nous aimerions préparer notre mariage avec un accompagnement pastoral.",
+      status: "VALIDATED",
+      assignedToId: pastoralProfile.id,
+      qualifiedById: admin.id,
+      qualifiedAt: daysFrom(TODAY, -1),
+    },
+  });
+  console.log("Demandes de RDV pastoral créées");
+
+  // ── Comptabilité ──────────────────────────────────────────────────────
+  const financialSubmitter = respAccueil ?? admin;
+  await prisma.financialRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      departmentId: departmentByKey["accueil"].id,
+      submittedById: financialSubmitter.id,
+      type: "EXPENSE_REPORT",
+      label: "Achat de gobelets et café",
+      description: "Fournitures pour l'accueil du dimanche.",
+      amount: 34.9,
+      status: "SUBMITTED",
+      createdAt: daysFrom(TODAY, -2),
+    },
+  });
+  await prisma.financialRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      departmentId: departmentByKey["logistique"].id,
+      submittedById: ministre?.id ?? admin.id,
+      type: "BUDGET_ADVANCE",
+      label: "Location de matériel sono",
+      description: "Avance pour la location de matériel pour l'événement jeunesse.",
+      amount: 220,
+      status: "PROCESSING",
+      priority: "URGENT",
+      createdAt: daysFrom(TODAY, -10),
+    },
+  });
+  await prisma.financialRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      departmentId: departmentByKey["accueil"].id,
+      submittedById: financialSubmitter.id,
+      type: "EXPENSE_REPORT",
+      label: "Remboursement déplacement formation",
+      description: "Frais kilométriques pour une formation Accueil.",
+      amount: 58,
+      status: "APPROVED",
+      processedById: admin.id,
+      processedAt: daysFrom(TODAY, -30),
+      createdAt: daysFrom(TODAY, -35),
+    },
+  });
+  console.log("Demandes financières créées");
+
+  // ── Emplois ───────────────────────────────────────────────────────────
+  await prisma.jobOffer.create({
+    data: {
+      title: "Développeur web (H/F)",
+      type: "EMPLOI",
+      company: "Agence Web Bretagne",
+      location: "Lorient",
+      description: "Poste de développeur web fullstack au sein d'une agence locale.",
+      contactEmail: "recrutement@dev.local",
+      authorId: admin.id,
+    },
+  });
+  await prisma.jobOffer.create({
+    data: {
+      title: "Alternance assistant comptable",
+      type: "ALTERNANCE",
+      company: "Cabinet Martin & Associés",
+      location: "Vannes",
+      description: "Alternance en comptabilité, rythme 3 semaines / 1 semaine.",
+      contactEmail: "contact@dev.local",
+      authorId: secretaireUser?.id ?? admin.id,
+    },
+  });
+  await prisma.jobSeeker.create({
+    data: {
+      title: "Recherche poste d'aide-soignante",
+      wantEmploi: true,
+      sector: "Santé",
+      location: "Kervignac",
+      description: "Aide-soignante diplômée, disponible rapidement sur le secteur.",
+      contactEmail: "candidat@dev.local",
+      authorId: respAccueil?.id ?? admin.id,
+    },
+  });
+  await prisma.freelanceMission.create({
+    data: {
+      title: "Création d'un site vitrine",
+      domain: "Développement web",
+      dailyRate: "300-400€",
+      modality: "REMOTE",
+      description: "Mission de création d'un site vitrine pour une petite entreprise locale.",
+      contactEmail: "mission@dev.local",
+      authorId: ministre?.id ?? admin.id,
+    },
+  });
+  console.log("Offres et profils emploi créés");
+
+  // ── Intégration ───────────────────────────────────────────────────────
+  const bergerUser = faiseurDisciplesMember ? userByKey["faiseur-disciples"] : admin;
+  await prisma.familyLeaderAssignment.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      userId: bergerUser.id,
+      familyId: 101,
+      familyName: "Famille Le Gall",
+      role: "BERGER",
+    },
+  });
+  await prisma.familyIntegrationRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      firstName: "Camille",
+      lastName: "Le Gall",
+      email: "camille.legall@dev.local",
+      phone: "0611223344",
+      city: "Kervignac",
+      ageRange: "ADULT",
+      churchStatus: "VISITOR",
+      status: "SUBMITTED",
+      submittedAt: daysFrom(TODAY, -3),
+    },
+  });
+  const integrationRequestAssigned = await prisma.familyIntegrationRequest.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      firstName: "Yann",
+      lastName: "Cadoret",
+      email: "yann.cadoret@dev.local",
+      phone: "0655667788",
+      city: "Kervignac",
+      ageRange: "YOUNG_ADULT",
+      churchStatus: "REGULAR",
+      status: "ASSIGNED",
+      assignedFamilyId: 101,
+      assignedFamilyName: "Famille Le Gall",
+      assignedBergerId: bergerUser.id,
+      submittedAt: daysFrom(TODAY, -14),
+      assignedAt: daysFrom(TODAY, -12),
+      salvationCall: true,
+    },
+  });
+  await prisma.msdpFollowUp.create({
+    data: {
+      churchId: churchByKey[mainChurchKey].id,
+      requestId: integrationRequestAssigned.id,
+      status: "CONTACTED",
+      assignedConseillerMsdpId: admin.id,
+      assignedAt: daysFrom(TODAY, -12),
+      contactedAt: daysFrom(TODAY, -9),
+      notes: "Premier contact chaleureux, poursuite du suivi la semaine prochaine.",
+    },
+  });
+  console.log("Demandes d'intégration et suivi MSDP créés");
+
+  // ── Journaux d'audit ──────────────────────────────────────────────────
+  await prisma.auditLog.create({
+    data: {
+      userId: admin.id,
+      churchId: churchByKey[mainChurchKey].id,
+      action: "UPDATE",
+      entityType: "Member",
+      entityId: accueilMembers[0]?.id ?? "seed",
+      details: { field: "phone", before: "0600000000", after: "0612345678" },
+      createdAt: daysFrom(TODAY, -1),
+    },
+  });
+  await prisma.auditLog.create({
+    data: {
+      userId: secretaireUser?.id ?? admin.id,
+      churchId: churchByKey[mainChurchKey].id,
+      action: "CREATE",
+      entityType: "Event",
+      entityId: events[0]?.id ?? "seed",
+      details: { title: "Culte" },
+      createdAt: daysFrom(TODAY, -5),
+    },
+  });
+  await prisma.auditLog.create({
+    data: {
+      userId: admin.id,
+      churchId: churchByKey[mainChurchKey].id,
+      action: "DELETE",
+      entityType: "Request",
+      entityId: "seed-deleted-request",
+      details: { title: "Ancienne demande annulée" },
+      createdAt: daysFrom(TODAY, -20),
+    },
+  });
+  console.log("Journaux d'audit créés");
 
   console.log("Seed de développement terminé.");
   console.log("Comptes de test disponibles : voir prisma/fixtures/dev-users.ts");

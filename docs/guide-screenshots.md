@@ -55,7 +55,7 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
 | 1 | `guide-planning-view.png` | `/dashboard?dept=[id]` | Grille avec statuts colorés visibles, plusieurs STAR |
-| 2 | `guide-planning-edit.png` | `/dashboard?dept=[id]` | Dropdown statut ouvert sur une cellule |
+| 2 | `guide-planning-edit.png` | `/dashboard?dept=[id]` | Grille avec un statut de STAR modifié à l'instant (boutons de statut, pas de dropdown) |
 | 3 | `guide-planning-stats.png` | `/dashboard/stats` | Graphiques de taux de présence par département |
 
 ### Événements (3)
