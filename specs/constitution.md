@@ -46,7 +46,8 @@ la constitution l'emporte.
 - Toute feature non triviale commence par une **spec** (`/specify`) avant tout code.
 - Le flux est : `spec.md` (quoi/pourquoi) → `plan.md` (comment) → `tasks.md` (découpage) → implémentation.
 - La spec décrit le **comportement observable** et les critères d'acceptation, pas la technique.
-- Les décisions techniques et les alternatives écartées sont consignées dans `plan.md`.
+- Les décisions techniques et les alternatives écartées **propres à une feature** sont consignées dans `plan.md`.
+- Les décisions **architecturales/structurantes** — celles qui dépassent une seule feature, qui sont difficiles à revenir en arrière, ou qui engagent un choix de stack/pattern durable — sont consignées comme **ADR** dans `docs/adr/` (voir `docs/adr/README.md` pour le critère de distinction et le format). Un `plan.md` qui introduit une telle décision doit créer ou référencer l'ADR correspondant.
 
 ---
 
