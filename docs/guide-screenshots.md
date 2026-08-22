@@ -39,10 +39,16 @@ Utiliser l'église ICC Rennes (seed).
 | Resp. Département | Planning + membres de ses départements + discipolat lecture |
 | Faiseur de Disciples | Discipolat uniquement (ses disciples) |
 | Reporter | Événements lecture + comptes rendus |
+| Qualificateur agenda | Qualification des demandes de RDV pastoral |
+| Comptable | Traitement des demandes financières + statistiques |
+
+Pour les captures Salles / Intégration nécessitant un accès par appartenance de
+département (contrôle des mains courantes, MSDP, bergers de famille), utiliser
+un compte Super Admin ou Admin plutôt qu'un compte dédié.
 
 ---
 
-## Liste des 24 captures
+## Liste des 38 captures
 
 ### Planning (3)
 
@@ -102,11 +108,50 @@ Utiliser l'église ICC Rennes (seed).
 | 22 | `guide-admin-audit-logs.png` | `/admin/audit-logs` | Journal avec entrées horodatées |
 | 23 | `guide-admin-dept-functions.png` | `/admin/departments/functions` | Vue fonctions système + custom |
 
+### Salles (2)
+
+| # | Fichier | URL | État à capturer |
+|---|---|---|---|
+| 24 | `guide-salles-reservation.png` | `/rooms` | Planning des salles avec un créneau réservé |
+| 25 | `guide-salles-mains-courantes.png` | `/rooms/checklists` | Liste de réservations avec état des mains courantes |
+
+### Agenda pastoral (3)
+
+| # | Fichier | URL | État à capturer |
+|---|---|---|---|
+| 26 | `guide-agenda-demande.png` | `/agenda/request` | Formulaire de demande de RDV rempli |
+| 27 | `guide-agenda-qualification.png` | `/agenda/requests` | Demandes en attente avec formulaire de qualification ouvert |
+| 28 | `guide-agenda-planification.png` | `/agenda/schedule` | Demandes validées à planifier |
+
+### Comptabilité (3)
+
+| # | Fichier | URL | État à capturer |
+|---|---|---|---|
+| 29 | `guide-comptabilite-demande.png` | `/accounting/requests/new` | Formulaire de note de frais partiellement rempli |
+| 30 | `guide-comptabilite-gestion.png` | `/accounting/requests` | Liste des demandes financières avec statuts |
+| 31 | `guide-comptabilite-stats.png` | `/accounting/stats` | Statistiques par statut et département |
+
+### Emplois (2)
+
+| # | Fichier | URL | État à capturer |
+|---|---|---|---|
+| 32 | `guide-emplois-liste.png` | `/jobs` | Onglet Offres avec plusieurs annonces |
+| 33 | `guide-emplois-moderation.png` | `/admin/jobs` | Liste des annonces avec actions de modération |
+
+### Intégration (4)
+
+| # | Fichier | URL | État à capturer |
+|---|---|---|---|
+| 34 | `guide-integration-demandes.png` | `/integration/requests` | Liste des demandes d'intégration avec statuts |
+| 35 | `guide-integration-msdp.png` | `/integration/requests/[id]` | Onglet suivi MSDP avec conseiller assigné |
+| 36 | `guide-integration-bergers.png` | `/integration/leaders` | Liste des bergers de famille et affectations |
+| 37 | `guide-integration-stats.png` | `/integration/stats` | Statistiques d'intégration (délais, taux) |
+
 ### Profil (1)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 24 | `guide-profile.png` | `/profile` | Profil avec section liaison STAR visible |
+| 38 | `guide-profile.png` | `/profile` | Profil avec section liaison STAR visible |
 
 ---
 

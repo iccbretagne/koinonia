@@ -239,6 +239,128 @@ const FEATURES: Feature[] = [
     screenshotFile: "guide-profile.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
+
+  // ── Salles ───────────────────────────────────────────────────────────────
+  {
+    name: "Réserver une salle",
+    description: "Consultez le planning des salles et réservez un créneau depuis /rooms. La réservation est soumise à l'accord de l'équipe de contrôle si la salle le requiert.",
+    category: "Salles",
+    screenshotTitle: "Réservation de salles",
+    screenshotFile: "guide-salles-reservation.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Contrôle des mains courantes",
+    description: "Validez l'état des lieux (ouverture/fermeture) des salles réservées depuis /rooms/checklists. Accessible aux gestionnaires de salles et, par appartenance de département, aux membres de l'équipe de contrôle — indépendamment du rôle global.",
+    category: "Salles",
+    screenshotTitle: "Contrôle des mains courantes",
+    screenshotFile: "guide-salles-mains-courantes.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+
+  // ── Agenda pastoral ──────────────────────────────────────────────────────
+  {
+    name: "Demande de RDV pastoral",
+    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis /agenda/request. Disponible pour toute personne ayant accès au planning de son église.",
+    category: "Agenda pastoral",
+    screenshotTitle: "Demande de RDV pastoral",
+    screenshotFile: "guide-agenda-demande.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Qualification des demandes",
+    description: "Examinez chaque demande de RDV depuis /agenda/requests : validez-la en l'assignant à un profil pastoral, ou rejetez-la avec un motif.",
+    category: "Agenda pastoral",
+    screenshotTitle: "Qualification des demandes de RDV",
+    screenshotFile: "guide-agenda-qualification.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Vue et planification agenda",
+    description: "Consultez l'agenda hebdomadaire de chaque profil pastoral depuis /agenda, planifiez les créneaux des demandes validées depuis /agenda/schedule, ou ajoutez une entrée manuelle depuis /agenda/new. Un titulaire de profil pastoral voit également \"Mon agenda\", indépendamment de son rôle global.",
+    category: "Agenda pastoral",
+    screenshotTitle: "Vue et planification de l'agenda",
+    screenshotFile: "guide-agenda-planification.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+
+  // ── Comptabilité ─────────────────────────────────────────────────────────
+  {
+    name: "Soumettre une demande financière",
+    description: "Déposez une note de frais ou une demande d'avance de budget depuis /accounting/requests/new. Un titulaire de profil pastoral peut également soumettre, indépendamment de son rôle global.",
+    category: "Comptabilité",
+    screenshotTitle: "Nouvelle demande financière",
+    screenshotFile: "guide-comptabilite-demande.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Traiter les demandes financières",
+    description: "Consultez et traitez les notes de frais et avances de budget depuis /accounting/requests : confirmez le paiement ou refusez avec un motif. Les Ministres et Resp. département voient leurs propres demandes en lecture seule.",
+    category: "Comptabilité",
+    screenshotTitle: "Gestion des demandes financières",
+    screenshotFile: "guide-comptabilite-gestion.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Statistiques comptables",
+    description: "Visualisez le total des demandes financières sur l'année en cours depuis /accounting/stats, par statut et par département.",
+    category: "Comptabilité",
+    screenshotTitle: "Statistiques comptables",
+    screenshotFile: "guide-comptabilite-stats.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "edit" },
+  },
+
+  // ── Emplois ──────────────────────────────────────────────────────────────
+  {
+    name: "Offres, recherches d'emploi & freelance",
+    description: "Publiez ou consultez des offres d'emploi, des profils en recherche, et des missions freelance depuis /jobs (trois onglets). Fonctionnalité ouverte à tous les comptes de l'église.",
+    category: "Emplois",
+    screenshotTitle: "Offres et recherches d'emploi",
+    screenshotFile: "guide-emplois-liste.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Modération des annonces",
+    description: "Modérez et supprimez si besoin toute offre, recherche ou mission publiée par un autre compte, depuis /admin/jobs.",
+    category: "Emplois",
+    screenshotTitle: "Modération des annonces",
+    screenshotFile: "guide-emplois-moderation.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+
+  // ── Intégration ──────────────────────────────────────────────────────────
+  {
+    name: "Demandes d'intégration (familles)",
+    description: "Suivez les demandes d'intégration de nouvelles familles depuis /integration/requests : assignez un berger, changez le statut. Accessible aussi, par appartenance de département (fonction Intégration) ou en tant que berger assigné, indépendamment du rôle global.",
+    category: "Intégration",
+    screenshotTitle: "Demandes d'intégration",
+    screenshotFile: "guide-integration-demandes.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Suivi MSDP (appel au salut)",
+    description: "Depuis la fiche d'une demande d'intégration, démarrez et suivez le parcours MSDP (Mieux Se Découvrir en Personne) : assignez un conseiller, faites progresser le statut, ajoutez des notes. Accessible au conseiller assigné et aux membres du département Intégration, indépendamment du rôle global.",
+    category: "Intégration",
+    screenshotTitle: "Suivi MSDP",
+    screenshotFile: "guide-integration-msdp.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Bergers de famille",
+    description: "Gérez la liste des bergers de famille et leurs affectations depuis /integration/leaders.",
+    category: "Intégration",
+    screenshotTitle: "Bergers de famille",
+    screenshotFile: "guide-integration-bergers.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Parcours & statistiques d'intégration",
+    description: "Consultez le parcours d'intégration type et les statistiques (délais, taux de complétion) depuis /integration/parcours et /integration/stats.",
+    category: "Intégration",
+    screenshotTitle: "Parcours et statistiques d'intégration",
+    screenshotFile: "guide-integration-stats.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
 ];
 
 const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"];
