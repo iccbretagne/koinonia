@@ -6,6 +6,22 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.18.0] - 2026-08-23
+
+### Ajouté
+
+- **Relance d'inactivité pour les suivis MSDP bloqués** : un suivi MSDP (appel au salut) non terminal resté sans mise à jour depuis 7 jours déclenche désormais une alerte automatique au conseiller assigné, ou à l'équipe MSDP si aucun conseiller n'est assigné — même mécanisme que celui déjà en place pour les demandes d'intégration familiale.
+- **Guide utilisateur complété** : les modules Salles, Agenda pastoral, Comptabilité, Emplois et Intégration, absents du guide in-app malgré leur présence dans l'application, sont désormais documentés avec captures d'écran.
+
+### Modifié
+
+- **Rôle Reporter intégré au tableau des rôles transverses** : la page Accès & rôles gérait le rôle Reporter dans un onglet dédié, séparé des autres rôles transverses (Secrétaire, Faiseur de Disciples...) ; il est désormais géré au même endroit qu'eux, pour plus de cohérence.
+
+### Technique
+
+- Suppression de la route cron dupliquée `/api/cron/integration-inactivity`, orpheline depuis l'ajout de l'orchestrateur `/api/cron` principal.
+- Introduction de la pratique des ADR (Architecture Decision Records) dans `docs/adr/`.
+
 ## [v1.17.1] - 2026-08-16
 
 ### Corrigé
