@@ -48,15 +48,6 @@ export const s3 =
 
 // ─── Client média (bucket + credentials dédiés — MEDIA_S3_* obligatoires) ────
 
-export function isMediaS3Configured(): boolean {
-  return !!(
-    process.env.MEDIA_S3_ENDPOINT &&
-    process.env.MEDIA_S3_BUCKET &&
-    process.env.MEDIA_S3_ACCESS_KEY_ID &&
-    process.env.MEDIA_S3_SECRET_ACCESS_KEY
-  );
-}
-
 export const MEDIA_BUCKET = process.env.MEDIA_S3_BUCKET ?? "";
 
 export const s3Media =
@@ -71,24 +62,6 @@ export const s3Media =
 if (process.env.NODE_ENV !== "production") {
   globalForS3.s3 = s3;
   globalForS3.s3Media = s3Media;
-}
-
-/** Supprime plusieurs objets S3 en une requête batch (max 1000 clés par appel). */
-export async function deleteFiles(keys: string[]): Promise<void> {
-  if (keys.length === 0) return;
-  const bucket = process.env.BACKUP_S3_BUCKET;
-  if (!bucket) return; // S3 non configuré — no-op en dev
-
-  const BATCH = 1000;
-  for (let i = 0; i < keys.length; i += BATCH) {
-    const batch = keys.slice(i, i + BATCH);
-    await s3.send(
-      new DeleteObjectsCommand({
-        Bucket: bucket,
-        Delete: { Objects: batch.map((Key) => ({ Key })) },
-      })
-    );
-  }
 }
 
 /** Supprime plusieurs objets du bucket média (s3Media/MEDIA_BUCKET) en batch. */

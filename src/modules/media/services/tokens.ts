@@ -1,19 +1,11 @@
-import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { getSignedThumbnailUrl } from "./s3";
+import { getSignedThumbnailUrl, generateToken, isTokenExpired } from "@/modules/storage";
 import type { MediaTokenType, Prisma } from "@/generated/prisma/client";
 
 const APPROVED_FILE_STATUSES = new Set<string>(["APPROVED", "FINAL_APPROVED"]);
 
-export function generateToken(): string {
-  return randomBytes(32).toString("hex"); // 64 chars
-}
-
-export function isTokenExpired(expiresAt: Date | null): boolean {
-  if (!expiresAt) return false;
-  return new Date() > expiresAt;
-}
+export { generateToken, isTokenExpired };
 
 /** URL path segment par type de token (pour les liens publics). */
 export function getTokenUrlPath(type: MediaTokenType): string {

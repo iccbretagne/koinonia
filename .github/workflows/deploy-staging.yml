@@ -51,17 +51,26 @@ jobs:
 
       - run: npm ci
       - run: npx prisma generate
+      # `npm run build` produit aussi dist/worker.mjs (esbuild) — le worker audio est bundlé,
+      # il n'a donc besoin ni de src/ ni de tsx sur le serveur (ADR-0007).
       - run: npm run build
+
+      # Élague les devDependencies APRÈS le build : l'archive n'embarque plus typescript,
+      # vitest, eslint, esbuild… La CLI `prisma` est en `dependencies` (requise sur le serveur
+      # pour `migrate deploy`) et survit donc à l'élagage.
+      - name: Prune dev dependencies
+        run: npm prune --omit=dev
 
       - name: Package artifact
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           tar czf "koinonia-${VERSION}.tar.gz" \
             --exclude='prisma/scripts' \
-            .next/standalone .next/static \
+            .next/standalone .next/static dist \
             prisma prisma.config.ts public package.json \
             node_modules
           echo "Built koinonia-${VERSION}.tar.gz"
+          du -sh "koinonia-${VERSION}.tar.gz"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -131,6 +140,14 @@ jobs:
 
             # 6. Restart
             sudo systemctl restart koinonia
+
+            # 6b. Restart audio worker (separate unit, ADR-0007) if installed on this host —
+            # sans cela il continuerait de tourner sur le bundle de la release precedente.
+            if systemctl list-unit-files | grep -q '^koinonia-audio-worker\.service'; then
+              sudo systemctl restart koinonia-audio-worker
+            else
+              echo "koinonia-audio-worker.service absent — worker audio non deploye sur cet hote"
+            fi
 
             # 7. Cleanup: keep last 3 releases
             cd "$DEPLOY_PATH/releases"

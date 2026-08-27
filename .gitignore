@@ -31,3 +31,6 @@ coverage/
 
 # Local file uploads (stockage S3 en production)
 uploads/
+
+# graphify (graphe de connaissance généré localement)
+graphify-out/

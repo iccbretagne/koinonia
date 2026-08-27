@@ -70,7 +70,7 @@ function tokenize(s: string): string[] {
 }
 
 /** Seuil de similarité par token de requête (en-deçà → exclusion). */
-export const TOKEN_MATCH_THRESHOLD = 0.7;
+const TOKEN_MATCH_THRESHOLD = 0.7;
 
 /** Seuil au-delà duquel une correspondance est jugée « forte ». */
 export const STRONG_MATCH_THRESHOLD = 0.9;

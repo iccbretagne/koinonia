@@ -682,6 +682,154 @@ COMPLETED  # ZIP genere et disponible
 FAILED     # Echec de generation
 ```
 
+### Module Audio
+
+Publication des enregistrements de culte. Le traitement (`PROBE`, `RENDER`) est asynchrone :
+la table `audio_jobs` est le **seul canal** entre l'application et le worker
+([ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)).
+
+#### `audio_settings`
+
+Configuration du module par eglise.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String (unique) | Ref vers `churches` |
+| `captureDepartmentId` | String? | Departement de captation — pilote les acces (D7), pas de role code en dur |
+| `defaultCoverKey` | String? | Pochette par defaut (cle S3) |
+| `sequenceTemplate` | Json? | Noms de sequences usuels proposes au nommage |
+
+#### `audio_services`
+
+Un culte enregistre.
+
+| Champ | Type | Description |
+|---|---|---|
+| `churchId` | String | Ref vers `churches` |
+| `planningEventId` | String? (unique) | Rattachement facultatif a un evenement planning |
+| `serviceDate` | DateTime | Saisie si aucun `planningEventId` |
+| `title` / `speaker` | String? | Titre et predicateur |
+| `coverKey` | String? | Pochette specifique, sinon `AudioSettings.defaultCoverKey` |
+| `status` | AudioServiceStatus | `DRAFT`, `PENDING_REVIEW`, `READY`, `PUBLISHED`, `UNPUBLISHED` |
+| `publishedAt` / `publishedById` | DateTime? / String? | Horodatage et auteur de la publication |
+| `openCount` | Int | Nombre d'ouvertures du lien public |
+
+#### `audio_sources`
+
+Fichier depose. Un seul `kind` est emis en P1 : `SEQUENCE`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `serviceId` | String | Ref vers `audio_services` |
+| `kind` | AudioSourceKind | `SEQUENCE` (P1) ; `MIX`, `ENVELOPES`, `SOURCE` reserves |
+| `s3Key` | String(512) | Cle S3 — nommee d'apres l'id de la source |
+| `originalFilename` | String(255)? | Nom du fichier tel que depose, affiche pendant le nommage |
+| `uploadId` | String(255)? | Identifiant du multipart S3 en cours (reprise apres coupure) |
+| `etag` | String(255)? | ETag S3 final — base du `sourceHash` (idempotence du rendu) |
+| `durationMs` / `sizeBytes` | Int? / BigInt? | Renseignes par le job `PROBE` / a l'envoi |
+| `uploadStatus` | String | `PENDING` puis `DONE` |
+
+> `sizeBytes` est un `BigInt` : il **doit** etre converti avant toute serialisation JSON
+> (`toJsonSafeAudioSource`), `NextResponse.json` ne sachant pas serialiser ce type.
+
+#### `audio_segments`
+
+Sequence nommee et ordonnee au sein d'un culte.
+
+| Champ | Type | Description |
+|---|---|---|
+| `serviceId` | String | Ref vers `audio_services` |
+| `sourceId` | String? (unique) | Ref vers `audio_sources` (P1 : toujours renseigne) |
+| `order` | Int | Rang d'affichage — unique par culte |
+| `kind` | AudioSegmentKind | `SEQUENCE` (publiee) ou `DISCARDED` (non diffusee) |
+| `title` | String | Nom saisi (modele ou libre) |
+| `startMs` / `endMs` | Int | `0` et duree de la source en P1 (decoupage en P1.5) |
+| `playCount` | Int | Nombre d'ecoutes |
+
+#### `audio_renditions`
+
+Rendu sonore normalise d'un segment (une par segment).
+
+| Champ | Type | Description |
+|---|---|---|
+| `segmentId` | String (unique) | Ref vers `audio_segments` |
+| `s3Key` | String(512) | MP3 normalise |
+| `lufs` / `truePeakDb` | Float | Niveau cible (−16 LUFS) et crete vraie mesuree |
+| `sourceHash` | String | Hash de l'ETag source — evite de re-rendre a l'identique |
+
+#### `audio_jobs`
+
+File de traitement consommee par le worker via `SELECT … FOR UPDATE SKIP LOCKED`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `serviceId` | String | Ref vers `audio_services` |
+| `type` | AudioJobType | `PROBE`, `RENDER` (P1) ; `ALIGN`, `TRANSCRIBE` reserves |
+| `status` | AudioJobStatus | `PENDING`, `RUNNING`, `DONE`, `FAILED` |
+| `attempts` | Int | 3 tentatives avant `FAILED` |
+| `leasedUntil` | DateTime? | Bail (30 min) — permet la reprise si le worker meurt en plein rendu |
+| `payload` / `error` | Json? / Text? | Parametres du job et message d'echec |
+
+#### `audio_share_tokens`
+
+| Champ | Type | Description |
+|---|---|---|
+| `serviceId` | String | Ref vers `audio_services` |
+| `segmentId` | String? | `null` = lien vers le culte entier ; sinon lien direct vers une sequence |
+| `token` | String (unique) | Utilise par `/ecouter/[token]` |
+| `revokedAt` | DateTime? | Depublier revoque les liens deja partages |
+
+#### `audio_service_templates`
+
+Deroules types par eglise et type d'evenement (`sequenceNames`, `mixingProfile` reserve P2).
+
+### Enums audio
+
+#### `AudioServiceStatus`
+```
+DRAFT          # Depot incomplet ou en cours
+PENDING_REVIEW # Sources deposees, en attente de nommage
+READY          # Nommage valide, rendu en cours
+PUBLISHED      # Lien public actif
+UNPUBLISHED    # Depublie — liens partages inoperants
+```
+
+> Le depot reste editable (redeposer, supprimer une sequence, renommer/reordonner) dans tous
+> ces statuts **sauf `PUBLISHED`** — voir `EDITABLE_SERVICE_STATUSES` dans
+> `src/modules/audio/services/service.ts`. `READY` en fait partie : un rendu peut echouer (objet
+> S3 absent, ffmpeg en erreur) et laisser le culte bloque dans cet etat sans jamais atteindre
+> `PUBLISHED` — sans cela, aucune correction ni sortie par l'interface n'etait possible.
+
+#### `AudioSourceKind`
+```
+SEQUENCE  # Sequence deja mixee, deposee telle quelle (seul kind emis en P1)
+MIX       # Mix stereo a decouper (P1.5, reserve)
+ENVELOPES # Enveloppes d'energie par canal (P2, reserve)
+SOURCE    # Multipiste FLAC archive (P2, reserve)
+```
+
+#### `AudioSegmentKind`
+```
+SEQUENCE  # Publiee
+DISCARDED # Marquee non diffusee (repetition, temps mort)
+```
+
+#### `AudioJobType`
+```
+PROBE      # Duree + niveau
+RENDER     # loudnorm (−16 LUFS) + reencodage MP3
+ALIGN      # Detection des frontieres (P2, reserve)
+TRANSCRIBE # Transcription (P3, reserve)
+```
+
+#### `AudioJobStatus`
+```
+PENDING # En attente de bail
+RUNNING # Bail pris par un worker
+DONE    # Termine
+FAILED  # Echec apres 3 tentatives
+```
+
 ## Seed (donnees initiales)
 
 Le script `prisma/seed.ts` cree :

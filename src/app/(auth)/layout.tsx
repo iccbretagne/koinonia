@@ -5,6 +5,7 @@ import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions } from "@/lib/registry";
+import { isCaptureTeamMember } from "@/modules/audio";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import NotificationBell from "@/components/NotificationBell";
@@ -17,6 +18,7 @@ const configLinksDef = [
   { href: "/admin/departments",           label: "Départements",      permissions: ["departments:manage"] },
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
   { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
+  { href: "/admin/audio/settings",        label: "Audio",             permissions: ["audio:manage"] },
   // Personnes
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
@@ -191,6 +193,16 @@ export default async function AuthLayout({
     isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
 
     requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  }
+
+  // ── Lien "Audio" (module audio — file d'attente de publication des cultes) ──
+  if (currentChurchId) {
+    const canAccessAudio =
+      userPermissions.has("audio:view") ||
+      (await isCaptureTeamMember(currentChurchId, departments.map((d) => d.id)));
+    if (canAccessAudio) {
+      mediaLinks.push({ href: "/audio", label: "Audio évènements" });
+    }
   }
 
   // ── Section "Intégration familles" ──────────────────────────────────────────

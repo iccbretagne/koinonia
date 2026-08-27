@@ -31,6 +31,10 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0002](0002-multi-tenant-church-id.md) | Multi-tenant par `churchId` sur chaque donnée | Accepté |
 | [0003](0003-prisma7-esm-driver-adapter.md) | Prisma 7 ESM-only avec driver adapter MariaDB | Accepté |
 | [0004](0004-import-dynamique-anti-cycle-registry.md) | Import dynamique comme échappatoire au cycle `registry.ts` ↔ modules | Accepté |
+| [0005](0005-module-audio-distinct.md) | Module `audio` distinct de `media` | Proposé |
+| [0006](0006-extraction-module-storage.md) | Extraction de `modules/storage` hors de `media` | Proposé |
+| [0007](0007-worker-hors-nextjs-table-jobs.md) | Worker hors Next.js, piloté par une table de jobs | Proposé |
+| [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Proposé |
 
 ## Note sur les ADR 0001–0003
 

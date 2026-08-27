@@ -65,7 +65,11 @@ koinonia/
 │   │   │   ├── events.ts        # PlanningEvents type map
 │   │   │   └── services/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
-│   │   └── discipleship/index.ts # Manifeste : discipleship:view/manage/export
+│   │   ├── discipleship/index.ts # Manifeste : discipleship:view/manage/export
+│   │   └── audio/               # Publication audio des cultes (ADR-0007)
+│   │       ├── index.ts         # Manifeste : audio:view/upload/review/manage
+│   │       ├── services/        # Depot, sequences, publication, tokens, acces
+│   │       └── worker/          # Process hors Next.js (runner + handlers probe/render)
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout (Montserrat, metadata)
 │   │   ├── page.tsx             # Page de connexion (Google OAuth)
@@ -86,9 +90,10 @@ koinonia/
 │   │   │   │   └── requests/    # Dashboard Production Media (VISUEL) — traitement uniquement
 │   │   │   ├── communication/
 │   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
+│   │   │   ├── audio/           # File d'attente des cultes + depot/nommage ([id])
 │   │   │   ├── guide/           # Guide utilisateur par role
 │   │   │   └── admin/           # Section administration
-│   │   │       ├── layout.tsx   # Guard multi-permissions (requireAnyPermission)
+│   │   │       ├── layout.tsx   # Guard acces eglise (requireAuth + requireChurchAccess)
 │   │   │       ├── churches/    # CRUD eglises + onboarding
 │   │   │       ├── users/       # Gestion utilisateurs
 │   │   │       ├── access/      # Gestion des acces et roles
@@ -105,6 +110,7 @@ koinonia/
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
 │   │       ├── requests/        # GET/POST + [id] GET/PATCH/DELETE (unifie)
+│   │       ├── audio/           # services (depot, sequences, publish/unpublish) + public/[token]
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── discipleships/   # CRUD, attendance, stats, tree, export
@@ -153,12 +159,16 @@ koinonia/
 
 ```bash
 npm run dev              # Developpement (Turbopack)
-npm run build            # Build de production
+npm run build            # Build de production (enchaine build:worker)
+npm run build:worker     # Bundle esbuild du worker audio -> dist/worker.mjs
+npm run worker           # Worker audio en developpement (tsx, sources directes)
 npm run start            # Serveur de production
 npm run typecheck        # Verification TypeScript (tsc --noEmit)
 npm run lint             # ESLint
 npm run lint:boundaries  # Verification des frontieres modules (dependency-cruiser)
 npm run test             # Tests unitaires (Vitest)
+npm run test:watch       # Tests en mode watch
+npm run test:coverage    # Tests avec rapport de couverture
 npm run db:push          # Appliquer le schema Prisma
 npm run db:seed          # Charger les donnees ICC Rennes
 npm run db:migrate         # Creer une migration (dev)
@@ -190,9 +200,10 @@ export async function GET(
 - `requireAuth()` — verifie la session, throw `UNAUTHORIZED`
 - `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN`
 - `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
-- `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste
 - `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID
+- `requireAudioAccess(permission, churchId)` — permission de role **ou** membre du departement de captation
+- `requireAudioUnpublishAccess(churchId)` — `audio:manage` ou responsable du departement de captation
 
 ### Reponses API (`src/lib/api-utils.ts`)
 
@@ -248,6 +259,10 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 | `discipleship:export` | x | | x | | | | |
 | `reports:view` | x | x | x | | | | x |
 | `reports:edit` | x | x | x | | | | x |
+| `audio:view` | x | x | x | | | | |
+| `audio:upload` | x | x | x | | | | |
+| `audio:review` | x | x | | | | | |
+| `audio:manage` | x | x | | | | | |
 
 **Visibilite des departements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
@@ -266,6 +281,15 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Accès en lecture aux événements (`events:view`)
 - Accès en lecture/écriture aux comptes rendus (`reports:view` + `reports:edit`)
 - Pas d'accès au planning, membres, ou administration
+
+**Spécificités du module audio** — le tableau ci-dessus ne suffit pas :
+- `requireAudioAccess(permission, churchId)` verifie d'abord les permissions de role, puis
+  retombe sur `isCaptureTeamMember()` — un STAR du departement de captation configure passe
+  donc le controle **quelle que soit la permission demandee**, sans role dedie
+- `requireAudioUnpublishAccess(churchId)` est volontairement plus strict : `audio:manage` ou
+  `isCaptureTeamLead` (responsable/ministre du departement de captation) uniquement — pas de
+  passe-droit pour un simple STAR, depublier engageant plus que publier
+- Le departement de captation se configure dans `/admin/audio/settings` (`audio:manage`)
 
 ## Multi-tenant
 

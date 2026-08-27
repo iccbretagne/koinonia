@@ -25,7 +25,7 @@ export {
   getSignedPutUrl,
   fileExists,
   downloadFile,
-} from "./services/s3";
+} from "@/modules/storage";
 
 /**
  * Module media — ex-Mediaflow.
@@ -44,7 +44,7 @@ export {
 export const mediaModule = defineModule({
   name: "media",
   version: "1.0.0",
-  dependsOn: ["core"],
+  dependsOn: ["core", "storage"],
   optionalDependencies: ["planning"],
 
   permissions: {

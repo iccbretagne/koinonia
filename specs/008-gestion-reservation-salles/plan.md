@@ -33,8 +33,7 @@ sans déclarer de dépendance.
 
 L'accès « équipe dédiée » (validation de la main courante) réutilise le mécanisme déjà en place
 pour Protocole/Production Média : appartenance à un département dont la `function` vaut
-`SECURITE` ou `ENTRETIEN` (nouvelles entrées dans `DEPT_FN`/`SYSTEM_FUNCTIONS`), pas de nouveau
-rôle global.
+`SECURITE` ou `ENTRETIEN` (entrées de `DEPT_FN`), pas de nouveau rôle global.
 
 La déclaration d'ouverture/fermeture par l'utilisateur de la salle est **ownership-based** (comme
 l'auto-déclaration d'absence) : quiconque est `createdById` de la réservation peut déclarer, sans
@@ -156,9 +155,11 @@ Ajouts sur les modèles existants :
 - `User` : 7 relations nommées (`RoomReservationCreatedBy/CancelledBy`,
   `RoomChecklistOpenedBy/KeyReceivedFrom/ClosedBy/KeyReturnedTo/ValidatedBy`)
 
-`src/lib/department-functions.ts` : ajout de `DEPT_FN.SECURITE` et `DEPT_FN.ENTRETIEN` +
-entrées correspondantes dans `SYSTEM_FUNCTIONS` (l'admin des fonctions de département les
-affichera automatiquement, aucun changement UI supplémentaire requis).
+`src/lib/department-functions.ts` : `DEPT_FN.SECURITE` et `DEPT_FN.ENTRETIEN` (déjà présents).
+
+> ⚠️ Révision : `SYSTEM_FUNCTIONS` a été supprimée du code (aucun consommateur — l'admin des
+> fonctions de département ne l'utilisait pas). L'hypothèse « affichage automatique, aucun
+> changement UI requis » ne tient donc plus : prévoir les libellés là où ils sont affichés.
 
 Migration : `npm run db:migrate` (nom suggéré `add_rooms`).
 
