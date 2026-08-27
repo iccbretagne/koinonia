@@ -15,8 +15,10 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 // `tokens.ts` importe `@/lib/prisma` au niveau module (instancie un vrai client sinon).
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
-vi.mock("../s3", () => ({
+vi.mock("@/modules/storage", () => ({
   getSignedThumbnailUrl: (key: string) => Promise.resolve(`signed://${key}`),
+  generateToken: () => "test-token",
+  isTokenExpired: (expiresAt: Date | null) => !!expiresAt && new Date() > expiresAt,
 }));
 
 const { collectionPhotoWhere, resolveDownloadData, resolveGalleryData, resolveCollectionData, resolveValidatorData } = await import("../tokens");

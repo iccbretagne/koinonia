@@ -299,24 +299,6 @@ export async function requirePermission(permission: string, churchId?: string) {
   return session;
 }
 
-export async function requireAnyPermission(...permissions: string[]) {
-  const session = await requireAuth();
-
-  // Global super admin bypasses all permissions
-  if (session.user.isSuperAdmin) return session;
-
-  const { rolePermissions } = await import("./registry");
-  const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-
-  if (!permissions.some((p) => userPermissions.has(p))) {
-    throw new Error("FORBIDDEN");
-  }
-
-  return session;
-}
-
 type DepartmentScope =
   | { scoped: false }
   | { scoped: true; departmentIds: string[] };
@@ -677,6 +659,55 @@ export async function requireMediaReviewAccess(churchId: string) {
 
   if (userPerms.has("media:review") || await isProductionMediaMember(session, churchId))
     return session;
+
+  throw new Error("FORBIDDEN");
+}
+
+// ── Audio access helpers ──────────────────────────────────────────────────────
+
+/**
+ * Autorise l'accès aux ressources du module audio (vue, dépôt, révision).
+ * Passe si : la permission de rôle donnée (`audio:view`/`audio:upload`/`audio:review`,
+ * ADMIN/SECRETARY…) OU appartenance au département de captation configuré
+ * (`AudioSettings.captureDepartmentId`), quel que soit le rôle — autonomie complète
+ * dépôt → publication pour l'équipe technique (D7).
+ */
+export async function requireAudioAccess(permission: string, churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+  if (userPerms.has(permission)) return session;
+
+  const { isCaptureTeamMember } = await import("@/modules/audio");
+  const departmentIds = roles.flatMap((r) => r.departments.map((d) => d.department.id));
+  if (await isCaptureTeamMember(churchId, departmentIds)) return session;
+
+  throw new Error("FORBIDDEN");
+}
+
+/**
+ * Autorise la dépublication d'un culte audio — geste plus lourd que publier (un lien déjà
+ * partagé devient inopérant). Passe si : `audio:manage` (ADMIN/SECRETARY…) OU
+ * responsable (`DEPARTMENT_HEAD`/`MINISTER`) du département de captation configuré.
+ */
+export async function requireAudioUnpublishAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+  if (userPerms.has("audio:manage")) return session;
+
+  const { isCaptureTeamLead } = await import("@/modules/audio");
+  if (await isCaptureTeamLead(session, churchId)) return session;
 
   throw new Error("FORBIDDEN");
 }

@@ -19,7 +19,8 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     }],
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**"]
+  // "dist/**" : bundle esbuild du worker audio (généré par `npm run build:worker`)
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "dist/**", "next-env.d.ts", "coverage/**"]
 }];
 
 export default eslintConfig;

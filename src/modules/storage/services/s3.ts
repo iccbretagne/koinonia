@@ -7,6 +7,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  ListPartsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Media as s3Client, MEDIA_BUCKET as BUCKET } from "@/lib/s3";
@@ -112,6 +113,16 @@ export async function getSignedOriginalUrl(key: string): Promise<string> {
   return getSignedUrl(s3Client, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn: ORIGINAL_URL_EXPIRY });
 }
 
+// Expiry généreuse (3h) : couvre une session de culte longue (jusqu'à ~2h53, cf.
+// specs/019-audio-cultes-publication) lue en flux, sans qu'un rafraîchissement de page
+// n'invalide l'URL en cours de lecture.
+const STREAM_URL_EXPIRY = 3 * 3600;
+
+/** URL signée pour lecture en flux (inline, pas de Content-Disposition attachment). */
+export async function getSignedStreamUrl(key: string, expiresIn = STREAM_URL_EXPIRY): Promise<string> {
+  return getSignedUrl(s3Client, new GetObjectCommand({ Bucket: BUCKET, Key: key }), { expiresIn });
+}
+
 export async function getSignedDownloadUrl(key: string, filename: string): Promise<string> {
   return getSignedUrl(
     s3Client,
@@ -152,15 +163,37 @@ export async function completeMultipartUpload(
   key: string,
   uploadId: string,
   parts: { partNumber: number; etag: string }[]
-): Promise<void> {
-  await s3Client.send(new CompleteMultipartUploadCommand({
+): Promise<string | undefined> {
+  const resp = await s3Client.send(new CompleteMultipartUploadCommand({
     Bucket: BUCKET,
     Key: key,
     UploadId: uploadId,
     MultipartUpload: { Parts: parts.map((p) => ({ PartNumber: p.partNumber, ETag: p.etag })) },
   }));
+  return resp.ETag;
 }
 
 export async function abortMultipartUpload(key: string, uploadId: string): Promise<void> {
   await s3Client.send(new AbortMultipartUploadCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId }));
+}
+
+/** Parts déjà reçues côté S3 pour un upload multipart en cours (reprise après coupure). */
+export async function listUploadedParts(key: string, uploadId: string): Promise<{ partNumber: number; etag: string; size: number }[]> {
+  const parts: { partNumber: number; etag: string; size: number }[] = [];
+  let partNumberMarker: string | undefined;
+  do {
+    const resp = await s3Client.send(new ListPartsCommand({
+      Bucket: BUCKET,
+      Key: key,
+      UploadId: uploadId,
+      PartNumberMarker: partNumberMarker,
+    }));
+    for (const p of resp.Parts ?? []) {
+      if (p.PartNumber != null && p.ETag && p.Size != null) {
+        parts.push({ partNumber: p.PartNumber, etag: p.ETag, size: p.Size });
+      }
+    }
+    partNumberMarker = resp.IsTruncated ? resp.NextPartNumberMarker : undefined;
+  } while (partNumberMarker);
+  return parts;
 }

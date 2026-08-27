@@ -45,6 +45,7 @@ Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, 
 | `planning` | Evenements, planning, membres, annonces, demandes (Request workflow), espace STAR |
 | `discipleship` | Suivi discipolat, relations, presences, stats |
 | `media` | Galeries photos evenements, projets de production, versionnage fichiers, tokens de partage |
+| `audio` | Publication audio des cultes : depot des sequences, nommage, rendu sonore, diffusion par lien public. Depend de `storage` et `planning`. Seul module a embarquer un **worker hors Next.js** ([ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) |
 
 **Exports du module `media` :**
 - `mediaModule` — manifeste
@@ -130,6 +131,10 @@ koinonia/
 │   │   │       └── request-executor.ts  # Executor demandes + emissions bus
 │   │   ├── discipleship/
 │   │   │   └── index.ts           # Manifeste : discipleship:view/manage/export
+│   │   ├── audio/
+│   │   │   ├── index.ts           # Manifeste : audio:view/upload/review/manage
+│   │   │   ├── services/          # Depot, sequences, publication, tokens, acces
+│   │   │   └── worker/            # Hors Next.js — runner + handlers probe/render
 │   │   └── __tests__/             # Tests unitaires modules
 │   ├── app/
 │   │   ├── layout.tsx             # Root layout (Montserrat, metadata)
@@ -265,7 +270,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 | `requireAuth()` | Verifie la session, throw `UNAUTHORIZED` |
 | `requirePermission(perm, churchId?)` | Verifie une permission, throw `FORBIDDEN` |
 | `requireChurchPermission(perm, churchId)` | Idem, churchId obligatoire |
-| `requireAnyPermission(...perms)` | Au moins une permission valide |
 | `getUserDepartmentScope(session)` | `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` |
 | `getDiscipleshipScope(session, churchId)` | Portee discipolat (scoped ou non) |
 | `resolveChurchId(type, id)` | Retrouve le `churchId` d'une ressource par son type |

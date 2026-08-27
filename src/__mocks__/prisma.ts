@@ -5,6 +5,7 @@ function createModelMock() {
   return {
     findMany: vi.fn(),
     findUnique: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
     findFirst: vi.fn(),
     create: vi.fn(),
     createMany: vi.fn(),
@@ -70,9 +71,18 @@ export const prismaMock = {
   roomAccess: createModelMock(),
   roomReservation: createModelMock(),
   roomChecklist: createModelMock(),
-  $transaction: vi.fn((fn: (tx: typeof prismaMock) => Promise<unknown>) =>
-    fn(prismaMock)
-  ),
+  // Module audio
+  audioSettings: createModelMock(),
+  audioService: createModelMock(),
+  audioSource: createModelMock(),
+  audioSegment: createModelMock(),
+  audioRendition: createModelMock(),
+  audioServiceTemplate: createModelMock(),
+  audioJob: createModelMock(),
+  audioShareToken: createModelMock(),
+  $queryRaw: vi.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),
 };
 
 vi.mock("@/lib/prisma", () => ({

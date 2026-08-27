@@ -73,11 +73,15 @@ Cela permet d'assigner le role STAR sans aucune entree `user_departments` : les 
 - `requireAuth()` — verifie la session et throw `UNAUTHORIZED` si absente
 - `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN` si non autorise
 - `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
-- `requireAnyPermission(...permissions)` — verifie au moins une permission parmi la liste
 - `getUserDepartmentScope(session)` — retourne le perimetre departements selon le role
 - `getDiscipleshipScope(session, churchId)` — portee discipolat (scoped ou non)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource
 - `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste)
+- `requireAudioAccess(permission, churchId)` — permission de role **ou** appartenance au departement
+  de captation (`isCaptureTeamMember`) : un STAR de ce departement passe le controle quelle que soit
+  la permission demandee
+- `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre du
+  departement de captation (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
 
 ---
 

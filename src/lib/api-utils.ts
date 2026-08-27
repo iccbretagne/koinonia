@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { ApiError } from "./errors";
 
-export class ApiError extends Error {
-  constructor(
-    public statusCode: number,
-    message: string
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+// Ré-export : `ApiError` est définie dans `errors.ts` (sans dépendance Next.js) pour rester
+// utilisable hors du framework — voir le commentaire de ce fichier. Les nombreux appelants
+// qui font `import { ApiError } from "@/lib/api-utils"` continuent de fonctionner.
+export { ApiError };
 
 export function successResponse(data: unknown, status = 200) {
   return NextResponse.json(data, { status });

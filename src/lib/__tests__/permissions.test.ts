@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hasPermission, userHasAnyRole } from "../permissions";
+import { hasPermission } from "../permissions";
 import type { Role } from "@/generated/prisma/client";
 
 describe("hasPermission", () => {
@@ -82,30 +82,5 @@ describe("hasPermission", () => {
   it("returns empty array for unknown role", () => {
     const perms = hasPermission("UNKNOWN" as Role);
     expect(perms).toEqual([]);
-  });
-});
-
-describe("userHasAnyRole", () => {
-  const userRoles = [
-    { role: "ADMIN" as Role, churchId: "church-1" },
-    { role: "MINISTER" as Role, churchId: "church-2" },
-  ];
-
-  it("returns true when user has one of the allowed roles", () => {
-    expect(userHasAnyRole(userRoles, ["ADMIN"])).toBe(true);
-  });
-
-  it("returns false when user has none of the allowed roles", () => {
-    expect(userHasAnyRole(userRoles, ["SUPER_ADMIN"])).toBe(false);
-  });
-
-  it("filters by churchId when provided", () => {
-    expect(userHasAnyRole(userRoles, ["ADMIN"], "church-1")).toBe(true);
-    expect(userHasAnyRole(userRoles, ["ADMIN"], "church-2")).toBe(false);
-    expect(userHasAnyRole(userRoles, ["MINISTER"], "church-2")).toBe(true);
-  });
-
-  it("returns false for empty userRoles", () => {
-    expect(userHasAnyRole([], ["ADMIN"])).toBe(false);
   });
 });

@@ -1817,6 +1817,72 @@ Génère une URL de téléchargement signée pour une photo approuvée.
 
 ---
 
+## Audio des cultes
+
+Publication des enregistrements de culte : depot des sequences, nommage/ordonnancement, rendu
+sonore normalise puis diffusion via un lien public. Voir
+[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md) pour le traitement asynchrone.
+
+### Permissions
+
+- `audio:view` — file d'attente et detail d'un culte
+- `audio:upload` — depot et suppression de sequences
+- `audio:review` — publication / depublication
+- `audio:manage` — parametres du module
+
+Le controle passe par `requireAudioAccess()`, qui accepte **aussi** un membre du departement de
+captation configure, sans role dedie. La depublication utilise `requireAudioUnpublishAccess()`,
+plus strict (voir [auth.md](auth.md)).
+
+### Cultes
+
+| Methode | Endpoint | Permission | Role |
+|---|---|---|---|
+| `GET` | `/api/audio/services` | `audio:view` | File d'attente des cultes de l'eglise |
+| `POST` | `/api/audio/services` | `audio:upload` | Cree un culte (titre, orateur, date, rattachable a un evenement) |
+| `GET` | `/api/audio/services/events` | `audio:upload` | Evenements de l'eglise a une date donnee, pour proposer un rattachement au depot |
+| `GET` | `/api/audio/services/[id]` | `audio:view` | Detail : sources, segments, rendus |
+| `PATCH` | `/api/audio/services/[id]` | `audio:review` | Modifie titre, orateur, date, rattachement, couverture |
+| `DELETE` | `/api/audio/services/[id]` | *(voir ci-dessus)* | Supprime le culte entier (tant qu'il n'est pas publie) |
+| `PUT` | `/api/audio/services/[id]/sequences` | `audio:upload` | Enregistre l'ordre et les titres |
+| `DELETE` | `/api/audio/services/[id]/sources/[sourceId]` | `audio:upload` | Supprime une sequence deposee (tant que le culte n'est pas publie) |
+| `POST` | `/api/audio/services/[id]/publish` | `audio:review` | Cree les jobs `RENDER` manquants et publie |
+| `POST` | `/api/audio/services/[id]/unpublish` | *(voir ci-dessus)* | Rend les liens partages inoperants |
+
+> Le culte passe en `READY` a la publication tant que des rendus restent a calculer, puis en
+> `PUBLISHED` automatiquement quand le worker a termine — aucune seconde action manuelle.
+
+### Depot (upload multipart S3)
+
+| Methode | Endpoint | Role |
+|---|---|---|
+| `POST` | `/api/audio/services/[id]/upload/sign` | Cree l'`AudioSource` et renvoie une URL signee par part |
+| `GET` | `/api/audio/services/[id]/upload/parts` | Parts deja recues (reprise apres coupure) |
+| `POST` | `/api/audio/services/[id]/upload/complete` | Finalise le multipart et programme le job `PROBE` |
+
+Le navigateur envoie chaque part directement a S3. Le bucket doit exposer l'en-tete `ETag`
+(CORS `ExposeHeaders`), faute de quoi la finalisation echoue.
+
+### Parametres
+
+| Methode | Endpoint | Permission |
+|---|---|---|
+| `GET` / `PUT` | `/api/audio/settings` | `audio:manage` |
+
+Departement de captation, couverture et modele de noms de sequences.
+
+### Acces public via token (sans authentification)
+
+| Methode | Endpoint | Role |
+|---|---|---|
+| `GET` | `/api/audio/public/[token]` | Culte publie et ses segments |
+| `POST` | `/api/audio/public/[token]/play` | Journalise une ecoute (limite en debit) |
+| `GET` | `/api/audio/public/[token]/stream/[segmentId]` | URL signee de lecture d'un segment |
+
+Page de lecture associee : `/ecouter/[token]`.
+
+---
+
 ## Notifications
 
 ### `GET /api/notifications`

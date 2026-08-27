@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+      # requis par src/modules/audio/worker/handlers/__tests__/render.test.ts (T043) — vrai
+      # ffmpeg, pas de binaire mocké ; absent de l'image ubuntu-latest par défaut.
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci
       - run: npx prisma generate
       - run: npm run typecheck

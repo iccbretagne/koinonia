@@ -98,6 +98,10 @@ model Church {
   rooms                     Room[]
   roomAccesses              RoomAccess[]
   roomReservations          RoomReservation[]
+  // Module audio
+  audioSettings             AudioSettings?
+  audioServices             AudioService[]
+  audioServiceTemplates     AudioServiceTemplate[]
   // Module pastoral
   responsibleProfileId      String?                    @unique
   supervisorProfileId       String?
@@ -258,6 +262,8 @@ model Department {
   linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
   financialSeries   FinancialSeries[]
   financialRequests FinancialRequest[]
+  // Module audio (département de captation, configurable — pas codé en dur)
+  audioSettings     AudioSettings[]
 
   @@map("departments")
 }
@@ -419,6 +425,8 @@ model Event {
   welcomeDutyAssignments  WelcomeDutyAssignment[]
   // Module rooms (réservation de salles)
   roomReservations        RoomReservation[]
+  // Module audio
+  audioService            AudioService?
 
   @@map("events")
 }
@@ -509,10 +517,10 @@ model Absence {
   updatedAt     DateTime      @updatedAt
   cancelledAt   DateTime?
 
-  member      Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  church      Church @relation(fields: [churchId], references: [id])
-  createdBy   User   @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
-  cancelledBy User?  @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
+  member      Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  church      Church          @relation(fields: [churchId], references: [id])
+  createdBy   User            @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
+  cancelledBy User?           @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
   backups     AbsenceBackup[]
 
   @@index([churchId, startDate, endDate])
@@ -1698,13 +1706,13 @@ model FamilyLeaderAssignment {
 // ─── Module Rooms (réservation de salles) ────────────────────────────────────
 
 model Room {
-  id         String   @id @default(cuid())
-  name       String
-  churchId   String
-  capacity   Int?
-  location   String?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  churchId  String
+  capacity  Int?
+  location  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
   church       Church            @relation(fields: [churchId], references: [id])
   sharedWith   RoomAccess[]
@@ -1741,7 +1749,7 @@ model RoomReservation {
   endAt              DateTime
   status             RoomReservationStatus @default(CONFIRMED)
   recurrenceRule     String? // "weekly" | "biweekly" | "monthly" — utilisé seulement si non lié
-                                            // à un Event lui-même récurrent
+  // à un Event lui-même récurrent
   seriesId           String?
   isRecurrenceParent Boolean               @default(false)
   createdById        String
@@ -1781,15 +1789,15 @@ model RoomChecklist {
   keyReceivedFromName String?
   openingNotes        String?   @db.Text
 
-  closedById          String?
-  closedAt            DateTime?
-  closedProperly      Boolean?
-  cleaned             Boolean?
-  equipmentOk         Boolean?
-  equipmentNotes      String?   @db.Text
-  keyReturnedToId     String?
-  keyReturnedToName   String?
-  closingNotes        String?   @db.Text
+  closedById        String?
+  closedAt          DateTime?
+  closedProperly    Boolean?
+  cleaned           Boolean?
+  equipmentOk       Boolean?
+  equipmentNotes    String?   @db.Text
+  keyReturnedToId   String?
+  keyReturnedToName String?
+  closingNotes      String?   @db.Text
 
   validatedById           String?
   validatedAt             DateTime?
@@ -1808,4 +1816,209 @@ model RoomChecklist {
   validatedBy     User?           @relation("RoomChecklistValidatedBy", fields: [validatedById], references: [id])
 
   @@map("room_checklists")
+}
+
+// ─── Module audio (publication audio des cultes) ───────────────────
+//
+// P1 ne livre que le dépôt de séquences déjà mixées/découpées (AudioSourceKind.SEQUENCE).
+// Le dépôt d'un mix à découper (AudioSourceKind.MIX, AudioSegment.startMs/endMs comme
+// plage d'un mix, job PROBE "pics de forme d'onde") est modélisé mais non câblé — P1.5.
+// Voir specs/019-audio-cultes-publication/plan.md.
+
+enum AudioServiceStatus {
+  DRAFT // dépôt incomplet ou en cours
+  PENDING_REVIEW // sources déposées, en attente de nommage (P1) ou de découpage (P1.5)
+  READY // nommage/découpage validé, rendu en cours ou terminé
+  PUBLISHED
+  UNPUBLISHED
+}
+
+enum AudioSourceKind {
+  SEQUENCE // séquence déjà mixée et découpée, déposée telle quelle (P1 — seul kind émis)
+  MIX // mix stéréo à découper (P1.5 — valeur réservée, non émise en P1)
+  ENVELOPES // enveloppes d'énergie par canal (P2, agent de dépôt)
+  SOURCE // multipiste FLAC archivé (P2)
+}
+
+enum AudioSegmentKind {
+  SEQUENCE // publiée
+  DISCARDED // marquée non diffusée (répétition, temps mort)
+}
+
+enum AudioJobType {
+  PROBE // P1 — durée + niveau ; P1.5 — pics de forme d'onde
+  RENDER // P1 — loudnorm + réencodage ; P1.5 — + découpe
+  ALIGN // P2 — détection automatique des frontières (réservé, non exécuté)
+  TRANSCRIBE // P3 — transcription (réservé, non exécuté)
+}
+
+enum AudioJobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+model AudioSettings {
+  id                  String  @id @default(cuid())
+  churchId            String  @unique
+  captureDepartmentId String? // département autonome sur le module (D7) — pas codé en dur
+  defaultCoverKey     String? @db.VarChar(512)
+  sequenceTemplate    Json? // noms de séquences usuels proposés au nommage/découpage
+
+  church            Church      @relation(fields: [churchId], references: [id])
+  captureDepartment Department? @relation(fields: [captureDepartmentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("audio_settings")
+}
+
+model AudioService {
+  id              String             @id @default(cuid())
+  churchId        String
+  planningEventId String?            @unique // rattachement facultatif (spec §1, cas limite)
+  serviceDate     DateTime // saisie si pas de planningEventId
+  title           String?
+  speaker         String?
+  type            String             @default("AUTRE") // nomenclature @/lib/event-types (EVENT_TYPES) — recopiée depuis Event.type au dépôt/rattachement, saisie sinon
+  coverKey        String?            @db.VarChar(512) // override, sinon AudioSettings.defaultCoverKey
+  status          AudioServiceStatus @default(DRAFT)
+  publishedAt     DateTime?
+  publishedById   String?
+  openCount       Int                @default(0) // compteur d'ouverture du lien (spec §6)
+
+  church        Church            @relation(fields: [churchId], references: [id])
+  planningEvent Event?            @relation(fields: [planningEventId], references: [id])
+  sources       AudioSource[]
+  segments      AudioSegment[]
+  jobs          AudioJob[]
+  shareTokens   AudioShareToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([churchId, status])
+  @@map("audio_services")
+}
+
+model AudioSource {
+  id               String          @id @default(cuid())
+  serviceId        String
+  kind             AudioSourceKind
+  channelKey       String? // null pour MIX/SEQUENCE ; nom du canal pour ENVELOPES/SOURCE (P2)
+  s3Key            String          @db.VarChar(512)
+  originalFilename String?         @db.VarChar(255) // nom du fichier tel que déposé par l'utilisateur —
+                                                      // distinct de s3Key (nommé par sourceId), affiché
+                                                      // pendant le nommage/réordonnancement (spec §2)
+  uploadId         String?         @db.VarChar(255) // identifiant S3 de l'upload multipart en cours (reprise)
+  etag             String?         @db.VarChar(255) // ETag S3 final — base du sourceHash (idempotence du rendu, D10)
+  durationMs       Int?
+  sizeBytes        BigInt?
+  uploadStatus     String          @default("PENDING") // multipart en cours / terminé
+  purgeableAt      DateTime? // archive FLAC, purge manuelle (P2)
+
+  service AudioService  @relation(fields: [serviceId], references: [id])
+  segment AudioSegment? // relation inverse, uniquement peuplée pour kind SEQUENCE
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+  @@map("audio_sources")
+}
+
+model AudioSegment {
+  id         String           @id @default(cuid())
+  serviceId  String
+  sourceId   String?          @unique // kind SEQUENCE uniquement (P1) — null si découpé du MIX (P1.5)
+  order      Int
+  kind       AudioSegmentKind @default(SEQUENCE)
+  title      String
+  startMs    Int // 0 pour un segment né d'une AudioSource kind SEQUENCE
+  endMs      Int // durationMs de la source pour un segment kind SEQUENCE
+  confidence Float? // rempli en P2 par la détection ; null en P1 (placement manuel)
+  detectedBy String? // "deposit" en P1 ; "manual" en P1.5 ; nom de l'algo en P2
+
+  service   AudioService    @relation(fields: [serviceId], references: [id])
+  source    AudioSource?    @relation(fields: [sourceId], references: [id])
+  rendition AudioRendition?
+  playCount Int             @default(0) // spec §6
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  audioShareTokens AudioShareToken[]
+
+  @@unique([serviceId, order])
+  @@index([serviceId, kind])
+  @@map("audio_segments")
+}
+
+model AudioRendition {
+  id         String @id @default(cuid())
+  segmentId  String @unique
+  s3Key      String @db.VarChar(512)
+  format     String @default("mp3")
+  durationMs Int
+  lufs       Float
+  truePeakDb Float
+  sourceHash String // idempotence du rendu (D10)
+
+  segment AudioSegment @relation(fields: [segmentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("audio_renditions")
+}
+
+model AudioServiceTemplate {
+  id            String  @id @default(cuid())
+  churchId      String
+  eventType     String? // null = déroulé par défaut de l'église
+  sequenceNames Json // liste ordonnée de noms usuels proposés (D5)
+  mixingProfile Json? // groupement de canaux, gains (P2, D10) — vide en P1
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([churchId, eventType])
+  @@map("audio_service_templates")
+}
+
+model AudioJob {
+  id          String         @id @default(cuid())
+  serviceId   String
+  type        AudioJobType
+  status      AudioJobStatus @default(PENDING)
+  progress    Int            @default(0)
+  attempts    Int            @default(0)
+  leasedUntil DateTime?
+  payload     Json?
+  error       String?        @db.Text
+
+  service AudioService @relation(fields: [serviceId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, leasedUntil])
+  @@map("audio_jobs")
+}
+
+model AudioShareToken {
+  id        String    @id @default(cuid())
+  serviceId String
+  segmentId String? // null = lien vers le culte entier ; sinon lien direct vers une séquence
+  token     String    @unique
+  revokedAt DateTime?
+
+  service AudioService  @relation(fields: [serviceId], references: [id])
+  segment AudioSegment? @relation(fields: [segmentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([serviceId])
+  @@map("audio_share_tokens")
 }

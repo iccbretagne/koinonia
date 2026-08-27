@@ -19,8 +19,13 @@
       `Room`, `RoomAccess`, `RoomReservation`, `RoomChecklist`, et les relations inverses
       (`Church.rooms/roomAccesses/roomReservations`, `Event.roomReservations`, 7 relations
       nommées sur `User`) *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** [P] — Ajouter `DEPT_FN.SECURITE` et `DEPT_FN.ENTRETIEN` + entrées `SYSTEM_FUNCTIONS`
-      correspondantes *(fichier : `src/lib/department-functions.ts`)*
+- [ ] **T2** [P] — Ajouter `DEPT_FN.SECURITE` et `DEPT_FN.ENTRETIEN`
+      *(fichier : `src/lib/department-functions.ts`)*
+      > ⚠️ `SYSTEM_FUNCTIONS` (liste de libellés/descriptions) a été supprimée depuis la
+      > rédaction de cette spec : elle n'avait aucun consommateur. `DEPT_FN.SECURITE` et
+      > `DEPT_FN.ENTRETIEN` **existent déjà** dans le fichier. Si l'écran d'admin des fonctions
+      > de département a besoin de libellés, il faudra les réintroduire là où ils sont
+      > effectivement affichés.
 - [ ] **T3** — Générer et vérifier la migration (`npm run db:migrate` — nom `add_rooms`) ;
       contrôler le SQL généré *(fichier : `prisma/migrations/…`)*
 

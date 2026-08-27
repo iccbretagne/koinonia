@@ -1,6 +1,9 @@
 import { requireAuth, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import Button from "@/components/ui/Button";
+import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/audio";
 import EventDetailClient from "./EventDetailClient";
 
 export default async function EventDetailPage({
@@ -33,6 +36,14 @@ export default async function EventDetailPage({
 
   const linkedDeptIds = new Set(event.eventDepts.map((ed) => ed.departmentId));
 
+  // Signalement d'un enregistrement audio rattaché (spec 020) — events:manage (Super Admin,
+  // Admin, Secrétaire) est un sous-ensemble strict des rôles ayant audio:view : aucun contrôle
+  // d'accès audio supplémentaire n'est nécessaire pour quiconque atteint déjà cette page.
+  const audioService = await prisma.audioService.findUnique({
+    where: { planningEventId: event.id },
+    include: { segments: { include: { rendition: true } } },
+  });
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h1>
@@ -45,6 +56,32 @@ export default async function EventDetailPage({
         })}{" "}
         &mdash; {event.church.name}
       </p>
+
+      {audioService && (
+        <div className="mb-6 border-2 border-gray-200 rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Enregistrement audio</h2>
+          {audioService.status === "PUBLISHED" ? (
+            <a
+              href={buildPublicAudioUrl(
+                (await getOrCreatePrimaryShareToken(audioService.id, event.churchId)).token
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="secondary" size="sm">Écouter l&apos;enregistrement ↗</Button>
+            </a>
+          ) : (
+            <Link href={`/audio/${audioService.id}`}>
+              <Button variant="secondary" size="sm">
+                En préparation — {audioService.segments.filter((s) => s.rendition).length}/
+                {audioService.segments.length} séquence
+                {audioService.segments.length > 1 ? "s" : ""} prête
+                {audioService.segments.length > 1 ? "s" : ""}
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
 
       <EventDetailClient
         eventId={event.id}

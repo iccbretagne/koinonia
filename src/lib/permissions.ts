@@ -117,13 +117,3 @@ export function hasPermission(role: Role): string[] {
   return ROLE_PERMISSIONS[role] || [];
 }
 
-export function userHasAnyRole(
-  userRoles: { role: Role; churchId: string }[],
-  allowedRoles: Role[],
-  churchId?: string
-): boolean {
-  return userRoles.some(
-    (r) =>
-      allowedRoles.includes(r.role) && (!churchId || r.churchId === churchId)
-  );
-}

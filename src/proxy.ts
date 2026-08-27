@@ -18,6 +18,11 @@ export function proxy(request: NextRequest) {
         request.nextUrl.pathname.startsWith("/api/media/collection/")) {
       return NextResponse.next();
     }
+    // Allow public audio share-link routes (/ecouter/[token]) — token-based auth, pas de
+    // session requise (le lien est aussi destiné à des personnes sans compte Koinonia).
+    if (request.nextUrl.pathname.startsWith("/api/audio/public/")) {
+      return NextResponse.next();
+    }
     // Allow MRBS SSO endpoints (authenticated by Bearer secret, not session cookie)
     if (request.nextUrl.pathname.startsWith("/api/auth/mrbs/")) {
       return NextResponse.next();

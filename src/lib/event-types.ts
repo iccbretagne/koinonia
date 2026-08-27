@@ -10,7 +10,7 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 /** Tailwind classes for badge display (bg + text) */
-export const EVENT_TYPE_BADGE: Record<string, string> = {
+const EVENT_TYPE_BADGE: Record<string, string> = {
   CULTE:     "bg-icc-violet/10 text-icc-violet",
   PRIERE:    "bg-orange-100 text-orange-600",
   REUNION:   "bg-icc-bleu/10 text-icc-bleu",

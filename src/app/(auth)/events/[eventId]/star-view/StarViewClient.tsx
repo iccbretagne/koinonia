@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/components/ui/Button";
 
 interface MemberItem {
   id: string;
@@ -28,6 +29,7 @@ interface StarViewData {
   departments: DepartmentItem[];
   totalStars: number;
   welcomeFamilies: string[];
+  audioLink: { url: string } | null;
 }
 
 interface Props {
@@ -230,6 +232,17 @@ export default function StarViewClient({ eventId }: Props) {
           {exporting === "pdf" ? "Export..." : "Export PDF"}
         </button>
       </div>
+
+      {data.audioLink && (
+        <a href={data.audioLink.url} target="_blank" rel="noopener noreferrer" className="mb-6 inline-block print:hidden">
+          <Button variant="secondary" size="sm" className="flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+            </svg>
+            Écouter l&apos;enregistrement audio de ce culte
+          </Button>
+        </a>
+      )}
 
       {/* Printable zone */}
       <div ref={printRef} className="rounded-2xl overflow-hidden shadow-xl">

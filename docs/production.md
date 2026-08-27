@@ -815,6 +815,113 @@ npx tsx prisma/scripts/purge-s3.ts \
 
 Options : `--prefix=<préfixe>`, `--older-than=<n>` (jours), `--yes` (sans confirmation interactive).
 
+## Worker audio (module `audio`)
+
+Le module de publication audio des cultes traite le rendu (`ffmpeg`) et le sondage
+(`ffprobe`) des fichiers déposés dans un **process séparé du serveur web**, pas dans une route
+Next.js — en production c'est le bundle `dist/worker.mjs` (en développement, `npm run worker`
+exécute les mêmes sources via `tsx`). Voir
+[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md). Le canal entre l'application et le
+worker est uniquement la table `audio_jobs` (`SELECT … FOR UPDATE SKIP LOCKED`), sans broker
+externe.
+
+### Dépendance système
+
+`ffmpeg` et `ffprobe` doivent être installés sur le serveur (paquet `ffmpeg` sur Debian/Ubuntu,
+qui fournit les deux binaires) :
+
+```bash
+sudo apt install ffmpeg
+ffmpeg -version && ffprobe -version
+```
+
+### Service systemd
+
+Créer `/etc/systemd/system/koinonia-audio-worker.service` :
+
+```ini
+[Unit]
+Description=Koinonia — worker audio (probe/render)
+After=network.target mariadb.service koinonia.service
+Requires=koinonia.service
+
+[Service]
+Type=simple
+User=koinonia
+Group=koinonia
+WorkingDirectory=/opt/koinonia/current
+EnvironmentFile=/opt/koinonia/shared/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/koinonia/current/dist/worker.mjs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+> Le worker est **bundlé par esbuild** au moment du build (`npm run build:worker`, enchaîné
+> automatiquement par `npm run build`) en un fichier unique `dist/worker.mjs`. Il ne nécessite
+> donc ni `src/` ni `tsx` sur le serveur : seul le `node_modules` de production est requis pour
+> ses dépendances externes (`@prisma/adapter-mariadb`, `mariadb`, `@aws-sdk/client-s3`), toutes
+> classées en `dependencies` et donc préservées par le `npm prune --omit=dev` du pipeline.
+
+> **Redémarrage** : le worker est une unité distincte du serveur web ; le pipeline de
+> déploiement la redémarre automatiquement si elle est installée sur l'hôte. Sur un hôte où
+> l'unité n'existe pas encore, le déploiement l'ignore sans échouer.
+>
+> Un `SIGTERM` reçu en plein rendu remet le job courant en `PENDING` : l'instance qui redémarre
+> le reprend aussitôt. Filet de sécurité en cas de mort brutale (OOM, `SIGKILL`) : le bail
+> (`leasedUntil`, 5 min, renouvelé chaque minute pendant le traitement) expire et le job est
+> repris automatiquement — voir l'amendement « le bail ne tenait pas sa promesse de reprise »
+> de [ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md).
+
+Activer et démarrer :
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now koinonia-audio-worker
+```
+
+Commandes utiles :
+
+```bash
+sudo systemctl status koinonia-audio-worker    # statut
+sudo journalctl -u koinonia-audio-worker -f    # logs en temps reel
+```
+
+### Lire les logs du worker
+
+Le worker trace chaque transition de job et chaque étape longue (téléchargement S3, mesure
+`loudnorm`, encodage ffmpeg, envoi du rendu), avec leur durée. Un culte publié normalement
+produit une trace de ce type :
+
+```
+[audio-worker] job cm3x… RENDER pris (tentative 1/3)
+[audio-worker] rendu seg-1 « Prédication » (culte cm2y…) — début
+[audio-worker] rendu seg-1 : source téléchargée (58.2 Mo) en 4.1 s
+[audio-worker] rendu seg-1 : mesure loudnorm en 22.8 s (-19.34 LUFS)
+[audio-worker] rendu seg-1 : encodage MP3 en 41.2 s (24.7 Mo produits)
+[audio-worker] rendu seg-1 : rendu envoyé vers audio-services/…/seg-1.mp3 en 3.3 s
+[audio-worker] culte cm2y… : toutes les séquences sont prêtes — passé à PUBLISHED
+[audio-worker] job cm3x… RENDER terminé en 1 min 12 s
+```
+
+Lignes à surveiller :
+
+| Ligne | Signification |
+|---|---|
+| `repris après expiration du bail — le worker précédent a été interrompu` | Un worker est mort en plein rendu (redéploiement brutal, OOM). Normal après un `SIGKILL` ; répété, c'est un symptôme. |
+| `toujours en cours (N min) — bail prolongé` | Preuve de vie sur un rendu long, une ligne par minute. Son absence pendant un rendu signale un worker figé. |
+| `en échec … sera réessayé` | Échec transitoire, nouvelle tentative automatique (3 au total). |
+| `en échec DÉFINITIF après 3 tentatives` | Le job ne repartira pas seul ; l'écran de la régie affiche le bandeau rouge correspondant. |
+| `N séquence(s) encore à rendre` | Publication en attente d'autres jobs — normal tant que d'autres rendus tournent. |
+
+> **Silence prolongé** : le worker ne journalise rien quand il n'a rien à faire (un sondage
+> toutes les 5 s remplirait le journal). Un worker actif mais silencieux signifie donc « aucun
+> job en attente ». Si l'écran de la régie affiche « rendu en cours » alors que le journal est
+> muet, l'incohérence est réelle et mérite d'inspecter la table `audio_jobs`.
+
 ## Mise à jour depuis une version précédente
 
 Pour mettre à jour une instance existante, consulter le guide de migration correspondant :
