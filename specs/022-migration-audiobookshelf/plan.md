@@ -74,6 +74,19 @@ Même patron que les scripts one-off existants (`prisma/scripts/import-mediaflow
 `@/…` résout via l'alias `vitest.config.ts` en test et via `tsx` (support natif
 des `paths` tsconfig) à l'exécution.
 
+**Contexte d'exécution (Option B).** L'artefact de déploiement est un bundle
+`output: "standalone"` : le tar de `deploy.yml` / `deploy-staging.yml` exclut
+`prisma/scripts`, n'embarque ni `tsx` (devDependency) ni `src/` (l'alias `@/*`
+n'y résout pas). `/opt/koinonia/current` **ne peut donc pas lancer ce script**.
+Il se lance depuis un **checkout complet du dépôt** à la version déployée
+(`npm ci` + `npx prisma generate`), avec l'env de la cible pointé par
+`DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env` (honoré par `import "dotenv/config"`).
+Écarté : bundler le script via esbuild comme le worker (ADR-0007) — inutile de
+faire rider un outil de migration one-shot dans chaque release ; le
+`--exclude='prisma/scripts'` du tar acte déjà « non shippé ». Le ledger
+`.ledger.jsonl` vit dans le checkout : garder le même entre relances d'une cible.
+Détails opératoires dans le `README.md` du script.
+
 ## Modèle de données
 
 **[Aucun changement de schéma.]** Correspondance ABS → Koinonia :
@@ -312,9 +325,9 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
 - **Numérotation irrégulière / pistes sans préfixe** (dossiers 2024,
   `Culte du 30 11 2025` sans `#`) : `orderTracks` retombe sur l'ordre de listing
   — vérifier ces dossiers dans le rapport avant exécution.
-- **Fuseau horaire** : conversion `Europe/Paris` → UTC explicite (une
-  dépendance légère type `date-fns-tz` **ou** calcul manuel de l'offset ;
-  trancher en implémentation — pas de dépendance nouvelle si évitable).
+- **Fuseau horaire** : conversion `Europe/Paris` → UTC explicite via
+  `Intl.DateTimeFormat` (offset calculé à la date du culte) — **sans dépendance
+  nouvelle**. Correct en heure d'été comme d'hiver (testé juin / décembre).
 - **Idempotence partielle** : si le script tombe **après** `createAudioService`
   mais **avant** l'écriture du ledger, un culte incomplet subsiste. Reprise :
   le rapport `--dry-run` recompte, et une commande `--purge <folder>` (supprime
@@ -328,6 +341,10 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
 - **Accès serveur** : le script lit une copie locale des fichiers sur la VM de
   recette — aucune connexion à Audiobookshelf, aucune action sur
   `ssh.iccrennes.fr` au-delà des copies déjà faites.
+- **Non embarqué dans le déploiement** : build `standalone`, tar sans
+  `prisma/scripts` / `tsx` / `src`. Exécution depuis un checkout complet à la
+  version déployée (`npm ci`, `DOTENV_CONFIG_PATH` sur le `.env` de la cible) —
+  cf. « Emplacement et exécution » et le `README.md` du script.
 
 ## Stratégie de tests
 

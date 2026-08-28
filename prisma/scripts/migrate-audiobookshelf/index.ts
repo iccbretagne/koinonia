@@ -12,8 +12,13 @@
  *   --limit <n>         limite l'import aux n premiers cultes non traités
  *   --purge <dossier>   supprime un culte importé non publié et le retire du ledger
  *
+ * Contexte d'exécution : ce script ne fait PAS partie de l'artefact de déploiement
+ * (`.next/standalone` — le tar de `deploy*.yml` exclut `prisma/scripts`, `tsx` et `src/`).
+ * Il se lance depuis un checkout complet du dépôt (`npm ci`, `tsx`), voir `README.md`.
+ *
  * Pré-requis : `ffprobe` accessible (ou `FFPROBE_PATH`), variables `DATABASE_URL` et
- * `MEDIA_S3_*` renseignées, worker audio actif sur la cible pour consommer les jobs RENDER.
+ * `MEDIA_S3_*` renseignées (`DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env` pour pointer
+ * l'env de la cible), worker audio actif sur la cible pour consommer les jobs RENDER.
  */
 
 import "dotenv/config";
@@ -165,7 +170,14 @@ async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (!args.root && !args.purge) throw new Error("--root est obligatoire");
 
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL!) });
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      "DATABASE_URL absent — lancer depuis un checkout du dépôt avec l'env de la cible : " +
+        "`DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env tsx …` ou copier ce fichier en `.env`."
+    );
+  }
+
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL) });
   try {
     const church = await prisma.church.findFirst({
       where: { OR: [{ slug: CHURCH_SLUG }, { name: CHURCH_NAME }] },

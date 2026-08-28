@@ -30,15 +30,43 @@ lui, les cultes restent en `READY` sans audio jouable.
 Aucun changement de schéma, aucune route API, aucun écran : le script alimente
 le pipeline existant.
 
+## Contexte d'exécution — depuis un checkout, pas depuis l'artefact déployé
+
+Ce script **ne fait pas partie de l'artefact de déploiement**. Le tar produit par
+`deploy.yml` / `deploy-staging.yml` exclut explicitement `prisma/scripts`, ne
+contient pas `tsx` (devDependency) ni `src/` (l'alias `@/*` n'y résout donc pas) :
+`/opt/koinonia/current` ne peut pas lancer ce script.
+
+Il se lance depuis un **checkout complet du dépôt** sur la version déployée, avec
+les dépendances de dev (`tsx` inclus). Sur la VM (recette ou prod), à côté du
+déploiement, ou depuis un poste ayant accès à la base + au bucket S3 de la cible
+et aux fichiers audio en local :
+
+```bash
+git clone https://github.com/iccbretagne/koinonia.git /tmp/koinonia-migration
+cd /tmp/koinonia-migration
+git checkout "$(cat /opt/koinonia/current/package.json | node -pe 'JSON.parse(require("fs").readFileSync(0)).version' | sed 's/^/v/')"  # même version que la prod
+npm ci                     # dépendances de dev incluses (tsx)
+npx prisma generate        # client Prisma dans src/generated/
+```
+
+L'environnement (`DATABASE_URL`, `MEDIA_S3_*`) est celui de la **cible**. Le plus
+simple : pointer le `.env` de la cible sans le copier —
+
+```bash
+export DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env   # honoré par `import "dotenv/config"`
+```
+
 ## Pré-requis
 
 | Élément | Vérification |
 |---|---|
+| Checkout + `npm ci` + `npx prisma generate` | cf. section ci-dessus |
 | `ffprobe` accessible | `ffprobe -version` (ou variable `FFPROBE_PATH`) |
-| `DATABASE_URL` | pointant sur la base cible (recette puis prod) |
-| `MEDIA_S3_*` | bucket média configuré (`s3Media` / `MEDIA_BUCKET` de `@/lib/s3`) |
+| `DATABASE_URL` | pointant sur la base cible (via `DOTENV_CONFIG_PATH` ou `.env`) |
+| `MEDIA_S3_*` | bucket média de la cible (`s3Media` / `MEDIA_BUCKET` de `@/lib/s3`) |
 | Fichiers ABS copiés | `<root>/cultes/*` et `<root>/predications/**` présents sur la machine d'exécution |
-| Worker audio actif | `npm run worker` sur la cible, avant ou pendant l'import |
+| Worker audio actif | `npm run worker` (recette) / service systemd (prod), avant ou pendant l'import |
 | Église + publieur | `Church` ICC Rennes et `User.email = ouattara.ismael@gmail.com` existent dans la base cible |
 
 ## Utilisation
@@ -56,6 +84,9 @@ tsx prisma/scripts/migrate-audiobookshelf/index.ts --root /chemin/vers/abs
 # 4. Reprise après échec sur un culte — supprime l'import partiel puis relancer
 tsx prisma/scripts/migrate-audiobookshelf/index.ts --root /chemin/vers/abs --purge "Culte du 29 12 2024"
 ```
+
+Le ledger (`.ledger.jsonl`) vit dans le dossier du script du checkout : **garder
+le même checkout** entre les relances d'une même cible, ou reporter le fichier.
 
 ### Options
 
@@ -104,10 +135,16 @@ Les cultes passent alors de `READY` à `PUBLISHED` et deviennent audibles dans
 
 ## Recette puis production
 
-1. **Recette** : dérouler les étapes 1→3 ci-dessus sur la VM de recette,
-   worker actif, vérifier les critères d'acceptation de `spec.md`, relancer le
-   script pour confirmer l'absence de doublon.
+1. **Recette** : checkout + `npm ci` + `npx prisma generate` sur la VM de recette
+   (cf. « Contexte d'exécution »), `DOTENV_CONFIG_PATH` sur le `.env` de recette,
+   worker actif ; dérouler les étapes 1→3 de « Utilisation », vérifier les
+   critères d'acceptation de `spec.md`, relancer le script pour confirmer
+   l'absence de doublon.
 2. **Production** (après merge, **sur accord explicite**) : copier les fichiers
    ABS sur la cible de prod (lecture seule côté `/var/lib/audiobookshelf`),
-   exécuter en heure creuse, surveiller `audio_jobs`, puis décommissionner
-   Audiobookshelf.
+   même préparation (checkout à la version déployée, `DOTENV_CONFIG_PATH` sur
+   `/opt/koinonia/shared/.env`), exécuter en heure creuse, surveiller
+   `audio_jobs`, puis décommissionner Audiobookshelf.
+3. Après la passe prod : supprimer le checkout jetable. Un `chore:` pourra
+   retirer `prisma/scripts/migrate-audiobookshelf/` du dépôt (opération
+   ponctuelle terminée).

@@ -16,6 +16,10 @@
       tâche n'en introduit)
 - [ ] `ffprobe` disponible sur la machine d'exécution (`ffprobe -version`)
 - [ ] Worker audio actif sur la cible avant l'exécution (`npm run worker`)
+- [ ] Exécution depuis un **checkout complet** du dépôt à la version déployée
+      (`npm ci` + `npx prisma generate`), `DOTENV_CONFIG_PATH` sur le `.env` de
+      la cible — le script n'est **pas** dans l'artefact `standalone` déployé
+      (cf. `plan.md` § « Emplacement et exécution » et `README.md` du script)
 
 ## Tâches
 

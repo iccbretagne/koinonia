@@ -249,6 +249,15 @@ Le worker en prod consomme la file `RENDER`, écrit les `AudioRendition`,
 `maybeCompletePublication` bascule chaque culte en `PUBLISHED`.
 Suivi : `SELECT status, count(*) FROM audio_jobs GROUP BY status`.
 
+> **Exécution — depuis un checkout, pas depuis l'artefact déployé.** Le build est
+> `output: "standalone"` et le tar de `deploy*.yml` exclut `prisma/scripts`,
+> `tsx` et `src/`. `/opt/koinonia/current` ne peut pas lancer le script. On le
+> lance depuis un `git clone` complet à la version déployée (`npm ci` +
+> `npx prisma generate`), env de la cible via
+> `DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env`. Écarté : bundler via esbuild
+> comme le worker — inutile pour une opération one-shot. Cf. `plan.md` et le
+> `README.md` du script.
+
 ### Phase 3 — Recette puis prod
 
 1. Passe complète sur l'environnement de **recette** (base + bucket recette) :
@@ -304,10 +313,10 @@ worker (jobs `RENDER`) · source de vérité = système de fichiers ABS (base
 
 - [x] Phase 0 — inventaire lecture seule de `ssh.iccrennes.fr` (2026-08-28, §4).
 - [x] Décisions produit arrêtées (§9).
-- [ ] `/specify` puis `/plan` / `/tasks` sur la base de ce document.
-- [ ] `scripts/migrate-audiobookshelf.ts` : parseur FS → manifeste JSON →
+- [x] `/specify` puis `/plan` / `/tasks` sur la base de ce document.
+- [x] `prisma/scripts/migrate-audiobookshelf/` : parseur FS → manifeste (Zod) →
       `AudioService`/`Source`/`Segment` + `PutObject` (lecture ETag) + `ffprobe`
-      local (`durationMs`) + `publishAudioService` + ledger `.jsonl`.
+      local (`durationMs`) + `publishAudioService` + ledger `.jsonl` (PR #471).
 - [x] Fichiers Audiobookshelf sur la VM de recette (2026-08-28).
-- [ ] Passe recette, vérif écoute.
+- [ ] Passe recette (checkout + `npm ci` + `DOTENV_CONFIG_PATH`), vérif écoute.
 - [ ] Passe prod + surveillance de la file `audio_jobs`.
