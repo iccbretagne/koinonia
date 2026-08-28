@@ -60,25 +60,85 @@ renditions (ADR-0008) ; sinon il se remplit au premier lecteur.
   faire son propre `PutObject` **et lire l'`ETag`** de la réponse (indispensable,
   cf. §6).
 
-## 4. Source : Audiobookshelf `v2.35.1`
+## 4. Source : Audiobookshelf `v2.35.1` — inventaire phase 0 (relevé 2026-08-28, lecture seule)
 
-- Répertoire : `/var/lib/audiobookshelf` (config + `absdatabase.sqlite` + éventuel
-  `/metadata`). Racines des bibliothèques à confirmer en phase 0.
-- Base **SQLite** `absdatabase.sqlite` : tables `libraries`, `libraryItems`,
-  `podcasts`, `podcastEpisodes`, `mediaProgresses`… Les fichiers audio sont
-  décrits en JSON (`audioFile` / `audioFiles`, avec `metadata.path`, `duration`,
-  `bitRate`, chapitres) ; chemins disque sous les racines de bibliothèque.
-- **2 bibliothèques** (type *podcast*) :
-  - **« Cultes complets »** — ~80 podcasts, **1 podcast = 1 culte**. Les épisodes
-    d'un podcast = les moments/fichiers de ce culte.
-  - **« Prédications »** — 4 podcasts (séries de messages / compilations de
-    prédications indépendantes), chaque épisode = 1 prédication. Fichiers avec
-    métadonnées MP3 (ID3) plus riches (orateur, titre…).
-- **Période à 2 cultes/jour** : l'heure discrimine les deux cultes d'une même
-  date.
-- **Date + heure du culte** : dans le **nom du dossier** côté « Cultes complets ».
-- **Date + heure** : également dans le **nom de fichier** côté « Prédications » →
-  sert de clé de corrélation.
+### Disposition disque
+
+- Médias : `/var/lib/audiobookshelf/podcasts/` — 2 sous-dossiers `cultes/` et
+  `predications/` (+ `Cover.png` global). Le dossier `books/` est vide.
+- Config + base : `/usr/share/audiobookshelf/config/absdatabase.sqlite`.
+  ⚠️ **Le CLI `sqlite3` standard ne peut PAS lire cette base** : ABS charge une
+  extension propriétaire (`libnusqlite3.so`) et le schéma contient des triggers
+  que le parseur stock rejette (« malformed database schema … near "ORDER" »).
+  ⇒ **La migration s'appuie sur le système de fichiers + `ffprobe`, pas sur la
+  base ABS.** (La base n'apporterait que la progression d'écoute ABS, inutile.)
+- `ffmpeg`/`ffprobe` fournis par ABS dans `/usr/share/audiobookshelf/`.
+- **Volumes** : `cultes/` = **6,5 Go**, `predications/` = **1,7 Go** (~8,2 Go de
+  sources). Prévoir ~**16–18 Go** sur le bucket (sources + renditions MP3 192k).
+
+### Bibliothèque « cultes » — `/var/lib/audiobookshelf/podcasts/cultes/`
+
+~79 dossiers, un par culte, 2024-06 → 2026-06. Nommage du dossier :
+
+- `Culte du JJ MM AAAA`
+- `Culte 1 du JJ MM AAAA` / `Culte 2 du JJ MM AAAA` — deux cultes le même jour
+  (1 = matin, 2 = après-midi)
+- `Cérémonie des baptêmes du JJ MM AAAA` — 1 cas, fichier unique
+- Date = `JJ MM AAAA`, séparé par des espaces, zéro-paddé. **Pas d'heure.**
+
+Épisodes dans chaque dossier — **nommage hétérogène, parseur robuste requis** :
+
+- Cas courant : `#N - Titre.mp3` (`N` = ordre, titre après `" - "`)
+- Variantes observées :
+  - sans `#` : `1 - Prière des STAR.mp3`
+  - sans préfixe d'ordre : `Annonces.mp3`, `Prédication.mp3`,
+    `Temps_de_prière_spécial.mp3`, `Balance_MLA.mp3`, `MLA.mp3`
+  - underscores au lieu d'espaces (dossiers 2024) :
+    `Sainte_cène_et_Offrandes.mp3`
+  - `#98` / `#99` = « MLA » / « MLA Balances » = musique/jam de fin
+    (**pas du contenu de culte** — cf. décision §5.7)
+  - trous dans la numérotation (dossiers démarrant à `#2`)
+  - fusions : `Prédication & Offrandes.mp3`
+  - `Cérémonie des baptêmes` : `2025-02-16 Baptêmes - Cérémonie.mp3` (1 fichier)
+- Séquence « prédication » = titre qui matche `/pr[ée]dications?/i`.
+  **Pas toujours présente** : certains cultes n'ont ni « Prédication » ni
+  « Message » (ex. `Culte du 12 10 2025`, `Culte du 28 09 2025`,
+  `Culte du 04 01 2026`). En 2024 elle s'appelle parfois `Message`.
+- ID3 côté cultes ≈ vide (`title` = nom de fichier, `track`) — d'où l'intérêt de
+  substituer par le fichier de la bibliothèque « predications ».
+- 2–8 séquences utiles par culte (moyenne ~4–6).
+
+### Bibliothèque « predications » — `/var/lib/audiobookshelf/podcasts/predications/`
+
+4 dossiers = 4 « podcasts » ABS : `Prédications indépendantes` +
+3 `Série - <titre>`. **Nommage propre et régulier** :
+
+- `AAAA-MM-JJ_HHhMM_Titre_avec_underscores.mp3`
+- Heures rencontrées : `10h00`, `10h30`, `12h00`
+- Quand 2 cultes le même jour : 2 fichiers même date, `10h00` **et** `12h00`
+  ⇒ `10h00` → « Culte 1 », `12h00` → « Culte 2 » (donne aussi l'heure du culte)
+- ID3 riches : `artist` = prédicateur (ex. « Pasteure Armelle Essoualla »),
+  `title` = titre propre du message, `album` = série, `comment` = « ICC Rennes »,
+  `date` = année
+- **Couverture partielle** : uniquement à partir de 2025-01, et pas tous les
+  dimanches (~31 fichiers). Tous les cultes 2024 et une partie de 2025-2026
+  n'ont **aucun** fichier « predications » correspondant.
+
+### Logique de corrélation (par date, puis heure si ambiguïté)
+
+1. Dossier culte → date `AAAA-MM-JJ` (+ indice 1/2 éventuel).
+2. Fichiers predications → `AAAA-MM-JJ` + `HHhMM` + titre + ID3 `artist`.
+3. Appariement :
+   - 1 culte / 1 prédication ce jour → la séquence « Prédication » du culte
+     prend pour **source** le fichier de la bibliothèque « predications » ;
+     `speaker` ← ID3 `artist` ; titre de séquence ← ID3 `title` (nettoyé).
+   - `Culte 1`/`Culte 2` + 2 prédications (`10h00`/`12h00`) → appariement par
+     ordre horaire.
+   - culte sans prédication correspondante → on garde le
+     `#N - Prédication.mp3` du culte tel quel ; s'il n'y en a pas, le culte n'a
+     pas de séquence prédication.
+4. `serviceDate` (heure) : de la prédication appariée si dispo ; sinon défaut
+   `Culte` / `Culte 1` → 10:00, `Culte 2` → 12:00 (`Europe/Paris`).
 
 ## 5. Décisions du mainteneur
 
@@ -97,8 +157,14 @@ renditions (ADR-0008) ; sinon il se remplit au premier lecteur.
 5. **Découpage** : ~4 à 6 séquences par culte en moyenne (épisodes du podcast côté
    « Cultes complets »), ordre = ordre des épisodes ABS.
 6. **Les 4 podcasts « Prédications » sont tous rattachés à un culte** : chaque
-   prédication est corrélée par date+heure à un culte des ~80 ; aucune ne devient
-   un `AudioService` `type=AUTRE` autonome.
+   prédication est corrélée par date à un culte ; aucune ne devient un
+   `AudioService` autonome. (Rappel : seuls ~31 cultes sur ~79 ont un fichier
+   predications ; pour les autres on reste sur le fichier prédication du culte.)
+7. **`#98`/`#99` « MLA » (musique de fin) : exclus** de l'import — ce n'est pas
+   du contenu de culte. *(à confirmer §9)*
+8. **`Cérémonie des baptêmes` → `type = AUTRE`**, séquence unique. *(à confirmer)*
+9. **Titres de séquences normalisés** : retirer le préfixe `#N - `, remplacer
+   les `_` par des espaces, casse d'origine conservée sinon. *(à confirmer)*
 
 ## 6. Approche retenue — alimenter le pipeline existant
 
@@ -193,49 +259,59 @@ Suivi : `SELECT status, count(*) FROM audio_jobs GROUP BY status`.
    contrôle dans `/audio/ecouter`.
 4. Décommission d'Audiobookshelf.
 
-## 8. Estimation de volume (à affiner en phase 0)
+## 8. Volume (mesuré en phase 0)
 
-- **Cultes complets** : ~80 podcasts. Si ~1h30 par culte à ~128–192 kbps ⇒
-  ~80–170 Mo/culte ⇒ **~6–14 Go** côté sources.
-- **Prédications** : 4 podcasts, nombre d'épisodes inconnu (compilations) ⇒ à
-  mesurer ; ~40 min/prédication ⇒ ~40–55 Mo pièce.
-- **Séquences à rendre** : ~4–6 séquences/culte × ~80 cultes ⇒ **~320–480
-  séquences** ⇒ **~10–24 h de CPU worker** (loudnorm 2 passes), étalées
-  (1 job à la fois). Prévoir une fenêtre de nuit ou plusieurs jours.
-- **Renditions produites** : ~même volume que les sources (MP3 192k) ⇒ prévoir
-  **~15–35 Go** supplémentaires sur le bucket (sources + renditions).
+- **Sources** : `cultes/` 6,5 Go + `predications/` 1,7 Go = **~8,2 Go**. Le
+  script ne re-dépose pas deux fois une prédication substituée : la source
+  « predications » remplace le fichier culte correspondant.
+- **Cultes** : ~79. **Séquences** : ~2–8 par culte, moyenne ~4–6 ⇒ **~350–450
+  séquences** à rendre ⇒ **~12–24 h de CPU worker** cumulées (loudnorm 2 passes,
+  1 job à la fois). Fenêtre de nuit ou étalement sur plusieurs jours.
+- **Renditions** (MP3 192k) : ordre de grandeur des sources ⇒ prévoir **~16–18
+  Go** au total sur le bucket (sources archivées + renditions).
 
-## 9. Inconnues restantes
+## 9. Décisions restantes (à valider avec le mainteneur)
 
-**Bloquant pour écrire le parseur :**
+Le parseur peut être écrit : les patterns sont connus (§4). Restent des choix
+produit :
 
-1. Format **exact** du nom de dossier (bibliothèque « Cultes complets ») et du
-   nom de fichier (bibliothèque « Prédications ») portant la **date + heure** —
-   à relever par un `ls` lecture seule du dossier de la bibliothèque « cultes »
-   sur `ssh.iccrennes.fr` (phase 0). Commande proposée, non encore exécutée :
-   `find /var/lib/audiobookshelf -maxdepth 2 -type d | grep -iE "culte|predic"`
-   puis `ls` du dossier trouvé.
-2. Schéma réel des tables `absdatabase.sqlite` en `v2.35.1` (noms de
-   colonnes/tables — varient selon version).
+1. **`#98`/`#99` « MLA » (musique de fin)** : exclure de l'import ? *(défaut
+   proposé : oui, exclure.)*
+2. **Titre du `AudioService`** : laisser vide (l'UI affiche la date) ? mettre
+   « Culte » ? reprendre le titre du message (ID3 `title` de la prédication)
+   quand il y a un match ?
+3. **`Cérémonie des baptêmes`** : `type = AUTRE`, séquence unique ? l'importer
+   ou l'ignorer ?
+4. **Normalisation des titres de séquences** : retirer `#N - `, `_`→espace,
+   sinon casse d'origine — OK ?
+5. **`speaker` quand pas de prédication « predications »** (tous les cultes
+   2024, une partie 2025-2026) : laisser vide (ID3 côté cultes inexploitable) ?
+   ou fournir une table `date → prédicateur` ?
+6. **Nom des séries** (`album` ID3 : « Série - … ») : Koinonia n'a pas de notion
+   de série → on ignore ? ou on préfixe le titre de séquence ?
+7. **Où tourne le script** : (a) sur `ssh.iccrennes.fr` en lisant
+   `/var/lib/audiobookshelf` en lecture seule et en écrivant base + S3 de prod,
+   ou (b) rsync des 8,2 Go vers la VM de recette pour une passe recette d'abord
+   (recommandé) puis rejeu en prod.
+8. **Couvertures** : chaque dossier a un `Cover.png` (souvent le logo générique
+   27 ko). On ignore et on garde `AudioSettings.defaultCoverKey` ? *(défaut
+   proposé : ignorer.)*
+9. **Capacité disque** du bucket S3 de prod (~16–18 Go libres nécessaires).
 
-**À confirmer, non bloquant :**
-
-3. Quand un culte n'a **pas** de prédication corrélée : garder l'épisode
-   « prédication » de la bibliothèque « Cultes complets » tel quel (défaut
-   retenu).
-4. Présence de couvertures ABS à reprendre (option — sinon couverture par défaut
-   de l'église).
-5. Capacité disque restante du bucket S3 de prod (~15–35 Go nécessaires).
-
-**Résolues :** contenu = culte complet découpé · ~4–6 séquences/culte ·
-corrélation par date+heure (dossier côté cultes, nom de fichier côté
-prédications) · 4 podcasts prédications tous rattachés à un culte · église =
-ICC Rennes · `publishedById` = `ouattara.ismael@gmail.com`.
+**Résolues :** culte complet découpé · ~4–6 séquences/culte · corrélation par
+date (heure en secours d'ambiguïté 1/2) · substitution de la séquence
+prédication par le fichier « predications » quand il existe · église = ICC
+Rennes · `publishedById` = `ouattara.ismael@gmail.com` · pipeline via worker ·
+source de vérité = système de fichiers (base ABS illisible au CLI).
 
 ## 10. Prochaines étapes
 
-- [ ] Phase 0 : `ls` lecture seule du dossier bibliothèque « Cultes complets »
-      sur `ssh.iccrennes.fr` → relever le pattern date+heure (inconnue §9.1).
-- [ ] Phase 0 : inspection du schéma `absdatabase.sqlite` `v2.35.1` (§9.2).
-- [ ] `/specify` sur la base de ce document une fois le pattern relevé.
-- [ ] Écriture de `scripts/migrate-audiobookshelf.ts` + passe recette.
+- [x] Phase 0 — inventaire lecture seule de `ssh.iccrennes.fr` (fait
+      2026-08-28, cf. §4).
+- [ ] Trancher les décisions §9 (surtout 1, 2, 5, 7).
+- [ ] `/specify` puis `/plan` sur la base de ce document.
+- [ ] `scripts/migrate-audiobookshelf.ts` : parseur FS → manifeste JSON →
+      création `AudioService`/`Source`/`Segment` + `PutObject` (ETag) +
+      `ffprobe` local (`durationMs`) + `publishAudioService` + ledger.
+- [ ] Passe recette, vérif écoute, puis passe prod + surveillance de la file
+      `audio_jobs`.
