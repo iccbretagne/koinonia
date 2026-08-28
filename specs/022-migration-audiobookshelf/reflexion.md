@@ -92,6 +92,13 @@ renditions (ADR-0008) ; sinon il se remplit au premier lecteur.
    **fichier de la bibliothèque « Prédications »** (métadonnées MP3 plus riches)
    plutôt que l'épisode équivalent côté « Cultes complets ».
 3. **Une seule église** concernée : ICC Rennes (`churchId` à lire dans `Church`).
+4. **`publishedById`** = compte dont `User.email = "ouattara.ismael@gmail.com"`
+   (le script le résout).
+5. **Découpage** : ~4 à 6 séquences par culte en moyenne (épisodes du podcast côté
+   « Cultes complets »), ordre = ordre des épisodes ABS.
+6. **Les 4 podcasts « Prédications » sont tous rattachés à un culte** : chaque
+   prédication est corrélée par date+heure à un culte des ~80 ; aucune ne devient
+   un `AudioService` `type=AUTRE` autonome.
 
 ## 6. Approche retenue — alimenter le pipeline existant
 
@@ -192,33 +199,43 @@ Suivi : `SELECT status, count(*) FROM audio_jobs GROUP BY status`.
   ~80–170 Mo/culte ⇒ **~6–14 Go** côté sources.
 - **Prédications** : 4 podcasts, nombre d'épisodes inconnu (compilations) ⇒ à
   mesurer ; ~40 min/prédication ⇒ ~40–55 Mo pièce.
-- **Séquences à rendre** : dépend du nombre d'épisodes par podcast côté cultes.
-  Hypothèse 3–5 séquences/culte ⇒ **~250–400 séquences** ⇒ **~8–20 h de CPU
-  worker** (loudnorm 2 passes), étalées (1 job à la fois).
+- **Séquences à rendre** : ~4–6 séquences/culte × ~80 cultes ⇒ **~320–480
+  séquences** ⇒ **~10–24 h de CPU worker** (loudnorm 2 passes), étalées
+  (1 job à la fois). Prévoir une fenêtre de nuit ou plusieurs jours.
 - **Renditions produites** : ~même volume que les sources (MP3 192k) ⇒ prévoir
   **~15–35 Go** supplémentaires sur le bucket (sources + renditions).
 
 ## 9. Inconnues restantes
 
-1. Nombre d'épisodes/fichiers par podcast côté « Cultes complets » (⇒ 1 séquence
-   ou plusieurs).
-2. Format **exact** du nom de dossier (cultes) et du nom de fichier
-   (prédications) portant la date+heure — pour écrire le parseur.
-3. Schéma réel des tables `absdatabase.sqlite` en `v2.35.1`.
-4. Les 4 podcasts « Prédications » couvrent-ils tous des cultes du dimanche, ou
-   certaines prédications sont-elles hors culte (⇒ culte `type=AUTRE` ou exclues) ?
-5. Quand un culte n'a **pas** de prédication corrélée : garder l'épisode
-   « prédication » de la bibliothèque « Cultes complets » tel quel (comportement
-   par défaut retenu).
-6. Nom du dossier `/metadata` d'ABS et présence de couvertures à reprendre
-   (option — sinon couverture par défaut de l'église).
-7. `publishedById` : quel utilisateur porter comme « publieur » des cultes
-   migrés (compte technique / mainteneur).
-8. Capacité disque restante du bucket S3 de prod.
+**Bloquant pour écrire le parseur :**
+
+1. Format **exact** du nom de dossier (bibliothèque « Cultes complets ») et du
+   nom de fichier (bibliothèque « Prédications ») portant la **date + heure** —
+   à relever par un `ls` lecture seule du dossier de la bibliothèque « cultes »
+   sur `ssh.iccrennes.fr` (phase 0). Commande proposée, non encore exécutée :
+   `find /var/lib/audiobookshelf -maxdepth 2 -type d | grep -iE "culte|predic"`
+   puis `ls` du dossier trouvé.
+2. Schéma réel des tables `absdatabase.sqlite` en `v2.35.1` (noms de
+   colonnes/tables — varient selon version).
+
+**À confirmer, non bloquant :**
+
+3. Quand un culte n'a **pas** de prédication corrélée : garder l'épisode
+   « prédication » de la bibliothèque « Cultes complets » tel quel (défaut
+   retenu).
+4. Présence de couvertures ABS à reprendre (option — sinon couverture par défaut
+   de l'église).
+5. Capacité disque restante du bucket S3 de prod (~15–35 Go nécessaires).
+
+**Résolues :** contenu = culte complet découpé · ~4–6 séquences/culte ·
+corrélation par date+heure (dossier côté cultes, nom de fichier côté
+prédications) · 4 podcasts prédications tous rattachés à un culte · église =
+ICC Rennes · `publishedById` = `ouattara.ismael@gmail.com`.
 
 ## 10. Prochaines étapes
 
-- [ ] Réponses aux inconnues §9 (surtout 1, 2, 4).
-- [ ] Accord pour les commandes SSH lecture seule de la phase 0.
-- [ ] `/specify` sur la base de ce document une fois le mapping figé.
-- [ ] Écriture du script + passe recette.
+- [ ] Phase 0 : `ls` lecture seule du dossier bibliothèque « Cultes complets »
+      sur `ssh.iccrennes.fr` → relever le pattern date+heure (inconnue §9.1).
+- [ ] Phase 0 : inspection du schéma `absdatabase.sqlite` `v2.35.1` (§9.2).
+- [ ] `/specify` sur la base de ce document une fois le pattern relevé.
+- [ ] Écriture de `scripts/migrate-audiobookshelf.ts` + passe recette.
