@@ -1,10 +1,10 @@
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
-import { requireRateLimit } from "@/lib/rate-limit";
+import { requireRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   try {
-    requireRateLimit(request, { prefix: `integration-families-suggest:public:${request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"}`, windowMs: 60_000, max: 20 });
+    requireRateLimit(request, { prefix: `integration-families-suggest:public:${getClientIp(request)}`, windowMs: 60_000, max: 20 });
 
     const { searchParams } = new URL(request.url);
     const address = searchParams.get("address");

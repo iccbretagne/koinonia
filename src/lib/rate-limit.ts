@@ -51,7 +51,12 @@ export const RATE_LIMIT_AUTH: RateLimitOptions = { windowMs: 60_000, max: 10 };
 export const RATE_LIMIT_MUTATION: RateLimitOptions = { windowMs: 60_000, max: 30 };
 export const RATE_LIMIT_SENSITIVE: RateLimitOptions = { windowMs: 60_000, max: 10 };
 
-function getClientIp(request: Request): string {
+/**
+ * IP client telle que vue derriere le proxy. Exportee pour que les routes publiques
+ * composent leur cle de rate-limit avec elle au lieu de reparser l'en-tete a la main.
+ * Voir l'hypothese proxy documentee en tete de fichier.
+ */
+export function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return "unknown";
@@ -59,8 +64,13 @@ function getClientIp(request: Request): string {
 
 /**
  * Throws ApiError(429) if the rate limit is exceeded.
- * Use `prefix` to namespace the key (e.g., "auth", "mut:userId").
- * When no prefix is given, keys by IP (for unauthenticated routes).
+ *
+ * `prefix` REMPLACE la cle, il ne s'y ajoute pas : la cle est exactement `prefix`.
+ * Un prefixe constant (ex: "audio:play") est donc un compteur GLOBAL partage par tous
+ * les appelants, pas une limite par client. Tout prefixe doit inclure ce qui identifie
+ * l'appelant : `mut:${userId}` pour une route authentifiee, `${route}:${getClientIp(request)}`
+ * pour une route publique.
+ * Sans prefixe, la cle est l'IP (routes publiques sans dimension supplementaire).
  */
 export function requireRateLimit(
   request: Request,

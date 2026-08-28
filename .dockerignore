@@ -1,0 +1,36 @@
+# Contexte de build Docker — evite d'embarquer secrets, historique et artefacts locaux
+# dans les couches d'image (docker/Dockerfile.dev fait `COPY . .`).
+
+# Secrets et environnement local
+.env
+.env.*
+!.env.example
+
+# Historique et metadonnees
+.git
+.gitignore
+.github
+
+# Dependances et artefacts de build (reinstalles/regeneres dans l'image)
+node_modules
+.next
+dist
+out
+coverage
+src/generated
+
+# Caches et logs
+.turbo
+.eslintcache
+*.log
+npm-debug.log*
+
+# Donnees locales
+uploads
+tmp
+specs
+
+# Editeurs / OS
+.vscode
+.idea
+.DS_Store

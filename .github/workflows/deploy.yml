@@ -37,7 +37,12 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
     steps:
+      # Sur workflow_run, sans `ref` explicite le checkout prend le HEAD de la branche
+      # par defaut : on deploierait alors un commit different de celui valide par la CI.
+      # On epingle le SHA exact du run declencheur (le tag pour un dispatch manuel).
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || format('v{0}', inputs.version) }}
 
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:

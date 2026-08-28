@@ -8,7 +8,8 @@ vi.mock("@/modules/storage", () => ({
   deleteMediaFile: vi.fn(),
 }));
 
-const { deleteAudioSource } = await import("../upload");
+const { deleteAudioSource, assertUploadWithinLimits, AUDIO_UPLOAD_MAX_SIZE, partCountFor } =
+  await import("../upload");
 
 const serviceId = "service-1";
 const churchId = "church-1";
@@ -69,5 +70,26 @@ describe("deleteAudioSource", () => {
     await deleteAudioSource(serviceId, churchId, "src-1");
 
     expect(prismaMock.audioJob.deleteMany).not.toHaveBeenCalled();
+  });
+});
+
+// H-05 : la taille annoncee etait seulement `positive()`. `partCountFor(size)` generant une
+// URL presignee par part, une taille arbitraire faisait signer un nombre illimite d'URLs
+// (au-dela des 10 000 parts S3) — DoS applicatif et cout de stockage.
+describe("assertUploadWithinLimits", () => {
+  it("accepte un fichier audio dans les bornes", () => {
+    expect(() => assertUploadWithinLimits("audio/mpeg", 50 * 1024 * 1024)).not.toThrow();
+  });
+
+  it("refuse un type MIME hors liste", () => {
+    expect(() => assertUploadWithinLimits("application/zip", 1024)).toThrow(ApiError);
+  });
+
+  it("refuse une taille au-dela du maximum", () => {
+    expect(() => assertUploadWithinLimits("audio/mpeg", AUDIO_UPLOAD_MAX_SIZE + 1)).toThrow(ApiError);
+  });
+
+  it("borne le nombre de parts signees bien en deca de la limite S3 de 10 000", () => {
+    expect(partCountFor(AUDIO_UPLOAD_MAX_SIZE)).toBeLessThan(10_000);
   });
 });

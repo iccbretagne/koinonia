@@ -3,7 +3,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireIntegrationAccess, buildConfirmationEmail } from "@/modules/integration";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
-import { requireRateLimit } from "@/lib/rate-limit";
+import { requireRateLimit, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 import type { FamilyAgeRange, FamilyChurchStatus, FamilyIntegrationStatus, Prisma } from "@/generated/prisma/client";
 
@@ -73,7 +73,7 @@ const createSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    requireRateLimit(request, { prefix: `integration-requests:public:${request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"}`, windowMs: 60_000, max: 5 });
+    requireRateLimit(request, { prefix: `integration-requests:public:${getClientIp(request)}`, windowMs: 60_000, max: 5 });
 
     const body = await request.json();
     const data = createSchema.parse(body);
