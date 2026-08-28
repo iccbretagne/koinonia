@@ -40,16 +40,18 @@ nécessaires (`serviceDate`, `title`, `speaker`, `type`, `status`, `openCount`,
       `DEFAULT_SORT = { key: "date", dir: "desc" }`, `STATUS_SORT_ORDER`
       (`PENDING_REVIEW` 0 → `READY` 1 → `DRAFT` 2 → `PUBLISHED` 3 →
       `UNPUBLISHED` 4). *(fichier : `queue-filters.ts`)*
-- [x] **T4** — `deriveSpeakers(rows): string[]` : orateurs non vides, trim,
-      dédoublonnage insensible casse/accents (1re graphie conservée), tri
-      `localeCompare("fr")`. *(fichier : `queue-filters.ts`)*
+- [x] **T4** — `deriveSpeakers(rows): string[]` (+ `deriveSeries` identique sur
+      `series`) : valeurs non vides, trim, dédoublonnage insensible casse/accents
+      (1re graphie conservée), tri `localeCompare("fr")`.
+      *(fichier : `queue-filters.ts`)*
 - [x] **T5** — `isRangeValid(c: QueueCriteria): boolean` : `false` si `from` et
       `to` renseignés et `from > to`, `true` sinon. *(fichier : `queue-filters.ts`)*
 - [x] **T6** — `filterQueue(rows, c): Row[]` : intersection de tous les critères
       actifs — `status` (exact), `type` (exact), `year` (année de `serviceDate`),
       `from`/`to` (bornes incluses sur `serviceDate`), `text`
       (`normalizeText` sur `title` **et** `speaker`, robuste au `null`),
-      `speaker` (`NO_SPEAKER` → lignes sans orateur ; sinon égalité exacte).
+      `speaker` (`NO_SPEAKER` → lignes sans orateur ; sinon égalité exacte),
+      `series` (`NO_SERIES` → lignes hors série ; sinon égalité exacte).
       Si `!isRangeValid(c)` → `[]`. *(fichier : `queue-filters.ts`)*
 - [x] **T7** — `sortQueue(rows, key, dir): Row[]` : copie triée ; `status` via
       `STATUS_SORT_ORDER` ; départage systématique par `serviceDate`
@@ -92,7 +94,8 @@ nécessaires (`serviceDate`, `title`, `speaker`, `type`, `status`, `openCount`,
       Statut (`Select`, `STATUS_LABELS`, choix unique), Type (`Select`,
       `EVENT_TYPE_OPTIONS`), Année (`Select`, années distinctes de `services`
       desc ; masqué si aucune), Du / Au (deux `Input type="date"`), Orateur
-      (`Select`, `deriveSpeakers(services)` + option « Sans orateur »),
+      (`Select`, `deriveSpeakers(services)` + option « Sans orateur »), Série
+      (`Select`, `deriveSeries(services)` + option « Sans série »),
       Recherche (`Input`, **débounce 300 ms** — même constante et pattern
       `useRef<setTimeout>` que `LibraryFiltersClient`).
       *(fichier : `AudioQueueClient.tsx`)*
@@ -155,6 +158,7 @@ nécessaires (`serviceDate`, `title`, `speaker`, `type`, `status`, `openCount`,
 | Période : année **ou** plage du/au | T3, T6, T13, T19 |
 | Recherche titre + orateur, insensible casse/accents, robuste `null` | T1, T6, T17, T19 |
 | Filtre orateur + option « Sans orateur » | T4, T6, T13, T19 |
+| Filtre série + option « Sans série » (spec 022) | T4, T6, T13, T19 |
 | Tri par clic d'en-tête Date/Statut/Séquences/Ouvertures + inversion | T7, T9, T14, T20 |
 | Tri statut : « à traiter » en tête | T3, T7, T20 |
 | Remise à zéro en un geste | T15 |

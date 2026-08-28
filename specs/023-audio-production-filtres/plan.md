@@ -81,6 +81,7 @@ export interface QueueCriteria {
   to: string;              // "" ou "AAAA-MM-JJ"
   text: string;            // recherche libre (titre + orateur)
   speaker: string;         // "" = tous ; "__NONE__" = sans orateur ; sinon nom exact
+  series: string;          // "" = toutes ; "__NONE__" = sans série ; sinon nom exact
 }
 
 export const EMPTY_CRITERIA: QueueCriteria;
@@ -92,6 +93,7 @@ export const STATUS_SORT_ORDER: Record<string, number>;
 //  PENDING_REVIEW(0) → READY(1) → DRAFT(2) → PUBLISHED(3) → UNPUBLISHED(4)
 
 export function deriveSpeakers(rows: Row[]): string[];
+export function deriveSeries(rows: Row[]): string[];  // idem, sur `series`
 //  orateurs non vides, dédoublonnés (casse/accent ignorés pour l'unicité,
 //  1re graphie rencontrée conservée), triés localeCompare("fr").
 
@@ -142,6 +144,7 @@ l'utilise **ici uniquement** ; la reprise des autres appels est hors périmètre
   | Année | `Select` | années distinctes présentes dans `services` (desc) |
   | Du / Au | deux `Input type="date"` | — |
   | Orateur | `Select` | `deriveSpeakers(services)` + option « Sans orateur » |
+  | Série | `Select` | `deriveSeries(services)` + option « Sans série » (champ `AudioService.series`, spec 022) |
   | Recherche | `Input` | libre, **débounce 300 ms** (même constante que (re)Écouter) |
 - **Ligne d'état** : `« N enregistrement(s) »` + `Button variant="secondary"
   size="sm"` **Réinitialiser** (visible seulement si un critère ou un tri

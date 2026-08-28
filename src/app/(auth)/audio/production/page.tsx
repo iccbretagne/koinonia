@@ -25,6 +25,7 @@ export default async function AudioQueuePage() {
           id: s.id,
           title: s.title,
           speaker: s.speaker,
+          series: s.series,
           serviceDate: s.serviceDate.toISOString(),
           status: s.status,
           type: s.type,

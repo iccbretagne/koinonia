@@ -5,9 +5,11 @@ import {
   DEFAULT_SORT,
   EMPTY_CRITERIA,
   NO_SPEAKER,
+  NO_SERIES,
   STATUS_SORT_ORDER,
   __resetState,
   deriveSpeakers,
+  deriveSeries,
   deriveYears,
   filterQueue,
   hasActiveState,
@@ -22,6 +24,7 @@ function row(over: Partial<AudioServiceRow>): AudioServiceRow {
     id: Math.random().toString(36).slice(2),
     title: "Culte",
     speaker: null,
+    series: null,
     serviceDate: "2025-06-01T08:00:00.000Z",
     status: "PUBLISHED",
     type: "CULTE",
@@ -45,6 +48,19 @@ describe("deriveSpeakers", () => {
       row({ speaker: "Bruno" }),
     ];
     expect(deriveSpeakers(rows)).toEqual(["Armelle", "Bruno", "Pasteur Éric"]);
+  });
+});
+
+describe("deriveSeries", () => {
+  it("dédoublonne sur casse/accents, ignore les vides, trie fr", () => {
+    const rows = [
+      row({ series: "Identité" }),
+      row({ series: "identite" }),
+      row({ series: "  Alliance  " }),
+      row({ series: "" }),
+      row({ series: null }),
+    ];
+    expect(deriveSeries(rows)).toEqual(["Alliance", "Identité"]);
   });
 });
 
@@ -72,8 +88,8 @@ describe("isRangeValid", () => {
 describe("filterQueue", () => {
   const rows = [
     row({ id: "a", status: "PENDING_REVIEW", type: "CULTE", serviceDate: "2024-03-10T09:00:00.000Z", speaker: null, title: "Culte" }),
-    row({ id: "b", status: "PUBLISHED", type: "CULTE", serviceDate: "2025-02-09T09:00:00.000Z", speaker: "Pasteure Armelle", title: "Qui es-tu ?" }),
-    row({ id: "c", status: "PUBLISHED", type: "AUTRE", serviceDate: "2025-02-16T09:00:00.000Z", speaker: "Bruno", title: "Cérémonie des baptêmes" }),
+    row({ id: "b", status: "PUBLISHED", type: "CULTE", serviceDate: "2025-02-09T09:00:00.000Z", speaker: "Pasteure Armelle", title: "Qui es-tu ?", series: "Identité" }),
+    row({ id: "c", status: "PUBLISHED", type: "AUTRE", serviceDate: "2025-02-16T09:00:00.000Z", speaker: "Bruno", title: "Cérémonie des baptêmes", series: "Identité" }),
     row({ id: "d", status: "READY", type: "CULTE", serviceDate: "2025-11-30T09:00:00.000Z", speaker: "  ", title: null }),
   ];
   const ids = (c: QueueCriteria) => filterQueue(rows, c).map((r) => r.id).sort();
@@ -113,6 +129,12 @@ describe("filterQueue", () => {
   });
   it("orateur = Sans orateur → lignes sans orateur (null ou espaces)", () => {
     expect(ids(crit({ speaker: NO_SPEAKER }))).toEqual(["a", "d"]);
+  });
+  it("série exacte", () => {
+    expect(ids(crit({ series: "Identité" }))).toEqual(["b", "c"]);
+  });
+  it("série = Sans série → lignes hors série", () => {
+    expect(ids(crit({ series: NO_SERIES }))).toEqual(["a", "d"]);
   });
   it("combinaison de 3+ critères = intersection", () => {
     expect(ids(crit({ status: "PUBLISHED", type: "CULTE", year: "2025", text: "es-tu" }))).toEqual(["b"]);

@@ -15,7 +15,9 @@ import {
   DEFAULT_SORT,
   EMPTY_CRITERIA,
   NO_SPEAKER,
+  NO_SERIES,
   deriveSpeakers,
+  deriveSeries,
   deriveYears,
   filterQueue,
   hasActiveState,
@@ -189,6 +191,7 @@ export default function AudioQueueClient({ services }: { services: AudioServiceR
   }, [criteria, sort]);
 
   const speakers = useMemo(() => deriveSpeakers(services), [services]);
+  const seriesList = useMemo(() => deriveSeries(services), [services]);
   const years = useMemo(() => deriveYears(services), [services]);
 
   const rangeValid = isRangeValid(criteria);
@@ -266,6 +269,16 @@ export default function AudioQueueClient({ services }: { services: AudioServiceR
             options={[
               { value: NO_SPEAKER, label: "Sans orateur" },
               ...speakers.map((s) => ({ value: s, label: s })),
+            ]}
+          />
+          <Select
+            label="Série"
+            placeholder="Toutes les séries"
+            value={criteria.series}
+            onChange={(e) => setField("series", e.target.value)}
+            options={[
+              { value: NO_SERIES, label: "Sans série" },
+              ...seriesList.map((s) => ({ value: s, label: s })),
             ]}
           />
           <Input

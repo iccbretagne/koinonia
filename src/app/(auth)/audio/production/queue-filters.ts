@@ -20,6 +20,7 @@ export interface AudioServiceRow {
   id: string;
   title: string | null;
   speaker: string | null;
+  series: string | null;
   serviceDate: string; // ISO
   status: AudioServiceStatus;
   type: string;
@@ -43,10 +44,14 @@ export interface QueueCriteria {
   to: string; // "" ou "AAAA-MM-JJ"
   text: string; // recherche libre (titre + orateur)
   speaker: string; // "" = tous, NO_SPEAKER = sans orateur, sinon nom exact
+  series: string; // "" = toutes, NO_SERIES = sans série, sinon nom exact
 }
 
 /** Valeur du filtre orateur isolant les enregistrements sans orateur renseigné. */
 export const NO_SPEAKER = "__NONE__";
+
+/** Valeur du filtre série isolant les enregistrements hors série. */
+export const NO_SERIES = "__NONE__";
 
 export const EMPTY_CRITERIA: QueueCriteria = {
   status: "",
@@ -56,6 +61,7 @@ export const EMPTY_CRITERIA: QueueCriteria = {
   to: "",
   text: "",
   speaker: "",
+  series: "",
 };
 
 export const DEFAULT_SORT: SortState = { key: "date", dir: "desc" };
@@ -89,6 +95,18 @@ export function deriveSpeakers(rows: AudioServiceRow[]): string[] {
   const seen = new Map<string, string>();
   for (const row of rows) {
     const raw = row.speaker?.trim();
+    if (!raw) continue;
+    const key = normalizeText(raw);
+    if (!seen.has(key)) seen.set(key, raw);
+  }
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/** Séries distinctes présentes dans la file (dédupliquées sur forme normalisée), triées `fr`. */
+export function deriveSeries(rows: AudioServiceRow[]): string[] {
+  const seen = new Map<string, string>();
+  for (const row of rows) {
+    const raw = row.series?.trim();
     if (!raw) continue;
     const key = normalizeText(raw);
     if (!seen.has(key)) seen.set(key, raw);
@@ -135,6 +153,12 @@ export function filterQueue(rows: AudioServiceRow[], c: QueueCriteria): AudioSer
     if (c.speaker === NO_SPEAKER) {
       if (row.speaker && row.speaker.trim()) return false;
     } else if (c.speaker && row.speaker !== c.speaker) {
+      return false;
+    }
+
+    if (c.series === NO_SERIES) {
+      if (row.series && row.series.trim()) return false;
+    } else if (c.series && row.series !== c.series) {
       return false;
     }
 

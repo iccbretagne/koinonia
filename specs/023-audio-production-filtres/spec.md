@@ -68,6 +68,9 @@ l'onglet Production, ne sont pas concernés.
 - **Orateur** — liste déroulante des orateurs présents dans la file, plus une
   option **« Sans orateur »** qui isole les enregistrements sans orateur
   renseigné (cas fréquent des cultes 2024 migrés).
+- **Série** — liste déroulante des séries présentes dans la file (champ série
+  repris à l'import Audiobookshelf, cf. spec 022), plus une option
+  **« Sans série »** pour les enregistrements hors série.
 
 ### Tris proposés (clic sur l'en-tête de colonne, bascule croissant / décroissant)
 
@@ -104,7 +107,7 @@ précédent.
 - [x] À l'ouverture, la file est identique à aujourd'hui : tout l'historique,
       trié par date de service décroissante, aucun filtre actif hormis un
       éventuel filtre mémorisé de la session.
-- [x] Les cinq filtres (statut, type, période, recherche texte, orateur)
+- [x] Les six filtres (statut, type, période, recherche texte, orateur, série)
       peuvent être actifs simultanément ; le résultat est l'intersection.
 - [x] Le filtre de période permet de sélectionner une année entière **ou** une
       plage début/fin ; seuls les enregistrements dont la date de service est
@@ -113,6 +116,8 @@ précédent.
       et aux accents, sans erreur sur les enregistrements sans titre/orateur.
 - [x] Le filtre orateur propose « Sans orateur » et cette option n'affiche que
       les enregistrements sans orateur renseigné.
+- [x] Le filtre série liste les séries présentes et propose « Sans série » ;
+      chaque option n'affiche que les enregistrements correspondants.
 - [x] Cliquer sur les en-têtes Date, Statut, Séquences, Ouvertures réordonne la
       file selon cette colonne ; un second clic inverse le sens.
 - [x] Le tri par statut place les statuts « à traiter » (À nommer, Rendu en
