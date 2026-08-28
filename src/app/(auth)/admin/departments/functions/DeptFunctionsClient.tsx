@@ -50,18 +50,24 @@ const FUNCTIONS = [
     description: "Assure le suivi des nouveaux convertis (appel au salut). Les membres sont proposés comme conseillers dans le workflow MSDP.",
     icon: "🕊️",
   },
+  {
+    key: "CAPTATION_AUDIO" as const,
+    label: "Captation Audio",
+    description: "Enregistre et dépose les cultes ; ses membres accèdent à l'espace Audio (spec 021).",
+    icon: "🎙️",
+  },
 ];
 
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
 
-  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP") {
+  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP" | "CAPTATION_AUDIO") {
     return depts.find((d) => d.function === fn)?.id ?? "";
   }
 
   async function handleChange(
-    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP",
+    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP" | "CAPTATION_AUDIO",
     newDeptId: string
   ) {
     setSaving(fn);

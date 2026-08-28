@@ -2,8 +2,9 @@ import { defineModule } from "@/core/module-registry";
 
 /**
  * Module audio — publication des enregistrements de culte (dépôt, découpage/nommage,
- * publication, lecture publique). P1 : chemin « séquences déjà mixées/découpées » uniquement
- * — voir specs/019-audio-cultes-publication/plan.md.
+ * publication, lecture publique) et bibliothèque d'écoute ouverte à tout membre (spec 021).
+ * P1 : chemin « séquences déjà mixées/découpées » uniquement —
+ * voir specs/019-audio-cultes-publication/plan.md.
  *
  * Dépendances : core (obligatoire), storage (S3 multipart), planning (lie un culte audio à un
  * événement via `planningEventId`).
@@ -14,18 +15,22 @@ export const audioModule = defineModule({
   dependsOn: ["core", "storage", "planning"],
 
   permissions: {
-    // Accès en lecture à la file d'attente et aux cultes publiés
+    // Écoute des cultes publiés (bibliothèque + fiche d'événement) — tout membre authentifié
+    // (spec 021 : « restreindre la liste plus que le lien de partage n'aurait pas de sens »)
+    "audio:listen":  ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD",
+                       "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
+    // Accès en lecture à la file d'attente et aux cultes publiés (espace de production)
     "audio:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Dépôt de séquences (en plus de l'équipe de captation via isCaptureTeamMember)
     "audio:upload":  ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Corriger un découpage, publier/dépublier
     "audio:review":  ["SUPER_ADMIN", "ADMIN"],
-    // Administration du module (paramètres — département de captation, couverture, template)
+    // Administration du module (paramètres — couverture, template de séquences)
     "audio:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
 
   navigation: [
-    { label: "Audio", icon: "audio", href: "/audio", permission: "audio:view" },
+    { label: "Audio", icon: "audio", href: "/audio", permission: "audio:listen" },
   ],
 });
 
@@ -62,11 +67,17 @@ export {
   resolveShareToken,
   revokeShareToken,
   getOrCreatePrimaryShareToken,
+  getOrCreateSegmentShareToken,
   buildPublicAudioUrl,
 } from "./services/tokens";
 export type { CreateShareTokenInput } from "./services/tokens";
 
-export { resolvePublicAudioService, recordAudioServiceOpen } from "./services/public";
+export {
+  resolvePublicAudioService,
+  recordAudioServiceOpen,
+  mapPublishedSegments,
+  resolveEffectiveCoverUrl,
+} from "./services/public";
 export type { PublicAudioResolution, PublicAudioService, PublicAudioSegment } from "./services/public";
 
 export {
@@ -76,3 +87,9 @@ export {
   getCoverExtensionFromMimeType,
   getDefaultCoverKey,
 } from "./services/settings";
+
+export { listPublishedServices, listSpeakers, getPublishedServiceForMember } from "./services/library";
+export type { LibrarySort, ListPublishedServicesInput, LibraryServiceSummary } from "./services/library";
+
+export { getCachedRenditionPath, primeRenditionCache, getCacheDir } from "./services/rendition-cache";
+export { buildRenditionResponse } from "./services/stream";

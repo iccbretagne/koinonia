@@ -78,10 +78,13 @@ Cela permet d'assigner le role STAR sans aucune entree `user_departments` : les 
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource
 - `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste)
 - `requireAudioAccess(permission, churchId)` — permission de role **ou** appartenance au departement
-  de captation (`isCaptureTeamMember`) : un STAR de ce departement passe le controle quelle que soit
-  la permission demandee
+  de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`) : un STAR
+  de ce departement passe le controle quelle que soit la permission demandee
 - `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre du
-  departement de captation (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
+  departement de captation audio (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
+
+`audio:listen` (bibliotheque d'ecoute, spec 021) est accordee a **tous les roles** — voir
+[api.md](api.md#audio-des-cultes).
 
 ---
 

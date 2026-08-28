@@ -1,6 +1,7 @@
 /**
- * GET/PUT /api/audio/settings — configuration du module audio (département de captation,
- * couverture par défaut, template de noms de séquences).
+ * GET/PUT /api/audio/settings — configuration du module audio (couverture par défaut, template
+ * de noms de séquences). Le département de captation audio se configure désormais via les
+ * fonctions de département (`Department.function = "CAPTATION_AUDIO"`, spec 021).
  */
 import { z } from "zod";
 import { requirePermission, getCurrentChurchId } from "@/lib/auth";
@@ -8,7 +9,6 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 const schema = z.object({
-  captureDepartmentId: z.string().nullable().optional(),
   defaultCoverKey: z.string().nullable().optional(),
   sequenceTemplate: z.array(z.string().min(1)).optional(),
 });
@@ -34,23 +34,14 @@ export async function PUT(request: Request) {
 
     const body = schema.parse(await request.json());
 
-    if (body.captureDepartmentId) {
-      const dept = await prisma.department.findFirst({
-        where: { id: body.captureDepartmentId, ministry: { churchId } },
-      });
-      if (!dept) throw new ApiError(404, "Département introuvable");
-    }
-
     const settings = await prisma.audioSettings.upsert({
       where: { churchId },
       create: {
         churchId,
-        captureDepartmentId: body.captureDepartmentId,
         defaultCoverKey: body.defaultCoverKey,
         sequenceTemplate: body.sequenceTemplate,
       },
       update: {
-        captureDepartmentId: body.captureDepartmentId,
         defaultCoverKey: body.defaultCoverKey,
         sequenceTemplate: body.sequenceTemplate,
       },

@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/audio";
 
 export async function GET(
   _request: Request,
@@ -69,15 +68,15 @@ export async function GET(
     );
 
     // Lien croisé événement → audio : uniquement si un culte audio publié est rattaché
-    // (spec §1 — le lien apparaît une fois la publication faite, pas avant).
+    // (spec §1 — le lien apparaît une fois la publication faite, pas avant). Pointe vers la
+    // bibliothèque d'écoute interne (spec 021) plutôt que de fabriquer un token de partage à
+    // chaque consultation d'événement.
     const audioService = await prisma.audioService.findUnique({
       where: { planningEventId: eventId },
       select: { id: true, status: true },
     });
     const audioLink =
-      audioService?.status === "PUBLISHED"
-        ? { url: buildPublicAudioUrl((await getOrCreatePrimaryShareToken(audioService.id, churchId)).token) }
-        : null;
+      audioService?.status === "PUBLISHED" ? { url: `/audio/ecouter/${audioService.id}` } : null;
 
     return successResponse({
       event: {

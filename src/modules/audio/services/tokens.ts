@@ -68,6 +68,27 @@ export async function getOrCreatePrimaryShareToken(
   return createShareToken({ serviceId, churchId }, db);
 }
 
+/**
+ * Retrouve le lien de partage d'une séquence précise, ou le crée s'il n'existe pas encore —
+ * symétrique de `getOrCreatePrimaryShareToken` pour le partage individuel d'une séquence
+ * (spec 021). Un membre qui repartage la même séquence ne multiplie pas les liens.
+ */
+export async function getOrCreateSegmentShareToken(
+  serviceId: string,
+  segmentId: string,
+  churchId: string,
+  db?: DbClient
+): Promise<AudioShareToken> {
+  db ??= await defaultDb();
+
+  const existing = await db.audioShareToken.findFirst({
+    where: { serviceId, segmentId, revokedAt: null },
+  });
+  if (existing) return existing;
+
+  return createShareToken({ serviceId, churchId, segmentId }, db);
+}
+
 /** Révoque un lien de partage — il devient inopérant, mais reste consultable côté admin. */
 export async function revokeShareToken(id: string, churchId: string, db?: DbClient): Promise<AudioShareToken> {
   db ??= await defaultDb();

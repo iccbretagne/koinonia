@@ -1,14 +1,15 @@
 /**
  * GET /api/audio/public/[token]/stream/[segmentId]
- * Redirige (302) vers une URL S3 signée servant la rendition MP3 d'un segment publié — le
- * Range HTTP natif de S3 permet la lecture/seek côté navigateur sans proxy.
+ * Sert la rendition MP3 d'un segment publié depuis le cache disque local (ADR-0008), en
+ * honorant le `Range` HTTP — remplace l'ancienne redirection 302 vers une URL S3 signée, qui
+ * empêchait tout cache navigateur et facturait l'egress à chaque écoute.
  */
 import { prisma } from "@/lib/prisma";
 import { errorResponse, ApiError } from "@/lib/api-utils";
-import { getSignedStreamUrl } from "@/modules/storage";
+import { buildRenditionResponse } from "@/modules/audio";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ token: string; segmentId: string }> }
 ) {
   try {
@@ -31,8 +32,7 @@ export async function GET(
       throw new ApiError(410, "Ce culte n'est plus disponible.");
     }
 
-    const url = await getSignedStreamUrl(segment.rendition.s3Key);
-    return Response.redirect(url, 302);
+    return await buildRenditionResponse(segment.rendition.s3Key, request.headers.get("Range"));
   } catch (error) {
     return errorResponse(error);
   }

@@ -71,7 +71,7 @@ export default async function EventDetailPage({
               <Button variant="secondary" size="sm">Écouter l&apos;enregistrement ↗</Button>
             </a>
           ) : (
-            <Link href={`/audio/${audioService.id}`}>
+            <Link href={`/audio/production/${audioService.id}`}>
               <Button variant="secondary" size="sm">
                 En préparation — {audioService.segments.filter((s) => s.rendition).length}/
                 {audioService.segments.length} séquence

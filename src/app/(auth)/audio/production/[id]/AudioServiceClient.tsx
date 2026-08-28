@@ -261,7 +261,7 @@ export default function AudioServiceClient({
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? "Échec de la suppression");
       }
-      router.push("/audio");
+      router.push("/audio/production");
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Erreur inconnue");
       setDeleting(false);
@@ -287,7 +287,7 @@ export default function AudioServiceClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/audio">
+      <Link href="/audio/production">
         <Button variant="secondary" size="sm">
           ← File d&apos;attente
         </Button>

@@ -1819,20 +1819,27 @@ Génère une URL de téléchargement signée pour une photo approuvée.
 
 ## Audio des cultes
 
-Publication des enregistrements de culte : depot des sequences, nommage/ordonnancement, rendu
-sonore normalise puis diffusion via un lien public. Voir
-[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md) pour le traitement asynchrone.
+Publication des enregistrements de culte (depot des sequences, nommage/ordonnancement, rendu
+sonore normalise, diffusion via un lien public — voir
+[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md) pour le traitement asynchrone) et
+bibliotheque d'ecoute ouverte a tout membre (spec 021), servie depuis un cache disque local
+(voir [ADR-0008](adr/0008-cache-disque-renditions-audio.md)).
+
+L'espace `/audio` est a onglets a droits distincts : **(re)Écouter** (`audio:listen`, tous les
+roles), **Production** (`audio:view`) et **Paramètres** (`audio:manage`).
 
 ### Permissions
 
+- `audio:listen` — ecoute des cultes publies (bibliotheque + fiche d'evenement), **tous les roles**
 - `audio:view` — file d'attente et detail d'un culte
 - `audio:upload` — depot et suppression de sequences
 - `audio:review` — publication / depublication
 - `audio:manage` — parametres du module
 
 Le controle passe par `requireAudioAccess()`, qui accepte **aussi** un membre du departement de
-captation configure, sans role dedie. La depublication utilise `requireAudioUnpublishAccess()`,
-plus strict (voir [auth.md](auth.md)).
+captation audio (`Department.function = "CAPTATION_AUDIO"`, configure dans
+`/admin/departments/functions`), sans role dedie. La depublication utilise
+`requireAudioUnpublishAccess()`, plus strict (voir [auth.md](auth.md)).
 
 ### Cultes
 
@@ -1863,13 +1870,27 @@ plus strict (voir [auth.md](auth.md)).
 Le navigateur envoie chaque part directement a S3. Le bucket doit exposer l'en-tete `ETag`
 (CORS `ExposeHeaders`), faute de quoi la finalisation echoue.
 
+### Ecoute (bibliotheque, membre authentifie)
+
+| Methode | Endpoint | Permission | Role |
+|---|---|---|---|
+| `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `audio:listen` (+ eglise du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
+| `POST` | `/api/audio/services/[id]/play` | `audio:listen` | Incremente `AudioSegment.playCount` |
+| `POST` | `/api/audio/services/[id]/share` | `audio:listen` | Reutilise ou cree un lien de partage (culte entier ou segment) |
+
+Le culte doit etre `PUBLISHED` (sinon `410`) ; appartenir a une autre eglise repond `403`
+(ecart au 404 uniforme initialement envisage — coherent avec `requireAudioAccess` ailleurs
+dans le module, voir `specs/021-audio-bibliotheque-ecoute/plan.md`). Pas de route de liste :
+l'onglet **(re)Écouter** est un Server Component qui lit directement le service `library.ts`.
+
 ### Parametres
 
 | Methode | Endpoint | Permission |
 |---|---|---|
 | `GET` / `PUT` | `/api/audio/settings` | `audio:manage` |
 
-Departement de captation, couverture et modele de noms de sequences.
+Couverture par defaut et modele de noms de sequences. Le departement de captation audio n'y est
+plus configure — voir *Permissions* ci-dessus.
 
 ### Acces public via token (sans authentification)
 
@@ -1877,9 +1898,10 @@ Departement de captation, couverture et modele de noms de sequences.
 |---|---|---|
 | `GET` | `/api/audio/public/[token]` | Culte publie et ses segments |
 | `POST` | `/api/audio/public/[token]/play` | Journalise une ecoute (limite en debit) |
-| `GET` | `/api/audio/public/[token]/stream/[segmentId]` | URL signee de lecture d'un segment |
+| `GET` | `/api/audio/public/[token]/stream/[segmentId]` | Flux audio (`Range` HTTP) depuis le cache disque — **modifie** (spec 021) : servait auparavant une redirection `302` vers une URL S3 signee |
 
-Page de lecture associee : `/ecouter/[token]`.
+Page de lecture associee : `/ecouter/[token]`, qui reutilise le meme composant `<AudioPlayer>`
+que la bibliotheque interne.
 
 ---
 

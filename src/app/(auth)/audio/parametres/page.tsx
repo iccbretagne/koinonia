@@ -1,21 +1,16 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import Link from "next/link";
+import { requireAuth, requireAudioAccess, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getSignedStreamUrl } from "@/modules/storage";
 import AudioSettingsClient from "./AudioSettingsClient";
 
 export default async function AudioSettingsPage() {
-  const session = await requirePermission("audio:manage");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireAudioAccess("audio:manage", churchId);
 
-  const [settings, departments] = await Promise.all([
-    prisma.audioSettings.findUnique({ where: { churchId } }),
-    prisma.department.findMany({
-      where: { ministry: { churchId } },
-      select: { id: true, name: true, ministry: { select: { name: true } } },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const settings = await prisma.audioSettings.findUnique({ where: { churchId } });
 
   const coverPreviewUrl = settings?.defaultCoverKey
     ? await getSignedStreamUrl(settings.defaultCoverKey)
@@ -23,20 +18,25 @@ export default async function AudioSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Audio — Paramètres</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Audio — Paramètres</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        Le département de captation audio se configure désormais parmi les{" "}
+        <Link href="/admin/departments/functions" className="text-icc-violet underline">
+          fonctions départementales
+        </Link>{" "}
+        (fonction « Captation Audio »).
+      </p>
       <AudioSettingsClient
         settings={
           settings
             ? {
-                captureDepartmentId: settings.captureDepartmentId,
                 defaultCoverKey: settings.defaultCoverKey,
                 sequenceTemplate: Array.isArray(settings.sequenceTemplate)
                   ? (settings.sequenceTemplate as unknown[]).filter((n): n is string => typeof n === "string")
                   : [],
               }
-            : { captureDepartmentId: null, defaultCoverKey: null, sequenceTemplate: [] }
+            : { defaultCoverKey: null, sequenceTemplate: [] }
         }
-        departments={departments.map((d) => ({ id: d.id, label: `${d.name} (${d.ministry.name})` }))}
         coverPreviewUrl={coverPreviewUrl}
       />
     </div>

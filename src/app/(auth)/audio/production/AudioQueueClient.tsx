@@ -92,7 +92,7 @@ function NewServiceModal({ open, onClose }: { open: boolean; onClose: () => void
         throw new Error(body.error ?? "Échec de la création");
       }
       const service = await res.json();
-      router.push(`/audio/${service.id}`);
+      router.push(`/audio/production/${service.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue");
       setCreating(false);
@@ -213,7 +213,7 @@ export default function AudioQueueClient({ services }: { services: AudioServiceR
         data={filtered}
         emptyMessage="Aucun enregistrement audio."
         actions={(row) => (
-          <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/${row.id}`)}>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/production/${row.id}`)}>
             Ouvrir
           </Button>
         )}

@@ -1,0 +1,54 @@
+/*
+ * Thème ICC pour react-h5-audio-player — la librairie n'expose pas de variables CSS (`--rhap-*`)
+ * dans cette version, uniquement des classes `.rhap_*` fixes ; on les surcharge ici en
+ * référençant les tokens `--color-icc-*` définis en `@theme` (globals.css).
+ */
+.rhap_container {
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.rhap_main-controls-button,
+.rhap_play-pause-button {
+  color: var(--color-icc-violet);
+}
+
+.rhap_main-controls-button:hover,
+.rhap_play-pause-button:hover {
+  color: var(--color-icc-violet-dark);
+}
+
+.rhap_progress-filled,
+.rhap_progress-indicator,
+.rhap_download-progress {
+  background-color: var(--color-icc-violet);
+}
+
+.rhap_download-progress {
+  background-color: var(--color-icc-violet-light);
+}
+
+.rhap_progress-indicator {
+  width: 16px;
+  height: 16px;
+  top: -6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.rhap_time {
+  color: var(--color-gray-500, #6b7280);
+  font-size: 0.75rem;
+}
+
+.rhap_volume-filled,
+.rhap_volume-indicator {
+  background-color: var(--color-icc-violet);
+}
+
+.rhap_container:focus-visible,
+.rhap_progress-bar:focus-visible,
+.rhap_main-controls-button:focus-visible {
+  outline: 2px solid var(--color-icc-violet);
+  outline-offset: 2px;
+}
