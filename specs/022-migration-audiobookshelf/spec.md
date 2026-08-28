@@ -172,8 +172,7 @@ aucune bascule d'import automatique n'est demandé.
 
 - Espace disque de stockage disponible côté production pour accueillir l'audio
   migré (sources + versions encodées) — à vérifier avant la passe de production.
-- Espace disque de la VM de recette pour accueillir la copie des fichiers
-  d'Audiobookshelf pendant la vérification.
+  *(Recette : fichiers Audiobookshelf déjà récupérés sur la VM — 2026-08-28.)*
 - Fenêtre d'exécution en production (heure creuse) pour absorber les heures de
   mise en forme audio sans gêner l'usage courant.
 - Comportement souhaité si un titre de piste est ambigu au point qu'aucune

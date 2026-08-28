@@ -298,7 +298,7 @@ worker (jobs `RENDER`) · source de vérité = système de fichiers ABS (base
 ### Restent à vérifier (non bloquant)
 
 - Capacité disque libre du bucket S3 de prod (~16–18 Go).
-- Espace disque de la VM de recette pour accueillir 8,2 Go + renditions.
+- [x] Fichiers Audiobookshelf récupérés sur la VM de recette (2026-08-28).
 
 ## 10. Prochaines étapes
 
@@ -308,5 +308,6 @@ worker (jobs `RENDER`) · source de vérité = système de fichiers ABS (base
 - [ ] `scripts/migrate-audiobookshelf.ts` : parseur FS → manifeste JSON →
       `AudioService`/`Source`/`Segment` + `PutObject` (lecture ETag) + `ffprobe`
       local (`durationMs`) + `publishAudioService` + ledger `.jsonl`.
-- [ ] rsync 8,2 Go vers la VM de recette, passe recette, vérif écoute.
+- [x] Fichiers Audiobookshelf sur la VM de recette (2026-08-28).
+- [ ] Passe recette, vérif écoute.
 - [ ] Passe prod + surveillance de la file `audio_jobs`.
