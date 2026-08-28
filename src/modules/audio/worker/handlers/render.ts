@@ -7,6 +7,7 @@ import type { AudioJob } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { downloadFile, uploadFile } from "@/modules/storage";
 import { maybeCompletePublication } from "../../services/publish";
+import { primeRenditionCache } from "../../services/rendition-cache";
 import { log, since, formatBytes } from "../log";
 
 const execFileAsync = promisify(execFile);
@@ -118,6 +119,10 @@ export async function renderHandler(job: AudioJob): Promise<void> {
     const key = getRenditionKey(segment.serviceId, segment.id);
     await uploadFile(key, outputBuffer, "audio/mpeg");
     log(`rendu ${segment.id} : rendu envoyé vers ${key} en ${since(stepAt)}`);
+
+    // Pré-chauffage du cache disque (ADR-0008) : le fichier vient d'être produit ici, autant
+    // l'y placer directement plutôt que de faire attendre le premier auditeur.
+    await primeRenditionCache(key, outputPath);
 
     const truePeakDb = parseFloat(measured.input_tp);
     await prisma.audioRendition.upsert({

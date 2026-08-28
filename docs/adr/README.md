@@ -34,7 +34,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0005](0005-module-audio-distinct.md) | Module `audio` distinct de `media` | Proposé |
 | [0006](0006-extraction-module-storage.md) | Extraction de `modules/storage` hors de `media` | Proposé |
 | [0007](0007-worker-hors-nextjs-table-jobs.md) | Worker hors Next.js, piloté par une table de jobs | Proposé |
-| [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Proposé |
+| [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Accepté |
 
 ## Note sur les ADR 0001–0003
 

@@ -262,8 +262,6 @@ model Department {
   linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
   financialSeries   FinancialSeries[]
   financialRequests FinancialRequest[]
-  // Module audio (département de captation, configurable — pas codé en dur)
-  audioSettings     AudioSettings[]
 
   @@map("departments")
 }
@@ -1860,14 +1858,14 @@ enum AudioJobStatus {
 }
 
 model AudioSettings {
-  id                  String  @id @default(cuid())
-  churchId            String  @unique
-  captureDepartmentId String? // département autonome sur le module (D7) — pas codé en dur
-  defaultCoverKey     String? @db.VarChar(512)
-  sequenceTemplate    Json? // noms de séquences usuels proposés au nommage/découpage
+  id               String  @id @default(cuid())
+  churchId         String  @unique
+  defaultCoverKey  String? @db.VarChar(512)
+  sequenceTemplate Json? // noms de séquences usuels proposés au nommage/découpage
+  // Département de captation : Department.function = "CAPTATION_AUDIO" (spec 021) —
+  // ramené dans le mécanisme commun des fonctions de département, plus de colonne dédiée ici.
 
-  church            Church      @relation(fields: [churchId], references: [id])
-  captureDepartment Department? @relation(fields: [captureDepartmentId], references: [id])
+  church Church @relation(fields: [churchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

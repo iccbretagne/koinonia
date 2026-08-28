@@ -181,6 +181,45 @@ http:
 
 Traefik gere automatiquement le certificat TLS via Let's Encrypt.
 
+## Cache disque des renditions audio (ADR-0008)
+
+Le module audio (spec 021 — bibliotheque d'ecoute) sert les renditions MP3 depuis un cache
+disque local, alimente au premier acces depuis le stockage S3 media. Sur l'infra actuelle
+(Traefik attaque directement le process Node, port 3001), le process Node sert lui-meme ces
+fichiers en `Range` HTTP natif — aucune configuration supplementaire n'est necessaire.
+
+```bash
+AUDIO_CACHE_DIR=/opt/koinonia/shared/audio-cache   # defaut : <tmpdir>/koinonia-audio-cache
+AUDIO_CACHE_MAX_BYTES=5368709120                   # defaut : 5 Go, eviction LRU au-dela
+```
+
+Dimensionner `AUDIO_CACHE_MAX_BYTES` selon l'espace disque disponible et le volume de cultes
+publies conserves activement — une rendition non consultee depuis longtemps est evincee
+automatiquement (LRU), le culte reste disponible, seul le prochain acces redeclenche un
+telechargement S3.
+
+### Delegation nginx (X-Accel-Redirect) — annexe optionnelle, non activee
+
+Si un nginx est un jour insere devant Koinonia (aujourd'hui Traefik sert Node directement, voir
+ADR-0008), le service peut deleguer la livraison du fichier a nginx via `X-Accel-Redirect`
+plutot que de le streamer lui-meme (`sendfile`, moins de charge sur le process Node) :
+
+```bash
+AUDIO_XACCEL_LOCATION=/protected/audio
+```
+
+Configuration nginx correspondante :
+
+```nginx
+location /protected/audio/ {
+    internal;                                   # jamais atteint directement par un client
+    alias /opt/koinonia/shared/audio-cache/;
+}
+```
+
+Ne definir `AUDIO_XACCEL_LOCATION` que si ce nginx existe reellement devant Koinonia — sinon les
+requetes audio echoueront (le fichier ne sera jamais servi par personne).
+
 ## Rollback
 
 Pour revenir a une release precedente :
@@ -943,6 +982,7 @@ Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionneme
 - [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
 - [ ] Variables `BACKUP_S3_*` configurées pour les backups BDD (optionnel)
 - [ ] Variables `MEDIA_S3_*` configurées pour le bucket média (optionnel)
+- [ ] `AUDIO_CACHE_DIR`/`AUDIO_CACHE_MAX_BYTES` dimensionnés pour le cache des renditions audio (optionnel, valeurs par défaut sinon)
 - [ ] Diagnostic S3 validé : `npx tsx prisma/scripts/debug-s3.ts` (en local)
 - [ ] Timer systemd `koinonia-backup.timer` activé (ou crontab) pour backup quotidien (optionnel)
 - [ ] Backup testé : déclencher manuellement et vérifier la présence dans S3

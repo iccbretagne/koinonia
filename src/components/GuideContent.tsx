@@ -361,6 +361,24 @@ const FEATURES: Feature[] = [
     screenshotFile: "guide-integration-stats.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
+
+  // ── Audio ────────────────────────────────────────────────────────────────
+  {
+    name: "(re)Écouter les cultes",
+    description: "Depuis /audio, retrouvez la bibliothèque des cultes publiés : recherche par titre, orateur, type ou période, lecture avec vitesse ajustable et reprise d'écoute, partage d'un lien par culte ou par séquence. Accessible à tout membre connecté, quel que soit son rôle.",
+    category: "Audio",
+    screenshotTitle: "Bibliothèque d'écoute",
+    screenshotFile: "guide-audio-library.png",
+    access: { SUPER_ADMIN: "read", ADMIN: "read", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "read", AGENDA_QUALIFIER: "read", ACCOUNTANT: "read" },
+  },
+  {
+    name: "Production audio (dépôt, découpage, publication)",
+    description: "Depuis l'onglet Production de /audio, déposez les séquences enregistrées, ajustez leur ordre et leurs noms, puis publiez le culte pour le rendre disponible dans la bibliothèque et via un lien partageable. Réservé aux rôles de gestion et aux membres du département de captation audio.",
+    category: "Audio",
+    screenshotTitle: "File d'attente Production audio",
+    screenshotFile: "guide-audio-production.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
 ];
 
 const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"];

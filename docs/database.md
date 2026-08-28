@@ -432,6 +432,7 @@ Champ `String?` sur le modele `Department` (plus un enum Prisma depuis v1.0). Va
 SECRETARIAT       # Departement traitant les diffusions internes et demandes
 COMMUNICATION     # Departement traitant les publications reseaux sociaux
 PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
+CAPTATION_AUDIO   # Departement de captation audio — pilote isCaptureTeamMember/Lead (module audio)
 ```
 
 Des valeurs personnalisees sont possibles. Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`. Constantes definies dans `src/lib/department-functions.ts`.
@@ -684,9 +685,11 @@ FAILED     # Echec de generation
 
 ### Module Audio
 
-Publication des enregistrements de culte. Le traitement (`PROBE`, `RENDER`) est asynchrone :
-la table `audio_jobs` est le **seul canal** entre l'application et le worker
-([ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)).
+Publication des enregistrements de culte (le traitement `PROBE`/`RENDER` est asynchrone : la
+table `audio_jobs` est le **seul canal** entre l'application et le worker, voir
+[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) et bibliotheque d'ecoute ouverte a tout
+membre (spec 021), servie depuis un cache disque local
+([ADR-0008](adr/0008-cache-disque-renditions-audio.md)).
 
 #### `audio_settings`
 
@@ -695,9 +698,14 @@ Configuration du module par eglise.
 | Champ | Type | Description |
 |---|---|---|
 | `churchId` | String (unique) | Ref vers `churches` |
-| `captureDepartmentId` | String? | Departement de captation — pilote les acces (D7), pas de role code en dur |
 | `defaultCoverKey` | String? | Pochette par defaut (cle S3) |
 | `sequenceTemplate` | Json? | Noms de sequences usuels proposes au nommage |
+
+> Le departement de captation audio n'est plus une colonne dediee ici — depuis la spec 021, il
+> se pilote via `departments.function = "CAPTATION_AUDIO"` (voir `departments` ci-dessous),
+> ramene dans le mecanisme commun des fonctions de departement (`SECRETARIAT`, `COMMUNICATION`…).
+> Migration `move_capture_department_to_function` : les donnees existantes sont reportees avant
+> la suppression de la colonne.
 
 #### `audio_services`
 

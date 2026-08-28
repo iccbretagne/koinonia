@@ -71,7 +71,7 @@ export const DEV_DEPARTMENTS: DevDepartmentDef[] = [
   // ICC Kervignac — Communication
   { key: "reseaux-sociaux", ministryKey: "communication", name: "Réseaux sociaux", function: "COMMUNICATION" },
   { key: "production-media", ministryKey: "communication", name: "Production média", function: "PRODUCTION_MEDIA" },
-  { key: "regie-technique", ministryKey: "communication", name: "Régie technique" },
+  { key: "regie-technique", ministryKey: "communication", name: "Régie technique", function: "CAPTATION_AUDIO" },
 
   // ICC Guingamp
   { key: "choristes-guingamp", ministryKey: "louange-guingamp", name: "Choristes" },

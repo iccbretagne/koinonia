@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { resolvePublicAudioService, recordAudioServiceOpen } from "@/modules/audio";
-import AudioPlayerClient from "./AudioPlayerClient";
+import PublicAudioPlayer from "./PublicAudioPlayer";
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -65,16 +65,20 @@ export default async function PublicAudioPage({ params }: Props) {
   }
 
   return (
-    <AudioPlayerClient
-      token={token}
-      backHref={backHref}
-      service={{
-        title: result.data.title,
-        serviceDate: result.data.serviceDate.toISOString(),
-        speaker: result.data.speaker,
-        coverUrl: result.data.coverUrl,
-        segments: result.data.segments,
-      }}
-    />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto p-4 md:p-8">
+        <PublicAudioPlayer
+          token={token}
+          backHref={backHref}
+          service={{
+            title: result.data.title,
+            serviceDate: result.data.serviceDate.toISOString(),
+            speaker: result.data.speaker,
+            coverUrl: result.data.coverUrl,
+            segments: result.data.segments,
+          }}
+        />
+      </div>
+    </div>
   );
 }

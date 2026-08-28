@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 
 const ALLOWED_COVER_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -9,21 +8,17 @@ const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10 MB
 
 
 interface Settings {
-  captureDepartmentId: string | null;
   defaultCoverKey: string | null;
   sequenceTemplate: string[];
 }
 
 export default function AudioSettingsClient({
   settings,
-  departments,
   coverPreviewUrl,
 }: {
   settings: Settings;
-  departments: { id: string; label: string }[];
   coverPreviewUrl: string | null;
 }) {
-  const [captureDepartmentId, setCaptureDepartmentId] = useState(settings.captureDepartmentId ?? "");
   const [defaultCoverKey, setDefaultCoverKey] = useState(settings.defaultCoverKey ?? "");
   const [coverPreview, setCoverPreview] = useState(coverPreviewUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -100,7 +95,6 @@ export default function AudioSettingsClient({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          captureDepartmentId: captureDepartmentId || null,
           defaultCoverKey: defaultCoverKey.trim() || null,
           sequenceTemplate,
         }),
@@ -119,17 +113,6 @@ export default function AudioSettingsClient({
 
   return (
     <div className="max-w-xl space-y-4">
-      <Select
-        label="Département de captation"
-        value={captureDepartmentId}
-        onChange={(e) => setCaptureDepartmentId(e.target.value)}
-        placeholder="Aucun (module inactif)"
-        options={departments.map((d) => ({ value: d.id, label: d.label }))}
-      />
-      <p className="text-xs text-gray-500 -mt-2">
-        Tout membre de ce département peut déposer, nommer et publier les cultes audio, quel que soit son rôle.
-      </p>
-
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">Couverture par défaut</label>
         {coverPreview && (

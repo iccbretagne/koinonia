@@ -9,16 +9,18 @@ async function defaultDb(): Promise<DbClient> {
 }
 
 /**
- * Département de captation configuré pour l'église (D7 — jamais codé en dur).
+ * Département de captation audio configuré pour l'église (D7 — jamais codé en dur) — porté par
+ * la fonction de département `CAPTATION_AUDIO`, au même titre que Secrétariat, Communication…
+ * (spec 021, ramené dans le mécanisme commun des fonctions de département).
  * `null` si le module n'a pas encore été configuré.
  */
 export async function getCaptureDepartmentId(churchId: string, db?: DbClient): Promise<string | null> {
   db ??= await defaultDb();
-  const settings = await db.audioSettings.findUnique({
-    where: { churchId },
-    select: { captureDepartmentId: true },
+  const department = await db.department.findFirst({
+    where: { function: "CAPTATION_AUDIO", ministry: { churchId } },
+    select: { id: true },
   });
-  return settings?.captureDepartmentId ?? null;
+  return department?.id ?? null;
 }
 
 /**

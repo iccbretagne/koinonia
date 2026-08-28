@@ -72,6 +72,14 @@ async function wipe() {
   await prisma.request.deleteMany();
   await prisma.eventReportSection.deleteMany();
   await prisma.eventReport.deleteMany();
+  await prisma.audioShareToken.deleteMany();
+  await prisma.audioRendition.deleteMany();
+  await prisma.audioSegment.deleteMany();
+  await prisma.audioJob.deleteMany();
+  await prisma.audioSource.deleteMany();
+  await prisma.audioService.deleteMany();
+  await prisma.audioServiceTemplate.deleteMany();
+  await prisma.audioSettings.deleteMany();
   await prisma.eventDepartment.deleteMany();
   await prisma.event.deleteMany();
   await prisma.memberUserLink.deleteMany();
@@ -291,6 +299,82 @@ async function main() {
     },
   });
   console.log(`${events.length + 2} événements créés`);
+
+  // ── Audio (bibliothèque d'écoute, spec 021) ──────────────────────────────
+  // Départements/orateurs/types différents pour que les filtres de la bibliothèque aient
+  // matière à démontrer quelque chose. Les clés S3 sont fictives : sans MinIO configuré en
+  // local, la lecture échoue au streaming — la liste, les filtres et la fiche restent
+  // consultables, ce qui suffit à travailler l'UI de la bibliothèque.
+  const pastEvents = events.filter((e) => e.isPast);
+  const audioServiceDefs = [
+    {
+      planningEvent: pastEvents[0],
+      title: "Vivre dans la victoire",
+      speaker: "Pasteur Le Gall",
+      type: "CULTE",
+      serviceDate: daysFrom(TODAY, -42),
+      segments: ["Louange", "Prédication", "Sainte Cène"],
+    },
+    {
+      planningEvent: pastEvents[2],
+      title: "Marcher par la foi",
+      speaker: "Pasteur Morvan",
+      type: "CULTE",
+      serviceDate: daysFrom(TODAY, -28),
+      segments: ["Louange", "Prédication"],
+    },
+    {
+      planningEvent: null,
+      title: "Soirée de formation des serviteurs",
+      speaker: "Évangéliste Riou",
+      type: "FORMATION",
+      serviceDate: daysFrom(TODAY, -14),
+      segments: ["Enseignement", "Questions/réponses"],
+    },
+  ];
+
+  let audioSegmentCount = 0;
+  for (const def of audioServiceDefs) {
+    const service = await prisma.audioService.create({
+      data: {
+        churchId: churchByKey[mainChurchKey].id,
+        planningEventId: def.planningEvent?.id ?? null,
+        serviceDate: def.serviceDate,
+        title: def.title,
+        speaker: def.speaker,
+        type: def.type,
+        status: "PUBLISHED",
+        publishedAt: def.serviceDate,
+      },
+    });
+
+    for (let i = 0; i < def.segments.length; i++) {
+      const segment = await prisma.audioSegment.create({
+        data: {
+          serviceId: service.id,
+          order: i,
+          kind: "SEQUENCE",
+          title: def.segments[i],
+          startMs: 0,
+          endMs: 0,
+          detectedBy: "manual",
+        },
+      });
+      const durationMs = faker.number.int({ min: 8, max: 45 }) * 60_000; // 8 à 45 minutes
+      await prisma.audioRendition.create({
+        data: {
+          segmentId: segment.id,
+          s3Key: `dev-seed/audio/${service.id}/${segment.id}.mp3`,
+          durationMs,
+          lufs: -16,
+          truePeakDb: -1.5,
+          sourceHash: `dev-seed-${segment.id}`,
+        },
+      });
+      audioSegmentCount++;
+    }
+  }
+  console.log(`${audioServiceDefs.length} cultes audio publiés créés (${audioSegmentCount} séquences)`);
 
   // ── Absences (+ backup) ─────────────────────────────────────────────────
   const accueilMembers = membersByDeptKey["accueil"];

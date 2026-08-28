@@ -1,7 +1,7 @@
 # Spec — Bibliothèque d'écoute des cultes
 
 - **Numéro** : 021
-- **Statut** : En revue *(questions ouvertes tranchées — prête pour `/plan`)*
+- **Statut** : Implémentée
 - **Créée le** : 2026-08-26
 - **Branche suggérée** : `feat/audio-bibliotheque-ecoute`
 

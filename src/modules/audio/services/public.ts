@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import type { AudioSegment, AudioRendition, Prisma } from "@/generated/prisma/client";
 import { getSignedStreamUrl } from "@/modules/storage";
 
 type DbClient = Prisma.TransactionClient;
@@ -31,6 +31,41 @@ export type PublicAudioResolution =
   | { status: "OK"; data: PublicAudioService };
 
 /**
+ * Mapping des segments rendus, partagé entre la page publique et la bibliothèque interne
+ * (spec 021) — pour que les deux vues ne puissent pas diverger. Seuls les segments dont le
+ * rendu est terminé sont exposés à l'écoute.
+ */
+export function mapPublishedSegments(
+  segments: (AudioSegment & { rendition: AudioRendition | null })[]
+): PublicAudioSegment[] {
+  return segments
+    .filter((s) => s.rendition)
+    .map((s) => ({ id: s.id, title: s.title, order: s.order, durationMs: s.rendition!.durationMs }));
+}
+
+/**
+ * Résout la couverture effective d'un culte — celle du culte si définie, sinon la couverture
+ * par défaut de l'église. Partagé entre la page publique et la bibliothèque interne.
+ */
+export async function resolveEffectiveCoverUrl(
+  coverKey: string | null,
+  churchId: string,
+  db: DbClient
+): Promise<string | null> {
+  const effectiveCoverKey =
+    coverKey ??
+    (
+      await db.audioSettings.findUnique({
+        where: { churchId },
+        select: { defaultCoverKey: true },
+      })
+    )?.defaultCoverKey ??
+    null;
+
+  return effectiveCoverKey ? await getSignedStreamUrl(effectiveCoverKey) : null;
+}
+
+/**
  * Résout un token de partage public — distingue un token inexistant (404 générique) d'un lien
  * révoqué ou d'un culte dépublié (réponse dédiée, spec §3 « message compréhensible »).
  * Incrémente `openCount` une seule fois côté appelant HTTP — pas ici, pour rester un pur
@@ -56,27 +91,15 @@ export async function resolvePublicAudioService(token: string, db?: DbClient): P
   if (!service) return { status: "NOT_FOUND" };
   if (service.status !== "PUBLISHED") return { status: "UNAVAILABLE" };
 
-  const effectiveCoverKey =
-    service.coverKey ??
-    (
-      await db.audioSettings.findUnique({
-        where: { churchId: service.churchId },
-        select: { defaultCoverKey: true },
-      })
-    )?.defaultCoverKey ??
-    null;
-
   return {
     status: "OK",
     data: {
       title: service.title,
       serviceDate: service.serviceDate,
       speaker: service.speaker,
-      coverUrl: effectiveCoverKey ? await getSignedStreamUrl(effectiveCoverKey) : null,
+      coverUrl: await resolveEffectiveCoverUrl(service.coverKey, service.churchId, db),
       planningEventId: service.planningEventId,
-      segments: service.segments
-        .filter((s) => s.rendition)
-        .map((s) => ({ id: s.id, title: s.title, order: s.order, durationMs: s.rendition!.durationMs })),
+      segments: mapPublishedSegments(service.segments),
     },
   };
 }

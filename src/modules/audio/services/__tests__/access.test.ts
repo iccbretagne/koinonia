@@ -19,28 +19,41 @@ const { requireAudioAccess, requireAudioUnpublishAccess } = await import("@/lib/
 const churchId = "church-1";
 const captureDepartmentId = "dept-son";
 
+function mockCaptureDepartment(id: string | null) {
+  prismaMock.department.findFirst.mockResolvedValue(id ? ({ id } as never) : null);
+}
+
 describe("getCaptureDepartmentId / isCaptureTeamMember", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("null si le module n'est pas configuré pour cette église", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue(null);
+    mockCaptureDepartment(null);
     expect(await getCaptureDepartmentId(churchId)).toBeNull();
     expect(await isCaptureTeamMember(churchId, ["dept-x"])).toBe(false);
   });
 
+  it("lit le département via la fonction CAPTATION_AUDIO, pas via AudioSettings", async () => {
+    mockCaptureDepartment(captureDepartmentId);
+    expect(await getCaptureDepartmentId(churchId)).toBe(captureDepartmentId);
+    expect(prismaMock.department.findFirst).toHaveBeenCalledWith({
+      where: { function: "CAPTATION_AUDIO", ministry: { churchId } },
+      select: { id: true },
+    });
+  });
+
   it("faux si aucun des départements de l'utilisateur ne correspond", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     expect(await isCaptureTeamMember(churchId, ["dept-autre"])).toBe(false);
   });
 
   it("vrai si un des départements est le département de captation, quel que soit le rôle", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     expect(await isCaptureTeamMember(churchId, ["dept-autre", captureDepartmentId])).toBe(true);
   });
 
   it("faux immédiatement si l'utilisateur n'a aucun département (pas de requête inutile)", async () => {
     expect(await isCaptureTeamMember(churchId, [])).toBe(false);
-    expect(prismaMock.audioSettings.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
   });
 });
 
@@ -48,7 +61,7 @@ describe("isCaptureTeamLead", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("faux pour un STAR du département de captation (pas responsable)", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     const session = createSession({
       churchRoles: [
         {
@@ -65,7 +78,7 @@ describe("isCaptureTeamLead", () => {
   });
 
   it("vrai pour un DEPARTMENT_HEAD du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     const session = createSession({
       churchRoles: [
         {
@@ -82,7 +95,7 @@ describe("isCaptureTeamLead", () => {
   });
 
   it("vrai pour un MINISTER du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     const session = createSession({
       churchRoles: [
         {
@@ -99,7 +112,7 @@ describe("isCaptureTeamLead", () => {
   });
 
   it("faux pour un DEPARTMENT_HEAD d'un autre département", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     const session = createSession({
       churchRoles: [
         {
@@ -127,11 +140,11 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
     const session = await requireAudioAccess("audio:view", churchId);
     expect(session.user.id).toBe("user-1");
     // ADMIN a la permission de rôle — pas besoin d'interroger le département de captation
-    expect(prismaMock.audioSettings.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
   });
 
   it("passe pour un membre du département de captation sans permission de rôle (STAR)", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     mockAuth.mockResolvedValue(
       createSession({
         churchRoles: [
@@ -152,7 +165,7 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
   });
 
   it("rejette un STAR sans permission de rôle et hors du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     mockAuth.mockResolvedValue(
       createSession({
         churchRoles: [
@@ -178,7 +191,7 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
   });
 
   it("unpublish : refuse un STAR du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     mockAuth.mockResolvedValue(
       createSession({
         churchRoles: [
@@ -198,7 +211,7 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
   });
 
   it("unpublish : accepte un DEPARTMENT_HEAD du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     mockAuth.mockResolvedValue(
       createSession({
         churchRoles: [
@@ -219,7 +232,7 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
   });
 
   it("unpublish : accepte un MINISTER du département de captation", async () => {
-    prismaMock.audioSettings.findUnique.mockResolvedValue({ captureDepartmentId } as never);
+    mockCaptureDepartment(captureDepartmentId);
     mockAuth.mockResolvedValue(
       createSession({
         churchRoles: [
@@ -244,6 +257,6 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", (
 
     const session = await requireAudioUnpublishAccess(churchId);
     expect(session.user.id).toBe("user-1");
-    expect(prismaMock.audioSettings.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
   });
 });

@@ -66,7 +66,7 @@ koinonia/
 │   │   │   └── services/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
 │   │   ├── discipleship/index.ts # Manifeste : discipleship:view/manage/export
-│   │   └── audio/               # Publication audio des cultes (ADR-0007)
+│   │   └── audio/               # Publication (ADR-0007) + bibliotheque d'ecoute (spec 021)
 │   │       ├── index.ts         # Manifeste : audio:view/upload/review/manage
 │   │       ├── services/        # Depot, sequences, publication, tokens, acces
 │   │       └── worker/          # Process hors Next.js (runner + handlers probe/render)
@@ -90,7 +90,10 @@ koinonia/
 │   │   │   │   └── requests/    # Dashboard Production Media (VISUEL) — traitement uniquement
 │   │   │   ├── communication/
 │   │   │   │   └── requests/    # Dashboard Communication (RESEAUX_SOCIAUX)
-│   │   │   ├── audio/           # File d'attente des cultes + depot/nommage ([id])
+│   │   │   ├── audio/           # Espace a onglets (spec 021), layout calcule les droits une fois
+│   │   │   │   ├── ecouter/     # Onglet (re)Écouter — bibliotheque des cultes publies ([id])
+│   │   │   │   ├── production/  # Onglet Production — file d'attente + depot/nommage ([id])
+│   │   │   │   └── parametres/  # Onglet Paramètres — couverture par defaut, modele de sequences
 │   │   │   ├── guide/           # Guide utilisateur par role
 │   │   │   └── admin/           # Section administration
 │   │   │       ├── layout.tsx   # Guard acces eglise (requireAuth + requireChurchAccess)
@@ -110,7 +113,7 @@ koinonia/
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
 │   │       ├── requests/        # GET/POST + [id] GET/PATCH/DELETE (unifie)
-│   │       ├── audio/           # services (depot, sequences, publish/unpublish) + public/[token]
+│   │       ├── audio/           # services (depot, sequences, publish/unpublish, listen) + public/[token]
 │   │       ├── churches/
 │   │       ├── departments/
 │   │       ├── discipleships/   # CRUD, attendance, stats, tree, export
@@ -259,6 +262,7 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 | `discipleship:export` | x | | x | | | | |
 | `reports:view` | x | x | x | | | | x |
 | `reports:edit` | x | x | x | | | | x |
+| `audio:listen` | x | x | x | x | x | x | x |
 | `audio:view` | x | x | x | | | | |
 | `audio:upload` | x | x | x | | | | |
 | `audio:review` | x | x | | | | | |
@@ -283,13 +287,25 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Pas d'accès au planning, membres, ou administration
 
 **Spécificités du module audio** — le tableau ci-dessus ne suffit pas :
+- `/audio` est un espace a onglets a droits distincts (spec 021), un seul lien de navigation
+  **« Audio »** conditionne par `audio:listen` — chaque onglet verifie en plus son propre droit
+  server-side (l'onglet masque ne dispense jamais du controle) :
+  - `/audio/ecouter` (+ `/audio/ecouter/[id]`) — **(re)Écouter**, bibliotheque des cultes publies,
+    `audio:listen` — accordee a **tous les roles**, y compris STAR
+  - `/audio/production` (+ `/audio/production/[id]`) — **Production**, file d'attente et
+    depot/nommage, `requireAudioAccess("audio:view", …)`
+  - `/audio/parametres` — **Paramètres**, couverture par defaut et modele de sequences,
+    `requireAudioAccess("audio:manage", …)`
 - `requireAudioAccess(permission, churchId)` verifie d'abord les permissions de role, puis
-  retombe sur `isCaptureTeamMember()` — un STAR du departement de captation configure passe
+  retombe sur `isCaptureTeamMember()` — un STAR du departement de captation audio passe
   donc le controle **quelle que soit la permission demandee**, sans role dedie
 - `requireAudioUnpublishAccess(churchId)` est volontairement plus strict : `audio:manage` ou
-  `isCaptureTeamLead` (responsable/ministre du departement de captation) uniquement — pas de
-  passe-droit pour un simple STAR, depublier engageant plus que publier
-- Le departement de captation se configure dans `/admin/audio/settings` (`audio:manage`)
+  `isCaptureTeamLead` (responsable/ministre du departement de captation audio) uniquement — pas
+  de passe-droit pour un simple STAR, depublier engageant plus que publier
+- Le departement de captation se configure comme une **fonction de departement**
+  (`Department.function = "CAPTATION_AUDIO"`) dans `/admin/departments/functions`
+  (`events:manage`) — plus de colonne dediee sur `AudioSettings`, et plus de page
+  `/admin/audio/settings` (jamais mise en production, supprimee sans redirection)
 
 ## Multi-tenant
 
