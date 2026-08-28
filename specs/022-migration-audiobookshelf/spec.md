@@ -1,7 +1,7 @@
 # Spec — Migration des cultes Audiobookshelf vers la bibliothèque d'écoute
 
 - **Numéro** : 022
-- **Statut** : Brouillon
+- **Statut** : Implémentée (script + tests unitaires) — critères d'acceptation à cocher lors de la passe recette (T38-T39)
 - **Créée le** : 2026-08-28
 - **Branche suggérée** : `feat/migration-audiobookshelf`
 

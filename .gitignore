@@ -34,3 +34,6 @@ uploads/
 
 # graphify (graphe de connaissance généré localement)
 graphify-out/
+
+# Ledger local du script de migration Audiobookshelf (état d'exécution, jamais versionné)
+prisma/scripts/migrate-audiobookshelf/.ledger.jsonl
