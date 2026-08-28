@@ -20,6 +20,7 @@ export interface ListPublishedServicesInput {
   q?: string;
   speaker?: string;
   type?: string;
+  series?: string;
   from?: Date;
   to?: Date;
   sort?: LibrarySort;
@@ -30,6 +31,7 @@ export interface LibraryServiceSummary {
   title: string | null;
   serviceDate: Date;
   speaker: string | null;
+  series: string | null;
   type: string;
   segmentCount: number;
   totalDurationMs: number;
@@ -65,6 +67,7 @@ export async function listPublishedServices(
     status: "PUBLISHED",
     ...(input.speaker ? { speaker: input.speaker } : {}),
     ...(input.type ? { type: input.type } : {}),
+    ...(input.series ? { series: input.series } : {}),
     ...(input.q ? { title: { contains: input.q } } : {}),
     ...(input.from || input.to
       ? {
@@ -94,12 +97,27 @@ export async function listPublishedServices(
       title: s.title,
       serviceDate: s.serviceDate,
       speaker: s.speaker,
+      series: s.series,
       type: s.type,
       segmentCount: renderedSegments.length,
       totalDurationMs: renderedSegments.reduce((sum, seg) => sum + (seg.rendition?.durationMs ?? 0), 0),
       segmentIds: renderedSegments.map((seg) => seg.id),
     };
   });
+}
+
+/** Séries distinctes renseignées parmi les cultes publiés — pour le filtre « Série ». */
+export async function listSeries(churchId: string, db?: DbClient): Promise<string[]> {
+  db ??= await defaultDb();
+
+  const rows = await db.audioService.findMany({
+    where: { churchId, status: "PUBLISHED", series: { not: null } },
+    select: { series: true },
+    distinct: ["series"],
+    orderBy: { series: "asc" },
+  });
+
+  return rows.map((r) => r.series).filter((s): s is string => s !== null);
 }
 
 /** Orateurs distincts renseignés parmi les cultes publiés — pour un choix plutôt qu'une saisie libre. */

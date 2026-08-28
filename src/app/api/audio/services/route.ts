@@ -16,6 +16,7 @@ const createSchema = z.object({
   serviceDate: z.string().datetime().optional(),
   title: z.string().optional(),
   speaker: z.string().optional(),
+  series: z.string().min(1).optional(),
   // Même contrainte que Event.type : EVENT_TYPES est une contrainte d'interface, pas serveur.
   type: z.string().min(1).optional(),
 });
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       serviceDate: body.serviceDate ? new Date(body.serviceDate) : undefined,
       title: body.title,
       speaker: body.speaker,
+      series: body.series,
       type: body.type,
     });
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import Link from "next/link";
 import { requireAuth, requirePermission, getCurrentChurchId } from "@/lib/auth";
-import { listPublishedServices, listSpeakers } from "@/modules/audio";
+import { listPublishedServices, listSpeakers, listSeries } from "@/modules/audio";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import LibraryFiltersClient from "./LibraryFiltersClient";
 import ResumeBanner from "./ResumeBanner";
@@ -10,6 +10,7 @@ import Button from "@/components/ui/Button";
 const searchParamsSchema = z.object({
   q: z.string().trim().min(1).optional().catch(undefined),
   speaker: z.string().trim().min(1).optional().catch(undefined),
+  series: z.string().trim().min(1).optional().catch(undefined),
   type: z.string().trim().min(1).optional().catch(undefined),
   from: z.string().trim().min(1).optional().catch(undefined),
   to: z.string().trim().min(1).optional().catch(undefined),
@@ -40,19 +41,21 @@ export default async function AudioLibraryPage({
   );
   const filters = parsed.success ? parsed.data : {};
 
-  const hasActiveFilters = Boolean(filters.q || filters.speaker || filters.type || filters.from || filters.to);
+  const hasActiveFilters = Boolean(filters.q || filters.speaker || filters.series || filters.type || filters.from || filters.to);
 
-  const [services, speakers] = await Promise.all([
+  const [services, speakers, series] = await Promise.all([
     listPublishedServices({
       churchId,
       q: filters.q,
       speaker: filters.speaker,
+      series: filters.series,
       type: filters.type,
       from: filters.from ? new Date(filters.from) : undefined,
       to: filters.to ? new Date(filters.to) : undefined,
       sort: filters.sort,
     }),
     listSpeakers(churchId),
+    listSeries(churchId),
   ]);
 
   return (
@@ -61,10 +64,12 @@ export default async function AudioLibraryPage({
 
       <LibraryFiltersClient
         speakers={speakers}
+        seriesOptions={series}
         typeOptions={EVENT_TYPE_OPTIONS}
         current={{
           q: filters.q ?? "",
           speaker: filters.speaker ?? "",
+          series: filters.series ?? "",
           type: filters.type ?? "",
           from: filters.from ?? "",
           to: filters.to ?? "",
@@ -114,6 +119,9 @@ export default async function AudioLibraryPage({
                   {s.title || "Enregistrement du culte"}
                 </p>
                 {s.speaker && <p className="text-sm text-gray-500 mb-2">{s.speaker}</p>}
+                {s.series && (
+                  <p className="text-xs text-icc-violet mb-2">Série : {s.series}</p>
+                )}
                 <p className="text-xs text-gray-400">
                   {s.segmentCount} séquence{s.segmentCount > 1 ? "s" : ""} · {formatDuration(s.totalDurationMs)}
                 </p>

@@ -21,6 +21,7 @@ const updateSchema = z.object({
   serviceDate: z.string().datetime().optional(),
   planningEventId: z.string().nullable().optional(),
   coverKey: z.string().nullable().optional(),
+  series: z.string().min(1).nullable().optional(),
   // Même contrainte que Event.type (src/app/api/events/route.ts) : EVENT_TYPES est une
   // contrainte d'interface (le Select), pas une contrainte serveur.
   type: z.string().min(1).optional(),

@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 interface Filters {
   q: string;
   speaker: string;
+  series: string;
   type: string;
   from: string;
   to: string;
@@ -25,10 +26,12 @@ const DEBOUNCE_MS = 300;
 
 export default function LibraryFiltersClient({
   speakers,
+  seriesOptions,
   typeOptions,
   current,
 }: {
   speakers: string[];
+  seriesOptions: string[];
   typeOptions: { value: string; label: string }[];
   current: Filters;
 }) {
@@ -39,7 +42,7 @@ export default function LibraryFiltersClient({
   const [mobileOpen, setMobileOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activeCount = [current.q, current.speaker, current.type, current.from, current.to].filter(Boolean).length;
+  const activeCount = [current.q, current.speaker, current.series, current.type, current.from, current.to].filter(Boolean).length;
 
   function pushParams(next: Partial<Filters>) {
     const merged: Filters = { ...current, q, ...next };
@@ -65,6 +68,7 @@ export default function LibraryFiltersClient({
   }, [q]);
 
   const speakerOptions = useMemo(() => speakers.map((s) => ({ value: s, label: s })), [speakers]);
+  const seriesSelectOptions = useMemo(() => seriesOptions.map((s) => ({ value: s, label: s })), [seriesOptions]);
 
   return (
     <div className="mb-4">
@@ -74,7 +78,7 @@ export default function LibraryFiltersClient({
         </Button>
       </div>
 
-      <div className={`${mobileOpen ? "grid" : "hidden"} md:grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 mb-2`}>
+      <div className={`${mobileOpen ? "grid" : "hidden"} md:grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 mb-2`}>
         <Input
           label="Recherche"
           placeholder="Titre du culte…"
@@ -87,6 +91,13 @@ export default function LibraryFiltersClient({
           options={speakerOptions}
           value={current.speaker}
           onChange={(e) => pushParams({ speaker: e.target.value })}
+        />
+        <Select
+          label="Série"
+          placeholder="Toutes"
+          options={seriesSelectOptions}
+          value={current.series}
+          onChange={(e) => pushParams({ series: e.target.value })}
         />
         <Select
           label="Type"

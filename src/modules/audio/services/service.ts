@@ -33,6 +33,7 @@ export interface CreateAudioServiceInput {
   serviceDate?: Date;
   title?: string;
   speaker?: string;
+  series?: string;
   type?: string;
 }
 
@@ -89,6 +90,7 @@ export async function createAudioService(
       serviceDate,
       title: input.title,
       speaker: input.speaker,
+      series: input.series,
       type: eventType ?? input.type,
       status: "DRAFT",
     },
@@ -98,6 +100,7 @@ export async function createAudioService(
 export interface UpdateAudioServiceInput {
   title?: string | null;
   speaker?: string;
+  series?: string | null;
   serviceDate?: Date;
   planningEventId?: string | null;
   coverKey?: string | null;
@@ -148,6 +151,7 @@ export async function updateAudioService(
     data: {
       title: input.title,
       speaker: input.speaker,
+      series: input.series,
       serviceDate: input.serviceDate,
       planningEventId: input.planningEventId,
       coverKey: input.coverKey,
