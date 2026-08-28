@@ -243,8 +243,9 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
   `PUBLISHED`. À vérifier avant de lancer. Le rendu de ~350–450 séquences =
   ~12–24 h cumulées (1 job à la fois) → lancer en heure creuse, laisser tourner.
 - **Charge S3 / disque** : ~8,2 Go de sources + ~8 Go de renditions +
-  pré-chauffage du cache disque des renditions (ADR-0008). Vérifier l'espace du
-  bucket de prod et du volume de cache avant la passe prod.
+  pré-chauffage du cache disque des renditions (ADR-0008). Espace bucket prod
+  confirmé suffisant par le mainteneur — reste à surveiller le volume de cache
+  disque des renditions.
 - **Pistes prédication fusionnées** (`"Prédication & Offrandes"`,
   `"Prédication & Offrandes.mp3"`) : `isPredicationTrack` renvoie `false` → pas
   de substitution, la piste est importée telle quelle sous son nom d'origine.
@@ -314,6 +315,6 @@ vérifié par la **passe recette** :
    Attendre la fin des `RENDER`. Vérifier `/audio/ecouter`.
 2. **Corrections** éventuelles des règles de parsing / arbitrages, nouveau
    `--dry-run`.
-3. **Prod** : vérifier l'espace bucket + cache, copier les fichiers ABS
+3. **Prod** : copier les fichiers ABS
    (lecture seule côté `/var/lib/audiobookshelf`), lancer en heure creuse,
    surveiller `audio_jobs`, vérifier, puis arrêter Audiobookshelf.
