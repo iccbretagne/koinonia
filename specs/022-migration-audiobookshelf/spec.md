@@ -130,8 +130,12 @@ aucune bascule d'import automatique n'est demandé.
       migré.
 - [ ] Pour un culte ayant une prédication datée correspondante dans la
       bibliothèque « predications », la séquence « prédication » est **le fichier
-      de cette bibliothèque**, et le culte affiche l'**orateur** et le **titre du
-      message** issus de ses métadonnées.
+      de cette bibliothèque**, et le culte affiche l'**orateur**, le **titre du
+      message** et, s'il y en a une, la **série** issus de ses métadonnées.
+- [ ] La **série** reprise est le nom du dossier de podcast d'origine ; le
+      rangement par défaut « Prédications indépendantes » n'est pas traité comme
+      une série (aucune série affichée). La série est visible en fiche Production
+      et dans « (re)Écouter », et filtrable dans les deux vues.
 - [ ] Pour une journée à deux cultes avec deux prédications datées, la
       prédication du matin est sur le premier culte et celle de midi sur le
       second.
@@ -155,8 +159,9 @@ aucune bascule d'import automatique n'est demandé.
   une migration unique, pas un pont permanent.
 - **Bibliothèque « books »** d'Audiobookshelf (vide) et toute autre bibliothèque
   que « cultes » et « predications ».
-- **Notion de série de messages** : la bibliothèque « predications » regroupe des
-  prédications en séries ; Koinonia n'a pas ce concept et ne l'introduit pas ici.
+- **Regroupement / navigation par série** : la série est reprise comme simple
+  libellé sur le culte (stocké, affiché, filtrable). Aucune page « série », aucun
+  tri hiérarchique, aucune gestion de l'ordre des messages dans une série.
 - **Couvertures (visuels) par culte** : les images d'Audiobookshelf ne sont pas
   reprises ; les cultes migrés utilisent la couverture par défaut de l'église.
 - **Rattachement à un événement de planning** : les cultes migrés ne sont pas

@@ -1880,6 +1880,7 @@ model AudioService {
   serviceDate     DateTime // saisie si pas de planningEventId
   title           String?
   speaker         String?
+  series          String?            // nom de la série / podcast d'origine (import Audiobookshelf, spec 022) — null hors série
   type            String             @default("AUTRE") // nomenclature @/lib/event-types (EVENT_TYPES) — recopiée depuis Event.type au dépôt/rattachement, saisie sinon
   coverKey        String?            @db.VarChar(512) // override, sinon AudioSettings.defaultCoverKey
   status          AudioServiceStatus @default(DRAFT)

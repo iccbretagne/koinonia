@@ -203,6 +203,7 @@ describe("matchPredication", () => {
     sizeBytes: 1,
     artist: "Pasteur X",
     id3Title: "La loi de la semence",
+    series: "Les paraboles",
   });
 
   it("1 culte / 1 prédication", () => {
@@ -263,6 +264,7 @@ describe("buildManifest", () => {
         sizeBytes: 5000,
         artist: "Pasteure Armelle Essoualla",
         id3Title: "Qui es-tu ?",
+        series: "Identité",
       },
       {
         date: "2025-02-09",
@@ -272,6 +274,7 @@ describe("buildManifest", () => {
         sizeBytes: 5200,
         artist: "Pasteure Armelle Essoualla",
         id3Title: "Qui es-tu ?",
+        series: null,
       },
     ],
   };
@@ -311,6 +314,8 @@ describe("buildManifest", () => {
     const c2 = manifest.cultes.find((x) => x.folder === "Culte 2 du 09 02 2025")!;
     expect(c1.speaker).toBe("Pasteure Armelle Essoualla");
     expect(c1.title).toBe("Qui es-tu ?");
+    expect(c1.series).toBe("Identité");
+    expect(c2.series).toBeNull();
     const pred1 = c1.sequences.find((s) => s.isPredication)!;
     expect(pred1.fromPredicationsLibrary).toBe(true);
     expect(pred1.filePath).toContain("10h00");
@@ -321,6 +326,7 @@ describe("buildManifest", () => {
   it("culte 2024 sans prédication appariée : orateur vide, titre = libellé du dossier", () => {
     const c = manifest.cultes.find((x) => x.folder === "Culte du 08 09 2024")!;
     expect(c.speaker).toBeNull();
+    expect(c.series).toBeNull();
     expect(c.title).toBe("Culte");
     expect(manifest.report.cultesWithoutPredication).toContain("Culte du 08 09 2024");
   });

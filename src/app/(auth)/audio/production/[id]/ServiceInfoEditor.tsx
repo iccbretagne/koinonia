@@ -18,6 +18,7 @@ export interface ServiceInfo {
   id: string;
   title: string | null;
   speaker: string | null;
+  series: string | null;
   serviceDate: string;
   type: string;
   planningEventId: string | null;
@@ -31,6 +32,7 @@ export default function ServiceInfoEditor({ service }: { service: ServiceInfo })
   const [eventId, setEventId] = useState(service.planningEventId ?? "");
   const [title, setTitle] = useState(service.title ?? "");
   const [speaker, setSpeaker] = useState(service.speaker ?? "");
+  const [series, setSeries] = useState(service.series ?? "");
   const [type, setType] = useState(service.type);
   const [dayEvents, setDayEvents] = useState<DayEvent[]>([]);
   const [saving, setSaving] = useState(false);
@@ -71,6 +73,7 @@ export default function ServiceInfoEditor({ service }: { service: ServiceInfo })
         body: JSON.stringify({
           title: title.trim() || null,
           speaker: speaker.trim() || undefined,
+          series: series.trim() || null,
           serviceDate: new Date(date).toISOString(),
           planningEventId: eventId || null,
           type: linkedToEvent ? undefined : type || undefined,
@@ -107,6 +110,7 @@ export default function ServiceInfoEditor({ service }: { service: ServiceInfo })
           {" · "}
           {getEventTypeLabel(service.type)}
           {service.speaker && <span> · {service.speaker}</span>}
+          {service.series && <span> · Série : {service.series}</span>}
           {service.planningEventTitle && <span> · {service.planningEventTitle}</span>}
         </p>
       </div>
@@ -144,6 +148,7 @@ export default function ServiceInfoEditor({ service }: { service: ServiceInfo })
       />
       <Input label="Titre du message" value={title} onChange={(e) => setTitle(e.target.value)} />
       <Input label="Orateur" value={speaker} onChange={(e) => setSpeaker(e.target.value)} />
+      <Input label="Série" value={series} onChange={(e) => setSeries(e.target.value)} placeholder="Nom du podcast / de la série" />
       <div className="flex gap-2">
         <Button onClick={save} disabled={saving}>
           {saving ? "Enregistrement..." : "Enregistrer"}

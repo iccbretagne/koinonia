@@ -17,8 +17,10 @@ Pour chaque dossier `cultes/<Culte du JJ MM AAAA>/` :
    l'ordre d'origine** malgré le retrait du préfixe numérique ;
 3. si une prédication de même date existe dans `predications/`
    (`AAAA-MM-JJ_HHhMM_Titre.mp3`), la séquence « Prédication » utilise **ce**
-   fichier (ID3 plus riche) et le culte en tire son `speaker` (ID3 `artist`) et
-   son titre (ID3 `title`). Journée à deux cultes → appariement par heure ;
+   fichier (ID3 plus riche) et le culte en tire son `speaker` (ID3 `artist`), son
+   titre (ID3 `title`) et sa `series` (dossier podcast de 1er niveau sous
+   `predications/` ; « Prédications indépendantes » = rangement par défaut, pas
+   une série → `series` vide). Journée à deux cultes → appariement par heure ;
 4. crée le `AudioService` via `@/modules/audio` (`createAudioService` →
    dépôt S3 des sources + `ffprobe` → `applySequences` → `publishAudioService`) ;
 5. inscrit le dossier au **ledger** local (`.ledger.jsonl`) pour l'idempotence.
@@ -42,19 +44,23 @@ les dépendances de dev (`tsx` inclus). Sur la VM (recette ou prod), à côté d
 déploiement, ou depuis un poste ayant accès à la base + au bucket S3 de la cible
 et aux fichiers audio en local :
 
+L'environnement (`DATABASE_URL`, `MEDIA_S3_*`) est celui de la **cible**.
+`prisma.config.ts` fait `import "dotenv/config"` et résout `DATABASE_URL` **au
+chargement** : l'env doit donc être en place **avant** `npx prisma generate`, pas
+seulement avant le script. Le plus simple : copier le `.env` de la cible dans le
+checkout (Prisma et le script le chargent automatiquement). Sinon, exporter
+`DOTENV_CONFIG_PATH` dans chaque shell.
+
 ```bash
 git clone https://github.com/iccbretagne/koinonia.git /tmp/koinonia-migration
 cd /tmp/koinonia-migration
 git checkout "$(cat /opt/koinonia/current/package.json | node -pe 'JSON.parse(require("fs").readFileSync(0)).version' | sed 's/^/v/')"  # même version que la prod
+
+cp /opt/koinonia/shared/.env .env   # env de la cible — AVANT prisma generate
+# variante sans copie : export DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env
+
 npm ci                     # dépendances de dev incluses (tsx)
-npx prisma generate        # client Prisma dans src/generated/
-```
-
-L'environnement (`DATABASE_URL`, `MEDIA_S3_*`) est celui de la **cible**. Le plus
-simple : pointer le `.env` de la cible sans le copier —
-
-```bash
-export DOTENV_CONFIG_PATH=/opt/koinonia/shared/.env   # honoré par `import "dotenv/config"`
+npx prisma generate        # client Prisma dans src/generated/ (lit .env)
 ```
 
 ## Pré-requis

@@ -13,13 +13,24 @@ import { parsePredicationFile } from "./parse";
 import { readId3 } from "./probe";
 import type { Scan, ScanCulte, ScanPredication } from "./types";
 
-async function readPredicationsDir(dir: string): Promise<ScanPredication[]> {
+/**
+ * Rangement par défaut d'Audiobookshelf : ce n'est pas une série, on n'en garde pas le nom.
+ */
+const NOT_A_SERIES = "Prédications indépendantes";
+
+async function readPredicationsDir(
+  dir: string,
+  series: string | null
+): Promise<ScanPredication[]> {
   const out: ScanPredication[] = [];
   const entries = await readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      out.push(...(await readPredicationsDir(full)));
+      // Le dossier de 1er niveau sous `predications/` porte le nom du podcast / de la série.
+      const childSeries =
+        series ?? (entry.name === NOT_A_SERIES ? null : entry.name);
+      out.push(...(await readPredicationsDir(full, childSeries)));
       continue;
     }
     const parsed = parsePredicationFile(entry.name);
@@ -31,6 +42,7 @@ async function readPredicationsDir(dir: string): Promise<ScanPredication[]> {
       sizeBytes: size.size,
       artist: id3.artist,
       id3Title: id3.title,
+      series,
     });
   }
   return out;
@@ -56,6 +68,6 @@ export async function scanRoot(root: string): Promise<Scan> {
     cultes.push({ folder: entry.name, files });
   }
 
-  const predications = await readPredicationsDir(predicationsDir);
+  const predications = await readPredicationsDir(predicationsDir, null);
   return { cultes, predications };
 }

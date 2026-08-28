@@ -101,6 +101,7 @@ function printReport(manifest: Manifest): void {
     const speaker = c.speaker ? ` — ${c.speaker}` : "";
     console.log(`\n[${c.date}] ${c.title}${speaker}  (${c.folder}, ${c.type})`);
     console.log(`   ${new Date(c.serviceDateUtc).toISOString()}`);
+    if (c.series) console.log(`   Série : ${c.series}`);
     for (const s of c.sequences) {
       const tag = s.fromPredicationsLibrary ? " [predications]" : s.isPredication ? " [prédication]" : "";
       console.log(`   ${s.order}. ${s.title}${tag}  (${formatBytes(s.sizeBytes)})`);
@@ -120,6 +121,7 @@ async function importCulte(
       serviceDate: new Date(culte.serviceDateUtc),
       title: culte.title,
       speaker: culte.speaker ?? undefined,
+      series: culte.series ?? undefined,
       type: culte.type,
     },
     prisma

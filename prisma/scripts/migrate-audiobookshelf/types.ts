@@ -28,6 +28,7 @@ export interface ScanPredication {
   sizeBytes: number;
   artist: string | null; // ID3 `artist`
   id3Title: string | null; // ID3 `title`
+  series: string | null; // dossier de 1er niveau sous `predications/` (podcast) — null si « Prédications indépendantes »
 }
 
 /** Arborescence complète relevée sur disque, entrée de `buildManifest`. */
@@ -54,6 +55,7 @@ export interface ManifestCulte {
   serviceDateUtc: string; // ISO, heure du culte convertie Europe/Paris → UTC
   title: string;
   speaker: string | null;
+  series: string | null; // série / podcast d'origine de la prédication substituée — null sinon
   type: "CULTE" | "AUTRE";
   sequences: ManifestSequence[];
 }

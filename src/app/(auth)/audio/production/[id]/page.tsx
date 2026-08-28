@@ -53,6 +53,7 @@ export default async function AudioServicePage({
           id: service.id,
           title: service.title,
           speaker: service.speaker,
+          series: service.series,
           type: service.type,
           serviceDate: service.serviceDate.toISOString(),
           planningEventId: service.planningEventId,

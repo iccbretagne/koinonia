@@ -93,7 +93,7 @@ Détails opératoires dans le `README.md` du script.
 
 | Concept ABS | Enregistrement Koinonia | Champs renseignés par le script |
 |---|---|---|
-| Dossier `Culte … du JJ MM AAAA` | `AudioService` | `churchId` (ICC Rennes), `serviceDate` (date + heure calculée, `Europe/Paris` → UTC), `title` (cf. règles), `speaker` (ID3 `artist` de la prédication appariée, sinon `null`), `type` (`CULTE`, ou `AUTRE` pour la cérémonie de baptêmes), `status` piloté par les services |
+| Dossier `Culte … du JJ MM AAAA` | `AudioService` | `churchId` (ICC Rennes), `serviceDate` (date + heure calculée, `Europe/Paris` → UTC), `title` (cf. règles), `speaker` (ID3 `artist` de la prédication appariée, sinon `null`), `series` (dossier podcast de 1er niveau sous `predications/` de la prédication appariée, `null` pour « Prédications indépendantes » ou sans appariement — nouvelle colonne `AudioService.series`, migration `add_audioservice_series`), `type` (`CULTE`, ou `AUTRE` pour la cérémonie de baptêmes), `status` piloté par les services |
 | Piste `#N - Titre.mp3` retenue | `AudioSource` (`kind = SEQUENCE`) | `serviceId`, `s3Key = getAudioSourceKey(serviceId, sourceId, ext)`, `originalFilename`, `sizeBytes`, `durationMs` (**ffprobe local**), `etag` (**ETag réel du PutObject**), `uploadStatus = "DONE"`, `uploadId = null` |
 | — | `AudioSegment` (`kind = SEQUENCE`) | via `applySequences` : `order`, `title` (nettoyé), `startMs = 0`, `endMs = source.durationMs`, `detectedBy = "deposit"` |
 | Rendu | `AudioRendition` | **écrit par le worker** (`RENDER`), pas par le script |
@@ -126,7 +126,7 @@ Production, inchangées.
 
 Depuis `@/modules/audio` :
 
-- `createAudioService({ churchId, serviceDate, title, speaker, type })` — crée le
+- `createAudioService({ churchId, serviceDate, title, speaker, series, type })` — crée le
   culte en `DRAFT`. Le script **ne passe pas** `planningEventId` (hors périmètre).
   Un `db` (PrismaClient du script) est passé en second argument pour éviter le
   singleton.

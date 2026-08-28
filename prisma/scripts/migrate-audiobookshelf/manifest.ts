@@ -25,6 +25,7 @@ export const manifestCulteSchema = z
     serviceDateUtc: z.string().datetime(),
     title: z.string().min(1),
     speaker: z.string().min(1).nullable(),
+    series: z.string().min(1).nullable(),
     type: z.enum(["CULTE", "AUTRE"]),
     sequences: z.array(manifestSequenceSchema).min(1),
   })

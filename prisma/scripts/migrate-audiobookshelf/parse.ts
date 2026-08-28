@@ -354,6 +354,7 @@ export function buildManifest(scan: Scan): Manifest {
         ? (predication.id3Title?.replace(/\s+/g, " ").trim() || predication.rawTitle)
         : parsed.label;
     const speaker = substituted && predication ? predication.artist : null;
+    const series = substituted && predication ? predication.series : null;
 
     const sequences: ManifestSequence[] = ordered.map((t, i) => {
       const isPred = i === predicationIndex;
@@ -384,6 +385,7 @@ export function buildManifest(scan: Scan): Manifest {
       serviceDateUtc,
       title,
       speaker,
+      series,
       type: parsed.type,
       sequences,
     });

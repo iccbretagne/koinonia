@@ -88,7 +88,7 @@ export {
   getDefaultCoverKey,
 } from "./services/settings";
 
-export { listPublishedServices, listSpeakers, getPublishedServiceForMember } from "./services/library";
+export { listPublishedServices, listSpeakers, listSeries, getPublishedServiceForMember } from "./services/library";
 export type { LibrarySort, ListPublishedServicesInput, LibraryServiceSummary } from "./services/library";
 
 export { getCachedRenditionPath, primeRenditionCache, getCacheDir } from "./services/rendition-cache";

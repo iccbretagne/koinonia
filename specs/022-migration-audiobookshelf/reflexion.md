@@ -294,7 +294,13 @@ Suivi : `SELECT status, count(*) FROM audio_jobs GROUP BY status`.
    remplacer `_` par des espaces, conserver la casse d'origine sinon.
 7. **`Cover.png`** des dossiers ABS : ignorés (souvent le logo générique) → on
    garde `AudioSettings.defaultCoverKey`.
-8. **Nom de série** (`album` ID3) : ignoré — Koinonia n'a pas de notion de série.
+8. **Nom de série** : conservé. Source = **dossier de 1er niveau sous `predications/`**
+   (le podcast), pas le tag `album` ID3. Le rangement par défaut d'Audiobookshelf
+   « Prédications indépendantes » n'est **pas** une série → `series = null`. Renseigné
+   sur `AudioService.series` (nouvelle colonne, migration `add_audioservice_series`)
+   uniquement quand une prédication « predications » est substituée ; `null` sinon.
+   Affiché en fiche Production et dans « (re)Écouter », et filtrable dans les deux.
+   *(revient sur la décision initiale « ignoré » — demande utilisateur post-implémentation.)*
 
 **Rappels des décisions antérieures :** culte complet découpé · ~4–6
 séquences/culte · corrélation par date (heure `HHhMM` du fichier predications en
