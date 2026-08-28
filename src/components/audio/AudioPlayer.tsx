@@ -154,7 +154,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
   );
 
   return (
-    <div className="pb-28 md:pb-0">
+    <div className="pb-[184px] md:pb-0">
       {backHref && (
         <div className="mb-4">
           <Link href={backHref}>
@@ -214,7 +214,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       </ul>
 
       {current && (
-        <div className="fixed bottom-0 inset-x-0 md:static bg-white border-t-2 md:border-2 border-gray-100 md:rounded-xl shadow-lg md:shadow p-3 md:p-4 z-20">
+        <div className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-white border-t-2 md:border-2 border-gray-100 md:rounded-xl shadow-lg md:shadow p-3 md:p-4 z-20">
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-gray-900 text-sm truncate pr-2">{current.title}</p>
             <select

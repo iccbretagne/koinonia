@@ -13,7 +13,10 @@ export default function AudioTabs({ tabs }: { tabs: Tab[] }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1 border-b-2 border-gray-100 mb-6 overflow-x-auto" aria-label="Onglets Audio">
+    <nav
+      className="flex gap-1 border-b-2 border-gray-100 mb-6 bg-white sticky top-[68px] md:top-[80px] z-40"
+      aria-label="Onglets Audio"
+    >
       {tabs.map((tab) => {
         const active = pathname === tab.href || pathname?.startsWith(`${tab.href}/`);
         return (

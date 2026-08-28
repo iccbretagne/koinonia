@@ -20,13 +20,14 @@
 }
 
 .rhap_progress-filled,
-.rhap_progress-indicator,
-.rhap_download-progress {
+.rhap_progress-indicator {
   background-color: var(--color-icc-violet);
 }
 
+/* Chargement/mise en tampon — teinte intermédiaire, nettement visible sur le fond de piste
+   gris clair de la librairie, mais distincte de la couleur pleine de la lecture. */
 .rhap_download-progress {
-  background-color: var(--color-icc-violet-light);
+  background-color: rgba(94, 23, 235, 0.35);
 }
 
 .rhap_progress-indicator {
