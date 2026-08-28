@@ -142,7 +142,7 @@ Depuis `@/modules/audio` :
 | `parseTrack(filename)` | `"#5 - Prédication.mp3"` → `{ order: 5, rawTitle: "Prédication" }` ; strip du préfixe d'ordre (`#N - `, `N - `), `_`→espace, espaces multiples réduits, extension retirée |
 | `canonicalTitle(rawTitle)` | rabat le titre brut sur le **template standard** (cf. § dédié) ; renvoie le titre canonique, ou le titre nettoyé tel quel si aucune règle ne matche |
 | `isExcludedTrack(title)` | `true` pour `MLA`, `MLA Balances` (regex `/\bMLA\b/i`), `Cover.png`, `desktop.ini`, `.ini` |
-| `isPredicationTrack(title)` | `true` **ssi `canonicalTitle(...) === "Prédication"`** — les pistes fusionnées (`"Prédication & Offrandes"`) ne matchent aucune règle canonique, donc pas de substitution |
+| `isPredicationTrack(title)` | `true` **ssi `canonicalTitle(...) === "Prédication"`** — une seule source de vérité, pas de règle de détection parallèle |
 | `orderTracks(tracks)` | ordonne : pistes numérotées par `order` croissant, puis pistes sans numéro dans l'ordre de listing ; renumérote `1..n` en sortie |
 | `defaultServiceTime(slot)` | `slot === 2` → `"12:00"`, sinon `"10:00"` |
 | `matchPredication(culte, predicationsByDate)` | associe une prédication : même date ; si `slot` défini et 2 prédications ce jour → tri horaire (`10h*` → slot 1, `12h*` → slot 2) ; sinon la seule ; `null` si aucune |
@@ -162,7 +162,7 @@ forme normalisée (minuscules, accents retirés, ponctuation → espace) :
 | `Sainte-cène` | `Sainte cène`, `Sainte-cène`, `Sainte Cène` | 47 |
 | `Sainte-cène, dîmes et offrandes` | `Sainte cène et Offrandes` *(piste fusionnée)* | 28 |
 | `Dîmes et offrandes` | `Offrandes`, `offrandes`, `Dimes`, `Dimes et offrandes` | 45 |
-| `Prédication` | `Prédication`, `prédication`, `Prédications`, `Message` | 54 |
+| `Prédication` | `Prédication`, `prédication`, `Prédications`, `Message`, `Prédication & Offrandes` | 55 |
 | `Annonces` | `Annonces`, `annonces`, **`Modération`** | 78 |
 | `Prière de fin` | `Prière de fin`, `Prière finale` | 43 |
 
@@ -176,13 +176,24 @@ Deux absorptions méritent d'être justifiées :
   plutôt que de mentir sur l'un des deux.
 
 **Titres non reconnus** : conservés tels quels après nettoyage. Simulation sur
-le catalogue complet — 5 cas, tous uniques : `Actions de grâce et témoignages`,
+le catalogue complet — 4 cas, tous uniques : `Actions de grâce et témoignages`,
 `Temps de prière spécial`, `Témoignage spécial - Frère Brave`,
-`Prédication & Offrandes`, `Baptêmes - Cérémonie`.
+`Baptêmes - Cérémonie`.
 
-**Résultat de la simulation** (382 pistes) : 364 normalisées (95 %), 13 exclues
-(`MLA*`), 5 conservées telles quelles, **0 collision** de titre au sein d'un
+**Résultat de la simulation** (382 pistes) : 365 normalisées (95 %), 13 exclues
+(`MLA*`), 4 conservées telles quelles, **0 collision** de titre au sein d'un
 même culte (contrainte `applySequences` : titres uniques par culte).
+
+### Ordre des séquences — le strip du numéro ne le perd pas
+
+`parseTrack` renvoie `{ order, rawTitle }` : le numéro est **lu avant d'être
+retiré du libellé**, et c'est lui qui alimente `AudioSegment.order`. Le strip ne
+concerne que le **titre affiché**. `orderTracks` classe les pistes numérotées par
+`order` croissant, place ensuite les pistes sans numéro dans l'ordre de listing
+du dossier, puis renumérote `1..n` de façon contiguë — nécessaire car la
+numérotation d'origine a des trous (dossiers démarrant à `#2`) et des valeurs
+hautes réservées (`#98`, `#99`, exclues). L'ordre relatif d'origine est donc
+strictement conservé.
 
 ### `index.ts` — orchestration
 
@@ -290,9 +301,10 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
   confirmé suffisant par le mainteneur — reste à surveiller le volume de cache
   disque des renditions.
 - **Piste prédication fusionnée** : un seul cas dans tout le catalogue
-  (`Culte du 29 12 2024`, `"#4 - Prédication & Offrandes"`). Ne matche aucune
-  règle canonique → pas de substitution, importée sous son nom nettoyé. Sans
-  conséquence pratique : la bibliothèque « predications » ne couvre pas 2024.
+  (`Culte du 29 12 2024`, `"#4 - Prédication & Offrandes"`), normalisé en
+  `Prédication`. Vérifié : ce culte n'a aucune autre piste prédication → pas de
+  collision. La substitution par la bibliothèque « predications » ne s'applique
+  pas ici (couverture 2025→ seulement).
 - **Cultes sans piste prédication identifiable** alors qu'on en attendrait une
   (titre trop ambigu) : comportement retenu = culte publié sans séquence
   prédication ; le rapport `--dry-run` les signale (spec, question ouverte —
@@ -335,15 +347,18 @@ pures, à partir d'échantillons réels relevés en phase 0 :
 - `canonicalTitle` : au moins un cas par ligne du tableau du template
   (`"Modération"` → `"Annonces"`, `"Louange"` → `"Louanges et adoration"`,
   `"Sainte cène et Offrandes"` → `"Sainte-cène, dîmes et offrandes"`,
-  `"Prière finale"` → `"Prière de fin"`, `"Message"` → `"Prédication"`…) ; titre
-  inconnu (`"Actions de grâce et témoignages"`) → rendu tel quel.
+  `"Prière finale"` → `"Prière de fin"`, `"Message"` → `"Prédication"`,
+  `"Prédication & Offrandes"` → `"Prédication"`…) ; titre inconnu
+  (`"Actions de grâce et témoignages"`) → rendu tel quel.
 - `isPredicationTrack` : `"Prédication"`, `"prédication"`, `"Prédications"`,
-  `"Message"` → `true` ; `"Prédication & Offrandes"`, `"Louanges"` → `false`.
+  `"Message"`, `"Prédication & Offrandes"` → `true` ; `"Louanges"` → `false`.
 - **Non-collision** : sur une fixture reprenant un culte « Modération +
   Annonces » hypothétique, `buildManifest` signale la collision (le catalogue
   réel n'en contient aucune).
-- `orderTracks` : mélange numéroté / non numéroté, trous (`#2..#6`),
-  renumérotation `1..n`, déduplication de titre.
+- `orderTracks` : **conservation de l'ordre malgré le strip du numéro**
+  (`#5` reste après `#3`), mélange numéroté / non numéroté, trous (`#2..#6`),
+  valeurs hautes exclues (`#98`/`#99`), renumérotation contiguë `1..n`,
+  déduplication de titre.
 - `defaultServiceTime`, `matchPredication` : 1 culte / 1 prédication ;
   2 cultes (`slot` 1/2) / 2 prédications `10h00`+`12h00` → appariement correct ;
   2 cultes / 0 prédication → `null` ; 1 culte / 0 prédication → `null`.
