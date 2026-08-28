@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable from "@/components/ui/DataTable";
 import Select from "@/components/ui/Select";
@@ -8,18 +8,26 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel, getEventTypeBadge } from "@/lib/event-types";
+import {
+  type AudioServiceRow,
+  type QueueCriteria,
+  type SortState,
+  DEFAULT_SORT,
+  EMPTY_CRITERIA,
+  NO_SPEAKER,
+  NO_SERIES,
+  deriveSpeakers,
+  deriveSeries,
+  deriveYears,
+  filterQueue,
+  hasActiveState,
+  isRangeValid,
+  loadState,
+  saveState,
+  sortQueue,
+} from "./queue-filters";
 
-interface AudioServiceRow {
-  id: string;
-  title: string | null;
-  speaker: string | null;
-  serviceDate: string;
-  status: "DRAFT" | "PENDING_REVIEW" | "READY" | "PUBLISHED" | "UNPUBLISHED";
-  type: string;
-  openCount: number;
-  segmentCount: number;
-  eventTitle: string | null;
-}
+const SEARCH_DEBOUNCE_MS = 300;
 
 const STATUS_LABELS: Record<AudioServiceRow["status"], string> = {
   DRAFT: "Brouillon",
@@ -153,28 +161,148 @@ function NewServiceModal({ open, onClose }: { open: boolean; onClose: () => void
 
 export default function AudioQueueClient({ services }: { services: AudioServiceRow[] }) {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const filtered = useMemo(
-    () => (statusFilter ? services.filter((s) => s.status === statusFilter) : services),
-    [services, statusFilter]
+  const [criteria, setCriteria] = useState<QueueCriteria>(
+    () => loadState()?.criteria ?? EMPTY_CRITERIA
   );
+  const [sort, setSort] = useState<SortState>(() => loadState()?.sort ?? DEFAULT_SORT);
+
+  // Champ de recherche local + débounce : on ne recalcule la file qu'après une pause
+  // de frappe (même cadence que l'onglet (re)Écouter).
+  const [searchText, setSearchText] = useState(criteria.text);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (searchText === criteria.text) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(
+      () => setCriteria((c) => ({ ...c, text: searchText })),
+      SEARCH_DEBOUNCE_MS
+    );
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchText, criteria.text]);
+
+  // Persistance intra-session (perdue au rechargement complet, cf. spec 023).
+  useEffect(() => {
+    saveState({ criteria, sort });
+  }, [criteria, sort]);
+
+  const speakers = useMemo(() => deriveSpeakers(services), [services]);
+  const seriesList = useMemo(() => deriveSeries(services), [services]);
+  const years = useMemo(() => deriveYears(services), [services]);
+
+  const rangeValid = isRangeValid(criteria);
+  const visible = useMemo(
+    () => sortQueue(filterQueue(services, criteria), sort.key, sort.dir),
+    [services, criteria, sort]
+  );
+
+  const activeFilterCount = (Object.keys(EMPTY_CRITERIA) as (keyof QueueCriteria)[]).filter(
+    (k) => criteria[k] !== EMPTY_CRITERIA[k]
+  ).length;
+  const showReset = hasActiveState(criteria, sort) || searchText !== "";
+  function reset() {
+    setSearchText("");
+    setCriteria(EMPTY_CRITERIA);
+    setSort(DEFAULT_SORT);
+  }
+
+  function setField<K extends keyof QueueCriteria>(key: K, value: QueueCriteria[K]) {
+    setCriteria((c) => ({ ...c, [key]: value }));
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-        <div className="w-full max-w-xs">
+        <div className="w-full md:flex-1">
+          <div className="md:hidden mb-2">
+            <Button variant="secondary" size="sm" onClick={() => setMobileFiltersOpen((o) => !o)}>
+              Filtrer{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </Button>
+          </div>
+          <div
+            className={`${mobileFiltersOpen ? "grid" : "hidden"} md:grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6`}
+          >
           <Select
             label="Statut"
             placeholder="Tous les statuts"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={criteria.status}
+            onChange={(e) => setField("status", e.target.value)}
             options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
           />
+          <Select
+            label="Type"
+            placeholder="Tous les types"
+            value={criteria.type}
+            onChange={(e) => setField("type", e.target.value)}
+            options={EVENT_TYPE_OPTIONS}
+          />
+          {years.length > 0 && (
+            <Select
+              label="Année"
+              placeholder="Toutes les années"
+              value={criteria.year}
+              onChange={(e) => setField("year", e.target.value)}
+              options={years.map((y) => ({ value: y, label: y }))}
+            />
+          )}
+          <Input
+            label="Du"
+            type="date"
+            value={criteria.from}
+            onChange={(e) => setField("from", e.target.value)}
+          />
+          <Input
+            label="Au"
+            type="date"
+            value={criteria.to}
+            onChange={(e) => setField("to", e.target.value)}
+          />
+          <Select
+            label="Orateur"
+            placeholder="Tous les orateurs"
+            value={criteria.speaker}
+            onChange={(e) => setField("speaker", e.target.value)}
+            options={[
+              { value: NO_SPEAKER, label: "Sans orateur" },
+              ...speakers.map((s) => ({ value: s, label: s })),
+            ]}
+          />
+          <Select
+            label="Série"
+            placeholder="Toutes les séries"
+            value={criteria.series}
+            onChange={(e) => setField("series", e.target.value)}
+            options={[
+              { value: NO_SERIES, label: "Sans série" },
+              ...seriesList.map((s) => ({ value: s, label: s })),
+            ]}
+          />
+          <Input
+            label="Recherche"
+            placeholder="Titre ou orateur…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          </div>
         </div>
         <Button onClick={() => setModalOpen(true)}>Déposer un enregistrement</Button>
       </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-3 text-sm text-gray-500">
+        <span>
+          {visible.length} enregistrement{visible.length > 1 ? "s" : ""}
+        </span>
+        {showReset && (
+          <Button variant="secondary" size="sm" onClick={reset}>
+            Réinitialiser
+          </Button>
+        )}
+      </div>
+
       <NewServiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
       <DataTable
@@ -190,7 +318,11 @@ export default function AudioQueueClient({ services }: { services: AudioServiceR
               </div>
             ),
           },
-          { header: "Date", accessor: (row) => new Date(row.serviceDate).toLocaleDateString("fr-FR") },
+          {
+            header: "Date",
+            accessor: (row) => new Date(row.serviceDate).toLocaleDateString("fr-FR"),
+            sortKey: "date",
+          },
           {
             header: "Type",
             accessor: (row) => (
@@ -206,12 +338,20 @@ export default function AudioQueueClient({ services }: { services: AudioServiceR
                 {STATUS_LABELS[row.status]}
               </span>
             ),
+            sortKey: "status",
+            defaultSortDir: "asc",
           },
-          { header: "Séquences", accessor: (row) => row.segmentCount },
-          { header: "Ouvertures", accessor: (row) => row.openCount },
+          { header: "Séquences", accessor: (row) => row.segmentCount, sortKey: "segments" },
+          { header: "Ouvertures", accessor: (row) => row.openCount, sortKey: "opens" },
         ]}
-        data={filtered}
-        emptyMessage="Aucun enregistrement audio."
+        data={visible}
+        sort={sort}
+        onSortChange={(s) => setSort({ key: s.key as SortState["key"], dir: s.dir })}
+        emptyMessage={
+          rangeValid
+            ? "Aucun enregistrement ne correspond aux filtres."
+            : "La date de fin est antérieure à la date de début."
+        }
         actions={(row) => (
           <Button variant="secondary" size="sm" onClick={() => router.push(`/audio/production/${row.id}`)}>
             Ouvrir
