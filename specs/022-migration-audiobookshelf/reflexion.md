@@ -270,48 +270,43 @@ Suivi : `SELECT status, count(*) FROM audio_jobs GROUP BY status`.
 - **Renditions** (MP3 192k) : ordre de grandeur des sources ⇒ prévoir **~16–18
   Go** au total sur le bucket (sources archivées + renditions).
 
-## 9. Décisions restantes (à valider avec le mainteneur)
+## 9. Décisions arrêtées
 
-Le parseur peut être écrit : les patterns sont connus (§4). Restent des choix
-produit :
+1. **`#98`/`#99` « MLA »** (musique de fin) : **exclus** de l'import.
+2. **`AudioService.title`** : titre du message (ID3 `title` de la prédication
+   « predications », nettoyé) quand il y a un match ; sinon le libellé du dossier
+   ABS hors date (`Culte`, `Culte 1`, `Culte 2`, `Cérémonie des baptêmes`).
+3. **`speaker`** : ID3 `artist` de la prédication « predications » quand match ;
+   **vide sinon** (les ~48 cultes sans fichier predications, surtout 2024).
+4. **Exécution** : **recette d'abord** — rsync des 8,2 Go vers la VM de recette,
+   passe complète + vérification d'écoute, puis rejeu en prod.
+5. **`Cérémonie des baptêmes`** : importée, `type = AUTRE`, séquence unique.
+6. **Titres de séquences** : retirer le préfixe d'ordre (`#N - `, `N - `),
+   remplacer `_` par des espaces, conserver la casse d'origine sinon.
+7. **`Cover.png`** des dossiers ABS : ignorés (souvent le logo générique) → on
+   garde `AudioSettings.defaultCoverKey`.
+8. **Nom de série** (`album` ID3) : ignoré — Koinonia n'a pas de notion de série.
 
-1. **`#98`/`#99` « MLA » (musique de fin)** : exclure de l'import ? *(défaut
-   proposé : oui, exclure.)*
-2. **Titre du `AudioService`** : laisser vide (l'UI affiche la date) ? mettre
-   « Culte » ? reprendre le titre du message (ID3 `title` de la prédication)
-   quand il y a un match ?
-3. **`Cérémonie des baptêmes`** : `type = AUTRE`, séquence unique ? l'importer
-   ou l'ignorer ?
-4. **Normalisation des titres de séquences** : retirer `#N - `, `_`→espace,
-   sinon casse d'origine — OK ?
-5. **`speaker` quand pas de prédication « predications »** (tous les cultes
-   2024, une partie 2025-2026) : laisser vide (ID3 côté cultes inexploitable) ?
-   ou fournir une table `date → prédicateur` ?
-6. **Nom des séries** (`album` ID3 : « Série - … ») : Koinonia n'a pas de notion
-   de série → on ignore ? ou on préfixe le titre de séquence ?
-7. **Où tourne le script** : (a) sur `ssh.iccrennes.fr` en lisant
-   `/var/lib/audiobookshelf` en lecture seule et en écrivant base + S3 de prod,
-   ou (b) rsync des 8,2 Go vers la VM de recette pour une passe recette d'abord
-   (recommandé) puis rejeu en prod.
-8. **Couvertures** : chaque dossier a un `Cover.png` (souvent le logo générique
-   27 ko). On ignore et on garde `AudioSettings.defaultCoverKey` ? *(défaut
-   proposé : ignorer.)*
-9. **Capacité disque** du bucket S3 de prod (~16–18 Go libres nécessaires).
+**Rappels des décisions antérieures :** culte complet découpé · ~4–6
+séquences/culte · corrélation par date (heure `HHhMM` du fichier predications en
+secours pour l'ambiguïté Culte 1/2) · substitution de la séquence prédication
+par le fichier « predications » quand il existe · église = ICC Rennes ·
+`publishedById` = `User.email = ouattara.ismael@gmail.com` · pipeline via le
+worker (jobs `RENDER`) · source de vérité = système de fichiers ABS (base
+`absdatabase.sqlite` illisible au CLI).
 
-**Résolues :** culte complet découpé · ~4–6 séquences/culte · corrélation par
-date (heure en secours d'ambiguïté 1/2) · substitution de la séquence
-prédication par le fichier « predications » quand il existe · église = ICC
-Rennes · `publishedById` = `ouattara.ismael@gmail.com` · pipeline via worker ·
-source de vérité = système de fichiers (base ABS illisible au CLI).
+### Restent à vérifier (non bloquant)
+
+- Capacité disque libre du bucket S3 de prod (~16–18 Go).
+- Espace disque de la VM de recette pour accueillir 8,2 Go + renditions.
 
 ## 10. Prochaines étapes
 
-- [x] Phase 0 — inventaire lecture seule de `ssh.iccrennes.fr` (fait
-      2026-08-28, cf. §4).
-- [ ] Trancher les décisions §9 (surtout 1, 2, 5, 7).
-- [ ] `/specify` puis `/plan` sur la base de ce document.
+- [x] Phase 0 — inventaire lecture seule de `ssh.iccrennes.fr` (2026-08-28, §4).
+- [x] Décisions produit arrêtées (§9).
+- [ ] `/specify` puis `/plan` / `/tasks` sur la base de ce document.
 - [ ] `scripts/migrate-audiobookshelf.ts` : parseur FS → manifeste JSON →
-      création `AudioService`/`Source`/`Segment` + `PutObject` (ETag) +
-      `ffprobe` local (`durationMs`) + `publishAudioService` + ledger.
-- [ ] Passe recette, vérif écoute, puis passe prod + surveillance de la file
-      `audio_jobs`.
+      `AudioService`/`Source`/`Segment` + `PutObject` (lecture ETag) + `ffprobe`
+      local (`durationMs`) + `publishAudioService` + ledger `.jsonl`.
+- [ ] rsync 8,2 Go vers la VM de recette, passe recette, vérif écoute.
+- [ ] Passe prod + surveillance de la file `audio_jobs`.
