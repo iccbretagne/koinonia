@@ -139,13 +139,50 @@ Depuis `@/modules/audio` :
 |---|---|
 | `parseCulteFolder(name)` | `"Culte 2 du 11 05 2025"` → `{ kind: "culte", date: "2025-05-11", slot: 2, label: "Culte 2" }` ; gère `Culte`, `Culte 1/2`, `Cérémonie des baptêmes` ; `null` si non reconnu |
 | `parsePredicationFile(name)` | `"2025-02-09_12h00_La_loi_de_la_semence.mp3"` → `{ date: "2025-02-09", time: "12:00", rawTitle: "La loi de la semence" }` |
-| `parseTrack(filename)` | `"#5 - Prédication.mp3"` / `"1 - Prière des  STAR.mp3"` / `"Annonces.mp3"` → `{ order: number \| null, title: string }` ; titre nettoyé (`_`→espace, espaces multiples réduits, préfixe d'ordre retiré, `.mp3` retiré) |
+| `parseTrack(filename)` | `"#5 - Prédication.mp3"` → `{ order: 5, rawTitle: "Prédication" }` ; strip du préfixe d'ordre (`#N - `, `N - `), `_`→espace, espaces multiples réduits, extension retirée |
+| `canonicalTitle(rawTitle)` | rabat le titre brut sur le **template standard** (cf. § dédié) ; renvoie le titre canonique, ou le titre nettoyé tel quel si aucune règle ne matche |
 | `isExcludedTrack(title)` | `true` pour `MLA`, `MLA Balances` (regex `/\bMLA\b/i`), `Cover.png`, `desktop.ini`, `.ini` |
-| `isPredicationTrack(title)` | `true` si `/pr[ée]dications?/i` ou `/^message$/i`. **`false` si le titre contient un `&` ou `et Offrandes`** (piste fusionnée — pas de substitution, cf. risques) |
+| `isPredicationTrack(title)` | `true` **ssi `canonicalTitle(...) === "Prédication"`** — les pistes fusionnées (`"Prédication & Offrandes"`) ne matchent aucune règle canonique, donc pas de substitution |
 | `orderTracks(tracks)` | ordonne : pistes numérotées par `order` croissant, puis pistes sans numéro dans l'ordre de listing ; renumérote `1..n` en sortie |
 | `defaultServiceTime(slot)` | `slot === 2` → `"12:00"`, sinon `"10:00"` |
 | `matchPredication(culte, predicationsByDate)` | associe une prédication : même date ; si `slot` défini et 2 prédications ce jour → tri horaire (`10h*` → slot 1, `12h*` → slot 2) ; sinon la seule ; `null` si aucune |
 | `buildManifest(fsTree)` | assemble le manifeste complet à partir de l'arborescence lue |
+
+### Normalisation des titres — template standard
+
+Les noms de pistes Audiobookshelf ont dérivé sur deux ans (33 variantes
+distinctes pour 382 pistes). Après strip du numéro de piste, chaque titre est
+rabattu sur un **template standard de 7 séquences**, par comparaison sur une
+forme normalisée (minuscules, accents retirés, ponctuation → espace) :
+
+| Titre canonique | Variantes absorbées | Pistes |
+|---|---|---|
+| `Prière des STAR` | `Prière des STAR`, `Prière des Stars`, `Prière des stars`, `Prière des  STAR` | 34 |
+| `Louanges et adoration` | `Louange`, `Louanges`, `Louanges et adorations`, `Louanges et adoration` | 34 |
+| `Sainte-cène` | `Sainte cène`, `Sainte-cène`, `Sainte Cène` | 47 |
+| `Sainte-cène, dîmes et offrandes` | `Sainte cène et Offrandes` *(piste fusionnée)* | 28 |
+| `Dîmes et offrandes` | `Offrandes`, `offrandes`, `Dimes`, `Dimes et offrandes` | 45 |
+| `Prédication` | `Prédication`, `prédication`, `Prédications`, `Message` | 54 |
+| `Annonces` | `Annonces`, `annonces`, **`Modération`** | 78 |
+| `Prière de fin` | `Prière de fin`, `Prière finale` | 43 |
+
+Deux absorptions méritent d'être justifiées :
+
+- **`Modération` → `Annonces`** : même moment du culte, renommé au fil du temps
+  (« Modération » sur 2024–mi-2025, « Annonces » ensuite). Vérifié sur les 80
+  dossiers : **aucun culte ne contient les deux** — pas de collision de titre.
+- **`Sainte cène et Offrandes` → `Sainte-cène, dîmes et offrandes`** : fichier
+  unique couvrant deux moments ; le titre composite dit ce qu'il contient
+  plutôt que de mentir sur l'un des deux.
+
+**Titres non reconnus** : conservés tels quels après nettoyage. Simulation sur
+le catalogue complet — 5 cas, tous uniques : `Actions de grâce et témoignages`,
+`Temps de prière spécial`, `Témoignage spécial - Frère Brave`,
+`Prédication & Offrandes`, `Baptêmes - Cérémonie`.
+
+**Résultat de la simulation** (382 pistes) : 364 normalisées (95 %), 13 exclues
+(`MLA*`), 5 conservées telles quelles, **0 collision** de titre au sein d'un
+même culte (contrainte `applySequences` : titres uniques par culte).
 
 ### `index.ts` — orchestration
 
@@ -232,6 +269,12 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
 - **Choix : script sous `prisma/scripts/`, non ajouté à `package.json`.**
   *Pourquoi* : cohérent avec les one-off existants (`import-mediaflow.ts`,
   `import-mrbs-reservations.ts`) ; ce n'est pas une commande de cycle de vie.
+- **Choix : rabattre les titres de pistes sur un template standard de 7
+  séquences** (§ Normalisation). *Pourquoi* : deux ans de dérive de nommage
+  (33 variantes) produiraient une bibliothèque incohérente, et les filtres/tri
+  de `/audio/ecouter` n'ont d'intérêt que sur des libellés stables.
+  *Alternative écartée* : conserver les libellés d'origine — lisible pour un
+  culte isolé, illisible à l'échelle du catalogue.
 - **Pas d'ADR.** *Pourquoi* : opération ponctuelle, réversible (dépublier /
   supprimer les cultes migrés), n'introduit aucun pattern durable ni dépendance.
   L'ADR structurant du domaine (worker hors Next.js) est déjà ADR-0007.
@@ -246,10 +289,10 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
   pré-chauffage du cache disque des renditions (ADR-0008). Espace bucket prod
   confirmé suffisant par le mainteneur — reste à surveiller le volume de cache
   disque des renditions.
-- **Pistes prédication fusionnées** (`"Prédication & Offrandes"`,
-  `"Prédication & Offrandes.mp3"`) : `isPredicationTrack` renvoie `false` → pas
-  de substitution, la piste est importée telle quelle sous son nom d'origine.
-  Le rapport `--dry-run` **liste ces cas** pour arbitrage manuel éventuel.
+- **Piste prédication fusionnée** : un seul cas dans tout le catalogue
+  (`Culte du 29 12 2024`, `"#4 - Prédication & Offrandes"`). Ne matche aucune
+  règle canonique → pas de substitution, importée sous son nom nettoyé. Sans
+  conséquence pratique : la bibliothèque « predications » ne couvre pas 2024.
 - **Cultes sans piste prédication identifiable** alors qu'on en attendrait une
   (titre trop ambigu) : comportement retenu = culte publié sans séquence
   prédication ; le rapport `--dry-run` les signale (spec, question ouverte —
@@ -265,9 +308,11 @@ Aucun ajout. Vérifications visuelles en recette sur les écrans existants :
   le rapport `--dry-run` recompte, et une commande `--purge <folder>` (supprime
   le culte non publié via `deleteAudioService` du module) permet de repartir
   propre. Sinon suppression manuelle via l'onglet Production.
-- **Titres en double dans un même culte** (`applySequences` refuse deux séquences
-  de même titre normalisé) : `orderTracks` déduplique en suffixant ` (2)` si
-  collision après nettoyage. Cas rare (`Prédications` vs `Prédication`).
+- **Titres en double dans un même culte** : `applySequences` refuse deux
+  séquences de même titre normalisé. La normalisation canonique a été **simulée
+  sur les 382 pistes du catalogue : aucune collision**. Garde-fou conservé —
+  `orderTracks` suffixe ` (2)` en cas de collision, et le rapport `--dry-run`
+  la signale.
 - **Accès serveur** : le script lit une copie locale des fichiers sur la VM de
   recette — aucune connexion à Audiobookshelf, aucune action sur
   `ssh.iccrennes.fr` au-delà des copies déjà faites.
@@ -287,8 +332,16 @@ pures, à partir d'échantillons réels relevés en phase 0 :
   `"Sainte_cène_et_Offrandes.mp3"`, `"Annonces.mp3"`, `"#99 - MLA.mp3"`.
 - `isExcludedTrack` : `"#98 - MLA Balances"`, `"MLA"`, `"Cover.png"`,
   `"desktop.ini"` → `true` ; `"Modération"` → `false`.
+- `canonicalTitle` : au moins un cas par ligne du tableau du template
+  (`"Modération"` → `"Annonces"`, `"Louange"` → `"Louanges et adoration"`,
+  `"Sainte cène et Offrandes"` → `"Sainte-cène, dîmes et offrandes"`,
+  `"Prière finale"` → `"Prière de fin"`, `"Message"` → `"Prédication"`…) ; titre
+  inconnu (`"Actions de grâce et témoignages"`) → rendu tel quel.
 - `isPredicationTrack` : `"Prédication"`, `"prédication"`, `"Prédications"`,
   `"Message"` → `true` ; `"Prédication & Offrandes"`, `"Louanges"` → `false`.
+- **Non-collision** : sur une fixture reprenant un culte « Modération +
+  Annonces » hypothétique, `buildManifest` signale la collision (le catalogue
+  réel n'en contient aucune).
 - `orderTracks` : mélange numéroté / non numéroté, trous (`#2..#6`),
   renumérotation `1..n`, déduplication de titre.
 - `defaultServiceTime`, `matchPredication` : 1 culte / 1 prédication ;
