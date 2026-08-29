@@ -17,15 +17,14 @@ export default async function SecretariatRequestsPage() {
   });
 
   // Access check: events:manage OR member of secretariat dept
-  const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
-  );
+  // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
+  // responsable de l'église A obtient events:manage dans l'église B (issue #490).
+  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
   const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
 
   if (secretariatDept) {
-    const userDeptIds = session.user.churchRoles.flatMap((r) =>
-      r.departments.map((d) => d.department.id)
-    );
+    const userDeptIds = churchRoles.flatMap((r) => r.departments.map((d) => d.department.id));
     const isDeptMember = userDeptIds.includes(secretariatDept.id);
     if (!canManage && !isDeptMember) return notFound();
   }
