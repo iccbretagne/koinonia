@@ -1,6 +1,7 @@
 "use client";
 
 import AudioPlayer, { type AudioPlayerService } from "@/components/audio/AudioPlayer";
+import { buildStreamUrl } from "./stream-url";
 
 interface Props {
   token: string;
@@ -17,7 +18,7 @@ export default function PublicAudioPlayer({ token, backHref, service }: Props) {
   return (
     <AudioPlayer
       service={service}
-      streamUrl={(segmentId) => `/api/audio/public/${token}/stream/${segmentId}`}
+      streamUrl={(segment) => buildStreamUrl(token, segment)}
       onPlay={(segmentId) => {
         fetch(`/api/audio/public/${token}/play`, {
           method: "POST",

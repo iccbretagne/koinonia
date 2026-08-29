@@ -16,6 +16,8 @@ export interface AudioPlayerSegment {
   title: string;
   order: number;
   durationMs: number;
+  /** Empreinte du rendu — change quand le contenu change (spec 026), sert de casse-cache navigateur. */
+  version: string;
 }
 
 export interface AudioPlayerService {
@@ -28,7 +30,7 @@ export interface AudioPlayerService {
 
 interface Props {
   service: AudioPlayerService;
-  streamUrl: (segmentId: string) => string;
+  streamUrl: (segment: AudioPlayerSegment) => string;
   onPlay?: (segmentId: string) => void;
   onShare?: (segmentId: string | null) => void;
   backHref?: string | null;
@@ -250,7 +252,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
             <H5AudioPlayer
               ref={playerRef}
               key={current.id}
-              src={streamUrl(current.id)}
+              src={streamUrl(current)}
               autoPlayAfterSrcChange={false}
               showJumpControls
               progressJumpSteps={{ backward: 15000, forward: 30000 }}

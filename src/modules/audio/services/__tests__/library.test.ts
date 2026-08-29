@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
+import { renditionVersion } from "../rendition-cache";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/modules/storage", () => ({
@@ -27,7 +28,7 @@ function service(overrides: Record<string, unknown> = {}) {
         kind: "SEQUENCE",
         order: 0,
         title: "Louange",
-        rendition: { durationMs: 60000 },
+        rendition: { durationMs: 60000, sourceHash: "hash-1" },
       },
     ],
     ...overrides,
@@ -161,5 +162,7 @@ describe("getPublishedServiceForMember", () => {
     expect(result).not.toBeNull();
     expect(result?.title).toBe("Culte du dimanche");
     expect(result?.segments).toHaveLength(1);
+    // Version dérivée du sourceHash (spec 026) — même mapping que la page publique.
+    expect(result?.segments[0].version).toBe(renditionVersion("hash-1"));
   });
 });

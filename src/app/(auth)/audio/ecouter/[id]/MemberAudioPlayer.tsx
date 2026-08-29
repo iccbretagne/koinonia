@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AudioPlayer, { type AudioPlayerService } from "@/components/audio/AudioPlayer";
+import { buildStreamUrl } from "./stream-url";
 
 interface Props {
   serviceId: string;
@@ -51,7 +52,7 @@ export default function MemberAudioPlayer({ serviceId, service }: Props) {
       )}
       <AudioPlayer
         service={service}
-        streamUrl={(segmentId) => `/api/audio/services/${serviceId}/stream/${segmentId}`}
+        streamUrl={(segment) => buildStreamUrl(serviceId, segment)}
         onPlay={(segmentId) => {
           fetch(`/api/audio/services/${serviceId}/play`, {
             method: "POST",
