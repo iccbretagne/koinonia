@@ -80,15 +80,36 @@ describe("buildRenditionResponse", () => {
     expect(getS3ObjectStream).toHaveBeenCalledWith("segments/a.mp3");
   });
 
-  it("avec AUDIO_XACCEL_LOCATION défini : corps vide + X-Accel-Redirect sur le bon fichier, mtime rafraîchi", async () => {
+  it("avec AUDIO_XACCEL_LOCATION défini : corps vide + X-Accel-Redirect sur le bon fichier", async () => {
     process.env.AUDIO_XACCEL_LOCATION = "/protected/audio";
 
     const res = await buildRenditionResponse("segments/a.mp3", "bytes=2-5");
 
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Accel-Redirect")).toBe(`/protected/audio/${getCacheFileName("segments/a.mp3")}`);
-    expect(touchRenditionAccess).toHaveBeenCalledWith("segments/a.mp3");
-    expect(getCachedRenditionPath).not.toHaveBeenCalled(); // délégué à nginx, pas de lecture locale ici
-    expect(await readBody(res)).toBe("");
+    expect(await readBody(res)).toBe(""); // octets livrés par nginx, pas par Node
+  });
+
+  it("délègue seulement après avoir garanti la présence du fichier en cache", async () => {
+    // nginx sert le fichier tel quel : deleguer sans remplir le cache produirait un 404.
+    process.env.AUDIO_XACCEL_LOCATION = "/protected/audio";
+
+    await buildRenditionResponse("segments/a.mp3", null);
+
+    expect(getCachedRenditionPath).toHaveBeenCalledWith("segments/a.mp3");
+  });
+
+  it("ne délègue pas quand le cache est indisponible : repli sur le flux S3", async () => {
+    process.env.AUDIO_XACCEL_LOCATION = "/protected/audio";
+    getCachedRenditionPath.mockResolvedValue(null);
+    const { Readable } = await import("stream");
+    getS3ObjectStream.mockResolvedValue(Readable.from([Buffer.from(CONTENT)]));
+
+    const res = await buildRenditionResponse("segments/a.mp3", null);
+
+    expect(res.headers.get("X-Accel-Redirect")).toBeNull();
+    expect(res.status).toBe(200);
+    expect(getS3ObjectStream).toHaveBeenCalledWith("segments/a.mp3");
+    expect(await readBody(res)).toBe(CONTENT);
   });
 });

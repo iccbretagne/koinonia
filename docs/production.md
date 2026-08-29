@@ -220,6 +220,11 @@ location /protected/audio/ {
 Ne definir `AUDIO_XACCEL_LOCATION` que si ce nginx existe reellement devant Koinonia — sinon les
 requetes audio echoueront (le fichier ne sera jamais servi par personne).
 
+Le service ne delegue a nginx qu'apres s'etre assure que la rendition est presente dans
+`AUDIO_CACHE_DIR` (telechargement depuis S3 au besoin) : nginx sert le fichier tel quel et ne
+sait pas le recuperer. Si le cache est indisponible, la delegation est ignoree et le flux est
+servi directement par Node — l'ecoute reste possible.
+
 ## Rollback
 
 Pour revenir a une release precedente :
