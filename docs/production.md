@@ -292,15 +292,37 @@ Sans empreinte, les actions de deploiement acceptent n'importe quelle cle d'hote
 detournement DNS ou reseau suffirait a faire livrer l'artefact — et surtout la cle privee de
 deploiement — a une machine tierce. L'empreinte epingle l'identite du serveur.
 
-La relever **sur l'hote lui-meme** (ou via une connexion SSH deja verifiee), jamais depuis un
-reseau non maitrise :
+**Quel type de cle relever** — le point qui fait echouer la verification si on se trompe. Un
+serveur presente plusieurs cles d'hote (RSA, ECDSA, ed25519) et le client en negocie **une**.
+Le client Go utilise par les actions de deploiement les prefere dans cet ordre (`x/crypto/ssh`,
+`supportedHostKeyAlgos`) :
+
+1. **RSA** (`rsa-sha2-256` / `rsa-sha2-512`)
+2. **ECDSA**
+3. **ed25519**
+
+C'est **l'inverse d'OpenSSH**, qui prefere ed25519 : relever l'empreinte ed25519 « parce que
+c'est la cle moderne » donne une valeur valide mais qui ne sera jamais celle presentee, et le
+deploiement echoue sur `host key fingerprint mismatch`.
+
+Relever donc l'empreinte de la **premiere cle existante dans cet ordre** — en pratique la RSA
+sur une Debian par defaut. Sur l'hote lui-meme (ou via une connexion SSH deja verifiee), jamais
+depuis un reseau non maitrise :
 
 ```bash
-ssh <hote> ssh-keygen -l -f /etc/ssh/ssh_host_ed25519_key.pub | cut -d ' ' -f2
+# Lister toutes les cles d'hote disponibles et leur type
+for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -l -f "$f"; done
+
+# Empreinte a enregistrer (RSA si presente, sinon ECDSA, sinon ed25519)
+ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub | cut -d ' ' -f2
 ```
 
 La valeur obtenue commence par `SHA256:` — la copier telle quelle, prefixe compris, dans le
 secret `DEPLOY_HOST_FINGERPRINT` de l'environnement correspondant.
+
+> Si le deploiement echoue sur `ssh: handshake failed: ssh: host key fingerprint mismatch`,
+> c'est presque toujours ce point : empreinte relevee sur un autre type de cle que celui
+> negocie, ou empreinte d'un autre hote (recette/production interverties).
 
 > Le deploiement **echoue volontairement** si ce secret est absent. Un secret vide ne
 > declencherait aucune verification : mieux vaut un deploiement bloque qu'un deploiement que
