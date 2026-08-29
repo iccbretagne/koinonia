@@ -164,9 +164,10 @@
 - [x] `npm run lint`
 - [x] `npm run lint:boundaries`
 - [x] `npm run test`
-- [ ] **Vérification manuelle en recette** : un responsable de département réel ne perd aucun
+- [x] **Vérification manuelle en recette** : un responsable de département réel ne perd aucun
       département qu'il gère légitimement (risque n° 1 du plan : bloquer à tort, pas laisser
-      passer)
+      passer) — confirmé le 2026-08-30. A révélé une issue distincte, hors périmètre de cette
+      spec : `/dashboard/stats` n'appliquait aucun périmètre (voir issue liée)
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [x] Issues #462, #463 et #467 référencées dans la PR pour fermeture automatique
 - [x] PR ouverte vers `main`
