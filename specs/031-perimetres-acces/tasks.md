@@ -168,5 +168,5 @@
       département qu'il gère légitimement (risque n° 1 du plan : bloquer à tort, pas laisser
       passer)
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits
-- [ ] Issues #462, #463 et #467 référencées dans la PR pour fermeture automatique
-- [ ] PR ouverte vers `main`
+- [x] Issues #462, #463 et #467 référencées dans la PR pour fermeture automatique
+- [x] PR ouverte vers `main`
