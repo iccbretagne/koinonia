@@ -281,56 +281,65 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 | `DEPLOY_PORT` | Port SSH personnalise |
 | `DEPLOY_USER` | `koinonia` |
 | `DEPLOY_PATH` | `/opt/koinonia` |
-| `DEPLOY_HOST_FINGERPRINT` | Empreinte SHA-256 de la cle d'hote SSH (voir ci-dessous) |
 
 Ces secrets sont a definir **par environnement** (`Settings > Environments`), la recette et la
-production n'ayant ni la meme machine ni la meme empreinte.
+production etant deux machines distinctes.
 
-### Empreinte SSH de l'hote
+### Identite SSH de l'hote — risque accepte (audit M-08)
 
-Sans empreinte, les actions de deploiement acceptent n'importe quelle cle d'hote : un
-detournement DNS ou reseau suffirait a faire livrer l'artefact — et surtout la cle privee de
-deploiement — a une machine tierce. L'empreinte epingle l'identite du serveur.
+> **Etat** : non corrige, **risque formellement accepte** le 2026-08-29.
+> **Proprietaire** : responsable technique du projet.
+> **Reexamen** : a la prochaine montee de version des actions de deploiement, et au plus tard
+> le 2027-02-28.
 
-**Quel type de cle relever** — le point qui fait echouer la verification si on se trompe. Un
-serveur presente plusieurs cles d'hote (RSA, ECDSA, ed25519) et le client en negocie **une**.
-Le client Go utilise par les actions de deploiement les prefere dans cet ordre (`x/crypto/ssh`,
-`supportedHostKeyAlgos`) :
+Les actions de deploiement n'epinglent pas l'empreinte de la cle d'hote SSH : elles acceptent
+donc la cle presentee, quelle qu'elle soit. Un detournement DNS ou reseau sur le trajet
+GitHub → serveur permettrait a une machine tierce de recevoir l'artefact **et la cle privee de
+deploiement**.
 
-1. **RSA** (`rsa-sha2-256` / `rsa-sha2-512`)
-2. **ECDSA**
-3. **ed25519**
+#### Pourquoi ce n'est pas corrige
 
-C'est **l'inverse d'OpenSSH**, qui prefere ed25519 : relever l'empreinte ed25519 « parce que
-c'est la cle moderne » donne une valeur valide mais qui ne sera jamais celle presentee, et le
-deploiement echoue sur `host key fingerprint mismatch`.
+L'epinglage a ete implemente puis **retire** : il ne peut pas fonctionner en l'etat. Les deux
+etapes du deploiement embarquent des versions differentes de `golang.org/x/crypto`, qui ne
+classent pas les algorithmes de cle d'hote dans le meme ordre :
 
-Relever donc l'empreinte de la **premiere cle existante dans cet ordre** — en pratique la RSA
-sur une Debian par defaut. Sur l'hote lui-meme (ou via une connexion SSH deja verifiee), jamais
-depuis un reseau non maitrise :
+| Etape | Binaire | `x/crypto` | Cle negociee |
+|---|---|---|---|
+| `appleboy/scp-action@v0.1.7` | drone-scp 1.6.14 | v0.17.0 | **ECDSA** |
+| `appleboy/ssh-action@v1.2.5` | drone-ssh 1.8.2 | v0.45.0 | **RSA** |
 
-```bash
-# Lister toutes les cles d'hote disponibles et leur type
-for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -l -f "$f"; done
+Jusqu'a `x/crypto` v0.37 l'ordre est `ECDSA…, RSA…, ED25519` ; a partir de v0.45 il devient
+`RSA…, ECDSA…, ED25519`. Les deux etapes negocient donc **deux cles d'hote differentes**, et
+une empreinte unique ne peut satisfaire que l'une des deux. Monter `scp-action` en v1.0.0 ne
+change rien : drone-scp 1.8.0 utilise `x/crypto` v0.37.0, encore cote ECDSA.
 
-# Empreinte a enregistrer (RSA si presente, sinon ECDSA, sinon ed25519)
-ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub | cut -d ' ' -f2
-```
+#### Mesures compensatoires en place
 
-La valeur obtenue commence par `SHA256:` — la copier telle quelle, prefixe compris, dans le
-secret `DEPLOY_HOST_FINGERPRINT` de l'environnement correspondant.
+- Cle de deploiement **dediee**, distincte entre recette et production, sans autre usage.
+- `sudo` du compte de deploiement restreint au seul `systemctl restart` des services Koinonia.
+- Le deploiement de production ne transporte que l'artefact **deja construit et teste par la
+  CI**, dont le tag et le commit sont verifies avant transfert : un attaquant en position
+  d'interception ne peut pas faire construire un artefact different par la chaine.
+- Aucun secret applicatif ne transite par ce canal : `shared/.env` vit sur le serveur.
 
-> Si le deploiement echoue sur `ssh: handshake failed: ssh: host key fingerprint mismatch`,
-> c'est presque toujours ce point : empreinte relevee sur un autre type de cle que celui
-> negocie, ou empreinte d'un autre hote (recette/production interverties).
+Ces mesures **ne couvrent pas** le risque principal — la capture de la cle privee de
+deploiement par un hote usurpe. Elles en limitent la portee, elles ne l'annulent pas.
 
-> Le deploiement **echoue volontairement** si ce secret est absent. Un secret vide ne
-> declencherait aucune verification : mieux vaut un deploiement bloque qu'un deploiement que
-> l'on croit protege a tort.
+#### Conditions de levee
 
-Si la cle d'hote du serveur est regeneree (reinstallation, changement de machine), l'empreinte
-change et le deploiement echouera tant que le secret n'est pas mis a jour. C'est le comportement
-attendu : un changement d'identite de l'hote doit etre constate, pas subi.
+Deux sorties possibles, a instruire au reexamen :
+
+1. **Ne faire offrir qu'un seul type de cle d'hote par le serveur** (`HostKey` unique dans
+   `sshd_config`, ed25519 en pratique). Les deux clients negocient alors la meme cle quelle que
+   soit leur version, et une empreinte unique redevient possible. Cout : une modification
+   `sshd` par machine, et une nouvelle acceptation de cle pour les connexions humaines.
+2. **Remplacer les actions tierces par `scp`/`ssh` d'OpenSSH** avec un `known_hosts` epingle.
+   OpenSSH accepte toutes les cles listees : la question de l'ordre disparait, et le job
+   privilegie n'execute plus de code tiers. Cout : reecriture des deux etapes, a valider en
+   recette.
+
+L'option 2 est la cible souhaitable ; elle rejoint la reduction de surface du chemin de
+deploiement traitee par [le TODO H-10](todo-separation-comptes-deploiement.md).
 
 ### Fonctionnement
 
@@ -1050,4 +1059,3 @@ Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionneme
 - [ ] Traefik configure avec certificat TLS
 - [ ] URI de redirection Google OAuth ajoutee
 - [ ] Acces HTTPS fonctionnel
-- [ ] `DEPLOY_HOST_FINGERPRINT` renseigne dans l'environnement GitHub de l'hote (recette **et** production) — sans lui le deploiement echoue volontairement

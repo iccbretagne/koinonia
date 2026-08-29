@@ -101,33 +101,6 @@ jobs:
           run-id: ${{ needs.resolve.outputs.run_id }}
           github-token: ${{ github.token }}
 
-      - name: Verifier la presence de l'empreinte SSH de l'hote
-        # Fail-closed volontaire : sans empreinte, les actions SSH acceptent n'importe quelle cle
-        # d'hote, donc un detournement DNS/reseau suffirait a capter la cle de deploiement et
-        # l'artefact. Un secret vide passerait inapercu (l'action ne verifierait simplement rien) :
-        # on prefere refuser le deploiement plutot que de le croire protege (audit M-08).
-        # Le format est verifie aussi : sans le prefixe 'SHA256:', la comparaison echouerait
-        # au handshake, beaucoup plus loin et avec un message bien moins parlant.
-        run: |
-          FP='${{ secrets.DEPLOY_HOST_FINGERPRINT }}'
-          if [ -z "$FP" ]; then
-            echo "::error::Secret DEPLOY_HOST_FINGERPRINT absent de l'environnement ${ENVIRONMENT}."
-          elif [ "${FP#SHA256:}" = "$FP" ]; then
-            echo "::error::DEPLOY_HOST_FINGERPRINT ne commence pas par 'SHA256:' (environnement ${ENVIRONMENT})."
-          else
-            exit 0
-          fi
-          echo "Relever l'empreinte sur l'hote, en respectant l'ORDRE DE PREFERENCE du client Go"
-          echo "(RSA, puis ECDSA, puis ed25519 — l'inverse d'OpenSSH) : une empreinte relevee sur"
-          echo "un autre type de cle est valide mais ne correspondra jamais a celle presentee."
-          echo "  for f in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -l -f \"\$f\"; done"
-          echo "  ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub | cut -d ' ' -f2"
-          echo "Puis GitHub > Settings > Environments > ${ENVIRONMENT}."
-          echo "Voir docs/production.md, section « Empreinte SSH de l'hote »."
-          exit 1
-        env:
-          ENVIRONMENT: production
-
       - name: Upload artifact to server
         uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
@@ -135,7 +108,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
           source: koinonia-${{ needs.resolve.outputs.version }}.tar.gz
           target: /tmp
 
@@ -149,7 +121,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
           envs: VERSION,DEPLOY_PATH
           script: |
             set -e
