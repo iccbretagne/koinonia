@@ -17,6 +17,9 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/s3", () => ({
   deleteMediaFiles: vi.fn().mockResolvedValue(undefined),
+  // Taille reelle constatee a la confirmation de depot (spec 029) : valeur dans les clous,
+  // ce fichier de test porte sur la derivation des cles, pas sur la borne de taille.
+  getMediaObjectSize: vi.fn().mockResolvedValue(1024),
 }));
 
 // Mock getFileOriginalKey pour vérifier qu'elle est appelée server-side
@@ -24,6 +27,7 @@ const mockGetFileOriginalKey = vi.fn().mockReturnValue("media-events/evt-1/files
 
 vi.mock("@/modules/media", () => ({
   getFileOriginalKey: (...args: unknown[]) => mockGetFileOriginalKey(...args),
+  MAX_FILE_SIZE: 500 * 1024 * 1024,
 }));
 
 const { PATCH } = await import("../route");

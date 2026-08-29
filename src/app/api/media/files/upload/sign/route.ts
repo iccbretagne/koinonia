@@ -7,14 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { requireMediaUploadAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { getFileOriginalKey } from "@/modules/media";
+import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Media, MEDIA_BUCKET } from "@/lib/s3";
 import { z } from "zod";
 
 const PRESIGNED_EXPIRY = 3600; // 1h
-const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
 
 const ALLOWED_MIME_TYPES = [
   // Images / visuels

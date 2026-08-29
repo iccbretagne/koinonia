@@ -25,6 +25,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/modules/media", () => ({
   getFileOriginalKey: vi.fn().mockReturnValue("media-events/me-1/file-1/v1/file.mp4"),
+  MAX_FILE_SIZE: 500 * 1024 * 1024,
 }));
 
 vi.mock("@/lib/rate-limit", () => ({

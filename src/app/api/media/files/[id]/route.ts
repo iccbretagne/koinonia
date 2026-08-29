@@ -5,8 +5,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, requireMediaReviewAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { deleteMediaFiles } from "@/lib/s3";
-import { getFileOriginalKey } from "@/modules/media";
+import { deleteMediaFiles, getMediaObjectSize } from "@/lib/s3";
+import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
 import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
@@ -111,6 +111,19 @@ export async function PATCH(
         const containerId = (mediaFile.mediaEventId ?? mediaFile.mediaProjectId)!;
         const derivedKey = getFileOriginalKey(container, containerId, id, 1, ext);
 
+        // La borne de taille validee a la signature ne portait que sur la taille ANNONCEE :
+        // une URL presignee PutObject n'impose aucune limite, le fichier reellement depose
+        // peut donc etre bien plus gros. On constate ici sa taille reelle avant de l'accepter
+        // dans le circuit de revue (spec 029).
+        const actualSize = await getMediaObjectSize(derivedKey);
+        if (actualSize === null) {
+          throw new ApiError(404, "Fichier déposé introuvable — le dépôt n'a pas abouti.");
+        }
+        if (actualSize > MAX_FILE_SIZE) {
+          await deleteMediaFiles([derivedKey]);
+          throw new ApiError(400, `Fichier trop lourd (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+        }
+
         await prisma.mediaFileVersion.create({
           data: {
             mediaFileId: id,
@@ -120,7 +133,10 @@ export async function PATCH(
             createdById: session.user.id,
           },
         });
-        await prisma.mediaFile.update({ where: { id }, data: { status: "IN_REVIEW" } });
+        await prisma.mediaFile.update({
+          where: { id },
+          data: { status: "IN_REVIEW", size: actualSize },
+        });
       }
     }
 

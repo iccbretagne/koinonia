@@ -31,18 +31,21 @@ export async function POST(
       throw new ApiError(403, "Segment hors périmètre de ce lien");
     }
 
-    const segment = await prisma.audioSegment.findUnique({
-      where: { id: segmentId },
-      select: { id: true, serviceId: true },
-    });
-    if (!segment || segment.serviceId !== shareToken.serviceId) {
-      throw new ApiError(404, "Segment introuvable");
-    }
-
-    await prisma.audioSegment.update({
-      where: { id: segmentId },
+    // Increment conditionnel en une seule instruction : le statut publie entre dans le
+    // `where` plutot que d'etre verifie avant l'ecriture, ce qui supprime la fenetre entre
+    // les deux. Sans ce controle, un ancien lien non revoque continuait de gonfler le
+    // compteur d'un culte depublie, que le streaming refuse pourtant deja (spec 029).
+    const { count } = await prisma.audioSegment.updateMany({
+      where: {
+        id: segmentId,
+        serviceId: shareToken.serviceId,
+        service: { status: "PUBLISHED" },
+      },
       data: { playCount: { increment: 1 } },
     });
+    if (count === 0) {
+      throw new ApiError(410, "Ce culte n'est plus disponible.");
+    }
 
     return successResponse({ ok: true });
   } catch (error) {
