@@ -8,11 +8,12 @@
  *  - **Délégué (point de sortie, désactivé par défaut)** : si `AUDIO_XACCEL_LOCATION` est
  *    défini, la route répond un corps vide portant `X-Accel-Redirect`, et un nginx placé devant
  *    le process sert le fichier en `sendfile`. Activer ce mode suppose d'insérer nginx dans la
- *    chaîne — non fait aujourd'hui (plan.md § Services / logique métier).
+ *    chaîne — non fait aujourd'hui (plan.md § Services / logique métier). La délégation n'a lieu
+ *    que si la rendition est effectivement en cache : nginx ne sait pas la télécharger.
  */
 import { createReadStream, statSync } from "fs";
 import { Readable } from "stream";
-import { getCachedRenditionPath, getCacheFileName, touchRenditionAccess } from "./rendition-cache";
+import { getCachedRenditionPath, getCacheFileName } from "./rendition-cache";
 import { getS3ObjectStream } from "@/modules/storage";
 
 const CACHE_HEADERS = {
@@ -47,8 +48,14 @@ function parseRange(rangeHeader: string | null, size: number): { start: number; 
  */
 export async function buildRenditionResponse(s3Key: string, rangeHeader: string | null): Promise<Response> {
   const xAccelLocation = process.env.AUDIO_XACCEL_LOCATION;
-  if (xAccelLocation) {
-    await touchRenditionAccess(s3Key);
+  const cachedPath = await getCachedRenditionPath(s3Key);
+
+  if (xAccelLocation && cachedPath) {
+    // Le remplissage du cache doit précéder la délégation : nginx sert le fichier tel quel et
+    // répondrait 404 s'il était absent. Ni le pré-chauffage du worker (best-effort) ni la
+    // présence passée du fichier ne le garantissent — l'éviction LRU peut l'avoir retiré. Quand
+    // le cache est indisponible, on ne délègue pas : la suite sert le flux S3 direct, fidèle au
+    // principe d'ADR-0008 selon lequel le cache accélère l'écoute sans jamais la conditionner.
     return new Response(null, {
       status: 200,
       headers: {
@@ -59,7 +66,6 @@ export async function buildRenditionResponse(s3Key: string, rangeHeader: string 
     });
   }
 
-  const cachedPath = await getCachedRenditionPath(s3Key);
   if (cachedPath) {
     return streamLocalFile(cachedPath, rangeHeader);
   }
