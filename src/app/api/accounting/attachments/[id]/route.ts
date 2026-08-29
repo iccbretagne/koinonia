@@ -1,7 +1,8 @@
-import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getFileUrl, deleteFile } from "@/lib/file-storage";
+import { canReadAttachment } from "@/modules/accounting";
 
 export async function GET(
   _request: Request,
@@ -10,18 +11,15 @@ export async function GET(
   try {
     const { id } = await params;
     const session = await requireAuth();
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
 
-    const attachment = await prisma.financialAttachment.findUnique({
-      where: { id },
-      include: { request: { select: { churchId: true, submittedById: true } } },
-    });
+    // L'église de la pièce fait autorité — jamais le contexte d'église affiché, qui peut être
+    // manipulé côté client (spec 025, même principe que spec 024).
+    const attachment = await prisma.financialAttachment.findUnique({ where: { id } });
     if (!attachment) throw new ApiError(404, "Pièce jointe introuvable");
 
-    const attachmentChurchId = attachment.request?.churchId ?? null;
-    if (attachmentChurchId && attachmentChurchId !== churchId) throw new ApiError(403, "Accès refusé");
-    if (!attachment.request && attachment.uploadedById !== session.user.id!) throw new ApiError(403, "Accès refusé");
+    if (!(await canReadAttachment(attachment, session))) {
+      throw new ApiError(403, "Accès refusé");
+    }
 
     const url = await getFileUrl(attachment.s3Key, attachment.filename);
     return successResponse({ url, filename: attachment.filename, mimeType: attachment.mimeType });
@@ -37,12 +35,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     const session = await requireAuth();
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
 
     const attachment = await prisma.financialAttachment.findUnique({
       where: { id },
-      include: { request: { select: { churchId: true, submittedById: true, status: true } } },
+      include: { request: { select: { submittedById: true, status: true } } },
     });
     if (!attachment) throw new ApiError(404, "Pièce jointe introuvable");
 

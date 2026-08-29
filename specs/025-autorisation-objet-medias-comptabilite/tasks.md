@@ -10,18 +10,18 @@
 ## Prérequis
 
 - [x] Branche créée : `fix/autorisation-objet-medias-comptabilite`
-- [ ] Migration Prisma générée (schéma modifié : `churchId` sur les pièces jointes)
+- [x] Migration Prisma générée (schéma modifié : `churchId` sur les pièces jointes)
 
 ## Tâches
 
 ### 1. Données & migration
 
-- [ ] **T1** — Ajouter `churchId` (obligatoire) et sa relation `church` au modèle
+- [x] **T1** — Ajouter `churchId` (obligatoire) et sa relation `church` au modèle
       `FinancialAttachment`, avec `@@index([churchId])`. Documenter en commentaire que ce champ
       fait autorité et ne dépend jamais du rattachement à une demande.
       *(fichier : `prisma/schema.prisma`)*
 
-- [ ] **T2** — Générer la migration (`npm run db:migrate`, nom `add_church_to_financial_attachments`)
+- [x] **T2** — Générer la migration (`npm run db:migrate`, nom `add_church_to_financial_attachments`)
       puis **éditer le SQL** pour que l'ajout et la reprise soient atomiques, dans cet ordre :
       colonne nullable → remplissage depuis `request.churchId` → remplissage du reliquat depuis le
       2ᵉ segment de `s3Key` (`accounting/{churchId}/…`) → passage en `NOT NULL`.
@@ -30,7 +30,7 @@
 
 ### 2. Logique métier (services)
 
-- [ ] **T3** — Créer le service d'autorisation des pièces jointes, seul porteur de la règle :
+- [x] **T3** — Créer le service d'autorisation des pièces jointes, seul porteur de la règle :
       - `assertAttachmentsAssignable(attachmentIds, { userId, churchId })` — vérifie en **une**
         requête que chaque identifiant désigne une pièce du déposant, **sans** `requestId`, et de
         l'église donnée ; toute divergence de cardinalité lève un `ApiError` **unique et
@@ -43,7 +43,7 @@
 
 ### 3. API (route handlers)
 
-- [ ] **T4** — **Médias / validation** : refuser inconditionnellement un jeton sans événement
+- [x] **T4** — **Médias / validation** : refuser inconditionnellement un jeton sans événement
       (`if (!shareToken.mediaEventId) throw new ApiError(403, …)`), puis charger la photo avec un
       `findFirst` filtré par `{ id, mediaEventId: shareToken.mediaEventId }` et répondre **404**
       si absente. Le PATCH poursuit avec un `updateMany` filtré sur le même périmètre, afin que
@@ -51,24 +51,24 @@
       transition d'état de l'événement n'est pas déclenchée sur un refus.
       *(fichier : `src/app/api/media/validate/[token]/photo/[photoId]/route.ts`)*
 
-- [ ] **T5** [P] — **Médias / galerie** : même traitement sur la branche photo (la branche projet
+- [x] **T5** [P] — **Médias / galerie** : même traitement sur la branche photo (la branche projet
       existante, correctement scopée, reste inchangée).
       *(fichier : `src/app/api/media/gallery/[token]/photo/[photoId]/route.ts`)*
 
-- [ ] **T6** [P] — **Médias / téléchargement** : même traitement sur la branche photo.
+- [x] **T6** [P] — **Médias / téléchargement** : même traitement sur la branche photo.
       *(fichier : `src/app/api/media/download/[token]/photo/[photoId]/route.ts`)*
 
-- [ ] **T7** — **Comptabilité / dépôt** : écrire `churchId` à la création de la pièce (l'église
+- [x] **T7** — **Comptabilité / dépôt** : écrire `churchId` à la création de la pièce (l'église
       vient de `requireCurrentChurchPermission`, déjà en place).
       *(fichier : `src/app/api/accounting/attachments/route.ts`)*
 
-- [ ] **T8** — **Comptabilité / création de demande** : appeler `assertAttachmentsAssignable`
+- [x] **T8** — **Comptabilité / création de demande** : appeler `assertAttachmentsAssignable`
       avant de rattacher, et envelopper vérification **et** création dans une même
       `prisma.$transaction`, pour qu'aucun rattachement partiel ne survive à une suppression
       concurrente. Un lot contenant une seule pièce invalide ne crée **aucune** demande.
       *(fichier : `src/app/api/accounting/requests/route.ts`)*
 
-- [ ] **T9** — **Comptabilité / consultation et suppression** : faire porter l'autorité à
+- [x] **T9** — **Comptabilité / consultation et suppression** : faire porter l'autorité à
       `attachment.churchId` (et non plus à `request.churchId`), et soumettre la lecture d'une
       pièce d'un tiers à `canReadAttachment` — `accounting:submit` seul ne suffit plus.
       *(fichier : `src/app/api/accounting/attachments/[id]/route.ts`)*
@@ -80,20 +80,20 @@ comportement identique.*
 
 ### 5. Tests
 
-- [ ] **T10** — **Périmètre des jetons média** : jeton **projet** sur une route photo refusé en
+- [x] **T10** — **Périmètre des jetons média** : jeton **projet** sur une route photo refusé en
       GET **et** PATCH sans écriture émise ; jeton **sans cible** refusé sur les trois routes ;
       jeton événement visant la photo d'un **autre** événement refusé ; jeton événement visant
       **sa** photo autorisé (non-régression) ; refus hors périmètre et photo inexistante rendant
       le **même** statut et le **même** message ; aucune transition d'état d'événement sur refus.
       *(fichier : `src/app/api/media/__tests__/validate-photo-scope.test.ts`)*
 
-- [ ] **T11** [P] — **Service d'autorisation comptable** : pièce d'autrui, pièce déjà rattachée,
+- [x] **T11** [P] — **Service d'autorisation comptable** : pièce d'autrui, pièce déjà rattachée,
       pièce d'une autre église, identifiant inexistant → chacun rejeté avec le **même** message ;
       pièces propres et orphelines → acceptées ; `canReadAttachment` vrai pour le déposant et pour
       `accounting:manage`, faux pour `accounting:submit` seul.
       *(fichier : `src/modules/accounting/services/__tests__/attachments.test.ts`)*
 
-- [ ] **T12** — **Bout en bout comptable** : création de demande refusée pour une pièce d'autrui,
+- [x] **T12** — **Bout en bout comptable** : création de demande refusée pour une pièce d'autrui,
       déjà rattachée, ou d'une autre église ; lot **mixte** → refus global et **aucun**
       rattachement (critère d'atomicité) ; création avec ses propres pièces orphelines → succès ;
       lecture d'une pièce d'un tiers refusée avec `accounting:submit`, autorisée avec
@@ -121,11 +121,11 @@ comportement identique.*
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test`
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test`
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] **Avant déploiement** : la migration T2 est irréversible en pratique (colonne `NOT NULL`
       remplie par reprise) — vérifier sur une copie des données de production qu'aucune pièce ne
       résiste au double backfill avant de l'appliquer

@@ -91,6 +91,7 @@ model Church {
   // Module comptabilité
   financialSeries           FinancialSeries[]
   financialRequests         FinancialRequest[]
+  financialAttachments      FinancialAttachment[]
   // Module service d'accueil
   welcomeDutyFamilies       WelcomeDutyFamily[]
   welcomeDutyAssignments    WelcomeDutyAssignment[]
@@ -1459,6 +1460,9 @@ model FinancialAttachment {
   id           String  @id @default(cuid())
   requestId    String?
   uploadedById String?
+  // Église de dépôt — fait autorité pour toute décision d'accès. Ne dépend jamais du
+  // rattachement à une demande, que l'appelant peut lui-même provoquer (spec 025).
+  churchId     String
   s3Key        String  @db.VarChar(512)
   filename     String  @db.VarChar(255)
   mimeType     String  @db.VarChar(100)
@@ -1466,9 +1470,11 @@ model FinancialAttachment {
 
   request    FinancialRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
   uploadedBy User?             @relation("AccountingAttachmentsUploaded", fields: [uploadedById], references: [id])
+  church     Church            @relation(fields: [churchId], references: [id])
   uploadedAt DateTime          @default(now())
 
   @@index([requestId])
+  @@index([churchId])
   @@map("financial_attachments")
 }
 

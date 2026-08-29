@@ -1,7 +1,7 @@
 # Spec — Autorisation objet des médias et des pièces comptables
 
 - **Numéro** : 025
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-08-29
 - **Branche suggérée** : `fix/autorisation-objet-medias-comptabilite`
 

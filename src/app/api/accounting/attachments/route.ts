@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       data: {
         requestId:    requestId ?? undefined,
         uploadedById: session.user.id!,
+        churchId,
         s3Key,
         filename: file.name,
         mimeType: file.type,

@@ -80,6 +80,11 @@ export const prismaMock = {
   audioServiceTemplate: createModelMock(),
   audioJob: createModelMock(),
   audioShareToken: createModelMock(),
+  // Module comptabilité
+  financialSeries: createModelMock(),
+  financialRequest: createModelMock(),
+  financialAttachment: createModelMock(),
+  financialPayment: createModelMock(),
   $queryRaw: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   $transaction: vi.fn((arg: any) => (Array.isArray(arg) ? Promise.all(arg) : arg(prismaMock))),

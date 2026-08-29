@@ -19,15 +19,16 @@ export async function GET(
     const { token, photoId } = await params;
     const shareToken = await validateMediaShareToken(token, ["VALIDATOR", "PREVALIDATOR"]);
 
-    const photo = await prisma.mediaPhoto.findUnique({
-      where: { id: photoId },
-      select: { id: true, originalKey: true, filename: true, mediaEventId: true },
+    // Une photo n'appartient jamais à un projet : un jeton sans événement (ou délégué à un
+    // projet) n'a rien de légitime à faire ici — refus inconditionnel (spec 025).
+    if (!shareToken.mediaEventId) throw new ApiError(404, "Photo introuvable");
+
+    const photo = await prisma.mediaPhoto.findFirst({
+      where: { id: photoId, mediaEventId: shareToken.mediaEventId },
+      select: { id: true, originalKey: true, filename: true },
     });
 
     if (!photo) throw new ApiError(404, "Photo introuvable");
-    if (shareToken.mediaEventId && photo.mediaEventId !== shareToken.mediaEventId) {
-      throw new ApiError(403, "Photo hors périmètre");
-    }
 
     const originalUrl = await getSignedOriginalUrl(photo.originalKey);
     return successResponse({ id: photo.id, originalUrl, filename: photo.filename });
@@ -57,20 +58,16 @@ export async function PATCH(
       throw new ApiError(403, "Le validateur ne peut qu'approuver ou rejeter");
     }
 
-    const photo = await prisma.mediaPhoto.findUnique({
-      where: { id: photoId },
-      select: { id: true, mediaEventId: true, status: true },
-    });
+    // Une photo n'appartient jamais à un projet : un jeton sans événement (ou délégué à un
+    // projet) n'a rien de légitime à faire ici — refus inconditionnel (spec 025).
+    if (!shareToken.mediaEventId) throw new ApiError(404, "Photo introuvable");
 
-    if (!photo) throw new ApiError(404, "Photo introuvable");
-    if (shareToken.mediaEventId && photo.mediaEventId !== shareToken.mediaEventId) {
-      throw new ApiError(403, "Photo hors périmètre");
-    }
-
-    const updated = await prisma.mediaPhoto.update({
-      where: { id: photoId },
+    const result = await prisma.mediaPhoto.updateMany({
+      where: { id: photoId, mediaEventId: shareToken.mediaEventId },
       data: { status, validatedAt: new Date() },
     });
+
+    if (result.count === 0) throw new ApiError(404, "Photo introuvable");
 
     // Auto-transition de l'événement → REVIEWED si plus aucune photo en attente
     if (shareToken.type === "VALIDATOR" && shareToken.mediaEventId) {
@@ -91,7 +88,7 @@ export async function PATCH(
       }
     }
 
-    return successResponse(updated);
+    return successResponse({ id: photoId, status });
   } catch (error) {
     return errorResponse(error);
   }
