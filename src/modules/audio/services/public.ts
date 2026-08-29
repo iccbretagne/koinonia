@@ -1,5 +1,6 @@
 import type { AudioSegment, AudioRendition, Prisma } from "@/generated/prisma/client";
 import { getSignedStreamUrl } from "@/modules/storage";
+import { renditionVersion } from "./rendition-cache";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -13,6 +14,8 @@ export interface PublicAudioSegment {
   title: string;
   order: number;
   durationMs: number;
+  /** Empreinte du rendu — change quand le contenu change (spec 026), sert de casse-cache navigateur. */
+  version: string;
 }
 
 export interface PublicAudioService {
@@ -40,7 +43,13 @@ export function mapPublishedSegments(
 ): PublicAudioSegment[] {
   return segments
     .filter((s) => s.rendition)
-    .map((s) => ({ id: s.id, title: s.title, order: s.order, durationMs: s.rendition!.durationMs }));
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      order: s.order,
+      durationMs: s.rendition!.durationMs,
+      version: renditionVersion(s.rendition!.sourceHash),
+    }));
 }
 
 /**

@@ -5,9 +5,9 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import type { AudioJob } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { downloadFile, uploadFile } from "@/modules/storage";
+import { downloadFile, uploadFile, deleteMediaFile } from "@/modules/storage";
 import { maybeCompletePublication } from "../../services/publish";
-import { primeRenditionCache } from "../../services/rendition-cache";
+import { primeRenditionCache, renditionVersion } from "../../services/rendition-cache";
 import { log, since, formatBytes } from "../log";
 
 const execFileAsync = promisify(execFile);
@@ -28,8 +28,14 @@ interface LoudnormMeasured {
   target_offset: string;
 }
 
-function getRenditionKey(serviceId: string, segmentId: string): string {
-  return `audio-services/${serviceId}/renditions/${segmentId}.mp3`;
+/**
+ * Clé S3 adressée par contenu (spec 026) : intègre le `sourceHash` du rendu, pour qu'un
+ * re-rendu (ex. correction) produise une clé différente au lieu d'écraser silencieusement
+ * l'objet précédent — c'est ce que suppose le cache long et `immutable` servi en aval
+ * (ADR-0008), qui ne tenait pas tant que la clé ne dépendait que de `segmentId`.
+ */
+function getRenditionKey(serviceId: string, segmentId: string, sourceHash: string): string {
+  return `audio-services/${serviceId}/renditions/${segmentId}-${renditionVersion(sourceHash)}.mp3`;
 }
 
 /** Passe de mesure `loudnorm` (dry-run vers /dev/null) — ffmpeg écrit le JSON sur stderr. */
@@ -63,7 +69,7 @@ export async function renderHandler(job: AudioJob): Promise<void> {
 
   const segment = await prisma.audioSegment.findUnique({
     where: { id: payload.segmentId },
-    include: { source: true, service: true },
+    include: { source: true, service: true, rendition: true },
   });
   if (!segment || !segment.source) {
     throw new Error(`Segment ${payload.segmentId} introuvable ou sans source associée`);
@@ -116,7 +122,8 @@ export async function renderHandler(job: AudioJob): Promise<void> {
     );
 
     stepAt = Date.now();
-    const key = getRenditionKey(segment.serviceId, segment.id);
+    const previousKey = segment.rendition?.s3Key ?? null;
+    const key = getRenditionKey(segment.serviceId, segment.id, payload.sourceHash);
     await uploadFile(key, outputBuffer, "audio/mpeg");
     log(`rendu ${segment.id} : rendu envoyé vers ${key} en ${since(stepAt)}`);
 
@@ -144,6 +151,13 @@ export async function renderHandler(job: AudioJob): Promise<void> {
         sourceHash: payload.sourceHash,
       },
     });
+
+    // Nettoyage de l'ancien objet S3 après bascule (spec 026) : la clé n'est plus référencée
+    // par personne dès que l'upsert ci-dessus a réussi. Best-effort — un objet orphelin
+    // n'empêche aucune écoute, alors qu'un échec de nettoyage qui ferait échouer le rendu, si.
+    if (previousKey && previousKey !== key) {
+      await deleteMediaFile(previousKey).catch(() => {});
+    }
 
     const completion = await maybeCompletePublication(segment.serviceId);
     log(

@@ -104,6 +104,30 @@ l'est aussi, alors que la redirection déportait cette charge sur le stockage ob
 prix assumé de la décision, et la raison pour laquelle le CDN reste la porte de sortie si
 l'audience change d'ordre de grandeur.
 
+## Mise à jour — 2026-08-29 (spec 026)
+
+La section « Décision » affirmait : « la clé de cache est celle de la rendition dans le stockage
+objet, qui change quand le rendu change — il n'y a donc pas d'invalidation à orchestrer. » Cette
+prémisse n'était pas tenue par le code : `getRenditionKey(serviceId, segmentId)` ne dépendait que
+de ces deux identifiants, jamais du contenu. Un nouveau rendu (ex. correction d'un culte déjà
+publié) écrasait silencieusement le même objet à la même clé — donc la même URL de streaming — et
+un navigateur ayant déjà mis l'ancienne version en cache (`immutable`, jusqu'à un an) continuait
+à la servir indéfiniment. Le cache disque serveur, nommé par hash de cette même clé, portait le
+même défaut.
+
+**Correction (spec 026)** : la clé intègre désormais une empreinte du `sourceHash` du rendu — la
+prémisse énoncée ci-dessus est maintenant vraie. Un nouveau rendu produit une clé différente,
+donc un fichier de cache disque différent et une URL de streaming différente (l'empreinte est
+propagée jusqu'au lecteur en paramètre de requête, purement indicatif côté serveur). L'ancien
+objet S3 est supprimé après bascule. Aucun changement des en-têtes `Cache-Control` ni de la
+décision elle-même : voir
+[Plan de la spec 026](../../specs/026-cache-corrections-audio/plan.md) pour le détail.
+
+Reste hors périmètre, alors et maintenant : un appareil ayant déjà mis un fichier en cache
+localement continue de le servir après une dépublication ou une révocation de lien, quel que
+soit le schéma de clé — limite inhérente à tout cache privé, non résolue par cette mise à jour
+(suivi dédié à ouvrir séparément, spec 026 § Questions ouvertes).
+
 ## Références
 
 - [Spec 021 — Bibliothèque d'écoute des cultes](../../specs/021-audio-bibliotheque-ecoute/spec.md) — la

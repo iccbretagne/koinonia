@@ -25,6 +25,16 @@ function cacheFileName(s3Key: string): string {
   return createHash("sha1").update(s3Key).digest("hex") + ".mp3";
 }
 
+/**
+ * Empreinte courte d'un `sourceHash` de rendition — utilisée à la fois dans la clé S3 (pour que
+ * la clé change quand le contenu change, spec 026) et dans l'URL de streaming exposée au lecteur
+ * (casse-cache navigateur). Les deux usages doivent produire la même valeur pour un même
+ * `sourceHash`, d'où ce point unique.
+ */
+export function renditionVersion(sourceHash: string): string {
+  return createHash("sha1").update(sourceHash).digest("hex").slice(0, 12);
+}
+
 function cachePath(s3Key: string): string {
   return path.join(CACHE_DIR, cacheFileName(s3Key));
 }
