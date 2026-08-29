@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
@@ -16,9 +16,7 @@ const createSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("accounting:view");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { session, churchId } = await requireCurrentChurchPermission("accounting:view");
 
     const { searchParams } = new URL(request.url);
     const status     = searchParams.get("status") ?? undefined;
@@ -86,9 +84,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("accounting:submit");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { session, churchId } = await requireCurrentChurchPermission("accounting:submit");
 
     const body = createSchema.parse(await request.json());
 

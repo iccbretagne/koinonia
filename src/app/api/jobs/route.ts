@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission } from "@/lib/auth";
+import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { sendEmail, buildJobOfferEmail } from "@/lib/email";
 import { z } from "zod";
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("jobs:post");
+    const session = await requirePlatformPermission("jobs:post");
     const body = await request.json();
     const data = jobSchema.parse(body);
 

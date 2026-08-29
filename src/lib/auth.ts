@@ -277,28 +277,6 @@ export async function requireAuth() {
   return session;
 }
 
-export async function requirePermission(permission: string, churchId?: string) {
-  const session = await requireAuth();
-
-  // Global super admin bypasses all permissions
-  if (session.user.isSuperAdmin) return session;
-
-  const roles = session.user.churchRoles.filter(
-    (r) => !churchId || r.churchId === churchId
-  );
-
-  const { rolePermissions } = await import("./registry");
-  const userPermissions = new Set(
-    roles.flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-
-  if (!userPermissions.has(permission)) {
-    throw new Error("FORBIDDEN");
-  }
-
-  return session;
-}
-
 type DepartmentScope =
   | { scoped: false }
   | { scoped: true; departmentIds: string[] };
@@ -360,7 +338,8 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
 
 /**
  * Vérifie qu'un utilisateur possède une permission donnée **dans une église précise**.
- * Contrairement à requirePermission, le churchId est obligatoire.
+ * Le churchId est obligatoire — voir requireCurrentChurchPermission pour le résoudre
+ * depuis le contexte courant.
  */
 // Permissions accordées aux utilisateurs ayant un profil pastoral dans une église
 // (lire mais pas écrire)
@@ -712,6 +691,11 @@ export async function requireAudioUnpublishAccess(churchId: string) {
   throw new Error("FORBIDDEN");
 }
 
+// Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie
+// posé par le client. Elle ne fait que sélectionner, parmi les églises où la session a
+// un rattachement (rôle ou supervision pastorale), laquelle regarder — elle ne confère
+// aucun droit par elle-même. Toute décision d'autorisation doit vérifier la permission
+// DANS l'église ainsi désignée (cf. requireCurrentChurchPermission), jamais s'y fier seule.
 export async function getCurrentChurchId(
   session: Session
 ): Promise<string | undefined> {
@@ -728,4 +712,65 @@ export async function getCurrentChurchId(
   }
 
   return session.user.churchRoles[0]?.churchId ?? pastoralChurchIds[0];
+}
+
+/**
+ * Vérifie une permission dans l'église courante (cf. getCurrentChurchId) et la retourne.
+ * Remplaçant de l'ancien `requirePermission(permission)` sans église : résout le contexte
+ * PUIS vérifie la permission dans ce contexte — jamais l'inverse — pour qu'un `churchId`
+ * ne puisse être retourné sans que la permission y ait été vérifiée.
+ */
+export async function requireCurrentChurchPermission(permission: string) {
+  const session = await requireAuth();
+  const { ApiError } = await import("./api-utils");
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+  await requireChurchPermission(permission, churchId);
+  return { session, churchId };
+}
+
+/**
+ * Réserve une action à l'administration de la plateforme (permissions globales telles que
+ * `church:manage`) : jamais évaluée dans une église, toujours globale — le Super Admin
+ * uniquement aujourd'hui, cf. `src/modules/core/index.ts`.
+ */
+export async function requireSuperAdmin() {
+  const session = await requireAuth();
+  if (!session.user.isSuperAdmin) {
+    throw new Error("FORBIDDEN");
+  }
+  return session;
+}
+
+/**
+ * Permissions volontairement transverses, non rattachées à une église : les modèles
+ * concernés (module emploi) n'ont pas de `churchId` par conception. Liste blanche
+ * explicite pour que toute portée globale reste énumérable et justifiée en revue —
+ * ne pas y ajouter une permission qui devrait être vérifiée par église.
+ */
+const PLATFORM_PERMISSIONS = new Set([
+  "jobs:seek",
+  "jobs:post",
+  "jobs:freelance",
+]);
+
+export async function requirePlatformPermission(permission: string) {
+  if (!PLATFORM_PERMISSIONS.has(permission)) {
+    throw new Error(
+      `Permission "${permission}" non déclarée comme transverse — vérifier par église via requireCurrentChurchPermission.`
+    );
+  }
+  const session = await requireAuth();
+
+  if (session.user.isSuperAdmin) return session;
+
+  const { rolePermissions } = await import("./registry");
+  const userPermissions = new Set(
+    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
+  );
+  if (!userPermissions.has(permission)) {
+    throw new Error("FORBIDDEN");
+  }
+
+  return session;
 }

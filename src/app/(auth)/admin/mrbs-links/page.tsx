@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { registry } from "@/lib/registry";
 import { notFound } from "next/navigation";
@@ -38,9 +38,10 @@ async function fetchMrbsUsers(): Promise<MrbsUser[]> {
 export default async function MrbsLinksPage() {
   if (!registry.has("mrbs")) notFound();
 
-  const session = await requirePermission("mrbs:manage");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("mrbs:manage", churchId);
 
   const [mrbsUsers, links, koinoniaUsers] = await Promise.all([
     fetchMrbsUsers(),

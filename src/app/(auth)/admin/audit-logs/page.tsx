@@ -1,8 +1,8 @@
-import { requirePermission } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import AuditLogsClient from "./AuditLogsClient";
 
 export default async function AuditLogsPage() {
-  await requirePermission("church:manage");
+  await requireSuperAdmin();
 
   return (
     <div>

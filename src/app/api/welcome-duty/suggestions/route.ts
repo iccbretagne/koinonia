@@ -1,12 +1,10 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { successResponse, errorResponse } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
   try {
-    const session = await requirePermission("events:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("events:manage");
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");

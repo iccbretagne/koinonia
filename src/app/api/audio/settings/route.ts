@@ -4,9 +4,9 @@
  * fonctions de département (`Department.function = "CAPTATION_AUDIO"`, spec 021).
  */
 import { z } from "zod";
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { successResponse, errorResponse } from "@/lib/api-utils";
 
 const schema = z.object({
   defaultCoverKey: z.string().nullable().optional(),
@@ -15,9 +15,7 @@ const schema = z.object({
 
 export async function GET() {
   try {
-    const session = await requirePermission("audio:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("audio:manage");
 
     const settings = await prisma.audioSettings.findUnique({ where: { churchId } });
     return successResponse(settings);
@@ -28,9 +26,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const session = await requirePermission("audio:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("audio:manage");
 
     const body = schema.parse(await request.json());
 

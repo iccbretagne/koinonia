@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -10,9 +10,7 @@ const createSchema = z.object({
 
 export async function GET(_request: Request) {
   try {
-    const session = await requirePermission("mrbs:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("mrbs:manage");
 
     const links = await prisma.mrbsUserLink.findMany({
       where: { churchId },
@@ -31,9 +29,7 @@ export async function GET(_request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("mrbs:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { session, churchId } = await requireCurrentChurchPermission("mrbs:manage");
 
     const data = createSchema.parse(await request.json());
 
@@ -60,9 +56,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await requirePermission("mrbs:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("mrbs:manage");
 
     const mrbsUsername = new URL(request.url).searchParams.get("mrbsUsername");
     if (!mrbsUsername) throw new ApiError(400, "Paramètre mrbsUsername requis");

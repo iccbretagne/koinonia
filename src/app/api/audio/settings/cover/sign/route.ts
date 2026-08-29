@@ -3,8 +3,8 @@
  * navigateur → S3 la couverture par défaut du module audio.
  */
 import { z } from "zod";
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { requireCurrentChurchPermission } from "@/lib/auth";
+import { successResponse, errorResponse } from "@/lib/api-utils";
 import { validateCoverFile, getCoverExtensionFromMimeType, getDefaultCoverKey } from "@/modules/audio";
 import { getSignedPutUrl, getSignedStreamUrl } from "@/modules/storage";
 
@@ -16,9 +16,7 @@ const signSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("audio:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("audio:manage");
 
     const body = signSchema.parse(await request.json());
     validateCoverFile(body.mimeType, body.size);

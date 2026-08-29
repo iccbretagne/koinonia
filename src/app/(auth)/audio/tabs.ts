@@ -1,4 +1,4 @@
-import { requireAudioAccess, requirePermission } from "@/lib/auth";
+import { requireAudioAccess, requireChurchPermission } from "@/lib/auth";
 
 export interface AudioTab {
   href: string;
@@ -11,7 +11,7 @@ export interface AudioTab {
  * onglet accessible).
  */
 export async function getAccessibleAudioTabs(churchId: string): Promise<AudioTab[]> {
-  const canListen = await hasAccess(() => requirePermission("audio:listen", churchId));
+  const canListen = await hasAccess(() => requireChurchPermission("audio:listen", churchId));
   const canProduce = await hasAccess(() => requireAudioAccess("audio:view", churchId));
   const canManage = await hasAccess(() => requireAudioAccess("audio:manage", churchId));
 

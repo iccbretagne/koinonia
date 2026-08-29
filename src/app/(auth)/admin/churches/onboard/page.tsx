@@ -1,8 +1,8 @@
-import { requirePermission } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import OnboardClient from "./OnboardClient";
 
 export default async function OnboardPage() {
-  await requirePermission("church:manage");
+  await requireSuperAdmin();
 
   return (
     <div>

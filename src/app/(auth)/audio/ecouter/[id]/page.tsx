@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAuth, requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { getPublishedServiceForMember } from "@/modules/audio";
 import MemberAudioPlayer from "./MemberAudioPlayer";
 
@@ -12,7 +12,7 @@ export default async function AudioListenPage({
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requirePermission("audio:listen", churchId);
+  await requireChurchPermission("audio:listen", churchId);
 
   const service = await getPublishedServiceForMember(id, churchId);
   if (!service) notFound();

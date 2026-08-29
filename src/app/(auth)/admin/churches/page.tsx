@@ -1,9 +1,9 @@
-import { requirePermission } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ChurchesClient from "./ChurchesClient";
 
 export default async function ChurchesPage() {
-  await requirePermission("church:manage");
+  await requireSuperAdmin();
 
   const churches = await prisma.church.findMany({
     include: {

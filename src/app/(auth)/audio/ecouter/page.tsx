@@ -1,6 +1,6 @@
 import { z } from "zod";
 import Link from "next/link";
-import { requireAuth, requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { listPublishedServices, listSpeakers, listSeries } from "@/modules/audio";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import LibraryFiltersClient from "./LibraryFiltersClient";
@@ -32,7 +32,7 @@ export default async function AudioLibraryPage({
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requirePermission("audio:listen", churchId);
+  await requireChurchPermission("audio:listen", churchId);
 
   const rawParams = await searchParams;
   // Une URL bricolée retombe sur les valeurs par défaut plutôt que de casser la page (plan.md).

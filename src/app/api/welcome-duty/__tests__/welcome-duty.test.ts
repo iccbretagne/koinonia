@@ -2,11 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
-const mockRequirePermission = vi.fn();
-const mockGetCurrentChurchId = vi.fn().mockResolvedValue("church-1");
+const mockRequireCurrentChurchPermission = vi.fn();
 vi.mock("@/lib/auth", () => ({
-  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
-  getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
+  requireCurrentChurchPermission: (...args: unknown[]) =>
+    mockRequireCurrentChurchPermission(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
@@ -18,7 +17,10 @@ const { PATCH: patchFamily, DELETE: deleteFamily } = await import("../families/[
 describe("GET /api/welcome-duty/families", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("returns pool families", async () => {
@@ -34,7 +36,7 @@ describe("GET /api/welcome-duty/families", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequireCurrentChurchPermission.mockRejectedValue(new Error("UNAUTHORIZED"));
     const res = await getFamilies(new Request("http://localhost/api/welcome-duty/families"));
     expect(res.status).toBe(401);
   });
@@ -43,7 +45,10 @@ describe("GET /api/welcome-duty/families", () => {
 describe("POST /api/welcome-duty/families", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("creates a new family in pool", async () => {
@@ -97,7 +102,10 @@ describe("POST /api/welcome-duty/families", () => {
 describe("PATCH /api/welcome-duty/families/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("toggles active status", async () => {
@@ -132,7 +140,10 @@ describe("PATCH /api/welcome-duty/families/[id]", () => {
 describe("DELETE /api/welcome-duty/families/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("deletes a family from pool", async () => {
@@ -156,7 +167,10 @@ const { DELETE: deleteAssignment } = await import("../assignments/[id]/route");
 describe("GET /api/welcome-duty/assignments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("returns assignments for an event", async () => {
@@ -179,7 +193,10 @@ describe("GET /api/welcome-duty/assignments", () => {
 describe("POST /api/welcome-duty/assignments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("creates an assignment", async () => {
@@ -212,7 +229,10 @@ describe("POST /api/welcome-duty/assignments", () => {
 describe("DELETE /api/welcome-duty/assignments/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("deletes an assignment", async () => {
@@ -237,7 +257,10 @@ const { GET: getSuggestions } = await import("../suggestions/route");
 describe("GET /api/welcome-duty/suggestions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequireCurrentChurchPermission.mockResolvedValue({
+      session: createAdminSession(),
+      churchId: "church-1",
+    });
   });
 
   it("returns suggestions sorted by last served", async () => {
