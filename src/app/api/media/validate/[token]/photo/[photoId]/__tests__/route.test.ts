@@ -41,17 +41,7 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("VALIDATOR peut corriger APPROVED → REJECTED (correction d'erreur)", async () => {
     mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue({
-      id: "photo-1",
-      mediaEventId: "evt-1",
-      status: "APPROVED",
-    } as never);
-
-    prismaMock.mediaPhoto.update.mockResolvedValue({
-      id: "photo-1",
-      status: "REJECTED",
-      validatedAt: new Date(),
-    } as never);
+    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
 
     prismaMock.mediaPhoto.count.mockResolvedValue(0);
     prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 0 } as never);
@@ -70,17 +60,7 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("VALIDATOR peut corriger REJECTED → APPROVED (correction d'erreur)", async () => {
     mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue({
-      id: "photo-1",
-      mediaEventId: "evt-1",
-      status: "REJECTED",
-    } as never);
-
-    prismaMock.mediaPhoto.update.mockResolvedValue({
-      id: "photo-1",
-      status: "APPROVED",
-      validatedAt: new Date(),
-    } as never);
+    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
 
     prismaMock.mediaPhoto.count.mockResolvedValue(0);
     prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 1 } as never);
@@ -99,17 +79,7 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("PREVALIDATOR peut transitionner PENDING → PREVALIDATED", async () => {
     mockValidateMediaShareToken.mockResolvedValue(basePrevalidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue({
-      id: "photo-1",
-      mediaEventId: "evt-1",
-      status: "PENDING",
-    } as never);
-
-    prismaMock.mediaPhoto.update.mockResolvedValue({
-      id: "photo-1",
-      status: "PREVALIDATED",
-      validatedAt: new Date(),
-    } as never);
+    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
 
     const request = new Request("http://localhost/api/media/validate/tok/photo/photo-1", {
       method: "PATCH",
@@ -125,12 +95,6 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("PREVALIDATOR ne peut pas mettre APPROVED", async () => {
     mockValidateMediaShareToken.mockResolvedValue(basePrevalidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue({
-      id: "photo-1",
-      mediaEventId: "evt-1",
-      status: "PENDING",
-    } as never);
-
     const request = new Request("http://localhost/api/media/validate/tok/photo/photo-1", {
       method: "PATCH",
       body: JSON.stringify({ status: "APPROVED" }),
@@ -143,17 +107,7 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("VALIDATOR peut transitionner PREVALIDATED → APPROVED", async () => {
     mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue({
-      id: "photo-1",
-      mediaEventId: "evt-1",
-      status: "PREVALIDATED",
-    } as never);
-
-    prismaMock.mediaPhoto.update.mockResolvedValue({
-      id: "photo-1",
-      status: "APPROVED",
-      validatedAt: new Date(),
-    } as never);
+    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
 
     prismaMock.mediaPhoto.count.mockResolvedValue(0);
     prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 1 } as never);
@@ -172,7 +126,7 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
   it("retourne 404 si la photo est introuvable", async () => {
     mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
 
-    prismaMock.mediaPhoto.findUnique.mockResolvedValue(null);
+    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 0 } as never);
 
     const request = new Request("http://localhost/api/media/validate/tok/photo/missing", {
       method: "PATCH",

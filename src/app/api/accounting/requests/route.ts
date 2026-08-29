@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { sendEmail, buildAccountingNewRequestEmail } from "@/lib/email";
+import { assertAttachmentsAssignable } from "@/modules/accounting";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -96,26 +97,36 @@ export async function POST(request: Request) {
       if (!dept) throw new ApiError(404, "Département introuvable");
     }
 
-    const req = await prisma.financialRequest.create({
-      data: {
-        churchId,
-        departmentId: body.departmentId ?? undefined,
-        submittedById: session.user.id!,
-        type:        body.type,
-        label:       body.label,
-        description: body.description,
-        amount:      body.amount,
-        status:      "SUBMITTED",
-        ...(body.attachmentIds?.length
-          ? { attachments: { connect: body.attachmentIds.map((id) => ({ id })) } }
-          : {}),
-      },
-      include: {
-        department:  { select: { id: true, name: true } },
-        submittedBy: { select: { id: true, name: true, email: true } },
-        attachments: true,
-        payments:    true,
-      },
+    const req = await prisma.$transaction(async (tx) => {
+      if (body.attachmentIds?.length) {
+        await assertAttachmentsAssignable(
+          body.attachmentIds,
+          { userId: session.user.id!, churchId },
+          tx
+        );
+      }
+
+      return tx.financialRequest.create({
+        data: {
+          churchId,
+          departmentId: body.departmentId ?? undefined,
+          submittedById: session.user.id!,
+          type:        body.type,
+          label:       body.label,
+          description: body.description,
+          amount:      body.amount,
+          status:      "SUBMITTED",
+          ...(body.attachmentIds?.length
+            ? { attachments: { connect: body.attachmentIds.map((id) => ({ id })) } }
+            : {}),
+        },
+        include: {
+          department:  { select: { id: true, name: true } },
+          submittedBy: { select: { id: true, name: true, email: true } },
+          attachments: true,
+          payments:    true,
+        },
+      });
     });
 
     // Notification email compta + in-app (best-effort)

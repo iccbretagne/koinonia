@@ -1,5 +1,7 @@
 import { defineModule } from "@/core/module-registry";
 
+export { assertAttachmentsAssignable, canReadAttachment } from "./services/attachments";
+
 export const accountingModule = defineModule({
   name: "accounting",
   version: "1.0.0",

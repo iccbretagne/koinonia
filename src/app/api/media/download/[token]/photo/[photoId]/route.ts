@@ -51,15 +51,17 @@ export async function GET(
     }
 
     // ── Événement : photo ───────────────────────────────────────────────────────
-    const photo = await prisma.mediaPhoto.findUnique({
-      where: { id: photoId },
-      select: { id: true, filename: true, mediaEventId: true, originalKey: true, status: true },
+    // Une photo n'appartient jamais à un projet : un jeton sans événement (ou délégué à un
+    // projet, déjà traité ci-dessus) n'a rien de légitime à faire ici — refus inconditionnel
+    // (spec 025).
+    if (!shareToken.mediaEventId) throw new ApiError(404, "Photo introuvable");
+
+    const photo = await prisma.mediaPhoto.findFirst({
+      where: { id: photoId, mediaEventId: shareToken.mediaEventId },
+      select: { id: true, filename: true, originalKey: true, status: true },
     });
 
     if (!photo) throw new ApiError(404, "Photo introuvable");
-    if (shareToken.mediaEventId && photo.mediaEventId !== shareToken.mediaEventId) {
-      throw new ApiError(403, "Photo hors périmètre");
-    }
     if (shareToken.type === "MEDIA" && photo.status !== "APPROVED") {
       throw new ApiError(403, "Photo non approuvée");
     }
