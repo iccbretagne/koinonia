@@ -38,12 +38,17 @@ function useFamilySuggestion(churchId: string) {
 }
 
 function useAddressSuggestions(query: string) {
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [fetched, setFetched] = useState<AddressSuggestion[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Liste DERIVEE de la saisie : en dessous du seuil on n'affiche rien, sans reinitialiser
+  // l'etat depuis l'effet (rendus en cascade).
+  const tooShort = query.trim().length < 3;
+  const suggestions = tooShort ? [] : fetched;
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
-    if (query.trim().length < 3) { setSuggestions([]); return; }
+    if (tooShort) return;
 
     timer.current = setTimeout(async () => {
       try {
@@ -52,7 +57,7 @@ function useAddressSuggestions(query: string) {
         );
         if (!res.ok) return;
         const json = await res.json();
-        setSuggestions(
+        setFetched(
           (json.features ?? []).map((f: { properties: { label: string; context: string } }) => ({
             label: f.properties.label,
             context: f.properties.context,
@@ -62,9 +67,9 @@ function useAddressSuggestions(query: string) {
     }, 300);
 
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [query]);
+  }, [query, tooShort]);
 
-  return { suggestions, clear: () => setSuggestions([]) };
+  return { suggestions, clear: () => setFetched([]) };
 }
 
 interface Props {

@@ -126,7 +126,10 @@ export default function NoAccessClient({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur lors de la liaison");
-      // Rechargement complet : la session serveur (stratégie DB) recharge les rôles
+      // Rechargement complet VOLONTAIRE : la session serveur (strategie DB) doit relire les
+      // roles fraichement accordes. `router.push()` conserverait le cache client et l'utilisateur
+      // arriverait sur un dashboard calcule avec ses anciens droits.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/dashboard");
     } catch (e) {
       setLinkError(e instanceof Error ? e.message : "Une erreur est survenue");

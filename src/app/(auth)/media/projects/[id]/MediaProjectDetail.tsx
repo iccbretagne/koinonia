@@ -452,7 +452,8 @@ async function uploadToS3(uploadUrl: string, file: File, onProgress?: (p: number
       };
     }
     xhr.onload  = () => {
-      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`S3 ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`S3 ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
     };
     xhr.onerror = () => reject(new Error("Erreur réseau (vérifiez CORS)"));
     xhr.onabort = () => reject(new Error("Upload annulé"));

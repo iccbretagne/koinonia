@@ -134,7 +134,7 @@ function KeyPersonField({
   value: { id?: string; name: string };
   onChange: (v: { id?: string; name: string }) => void;
 }) {
-  const [results, setResults] = useState<KeyHolder[]>([]);
+  const [fetched, setFetched] = useState<KeyHolder[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -146,20 +146,22 @@ function KeyPersonField({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  // La liste affichee est DERIVEE de la saisie : tant que la recherche n'a pas lieu d'etre, on
+  // n'affiche rien sans avoir a reinitialiser l'etat depuis l'effet (rendus en cascade).
+  const query = value.name.trim();
+  const searchDisabled = query.length < 2 || !!value.id;
+  const results = searchDisabled ? [] : fetched;
+
   useEffect(() => {
-    const q = value.name.trim();
-    if (q.length < 2 || value.id) {
-      setResults([]);
-      return;
-    }
+    if (searchDisabled) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/rooms/key-holders?churchId=${churchId}&q=${encodeURIComponent(q)}`,
+          `/api/rooms/key-holders?churchId=${churchId}&q=${encodeURIComponent(query)}`,
           { signal: controller.signal }
         );
-        if (res.ok) setResults(await res.json());
+        if (res.ok) setFetched(await res.json());
       } catch {
         // recherche annulée ou échouée — pas bloquant, l'utilisateur peut saisir un nom libre
       }
@@ -168,7 +170,7 @@ function KeyPersonField({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value.name, value.id, churchId]);
+  }, [query, searchDisabled, churchId]);
 
   function selectHolder(u: KeyHolder) {
     onChange({ id: u.id, name: u.displayName || u.name || "" });
