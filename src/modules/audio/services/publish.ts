@@ -73,13 +73,22 @@ export async function publishAudioService(
       type: "RENDER",
       status: "PENDING",
       payload: { segmentId: segment.id, sourceHash: hash },
+      // Doublent le payload en colonnes pour porter la contrainte d'unicite
+      // (segmentId, sourceHash) : c'est elle qui empeche deux publications
+      // concurrentes de creer chacune le meme job RENDER (spec 029).
+      segmentId: segment.id,
+      sourceHash: hash,
     });
   }
 
   const nowReady = jobsToCreate.length === 0; // rien à re-rendre : publication immédiate
 
   await db.$transaction([
-    ...(jobsToCreate.length > 0 ? [db.audioJob.createMany({ data: jobsToCreate })] : []),
+    // `skipDuplicates` : sur publication concurrente, la seconde insertion est ignoree
+    // silencieusement plutot que de lever une erreur d'unicite sans interet pour l'utilisateur.
+    ...(jobsToCreate.length > 0
+      ? [db.audioJob.createMany({ data: jobsToCreate, skipDuplicates: true })]
+      : []),
     db.audioService.update({
       where: { id: serviceId },
       data: {

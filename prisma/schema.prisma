@@ -1975,11 +1975,21 @@ model AudioJob {
   payload     Json?
   error       String?        @db.Text
 
+  /// Doublent `payload` pour porter la contrainte d'unicite ci-dessous (spec 029) :
+  /// renseignes uniquement pour les jobs RENDER, NULL sinon. MariaDB autorisant
+  /// plusieurs NULL dans un index unique, les autres types de job ne se contraignent pas
+  /// entre eux. La contrainte porte sur TOUS les jobs, y compris termines : recreer un
+  /// job pour un couple deja traite (ex. rendu supprime manuellement a regenerer) suppose
+  /// de supprimer d'abord l'ancienne ligne.
+  segmentId  String?
+  sourceHash String?
+
   service AudioService @relation(fields: [serviceId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([segmentId, sourceHash])
   @@index([status, leasedUntil])
   @@map("audio_jobs")
 }

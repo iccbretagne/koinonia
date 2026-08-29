@@ -1,4 +1,4 @@
-import { S3Client, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectsCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 
 const globalForS3 = globalThis as unknown as {
   s3: S3Client | undefined;
@@ -78,5 +78,24 @@ export async function deleteMediaFiles(keys: string[]): Promise<void> {
         Delete: { Objects: batch.map((Key) => ({ Key })) },
       })
     );
+  }
+}
+
+/**
+ * Taille reelle d'un objet du bucket media, telle que S3 la constate — `null` si l'objet
+ * n'existe pas. Sert a faire respecter la borne de taille cote serveur : une URL presignee
+ * `PutObject` ne porte aucune contrainte de taille, la valeur annoncee par le client a la
+ * signature ne garantit donc rien (spec 029).
+ */
+export async function getMediaObjectSize(key: string): Promise<number | null> {
+  if (!MEDIA_BUCKET) throw new Error("MEDIA_S3_BUCKET non configuré — variables MEDIA_S3_* requises");
+
+  try {
+    const head = await s3Media.send(new HeadObjectCommand({ Bucket: MEDIA_BUCKET, Key: key }));
+    return head.ContentLength ?? null;
+  } catch (err) {
+    const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+    if (e.name === "NotFound" || e.$metadata?.httpStatusCode === 404) return null;
+    throw err;
   }
 }

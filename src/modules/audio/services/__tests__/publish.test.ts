@@ -66,15 +66,40 @@ describe("publishAudioService", () => {
     const result = await publishAudioService(serviceId, churchId, "user-1");
 
     expect(prismaMock.audioJob.createMany).toHaveBeenCalledWith({
+      skipDuplicates: true,
       data: [
-        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-1", sourceHash: hashOf("etag-1") } },
-        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-2", sourceHash: hashOf("etag-2") } },
+        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-1", sourceHash: hashOf("etag-1") }, segmentId: "seg-1", sourceHash: hashOf("etag-1") },
+        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-2", sourceHash: hashOf("etag-2") }, segmentId: "seg-2", sourceHash: hashOf("etag-2") },
       ],
     });
     expect(prismaMock.audioService.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: "READY" }) })
     );
     expect(result.status).toBe("READY");
+  });
+
+  it("robustesse concurrence (spec 029) — chaque job porte (segmentId, sourceHash) en colonnes et l'insertion ignore les doublons", async () => {
+    // La garantie reelle est portee par la contrainte d'unicite (segmentId, sourceHash) en base,
+    // que le mock Prisma ne peut pas simuler : ce test verrouille les deux conditions cote code
+    // sans lesquelles elle ne s'appliquerait pas — colonnes renseignees, et insertion tolerante
+    // au doublon pour qu'une publication concurrente n'echoue pas bruyamment.
+    prismaMock.audioService.findUnique.mockResolvedValue({
+      id: serviceId,
+      churchId,
+      publishedAt: null,
+      segments: [{ id: "seg-1", source: { etag: "etag-1", uploadStatus: "DONE" }, rendition: null }],
+    } as never);
+    prismaMock.audioService.findUniqueOrThrow.mockResolvedValue({ id: serviceId, status: "READY" } as never);
+
+    await publishAudioService(serviceId, churchId, "user-1");
+
+    const call = prismaMock.audioJob.createMany.mock.calls[0][0] as {
+      skipDuplicates: boolean;
+      data: { segmentId: string; sourceHash: string }[];
+    };
+    expect(call.skipDuplicates).toBe(true);
+    expect(call.data[0].segmentId).toBe("seg-1");
+    expect(call.data[0].sourceHash).toBe(hashOf("etag-1"));
   });
 
   it("idempotence — republier sans redéposer ne recrée aucun job, passe direct à PUBLISHED", async () => {
@@ -114,8 +139,9 @@ describe("publishAudioService", () => {
     await publishAudioService(serviceId, churchId, "user-1");
 
     expect(prismaMock.audioJob.createMany).toHaveBeenCalledWith({
+      skipDuplicates: true,
       data: [
-        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-1", sourceHash: hashOf("etag-1-new") } },
+        { serviceId, type: "RENDER", status: "PENDING", payload: { segmentId: "seg-1", sourceHash: hashOf("etag-1-new") }, segmentId: "seg-1", sourceHash: hashOf("etag-1-new") },
       ],
     });
   });
