@@ -140,6 +140,29 @@ Le pipeline :
 1. Construit l'artefact (`build`) depuis la ref choisie — pas d'exigence de correspondance de version avec `package.json`, la version est calculee automatiquement (`<version-package.json>-<sha-court>`, ex. `1.9.2-abc1234`)
 2. Deploie (`deploy`) sur la VM de recette en utilisant les secrets de l'Environment `staging` : transfert de l'artefact, extraction, assemblage du bundle standalone, migrations Prisma, bascule du symlink `current`, redemarrage du service `koinonia`, nettoyage (3 dernieres releases conservees)
 
+### Pourquoi la recette compile, alors que la production promeut l'artefact de la CI
+
+La production ne recompile jamais : `deploy.yml` telecharge l'artefact du run CI du tag deploye
+(voir [docs/production.md](production.md)). La recette, elle, **construit son propre artefact**.
+Ce n'est pas une incoherence :
+
+- la CI n'empaquette un artefact que **sur un tag `v*`** ; une branche en cours de validation
+  n'en a donc aucun a promouvoir ;
+- le job `build` de ce workflow n'a **pas** de cle `environment:` — seul le job `deploy` porte
+  `environment: staging`. La compilation n'a donc acces a aucun secret de recette (cle SSH,
+  empreinte d'hote, `DEPLOY_HOST`). La propriete recherchee — ne pas compiler dans un contexte
+  privilegie — est preservee.
+
+**Le build de recette ne lance ni `typecheck`, ni `lint`, ni les tests.** C'est **volontaire** :
+la recette sert a valider un travail en cours, y compris avant que la CI ne soit verte. Exiger
+une CI reussie interdirait precisement l'usage auquel elle est destinee.
+
+La contrepartie doit etre connue : **on peut deployer en recette du code dont les tests
+echouent**. Devant un comportement inattendu sur la recette, verifier l'etat de la CI de la
+branche deployee fait partie du diagnostic — l'anomalie peut venir d'une regression que la CI
+signalait deja. La production, elle, reste inaccessible sans CI verte : c'est la qu'est
+l'exigence, et elle n'est pas negociable.
+
 ## Donnees de recette
 
 Pour tester dans des conditions realistes, il est recommande de restaurer periodiquement un backup de production dans la base `koinonia_staging`, en **anonymisant les donnees personnelles** (emails des STAR, noms si necessaire) avant ou apres restauration.
