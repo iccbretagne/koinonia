@@ -123,11 +123,16 @@ le même checkout** entre les relances d'une même cible, ou reporter le fichier
 ## Idempotence & reprise
 
 - Le **ledger** `.ledger.jsonl` (git-ignoré, à côté du script) contient une
-  ligne JSON par culte importé avec succès, clé = nom du dossier ABS.
-- Une relance saute ces dossiers : sûr de relancer autant de fois que
-  nécessaire.
-- Un échec en cours de culte laisse un `AudioService` partiel **non inscrit** au
-  ledger. Le nettoyer avec `--purge "<dossier>"` avant de relancer.
+  entrée `status: "started"` dès la création du `AudioService`, remplacée par
+  `status: "done"` une fois l'import terminé — clé = nom du dossier ABS.
+- Une relance saute les dossiers dont la dernière entrée est `"done"` (ou une
+  entrée historique sans `status`, écrite par une version antérieure du
+  script) : sûr de relancer autant de fois que nécessaire.
+- Un échec en cours de culte laisse une entrée `"started"` sans `"done"`
+  associée. Ces dossiers sont **exclus automatiquement** d'une nouvelle
+  tentative d'import (affichés en avertissement) — nettoyer avec
+  `--purge "<dossier>"` avant de relancer, l'outil retrouve désormais
+  systématiquement le service à supprimer, même pour une tentative inaboutie.
 
 ## Surveillance du rendu
 

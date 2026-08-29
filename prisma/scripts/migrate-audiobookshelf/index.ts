@@ -30,15 +30,18 @@ import {
   createAudioService,
   applySequences,
   publishAudioService,
+  unpublishAudioService,
   deleteAudioService,
   getAudioSourceKey,
 } from "@/modules/audio";
+import { ApiError } from "@/lib/errors";
 import { scanRoot } from "./scan";
 import { buildManifest } from "./parse";
 import { assertValidManifest } from "./manifest";
 import { assertFfprobe, probeDurationMs } from "./probe";
 import { putObjectWithEtag } from "./s3";
-import { readLedger, appendLedger, removeFromLedger } from "./ledger";
+import { readLedger, appendLedger, removeFromLedger, latestEntryByFolder } from "./ledger";
+import { classifyFolders } from "./resolution";
 import type { Manifest, ManifestCulte } from "./types";
 
 const CHURCH_SLUG = "icc-rennes";
@@ -127,6 +130,20 @@ async function importCulte(
     prisma
   );
 
+  const predicationMatched = culte.sequences.some((s) => s.fromPredicationsLibrary);
+
+  // Écrit avant tout effet externe supplémentaire (upload S3, publication) : si l'import
+  // échoue après ce point, `--purge` retrouve ce service via cette entrée `started`.
+  await appendLedger({
+    folder: culte.folder,
+    serviceId: service.id,
+    date: culte.date,
+    sequences: culte.sequences.length,
+    predicationMatched,
+    at: new Date().toISOString(),
+    status: "started",
+  });
+
   const sequences: { sourceId: string; order: number; title: string }[] = [];
   for (const seq of culte.sequences) {
     const ext = (path.extname(seq.filePath).slice(1) || "mp3").toLowerCase();
@@ -163,8 +180,9 @@ async function importCulte(
     serviceId: service.id,
     date: culte.date,
     sequences: sequences.length,
-    predicationMatched: culte.sequences.some((s) => s.fromPredicationsLibrary),
+    predicationMatched,
     at: new Date().toISOString(),
+    status: "done",
   });
 }
 
@@ -190,12 +208,23 @@ async function main(): Promise<void> {
     if (!publisher) throw new Error(`Utilisateur publieur introuvable (email « ${PUBLISHER_EMAIL} »)`);
 
     if (args.purge) {
-      const entry = (await readLedger()).find((e) => e.folder === args.purge);
+      const entry = latestEntryByFolder(await readLedger(), args.purge);
       if (!entry) {
         console.log(`Aucune entrée de ledger pour « ${args.purge} » — rien à purger.`);
         return;
       }
-      await deleteAudioService(entry.serviceId, church.id, prisma);
+      try {
+        await deleteAudioService(entry.serviceId, church.id, prisma);
+      } catch (err) {
+        // Fenêtre étroite : `publishAudioService` a réussi mais l'entrée `done` n'a jamais
+        // été écrite (crash entre les deux). Dépublier avant de réessayer.
+        if (err instanceof ApiError && err.statusCode === 400) {
+          await unpublishAudioService(entry.serviceId, church.id, prisma);
+          await deleteAudioService(entry.serviceId, church.id, prisma);
+        } else {
+          throw err;
+        }
+      }
       await removeFromLedger(args.purge);
       console.log(`Culte « ${args.purge} » (${entry.serviceId}) supprimé et retiré du ledger.`);
       return;
@@ -214,14 +243,27 @@ async function main(): Promise<void> {
       return;
     }
 
-    const done = new Set((await readLedger()).map((e) => e.folder));
-    let candidates = manifest.cultes.filter((c) => !done.has(c.folder));
+    const ledgerEntries = await readLedger();
+    const { toImport, alreadyDone, pendingCleanup } = classifyFolders(
+      manifest.cultes.map((c) => c.folder),
+      ledgerEntries
+    );
+
+    if (pendingCleanup.length > 0) {
+      console.log(`\n⚠ Tentatives inabouties détectées — à purger avant réimport :`);
+      for (const folder of pendingCleanup) {
+        console.log(`   --purge "${folder}"`);
+      }
+    }
+
+    let candidates = manifest.cultes.filter((c) => toImport.includes(c.folder));
     if (args.only.length > 0) candidates = candidates.filter((c) => args.only.includes(c.folder));
     if (args.limit !== null) candidates = candidates.slice(0, args.limit);
 
     console.log(
       `\n=== Import ===\n${candidates.length} culte(s) à importer` +
-        (done.size ? ` (${done.size} déjà dans le ledger)` : "")
+        (alreadyDone.length ? ` (${alreadyDone.length} déjà dans le ledger)` : "") +
+        (pendingCleanup.length ? ` (${pendingCleanup.length} en attente de purge, exclu(s))` : "")
     );
 
     const failed: string[] = [];
