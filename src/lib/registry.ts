@@ -6,7 +6,6 @@ import { discipleshipModule } from "@/modules/discipleship";
 import { storageModule } from "@/modules/storage";
 import { mediaModule } from "@/modules/media";
 import { audioModule } from "@/modules/audio";
-import { mrbsModule } from "@/modules/mrbs";
 import { agendaModule } from "@/modules/agenda";
 import { integrationModule } from "@/modules/integration";
 import { accountingModule } from "@/modules/accounting";
@@ -22,7 +21,7 @@ import { roomsModule } from "@/modules/rooms";
 // L'ordre du tableau n'a pas de portée sémantique (le vrai ordre de chargement est
 // résolu par tri topologique dans boot()).
 export const registry = boot({
-  modules: [coreModule, planningModule, discipleshipModule, storageModule, mediaModule, audioModule, mrbsModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule],
+  modules: [coreModule, planningModule, discipleshipModule, storageModule, mediaModule, audioModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule],
 });
 
 /**
