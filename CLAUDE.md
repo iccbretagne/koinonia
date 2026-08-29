@@ -145,7 +145,7 @@ koinonia/
 │   │   └── prisma/              # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
 │   │   ├── prisma.ts            # Singleton Prisma (globalThis pattern, driver adapter PrismaMariaDb)
-│   │   ├── auth.ts              # Config NextAuth + helpers (requireAuth, requirePermission…)
+│   │   ├── auth.ts              # Config NextAuth + helpers (requireAuth, requireChurchPermission…)
 │   │   ├── registry.ts          # Boot registry + rolePermissions pre-calcule
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
 │   │   ├── audit.ts             # logAudit() — journal des actions
@@ -188,7 +188,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();           // ou requirePermission("permission")
+    await requireAuth();           // ou requireCurrentChurchPermission("permission")
     const { id } = await params;   // TOUJOURS await params (Next.js 15)
     // ... logique metier + Prisma
     return successResponse(data);
@@ -201,10 +201,19 @@ export async function GET(
 ### Helpers d'authentification (`src/lib/auth.ts`)
 
 - `requireAuth()` — verifie la session, throw `UNAUTHORIZED`
-- `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN`
-- `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
+- `requireChurchPermission(permission, churchId)` — verifie une permission **dans une eglise
+  precise**, `churchId` obligatoire (jamais optionnel — voir spec 024)
+- `requireCurrentChurchPermission(permission)` — resout l'eglise courante puis verifie la
+  permission dedans ; remplacant de choix pour une route qui n'agit pas sur un objet deja
+  identifie
+- `requireSuperAdmin()` — action reservee a l'administration de la plateforme, jamais evaluee
+  dans une eglise (Super Admin uniquement)
+- `requirePlatformPermission(permission)` — permissions volontairement transverses aux eglises
+  (module emploi), liste blanche testee dans `auth-global-scopes.test.ts`
 - `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
-- `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID
+- `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID.
+  Pour toute action portant sur un objet identifie, cette eglise fait autorite — jamais le
+  contexte d'eglise affiche, qui peut etre manipule cote client
 - `requireAudioAccess(permission, churchId)` — permission de role **ou** membre du departement de captation
 - `requireAudioUnpublishAccess(churchId)` — `audio:manage` ou responsable du departement de captation
 
@@ -442,7 +451,8 @@ Creer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `f
 5. **Composants UI** : verifier `src/components/ui/` avant de creer un nouveau composant
 6. **Pas de sur-ingenierie** : faire le minimum necessaire pour la fonctionnalite demandee
 7. **Erreurs** : utiliser `ApiError` pour les erreurs metier, Zod pour la validation
-8. **Permissions** : toujours proteger les routes API avec `requireAuth()` ou `requirePermission()`
+8. **Permissions** : toujours proteger les routes API avec `requireAuth()`, `requireChurchPermission()`
+   ou `requireCurrentChurchPermission()` — jamais de controle de permission sans eglise cible
 9. **Migrations** : toujours creer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schema
 10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry` (PAS `hasPermission` de `@/lib/permissions` qui est deprecated)
 11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes

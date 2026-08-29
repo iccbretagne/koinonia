@@ -118,7 +118,13 @@ export default async function AuthLayout({
   }
 
   // Compute visible config links
-  const userRoles = churchRoles.map((r) => r.role);
+  // Uniquement les rôles détenus dans l'église COURANTE : agréger toutes les églises ici
+  // afficherait les liens d'administration d'une église où l'utilisateur n'est qu'Admin
+  // ailleurs et simple STAR dans celle-ci (isolation inter-églises, spec 024). Le masquage
+  // reste un confort d'affichage — la protection réelle est côté serveur (requireChurchPermission).
+  const userRoles = churchRoles
+    .filter((r) => r.churchId === currentChurchId)
+    .map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
   // Super admins have all permissions regardless of church roles
   if (session.user.isSuperAdmin) {

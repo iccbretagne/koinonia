@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ChurchEditClient from "./ChurchEditClient";
@@ -8,7 +8,7 @@ export default async function ChurchDetailPage({
 }: {
   params: Promise<{ churchId: string }>;
 }) {
-  await requirePermission("church:manage");
+  await requireSuperAdmin();
   const { churchId } = await params;
 
   const church = await prisma.church.findUnique({

@@ -71,12 +71,24 @@ Cela permet d'assigner le role STAR sans aucune entree `user_departments` : les 
 
 **Helpers** (`src/lib/auth.ts`) :
 - `requireAuth()` — verifie la session et throw `UNAUTHORIZED` si absente
-- `requirePermission(permission, churchId?)` — verifie une permission, throw `FORBIDDEN` si non autorise
-- `requireChurchPermission(permission, churchId)` — idem, churchId obligatoire
+- `requireChurchPermission(permission, churchId)` — verifie une permission **dans une eglise
+  precise**, `churchId` obligatoire, throw `FORBIDDEN` si non autorise
+- `requireCurrentChurchPermission(permission)` — resout l'eglise courante (`getCurrentChurchId`)
+  PUIS verifie la permission dedans ; a utiliser des qu'une route n'agit pas sur un objet deja
+  identifie (sinon preferer `resolveChurchId` + `requireChurchPermission` pour que l'eglise de
+  l'objet fasse autorite, pas le contexte affiche)
+- `requireSuperAdmin()` — reserve une action a l'administration de la plateforme (Super Admin
+  uniquement), jamais evaluee dans une eglise
+- `requirePlatformPermission(permission)` — permissions volontairement transverses aux eglises
+  (module emploi uniquement) ; la liste blanche est dans `src/lib/auth.ts` et testee par
+  `src/lib/__tests__/auth-global-scopes.test.ts`
 - `getUserDepartmentScope(session)` — retourne le perimetre departements selon le role
 - `getDiscipleshipScope(session, churchId)` — portee discipolat (scoped ou non)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource
-- `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste)
+- `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste).
+  Contexte d'**affichage**, jamais une autorisation a lui seul : la valeur peut venir d'un cookie
+  pose par le client. Toute decision d'autorisation doit verifier la permission **dans** l'eglise
+  ainsi designee (`requireCurrentChurchPermission`), jamais s'y fier seule.
 - `requireAudioAccess(permission, churchId)` — permission de role **ou** appartenance au departement
   de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`) : un STAR
   de ce departement passe le controle quelle que soit la permission demandee

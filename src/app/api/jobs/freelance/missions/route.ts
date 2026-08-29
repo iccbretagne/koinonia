@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission } from "@/lib/auth";
+import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -38,7 +38,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("jobs:freelance");
+    const session = await requirePlatformPermission("jobs:freelance");
     const data = createMissionSchema.parse(await request.json());
 
     const mission = await prisma.freelanceMission.create({

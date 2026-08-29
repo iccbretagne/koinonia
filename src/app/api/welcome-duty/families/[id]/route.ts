@@ -1,4 +1,4 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
@@ -7,9 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("events:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("events:manage");
 
     const { id } = await params;
     const family = await prisma.welcomeDutyFamily.findFirst({ where: { id, churchId } });
@@ -35,9 +33,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("events:manage");
-    const churchId = await getCurrentChurchId(session);
-    if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
+    const { churchId } = await requireCurrentChurchPermission("events:manage");
 
     const { id } = await params;
     const family = await prisma.welcomeDutyFamily.findFirst({ where: { id, churchId } });

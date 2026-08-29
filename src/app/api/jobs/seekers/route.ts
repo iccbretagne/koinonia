@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requirePermission } from "@/lib/auth";
+import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requirePermission("jobs:seek");
+    const session = await requirePlatformPermission("jobs:seek");
     const body = await request.json();
     const data = createSeekerSchema.parse(body);
 

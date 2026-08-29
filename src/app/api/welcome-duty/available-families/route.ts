@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth";
+import { requireCurrentChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 const FAMILLES_URL =
@@ -6,7 +6,7 @@ const FAMILLES_URL =
 
 export async function GET(_request: Request) {
   try {
-    await requirePermission("events:manage");
+    await requireCurrentChurchPermission("events:manage");
 
     const res = await fetch(`${FAMILLES_URL}/api/geojson`, {
       next: { revalidate: 3600 },

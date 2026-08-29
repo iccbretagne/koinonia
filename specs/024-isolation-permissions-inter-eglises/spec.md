@@ -1,7 +1,7 @@
 # Spec — Isolation inter-églises des contrôles de permission
 
 - **Numéro** : 024
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-08-29
 - **Branche suggérée** : `fix/isolation-permissions-inter-eglises`
 

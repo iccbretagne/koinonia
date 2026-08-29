@@ -3,11 +3,11 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireAuth       = vi.fn();
-const mockRequirePermission = vi.fn();
+const mockRequirePlatformPermission = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   requireAuth:       (...args: unknown[]) => mockRequireAuth(...args),
-  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requirePlatformPermission: (...args: unknown[]) => mockRequirePlatformPermission(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email",  () => ({
@@ -47,7 +47,7 @@ describe("GET /api/jobs", () => {
 describe("POST /api/jobs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequirePlatformPermission.mockResolvedValue(createAdminSession());
     prismaMock.jobNotificationSubscription.findMany.mockResolvedValue([]);
   });
 
@@ -79,7 +79,7 @@ describe("POST /api/jobs", () => {
   });
 
   it("returns 403 when permission denied", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+    mockRequirePlatformPermission.mockRejectedValue(new Error("FORBIDDEN"));
     const req = new Request("http://localhost/api/jobs", {
       method: "POST",
       body: JSON.stringify({ title: "Dev", type: "EMPLOI", company: "Corp", description: "Desc" }),

@@ -1,11 +1,12 @@
-import { requirePermission, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import Link from "next/link";
 import WelcomeDutyShell from "./WelcomeDutyShell";
 
 export default async function WelcomeDutyPage() {
-  const session = await requirePermission("events:manage");
+  const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-sm text-gray-500">Aucune église sélectionnée.</p>;
+  await requireChurchPermission("events:manage", churchId);
 
   return (
     <div>

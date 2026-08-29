@@ -3,11 +3,11 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession, createSession } from "@/__mocks__/auth";
 
 const mockRequireAuth       = vi.fn();
-const mockRequirePermission = vi.fn();
+const mockRequirePlatformPermission = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   requireAuth:       (...args: unknown[]) => mockRequireAuth(...args),
-  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requirePlatformPermission: (...args: unknown[]) => mockRequirePlatformPermission(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
@@ -88,7 +88,7 @@ describe("GET /api/jobs/freelance/missions", () => {
 describe("POST /api/jobs/freelance/missions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(userSession);
+    mockRequirePlatformPermission.mockResolvedValue(userSession);
     prismaMock.jobNotificationSubscription.findMany.mockResolvedValue([]);
   });
 
@@ -122,7 +122,7 @@ describe("POST /api/jobs/freelance/missions", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequirePlatformPermission.mockRejectedValue(new Error("UNAUTHORIZED"));
     const req = new Request("http://localhost/api/jobs/freelance/missions", {
       method: "POST",
       body: JSON.stringify({ title: "t", domain: "d", description: "desc" }),
@@ -217,12 +217,12 @@ describe("DELETE /api/jobs/freelance/missions/[id]", () => {
 describe("POST /api/jobs/freelance/profiles", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(userSession);
+    mockRequirePlatformPermission.mockResolvedValue(userSession);
     prismaMock.jobNotificationSubscription.findMany.mockResolvedValue([]);
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequirePlatformPermission.mockRejectedValue(new Error("UNAUTHORIZED"));
     const req = new Request("http://localhost/api/jobs/freelance/profiles", {
       method: "POST",
       body: JSON.stringify({ title: "t", domain: "d", description: "desc" }),

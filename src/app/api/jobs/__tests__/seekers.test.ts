@@ -3,11 +3,11 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireAuth       = vi.fn();
-const mockRequirePermission = vi.fn();
+const mockRequirePlatformPermission = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   requireAuth:       (...args: unknown[]) => mockRequireAuth(...args),
-  requirePermission: (...args: unknown[]) => mockRequirePermission(...args),
+  requirePlatformPermission: (...args: unknown[]) => mockRequirePlatformPermission(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
@@ -64,7 +64,7 @@ describe("GET /api/jobs/seekers", () => {
 describe("POST /api/jobs/seekers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequirePermission.mockResolvedValue(createAdminSession());
+    mockRequirePlatformPermission.mockResolvedValue(createAdminSession());
     prismaMock.jobNotificationSubscription.findMany.mockResolvedValue([]);
   });
 
@@ -101,7 +101,7 @@ describe("POST /api/jobs/seekers", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
+    mockRequirePlatformPermission.mockRejectedValue(new Error("UNAUTHORIZED"));
     const req = new Request("http://localhost/api/jobs/seekers", {
       method: "POST",
       body: JSON.stringify({ title: "Dev", wantEmploi: true, description: "Desc" }),

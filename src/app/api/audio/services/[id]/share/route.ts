@@ -4,7 +4,7 @@
  * non révoqué avant d'en créer un — repartager la même séquence ne multiplie pas les liens.
  */
 import { z } from "zod";
-import { requirePermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getOrCreatePrimaryShareToken, getOrCreateSegmentShareToken, buildPublicAudioUrl } from "@/modules/audio";
@@ -22,7 +22,7 @@ export async function POST(
     const service = await prisma.audioService.findUnique({ where: { id }, select: { churchId: true, status: true } });
     if (!service) throw new ApiError(404, "Culte audio introuvable");
 
-    await requirePermission("audio:listen", service.churchId);
+    await requireChurchPermission("audio:listen", service.churchId);
 
     if (service.status !== "PUBLISHED") throw new ApiError(410, "Ce culte n'est plus disponible.");
 
