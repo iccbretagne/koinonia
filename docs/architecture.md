@@ -422,7 +422,30 @@ Quatre types de tokens controlent les acces sans authentification :
 - **ESLint** : `eslint.config.mjs` (`eslint-config-next` + `eslint-plugin-react-hooks`)
 - **dependency-cruiser** : frontieres modules enforces en CI (`npm run lint:boundaries`)
 - **Tests** : Vitest, `npm run test`
-- **CI** : typecheck + lint + lint:boundaries + tests sur chaque PR
+- **CI** : typecheck + lint + lint:boundaries + tests + `npm audit --omit=dev --audit-level=high`
+  sur chaque PR
+
+### Dependances vulnerables : le champ `overrides`
+
+`npm audit --omit=dev --audit-level=high` bloque la CI si une dependance de **production**
+presente une faille haute ou critique. Le perimetre s'arrete volontairement a la production :
+une faille dans un outil de build ou de test n'est pas exposee aux utilisateurs, et faire
+echouer la CI dessus finirait par pousser a desactiver le garde-fou.
+
+Quand la correction depend d'un paquet intermediaire qui n'a pas encore relache la version
+saine, le champ `overrides` de `package.json` force la version corrigee dans tout l'arbre.
+Chaque entree existe pour une faille precise et doit **disparaitre** des que le paquet parent
+publie une version qui embarque deja le correctif :
+
+| Override | Pourquoi | A retirer quand |
+|---|---|---|
+| `@prisma/adapter-mariadb > mariadb: ^3.5.3` | L'adaptateur epingle `mariadb@3.4.5`, qui fuit le mot de passe en clair face a un MitM malgre `ssl: true` | L'adaptateur epingle une version >= 3.5.3 |
+| `nodemailer: ^9.0.6` | Injections de commandes SMTP (CRLF) sur `<= 9.0.0` ; `next-auth` et `@auth/core` declarent encore `^7 \|\| ^8`, ce qui reintroduisait une copie vulnerable | `next-auth` accepte `^9` |
+| `deepmerge-ts: ^8.0.0` | Epuisement de pile dans `@prisma/config` (chargement de configuration, hors chemin de requete) | `@prisma/config` depend de `>= 8` |
+| `uuid: ^11.1.1` | Borne de buffer manquante, tiree par `exceljs` | `exceljs` depend de `>= 11.1.1` |
+
+Un override est un contournement, pas une solution : verifier a chaque montee de version si le
+paquet parent a rattrape son retard, et retirer la ligne devenue inutile.
 
 ---
 

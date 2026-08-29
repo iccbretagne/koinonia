@@ -31,6 +31,12 @@ jobs:
       - run: npm run lint
       - run: npm run lint:boundaries
       - run: npm run test:coverage
+      # Bloque l'ajout d'une dependance de PRODUCTION vulnerable (haute ou critique). Limite a
+      # `--omit=dev` volontairement : une faille dans un outil de build ou de test n'est pas
+      # exposee aux utilisateurs, et faire echouer la CI dessus pousserait a desactiver le
+      # garde-fou. Le graphe de production est a zero vulnerabilite au moment de l'ajout de
+      # cette etape — le seuil est donc tenable et non un voeu pieux.
+      - run: npm audit --omit=dev --audit-level=high
 
   build:
     needs: lint-test
