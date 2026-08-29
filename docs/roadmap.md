@@ -157,3 +157,4 @@
 - [x] Migrations Prisma correctrices (rattrapage db push → migrate)
 - [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
 - [x] Monitoring applicatif (healthcheck, metriques)
+- [ ] Separer le compte runtime du compte de deploiement (audit H-10) — voir [TODO dedie](todo-separation-comptes-deploiement.md)
