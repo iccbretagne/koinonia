@@ -33,6 +33,10 @@ export default function ResumeBanner({ services }: { services: ServiceRef[] }) {
     if (!match) return;
 
     const service = services.find((s) => s.segmentIds.includes(match.segmentId));
+    // La reprise vit dans localStorage, indisponible au rendu serveur : la lire pendant le
+    // rendu provoquerait une divergence d'hydratation. L'effet est ici le patron correct, pas
+    // un contournement.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (service) setResume({ service, position: match.position });
   }, [services]);
 

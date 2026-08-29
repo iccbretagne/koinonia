@@ -5,7 +5,12 @@ import { useState, useEffect } from "react";
 export default function PublicFormBanner({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
-  useEffect(() => { setOrigin(window.location.origin); }, []);
+  // `window` n'existe pas au rendu serveur : l'origine ne peut etre connue qu'apres montage,
+  // sinon l'hydratation diverge.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setOrigin(window.location.origin);
+  }, []);
   const url = `${origin}/rejoindre/${slug}`;
 
   function copy() {

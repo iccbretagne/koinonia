@@ -17,7 +17,7 @@
     "dev:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
     "dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
     "dev:reset": "docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:migrate:deploy && docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run db:seed:dev",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "lint:boundaries": "depcruise src/core src/modules src/app --config .dependency-cruiser.cjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

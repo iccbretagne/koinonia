@@ -9,7 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm install
+# `npm ci` et non `npm install` : l'arbre installé doit être exactement celui du lockfile.
+# Avec `npm install`, un lockfile désynchronisé est silencieusement « réparé » — le conteneur
+# de dev diverge alors de la CI et de la production sans que personne ne le voie (audit L-01).
+RUN npm ci
 
 COPY . .
 

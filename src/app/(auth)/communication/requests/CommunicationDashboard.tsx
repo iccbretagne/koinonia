@@ -139,7 +139,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
                 <button
                   onClick={() => setExpandedContent((prev) => {
                     const next = new Set(prev);
-                    isExpanded ? next.delete(req.id) : next.add(req.id);
+                    if (isExpanded) next.delete(req.id); else next.add(req.id);
                     return next;
                   })}
                   className="mt-1 text-xs text-icc-violet hover:underline"

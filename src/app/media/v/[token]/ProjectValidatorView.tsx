@@ -417,6 +417,11 @@ export default function ProjectValidatorView({ token, data }: { token: string; d
   // (images use thumbnailUrl directly — fileUrl is only read for video/PDF in JSX)
   useEffect(() => {
     if (!currentFile || currentFile.mimeType.startsWith("image/")) return;
+    // Reinitialisation avant une requete asynchrone : sans elle, l'URL du fichier precedent
+    // resterait affichee pendant le chargement du suivant. Une version derivee devrait
+    // reconstruire la distinction succes/echec/en-cours que le `finally` assure aujourd'hui,
+    // pour un gain nul a l'ecran.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFileUrl(null);
     setFileUrlLoading(true);
     fetch(`/api/media/validate/${token}/file/${currentFile.id}`)
