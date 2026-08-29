@@ -3,6 +3,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
 import { notifyUsersWithRole } from "@/lib/notifications";
 import { requireRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { z } from "zod";
 
 const AGE_RANGES = ["18-20 ans", "21-30 ans", "31-40 ans", "41-50 ans", "+50 ans"] as const;
@@ -25,18 +26,6 @@ const submitSchema = z.object({
   preferredDay: z.enum(DAYS, { errorMap: () => ({ message: "Veuillez sélectionner un jour" }) }),
   turnstileToken: z.string().min(1, "Vérification CAPTCHA manquante"),
 });
-
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return false;
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ secret, response: token, remoteip: ip }),
-  });
-  const data = await res.json() as { success: boolean };
-  return data.success === true;
-}
 
 export async function POST(request: Request) {
   try {
