@@ -281,6 +281,34 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 | `DEPLOY_PORT` | Port SSH personnalise |
 | `DEPLOY_USER` | `koinonia` |
 | `DEPLOY_PATH` | `/opt/koinonia` |
+| `DEPLOY_HOST_FINGERPRINT` | Empreinte SHA-256 de la cle d'hote SSH (voir ci-dessous) |
+
+Ces secrets sont a definir **par environnement** (`Settings > Environments`), la recette et la
+production n'ayant ni la meme machine ni la meme empreinte.
+
+### Empreinte SSH de l'hote
+
+Sans empreinte, les actions de deploiement acceptent n'importe quelle cle d'hote : un
+detournement DNS ou reseau suffirait a faire livrer l'artefact — et surtout la cle privee de
+deploiement — a une machine tierce. L'empreinte epingle l'identite du serveur.
+
+La relever **sur l'hote lui-meme** (ou via une connexion SSH deja verifiee), jamais depuis un
+reseau non maitrise :
+
+```bash
+ssh <hote> ssh-keygen -l -f /etc/ssh/ssh_host_ed25519_key.pub | cut -d ' ' -f2
+```
+
+La valeur obtenue commence par `SHA256:` — la copier telle quelle, prefixe compris, dans le
+secret `DEPLOY_HOST_FINGERPRINT` de l'environnement correspondant.
+
+> Le deploiement **echoue volontairement** si ce secret est absent. Un secret vide ne
+> declencherait aucune verification : mieux vaut un deploiement bloque qu'un deploiement que
+> l'on croit protege a tort.
+
+Si la cle d'hote du serveur est regeneree (reinstallation, changement de machine), l'empreinte
+change et le deploiement echouera tant que le secret n'est pas mis a jour. C'est le comportement
+attendu : un changement d'identite de l'hote doit etre constate, pas subi.
 
 ### Fonctionnement
 
@@ -1000,3 +1028,4 @@ Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionneme
 - [ ] Traefik configure avec certificat TLS
 - [ ] URI de redirection Google OAuth ajoutee
 - [ ] Acces HTTPS fonctionnel
+- [ ] `DEPLOY_HOST_FINGERPRINT` renseigne dans l'environnement GitHub de l'hote (recette **et** production) — sans lui le deploiement echoue volontairement
