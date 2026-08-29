@@ -29,80 +29,77 @@ jobs:
     steps:
       - run: echo "CI passed, deploy allowed"
 
-  build:
+  # Resout l'artefact de release deja construit et teste par la CI. Ce workflow ne
+  # checkout ni ne compile aucun code : il promeut l'artefact tel quel. C'est ce qui
+  # garantit que le deploiement porte exactement le commit valide par la CI (H-08) et
+  # qu'aucun code n'est execute dans le contexte privilegie du deploiement.
+  resolve:
     needs: gate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      NEXT_TELEMETRY_DISABLED: "1"
-      DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Determine version
-        id: version
+      - name: Resolve version and CI run
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
             TAG="${{ github.event.workflow_run.head_branch }}"
-            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+            VERSION="${TAG#v}"
+            RUN_ID="${{ github.event.workflow_run.id }}"
+            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          else
+            VERSION="${{ inputs.version }}"
+            TAG="v${VERSION}"
+            # Deploiement manuel : on retrouve le run CI reussi du tag demande. Un tag sans
+            # run CI vert n'est pas deployable — pas de chemin qui contourne la CI (H-09).
+            RUN=$(gh api "repos/${GH_REPO}/actions/workflows/ci.yml/runs?branch=${TAG}&status=success&per_page=1")
+            RUN_ID=$(echo "$RUN" | jq -r '.workflow_runs[0].id // empty')
+            HEAD_SHA=$(echo "$RUN" | jq -r '.workflow_runs[0].head_sha // empty')
+            if [ -z "$RUN_ID" ]; then
+              echo "::error::Aucun run CI reussi pour le tag ${TAG}. Deploiement refuse."
+              exit 1
+            fi
           fi
 
-      - name: Check tag matches package.json
-        run: |
-          PKG=$(node -p "require('./package.json').version")
-          if [ "${{ steps.version.outputs.version }}" != "$PKG" ]; then
-            echo "::error::Version mismatch: tag=${{ steps.version.outputs.version }} package.json=$PKG"
+          # Le tag doit exister et pointer sur le commit valide par ce run CI.
+          TAG_SHA=$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha' 2>/dev/null || true)
+          if [ -z "$TAG_SHA" ]; then
+            echo "::error::Tag ${TAG} introuvable."
+            exit 1
+          fi
+          # Un tag annote pointe sur un objet tag : on deref vers le commit.
+          TAG_TYPE=$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.type')
+          if [ "$TAG_TYPE" = "tag" ]; then
+            TAG_SHA=$(gh api "repos/${GH_REPO}/git/tags/${TAG_SHA}" --jq '.object.sha')
+          fi
+          if [ "$TAG_SHA" != "$HEAD_SHA" ]; then
+            echo "::error::Le tag ${TAG} (${TAG_SHA}) ne correspond pas au commit valide par la CI (${HEAD_SHA})."
             exit 1
           fi
 
-      - run: npm ci
-      - run: npx prisma generate
-      # `npm run build` produit aussi dist/worker.mjs (esbuild) — le worker audio est bundlé,
-      # il n'a donc besoin ni de src/ ni de tsx sur le serveur (ADR-0007).
-      - run: npm run build
-
-      # Élague les devDependencies APRÈS le build : l'archive n'embarque plus typescript,
-      # vitest, eslint, esbuild… La CLI `prisma` est en `dependencies` (requise sur le serveur
-      # pour `migrate deploy`) et survit donc à l'élagage.
-      - name: Prune dev dependencies
-        run: npm prune --omit=dev
-
-      - name: Package artifact
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          tar czf "koinonia-${VERSION}.tar.gz" \
-            --exclude='prisma/scripts' \
-            .next/standalone .next/static dist \
-            prisma prisma.config.ts public package.json \
-            node_modules
-          echo "Built koinonia-${VERSION}.tar.gz"
-          du -sh "koinonia-${VERSION}.tar.gz"
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: koinonia-${{ steps.version.outputs.version }}
-          path: koinonia-${{ steps.version.outputs.version }}.tar.gz
-          retention-days: 14
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "run_id=${RUN_ID}"   >> "$GITHUB_OUTPUT"
+          echo "Artefact koinonia-${VERSION} promu depuis le run CI ${RUN_ID} (${HEAD_SHA})"
 
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      version: ${{ steps.ci.outputs.version }}
+      run_id: ${{ steps.ci.outputs.run_id }}
 
   deploy:
-    needs: build
+    needs: resolve
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 10
     steps:
+      # Artefact telecharge depuis le run CI qui l'a construit et teste (jamais rebuild ici).
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: koinonia-${{ needs.build.outputs.version }}
+          name: koinonia-${{ needs.resolve.outputs.version }}
+          run-id: ${{ needs.resolve.outputs.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Upload artifact to server
         uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
@@ -111,13 +108,13 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: koinonia-${{ needs.build.outputs.version }}.tar.gz
+          source: koinonia-${{ needs.resolve.outputs.version }}.tar.gz
           target: /tmp
 
       - name: Deploy artifact via SSH
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         env:
-          VERSION: ${{ needs.build.outputs.version }}
+          VERSION: ${{ needs.resolve.outputs.version }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}

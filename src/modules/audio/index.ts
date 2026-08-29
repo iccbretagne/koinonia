@@ -47,6 +47,9 @@ export { getCaptureDepartmentId, isCaptureTeamMember, isCaptureTeamLead } from "
 
 export {
   AUDIO_UPLOAD_PART_SIZE,
+  AUDIO_UPLOAD_MAX_SIZE,
+  AUDIO_UPLOAD_ALLOWED_MIME_TYPES,
+  assertUploadWithinLimits,
   getAudioSourceKey,
   partCountFor,
   signSequenceUpload,

@@ -25,8 +25,44 @@ export function getAudioSourceKey(serviceId: string, sourceId: string, ext: stri
   return `audio-services/${serviceId}/sources/${sourceId}.${ext}`;
 }
 
+/**
+ * Taille maximale d'une sequence deposee — 2 Gio, soit 256 parts de 8 Mo.
+ * Borne le nombre d'URLs presignees generees par appel (S3 plafonne a 10 000 parts).
+ */
+export const AUDIO_UPLOAD_MAX_SIZE = 2 * 1024 * 1024 * 1024;
+
+/** Types MIME acceptes pour une sequence audio. */
+export const AUDIO_UPLOAD_ALLOWED_MIME_TYPES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/mp4",
+  "audio/aac",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/flac",
+  "audio/x-flac",
+  "audio/ogg",
+  "audio/webm",
+];
+
 export function partCountFor(size: number, partSize = AUDIO_UPLOAD_PART_SIZE): number {
   return Math.max(1, Math.ceil(size / partSize));
+}
+
+/**
+ * Valide taille et type MIME annonces avant tout appel S3 : sans cette borne, une taille
+ * arbitraire fait generer autant d'URLs presignees que de parts (DoS applicatif).
+ */
+export function assertUploadWithinLimits(contentType: string, size: number): void {
+  if (!AUDIO_UPLOAD_ALLOWED_MIME_TYPES.includes(contentType)) {
+    throw new ApiError(400, `Type MIME non supporte : ${contentType}`);
+  }
+  if (size > AUDIO_UPLOAD_MAX_SIZE) {
+    throw new ApiError(
+      400,
+      `Fichier trop lourd (max ${AUDIO_UPLOAD_MAX_SIZE / 1024 / 1024 / 1024} Go)`
+    );
+  }
 }
 
 export interface SignSequenceUploadInput {
@@ -65,6 +101,7 @@ export async function signSequenceUpload(input: SignSequenceUploadInput, db?: Db
     throw new ApiError(404, "Culte audio introuvable");
   }
   assertServiceEditable(service, "déposer de nouvelles séquences");
+  assertUploadWithinLimits(input.contentType, input.size);
 
   const ext = input.filename.split(".").pop()?.toLowerCase() || "mp3";
   const source = await db.audioSource.create({

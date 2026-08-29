@@ -4,7 +4,7 @@
  * par IP pour éviter le gonflage artificiel du compteur (spec §6).
  */
 import { z } from "zod";
-import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
+import { requireRateLimit, getClientIp, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
@@ -15,10 +15,15 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    requireRateLimit(request, { prefix: "audio:play", ...RATE_LIMIT_MUTATION });
-
     const { token } = await params;
     const { segmentId } = schema.parse(await request.json());
+
+    // La cle doit identifier l'appelant : un prefixe constant ferait un compteur global
+    // qui bloquerait toutes les lectures publiques apres 30 requetes (cf. requireRateLimit).
+    requireRateLimit(request, {
+      prefix: `audio:play:${token}:${getClientIp(request)}`,
+      ...RATE_LIMIT_MUTATION,
+    });
 
     const shareToken = await prisma.audioShareToken.findUnique({ where: { token } });
     if (!shareToken || shareToken.revokedAt) throw new ApiError(404, "Lien introuvable");

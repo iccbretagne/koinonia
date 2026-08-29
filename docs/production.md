@@ -76,7 +76,7 @@ FLUSH PRIVILEGES;
 
 > **Important** : le deploiement se fait exclusivement via GitHub Actions (artefact pre-compile en CI).
 > Aucune compilation ne doit avoir lieu sur le serveur de production.
-> Le `workflow_dispatch` permet de re-deployer une version existante en cas d'urgence — il execute le meme pipeline CI que le deploiement automatique.
+> Le `workflow_dispatch` permet de re-deployer une version existante en cas d'urgence. Il ne recompile pas : il exige un run CI **reussi** pour le tag `v<version>` demande et promeut l'artefact de ce run. Un tag sans CI verte, ou dont le commit ne correspond pas a celui valide par la CI, est refuse — il n'existe donc aucun chemin de deploiement qui contourne la CI.
 
 ### Premiere installation
 
@@ -245,7 +245,7 @@ https://votre-domaine.com/api/auth/callback/google
 
 ## Deploiement automatise (CD)
 
-Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le CI, et le workflow de deploiement ne s'execute que si le CI passe integralement (typecheck, lint, tests). L'application est construite en CI (artefact immutable) puis deployee sur le serveur sans etape de build.
+Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le CI, et le workflow de deploiement ne s'execute que si le CI passe integralement (typecheck, lint, tests). L'application est construite **une seule fois** par le CI (artefact immutable, attache au run CI du tag) puis promue telle quelle par le workflow de deploiement, qui se contente de la transferer sur le serveur : aucune compilation n'a lieu ni au deploiement ni en production.
 
 ### Prerequis serveur
 
@@ -280,8 +280,8 @@ koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 ### Fonctionnement
 
 1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
-2. Le CI s'execute (typecheck, tests, verification version)
-3. Si le CI passe, le workflow deploy se connecte en SSH au serveur
+2. Le CI s'execute (typecheck, tests, verification version) et, sur un tag, **empaquette l'artefact de release** puis le publie comme artefact du run
+3. Si le CI passe, le workflow deploy **telecharge cet artefact depuis le run CI** — il ne recompile rien et ne fait aucun checkout — puis se connecte en SSH au serveur
 4. L'artefact pre-compile est transfere par SCP, extrait, les assets statiques assembles — aucune compilation n'a lieu en production. L'artefact inclut `prisma.config.ts` (requis par Prisma 7 pour la configuration CLI)
 5. Les migrations Prisma sont appliquees, le symlink `current` est bascule, le service redemarre
 6. Les anciennes releases sont nettoyees (3 dernieres conservees)
