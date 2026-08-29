@@ -9,6 +9,17 @@
 #
 # Le build part de la ref selectionnee dans l'UI (comportement par defaut
 # de actions/checkout en workflow_dispatch). Voir docs/staging.md.
+#
+# Pourquoi ce workflow COMPILE, alors que deploy.yml (production) se contente de promouvoir
+# l'artefact deja construit et teste par la CI : celle-ci n'empaquette un artefact que sur un
+# tag `v*`, or la recette deploie une branche en cours de validation, pour laquelle il n'existe
+# rien a promouvoir. La propriete visee par cette separation est neanmoins conservee — le job
+# `build` n'a pas de cle `environment:`, il n'a donc acces a aucun secret de recette ; seul le
+# job `deploy` en dispose. Aucune compilation n'a lieu en contexte privilegie.
+#
+# Ce build ne lance VOLONTAIREMENT ni typecheck, ni lint, ni tests : la recette sert a valider
+# un travail en cours, y compris avant que la CI ne soit verte. On peut donc y deployer du code
+# aux tests rouges — c'est assume ici, et impossible en production. Voir docs/staging.md.
 
 name: Deploy Staging
 
