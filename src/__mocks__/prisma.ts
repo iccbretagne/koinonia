@@ -39,7 +39,9 @@ export const prismaMock = {
   absence: createModelMock(),
   absenceBackup: createModelMock(),
   announcement: createModelMock(),
+  task: createModelMock(),
   taskAssignment: createModelMock(),
+  departmentNotice: createModelMock(),
   eventReport: createModelMock(),
   discipleship: createModelMock(),
   discipleshipAttendance: createModelMock(),
@@ -81,6 +83,7 @@ export const prismaMock = {
   audioShareToken: createModelMock(),
   // Module intégration
   familyIntegrationRequest: createModelMock(),
+  familyLeaderAssignment: createModelMock(),
   personJourney: createModelMock(),
   // Module comptabilité
   financialSeries: createModelMock(),

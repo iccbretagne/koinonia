@@ -4,6 +4,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   SUPER_ADMIN: [
     "planning:view",
     "planning:edit",
+    "planning:department",
+    "access:manage",
     "members:view",
     "members:manage",
     "events:view",
@@ -27,6 +29,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   ADMIN: [
     "planning:view",
     "planning:edit",
+    "planning:department",
+    "access:manage",
     "members:view",
     "members:manage",
     "events:view",
@@ -46,6 +50,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   ],
   SECRETARY: [
     "planning:view",
+    "planning:department",
+    "access:manage",
     "members:view",
     "events:view",
     "events:manage",
@@ -62,6 +68,8 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   MINISTER: [
     "planning:view",
     "planning:edit",
+    "planning:department",
+    "access:manage",
     "members:view",
     "members:manage",
     "events:view",
@@ -76,6 +84,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   DEPARTMENT_HEAD: [
     "planning:view",
     "planning:edit",
+    "planning:department",
     "members:view",
     "members:manage",
     "events:view",

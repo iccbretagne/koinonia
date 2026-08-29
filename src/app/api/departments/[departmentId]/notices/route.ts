@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -11,7 +11,8 @@ export async function GET(
   try {
     const { departmentId } = await params;
     const churchId = await resolveChurchId("department", departmentId);
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:department", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
@@ -53,6 +54,7 @@ export async function PUT(
     const { departmentId } = await params;
     const churchId = await resolveChurchId("department", departmentId);
     const session = await requireChurchPermission("planning:edit", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const { eventId, content } = putSchema.parse(await request.json());
 
@@ -94,6 +96,7 @@ export async function DELETE(
     const { departmentId } = await params;
     const churchId = await resolveChurchId("department", departmentId);
     const session = await requireChurchPermission("planning:edit", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");

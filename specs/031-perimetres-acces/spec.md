@@ -1,7 +1,7 @@
 # Spec — Périmètres d'accès : ce que chaque rôle peut réellement voir et modifier
 
 - **Numéro** : 031
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-08-29
 - **Branche suggérée** : `feat/perimetres-acces`
 

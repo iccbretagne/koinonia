@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { auth, getCurrentChurchId } from "@/lib/auth";
+import { auth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -34,8 +34,24 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
   const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
   if (isPastoralChurch && viewMode !== "admin") redirect("/pastoral");
+
+  if (!currentChurchId) {
+    return (
+      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+        Vous n&apos;êtes assigné à aucune église.
+      </div>
+    );
+  }
+
+  // planning:department (grille par département) — le STAR ne l'a pas, spec 031/#462
+  await requireChurchPermission("planning:department", currentChurchId);
+
+  // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
+  // responsable de l'église A obtient planning:edit dans l'église B (spec 031/T19).
   const userPermissions = new Set(
-    session.user.churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
+    session.user.churchRoles
+      .filter((r) => r.churchId === currentChurchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canEditPlanning = userPermissions.has("planning:edit");
   const canViewAbsences = session.user.churchRoles.some(
@@ -47,14 +63,6 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     !session.user.hasSeenTour &&
     !tour &&
     session.user.churchRoles.length > 0;
-
-  if (!currentChurchId) {
-    return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        Vous n&apos;êtes assigné à aucune église.
-      </div>
-    );
-  }
 
   // Auto-select first department when none is specified
   if (!selectedDeptId) {

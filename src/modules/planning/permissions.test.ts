@@ -11,3 +11,22 @@ describe("planningModule.permissions — absences:manage", () => {
     expect(managers).toContain("DEPARTMENT_HEAD");
   });
 });
+
+describe("planningModule.permissions — planning:department (spec 031, issue #462)", () => {
+  it("n'accorde PAS planning:department au STAR", () => {
+    expect(planningModule.permissions?.["planning:department"]).not.toContain("STAR");
+  });
+
+  it("accorde planning:department à Super Admin/Admin/Secrétaire/Ministre/Resp. département", () => {
+    const grantees = planningModule.permissions?.["planning:department"];
+    expect(grantees).toContain("SUPER_ADMIN");
+    expect(grantees).toContain("ADMIN");
+    expect(grantees).toContain("SECRETARY");
+    expect(grantees).toContain("MINISTER");
+    expect(grantees).toContain("DEPARTMENT_HEAD");
+  });
+
+  it("conserve planning:view au STAR — Mon planning, absences et agenda inchangés", () => {
+    expect(planningModule.permissions?.["planning:view"]).toContain("STAR");
+  });
+});

@@ -61,6 +61,10 @@ interface Props {
   isSuperAdmin: boolean;
   pendingRequests: PendingRequest[];
   rejectedRequests?: RejectedRequest[];
+  // Un appelant au périmètre de ministère restreint (Ministre) ne peut attribuer
+  // aucun rôle transverse — l'onglet est donc masqué plutôt que proposé pour rien
+  // rejeté ensuite par l'API (spec 031/#467)
+  hideTransverseRoles?: boolean;
 }
 
 type Tab = "requests" | "roles" | "transverse" | "stars";
@@ -116,7 +120,7 @@ const ROLE_LABELS: Record<string, string> = {
   REPORTER: "Reporter",
 };
 
-export default function AccessClient({ users, ministries, churchId, isSuperAdmin, pendingRequests, rejectedRequests = [] }: Props) {
+export default function AccessClient({ users, ministries, churchId, isSuperAdmin, pendingRequests, rejectedRequests = [], hideTransverseRoles = false }: Props) {
   const [tab, setTab] = useState<Tab>(pendingRequests.length > 0 ? "requests" : "roles");
   const [localRequests, setLocalRequests] = useState<PendingRequest[]>(pendingRequests);
   const [rejected, setRejected] = useState<RejectedRequest[]>(rejectedRequests);
@@ -580,7 +584,9 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
     <div>
       {/* Onglets */}
       <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-        {(["requests", "roles", "transverse", "stars"] as Tab[]).map((t) => (
+        {(["requests", "roles", "transverse", "stars"] as Tab[])
+          .filter((t) => t !== "transverse" || !hideTransverseRoles)
+          .map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -868,7 +874,7 @@ export default function AccessClient({ users, ministries, churchId, isSuperAdmin
       )}
 
       {/* ── Onglet Rôles transverses ──────────────────────────────────────── */}
-      {tab === "transverse" && (
+      {tab === "transverse" && !hideTransverseRoles && (
         <div className="space-y-3">
           <p className="text-xs text-gray-400 mb-4">
             Les rôles transverses donnent des accès fonctionnels globaux indépendants de la hiérarchie ministères/départements.

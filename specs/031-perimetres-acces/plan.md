@@ -200,6 +200,12 @@ rédiger dans la même PR, avec pour statut `Accepté`.
   accèdent aujourd'hui à `/dashboard` : le bloc qui injecte des permissions transverses dans
   `layout.tsx` ajoute `planning:view`, pas la nouvelle permission. À trancher à l'implémentation
   en vérifiant le parcours pastoral réel.
+  **Décision (T22)** : pas de changement. Le bouton qui bascule vers `/dashboard`
+  (`switchToAdminMode`, `layout.tsx`) n'est rendu que si `hasBothRoles` est vrai, c'est-à-dire si
+  l'utilisateur a un rôle classique **en plus** de son profil pastoral dans l'église courante. Un
+  utilisateur pastoral pur (sans rôle classique) n'a donc aucun chemin d'UI vers `/dashboard`, et
+  un utilisateur avec les deux obtient `planning:department` via son rôle classique, pas via
+  l'injection pastorale. Rien à ajouter au bloc pastoral.
 - **Le STAR perd les salles pendant qu'il a des réservations en cours.** Aucune donnée n'est
   supprimée, mais l'affichage côté gestionnaire doit tolérer un auteur qui n'a plus le droit —
   à couvrir par un test.

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 
 export async function GET(
@@ -9,7 +9,8 @@ export async function GET(
   try {
     const { departmentId } = await params;
     const churchId = await resolveChurchId("department", departmentId);
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:department", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const url = new URL(request.url);
     const monthParam = url.searchParams.get("month");

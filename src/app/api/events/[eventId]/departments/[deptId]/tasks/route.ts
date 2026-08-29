@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -11,7 +11,8 @@ export async function GET(
   try {
     const { eventId, deptId: departmentId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:department", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const eventDept = await prisma.eventDepartment.findUnique({
       where: { eventId_departmentId: { eventId, departmentId } },
@@ -53,6 +54,7 @@ export async function PUT(
     const { eventId, deptId: departmentId } = await params;
     const putChurchId = await resolveChurchId("event", eventId);
     const putSession = await requireChurchPermission("planning:edit", putChurchId);
+    requireDepartmentAccess(putSession, putChurchId, departmentId);
     const body = await request.json();
     const { taskId, memberIds } = assignSchema.parse(body);
 

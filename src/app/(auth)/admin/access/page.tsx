@@ -1,4 +1,4 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireChurchPermission, getCurrentChurchId, requireAuth, getUserMinistryScope } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AccessClient from "./AccessClient";
 
@@ -6,11 +6,61 @@ export default async function AccessPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
-  await requireChurchPermission("departments:manage", churchId);
+  // access:manage couvre SUPER_ADMIN, ADMIN, SECRETARY et MINISTER (borné à son
+  // ministère ci-dessous) — aligné sur la garde de l'API (spec 031/#467)
+  await requireChurchPermission("access:manage", churchId);
+  const ministryScope = getUserMinistryScope(session, churchId);
 
-  // All users in this church (with roles) + new users (no roles yet)
+  // Utilisateurs rattachés à cette église uniquement — rôle dans l'église, lien de
+  // membre, ou demande de liaison (peu importe le statut) (spec 031, correction du
+  // `where: {}` qui exposait tous les utilisateurs de la plateforme)
+  const churchMembershipOr = [
+    { churchRoles: { some: { churchId } } },
+    { memberLinks: { some: { churchId } } },
+    { memberLinkRequests: { some: { churchId } } },
+  ];
+  // Pour un appelant au périmètre de ministère restreint (Ministre), ne renvoyer que
+  // les personnes rattachées à SES ministères — par un rôle, un adjoint, un lien de
+  // membre ou une demande (spec 031/T21)
+  const ministryOr = ministryScope.scoped
+    ? [
+        {
+          churchRoles: {
+            some: {
+              churchId,
+              OR: [
+                { ministryId: { in: ministryScope.ministryIds } },
+                { departments: { some: { department: { ministryId: { in: ministryScope.ministryIds } } } } },
+              ],
+            },
+          },
+        },
+        {
+          memberLinks: {
+            some: {
+              churchId,
+              member: { departments: { some: { department: { ministryId: { in: ministryScope.ministryIds } } } } },
+            },
+          },
+        },
+        {
+          memberLinkRequests: {
+            some: {
+              churchId,
+              OR: [
+                { ministryId: { in: ministryScope.ministryIds } },
+                { department: { ministryId: { in: ministryScope.ministryIds } } },
+              ],
+            },
+          },
+        },
+      ]
+    : null;
+
   const users = await prisma.user.findMany({
-    where: {},
+    where: ministryOr
+      ? { AND: [{ OR: churchMembershipOr }, { OR: ministryOr }] }
+      : { OR: churchMembershipOr },
     select: {
       id: true,
       name: true,
@@ -47,7 +97,18 @@ export default async function AccessPage() {
 
   // Demandes d'accès en attente
   const pendingRequests = await prisma.memberLinkRequest.findMany({
-    where: { churchId, status: "PENDING" },
+    where: {
+      churchId,
+      status: "PENDING",
+      ...(ministryScope.scoped
+        ? {
+            OR: [
+              { ministryId: { in: ministryScope.ministryIds } },
+              { department: { ministryId: { in: ministryScope.ministryIds } } },
+            ],
+          }
+        : {}),
+    },
     include: {
       user: { select: { id: true, name: true, displayName: true, email: true, image: true } },
       member: {
@@ -69,7 +130,18 @@ export default async function AccessPage() {
 
   // Demandes refusées (30 dernières)
   const rejectedRequests = await prisma.memberLinkRequest.findMany({
-    where: { churchId, status: "REJECTED" },
+    where: {
+      churchId,
+      status: "REJECTED",
+      ...(ministryScope.scoped
+        ? {
+            OR: [
+              { ministryId: { in: ministryScope.ministryIds } },
+              { department: { ministryId: { in: ministryScope.ministryIds } } },
+            ],
+          }
+        : {}),
+    },
     select: {
       id: true,
       firstName: true,
@@ -86,7 +158,11 @@ export default async function AccessPage() {
 
   // Ministries with departments for structure view
   const ministries = await prisma.ministry.findMany({
-    where: { churchId, isSystem: false },
+    where: {
+      churchId,
+      isSystem: false,
+      ...(ministryScope.scoped ? { id: { in: ministryScope.ministryIds } } : {}),
+    },
     select: {
       id: true,
       name: true,
@@ -165,6 +241,7 @@ export default async function AccessPage() {
         }))}
         churchId={churchId}
         isSuperAdmin={session.user.isSuperAdmin ?? false}
+        hideTransverseRoles={ministryScope.scoped}
         rejectedRequests={rejectedRequests.map((r) => ({
           id: r.id,
           user: { name: r.user.displayName || r.user.name || r.user.email, email: r.user.email },

@@ -356,13 +356,18 @@ export default async function AuthLayout({
   const hasJobsManage = userPermissions.has("jobs:manage");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
-  const hasPlanningAccess = userPermissions.has("planning:view");
+  // Entrée de sidebar "Planning" (grille par département, /dashboard) — spec 031/#462 :
+  // le STAR n'a pas planning:department, contrairement à planning:view.
+  const hasPlanningAccess = userPermissions.has("planning:department");
   const hasMembersAccess = userPermissions.has("members:view");
   const hasReports = userPermissions.has("reports:view");
   const hasRooms = userPermissions.has("rooms:view");
+  // "Mon planning", événements STAR et absences reposent sur planning:view (conservé
+  // par le STAR), volontairement dissocié de hasPlanningAccess (spec 031/#462).
+  const hasStarPlanning = userPermissions.has("planning:view");
   // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
   // section Événements existante (Liste/Calendrier), réservée à events:view.
-  const showStarEvents = hasPlanningAccess && !hasEventsAccess;
+  const showStarEvents = hasStarPlanning && !hasEventsAccess;
 
   // "Mon planning" — visible pour tout utilisateur lié à un STAR dans l'église courante
   const memberLink = currentChurchId
@@ -371,7 +376,7 @@ export default async function AuthLayout({
         select: { id: true },
       })
     : null;
-  const hasMyPlanning = hasPlanningAccess && memberLink !== null;
+  const hasMyPlanning = hasStarPlanning && memberLink !== null;
 
   // "Absences" — visible pour tout STAR lié (auto-déclaration) ou tout
   // responsable/ministre/admin ayant la permission de vue transverse.

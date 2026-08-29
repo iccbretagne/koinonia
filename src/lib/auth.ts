@@ -314,6 +314,54 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
 }
 
 /**
+ * Jette FORBIDDEN si le département visé n'est pas dans le périmètre de l'appelant.
+ * Un périmètre restreint et VIDE (aucun `user_departments`, cas du STAR) refuse tout —
+ * c'est ce qui applique la restriction totale du STAR sans code spécifique à ce rôle
+ * (spec 031).
+ */
+export function requireDepartmentAccess(
+  session: Session,
+  churchId: string,
+  departmentId: string
+): void {
+  const scope = getUserDepartmentScope(session, churchId);
+  if (scope.scoped && !scope.departmentIds.includes(departmentId)) {
+    throw new Error("FORBIDDEN");
+  }
+}
+
+type MinistryScope =
+  | { scoped: false }
+  | { scoped: true; ministryIds: string[] };
+
+/**
+ * Retourne la portée ministère de l'utilisateur connecté pour une église donnée.
+ * - SUPER_ADMIN / ADMIN / SECRETARY → non scoped : vue complète de l'église
+ * - MINISTER → scoped sur le ou les ministères qui lui sont assignés dans cette église
+ * - Tous les autres rôles → scoped, ministryIds vide (aucune gestion des accès)
+ * Un MINISTER sans ministère assigné obtient une liste vide : il ne gère personne, le
+ * doute tranche toujours en faveur de la restriction (spec 031).
+ */
+export function getUserMinistryScope(session: Session, churchId: string): MinistryScope {
+  if (session.user.isSuperAdmin) return { scoped: false };
+
+  const hasGlobalRole = session.user.churchRoles.some(
+    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role)
+  );
+  if (hasGlobalRole) return { scoped: false };
+
+  const ministryIds = Array.from(
+    new Set(
+      session.user.churchRoles
+        .filter((r) => r.churchId === churchId && r.ministryId)
+        .map((r) => r.ministryId as string)
+    )
+  );
+
+  return { scoped: true, ministryIds };
+}
+
+/**
  * Vérifie qu'un utilisateur possède une permission donnée **dans une église précise**.
  * Le churchId est obligatoire — voir requireCurrentChurchPermission pour le résoudre
  * depuis le contexte courant.

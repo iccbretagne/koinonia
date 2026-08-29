@@ -83,6 +83,15 @@ Cela permet d'assigner le role STAR sans aucune entree `user_departments` : les 
   (module emploi uniquement) ; la liste blanche est dans `src/lib/auth.ts` et testee par
   `src/lib/__tests__/auth-global-scopes.test.ts`
 - `getUserDepartmentScope(session)` — retourne le perimetre departements selon le role
+- `requireDepartmentAccess(session, churchId, departmentId)` — jette `FORBIDDEN` si le
+  departement vise n'est pas dans le perimetre de l'appelant. Un perimetre restreint **vide**
+  (STAR) refuse tout, sans code specifique a ce role (ADR-0009). A appeler juste apres
+  `requireChurchPermission`/`resolveChurchId` sur toute route qui adresse nominativement un
+  `departmentId`/`deptId`
+- `getUserMinistryScope(session, churchId)` — symetrique de `getUserDepartmentScope` pour le
+  ministere : `{ scoped: false }` (Super Admin/Admin/Secretaire) ou `{ scoped: true, ministryIds }`
+  (Ministre, borne a `UserChurchRole.ministryId` de l'eglise courante) ; utilise par
+  `POST/PATCH/DELETE /api/users/[userId]/roles` pour cantonner un Ministre a son ministere
 - `getDiscipleshipScope(session, churchId)` — portee discipolat (scoped ou non)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource
 - `getCurrentChurchId(session)` — eglise active (cookie `current-church` ou premiere de la liste).
@@ -146,6 +155,8 @@ Matrice resultante :
 |---|---|---|---|---|---|---|---|---|
 | `planning:view` | x | x | x | x | x | | | x |
 | `planning:edit` | x | x | | x | x | | | |
+| `planning:department` | x | x | x | x | x | | | |
+| `access:manage` | x | x | x | x | | | | |
 | `members:view` | x | x | x | x | x | | | |
 | `members:manage` | x | x | | x | x | | | |
 | `events:view` | x | x | x | x | x | | x | |
@@ -172,11 +183,16 @@ Matrice resultante :
 - Accès aux événements en lecture (`events:view`) et aux comptes rendus (`reports:view` + `reports:edit`)
 - Pas d'accès au planning, aux membres, au discipolat ni à la section admin
 
-**Spécificités du STAR** :
-- Permission `planning:view` uniquement — accède à son planning personnel via `/planning`
-- Pas d'accès aux sections membres, événements, admin, discipolat
-- Navigation réduite : lien "Mon planning" visible uniquement si `isStarOnly` (`churchRoles.every(r => r.role === "STAR")`)
-- Les départements du STAR sont dérivés automatiquement depuis `MemberUserLink → Member → MemberDepartment` dans le callback de session (pas de `user_departments`)
+**Spécificités du STAR** (spec 031, issues #462/#463) :
+- Permission `planning:view` — accède à « Mon planning » (vue macro personnelle), ses
+  événements (`/planning/events`) et l'auto-déclaration d'absences
+- N'a **pas** `planning:department` : pas d'accès à `/dashboard` (grille par département), ni
+  aux routes API de département (tâches, consignes, membres, stats, planning mensuel/hebdomadaire)
+- Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve`
+- Pas d'accès aux sections membres, événements (liste/calendrier), admin, discipolat
+- `getUserDepartmentScope` renvoie `{ scoped: true, departmentIds: [] }` pour ce rôle — la chaîne
+  d'appartenance (`MemberUserLink → Member → MemberDepartment`) n'est volontairement pas fusionnée
+  avec le périmètre de responsabilité (`user_departments`) : voir ADR-0009
 - Attribution requiert une liaison compte-membre valide (`MemberUserLink`)
 
 ### Utilisation dans le code
@@ -217,6 +233,8 @@ L'endpoint `PATCH /api/departments/[departmentId]` qui assigne une fonction depa
 - **Responsable de département** : voit uniquement les départements qui lui sont assignés via `user_departments`
 - **Disciple Maker** : pas d'accès au planning ni à la grille des départements ; périmètre limité au module discipolat
 - **Reporter** : pas d'accès au planning, aux membres ni à la section admin ; voit uniquement les événements et les comptes rendus qui lui sont accessibles
-- **STAR** : accès à `/planning` uniquement (son planning personnel) ; les départements sont dérivés depuis `MemberUserLink`, pas depuis `user_departments`
+- **STAR** : restriction totale sur les données de département (`requireDepartmentAccess` refuse
+  systématiquement) ; accès conservé uniquement à « Mon planning », ses événements et ses absences
 
-Cette logique est implémentée dans `src/app/(auth)/layout.tsx` et `getUserDepartmentScope()` dans `src/lib/auth.ts`.
+Cette logique est implémentée dans `src/app/(auth)/layout.tsx` et
+`getUserDepartmentScope()`/`requireDepartmentAccess()` dans `src/lib/auth.ts` — voir ADR-0009.

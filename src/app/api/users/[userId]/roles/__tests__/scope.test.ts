@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createAdminSession, createMinisterSession, createSecretarySession } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
+import { fakeGetUserMinistryScope } from "@/lib/__tests__/support/ministry-scope-mock";
 
 const mockRequirePermission = vi.fn();
 const mockRequireRateLimit = vi.fn();
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
+  getUserMinistryScope: (...args: Parameters<typeof fakeGetUserMinistryScope>) =>
+    fakeGetUserMinistryScope(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }));
@@ -178,8 +181,9 @@ describe("BLOCKER-1 : POST /api/users/[userId]/roles — RBAC events:manage", ()
     // En production, MINISTER n'a PAS events:manage, donc requireChurchPermission lèvera FORBIDDEN.
     mockRequirePermission.mockResolvedValue(createMinisterSession("min-1", "church-1"));
 
+    // Le département relève du même ministère ("min-1") que le Ministre : dans son périmètre
     prismaMock.department.findMany.mockResolvedValue([
-      { id: "dept-1", name: "Son", ministry: { churchId: "church-1" } },
+      { id: "dept-1", name: "Son", ministryId: "min-1", ministry: { churchId: "church-1" } },
     ] as never);
     prismaMock.userChurchRole.create.mockResolvedValue({
       id: "ucr-1",

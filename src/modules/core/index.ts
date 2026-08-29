@@ -19,6 +19,9 @@ export const coreModule = defineModule({
   permissions: {
     "church:manage": ["SUPER_ADMIN"],
     "users:manage":  ["SUPER_ADMIN"],
+    // Gestion des accès/rôles au sein d'une église — distinct de users:manage (plateforme,
+    // Super Admin uniquement). Remplace l'emprunt à events:manage (spec 031, issue #467)
+    "access:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"],
   },
 
   navigation: [
