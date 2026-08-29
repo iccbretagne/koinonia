@@ -158,3 +158,4 @@
 - [x] Script d'import Mediaflow → ICC Platform (`prisma/scripts/import-mediaflow.ts`) : mapping churches, déduplication users, import tables media, idempotent
 - [x] Monitoring applicatif (healthcheck, metriques)
 - [ ] Separer le compte runtime du compte de deploiement (audit H-10) — voir [TODO dedie](todo-separation-comptes-deploiement.md)
+- [ ] Epingler l'identite SSH des hotes de deploiement (audit M-08) — risque accepte en attendant, voir [docs/production.md](production.md) section « Identite SSH de l'hote »
