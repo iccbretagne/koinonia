@@ -46,8 +46,6 @@ export async function POST(request: Request) {
     sameSite: "lax",
     path: "/",
     expires,
-    domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
-    secure: !!process.env.AUTH_COOKIE_DOMAIN,
   });
   return response;
 }

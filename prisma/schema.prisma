@@ -77,8 +77,6 @@ model Church {
   mediaEvents               MediaEvent[]
   mediaProjects             MediaProject[]
   mediaSettings             MediaSettings?
-  // Module mrbs (optionnel)
-  mrbsUserLinks             MrbsUserLink[]
   // Module agenda
   pastoralProfiles          PastoralProfile[]          @relation("ChurchPastoralProfiles")
   appointmentRequests       AppointmentRequest[]
@@ -157,9 +155,6 @@ model User {
   mediaProjectsCreated              MediaProject[]               @relation("MediaProjectCreator")
   mediaFileVersions                 MediaFileVersion[]           @relation("MediaFileVersionCreator")
   mediaComments                     MediaComment[]               @relation("MediaCommentAuthor")
-  // Module mrbs (optionnel)
-  mrbsUserLinks                     MrbsUserLink[]               @relation("MrbsLinkedUser")
-  mrbsUserLinksCreated              MrbsUserLink[]               @relation("MrbsLinkCreator")
   // Module agenda
   pastoralProfiles                  PastoralProfile[]            @relation("UserPastoralProfile")
   appointmentsMade                  AppointmentRequest[]         @relation("AppointmentRequester")
@@ -733,29 +728,6 @@ model Request {
   @@index([churchId, type, status])
   @@index([assignedDeptId, status])
   @@map("requests")
-}
-
-// ============================================================================
-// MODULE MRBS (optionnel — réservation de salles)
-// ============================================================================
-
-/// Liaison entre un compte MRBS (username) et un compte Koinonia (userId).
-/// Utilisée quand le username MRBS n'est pas l'email Koinonia (ex : "jdupont" → jean.dupont@mail.com).
-model MrbsUserLink {
-  id           String   @id @default(cuid())
-  mrbsUsername String   @unique // mrbs_users.name dans la BDD MRBS
-  userId       String
-  churchId     String
-  linkedAt     DateTime @default(now())
-  linkedById   String
-
-  user     User   @relation("MrbsLinkedUser", fields: [userId], references: [id])
-  church   Church @relation(fields: [churchId], references: [id])
-  linkedBy User   @relation("MrbsLinkCreator", fields: [linkedById], references: [id])
-
-  @@index([userId])
-  @@index([churchId])
-  @@map("mrbs_user_links")
 }
 
 // ============================================================================
