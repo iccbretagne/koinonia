@@ -87,4 +87,4 @@
 - [ ] **Avant déploiement** : confirmer que `NEXT_PUBLIC_TURNSTILE_SITE_KEY` et
       `TURNSTILE_SECRET_KEY` sont renseignées sur recette puis production — sans elles, le
       formulaire d'intégration refusera toute soumission (fail-closed volontaire)
-- [ ] PR ouverte vers `main`
+- [x] PR ouverte vers `main` — #481
