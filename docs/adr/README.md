@@ -35,6 +35,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0006](0006-extraction-module-storage.md) | Extraction de `modules/storage` hors de `media` | Proposé |
 | [0007](0007-worker-hors-nextjs-table-jobs.md) | Worker hors Next.js, piloté par une table de jobs | Proposé |
 | [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Accepté |
+| [0009](0009-garde-perimetre-explicite.md) | Garde de périmètre explicite au point d'entrée | Accepté |
 
 ## Note sur les ADR 0001–0003
 

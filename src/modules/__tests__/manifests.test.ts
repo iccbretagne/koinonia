@@ -40,6 +40,7 @@ describe("Manifestes des modules", () => {
     expect(permNames).toEqual([
       "absences:manage",
       "absences:view",
+      "access:manage",
       "church:manage",
       "departments:manage",
       "departments:view",
@@ -50,6 +51,7 @@ describe("Manifestes des modules", () => {
       "events:view",
       "members:manage",
       "members:view",
+      "planning:department",
       "planning:edit",
       "planning:view",
       "reports:edit",

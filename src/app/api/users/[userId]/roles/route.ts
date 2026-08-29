@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
@@ -49,6 +49,43 @@ const roleInclude = {
 
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
 
+// Rôles rattachables à un ministère ou un département — les seuls qu'un Ministre au
+// périmètre restreint peut attribuer/retirer (spec 031, issue #467). Tout le reste
+// (REPORTER, ACCOUNTANT, DISCIPLE_MAKER, AGENDA_QUALIFIER) est transverse à l'église.
+const MINISTRY_SCOPED_ROLES = ["MINISTER", "DEPARTMENT_HEAD", "STAR"] as const;
+
+type MinistryScope = ReturnType<typeof getUserMinistryScope>;
+
+/**
+ * Jette si un appelant au périmètre de ministère restreint agit hors de son périmètre :
+ * rôle non rattachable, ministère hors périmètre, ou département dont le ministère est
+ * hors périmètre. STAR n'a volontairement aucune vérification supplémentaire ici : la
+ * chaîne d'appartenance (Member → département) n'est pas fusionnée avec le périmètre de
+ * responsabilité (décision actée dans spec.md).
+ */
+function assertRoleWithinMinistryScope(
+  scope: MinistryScope,
+  role: string,
+  ministryId: string | null | undefined,
+  deptMinistryIds: string[]
+): void {
+  if (!scope.scoped) return;
+
+  if (!MINISTRY_SCOPED_ROLES.includes(role as typeof MINISTRY_SCOPED_ROLES[number])) {
+    throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
+  }
+  if (role === "MINISTER" && (!ministryId || !scope.ministryIds.includes(ministryId))) {
+    throw new ApiError(403, "Ce ministère ne relève pas de votre périmètre");
+  }
+  if (
+    role === "DEPARTMENT_HEAD" &&
+    (deptMinistryIds.length === 0 ||
+      deptMinistryIds.some((id) => !scope.ministryIds.includes(id)))
+  ) {
+    throw new ApiError(403, "Un ou plusieurs départements ne relèvent pas de votre périmètre");
+  }
+}
+
 // Normalise les deux formats d'entrée vers { id, isDeputy }[]
 function normalizeDepts(
   departments?: { id: string; isDeputy?: boolean }[],
@@ -68,11 +105,11 @@ export async function POST(
     const body = await request.json();
     const { churchId, role, ministryId, departmentIds, departments } = roleSchema.parse(body);
 
-    // Vérifier permission dans l'église ciblée.
-    // events:manage couvre SUPER_ADMIN, ADMIN, SECRETARY.
-    // Décision v1.0 : SECRETARY peut gérer les rôles non-privilégiés (MINISTER, DEPARTMENT_HEAD,
+    // Vérifier permission dans l'église ciblée. access:manage couvre SUPER_ADMIN, ADMIN,
+    // SECRETARY et MINISTER (borné à son ministère, voir assertRoleWithinMinistryScope) —
+    // décision v1.0 : SECRETARY peut gérer les rôles non-privilégiés (MINISTER, DEPARTMENT_HEAD,
     // DISCIPLE_MAKER, REPORTER, STAR) — rôle de confiance élevée, bras droit de l'admin.
-    const session = await requireChurchPermission("events:manage", churchId);
+    const session = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
@@ -105,6 +142,7 @@ export async function POST(
     }
 
     // Vérifier que les départements appartiennent à cette église
+    let deptMinistryIds: string[] = [];
     if (depts?.length) {
       const deptRecords = await prisma.department.findMany({
         where: { id: { in: depts.map((d) => d.id) } },
@@ -118,7 +156,17 @@ export async function POST(
           throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
         }
       }
+      deptMinistryIds = deptRecords.map((d) => d.ministryId);
     }
+
+    // Un Ministre au périmètre restreint ne peut attribuer que des rôles rattachables,
+    // dans son propre ministère (spec 031, issue #467)
+    assertRoleWithinMinistryScope(
+      getUserMinistryScope(session, churchId),
+      role,
+      ministryId,
+      deptMinistryIds
+    );
 
     const userRole = await prisma.userChurchRole.create({
       data: {
@@ -175,7 +223,7 @@ export async function PATCH(
     }
 
     // Vérifier permission dans l'église du rôle existant
-    const patchSession = await requireChurchPermission("events:manage", existing.churchId);
+    const patchSession = await requireChurchPermission("access:manage", existing.churchId);
     requireRateLimit(request, { prefix: `roles:${patchSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Scope enforcement : ministryId uniquement pour MINISTER, departments pour DEPARTMENT_HEAD
@@ -184,6 +232,26 @@ export async function PATCH(
     }
     if ((departments?.length || departmentIds?.length) && existing.role !== "DEPARTMENT_HEAD") {
       throw new ApiError(400, "departments n'est applicable qu'au rôle Responsable de département");
+    }
+
+    // Un Ministre au périmètre restreint ne peut toucher que les rôles déjà dans son
+    // ministère (état courant) — vérifié avant toute donnée nouvelle (spec 031)
+    const ministryScope = getUserMinistryScope(patchSession, existing.churchId);
+    if (ministryScope.scoped) {
+      let currentDeptMinistryIds: string[] = [];
+      if (existing.role === "DEPARTMENT_HEAD") {
+        const currentDepts = await prisma.userDepartment.findMany({
+          where: { userChurchRoleId: roleId },
+          select: { department: { select: { ministryId: true } } },
+        });
+        currentDeptMinistryIds = currentDepts.map((d) => d.department.ministryId);
+      }
+      assertRoleWithinMinistryScope(
+        ministryScope,
+        existing.role,
+        existing.ministryId,
+        currentDeptMinistryIds
+      );
     }
 
     // Vérifier que le ministryId appartient à cette église
@@ -200,6 +268,7 @@ export async function PATCH(
     const depts = normalizeDepts(departments, departmentIds);
 
     // Vérifier que les départements appartiennent à cette église
+    let newDeptMinistryIds: string[] = [];
     if (depts?.length) {
       const deptRecords = await prisma.department.findMany({
         where: { id: { in: depts.map((d) => d.id) } },
@@ -212,6 +281,20 @@ export async function PATCH(
       }
       if (deptRecords.length !== depts.length) {
         throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
+      }
+      newDeptMinistryIds = deptRecords.map((d) => d.ministryId);
+    }
+
+    // Le résultat de la modification doit lui aussi rester dans le périmètre — un Ministre
+    // ne peut pas déplacer un responsable vers un ministère qui n'est pas le sien. Seuls les
+    // champs effectivement modifiés sont revérifiés ; un champ non touché reste régi par le
+    // contrôle sur l'état courant fait plus haut.
+    if (ministryScope.scoped) {
+      if (ministryId !== undefined) {
+        assertRoleWithinMinistryScope(ministryScope, existing.role, ministryId, []);
+      }
+      if (depts !== undefined) {
+        assertRoleWithinMinistryScope(ministryScope, existing.role, undefined, newDeptMinistryIds);
       }
     }
 
@@ -261,7 +344,7 @@ export async function DELETE(
     const { churchId, role } = roleSchema.parse(body);
 
     // Vérifier permission dans l'église ciblée
-    const delSession = await requireChurchPermission("events:manage", churchId);
+    const delSession = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Block deletion of privileged roles by non-super-admins
@@ -271,12 +354,32 @@ export async function DELETE(
       }
     }
 
+    const delMinistryScope = getUserMinistryScope(delSession, churchId);
+
     await prisma.$transaction(async (tx) => {
       const existing = await tx.userChurchRole.findUnique({
         where: { userId_churchId_role: { userId, churchId, role } },
       });
 
       if (!existing) throw new Error("Rôle introuvable");
+
+      // Un Ministre au périmètre restreint ne peut supprimer que les rôles de son ministère
+      if (delMinistryScope.scoped) {
+        let currentDeptMinistryIds: string[] = [];
+        if (existing.role === "DEPARTMENT_HEAD") {
+          const currentDepts = await tx.userDepartment.findMany({
+            where: { userChurchRoleId: existing.id },
+            select: { department: { select: { ministryId: true } } },
+          });
+          currentDeptMinistryIds = currentDepts.map((d) => d.department.ministryId);
+        }
+        assertRoleWithinMinistryScope(
+          delMinistryScope,
+          existing.role,
+          existing.ministryId,
+          currentDeptMinistryIds
+        );
+      }
 
       await tx.userDepartment.deleteMany({ where: { userChurchRoleId: existing.id } });
       await tx.userChurchRole.delete({ where: { id: existing.id } });

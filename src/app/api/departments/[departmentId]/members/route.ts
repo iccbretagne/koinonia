@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 
 export async function GET(
@@ -9,7 +9,8 @@ export async function GET(
   try {
     const { departmentId } = await params;
     const churchId = await resolveChurchId("department", departmentId);
-    await requireChurchPermission("members:view", churchId);
+    const session = await requireChurchPermission("members:view", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const members = await prisma.member.findMany({
       where: { departments: { some: { departmentId } } },

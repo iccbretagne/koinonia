@@ -42,6 +42,9 @@ export const planningModule = defineModule({
     // Planning
     "planning:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "STAR"],
     "planning:edit":       ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
+    // Planning par département (grille /dashboard) — distinct de planning:view, qui couvre
+    // aussi "Mon planning", les absences et l'agenda du STAR (spec 031, issue #462)
+    "planning:department": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
     // Membres (STAR)
     "members:view":        ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
     "members:manage":      ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
@@ -60,7 +63,7 @@ export const planningModule = defineModule({
   },
 
   navigation: [
-    { label: "Planning",    icon: "planning",    href: "/dashboard",    permission: "planning:view" },
+    { label: "Planning",    icon: "planning",    href: "/dashboard",    permission: "planning:department" },
     { label: "Événements",  icon: "calendar",    href: "/events",       permission: "events:view" },
     { label: "Membres",     icon: "members",     href: "/admin/members",permission: "members:view" },
     { label: "Annonces",    icon: "megaphone",   href: "/announcements",permission: "events:view" },

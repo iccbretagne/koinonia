@@ -211,6 +211,14 @@ export async function GET(
 - `requirePlatformPermission(permission)` — permissions volontairement transverses aux eglises
   (module emploi), liste blanche testee dans `auth-global-scopes.test.ts`
 - `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
+- `requireDepartmentAccess(session, churchId, departmentId)` — jette `FORBIDDEN` si le
+  departement vise n'est pas dans le perimetre de l'appelant (`getUserDepartmentScope`). Un
+  perimetre restreint **vide** (STAR) refuse tout, sans code specifique a ce role — voir
+  ADR-0009. A appeler juste apres `requireChurchPermission`/`resolveChurchId` sur toute route
+  qui adresse nominativement un `departmentId`/`deptId`
+- `getUserMinistryScope(session, churchId)` — symetrique de `getUserDepartmentScope` pour le
+  ministere : `{ scoped: false }` (Super Admin/Admin/Secretaire) ou `{ scoped: true, ministryIds }`
+  (Ministre, borne a `UserChurchRole.ministryId` de l'eglise courante)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID.
   Pour toute action portant sur un objet identifie, cette eglise fait autorite — jamais le
   contexte d'eglise affiche, qui peut etre manipule cote client
@@ -258,6 +266,8 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 |---|---|---|---|---|---|---|---|
 | `planning:view` | x | x | x | x | x | | |
 | `planning:edit` | x | x | | x | x | | |
+| `planning:department` | x | x | x | x | x | | |
+| `access:manage` | x | x | x | x | | | |
 | `members:view` | x | x | x | x | x | | |
 | `members:manage` | x | x | | x | x | | |
 | `events:view` | x | x | x | x | x | | x |
@@ -289,6 +299,27 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Peut gérer les événements (`events:manage`)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
 - Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
+
+**Spécificités du STAR** (spec 031, issues #462/#463) :
+- N'a pas `planning:department` : pas d'accès à `/dashboard` (grille par département), ni aux
+  routes API de département (tâches, consignes, membres, stats, planning mensuel/hebdomadaire)
+- Conserve `planning:view` : « Mon planning » (vue macro personnelle), ses événements
+  (`/planning/events`) et l'auto-déclaration d'absences restent accessibles
+- Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve` — retirés totalement
+- `getUserDepartmentScope` renvoie systématiquement `{ scoped: true, departmentIds: [] }` pour
+  ce rôle (aucun `user_departments`), ce qui produit la restriction totale de `requireDepartmentAccess`
+  sans code spécifique — voir ADR-0009. Décision actée : la chaîne d'appartenance (`Member` →
+  `member_departments`) n'est pas fusionnée avec le périmètre de responsabilité
+
+**Spécificités du Ministre dans la gestion des accès** (spec 031, issue #467) :
+- `access:manage` remplace l'ancien emprunt de `events:manage` sur
+  `POST/PATCH/DELETE /api/users/[userId]/roles` — aligné sur la garde de la page `/admin/access`
+- Un Ministre au périmètre restreint (`getUserMinistryScope`) ne peut attribuer/modifier/retirer
+  que des rôles rattachables (`MINISTER`, `DEPARTMENT_HEAD`, `STAR`), et seulement dans **ses**
+  ministères — jamais un rôle transverse à l'église (`ADMIN`, `SECRETARY`, `REPORTER`,
+  `ACCOUNTANT`, `DISCIPLE_MAKER`, `AGENDA_QUALIFIER`)
+- L'anti-escalade `PRIVILEGED_ROLES` → `isSuperAdmin` (SUPER_ADMIN/ADMIN/SECRETARY) reste
+  inchangée et s'applique en plus de ce périmètre
 
 **Spécificités du Reporter** :
 - Accès en lecture aux événements (`events:view`)

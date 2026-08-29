@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId, getUserDepartmentScope } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import {
   successResponse,
   errorResponse,
@@ -52,10 +52,7 @@ export async function GET(
     const session = await requireChurchPermission("planning:view", churchId);
 
     // Vérifier le scope département : un DEPARTMENT_HEAD ne peut voir que ses départements
-    const deptScope = getUserDepartmentScope(session, churchId);
-    if (deptScope.scoped && !deptScope.departmentIds.includes(departmentId)) {
-      throw new ApiError(403, "Vous n'avez pas accès à ce département");
-    }
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const churchRoles = session.user.churchRoles
       .filter((r) => r.churchId === churchId)
@@ -196,10 +193,7 @@ export async function PUT(
     const session = await requireChurchPermission("planning:edit", eventChurchId);
 
     // Vérifier le scope département : un DEPARTMENT_HEAD ne peut éditer que ses départements
-    const deptScope = getUserDepartmentScope(session, eventChurchId);
-    if (deptScope.scoped && !deptScope.departmentIds.includes(departmentId)) {
-      throw new ApiError(403, "Vous n'avez pas accès à ce département");
-    }
+    requireDepartmentAccess(session, eventChurchId, departmentId);
 
     // Check planning deadline
     const event = await prisma.event.findUnique({

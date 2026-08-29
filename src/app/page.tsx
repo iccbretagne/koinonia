@@ -1,14 +1,32 @@
 import { redirect } from "next/navigation";
-import { auth, signIn, isDevLoginEnabled } from "@/lib/auth";
+import type { Session } from "next-auth";
+import { auth, signIn, getCurrentChurchId, isDevLoginEnabled } from "@/lib/auth";
+import { rolePermissions } from "@/lib/registry";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
+
+// /dashboard exige planning:department (spec 031/#462) : un STAR, Reporter, Faiseur de
+// disciples, Comptable ou Qualificateur agenda ne l'a pas et y crasherait en FORBIDDEN
+// (pas d'error.tsx dans l'app). La redirection post-connexion doit donc tenir compte du
+// rôle plutôt que de pointer vers /dashboard en dur.
+async function defaultLandingPage(session: Session) {
+  const churchId = await getCurrentChurchId(session);
+  const userPermissions = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
+  );
+  if (userPermissions.has("planning:department")) return "/dashboard";
+  if (userPermissions.has("planning:view")) return "/planning";
+  return "/profile";
+}
 
 export default async function LoginPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect(await defaultLandingPage(session));
   }
 
   const devLoginEnabled = isDevLoginEnabled(process.env);
@@ -25,7 +43,10 @@ export default async function LoginPage() {
         <form
           action={async () => {
             "use server";
-            await signIn("google", { redirectTo: "/dashboard" });
+            // redirectTo pointe vers "/" (pas "/dashboard") : au moment de l'appel, la
+            // session n'existe pas encore, donc le rôle est inconnu ici. "/" recalculera
+            // la destination via defaultLandingPage() une fois la session posée.
+            await signIn("google", { redirectTo: "/" });
           }}
         >
           <button

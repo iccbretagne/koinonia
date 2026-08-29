@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     if (!weekStart) throw new ApiError(400, "weekStart requis");
     if (!departmentId) throw new ApiError(400, "departmentId requis");
 
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:department", churchId);
+    requireDepartmentAccess(session, churchId, departmentId);
 
     const from = new Date(weekStart);
     from.setUTCHours(0, 0, 0, 0);

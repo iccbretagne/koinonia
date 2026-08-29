@@ -15,6 +15,13 @@ vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
   getUserDepartmentScope: (...args: unknown[]) => mockGetUserDepartmentScope(...args),
+  requireDepartmentAccess: (...args: unknown[]) => {
+    const scope = mockGetUserDepartmentScope(...args);
+    const departmentId = args[2] as string;
+    if (scope.scoped && !scope.departmentIds.includes(departmentId)) {
+      throw new Error("FORBIDDEN");
+    }
+  },
 }));
 
 vi.mock("@/lib/prisma", () => ({
