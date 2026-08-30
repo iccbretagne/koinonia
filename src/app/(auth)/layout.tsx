@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { rolePermissions } from "@/lib/registry";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
+import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import NotificationBell from "@/components/NotificationBell";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
@@ -415,7 +416,7 @@ export default async function AuthLayout({
       showStarEvents={showStarEvents}
       hasAbsences={hasAbsences}
       hasRooms={hasRooms}
-      userRole={currentRole as "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT"}
+      userRole={currentRole as TourRoleKey}
       headerColor={churchPrimaryColor}
       header={headerContent}
       footer={footerContent}

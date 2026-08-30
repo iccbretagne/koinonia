@@ -1,4 +1,4 @@
-export type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT";
+export type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
 
 const PLANNING_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
 const CONFIG_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"];
@@ -6,6 +6,8 @@ const MEMBERS_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER
 const REPORT_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"];
 const DISCIPLESHIP_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DEPARTMENT_HEAD", "DISCIPLE_MAKER"];
 const SERVICE_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
+// « Gestion pastorale » n'apparaît que pour les roles qui qualifient ou traitent les demandes de RDV.
+const PASTORAL_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "AGENDA_QUALIFIER"];
 
 export interface TourStep {
   /** CSS selector for the target element, or "center" for a centered modal */
@@ -42,27 +44,44 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     target: '[data-tour="sidebar-members"]',
-    title: "Membres (STAR)",
+    title: "Communauté",
     content:
-      "Consultez et gérez les membres actifs (STAR) de vos départements : coordonnées, affectations, statuts.",
+      "Les membres actifs (STAR) de vos départements — coordonnées, affectations, statuts — mais aussi le discipolat, l'intégration des nouvelles familles et les bergers de famille, regroupés ici.",
     viewport: "desktop",
     roles: MEMBERS_ROLES,
   },
   {
     target: '[data-tour="sidebar-service"]',
-    title: "Demandes",
+    title: "Opérations",
     content:
-      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. Les responsables Secrétariat, Communication et Production Média traitent les demandes depuis leur tableau de bord.",
+      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. On y trouve aussi les Médias : projets, collections de photos et validation. Les responsables Secrétariat, Communication et Production Média traitent les demandes depuis leur tableau de bord.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },
   {
-    target: '[data-tour="sidebar-discipleship"]',
+    // Le discipolat n'a plus de section propre : il vit dans « Communauté ».
+    // L'étape reste, ancrée sur cette section, car les FD n'y voient qu'elle.
+    target: '[data-tour="sidebar-members"]',
     title: "Discipolat",
     content:
-      "Gérez les relations Faiseur de Disciples ↔ disciple, enregistrez l'appel de présence et consultez les statistiques. Les FD ne voient que leurs propres disciples.",
+      "Dans Communauté, gérez les relations Faiseur de Disciples ↔ disciple, enregistrez l'appel de présence et consultez les statistiques. Les FD ne voient que leurs propres disciples.",
     viewport: "desktop",
     roles: DISCIPLESHIP_ROLES,
+  },
+  {
+    target: '[data-tour="sidebar-pastoral"]',
+    title: "Gestion pastorale",
+    content:
+      "Les demandes de rendez-vous pastoral déposées depuis le formulaire public : qualification, assignation au bon profil, puis planification dans l'agenda.",
+    viewport: "desktop",
+    roles: PASTORAL_ROLES,
+  },
+  {
+    target: '[data-tour="sidebar-ressources"]',
+    title: "Ressources",
+    content:
+      "Réservez une salle et suivez vos réservations, déposez une demande financière (note de frais, avance de budget), consultez les offres d'emploi et les cultes audio publiés.",
+    viewport: "desktop",
   },
   {
     target: '[data-tour="sidebar-config"]',
@@ -91,7 +110,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="dashboard-actions"]',
     title: "Vues du planning",
     content:
-      "Basculez entre la vue par événement, la vue mensuelle et la vue des tâches du département.",
+      "Basculez entre la vue par événement, la vue mensuelle et la vue des tâches — cette dernière permet de créer les tâches récurrentes du département et de les affecter à un STAR pour un événement donné.",
     roles: PLANNING_ROLES,
   },
   {

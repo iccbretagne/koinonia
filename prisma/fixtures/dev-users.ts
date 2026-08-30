@@ -28,6 +28,12 @@ export interface DevUserDef {
   /** Uniquement pour le rôle DEPARTMENT_HEAD. */
   departmentKeys?: string[];
   /**
+   * Sous-ensemble de `departmentKeys` où le compte est **adjoint** et non
+   * responsable principal (`UserDepartment.isDeputy`). Alimenté par la fixture
+   * de formation, où l'on veut rejouer les binômes responsable/adjoint réels.
+   */
+  deputyDepartmentKeys?: string[];
+  /**
    * Pour STAR / DISCIPLE_MAKER : le compte doit être lié à une fiche membre
    * (MemberUserLink). Le seed crée cette fiche dans ce département.
    */

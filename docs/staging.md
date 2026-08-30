@@ -169,6 +169,102 @@ Pour tester dans des conditions realistes, il est recommande de restaurer period
 
 La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est deja disponible et documentee dans la section ["Procedure de restauration"](production.md#procedure-de-restauration) de `docs/production.md` — s'y referer directement pour la marche a suivre technique, en l'appliquant sur la base et l'environnement de recette.
 
+## Jeu de donnees de formation
+
+Pour animer une formation aupres des ministres et responsables de departement, la recette peut etre
+regeneree avec la **structure et les comptes reels**, mais un **contenu metier entierement fabrique** :
+les participants retrouvent leurs ministeres, leurs departements et leur propre compte Google, sans
+qu'aucune donnee personnelle (membres, familles, demandes d'integration, comptabilite) ne soit exposee.
+
+### 1. Exporter la configuration depuis la production
+
+Dans l'application : **Administration → Sauvegardes → Exporter la configuration**. Le fichier JSON
+obtenu contient la structure, les comptes et leurs roles. Il contient aussi les fiches membres
+reelles — l'etape suivante les ignore volontairement.
+
+### 2. Construire la fixture
+
+```bash
+npm run fixture:training -- ~/Downloads/koinonia-config-<date>.json
+```
+
+Produit `prisma/fixtures/training-real.json` : eglises, ministeres, departements, comptes et roles.
+Ce fichier contient les emails des participants — il est **gitignore** et ne doit jamais etre commite.
+
+Ce qui est volontairement laisse de cote : les fiches membres, les liaisons membre-compte, et les
+adresses de notification (secretariat, comptabilite) — qu'on ne veut surtout pas voir servir depuis
+un environnement de formation.
+
+### 3. Regenerer la base de recette — depuis votre poste, via un tunnel SSH
+
+**Le seed ne peut pas s'executer sur la VM de recette.** L'artefact deploye est elague de ses
+devDependencies (`npm prune --omit=dev`) : ni `tsx` ni `@faker-js/faker` n'y survivent, et le tar
+exclut explicitement `prisma/scripts`. On execute donc le seed **depuis un poste de developpement**,
+ou tout est installe, en pointant la base de recette a travers un tunnel SSH — MariaDB y ecoute sur
+`localhost:3306` et n'est pas joignable autrement.
+
+```bash
+# Terminal 1 — ouvrir le tunnel (le laisser tourner)
+ssh -N -L 3307:127.0.0.1:3306 <hote-de-recette>
+
+# Terminal 2 — depuis le depot, sur le meme commit que la recette
+DATABASE_URL="mysql://koinonia_staging:MOT_DE_PASSE@127.0.0.1:3307/koinonia_staging" \
+  npm run db:seed:training
+```
+
+Le mot de passe est celui de `DATABASE_URL` dans le `shared/.env` de la recette.
+
+**Ce script vide integralement la base avant de la regenerer** — comptes et sessions compris, donc
+toute personne connectee a la recette est deconnectee. Il affiche la base visee avant de la vider :
+
+```
+Cible : 127.0.0.1:3307/koinonia_staging — la base va être VIDÉE puis régénérée.
+```
+
+**Lire cette ligne avant de laisser faire.** `import "dotenv/config"` n'ecrase pas une variable deja
+posee (verifie), donc le `DATABASE_URL` de la ligne de commande gagne sur celui du `.env` local — mais
+une faute de frappe sur le port renverrait sur la base locale.
+
+Se placer sur le **meme commit que la recette** : le client Prisma genere localement doit correspondre
+au schema applique sur la VM par `migrate deploy`.
+
+Le seed fabrique membres, plannings, evenements, absences, taches, salles, comptes rendus, discipolat
+et demandes sur la structure reelle.
+
+> **Si le seed de formation devient recurrent**, la bonne reponse n'est plus le tunnel mais un bundle :
+> `npm run build:worker` bundle deja le worker audio avec esbuild pour qu'il n'ait besoin ni de `src/`
+> ni de `tsx` sur le serveur (ADR-0007). Le meme traitement applique au seed produirait un
+> `dist/seed.mjs` executable par `node` sur la VM — `dist/` est deja embarque dans l'artefact. Non fait
+> ici : cela alourdirait chaque deploiement de recette pour un besoin ponctuel.
+
+### Ce que le jeu de donnees couvre
+
+| Sujet | Donnees generees |
+|---|---|
+| Planning | 15 evenements (6 passes, 6 a venir), plannings par departement |
+| Gestion des STAR | ~200 fiches membres reparties sur tous les departements |
+| Connexion STAR / adjoint | chaque compte STAR est lie a une fiche membre ; les departements a plusieurs responsables ont un principal et des adjoints |
+| Absences | absences avec backup designe |
+| Taches | taches par departement, affectees sur les prochains cultes |
+| Salles | salle, reservations et main courante |
+| Comptes rendus | comptes rendus des cultes passes, avec sections par departement |
+| Bergers de famille | affectation de berger |
+
+### Limites connues
+
+- L'export de configuration ne porte pas `isDeputy` : la qualite d'adjoint est **reconstruite** (sur un
+  departement tenu par plusieurs responsables, le premier declare est principal, les suivants adjoints).
+  Ce n'est pas l'organisation reelle — a ajuster depuis l'application si la formation s'y attarde.
+- Les noms d'affichage des comptes sont deduits de l'adresse email : l'export ne porte pas les noms.
+  Google renseigne le vrai nom a la premiere connexion du participant.
+- Le seed genere peu d'absences et de demandes (de quoi montrer l'ecran, pas de quoi le remplir) ;
+  les participants en creent eux-memes pendant la formation.
+
+### Apres la formation
+
+Redeployer la recette depuis `main` et rejouer le seed habituel, ou restaurer un backup — la base de
+formation n'a pas vocation a survivre a la session.
+
 ## Garde-fous
 
 > **A respecter systematiquement lors de toute manipulation sur la recette :**

@@ -700,6 +700,7 @@ export default function Sidebar({
           icon={<IconAgenda className="w-4 h-4" />}
           open={openSection === "pastoral"}
           onToggle={() => toggle("pastoral")}
+          dataTour="sidebar-pastoral"
           isActive={isGestionPastoraleActive}
         >
           <nav className="space-y-0.5 pl-6">
@@ -745,7 +746,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 5. Ressources — Salles + Comptabilité + Emploi */}
+      {/* 6. Ressources — Salles + Comptabilité + Emploi */}
       {hasRessources && (
         <AccordionSection
           title="Ressources"
@@ -784,7 +785,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 6. Configuration */}
+      {/* 7. Configuration */}
       {configLinks.length > 0 && (
         <AccordionSection
           title="Configuration"

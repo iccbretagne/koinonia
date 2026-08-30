@@ -1,6 +1,6 @@
 {
   "name": "koinonia",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -22,7 +22,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "fixture:training": "tsx prisma/scripts/build-training-fixture.ts",
+    "db:seed:training": "SEED_FIXTURE_FILE=prisma/fixtures/training-real.json tsx prisma/seed-dev.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
