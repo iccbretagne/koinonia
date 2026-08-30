@@ -2,8 +2,18 @@ import { defineModule } from "@/core/module-registry";
 
 export { integrationBus } from "./bus";
 export type { IntegrationEvents } from "./events";
-export { requireIntegrationAccess, isIntegrationMember, isMsdpMember } from "./auth";
+export {
+  requireIntegrationAccess,
+  requireIntegrationExportAccess,
+  isIntegrationMember,
+  isMsdpMember,
+} from "./auth";
 export type { IntegrationScope } from "./auth";
+export {
+  EXPORT_COLUMNS,
+  buildIntegrationExportRows,
+} from "./services/export-service";
+export type { IntegrationExportInput } from "./services/export-service";
 export {
   buildConfirmationEmail,
   buildBergerNotifEmail,

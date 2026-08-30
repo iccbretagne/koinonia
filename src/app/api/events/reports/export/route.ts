@@ -1,24 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { errorResponse, ApiError } from "@/lib/api-utils";
+import { sanitizeRow } from "@/lib/excel";
 import ExcelJS from "exceljs";
-
-/**
- * Neutralise les valeurs pouvant être interprétées comme des formules Excel.
- */
-function sanitizeExcelValue(value: unknown): unknown {
-  if (typeof value !== "string") return value;
-  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
-  return value;
-}
-
-function sanitizeRow<T extends Record<string, unknown>>(row: T): T {
-  const sanitized = {} as Record<string, unknown>;
-  for (const [key, value] of Object.entries(row)) {
-    sanitized[key] = sanitizeExcelValue(value);
-  }
-  return sanitized as T;
-}
 
 function norm(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();

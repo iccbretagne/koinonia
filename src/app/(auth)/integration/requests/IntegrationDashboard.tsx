@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Button from "@/components/ui/Button";
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED:      "En attente",
@@ -50,6 +51,8 @@ interface Request {
 interface Props {
   requests: Request[];
   isScoped: boolean;
+  canExport: boolean;
+  churchId: string;
   currentUserId: string;
 }
 
@@ -73,9 +76,17 @@ function getNextAction(
   return null;
 }
 
-export default function IntegrationDashboard({ requests, isScoped, currentUserId }: Props) {
+export default function IntegrationDashboard({
+  requests,
+  isScoped,
+  canExport,
+  churchId,
+  currentUserId,
+}: Props) {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const isIntegration = !isScoped;
 
   const actionable = useMemo(
@@ -101,6 +112,31 @@ export default function IntegrationDashboard({ requests, isScoped, currentUserId
     for (const r of requests) c[r.status] = (c[r.status] ?? 0) + 1;
     return c;
   }, [requests]);
+
+  async function handleExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      // On envoie les IDs déjà affichés, jamais les filtres : le fichier = l'écran.
+      const res = await fetch("/api/integration/requests/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId, requestIds: filtered.map((r) => r.id) }),
+      });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `demandes-integration-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Erreur lors de l'export.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -191,6 +227,18 @@ export default function IntegrationDashboard({ requests, isScoped, currentUserId
           <p className="text-sm text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 self-start">
             Affichage limité aux demandes de votre famille.
           </p>
+        )}
+        {canExport && (
+          <div className="sm:ml-auto flex flex-col sm:items-end gap-1">
+            <Button
+              variant="secondary"
+              onClick={handleExport}
+              disabled={exporting || filtered.length === 0}
+            >
+              {exporting ? "Export…" : `Exporter (${filtered.length})`}
+            </Button>
+            {exportError && <p className="text-xs text-icc-rouge">{exportError}</p>}
+          </div>
         )}
       </div>
 
