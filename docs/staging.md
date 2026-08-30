@@ -137,7 +137,7 @@ Le workflow `Deploy Staging` utilise une [GitHub Environment](https://docs.githu
 
 Le pipeline :
 
-1. Construit l'artefact (`build`) depuis la ref choisie — pas d'exigence de correspondance de version avec `package.json`, la version est calculee automatiquement (`<version-package.json>-<sha-court>`, ex. `1.9.2-abc1234`)
+1. Construit l'artefact (`build`) depuis la ref choisie — pas d'exigence de correspondance de version avec `package.json`, la version est calculee automatiquement (`<version-package.json>-<sha-court>`, ex. `1.9.2-abc1234`). Cette version est injectee dans le bundle via `NEXT_PUBLIC_BUILD_VERSION` et **s'affiche dans le footer** : c'est le code reellement deploye qui est identifie, et non le `package.json` de la branche, fige sur la derniere version publiee. En production la variable est absente et `package.json` reprend la main — sa version y correspond au tag deploye.
 2. Deploie (`deploy`) sur la VM de recette en utilisant les secrets de l'Environment `staging` : transfert de l'artefact, extraction, assemblage du bundle standalone, migrations Prisma, bascule du symlink `current`, redemarrage du service `koinonia`, nettoyage (3 dernieres releases conservees)
 
 ### Pourquoi la recette compile, alors que la production promeut l'artefact de la CI
