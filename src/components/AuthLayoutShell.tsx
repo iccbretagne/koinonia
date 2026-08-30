@@ -8,7 +8,9 @@ import MobileNavSheet from "@/components/MobileNavSheet";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "ACCOUNTANT";
+// Type importe plutot que recopie : les copies locales avaient derive et
+// omettaient AGENDA_QUALIFIER, privant ce role des etapes de tour ciblees.
+import type { RoleKey } from "@/lib/tour-steps";
 
 function hexToLuminance(hex: string): number {
   const clean = hex.replace("#", "");

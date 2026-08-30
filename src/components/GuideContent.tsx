@@ -188,6 +188,42 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
 
+  // ── Absences ─────────────────────────────────────────────────────────────
+  {
+    name: "Déclarer une absence",
+    description: "Depuis /absences, déclarez votre propre absence (onglet « Mes absences ») ou celle d'un STAR de votre périmètre (« Déclarer pour un STAR »). Si la personne absente est elle-même Resp. département ou Ministre, l'application propose de désigner un ou plusieurs backups, choisis dans le périmètre de l'absent — jamais celui du déclarant. Les backups sont notifiés.",
+    category: "Absences",
+    screenshotTitle: "Déclaration d'une absence",
+    screenshotFile: "guide-absences-declarer.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Vue d'ensemble et frise",
+    description: "L'onglet « Vue d'ensemble » liste les absences de votre périmètre, en tableau ou en frise temporelle, avec filtres par période, département et statut. Export Excel respectant les filtres actifs.",
+    category: "Absences",
+    screenshotTitle: "Vue d'ensemble des absences",
+    screenshotFile: "guide-absences-vue-ensemble.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Modifier ou annuler une absence",
+    description: "Une absence qui n'est pas encore passée peut être modifiée (période, motif, backups) plutôt qu'annulée puis recréée : les conflits de planning sont réévalués automatiquement. L'annulation reste possible à tout moment.",
+    category: "Absences",
+    screenshotTitle: "Modification d'une absence",
+    screenshotFile: "guide-absences-modifier.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+
+  // ── Tâches ───────────────────────────────────────────────────────────────
+  {
+    name: "Tâches de département",
+    description: "Depuis le planning (/dashboard), la vue « Tâches » permet de définir les tâches récurrentes d'un département (Mixage, Retours, Accueil VIP…) et d'affecter un STAR à chacune pour un événement donné. Complète le planning : celui-ci dit qui est en service, les tâches disent qui fait quoi.",
+    category: "Tâches",
+    screenshotTitle: "Tâches du département",
+    screenshotFile: "guide-taches.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+
   // ── Administration ────────────────────────────────────────────────────────
   {
     name: "Accès & rôles",
@@ -243,7 +279,7 @@ const FEATURES: Feature[] = [
   // ── Salles ───────────────────────────────────────────────────────────────
   {
     name: "Réserver une salle",
-    description: "Consultez le planning des salles et réservez un créneau depuis /rooms. La réservation est soumise à l'accord de l'équipe de contrôle si la salle le requiert.",
+    description: "Depuis /rooms, la vue « Semaine » affiche toutes les salles d'un coup, en grille salles × jours, pour repérer immédiatement celles qui sont libres ; le calendrier mensuel est lui aussi multi-salles et le choix d'une salle devient un filtre facultatif. Un encart « Mes réservations », visible quelle que soit la vue, liste vos prochaines réservations avec les actions de main courante au plus près. Réservez un créneau depuis cette même page. La réservation est soumise à l'accord de l'équipe de contrôle si la salle le requiert.",
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
@@ -379,6 +415,54 @@ const FEATURES: Feature[] = [
     screenshotFile: "guide-audio-production.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
+  {
+    name: "Paramètres audio",
+    description: "Depuis l'onglet Paramètres de /audio, définissez la couverture par défaut des cultes et le modèle de séquences appliqué aux nouveaux dépôts. Le département de captation se configure comme une fonction de département, dans Configuration → Départements → Fonctions.",
+    category: "Audio",
+    screenshotTitle: "Paramètres audio",
+    screenshotFile: "guide-audio-parametres.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Dépublier un culte",
+    description: "Un culte publié par erreur peut être retiré de la bibliothèque. Volontairement plus restreint que la publication : réservé aux Super Admin et Admin, ou au responsable du département de captation audio.",
+    category: "Audio",
+    screenshotTitle: "Dépublication d'un culte",
+    screenshotFile: "guide-audio-depublier.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Cycle de vie des offres",
+    description: "Une offre publiée ne reste plus en ligne indéfiniment. Après 60 jours sans modification, son auteur est relancé par email et par notification pour confirmer qu'elle est toujours d'actualité — un bandeau et un bouton « Toujours d'actualité » apparaissent alors sur la page de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation.",
+    category: "Emplois",
+    screenshotTitle: "Relance d'une offre d'emploi",
+    screenshotFile: "guide-emplois-relance.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Récapitulatif WhatsApp",
+    description: "Le bouton « Copier pour WhatsApp » compose un message texte résumant les offres affichées — le filtre de type actif est respecté — et le place dans le presse-papier, prêt à coller dans un groupe. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
+    category: "Emplois",
+    screenshotTitle: "Récapitulatif WhatsApp des offres",
+    screenshotFile: "guide-emplois-whatsapp.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Export Excel des demandes",
+    description: "Exportez la liste des demandes d'intégration au format Excel. Le fichier contient exactement les demandes affichées à l'écran : les filtres actifs sont respectés. Les notes internes, le motif d'abandon et l'adresse postale en sont exclus. Réservé aux rôles qui voient l'ensemble des demandes de l'église, et tracé dans le journal d'audit.",
+    category: "Intégration",
+    screenshotTitle: "Export des demandes d'intégration",
+    screenshotFile: "guide-integration-export.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Sauvegardes et export de configuration",
+    description: "Depuis /admin/backups, déclenchez une sauvegarde de la base et exportez la configuration de l'église (structure des ministères et départements, comptes et rôles) au format JSON. Sert aussi à monter un environnement de test ou de formation.",
+    category: "Administration",
+    screenshotTitle: "Sauvegardes et export de configuration",
+    screenshotFile: "guide-admin-backups.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
 ];
 
 const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"];
@@ -392,6 +476,52 @@ function AccessBadge({ level }: { level: AccessLevel }) {
     case "none":
       return <span className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">✗ Pas d&apos;accès</span>;
   }
+}
+
+/**
+ * Capture d'ecran d'une fonctionnalite, hebergee sur la release `guide-assets`.
+ *
+ * Les captures sont publiees a la main, en decalage avec le code : une
+ * fonctionnalite documentee avant que sa capture n'existe affichait jusqu'ici
+ * l'icone d'image cassee du navigateur. On rend ce cas explicite et sobre
+ * plutot que de laisser croire a un bug.
+ */
+function Screenshot({
+  file,
+  title,
+  onZoom,
+}: {
+  file: string;
+  title: string;
+  onZoom: (image: { src: string; alt: string }) => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = `${GUIDE_ASSETS_BASE}/${file}`;
+
+  if (failed) {
+    return (
+      <div className="w-full aspect-video bg-gray-50 rounded-lg border border-dashed border-gray-200 flex items-center justify-center">
+        <span className="text-xs text-gray-400">Capture a venir</span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onZoom({ src, alt: title })}
+      className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden cursor-zoom-in group"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={title}
+        className="w-full h-full object-contain transition-transform group-hover:scale-105"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    </button>
+  );
 }
 
 export default function GuideContent({ defaultRole }: GuideContentProps) {
@@ -470,19 +600,11 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
                     <AccessBadge level={feature.access[activeRole]} />
                   </div>
                   <p className="text-xs text-gray-500">{feature.description}</p>
-                  <button
-                    type="button"
-                    onClick={() => setZoomedImage({ src: `${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`, alt: feature.screenshotTitle })}
-                    className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden cursor-zoom-in group"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`${GUIDE_ASSETS_BASE}/${feature.screenshotFile}`}
-                      alt={feature.screenshotTitle}
-                      className="w-full h-full object-contain transition-transform group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </button>
+                  <Screenshot
+                    file={feature.screenshotFile}
+                    title={feature.screenshotTitle}
+                    onZoom={setZoomedImage}
+                  />
                 </div>
               ))}
             </div>
