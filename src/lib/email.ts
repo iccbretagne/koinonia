@@ -28,7 +28,7 @@ const transporter = nodemailer.createTransport({
 });
 
 interface SendEmailOptions {
-  to: string;
+  to: string | string[];
   subject: string;
   html: string;
 }
@@ -42,6 +42,21 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     subject,
     html,
   });
+}
+
+export function parseEmailList(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>();
+  for (const part of raw.split(/[,;\n]/)) {
+    const email = part.trim().toLowerCase();
+    if (email) seen.add(email);
+  }
+  return [...seen];
+}
+
+export function formatEmailList(emails: string[]): string | null {
+  const list = parseEmailList(emails.join(","));
+  return list.length > 0 ? list.join(", ") : null;
 }
 
 export interface PlanningChange {

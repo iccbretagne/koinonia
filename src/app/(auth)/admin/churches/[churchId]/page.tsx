@@ -1,5 +1,6 @@
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseEmailList } from "@/lib/email";
 import { notFound } from "next/navigation";
 import ChurchEditClient from "./ChurchEditClient";
 
@@ -17,8 +18,8 @@ export default async function ChurchDetailPage({
       id: true,
       name: true,
       slug: true,
-      secretariatEmail: true,
-      accountingEmail: true,
+      secretariatEmails: true,
+      accountingEmails: true,
       primaryColor: true,
       responsibleProfileId: true,
       supervisorProfileId: true,
@@ -56,8 +57,8 @@ export default async function ChurchDetailPage({
           id: church.id,
           name: church.name,
           slug: church.slug,
-          secretariatEmail: church.secretariatEmail ?? "",
-          accountingEmail: church.accountingEmail ?? "",
+          secretariatEmails: parseEmailList(church.secretariatEmails),
+          accountingEmails: parseEmailList(church.accountingEmails),
           primaryColor: church.primaryColor ?? "#5E17EB",
           responsibleProfileId: church.responsibleProfileId ?? "",
           supervisorProfileId: church.supervisorProfileId ?? "",

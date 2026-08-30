@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Ajouté
+
+- **Emails multiples pour les notifications comptabilité et secrétariat** : une église peut désormais déclarer plusieurs adresses email de notification pour la comptabilité (nouvelle demande financière) et pour le secrétariat (digest planning hebdomadaire), au lieu d'une seule adresse par canal.
+
 ## [v1.18.0] - 2026-08-23
 
 ### Ajouté

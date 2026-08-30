@@ -28,7 +28,7 @@ const regularSession = createSession({
 
 const baseChurch = {
   id: "c1", name: "ICC Rennes", slug: "icc-rennes",
-  secretariatEmail: "sec@icc.fr", accountingEmail: null,
+  secretariatEmails: "sec@icc.fr", accountingEmails: null,
   primaryColor: "#5E17EB", createdAt: new Date(), updatedAt: new Date(),
   ministries: [],
 };
@@ -47,8 +47,8 @@ const baseExportData = {
       id: "c1",
       name: "ICC Rennes",
       slug: "icc-rennes",
-      secretariatEmail: "sec@icc.fr",
-      accountingEmail: null,
+      secretariatEmails: "sec@icc.fr",
+      accountingEmails: null,
       primaryColor: "#5E17EB",
       ministries: [
         {
@@ -296,6 +296,36 @@ describe("POST /api/admin/backups/config/import — UPDATE", () => {
     expect(prismaMock.department.update).toHaveBeenCalled();
     const json = await res.json();
     expect(json.updated).toBeGreaterThan(0);
+  });
+
+  it("restaure une sauvegarde au format historique (champ email singulier)", async () => {
+    const legacyExportData = {
+      ...baseExportData,
+      churches: [
+        {
+          ...baseExportData.churches[0],
+          secretariatEmails: undefined,
+          accountingEmails: undefined,
+          secretariatEmail: "sec@icc.fr",
+          accountingEmail: "compta@icc.fr",
+        },
+      ],
+    };
+    const req = new Request("http://localhost", {
+      method: "POST",
+      body: JSON.stringify({ data: legacyExportData, strategy: "UPDATE", categories: ["structure"] }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await postImport(req);
+    expect(res.status).toBe(200);
+    expect(prismaMock.church.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          secretariatEmails: "sec@icc.fr",
+          accountingEmails: "compta@icc.fr",
+        }),
+      })
+    );
   });
 });
 

@@ -43,8 +43,8 @@ export interface ChurchConfig {
   id: string;
   name: string;
   slug: string;
-  secretariatEmail: string | null;
-  accountingEmail: string | null;
+  secretariatEmails: string | null;
+  accountingEmails: string | null;
   primaryColor: string;
   ministries: MinistryConfig[];
   members: MemberConfig[];
