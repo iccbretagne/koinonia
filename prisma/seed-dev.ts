@@ -97,7 +97,25 @@ async function wipe() {
   await prisma.church.deleteMany();
 }
 
+/**
+ * Annonce la base visée avant de la vider.
+ *
+ * Ce script est destructif et peut désormais être pointé sur une base distante
+ * (montage d'un environnement de formation via tunnel SSH). Afficher l'hôte et
+ * le nom de la base est le garde-fou le moins cher contre la vraie erreur :
+ * croire viser la recette et vider sa base locale, ou l'inverse.
+ */
+function describeTarget(): string {
+  try {
+    const url = new URL(process.env.DATABASE_URL!);
+    return `${url.hostname}:${url.port || "3306"}${url.pathname}`;
+  } catch {
+    return "<DATABASE_URL illisible>";
+  }
+}
+
 async function main() {
+  console.log(`Cible : ${describeTarget()} — la base va être VIDÉE puis régénérée.`);
   await wipe();
   console.log("Base de développement réinitialisée");
 

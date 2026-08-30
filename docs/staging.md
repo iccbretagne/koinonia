@@ -195,15 +195,47 @@ Ce qui est volontairement laisse de cote : les fiches membres, les liaisons memb
 adresses de notification (secretariat, comptabilite) — qu'on ne veut surtout pas voir servir depuis
 un environnement de formation.
 
-### 3. Regenerer la base de recette
+### 3. Regenerer la base de recette — depuis votre poste, via un tunnel SSH
+
+**Le seed ne peut pas s'executer sur la VM de recette.** L'artefact deploye est elague de ses
+devDependencies (`npm prune --omit=dev`) : ni `tsx` ni `@faker-js/faker` n'y survivent, et le tar
+exclut explicitement `prisma/scripts`. On execute donc le seed **depuis un poste de developpement**,
+ou tout est installe, en pointant la base de recette a travers un tunnel SSH — MariaDB y ecoute sur
+`localhost:3306` et n'est pas joignable autrement.
 
 ```bash
-DATABASE_URL="<base de recette>" npm run db:seed:training
+# Terminal 1 — ouvrir le tunnel (le laisser tourner)
+ssh -N -L 3307:127.0.0.1:3306 <hote-de-recette>
+
+# Terminal 2 — depuis le depot, sur le meme commit que la recette
+DATABASE_URL="mysql://koinonia_staging:MOT_DE_PASSE@127.0.0.1:3307/koinonia_staging" \
+  npm run db:seed:training
 ```
 
-**Ce script vide integralement la base avant de la regenerer.** Ne jamais le lancer contre la
-production. Le seed fabrique membres, plannings, evenements, absences, taches, salles, comptes rendus,
-discipolat et demandes sur la structure reelle.
+Le mot de passe est celui de `DATABASE_URL` dans le `shared/.env` de la recette.
+
+**Ce script vide integralement la base avant de la regenerer** — comptes et sessions compris, donc
+toute personne connectee a la recette est deconnectee. Il affiche la base visee avant de la vider :
+
+```
+Cible : 127.0.0.1:3307/koinonia_staging — la base va être VIDÉE puis régénérée.
+```
+
+**Lire cette ligne avant de laisser faire.** `import "dotenv/config"` n'ecrase pas une variable deja
+posee (verifie), donc le `DATABASE_URL` de la ligne de commande gagne sur celui du `.env` local — mais
+une faute de frappe sur le port renverrait sur la base locale.
+
+Se placer sur le **meme commit que la recette** : le client Prisma genere localement doit correspondre
+au schema applique sur la VM par `migrate deploy`.
+
+Le seed fabrique membres, plannings, evenements, absences, taches, salles, comptes rendus, discipolat
+et demandes sur la structure reelle.
+
+> **Si le seed de formation devient recurrent**, la bonne reponse n'est plus le tunnel mais un bundle :
+> `npm run build:worker` bundle deja le worker audio avec esbuild pour qu'il n'ait besoin ni de `src/`
+> ni de `tsx` sur le serveur (ADR-0007). Le meme traitement applique au seed produirait un
+> `dist/seed.mjs` executable par `node` sur la VM — `dist/` est deja embarque dans l'artefact. Non fait
+> ici : cela alourdirait chaque deploiement de recette pour un besoin ponctuel.
 
 ### Ce que le jeu de donnees couvre
 
