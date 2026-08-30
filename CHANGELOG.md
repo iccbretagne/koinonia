@@ -6,14 +6,26 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+## [v1.19.0] - 2026-08-30
+
 ### Ajouté
 
 - **Vue semaine multi-salles et suivi de ses réservations (`/rooms`)** : nouvelle vue « Semaine » (par défaut) en grille salles × jours — une ligne par salle, une colonne par jour — pour voir toutes les salles d'un coup et repérer immédiatement celles qui sont libres ; le calendrier mensuel devient lui aussi multi-salles et le choix d'une salle passe de sélection obligatoire à filtre facultatif. Un encart « Mes réservations » repliable, toujours visible quelle que soit la vue, liste les prochaines réservations de l'utilisateur avec les actions de main courante (déclarer l'ouverture/la fermeture) au plus près. Les réservations de l'utilisateur sont mises en évidence dans les grilles.
 - **Emails multiples pour les notifications comptabilité et secrétariat** : une église peut désormais déclarer plusieurs adresses email de notification pour la comptabilité (nouvelle demande financière) et pour le secrétariat (digest planning hebdomadaire), au lieu d'une seule adresse par canal.
+- **Export Excel des demandes d'intégration** : la liste des demandes d'intégration peut être exportée au format `.xlsx`. Le fichier contient exactement les demandes affichées à l'écran — les filtres actifs sont respectés, sans exception cachée. Les notes internes, le motif d'abandon et l'adresse postale en sont volontairement exclus. L'export est réservé aux rôles qui voient l'ensemble des demandes de leur église et il est tracé dans le journal d'audit.
+- **Cycle de vie des offres d'emploi** : une offre publiée ne reste plus indéfiniment en ligne. Passé 60 jours sans modification, son auteur est relancé — par email et par notification dans l'application — pour confirmer qu'elle est toujours d'actualité, un bandeau et un bouton « Toujours d'actualité » apparaissant sur la page de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation et remet le compteur à zéro. Les offres dont la date limite de candidature est dépassée sont soldées de la même façon.
+- **Message récapitulatif des offres au format WhatsApp** : un bouton « Copier pour WhatsApp » dans la liste des offres compose un message texte prêt à coller dans une conversation, résumant les offres affichées (le filtre de type actif est respecté) avec pour chacune son type, son intitulé, son entreprise, son lieu, sa date limite et le lien vers son détail. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message est destiné à être transféré, elles restent accessibles dans l'application. Si la copie automatique échoue, le texte est affiché à l'écran pour être copié manuellement.
 
 ### Corrigé
 
 - **Réservations de soirée affichées la veille dans le calendrier des salles** : le regroupement des réservations par jour se faisait sur la date universelle (UTC) et non la date locale ; une activité commençant tard le soir apparaissait le jour précédent.
+- **Version affichée en recette figée sur la dernière version publiée** : le pied de page de l'environnement de recette affichait la version de `package.json`, qui n'est incrémentée qu'à la publication — la version annoncée n'était donc pas celle de la branche en cours de validation. Elle indique désormais le code réellement déployé (`1.19.0-abc1234`). La production est inchangée.
+
+### Technique
+
+- Retrait d'une table leurre `__prisma_migrations` (deux underscores) créée puis supprimée par deux migrations : sans lien avec la table interne de Prisma (`_prisma_migrations`, un seul underscore), elle n'avait aucun effet mais sa ressemblance suffisait à faire diagnostiquer à tort une corruption de l'historique des migrations. Règle correspondante ajoutée à `docs/database.md`.
+- Verrouillage par test du nom du cookie de session attendu par le middleware : ce nom était supposé plutôt que lu depuis Auth.js, et un renommage lors d'une future montée de version aurait rendu tout le monde non authentifié, en silence.
+- Extraction de la protection contre l'injection de formules dans les exports Excel, jusque-là dupliquée à l'identique dans trois routes et couverte par aucun test.
 
 ## [v1.18.0] - 2026-08-23
 
