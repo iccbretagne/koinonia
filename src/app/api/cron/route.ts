@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList } from "@/lib/email";
 import { runInactivityNotifications, runMsdpInactivityNotifications } from "@/modules/integration";
+import { runJobOffersLifecycle } from "@/modules/jobs";
 
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -212,11 +213,18 @@ export async function POST(request: Request) {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [remindersResult, digestResult, integrationInactivityResult, msdpInactivityResult] = await Promise.all([
+    const [
+      remindersResult,
+      digestResult,
+      integrationInactivityResult,
+      msdpInactivityResult,
+      jobOffersLifecycleResult,
+    ] = await Promise.all([
       runReminders(),
       runPlanningDigest(),
       runInactivityNotifications(appUrl),
       runMsdpInactivityNotifications(appUrl),
+      runJobOffersLifecycle(appUrl),
     ]);
 
     return successResponse({
@@ -224,6 +232,7 @@ export async function POST(request: Request) {
       planningDigest: digestResult,
       integrationInactivity: integrationInactivityResult,
       msdpInactivity: msdpInactivityResult,
+      jobOffersLifecycle: jobOffersLifecycleResult,
     });
   } catch (error) {
     return errorResponse(error);

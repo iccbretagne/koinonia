@@ -1,5 +1,8 @@
 import { defineModule } from "@/core/module-registry";
 
+export { runJobOffersLifecycle } from "./services/lifecycle-service";
+export type { JobOffersLifecycleResult } from "./services/lifecycle-service";
+
 /**
  * Module emploi — transversal, ouvert à tous les utilisateurs authentifiés.
  *

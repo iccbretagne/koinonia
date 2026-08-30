@@ -37,6 +37,9 @@ const patchSchema = z.object({
   contactEmail: z.string().email().max(150).nullable().optional(),
   contactUrl:   z.string().url().max(500).nullable().optional(),
   status:       z.enum(["PUBLISHED", "ARCHIVED"]).optional(),
+  // Marqueur de requête « Toujours d'actualité » (spec 034), pas une colonne :
+  // retiré du payload avant le update Prisma.
+  renew:        z.literal(true).optional(),
 });
 
 export async function PATCH(
@@ -61,13 +64,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const data = patchSchema.parse(body);
+    const { renew: _renew, ...data } = patchSchema.parse(body);
 
     const updated = await prisma.jobOffer.update({
       where: { id },
       data: {
         ...data,
         ...(data.deadline !== undefined ? { deadline: data.deadline ? new Date(data.deadline) : null } : {}),
+        // Toute modification vaut confirmation « toujours d'actualité » (spec 034) :
+        // remet le compteur à zéro, qu'il s'agisse du bouton dédié, d'une édition
+        // ordinaire ou d'une republication.
+        renewalRequestedAt: null,
       },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },

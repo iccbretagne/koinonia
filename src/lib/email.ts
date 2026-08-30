@@ -451,6 +451,64 @@ export function buildJobOfferEmail(params: {
   };
 }
 
+/**
+ * Relance « votre offre est-elle toujours d'actualité ? » (spec 034).
+ * Le module emploi est transverse : aucun nom d'église, l'email est signé « Koinonia ».
+ * `archiveDate` est obligatoire — la spec impose d'annoncer ce qui se passera et quand.
+ */
+export function buildJobOfferRenewalEmail(params: {
+  authorName: string | null;
+  jobTitle: string;
+  company: string;
+  archiveDate: Date;
+  jobUrl: string;
+}) {
+  const greeting = params.authorName
+    ? `<p>Bonjour <strong>${escapeHtml(params.authorName)}</strong>,</p>`
+    : "<p>Bonjour,</p>";
+  const title = escapeHtml(params.jobTitle);
+  const company = escapeHtml(params.company);
+  const archiveDateStr = params.archiveDate.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return {
+    subject: `[Emploi] Votre offre « ${params.jobTitle} » est-elle toujours d'actualité ?`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia — Vos offres d&apos;emploi</h1>
+        </div>
+        <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          ${greeting}
+          <p>Vous avez publié l&apos;offre suivante il y a plus de 60 jours :</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+            <tr><td style="padding:6px 0;color:#6b7280;width:130px;">Poste</td><td style="padding:6px 0;font-weight:600;">${title}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Entreprise</td><td style="padding:6px 0;">${company}</td></tr>
+          </table>
+          <div style="background:#fff7ed;border-left:4px solid #f97316;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0;">
+            <p style="margin:0;color:#92400e;font-size:14px;line-height:1.5;">
+              Sans confirmation de votre part, cette offre sera <strong>archivée automatiquement le ${archiveDateStr}</strong>
+              et ne sera plus visible dans la liste.
+            </p>
+          </div>
+          <p>Si l&apos;offre est toujours d&apos;actualité, ouvrez-la et cliquez sur « Toujours d&apos;actualité » :</p>
+          <p style="margin-top:20px;">
+            <a href="${params.jobUrl}" style="display:inline-block;background:#5E17EB;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;">
+              Voir mon offre →
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+            Message automatique. Si l&apos;offre n&apos;est plus d&apos;actualité, vous n&apos;avez rien à faire.
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildReminderEmail(params: {
   memberName: string;
   eventTitle: string;

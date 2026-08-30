@@ -6,6 +6,10 @@ vi.mock("@/modules/integration", () => ({
   runInactivityNotifications: vi.fn().mockResolvedValue({}),
   runMsdpInactivityNotifications: vi.fn().mockResolvedValue({}),
 }));
+const mockRunJobOffersLifecycle = vi.fn().mockResolvedValue({ archived: 0, renewalsSent: 0, emailFailures: 0 });
+vi.mock("@/modules/jobs", () => ({
+  runJobOffersLifecycle: (...args: unknown[]) => mockRunJobOffersLifecycle(...args),
+}));
 
 const mockSendEmail = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/lib/email", async () => {
@@ -90,5 +94,16 @@ describe("POST /api/cron — digest planning, emails multiples secrétariat", ()
     const res = await POST(cronRequest());
     expect(res.status).toBe(200);
     expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: ["sec@icc.fr"] }));
+  });
+
+  it("exécute la tâche de cycle de vie des offres et remonte son compte rendu", async () => {
+    prismaMock.church.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    mockRunJobOffersLifecycle.mockResolvedValueOnce({ archived: 2, renewalsSent: 5, emailFailures: 1 });
+
+    const res = await POST(cronRequest());
+    const body = await res.json();
+
+    expect(mockRunJobOffersLifecycle).toHaveBeenCalledTimes(1);
+    expect(body.jobOffersLifecycle).toEqual({ archived: 2, renewalsSent: 5, emailFailures: 1 });
   });
 });

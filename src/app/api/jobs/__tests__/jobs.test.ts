@@ -149,6 +149,35 @@ describe("PATCH /api/jobs/[id]", () => {
     const res = await patchJob(req, { params: Promise.resolve({ id: "j1" }) });
     expect(res.status).toBe(403);
   });
+
+  it("clears renewalRequestedAt on { renew: true } without passing 'renew' to Prisma", async () => {
+    prismaMock.jobOffer.findUnique.mockResolvedValue({ id: "j1", authorId: "user-1" } as never);
+    prismaMock.jobOffer.update.mockResolvedValue({ id: "j1", author: {} } as never);
+
+    const req = new Request("http://localhost/api/jobs/j1", {
+      method: "PATCH",
+      body: JSON.stringify({ renew: true }),
+    });
+    const res = await patchJob(req, { params: Promise.resolve({ id: "j1" }) });
+    expect(res.status).toBe(200);
+
+    const data = prismaMock.jobOffer.update.mock.calls[0][0].data;
+    expect(data.renewalRequestedAt).toBeNull();
+    expect(data).not.toHaveProperty("renew");
+  });
+
+  it("also clears renewalRequestedAt on an ordinary edit (modification vaut confirmation)", async () => {
+    prismaMock.jobOffer.findUnique.mockResolvedValue({ id: "j1", authorId: "user-1" } as never);
+    prismaMock.jobOffer.update.mockResolvedValue({ id: "j1", author: {} } as never);
+
+    const req = new Request("http://localhost/api/jobs/j1", {
+      method: "PATCH",
+      body: JSON.stringify({ title: "Titre corrigé" }),
+    });
+    const res = await patchJob(req, { params: Promise.resolve({ id: "j1" }) });
+    expect(res.status).toBe(200);
+    expect(prismaMock.jobOffer.update.mock.calls[0][0].data.renewalRequestedAt).toBeNull();
+  });
 });
 
 describe("DELETE /api/jobs/[id]", () => {
