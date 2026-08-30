@@ -43,58 +43,49 @@ function daysFrom(base: Date, days: number) {
   return d;
 }
 
+/**
+ * Vide integralement la base, sauf l'historique des migrations.
+ *
+ * Les tables sont **decouvertes** dans `information_schema` plutot qu'enumerees :
+ * une liste tenue a la main derive du schema des qu'un modele est ajoute, et
+ * l'ordre des suppressions doit alors etre retrouve a chaque fois. C'est
+ * exactement ce qui s'etait produit — 19 modeles sur 69 manquaient a l'appel,
+ * sans consequence sur une base de developpement ou ces tables restent vides,
+ * mais bloquant des la premiere base reellement utilisee.
+ *
+ * `FOREIGN_KEY_CHECKS = 0` rend l'ordre indifferent. Le drapeau est propre a la
+ * session : tout se joue donc dans une transaction interactive, qui epingle une
+ * connexion — sinon le pool pourrait executer les suppressions sur une autre
+ * connexion, ou les contraintes sont restees actives.
+ *
+ * `_prisma_migrations` est explicitement preservee : la detruire ferait perdre
+ * l'historique des migrations de la base (voir issue #499).
+ */
 async function wipe() {
-  await prisma.msdpFollowUp.deleteMany();
-  await prisma.familyIntegrationRequest.deleteMany();
-  await prisma.familyLeaderAssignment.deleteMany();
-  await prisma.agendaEntry.deleteMany();
-  await prisma.roomChecklist.deleteMany();
-  await prisma.roomReservation.deleteMany();
-  await prisma.roomAccess.deleteMany();
-  await prisma.room.deleteMany();
-  await prisma.financialAttachment.deleteMany();
-  await prisma.financialPayment.deleteMany();
-  await prisma.financialRequest.deleteMany();
-  await prisma.financialSeries.deleteMany();
-  await prisma.jobOffer.deleteMany();
-  await prisma.jobSeeker.deleteMany();
-  await prisma.freelanceMission.deleteMany();
-  await prisma.freelanceProfile.deleteMany();
-  await prisma.appointmentRequest.deleteMany();
-  await prisma.pastoralProfile.deleteMany();
-  await prisma.auditLog.deleteMany();
-  await prisma.planning.deleteMany();
-  await prisma.discipleshipAttendance.deleteMany();
-  await prisma.discipleship.deleteMany();
-  await prisma.absenceBackup.deleteMany();
-  await prisma.absence.deleteMany();
-  await prisma.request.deleteMany();
-  await prisma.eventReportSection.deleteMany();
-  await prisma.eventReport.deleteMany();
-  await prisma.audioShareToken.deleteMany();
-  await prisma.audioRendition.deleteMany();
-  await prisma.audioSegment.deleteMany();
-  await prisma.audioJob.deleteMany();
-  await prisma.audioSource.deleteMany();
-  await prisma.audioService.deleteMany();
-  await prisma.audioServiceTemplate.deleteMany();
-  await prisma.audioSettings.deleteMany();
-  // Avant les événements et les départements, qu'elles référencent toutes deux.
-  await prisma.taskAssignment.deleteMany();
-  await prisma.task.deleteMany();
-  await prisma.eventDepartment.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.memberUserLink.deleteMany();
-  await prisma.memberDepartment.deleteMany();
-  await prisma.member.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.userDepartment.deleteMany();
-  await prisma.userChurchRole.deleteMany();
-  await prisma.department.deleteMany();
-  await prisma.ministry.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.church.deleteMany();
+  const rows = await prisma.$queryRaw<{ TABLE_NAME: string }[]>`
+    SELECT TABLE_NAME FROM information_schema.TABLES
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+  `;
+  const tables = rows
+    .map((r) => r.TABLE_NAME)
+    .filter((name) => name !== "_prisma_migrations");
+
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+      for (const table of tables) {
+        // Nom issu d'information_schema, jamais d'une entree utilisateur ; les
+        // backticks couvrent les identifiants qui en auraient besoin.
+        await tx.$executeRawUnsafe(`DELETE FROM \`${table}\``);
+      }
+      await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+    },
+    // Une base reellement utilisee est plus lourde qu'une base de developpement :
+    // le defaut de 5 s de Prisma ne suffit pas.
+    { maxWait: 15_000, timeout: 180_000 }
+  );
+
+  return tables.length;
 }
 
 /**
@@ -116,8 +107,8 @@ function describeTarget(): string {
 
 async function main() {
   console.log(`Cible : ${describeTarget()} — la base va être VIDÉE puis régénérée.`);
-  await wipe();
-  console.log("Base de développement réinitialisée");
+  const wipedTables = await wipe();
+  console.log(`Base réinitialisée (${wipedTables} tables vidées)`);
 
   // ── Églises ──────────────────────────────────────────────────────────────
   const churchByKey: Record<string, { id: string }> = {};
