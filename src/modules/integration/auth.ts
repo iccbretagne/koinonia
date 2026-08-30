@@ -58,3 +58,19 @@ export async function requireIntegrationAccess(
 
   throw new Error("FORBIDDEN");
 }
+
+/**
+ * Garde de l'export des demandes d'intégration : plus stricte que la consultation.
+ *
+ * Extraire des données personnelles hors de l'application n'est pas la même chose que les
+ * consulter à l'écran (un fichier se transfère, s'oublie, ne se révoque pas). Un berger /
+ * co-berger au périmètre restreint peut donc voir ses familles mais pas les exporter —
+ * même principe que `discipleship:export` vs `discipleship:view`.
+ */
+export async function requireIntegrationExportAccess(
+  churchId: string
+): Promise<{ session: Session }> {
+  const { session, scope } = await requireIntegrationAccess(churchId);
+  if (scope.scoped) throw new Error("FORBIDDEN");
+  return { session };
+}

@@ -5,7 +5,7 @@ import { logger } from "./logger";
 interface AuditLogEntry {
   userId: string;
   churchId?: string;
-  action: "CREATE" | "UPDATE" | "DELETE";
+  action: "CREATE" | "UPDATE" | "DELETE" | "EXPORT";
   entityType: string;
   entityId: string;
   details?: Record<string, unknown>;

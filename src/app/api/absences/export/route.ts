@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { errorResponse } from "@/lib/api-utils";
 import { findAbsenceConflicts } from "@/modules/planning";
+import { sanitizeRow } from "@/lib/excel";
 import ExcelJS from "exceljs";
 import { z } from "zod";
 
@@ -22,24 +23,6 @@ const COLUMNS = [
   "Backup(s)",
   "Déclaré par",
 ] as const;
-
-/**
- * Neutralise les valeurs pouvant être interprétées comme des formules Excel.
- * Préfixe avec une apostrophe les chaînes commençant par =, +, -, @ ou tab/CR.
- */
-function sanitizeExcelValue(value: unknown): unknown {
-  if (typeof value !== "string") return value;
-  if (/^[=+\-@\t\r]/.test(value)) return `'${value}`;
-  return value;
-}
-
-function sanitizeRow<T extends Record<string, unknown>>(row: T): T {
-  const sanitized = {} as Record<string, unknown>;
-  for (const [key, value] of Object.entries(row)) {
-    sanitized[key] = sanitizeExcelValue(value);
-  }
-  return sanitized as T;
-}
 
 /**
  * POST /api/absences/export — génère un classeur Excel à partir d'une liste d'IDs

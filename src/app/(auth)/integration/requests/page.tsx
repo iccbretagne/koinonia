@@ -46,6 +46,8 @@ export default async function IntegrationRequestsPage() {
       <IntegrationDashboard
         requests={requests}
         isScoped={scope.scoped}
+        canExport={!scope.scoped}
+        churchId={churchId}
         currentUserId={session.user.id!}
       />
     </div>

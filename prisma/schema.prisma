@@ -575,7 +575,7 @@ model AuditLog {
   id         String   @id @default(cuid())
   userId     String
   churchId   String?
-  action     String // CREATE, UPDATE, DELETE
+  action     String // CREATE, UPDATE, DELETE, EXPORT
   entityType String // Event, Planning, Member, etc.
   entityId   String
   details    Json?

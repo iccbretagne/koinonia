@@ -22,6 +22,7 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   CREATE: { label: "Création", color: "bg-green-100 text-green-800" },
   UPDATE: { label: "Modification", color: "bg-blue-100 text-blue-800" },
   DELETE: { label: "Suppression", color: "bg-red-100 text-red-800" },
+  EXPORT: { label: "Export", color: "bg-purple-100 text-purple-800" },
 };
 
 export default function AuditLogsClient() {
