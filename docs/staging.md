@@ -169,6 +169,70 @@ Pour tester dans des conditions realistes, il est recommande de restaurer period
 
 La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est deja disponible et documentee dans la section ["Procedure de restauration"](production.md#procedure-de-restauration) de `docs/production.md` — s'y referer directement pour la marche a suivre technique, en l'appliquant sur la base et l'environnement de recette.
 
+## Jeu de donnees de formation
+
+Pour animer une formation aupres des ministres et responsables de departement, la recette peut etre
+regeneree avec la **structure et les comptes reels**, mais un **contenu metier entierement fabrique** :
+les participants retrouvent leurs ministeres, leurs departements et leur propre compte Google, sans
+qu'aucune donnee personnelle (membres, familles, demandes d'integration, comptabilite) ne soit exposee.
+
+### 1. Exporter la configuration depuis la production
+
+Dans l'application : **Administration → Sauvegardes → Exporter la configuration**. Le fichier JSON
+obtenu contient la structure, les comptes et leurs roles. Il contient aussi les fiches membres
+reelles — l'etape suivante les ignore volontairement.
+
+### 2. Construire la fixture
+
+```bash
+npm run fixture:training -- ~/Downloads/koinonia-config-<date>.json
+```
+
+Produit `prisma/fixtures/training-real.json` : eglises, ministeres, departements, comptes et roles.
+Ce fichier contient les emails des participants — il est **gitignore** et ne doit jamais etre commite.
+
+Ce qui est volontairement laisse de cote : les fiches membres, les liaisons membre-compte, et les
+adresses de notification (secretariat, comptabilite) — qu'on ne veut surtout pas voir servir depuis
+un environnement de formation.
+
+### 3. Regenerer la base de recette
+
+```bash
+DATABASE_URL="<base de recette>" npm run db:seed:training
+```
+
+**Ce script vide integralement la base avant de la regenerer.** Ne jamais le lancer contre la
+production. Le seed fabrique membres, plannings, evenements, absences, taches, salles, comptes rendus,
+discipolat et demandes sur la structure reelle.
+
+### Ce que le jeu de donnees couvre
+
+| Sujet | Donnees generees |
+|---|---|
+| Planning | 15 evenements (6 passes, 6 a venir), plannings par departement |
+| Gestion des STAR | ~200 fiches membres reparties sur tous les departements |
+| Connexion STAR / adjoint | chaque compte STAR est lie a une fiche membre ; les departements a plusieurs responsables ont un principal et des adjoints |
+| Absences | absences avec backup designe |
+| Taches | taches par departement, affectees sur les prochains cultes |
+| Salles | salle, reservations et main courante |
+| Comptes rendus | comptes rendus des cultes passes, avec sections par departement |
+| Bergers de famille | affectation de berger |
+
+### Limites connues
+
+- L'export de configuration ne porte pas `isDeputy` : la qualite d'adjoint est **reconstruite** (sur un
+  departement tenu par plusieurs responsables, le premier declare est principal, les suivants adjoints).
+  Ce n'est pas l'organisation reelle — a ajuster depuis l'application si la formation s'y attarde.
+- Les noms d'affichage des comptes sont deduits de l'adresse email : l'export ne porte pas les noms.
+  Google renseigne le vrai nom a la premiere connexion du participant.
+- Le seed genere peu d'absences et de demandes (de quoi montrer l'ecran, pas de quoi le remplir) ;
+  les participants en creent eux-memes pendant la formation.
+
+### Apres la formation
+
+Redeployer la recette depuis `main` et rejouer le seed habituel, ou restaurer un backup — la base de
+formation n'a pas vocation a survivre a la session.
+
 ## Garde-fous
 
 > **A respecter systematiquement lors de toute manipulation sur la recette :**

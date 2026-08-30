@@ -2,8 +2,7 @@ import "dotenv/config";
 import { fakerFR as faker } from "@faker-js/faker";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { DEV_CHURCHES, DEV_MINISTRIES, DEV_DEPARTMENTS } from "./fixtures/dev-structure";
-import { DEV_USERS } from "./fixtures/dev-users";
+import { CHURCHES, MINISTRIES, DEPARTMENTS, USERS, IS_REAL_STRUCTURE } from "./fixtures/active";
 
 /**
  * Jeu de données fictif pour l'environnement de développement des contributeurs.
@@ -80,6 +79,9 @@ async function wipe() {
   await prisma.audioService.deleteMany();
   await prisma.audioServiceTemplate.deleteMany();
   await prisma.audioSettings.deleteMany();
+  // Avant les événements et les départements, qu'elles référencent toutes deux.
+  await prisma.taskAssignment.deleteMany();
+  await prisma.task.deleteMany();
   await prisma.eventDepartment.deleteMany();
   await prisma.event.deleteMany();
   await prisma.memberUserLink.deleteMany();
@@ -101,21 +103,21 @@ async function main() {
 
   // ── Églises ──────────────────────────────────────────────────────────────
   const churchByKey: Record<string, { id: string }> = {};
-  for (const c of DEV_CHURCHES) {
+  for (const c of CHURCHES) {
     churchByKey[c.key] = await prisma.church.create({
       data: { name: c.name, slug: c.slug, primaryColor: c.primaryColor },
     });
   }
-  console.log(`${DEV_CHURCHES.length} églises créées`);
+  console.log(`${CHURCHES.length} églises créées`);
 
   // ── Ministères (+ ministère système par église) ─────────────────────────
   const ministryByKey: Record<string, { id: string }> = {};
-  for (const m of DEV_MINISTRIES) {
+  for (const m of MINISTRIES) {
     ministryByKey[m.key] = await prisma.ministry.create({
       data: { name: m.name, churchId: churchByKey[m.churchKey].id },
     });
   }
-  for (const c of DEV_CHURCHES) {
+  for (const c of CHURCHES) {
     await prisma.ministry.create({
       data: {
         name: "Système",
@@ -125,20 +127,20 @@ async function main() {
       },
     });
   }
-  console.log(`${DEV_MINISTRIES.length} ministères créés`);
+  console.log(`${MINISTRIES.length} ministères créés`);
 
   // ── Départements ─────────────────────────────────────────────────────────
   const departmentByKey: Record<string, { id: string; ministryId: string }> = {};
-  for (const d of DEV_DEPARTMENTS) {
+  for (const d of DEPARTMENTS) {
     departmentByKey[d.key] = await prisma.department.create({
       data: { name: d.name, ministryId: ministryByKey[d.ministryKey].id, function: d.function },
     });
   }
-  console.log(`${DEV_DEPARTMENTS.length} départements créés`);
+  console.log(`${DEPARTMENTS.length} départements créés`);
 
   // ── Membres (STAR) par département ─────────────────────────────────────
   const membersByDeptKey: Record<string, { id: string; firstName: string; lastName: string }[]> = {};
-  for (const d of DEV_DEPARTMENTS) {
+  for (const d of DEPARTMENTS) {
     const count = faker.number.int({ min: 4, max: 9 });
     membersByDeptKey[d.key] = [];
     for (let i = 0; i < count; i++) {
@@ -158,19 +160,62 @@ async function main() {
   const totalMembers = Object.values(membersByDeptKey).reduce((n, list) => n + list.length, 0);
   console.log(`${totalMembers} membres (STAR) créés`);
 
-  // ── Comptes de test (un par rôle métier) ────────────────────────────────
+  // ── Comptes ─────────────────────────────────────────────────────────────
+  // Une entrée USERS = un RÔLE, pas un compte : un même email peut en porter
+  // plusieurs (dans la structure réelle, 25 comptes sur 41 sont à la fois
+  // responsable, ministre et/ou STAR). Le compte est donc créé une seule fois,
+  // puis chaque entrée y ajoute son `UserChurchRole` — sans quoi la contrainte
+  // d'unicité sur `users.email` casse dès le deuxième rôle.
   const userByKey: Record<string, { id: string }> = {};
-  for (const u of DEV_USERS) {
-    const user = await prisma.user.create({
-      data: {
-        email: u.email,
-        name: u.name,
-        displayName: u.displayName,
-        emailVerified: TODAY,
-        // church:manage / users:manage sont gérés par ce flag DB, indépendamment du rôle
-        isSuperAdmin: u.role === "SUPER_ADMIN",
-      },
-    });
+  const userByEmail: Record<string, { id: string }> = {};
+  const linkedEmails = new Set<string>();
+  const memberByUserEmail: Record<string, { id: string; firstName: string; lastName: string }> = {};
+
+  // Département de repli pour la liaison membre d'un compte dont la fixture ne
+  // précise pas de département (cas d'une fixture réelle).
+  const firstDeptByChurchKey: Record<string, string> = {};
+  for (const d of DEPARTMENTS) {
+    const ministry = MINISTRIES.find((m) => m.key === d.ministryKey);
+    if (ministry && !firstDeptByChurchKey[ministry.churchKey]) {
+      firstDeptByChurchKey[ministry.churchKey] = d.key;
+    }
+  }
+
+  // L'export de configuration ne porte pas `isDeputy` : quand la fixture ne le
+  // précise pas, on reconstruit un binôme plausible — sur un département tenu
+  // par plusieurs responsables, le premier déclaré est le principal, les suivants
+  // sont adjoints. C'est une reconstruction, pas l'organisation réelle : elle
+  // rend la distinction responsable/adjoint démontrable, et reste ajustable
+  // depuis l'application.
+  const reconstructedDeputies = new Map<string, Set<string>>();
+  const principalSeenForDept = new Set<string>();
+  for (const u of USERS) {
+    if (u.role !== "DEPARTMENT_HEAD" || u.deputyDepartmentKeys?.length) continue;
+    for (const deptKey of u.departmentKeys ?? []) {
+      if (principalSeenForDept.has(deptKey)) {
+        if (!reconstructedDeputies.has(u.key)) reconstructedDeputies.set(u.key, new Set());
+        reconstructedDeputies.get(u.key)!.add(deptKey);
+      } else {
+        principalSeenForDept.add(deptKey);
+      }
+    }
+  }
+
+  for (const u of USERS) {
+    let user = userByEmail[u.email];
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: u.email,
+          name: u.name,
+          displayName: u.displayName,
+          emailVerified: TODAY,
+          // church:manage / users:manage sont gérés par ce flag DB, indépendamment du rôle
+          isSuperAdmin: USERS.some((o) => o.email === u.email && o.role === "SUPER_ADMIN"),
+        },
+      });
+      userByEmail[u.email] = user;
+    }
     userByKey[u.key] = user;
 
     const churchRole = await prisma.userChurchRole.create({
@@ -182,22 +227,42 @@ async function main() {
       },
     });
 
+    const deputyKeys = new Set([
+      ...(u.deputyDepartmentKeys ?? []),
+      ...(reconstructedDeputies.get(u.key) ?? []),
+    ]);
     for (const deptKey of u.departmentKeys ?? []) {
       await prisma.userDepartment.create({
-        data: { userChurchRoleId: churchRole.id, departmentId: departmentByKey[deptKey].id },
+        data: {
+          userChurchRoleId: churchRole.id,
+          departmentId: departmentByKey[deptKey].id,
+          isDeputy: deputyKeys.has(deptKey),
+        },
       });
     }
 
-    if (u.linkedMemberDepartmentKey) {
+    // Un compte STAR ou Faiseur de disciples doit être lié à une fiche membre,
+    // sans quoi « Mon planning » et le discipolat sont vides pour lui. La fixture
+    // fictive désigne le département ; une fixture réelle ne le fait pas, on
+    // retombe alors sur un département de son périmètre, ou le premier de son
+    // église. Une seule liaison par compte, même s'il porte plusieurs rôles.
+    const needsMemberLink = u.role === "STAR" || u.role === "DISCIPLE_MAKER";
+    const linkDeptKey =
+      u.linkedMemberDepartmentKey ??
+      (needsMemberLink ? (u.departmentKeys?.[0] ?? firstDeptByChurchKey[u.churchKey]) : undefined);
+
+    if (linkDeptKey && !linkedEmails.has(u.email)) {
+      linkedEmails.add(u.email);
       const member = await prisma.member.create({
         data: {
           firstName: u.displayName,
           lastName: "(compte test)",
           email: u.email,
-          departments: { create: { departmentId: departmentByKey[u.linkedMemberDepartmentKey].id, isPrimary: true } },
+          departments: { create: { departmentId: departmentByKey[linkDeptKey].id, isPrimary: true } },
         },
       });
-      membersByDeptKey[u.linkedMemberDepartmentKey].push(member);
+      membersByDeptKey[linkDeptKey].push(member);
+      memberByUserEmail[u.email] = member;
       await prisma.memberUserLink.create({
         data: {
           memberId: member.id,
@@ -208,14 +273,49 @@ async function main() {
       });
     }
   }
-  console.log(`${DEV_USERS.length} comptes de test créés`);
+  console.log(`${USERS.length} comptes de test créés`);
 
   // ── Événements, plannings et comptes rendus (église principale) ────────
-  const mainChurchKey = "kervignac";
-  const mainDeptKeys = DEV_DEPARTMENTS.filter((d) => {
-    const ministry = DEV_MINISTRIES.find((m) => m.key === d.ministryKey);
+  // Première église de la fixture : « Kervignac » pour le jeu fictif, l'église
+  // réelle pour la fixture de formation, qui n'en compte qu'une.
+  const mainChurchKey = CHURCHES[0].key;
+  const mainDeptKeys = DEPARTMENTS.filter((d) => {
+    const ministry = MINISTRIES.find((m) => m.key === d.ministryKey);
     return ministry?.churchKey === mainChurchKey;
   }).map((d) => d.key);
+
+  // ── Repères de la fixture ───────────────────────────────────────────────
+  // Les scénarios qui suivent (comptes rendus, absences, demandes, discipolat,
+  // salles, tâches) doivent désigner « un département » et « un compte tenant
+  // tel rôle ». Avec la fixture fictive ce sont les clés connues ; avec une
+  // fixture réelle, dont les libellés diffèrent, on retombe sur un choix
+  // déterministe dans l'église principale. Sans ces repères, tous ces blocs
+  // seraient sautés en silence et l'environnement se retrouverait sans absence,
+  // sans demande et sans réservation de salle.
+  const deptAnchor = (preferred: string, fallbackIndex: number) =>
+    mainDeptKeys.includes(preferred)
+      ? preferred
+      : mainDeptKeys[fallbackIndex % mainDeptKeys.length];
+
+  const DEPT_A = deptAnchor("accueil", 0);
+  const DEPT_B = deptAnchor("reseaux-sociaux", 1);
+  const DEPT_C = deptAnchor("impact-junior", 2);
+  const DEPT_LOGISTIQUE = deptAnchor("logistique", 3);
+  const DEPT_EVANGELISATION = deptAnchor("evangelisation", 4);
+  // Le secrétariat se reconnaît à sa fonction système, pas à son libellé.
+  const DEPT_SECRETARIAT =
+    DEPARTMENTS.find((d) => d.function === "SECRETARIAT" && mainDeptKeys.includes(d.key))?.key ??
+    deptAnchor("secretariat", 5);
+
+  /** Premier compte portant ce rôle dans l'église principale, s'il en existe un. */
+  const userWithRole = (role: string) => {
+    const entry = USERS.find((u) => u.role === role && u.churchKey === mainChurchKey);
+    return entry ? userByKey[entry.key] : undefined;
+  };
+
+  // Repli garanti : une fixture n'est pas tenue de contenir tous les rôles, mais
+  // les blocs ci-dessous ont besoin d'un auteur pour créer leurs objets.
+  const fallbackUser = userByKey[USERS[0].key];
 
   const events: { id: string; isPast: boolean }[] = [];
   // 6 cultes passés + 6 cultes à venir, un pour chaque dimanche autour de l'ancre TODAY
@@ -265,12 +365,12 @@ async function main() {
         },
       });
       let position = 0;
-      for (const deptKey of ["accueil", "reseaux-sociaux", "impact-junior"]) {
+      for (const deptKey of [DEPT_A, DEPT_B, DEPT_C]) {
         await prisma.eventReportSection.create({
           data: {
             reportId: report.id,
             departmentId: departmentByKey[deptKey].id,
-            label: DEV_DEPARTMENTS.find((d) => d.key === deptKey)!.name,
+            label: DEPARTMENTS.find((d) => d.key === deptKey)!.name,
             position: position++,
             stats: { presents: faker.number.int({ min: 40, max: 220 }) },
             notes: faker.lorem.sentence(),
@@ -377,9 +477,9 @@ async function main() {
   console.log(`${audioServiceDefs.length} cultes audio publiés créés (${audioSegmentCount} séquences)`);
 
   // ── Absences (+ backup) ─────────────────────────────────────────────────
-  const accueilMembers = membersByDeptKey["accueil"];
+  const accueilMembers = membersByDeptKey[DEPT_A];
   const [absent, backup] = accueilMembers;
-  const respAccueil = userByKey["resp-accueil"];
+  const respAccueil = userWithRole("DEPARTMENT_HEAD");
   if (absent && backup && respAccueil) {
     const absence = await prisma.absence.create({
       data: {
@@ -414,10 +514,10 @@ async function main() {
   console.log("Absences créées");
 
   // ── Demandes (Request) — tous statuts, quelques types ───────────────────
-  const secretaire = userByKey["secretaire"];
-  const ministre = userByKey["ministre"];
+  const secretaire = userWithRole("SECRETARY");
+  const ministre = userWithRole("MINISTER");
   if (secretaire && ministre) {
-    const secretariatDept = departmentByKey["secretariat"];
+    const secretariatDept = departmentByKey[DEPT_SECRETARIAT];
     await prisma.request.create({
       data: {
         churchId: churchByKey[mainChurchKey].id,
@@ -426,7 +526,7 @@ async function main() {
         title: "Modification planning Accueil",
         payload: { eventId: events[6]?.id ?? events[0].id, note: "Besoin d'un remplaçant" },
         submittedById: respAccueil?.id ?? secretaire.id,
-        departmentId: departmentByKey["accueil"].id,
+        departmentId: departmentByKey[DEPT_A].id,
       },
     });
     await prisma.request.create({
@@ -448,9 +548,9 @@ async function main() {
         type: "DEMANDE_ACCES",
         status: "REFUSEE",
         title: "Demande d'accès Resp. département",
-        payload: { requestedRole: "DEPARTMENT_HEAD", departmentId: departmentByKey["logistique"].id },
+        payload: { requestedRole: "DEPARTMENT_HEAD", departmentId: departmentByKey[DEPT_LOGISTIQUE].id },
         submittedById: secretaire.id,
-        reviewedById: userByKey["admin"].id,
+        reviewedById: (userWithRole("ADMIN") ?? secretaire).id,
         reviewNotes: "Département déjà pourvu.",
         reviewedAt: daysFrom(TODAY, -3),
       },
@@ -459,8 +559,13 @@ async function main() {
   console.log("Demandes créées");
 
   // ── Discipolat ────────────────────────────────────────────────────────
-  const evangelisationMembers = membersByDeptKey["evangelisation"];
-  const faiseurDisciplesMember = evangelisationMembers.find((m) => m.lastName === "(compte test)");
+  const evangelisationMembers = membersByDeptKey[DEPT_EVANGELISATION];
+  const faiseurDisciplesEntry = USERS.find(
+    (u) => u.role === "DISCIPLE_MAKER" && u.churchKey === mainChurchKey
+  );
+  const faiseurDisciplesMember = faiseurDisciplesEntry
+    ? memberByUserEmail[faiseurDisciplesEntry.email]
+    : undefined;
   const discipleCandidates = evangelisationMembers.filter((m) => m !== faiseurDisciplesMember).slice(0, 3);
   if (faiseurDisciplesMember) {
     for (const disciple of discipleCandidates) {
@@ -476,9 +581,52 @@ async function main() {
   }
   console.log(`${discipleCandidates.length} relations de discipolat créées`);
 
+  // ── Tâches de département (+ affectations sur les cultes) ──────────────
+  // Chaque département repère reçoit quelques tâches récurrentes, affectées à
+  // des membres sur les prochains cultes : sans cela, l'écran « Tâches » est
+  // vide et la fonctionnalité n'est pas démontrable.
+  const TASK_NAMES: Record<string, string[]> = {
+    [DEPT_A]: ["Ouvrir les portes", "Distribuer les programmes", "Compter l'assemblée"],
+    [DEPT_B]: ["Publier l'annonce du culte", "Photographier le culte"],
+    [DEPT_C]: ["Préparer la salle enfants", "Accueillir les familles"],
+  };
+  const upcomingEvents = events.filter((e) => !e.isPast).slice(0, 3);
+  let taskCount = 0;
+  let assignmentCount = 0;
+
+  for (const [deptKey, names] of Object.entries(TASK_NAMES)) {
+    const deptMembers = membersByDeptKey[deptKey] ?? [];
+    for (const name of names) {
+      const task = await prisma.task.create({
+        data: {
+          departmentId: departmentByKey[deptKey].id,
+          name,
+          description: faker.lorem.sentence(),
+        },
+      });
+      taskCount++;
+
+      for (const event of upcomingEvents) {
+        const member = faker.helpers.arrayElement(deptMembers);
+        if (!member) continue;
+        // `@@unique([taskId, eventId, memberId])` : un même membre peut être tiré
+        // deux fois pour la même tâche et le même culte, on ignore le doublon.
+        try {
+          await prisma.taskAssignment.create({
+            data: { taskId: task.id, memberId: member.id, eventId: event.id },
+          });
+          assignmentCount++;
+        } catch {
+          /* affectation déjà créée — sans conséquence */
+        }
+      }
+    }
+  }
+  console.log(`${taskCount} tâches créées (${assignmentCount} affectations)`);
+
   // ── Salles ────────────────────────────────────────────────────────────
-  const admin = userByKey["admin"];
-  const secretaireUser = userByKey["secretaire"];
+  const admin = userWithRole("ADMIN") ?? fallbackUser;
+  const secretaireUser = userWithRole("SECRETARY");
   const room = await prisma.room.create({
     data: {
       name: "Salle polyvalente",
@@ -571,7 +719,7 @@ async function main() {
   await prisma.financialRequest.create({
     data: {
       churchId: churchByKey[mainChurchKey].id,
-      departmentId: departmentByKey["accueil"].id,
+      departmentId: departmentByKey[DEPT_A].id,
       submittedById: financialSubmitter.id,
       type: "EXPENSE_REPORT",
       label: "Achat de gobelets et café",
@@ -584,7 +732,7 @@ async function main() {
   await prisma.financialRequest.create({
     data: {
       churchId: churchByKey[mainChurchKey].id,
-      departmentId: departmentByKey["logistique"].id,
+      departmentId: departmentByKey[DEPT_LOGISTIQUE].id,
       submittedById: ministre?.id ?? admin.id,
       type: "BUDGET_ADVANCE",
       label: "Location de matériel sono",
@@ -598,7 +746,7 @@ async function main() {
   await prisma.financialRequest.create({
     data: {
       churchId: churchByKey[mainChurchKey].id,
-      departmentId: departmentByKey["accueil"].id,
+      departmentId: departmentByKey[DEPT_A].id,
       submittedById: financialSubmitter.id,
       type: "EXPENSE_REPORT",
       label: "Remboursement déplacement formation",
@@ -660,7 +808,7 @@ async function main() {
   console.log("Offres et profils emploi créés");
 
   // ── Intégration ───────────────────────────────────────────────────────
-  const bergerUser = faiseurDisciplesMember ? userByKey["faiseur-disciples"] : admin;
+  const bergerUser = userWithRole("DISCIPLE_MAKER") ?? admin;
   await prisma.familyLeaderAssignment.create({
     data: {
       churchId: churchByKey[mainChurchKey].id,
@@ -752,8 +900,16 @@ async function main() {
   });
   console.log("Journaux d'audit créés");
 
-  console.log("Seed de développement terminé.");
-  console.log("Comptes de test disponibles : voir prisma/fixtures/dev-users.ts");
+  console.log(
+    IS_REAL_STRUCTURE
+      ? "Seed terminé — structure et comptes RÉELS, contenu métier fabriqué (formation)."
+      : "Seed de développement terminé."
+  );
+  console.log(
+    IS_REAL_STRUCTURE
+      ? "Les participants se connectent avec leur compte Google habituel."
+      : "Comptes de test disponibles : voir prisma/fixtures/dev-users.ts"
+  );
 }
 
 main()

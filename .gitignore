@@ -37,3 +37,8 @@ graphify-out/
 
 # Ledger local du script de migration Audiobookshelf (état d'exécution, jamais versionné)
 prisma/scripts/migrate-audiobookshelf/.ledger.jsonl
+
+# Fixture de formation : structure et comptes reels extraits d'un export de
+# configuration (emails des participants). Genere par
+# prisma/scripts/build-training-fixture.ts — jamais commite.
+prisma/fixtures/training-real.*
