@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/**
+ * Noms du cookie de session posé par Auth.js — variante non préfixée (HTTP,
+ * développement) et variante `__Secure-` (HTTPS, production).
+ *
+ * Ces noms sont **supposés**, pas lus depuis la librairie : `defaultCookies()`
+ * de `@auth/core` n'est pas exporté publiquement. Un renommage côté Auth.js
+ * casserait donc ce middleware en silence — c'est le seul point du code où un
+ * changement amont échapperait à la suite de tests. `proxy.test.ts` compare
+ * cette constante à ce que la librairie installée définit réellement, pour que
+ * la CI le signale au lieu de la production (issue #143).
+ */
+export const SESSION_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+] as const;
+
 export function proxy(request: NextRequest) {
-  const sessionToken =
-    request.cookies.get("authjs.session-token")?.value ||
-    request.cookies.get("__Secure-authjs.session-token")?.value;
+  const sessionToken = SESSION_COOKIE_NAMES.map(
+    (name) => request.cookies.get(name)?.value
+  ).find(Boolean);
 
   if (!sessionToken) {
     // Allow cron routes to pass through (authenticated by bearer token in route handler)
