@@ -9,6 +9,18 @@ import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import DataTable from "@/components/ui/DataTable";
 import ChecklistDetail, { type Checklist } from "./ChecklistDetail";
+import {
+  addDays,
+  buildMonthDays,
+  buildWeekDays,
+  cellKey,
+  DAYS_FR,
+  formatWeekLabel,
+  getWeekStart,
+  groupByRoomAndDay,
+  localDateStr,
+  MONTHS_FR,
+} from "./calendar";
 
 interface Room {
   id: string;
@@ -56,12 +68,6 @@ const CHECKLIST_BADGE: Record<Reservation["checklistStatus"], string> = {
   ISSUE_REPORTED: "bg-red-100 text-red-700",
 };
 
-const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const MONTHS_FR = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-
 function formatDateTime(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 }
@@ -73,37 +79,6 @@ function formatTime(iso: string): string {
 function toLocalInputValue(d: Date): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function localDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function buildMonthDays(year: number, month: number) {
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
-
-  let startDow = firstDay.getDay() - 1;
-  if (startDow < 0) startDow = 6;
-
-  const days: { date: number; inMonth: boolean; dateStr: string }[] = [];
-
-  for (let i = 0; i < startDow; i++) {
-    const d = new Date(year, month - 1, -startDow + i + 1);
-    days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
-  }
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const dt = new Date(year, month - 1, d);
-    days.push({ date: d, inMonth: true, dateStr: localDateStr(dt) });
-  }
-  const remaining = 7 - (days.length % 7);
-  if (remaining < 7) {
-    for (let i = 1; i <= remaining; i++) {
-      const d = new Date(year, month, i);
-      days.push({ date: d.getDate(), inMonth: false, dateStr: localDateStr(d) });
-    }
-  }
-  return days;
 }
 
 /** Actions disponibles sur une réservation, cohérentes avec ce que le serveur autorise réellement. */
@@ -209,40 +184,92 @@ function KeyPersonField({
   );
 }
 
-// ─── Vue calendrier par salle ────────────────────────────────────────────────
+// ─── Pastille de réservation (partagée grille semaine / grille mois) ─────────
 
-function RoomCalendarView({
-  rooms,
-  reservations,
+function ReservationChip({
+  reservation,
+  mine,
+  showRoom,
   onSelect,
 }: {
+  reservation: Reservation;
+  mine: boolean;
+  showRoom?: boolean;
+  onSelect: (r: Reservation) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(reservation)}
+      title={`${reservation.room.name} — ${reservation.title} — ${formatTime(reservation.startAt)} à ${formatTime(reservation.endAt)}`}
+      className={`w-full text-left px-1.5 py-1 text-xs font-medium rounded-md truncate transition-colors ${
+        mine
+          ? "bg-icc-violet text-white hover:bg-icc-violet/90"
+          : "bg-icc-violet/10 text-icc-violet hover:bg-icc-violet/20"
+      }`}
+    >
+      {formatTime(reservation.startAt)} {showRoom ? `· ${reservation.room.name} · ` : ""}
+      {reservation.title}
+    </button>
+  );
+}
+
+// ─── Vue calendrier multi-salles (semaine ou mois) ─────────────────────────
+
+/** Colonne « Salle » fixe + 7 colonnes de jour égales. */
+const WEEK_GRID_COLS = "10rem repeat(7, minmax(0, 1fr))";
+
+function RoomCalendarView({
+  view,
+  anchor,
+  onNavigate,
+  rooms,
+  reservations,
+  filterRoomId,
+  onFilterRoomId,
+  currentUserId,
+  onSelect,
+}: {
+  view: "week" | "month";
+  anchor: Date;
+  onNavigate: (delta: number) => void;
   rooms: Room[];
   reservations: Reservation[];
+  filterRoomId: string;
+  onFilterRoomId: (id: string) => void;
+  currentUserId: string;
   onSelect: (reservation: Reservation) => void;
 }) {
-  const [selectedRoomId, setSelectedRoomId] = useState("");
-  const roomId = selectedRoomId || rooms[0]?.id || "";
-  const now = new Date();
-  const [currentMonth, setCurrentMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
-  const [year, month] = currentMonth.split("-").map(Number);
+  const days = useMemo(
+    () =>
+      view === "week"
+        ? buildWeekDays(getWeekStart(anchor))
+        : buildMonthDays(anchor.getFullYear(), anchor.getMonth() + 1),
+    [view, anchor]
+  );
 
-  function navigateMonth(delta: number) {
-    const d = new Date(year, month - 1 + delta, 1);
-    setCurrentMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
+  const label =
+    view === "week"
+      ? formatWeekLabel(getWeekStart(anchor))
+      : `${MONTHS_FR[anchor.getMonth()]} ${anchor.getFullYear()}`;
 
-  const reservationsByDate = useMemo(() => {
-    const map = new Map<string, Reservation[]>();
-    for (const r of reservations) {
-      if (r.room.id !== roomId) continue;
-      const dateStr = r.startAt.split("T")[0];
-      if (!map.has(dateStr)) map.set(dateStr, []);
-      map.get(dateStr)!.push(r);
-    }
-    return map;
-  }, [reservations, roomId]);
+  const grouped = useMemo(() => groupByRoomAndDay(reservations), [reservations]);
 
-  const days = useMemo(() => buildMonthDays(year, month), [year, month]);
+  // Salles affichées : les actives, plus toute salle inactive portant une réservation dans
+  // la période visible (une réservation ne doit pas disparaître si la salle est désactivée
+  // entre-temps). Puis restriction éventuelle au filtre de salle.
+  const displayedRooms = useMemo(() => {
+    const periodDateStrs = new Set(days.map((d) => d.dateStr));
+    const roomsWithReservation = new Set(
+      reservations
+        .filter((r) => periodDateStrs.has(localDateStr(new Date(r.startAt))))
+        .map((r) => r.room.id)
+    );
+    let list = rooms.filter((r) => r.isActive || roomsWithReservation.has(r.id));
+    if (filterRoomId) list = list.filter((r) => r.id === filterRoomId);
+    return list;
+  }, [rooms, reservations, days, filterRoomId]);
+
   const todayStr = localDateStr(new Date());
 
   return (
@@ -251,8 +278,9 @@ function RoomCalendarView({
         <div className="w-full sm:w-64">
           <Select
             label="Salle"
-            value={roomId}
-            onChange={(e) => setSelectedRoomId(e.target.value)}
+            value={filterRoomId}
+            onChange={(e) => onFilterRoomId(e.target.value)}
+            placeholder="Toutes les salles"
             options={rooms.map((r) => ({
               value: r.id,
               label: r.isOwner ? r.name : `${r.name} (${r.ownerChurch.name})`,
@@ -261,18 +289,20 @@ function RoomCalendarView({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigateMonth(-1)}
+            onClick={() => onNavigate(-1)}
+            aria-label="Période précédente"
             className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="px-3 py-2 text-base font-semibold text-icc-violet capitalize min-w-[10rem] text-center">
-            {MONTHS_FR[month - 1]} {year}
+          <span className="px-3 py-2 text-base font-semibold text-icc-violet capitalize min-w-[14rem] text-center">
+            {label}
           </span>
           <button
-            onClick={() => navigateMonth(1)}
+            onClick={() => onNavigate(1)}
+            aria-label="Période suivante"
             className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -284,6 +314,66 @@ function RoomCalendarView({
 
       {rooms.length === 0 ? (
         <p className="text-sm text-gray-500">Aucune salle disponible.</p>
+      ) : view === "week" ? (
+        <div className="overflow-x-auto bg-white rounded-xl shadow-md border-2 border-gray-100">
+          <div className="min-w-[760px]">
+            <div className="grid bg-icc-violet" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
+              <div className="sticky left-0 z-20 bg-icc-violet px-3 py-3 text-xs font-bold text-white uppercase tracking-wider">
+                Salle
+              </div>
+              {days.map((day) => (
+                <div
+                  key={day.dateStr}
+                  className={`px-2 py-3 text-xs font-bold text-center uppercase tracking-wider ${
+                    day.dateStr === todayStr ? "text-icc-jaune" : "text-white"
+                  }`}
+                >
+                  {day.weekday} {day.dayNum}
+                </div>
+              ))}
+            </div>
+
+            {displayedRooms.length === 0 ? (
+              <p className="px-3 py-6 text-sm text-gray-500">Aucune salle à afficher pour ce filtre.</p>
+            ) : (
+              displayedRooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="grid border-t border-gray-100"
+                  style={{ gridTemplateColumns: WEEK_GRID_COLS }}
+                >
+                  <div className="sticky left-0 z-10 bg-white border-r border-gray-100 px-3 py-2">
+                    <span className="text-sm font-medium text-gray-900">{room.name}</span>
+                    {!room.isOwner && (
+                      <span className="block text-[10px] text-gray-400">{room.ownerChurch.name}</span>
+                    )}
+                    {!room.isActive && <span className="block text-[10px] text-icc-rouge">désactivée</span>}
+                  </div>
+                  {days.map((day) => {
+                    const cell = grouped.get(cellKey(room.id, day.dateStr)) ?? [];
+                    return (
+                      <div
+                        key={day.dateStr}
+                        className={`min-h-[64px] border-r border-gray-100 p-1 space-y-1 ${
+                          day.dateStr === todayStr ? "bg-icc-violet-light/40" : ""
+                        }`}
+                      >
+                        {cell.map((r) => (
+                          <ReservationChip
+                            key={r.id}
+                            reservation={r}
+                            mine={r.createdBy.id === currentUserId}
+                            onSelect={onSelect}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md border-2 border-gray-100 overflow-hidden">
           <div className="grid grid-cols-7 bg-icc-violet">
@@ -294,12 +384,14 @@ function RoomCalendarView({
             ))}
           </div>
           <div className="grid grid-cols-7">
-            {days.map((day, idx) => {
-              const dayReservations = reservationsByDate.get(day.dateStr) || [];
+            {days.map((day) => {
+              const cell = displayedRooms
+                .flatMap((room) => grouped.get(cellKey(room.id, day.dateStr)) ?? [])
+                .sort((a, b) => a.startAt.localeCompare(b.startAt));
               const isToday = day.dateStr === todayStr;
               return (
                 <div
-                  key={idx}
+                  key={day.dateStr}
                   className={`min-h-[90px] md:min-h-[110px] border-b border-r border-gray-100 p-1.5 ${
                     day.inMonth ? (isToday ? "bg-icc-violet-light/50" : "bg-white") : "bg-gray-50/50"
                   }`}
@@ -313,19 +405,17 @@ function RoomCalendarView({
                           : "text-gray-300"
                     }`}
                   >
-                    {day.date}
+                    {day.dayNum}
                   </span>
                   <div className="space-y-1">
-                    {dayReservations.map((r) => (
-                      <button
+                    {cell.map((r) => (
+                      <ReservationChip
                         key={r.id}
-                        type="button"
-                        onClick={() => onSelect(r)}
-                        title={`${r.title} — ${formatTime(r.startAt)} à ${formatTime(r.endAt)}`}
-                        className="w-full text-left px-1.5 py-1 text-xs font-medium rounded-md bg-icc-violet/10 text-icc-violet truncate hover:bg-icc-violet/20 transition-colors"
-                      >
-                        {formatTime(r.startAt)} {r.title}
-                      </button>
+                        reservation={r}
+                        mine={r.createdBy.id === currentUserId}
+                        showRoom
+                        onSelect={onSelect}
+                      />
                     ))}
                   </div>
                 </div>
@@ -446,7 +536,11 @@ export default function RoomsBookingClient({
   const [rooms, setRooms] = useState<Room[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"list" | "calendar">("calendar");
+  const [view, setView] = useState<"week" | "month" | "list">("week");
+  // Ancre de période unique aux deux vues calendaires : basculer semaine ↔ mois conserve
+  // la période consultée au lieu de retomber sur le mois courant.
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [myResaOpen, setMyResaOpen] = useState(true);
 
   const [sortBy, setSortBy] = useState<"date" | "room">("date");
   const [filterRoomId, setFilterRoomId] = useState("");
@@ -485,6 +579,10 @@ export default function RoomsBookingClient({
     try {
       const [roomsRes, reservationsRes] = await Promise.all([
         fetch(`/api/rooms?churchId=${churchId}`),
+        // ponytail: charge tout l'historique de l'église à chaque montage alors que les
+        // vues n'en affichent qu'une semaine ou un mois. Plafond préexistant, hors
+        // périmètre spec 032. Voie de sortie : passer ?from=&to= (la route les accepte
+        // déjà) le jour où le volume gêne.
         fetch(`/api/room-reservations?churchId=${churchId}`),
       ]);
       if (roomsRes.ok) setRooms((await roomsRes.json()).rooms);
@@ -604,7 +702,27 @@ export default function RoomsBookingClient({
     }
   }
 
-  const activeReservations = reservations.filter((r) => r.status === "CONFIRMED");
+  const activeReservations = useMemo(
+    () => reservations.filter((r) => r.status === "CONFIRMED"),
+    [reservations]
+  );
+
+  // Flèches de période : ±1 mois en vue mois, ±7 jours en vue semaine.
+  const navigate = useCallback(
+    (delta: number) =>
+      setAnchor((a) =>
+        view === "month"
+          ? new Date(a.getFullYear(), a.getMonth() + delta, 1)
+          : addDays(a, delta * 7)
+      ),
+    [view]
+  );
+
+  // Encart « Mes réservations » : dérivé de la seule identité de l'utilisateur, donc
+  // indépendant de la vue et des filtres. Réservations non terminées, 4 affichées.
+  const myUpcoming = activeReservations
+    .filter((r) => r.createdBy.id === currentUserId && new Date(r.endAt).getTime() >= now.getTime())
+    .sort((a, b) => a.startAt.localeCompare(b.startAt));
 
   const displayedReservations = useMemo(() => {
     let list = activeReservations;
@@ -641,24 +759,98 @@ export default function RoomsBookingClient({
 
   return (
     <div>
+      {myUpcoming.length > 0 && (
+        <div className="mb-4 rounded-xl border-2 border-icc-violet/20 bg-white overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMyResaOpen((o) => !o)}
+            aria-expanded={myResaOpen}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-icc-violet hover:bg-icc-violet-light transition-colors"
+          >
+            <span>Mes réservations ({myUpcoming.length})</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${myResaOpen ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {myResaOpen && (
+            <div className="border-t border-gray-100 divide-y divide-gray-100">
+              {myUpcoming.slice(0, 4).map((r) => {
+                const actions = getAvailableActions(r, { currentUserId, canManage });
+                return (
+                  <div key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatDateTime(r.startAt)} · {r.room.name}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${CHECKLIST_BADGE[r.checklistStatus]}`}
+                    >
+                      {CHECKLIST_LABELS[r.checklistStatus]}
+                    </span>
+                    <div className="flex gap-2 shrink-0 flex-wrap">
+                      {actions.canDeclareOpen && (
+                        <Button size="sm" variant="primary" onClick={() => openChecklist(r, "open")}>
+                          Déclarer l&apos;ouverture
+                        </Button>
+                      )}
+                      {actions.canDeclareClose && (
+                        <Button size="sm" variant="primary" onClick={() => openChecklist(r, "close")}>
+                          Déclarer la fermeture
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => setDetailTarget(r)}>
+                        Détails
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {myUpcoming.length > 4 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView("list");
+                    setFilterMine(true);
+                    setFilterRoomId("");
+                    setFilterChecklistStatus("");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-icc-violet hover:bg-icc-violet-light transition-colors"
+                >
+                  Voir mes {myUpcoming.length} réservations →
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <div className="flex rounded-lg border-2 border-icc-violet/20 overflow-hidden">
-          <button
-            onClick={() => setView("calendar")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              view === "calendar" ? "bg-icc-violet text-white" : "bg-white text-icc-violet hover:bg-icc-violet-light"
-            }`}
-          >
-            Calendrier par salle
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              view === "list" ? "bg-icc-violet text-white" : "bg-white text-icc-violet hover:bg-icc-violet-light"
-            }`}
-          >
-            Liste
-          </button>
+          {(
+            [
+              ["week", "Semaine"],
+              ["month", "Mois"],
+              ["list", "Liste"],
+            ] as const
+          ).map(([value, labelText]) => (
+            <button
+              key={value}
+              onClick={() => setView(value)}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                view === value ? "bg-icc-violet text-white" : "bg-white text-icc-violet hover:bg-icc-violet-light"
+              }`}
+            >
+              {labelText}
+            </button>
+          ))}
         </div>
         {canReserve && (
           <Button onClick={openForm} disabled={rooms.length === 0}>
@@ -671,9 +863,7 @@ export default function RoomsBookingClient({
         <p className="text-sm text-gray-500 mb-4">Aucune salle disponible pour votre église pour le moment.</p>
       )}
 
-      {view === "calendar" ? (
-        <RoomCalendarView rooms={rooms} reservations={activeReservations} onSelect={setDetailTarget} />
-      ) : (
+      {view === "list" ? (
         <div>
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="w-full sm:w-48">
@@ -761,6 +951,18 @@ export default function RoomsBookingClient({
             }}
           />
         </div>
+      ) : (
+        <RoomCalendarView
+          view={view}
+          anchor={anchor}
+          onNavigate={navigate}
+          rooms={rooms}
+          reservations={activeReservations}
+          filterRoomId={filterRoomId}
+          onFilterRoomId={setFilterRoomId}
+          currentUserId={currentUserId}
+          onSelect={setDetailTarget}
+        />
       )}
 
       <ReservationDetailModal
