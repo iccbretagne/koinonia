@@ -2,13 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { parseEmailList, formatEmailList } from "@/lib/email";
 import { z } from "zod";
+
+const emailListSchema = z.array(z.string().email("Email invalide")).optional().default([]);
 
 const updateSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   slug: z.string().min(1, "Le slug est requis"),
-  secretariatEmail:     z.string().email("Email invalide").nullish(),
-  accountingEmail:      z.string().email("Email invalide").nullish(),
+  secretariatEmails:    emailListSchema,
+  accountingEmails:     emailListSchema,
   primaryColor:         z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
   responsibleProfileId: z.string().nullish(),
   supervisorProfileId:  z.string().nullish(),
@@ -46,12 +49,20 @@ export async function PUT(
 
     const church = await prisma.church.update({
       where: { id: churchId },
-      data,
+      data: {
+        ...data,
+        secretariatEmails: formatEmailList(data.secretariatEmails),
+        accountingEmails:  formatEmailList(data.accountingEmails),
+      },
     });
 
     await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "Church", entityId: churchId, details: data });
 
-    return successResponse(church);
+    return successResponse({
+      ...church,
+      secretariatEmails: parseEmailList(church.secretariatEmails),
+      accountingEmails:  parseEmailList(church.accountingEmails),
+    });
   } catch (error) {
     return errorResponse(error);
   }

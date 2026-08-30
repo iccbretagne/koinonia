@@ -80,8 +80,8 @@ export async function applyImport(
             data: {
               name: church.name,
               slug: church.slug,
-              secretariatEmail: church.secretariatEmail,
-              accountingEmail: church.accountingEmail,
+              secretariatEmails: church.secretariatEmails,
+              accountingEmails: church.accountingEmails,
               primaryColor: church.primaryColor,
             },
           });
@@ -95,8 +95,8 @@ export async function applyImport(
             id: church.id,
             name: church.name,
             slug: church.slug,
-            secretariatEmail: church.secretariatEmail,
-            accountingEmail: church.accountingEmail,
+            secretariatEmails: church.secretariatEmails,
+            accountingEmails: church.accountingEmails,
             primaryColor: church.primaryColor,
           },
         });

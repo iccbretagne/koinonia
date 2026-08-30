@@ -2,7 +2,7 @@ import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
-import { sendEmail, buildAccountingNewRequestEmail } from "@/lib/email";
+import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
 import { assertAttachmentsAssignable } from "@/modules/accounting";
 import { z } from "zod";
 
@@ -144,7 +144,7 @@ async function notifyAccountingTeam(
 ) {
   const church = await prisma.church.findUnique({
     where: { id: churchId },
-    select: { accountingEmail: true, name: true },
+    select: { accountingEmails: true, name: true },
   });
 
   // Notif in-app pour tous les ACCOUNTANT de l'église
@@ -165,8 +165,9 @@ async function notifyAccountingTeam(
     });
   }
 
-  // Email à l'adresse comptabilité configurée
-  if (church?.accountingEmail) {
+  // Email aux adresses comptabilité configurées
+  const emails = parseEmailList(church?.accountingEmails);
+  if (emails.length > 0) {
     const appUrl = process.env.APP_URL ?? "http://localhost:3000";
     const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
     const { subject, html } = buildAccountingNewRequestEmail({
@@ -176,10 +177,10 @@ async function notifyAccountingTeam(
       departmentName: req.department?.name ?? "—",
       submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
       description:    req.description,
-      churchName:     church.name,
+      churchName:     church!.name,
       requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
     });
-    sendEmail({ to: church.accountingEmail, subject, html })
-      .catch((err) => console.error("[accounting] sendEmail to accountingEmail failed:", err?.message ?? err));
+    sendEmail({ to: emails, subject, html })
+      .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
   }
 }

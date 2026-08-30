@@ -18,6 +18,9 @@ const importSchema = z.object({
       id: z.string(),
       name: z.string(),
       slug: z.string(),
+      secretariatEmails: z.string().nullable().optional(),
+      accountingEmails: z.string().nullable().optional(),
+      // Champs legacy (sauvegardes prises avant le passage aux emails multiples, spec 033)
       secretariatEmail: z.string().nullable().optional(),
       accountingEmail: z.string().nullable().optional(),
       primaryColor: z.string().optional().default("#5E17EB"),
@@ -44,8 +47,19 @@ export async function POST(request: Request) {
       throw new ApiError(400, `Version de schéma non supportée : ${body.data._meta.schemaVersion}`);
     }
 
+    // Rétrocompatibilité : une sauvegarde prise avant le passage aux emails multiples
+    // (spec 033) porte encore les champs singuliers `secretariatEmail`/`accountingEmail`.
+    const data = {
+      ...body.data,
+      churches: body.data.churches.map((church) => ({
+        ...church,
+        secretariatEmails: church.secretariatEmails ?? church.secretariatEmail ?? null,
+        accountingEmails:  church.accountingEmails ?? church.accountingEmail ?? null,
+      })),
+    };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const importResult = await applyImport(body.data as any, body.strategy, body.categories);
+    const importResult = await applyImport(data as any, body.strategy, body.categories);
 
     await logAudit({
       userId: session.user.id,

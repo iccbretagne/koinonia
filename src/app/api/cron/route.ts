@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { sendEmail, buildReminderEmail, buildPlanningDigestEmail } from "@/lib/email";
+import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList } from "@/lib/email";
 import { runInactivityNotifications, runMsdpInactivityNotifications } from "@/modules/integration";
 
 function authorizeCron(request: Request) {
@@ -122,13 +122,14 @@ async function runPlanningDigest() {
   const now = new Date();
 
   const churches = await prisma.church.findMany({
-    where: { secretariatEmail: { not: null } },
+    where: { secretariatEmails: { not: null } },
   });
 
   let digestsSent = 0;
 
   for (const church of churches) {
-    if (!church.secretariatEmail) continue;
+    const emails = parseEmailList(church.secretariatEmails);
+    if (emails.length === 0) continue;
 
     const since = church.planningDigestLastSentAt ?? new Date(0);
 
@@ -188,7 +189,7 @@ async function runPlanningDigest() {
 
     if (process.env.SMTP_HOST) {
       try {
-        await sendEmail({ to: church.secretariatEmail, subject, html });
+        await sendEmail({ to: emails, subject, html });
         digestsSent++;
       } catch (err) {
         console.error(`Failed to send planning digest for church ${church.id}:`, err instanceof Error ? err.message : err);

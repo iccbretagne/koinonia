@@ -18,6 +18,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email", () => ({
   sendEmail: vi.fn(),
   buildAccountingNewRequestEmail: vi.fn().mockReturnValue({ subject: "s", html: "h" }),
+  parseEmailList: vi.fn().mockReturnValue([]),
 }));
 vi.mock("@/lib/file-storage", () => ({
   getFileUrl: vi.fn().mockResolvedValue("https://example.com/signed-url"),

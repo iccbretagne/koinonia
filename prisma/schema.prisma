@@ -55,8 +55,8 @@ model Church {
   id                        String                     @id @default(cuid())
   name                      String
   slug                      String                     @unique
-  secretariatEmail          String?
-  accountingEmail           String?
+  secretariatEmails         String?                    @db.Text
+  accountingEmails          String?                    @db.Text
   primaryColor              String                     @default("#5E17EB")
   reminderLastSentAt        DateTime?
   planningDigestLastSentAt  DateTime?

@@ -18,6 +18,9 @@ const previewSchema = z.object({
     id: z.string(),
     name: z.string(),
     slug: z.string(),
+    secretariatEmails: z.string().nullable().optional(),
+    accountingEmails: z.string().nullable().optional(),
+    // Champs legacy (sauvegardes prises avant le passage aux emails multiples, spec 033)
     secretariatEmail: z.string().nullable().optional(),
     accountingEmail: z.string().nullable().optional(),
     primaryColor: z.string().optional(),

@@ -5,16 +5,26 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 
 interface Church {
   id: string;
   name: string;
   slug: string;
-  secretariatEmail: string;
-  accountingEmail: string;
+  secretariatEmails: string[];
+  accountingEmails: string[];
   primaryColor: string;
   responsibleProfileId: string;
   supervisorProfileId: string;
+}
+
+function parseEmailListInput(raw: string): string[] {
+  return [...new Set(
+    raw
+      .split(/[,;\n]/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean)
+  )];
 }
 
 interface Option {
@@ -32,8 +42,8 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
   const router = useRouter();
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
-  const [secretariatEmail, setSecretariatEmail] = useState(church.secretariatEmail);
-  const [accountingEmail, setAccountingEmail] = useState(church.accountingEmail);
+  const [secretariatEmails, setSecretariatEmails] = useState(church.secretariatEmails.join("\n"));
+  const [accountingEmails, setAccountingEmails] = useState(church.accountingEmails.join("\n"));
   const [primaryColor, setPrimaryColor] = useState(church.primaryColor || "#5E17EB");
   const [responsibleProfileId, setResponsibleProfileId] = useState(church.responsibleProfileId);
   const [supervisorProfileId, setSupervisorProfileId] = useState(church.supervisorProfileId);
@@ -54,8 +64,8 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
         body: JSON.stringify({
           name,
           slug,
-          secretariatEmail: secretariatEmail || null,
-          accountingEmail: accountingEmail || null,
+          secretariatEmails: parseEmailListInput(secretariatEmails),
+          accountingEmails: parseEmailListInput(accountingEmails),
           primaryColor,
           responsibleProfileId: responsibleProfileId || null,
           supervisorProfileId: supervisorProfileId || null,
@@ -101,19 +111,17 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           onChange={(e) => setSlug(e.target.value)}
           required
         />
-        <Input
-          label="Email secrétariat (digest planning)"
-          type="email"
-          value={secretariatEmail}
-          onChange={(e) => setSecretariatEmail(e.target.value)}
-          placeholder="secretariat@eglise.fr"
+        <Textarea
+          label="Emails secrétariat (digest planning, un par ligne)"
+          value={secretariatEmails}
+          onChange={(e) => setSecretariatEmails(e.target.value)}
+          placeholder={"secretariat@eglise.fr\nbackup@eglise.fr"}
         />
-        <Input
-          label="Email comptabilité (réception des demandes)"
-          type="email"
-          value={accountingEmail}
-          onChange={(e) => setAccountingEmail(e.target.value)}
-          placeholder="comptabilite@eglise.fr"
+        <Textarea
+          label="Emails comptabilité (réception des demandes, un par ligne)"
+          value={accountingEmails}
+          onChange={(e) => setAccountingEmails(e.target.value)}
+          placeholder={"comptabilite@eglise.fr\nresponsable@eglise.fr"}
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
