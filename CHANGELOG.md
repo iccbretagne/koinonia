@@ -20,12 +20,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 - **Réservations de soirée affichées la veille dans le calendrier des salles** : le regroupement des réservations par jour se faisait sur la date universelle (UTC) et non la date locale ; une activité commençant tard le soir apparaissait le jour précédent.
 - **Version affichée en recette figée sur la dernière version publiée** : le pied de page de l'environnement de recette affichait la version de `package.json`, qui n'est incrémentée qu'à la publication — la version annoncée n'était donc pas celle de la branche en cours de validation. Elle indique désormais le code réellement déployé (`1.19.0-abc1234`). La production est inchangée.
+- **Tour guidé et guide utilisateur décalés par rapport à l'application** : le tour ne présentait ni la section « Ressources » (Salles, Comptabilité, Emploi) ni « Gestion pastorale », et son étape sur le discipolat ne s'affichait plus depuis que celui-ci a rejoint la section « Communauté ». Les intitulés « Membres (STAR) » et « Demandes » ont par ailleurs été réalignés sur les sections « Communauté » et « Opérations ». Le rôle Qualificateur d'agenda ne recevait aucune étape le concernant.
+- **Guide utilisateur incomplet** : les Absences et les Tâches de département n'y figuraient pas du tout ; les paramètres audio et la dépublication d'un culte, le cycle de vie des offres d'emploi et leur récapitulatif WhatsApp, l'export Excel des demandes d'intégration et les sauvegardes de configuration ont été ajoutés. La fiche Salles décrit désormais la vue semaine multi-salles. Une capture d'écran non encore publiée affiche un cadre « Capture à venir » au lieu d'une image cassée.
 
 ### Technique
 
 - Retrait d'une table leurre `__prisma_migrations` (deux underscores) créée puis supprimée par deux migrations : sans lien avec la table interne de Prisma (`_prisma_migrations`, un seul underscore), elle n'avait aucun effet mais sa ressemblance suffisait à faire diagnostiquer à tort une corruption de l'historique des migrations. Règle correspondante ajoutée à `docs/database.md`.
 - Verrouillage par test du nom du cookie de session attendu par le middleware : ce nom était supposé plutôt que lu depuis Auth.js, et un renommage lors d'une future montée de version aurait rendu tout le monde non authentifié, en silence.
 - Extraction de la protection contre l'injection de formules dans les exports Excel, jusque-là dupliquée à l'identique dans trois routes et couverte par aucun test.
+- Jeu de données de formation : le seed de développement accepte désormais une fixture externe (`SEED_FIXTURE_FILE`), ce qui permet de monter un environnement sur la structure et les comptes réels d'une église, avec un contenu métier entièrement fabriqué. Un script convertit l'export de configuration en fixture. Procédure documentée dans `docs/staging.md`.
+- Réinitialisation du seed rendue indépendante de l'ordre et du nombre de modèles : la liste des tables à vider était tenue à la main et avait dérivé (19 modèles sur 69 y manquaient), sans conséquence sur une base de développement mais bloquant sur toute base ayant réellement servi.
 
 ## [v1.18.0] - 2026-08-23
 
