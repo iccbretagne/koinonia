@@ -1,6 +1,6 @@
 # Spec — Emails multiples pour les notifications comptabilité et secrétariat
 
-- **Numéro** : 032
+- **Numéro** : 033
 - **Statut** : Implémentée
 - **Créée le** : 2026-08-30
 - **Branche suggérée** : `feat/emails-multiples-notifications`

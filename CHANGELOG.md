@@ -8,7 +8,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Ajouté
 
+- **Vue semaine multi-salles et suivi de ses réservations (`/rooms`)** : nouvelle vue « Semaine » (par défaut) en grille salles × jours — une ligne par salle, une colonne par jour — pour voir toutes les salles d'un coup et repérer immédiatement celles qui sont libres ; le calendrier mensuel devient lui aussi multi-salles et le choix d'une salle passe de sélection obligatoire à filtre facultatif. Un encart « Mes réservations » repliable, toujours visible quelle que soit la vue, liste les prochaines réservations de l'utilisateur avec les actions de main courante (déclarer l'ouverture/la fermeture) au plus près. Les réservations de l'utilisateur sont mises en évidence dans les grilles.
 - **Emails multiples pour les notifications comptabilité et secrétariat** : une église peut désormais déclarer plusieurs adresses email de notification pour la comptabilité (nouvelle demande financière) et pour le secrétariat (digest planning hebdomadaire), au lieu d'une seule adresse par canal.
+
+### Corrigé
+
+- **Réservations de soirée affichées la veille dans le calendrier des salles** : le regroupement des réservations par jour se faisait sur la date universelle (UTC) et non la date locale ; une activité commençant tard le soir apparaissait le jour précédent.
 
 ## [v1.18.0] - 2026-08-23
 

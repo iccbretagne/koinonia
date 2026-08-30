@@ -20,7 +20,7 @@ const importSchema = z.object({
       slug: z.string(),
       secretariatEmails: z.string().nullable().optional(),
       accountingEmails: z.string().nullable().optional(),
-      // Champs legacy (sauvegardes prises avant le passage aux emails multiples, spec 032)
+      // Champs legacy (sauvegardes prises avant le passage aux emails multiples, spec 033)
       secretariatEmail: z.string().nullable().optional(),
       accountingEmail: z.string().nullable().optional(),
       primaryColor: z.string().optional().default("#5E17EB"),
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     // Rétrocompatibilité : une sauvegarde prise avant le passage aux emails multiples
-    // (spec 032) porte encore les champs singuliers `secretariatEmail`/`accountingEmail`.
+    // (spec 033) porte encore les champs singuliers `secretariatEmail`/`accountingEmail`.
     const data = {
       ...body.data,
       churches: body.data.churches.map((church) => ({

@@ -61,7 +61,7 @@ Migration (SQL explicite plutôt que `prisma migrate dev` en mode interactif, po
 préservation des données au lieu d'un drop+add auto-détecté) :
 
 ```sql
--- AlterTable: emails multiples pour comptabilité et secrétariat (spec 032)
+-- AlterTable: emails multiples pour comptabilité et secrétariat (spec 033)
 ALTER TABLE `churches` ADD COLUMN `secretariatEmails` TEXT NULL;
 ALTER TABLE `churches` ADD COLUMN `accountingEmails` TEXT NULL;
 
