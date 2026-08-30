@@ -887,3 +887,23 @@ npx prisma migrate resolve --applied 0_init
 1. Modifier `prisma/schema.prisma`
 2. Lancer `npm run db:migrate` — Prisma genere le SQL et l'applique
 3. Committer le dossier `prisma/migrations/` avec le code
+
+### Regle : ne jamais toucher a `_prisma_migrations`
+
+`_prisma_migrations` (**un seul** underscore) est la table interne ou Prisma tient l'historique
+des migrations appliquees. Aucune migration ne doit la creer, la modifier ni la supprimer :
+Prisma la gere seul, avant et apres chaque migration.
+
+Une migration ecrite a la main a un jour cree une table `__prisma_migrations` (**deux**
+underscores) — un decoy sans aucun lien avec Prisma, qu'une migration ulterieure a ensuite
+supprime. Inoffensif en pratique, mais suffisamment ressemblant pour faire croire a une
+corruption de l'historique. Les deux lignes ont ete retirees (issue #499).
+
+Pour verifier qu'un historique se rejoue proprement sans toucher a la base de dev, deployer sur
+une base jetable :
+
+```bash
+docker exec koinonia-db-1 mariadb -uroot -proot -e "CREATE DATABASE koinonia_check;"
+# puis un prisma.config.ts temporaire pointant sur koinonia_check
+npx prisma migrate deploy --config <config-temporaire>
+```
