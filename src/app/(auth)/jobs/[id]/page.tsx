@@ -36,6 +36,7 @@ export default async function JobDetailPage({
           deadline:  job.deadline  ? job.deadline.toISOString()  : null,
           createdAt: job.createdAt.toISOString(),
           updatedAt: job.updatedAt.toISOString(),
+          renewalRequestedAt: job.renewalRequestedAt ? job.renewalRequestedAt.toISOString() : null,
         }}
         canManage={canManage}
         isAuthor={isAuthor}

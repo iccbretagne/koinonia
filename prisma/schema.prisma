@@ -1539,8 +1539,14 @@ model JobOffer {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
+  /// Date d'envoi de la relance « toujours d'actualité ? » restée sans réponse.
+  /// NULL = aucune relance en cours (cas nominal). Remis à NULL par toute
+  /// modification de l'offre, qui vaut confirmation (spec 034).
+  renewalRequestedAt DateTime?
+
   @@index([status, type])
   @@index([authorId])
+  @@index([status, renewalRequestedAt])
   @@map("job_offers")
 }
 

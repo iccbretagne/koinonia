@@ -20,6 +20,7 @@ interface Job {
   status: "PUBLISHED" | "ARCHIVED";
   createdAt: string;
   updatedAt: string;
+  renewalRequestedAt: string | null;
   author: { id: string; name: string | null; displayName: string | null; image: string | null };
 }
 
@@ -47,8 +48,32 @@ export default function JobDetailClient({
   const router = useRouter();
   const [archiving, setArchiving] = useState(false);
   const [deleting,  setDeleting]  = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const isArchived = job.status === "ARCHIVED";
+  const canAct = isAuthor || canManage;
+
+  // Une relance est en cours : l'offre sera archivée 14 jours après renewalRequestedAt.
+  const renewalDate = job.renewalRequestedAt ? new Date(job.renewalRequestedAt) : null;
+  const archiveDate = renewalDate
+    ? new Date(renewalDate.getTime() + 14 * 86_400_000)
+    : null;
+  const showRenewalBanner = !isArchived && canAct && !!archiveDate;
+
+  async function confirmStillActive() {
+    setConfirming(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renew: true }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      router.refresh();
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   async function toggleArchive() {
     setArchiving(true);
@@ -91,6 +116,22 @@ export default function JobDetailClient({
         {isArchived && (
           <div className="mb-4 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
             Cette offre est archivée et n&apos;est plus visible dans la liste.
+          </div>
+        )}
+
+        {showRenewalBanner && (
+          <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="flex-1">
+              Sans confirmation, cette offre sera archivée automatiquement le{" "}
+              <strong>{archiveDate!.toLocaleDateString("fr-FR")}</strong>.
+            </span>
+            <button
+              onClick={confirmStillActive}
+              disabled={confirming}
+              className="shrink-0 px-3 py-1.5 text-xs font-semibold bg-icc-violet text-white rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+            >
+              {confirming ? "…" : "Toujours d'actualité"}
+            </button>
           </div>
         )}
 
