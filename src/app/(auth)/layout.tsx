@@ -343,7 +343,14 @@ export default async function AuthLayout({
         >
           Koinonia
         </a>
-        <span>v{pkg.version}</span>
+        {/*
+          En production, `package.json` porte la version du tag deploye : elle suffit.
+          En recette on deploie une branche quelconque, dont le `package.json` reste fige
+          sur la derniere version publiee — le footer afficherait donc une version qui
+          n'est pas celle qu'on teste. `NEXT_PUBLIC_BUILD_VERSION` (inline au build par
+          deploy-staging.yml, forme `1.18.0-abc1234`) prend alors le relais.
+        */}
+        <span>v{process.env.NEXT_PUBLIC_BUILD_VERSION ?? pkg.version}</span>
       </span>
     </footer>
   );

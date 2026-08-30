@@ -64,7 +64,14 @@ jobs:
       - run: npx prisma generate
       # `npm run build` produit aussi dist/worker.mjs (esbuild) — le worker audio est bundlé,
       # il n'a donc besoin ni de src/ ni de tsx sur le serveur (ADR-0007).
+      #
+      # NEXT_PUBLIC_BUILD_VERSION est inliné dans le bundle au moment du build : la version
+      # affichée dans le footer devient celle du code réellement déployé (`1.18.0-abc1234`)
+      # et non le `package.json` de la branche, figé sur la dernière version publiée. Le
+      # transmettre au serveur ne suffirait pas — l'artefact doit le porter.
       - run: npm run build
+        env:
+          NEXT_PUBLIC_BUILD_VERSION: ${{ steps.version.outputs.version }}
 
       # Élague les devDependencies APRÈS le build : l'archive n'embarque plus typescript,
       # vitest, eslint, esbuild… La CLI `prisma` est en `dependencies` (requise sur le serveur
