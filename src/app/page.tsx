@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import Link from "next/link";
 import type { Session } from "next-auth";
 import { auth, signIn, getCurrentChurchId, isDevLoginEnabled } from "@/lib/auth";
+import { isAuthCookieName } from "@/lib/auth-cookies";
 import { rolePermissions } from "@/lib/registry";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
@@ -27,6 +30,20 @@ export default async function LoginPage() {
 
   if (session?.user) {
     redirect(await defaultLandingPage(session));
+  }
+
+  // Pas de session, mais des cookies Auth.js quand même présents : session
+  // expirée/disparue en base, ou cookies de contrôle OAuth laissés par un
+  // callback en échec. Dans les deux cas ils bloquent la reconnexion et rien
+  // ne les supprime — on renvoie vers la route de réinitialisation, qui les
+  // efface et ramène ici avec un navigateur propre (issue #505). Pas de
+  // boucle possible : au retour, il n'y a plus de cookie à nettoyer.
+  // Un Server Component ne peut pas écrire de cookie, d'où la redirection.
+  const hasStaleAuthCookies = (await cookies())
+    .getAll()
+    .some((c) => isAuthCookieName(c.name));
+  if (hasStaleAuthCookies) {
+    redirect("/api/auth/reset");
   }
 
   const devLoginEnabled = isDevLoginEnabled(process.env);
@@ -74,6 +91,15 @@ export default async function LoginPage() {
             Se connecter avec Google
           </button>
         </form>
+
+        {/* Échappatoire manuelle (issue #505) : couvre les cas où des cookies
+            Auth.js cassés subsistent malgré le nettoyage automatique. Un clic
+            remplace la purge des données du site dans le navigateur. */}
+        <p className="mt-4 text-xs text-center text-gray-400">
+          <Link href="/api/auth/reset" prefetch={false} className="underline hover:text-icc-violet">
+            Problème de connexion ?
+          </Link>
+        </p>
 
         {devLoginEnabled && (
           <div className="pt-6 mt-6 border-t border-dashed border-gray-300">
