@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Corrigé
+
+- **Connexion impossible tant que les données du navigateur n'étaient pas purgées** : lorsqu'une session avait disparu côté serveur (expiration, réinitialisation) ou qu'une tentative de connexion Google avait échoué en cours de route, les cookies laissés derrière bloquaient toute nouvelle connexion — et rien ne les supprimait. L'utilisateur devait vider les données du site dans son navigateur, opération hors de portée de la plupart. Ces cookies sont désormais nettoyés automatiquement au retour sur la page de connexion, et un lien « Problème de connexion ? » permet de forcer cette remise à zéro en un clic.
+
 ## [v1.19.0] - 2026-08-30
 
 ### Ajouté
