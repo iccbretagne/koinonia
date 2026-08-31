@@ -6,11 +6,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
-### Corrigé
-
-- **Connexion impossible tant que les données du navigateur n'étaient pas purgées** : lorsqu'une session avait disparu côté serveur (expiration, réinitialisation) ou qu'une tentative de connexion Google avait échoué en cours de route, les cookies laissés derrière bloquaient toute nouvelle connexion — et rien ne les supprimait. L'utilisateur devait vider les données du site dans son navigateur, opération hors de portée de la plupart. Ces cookies sont désormais nettoyés automatiquement au retour sur la page de connexion, et un lien « Problème de connexion ? » permet de forcer cette remise à zéro en un clic.
-
-## [v1.19.0] - 2026-08-30
+## [v1.19.0] - 2026-09-01
 
 ### Ajouté
 
@@ -22,6 +18,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- **Connexion impossible tant que les données du navigateur n'étaient pas purgées** : lorsqu'une session avait disparu côté serveur (expiration, réinitialisation) ou qu'une tentative de connexion Google avait échoué en cours de route, les cookies laissés derrière bloquaient toute nouvelle connexion — et rien ne les supprimait. L'utilisateur devait vider les données du site dans son navigateur, opération hors de portée de la plupart. Ces cookies sont désormais nettoyés automatiquement au retour sur la page de connexion, et un lien « Problème de connexion ? » permet de forcer cette remise à zéro en un clic.
 - **Réservations de soirée affichées la veille dans le calendrier des salles** : le regroupement des réservations par jour se faisait sur la date universelle (UTC) et non la date locale ; une activité commençant tard le soir apparaissait le jour précédent.
 - **Version affichée en recette figée sur la dernière version publiée** : le pied de page de l'environnement de recette affichait la version de `package.json`, qui n'est incrémentée qu'à la publication — la version annoncée n'était donc pas celle de la branche en cours de validation. Elle indique désormais le code réellement déployé (`1.19.0-abc1234`). La production est inchangée.
 - **Tour guidé et guide utilisateur décalés par rapport à l'application** : le tour ne présentait ni la section « Ressources » (Salles, Comptabilité, Emploi) ni « Gestion pastorale », et son étape sur le discipolat ne s'affichait plus depuis que celui-ci a rejoint la section « Communauté ». Les intitulés « Membres (STAR) » et « Demandes » ont par ailleurs été réalignés sur les sections « Communauté » et « Opérations ». Le rôle Qualificateur d'agenda ne recevait aucune étape le concernant.
