@@ -13,11 +13,17 @@ function request(cookieHeader: string) {
 }
 
 describe("GET /api/auth/reset", () => {
-  it("renvoie sur la page de connexion", async () => {
+  /**
+   * Location relative et non absolue : derrière le reverse proxy, une URL
+   * construite depuis `request.url` porte l'adresse interne du service
+   * (`https://0.0.0.0:3001`), injoignable pour le navigateur. Constaté en
+   * recette après le premier déploiement de #505.
+   */
+  it("renvoie sur la page de connexion par une Location relative", async () => {
     const res = await GET(request(""));
 
     expect(res.status).toBe(307);
-    expect(new URL(res.headers.get("location")!).pathname).toBe("/");
+    expect(res.headers.get("location")).toBe("/");
   });
 
   it("expire les cookies de session et de contrôle OAuth", async () => {
