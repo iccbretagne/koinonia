@@ -95,8 +95,14 @@ export default async function LoginPage() {
         {/* Échappatoire manuelle (issue #505) : couvre les cas où des cookies
             Auth.js cassés subsistent malgré le nettoyage automatique. Un clic
             remplace la purge des données du site dans le navigateur. */}
-        <p className="mt-4 text-xs text-center text-gray-400">
-          <Link href="/api/auth/reset" prefetch={false} className="underline hover:text-icc-violet">
+        <p className="mt-2 text-center">
+          {/* px/py plutôt qu'un lien nu : la cible tactile doit rester
+              confortable au doigt (~44 px) malgré le texte discret. */}
+          <Link
+            href="/api/auth/reset"
+            prefetch={false}
+            className="inline-block px-4 py-3 text-xs text-gray-400 underline hover:text-icc-violet"
+          >
             Problème de connexion ?
           </Link>
         </p>
