@@ -44,6 +44,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - **Preuve d'humanité sur le formulaire public « Rejoindre une famille » (spec 030)** : chaque soumission déclenchait sans contrôle une géolocalisation externe, la création d'une demande d'intégration et d'un dossier de parcours, et surtout l'envoi d'un email de confirmation à une adresse choisie par celui qui remplit le formulaire — de quoi faire émettre des emails depuis le domaine de l'église et en abîmer la réputation d'expéditeur.
 - **Bornes de dépôt et statut publié réellement vérifiés côté serveur (spec 029)** : la limite de taille des fichiers média n'était appliquée qu'à la taille *annoncée* par le navigateur, et publier deux fois le même culte simultanément déclenchait deux fois le même travail de rendu.
 - Clé de limitation de débit, référence de déploiement et bornes d'upload audio corrigées ; graphe de dépendances de production ramené à zéro vulnérabilité, avec une porte dédiée en CI.
+- Montée de `mysql2` (tiré par `prisma`) en 3.24 via un override : l'avis GHSA-3f6p-5ww8-9rcr (déclassement du plugin d'authentification vers `mysql_clear_password`, fuite des identifiants en clair) touchait la version 3.15 embarquée.
 
 ### Technique
 
