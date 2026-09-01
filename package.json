@@ -71,6 +71,7 @@
     "@prisma/adapter-mariadb": {
       "mariadb": "^3.5.3"
     },
+    "mysql2": "^3.24.2",
     "nodemailer": "^9.0.6",
     "deepmerge-ts": "^8.0.0",
     "uuid": "^11.1.1"
