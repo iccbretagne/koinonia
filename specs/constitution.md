@@ -17,8 +17,12 @@ la constitution l'emporte.
 
 ## II. Sécurité par défaut
 
-- **Toute route API** est protégée par `requireAuth()` ou `requirePermission(...)`.
+- **Toute route API** est protégée par `requireAuth()`, `requireChurchPermission(perm, churchId)`
+  ou `requireCurrentChurchPermission(perm)`. Une permission ne s'évalue **jamais hors d'une
+  église** : le `churchId` n'est pas optionnel.
 - Multi-tenant strict : chaque donnée est rattachée à une église via `churchId` ; jamais de fuite cross-tenant.
+- Un accès transverse entre églises s'implémente par un **helper dédié au module** concerné,
+  jamais en élargissant `requireChurchPermission` (ADR-0010).
 - Les permissions viennent de `rolePermissions` (`@/lib/registry`) — **jamais** de `hasPermission` (déprécié).
 - Les mutations (POST/PUT/PATCH) valident leur body avec **Zod** avant tout accès BDD.
 

@@ -61,9 +61,25 @@ modifié en dernier). On peut cibler une feature précise en passant son numéro
 #   lance typecheck/lint/test, ouvre la PR
 ```
 
+## Spec, plan… ou ADR ?
+
+Les décisions techniques **propres à une feature** vivent dans son `plan.md`. Celles qui
+dépassent la feature — difficiles à défaire, transverses à plusieurs modules, ou engageant un
+choix de stack ou de pattern durable — sont consignées comme **ADR** dans
+[`docs/adr/`](../docs/adr/README.md).
+
+Règle pratique : *si la décision resterait vraie et pertinente même si la feature qui l'a
+motivée était totalement réécrite, c'est un ADR.* Un `plan.md` qui introduit une telle décision
+crée ou référence l'ADR correspondant.
+
+Pour la vue d'ensemble de l'architecture, voir le [DAT](../docs/dat.md).
+
 ## Règles
 
 - La **spec** ne contient aucune décision technique (pas de nom de table, de lib, d'endpoint).
-- Le **plan** respecte `constitution.md` (migrations Prisma, frontières modules, `requireAuth`, Zod…).
+- Le **plan** respecte `constitution.md` (migrations Prisma, frontières modules,
+  `requireAuth`/`requireChurchPermission`, Zod…).
 - Une feature triviale (fix d'une ligne, renommage) ne nécessite pas de spec.
 - Les specs sont versionnées avec le code : elles vivent dans le repo et évoluent en PR.
+- Une spec livrée passe en statut `Implémentée`, ses tâches en `Terminé` — le dossier reste
+  comme trace de l'intention, il n'est jamais supprimé.

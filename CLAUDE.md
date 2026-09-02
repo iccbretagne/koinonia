@@ -4,8 +4,12 @@ Contexte pour les agents IA travaillant sur ce projet.
 
 ## Projet
 
-**Koinonia** est une application web de gestion des plannings de service pour eglises.
-Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et departements.
+**Koinonia** est une application web de gestion opérationnelle pour églises : planning de
+service, événements et comptes rendus, discipolat, demandes internes et communication, audio des
+cultes, médias, salles, comptabilité et agenda pastoral.
+Elle remplace une organisation éclatée entre groupes WhatsApp et tableaux Excel par une source de
+vérité unique, avec un accès adapté à chaque rôle.
+Conçue pour ICC Bretagne, adaptable à toute église structurée en ministères et départements.
 
 - **Repository** : https://github.com/iccbretagne/koinonia
 - **Version** : voir `package.json`
@@ -13,14 +17,14 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 
 ## Terminologie
 
-- **STAR** (masculin) = **S**erviteur **T**ravaillant **A**ctivement pour le **R**oyaume — designe un membre d'un departement
-- **Ministere** : groupe organisationnel (Louange, Accueil, Communication...)
-- **Departement** : sous-division d'un ministere (Choristes, Musiciens, Son...)
+- **STAR** (masculin) = **S**erviteur **T**ravaillant **A**ctivement pour le **R**oyaume — désigne un membre d'un département
+- **Ministère** : groupe organisationnel (Louange, Accueil, Communication...)
+- **Département** : sous-division d'un ministère (Choristes, Musiciens, Son...)
 - **Statuts de service** : `EN_SERVICE`, `EN_SERVICE_DEBRIEF`, `INDISPONIBLE`, `REMPLACANT`
 
 ## Stack technique
 
-| Technologie | Version | Role |
+| Technologie | Version | Rôle |
 |---|---|---|
 | Node.js | 22 | Runtime serveur |
 | Next.js | 16 | Framework fullstack (App Router + Turbopack) |
@@ -28,14 +32,14 @@ Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et d
 | Tailwind CSS | 4 | Styles (PostCSS, `@theme` tokens) |
 | NextAuth (Auth.js) | 5 beta | Authentification Google OAuth |
 | Prisma | 7 | ORM (driver adapter MariaDB, ESM-only) |
-| MariaDB | 10.11 | Base de donnees (Docker) |
-| Zod | 3 | Validation des donnees cote API |
+| MariaDB | 10.11 | Base de données (Docker) |
+| Zod | 3 | Validation des données côté API |
 | TypeScript | 5 | Typage strict |
 
 **Points d'attention** :
 - Prisma 7 est ESM-only et requiert un driver adapter (`PrismaMariaDb` de `@prisma/adapter-mariadb`)
-- Le client Prisma genere est dans `src/generated/prisma/` (plus `@prisma/client`)
-- La datasource URL n'est plus dans `schema.prisma` mais dans `prisma.config.ts` (a la racine)
+- Le client Prisma généré est dans `src/generated/prisma/` (plus `@prisma/client`)
+- La datasource URL n'est plus dans `schema.prisma` mais dans `prisma.config.ts` (à la racine)
 - NextAuth v5 beta : utiliser `auth()` et non `getServerSession()`
 - Next.js 16 : `src/middleware.ts` renomme en `src/proxy.ts`, export `middleware` → `proxy`, runtime Node.js (pas Edge)
 
@@ -200,36 +204,36 @@ export async function GET(
 
 ### Helpers d'authentification (`src/lib/auth.ts`)
 
-- `requireAuth()` — verifie la session, throw `UNAUTHORIZED`
-- `requireChurchPermission(permission, churchId)` — verifie une permission **dans une eglise
-  precise**, `churchId` obligatoire (jamais optionnel — voir spec 024)
-- `requireCurrentChurchPermission(permission)` — resout l'eglise courante puis verifie la
-  permission dedans ; remplacant de choix pour une route qui n'agit pas sur un objet deja
-  identifie
-- `requireSuperAdmin()` — action reservee a l'administration de la plateforme, jamais evaluee
-  dans une eglise (Super Admin uniquement)
-- `requirePlatformPermission(permission)` — permissions volontairement transverses aux eglises
-  (module emploi), liste blanche testee dans `auth-global-scopes.test.ts`
+- `requireAuth()` — vérifie la session, throw `UNAUTHORIZED`
+- `requireChurchPermission(permission, churchId)` — vérifie une permission **dans une église
+  précise**, `churchId` obligatoire (jamais optionnel — voir spec 024)
+- `requireCurrentChurchPermission(permission)` — résout l'église courante puis vérifie la
+  permission dedans ; remplaçant de choix pour une route qui n'agit pas sur un objet déjà
+  identifié
+- `requireSuperAdmin()` — action réservée à l'administration de la plateforme, jamais évaluée
+  dans une église (Super Admin uniquement)
+- `requirePlatformPermission(permission)` — permissions volontairement transverses aux églises
+  (module emploi), liste blanche testée dans `auth-global-scopes.test.ts`
 - `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
 - `requireDepartmentAccess(session, churchId, departmentId)` — jette `FORBIDDEN` si le
-  departement vise n'est pas dans le perimetre de l'appelant (`getUserDepartmentScope`). Un
-  perimetre restreint **vide** (STAR) refuse tout, sans code specifique a ce role — voir
-  ADR-0009. A appeler juste apres `requireChurchPermission`/`resolveChurchId` sur toute route
+  département visé n'est pas dans le périmètre de l'appelant (`getUserDepartmentScope`). Un
+  périmètre restreint **vide** (STAR) refuse tout, sans code spécifique à ce rôle — voir
+  ADR-0009. À appeler juste après `requireChurchPermission`/`resolveChurchId` sur toute route
   qui adresse nominativement un `departmentId`/`deptId`
-- `getUserMinistryScope(session, churchId)` — symetrique de `getUserDepartmentScope` pour le
-  ministere : `{ scoped: false }` (Super Admin/Admin/Secretaire) ou `{ scoped: true, ministryIds }`
-  (Ministre, borne a `UserChurchRole.ministryId` de l'eglise courante)
+- `getUserMinistryScope(session, churchId)` — symétrique de `getUserDepartmentScope` pour le
+  ministère : `{ scoped: false }` (Super Admin/Admin/Secrétaire) ou `{ scoped: true, ministryIds }`
+  (Ministre, borné à `UserChurchRole.ministryId` de l'église courante)
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID.
-  Pour toute action portant sur un objet identifie, cette eglise fait autorite — jamais le
-  contexte d'eglise affiche, qui peut etre manipule cote client
-- `requireAudioAccess(permission, churchId)` — permission de role **ou** membre du departement de captation
-- `requireAudioUnpublishAccess(churchId)` — `audio:manage` ou responsable du departement de captation
+  Pour toute action portant sur un objet identifié, cette église fait autorité — jamais le
+  contexte d'église affiché, qui peut être manipulé côté client
+- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** membre du département de captation
+- `requireAudioUnpublishAccess(churchId)` — `audio:manage` ou responsable du département de captation
 
-### Reponses API (`src/lib/api-utils.ts`)
+### Réponses API (`src/lib/api-utils.ts`)
 
-- `successResponse(data, status?)` — JSON avec status 200 par defaut
-- `errorResponse(error)` — gestion centralisee (ApiError, ZodError, Error generique)
-- `throw new ApiError(statusCode, message)` — erreur metier
+- `successResponse(data, status?)` — JSON avec status 200 par défaut
+- `errorResponse(error)` — gestion centralisée (ApiError, ZodError, Error generique)
+- `throw new ApiError(statusCode, message)` — erreur métier
 
 ### Validation Zod
 
@@ -242,13 +246,13 @@ const data = schema.parse(await request.json());
 
 ### Server vs Client components
 
-- **Server Components** (par defaut) : pages, layouts, chargement de donnees
+- **Server Components** (par défaut) : pages, layouts, chargement de données
 - **Client Components** (`"use client"`) : interactions utilisateur, formulaires
-- Les pages chargent les donnees cote serveur et les passent en props aux composants client
+- Les pages chargent les données côté serveur et les passent en props aux composants client
 
 ### Composants UI
 
-Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composants existants dans `src/components/ui/` avant d'en creer de nouveaux.
+Style cohérent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composants existants dans `src/components/ui/` avant d'en créer de nouveaux.
 
 ## Design tokens
 
@@ -260,34 +264,63 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 | `icc-bleu` | `#38B6FF` | Information |
 | Font | Montserrat | Police principale |
 
-## Roles et permissions
+## Rôles et permissions
 
-| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Faiseur de Disciples | Reporter |
-|---|---|---|---|---|---|---|---|
-| `planning:view` | x | x | x | x | x | | |
-| `planning:edit` | x | x | | x | x | | |
-| `planning:department` | x | x | x | x | x | | |
-| `access:manage` | x | x | x | x | | | |
-| `members:view` | x | x | x | x | x | | |
-| `members:manage` | x | x | | x | x | | |
-| `events:view` | x | x | x | x | x | | x |
-| `events:manage` | x | x | x | | | | |
-| `departments:view` | x | x | x | x | x | | |
-| `departments:manage` | x | x | | | | | |
-| `church:manage` | x | | | | | | |
-| `users:manage` | x | | | | | | |
-| `discipleship:view` | x | x | x | | x | x | |
-| `discipleship:manage` | x | x | x | | | x | |
-| `discipleship:export` | x | | x | | | | |
-| `reports:view` | x | x | x | | | | x |
-| `reports:edit` | x | x | x | | | | x |
-| `audio:listen` | x | x | x | x | x | x | x |
-| `audio:view` | x | x | x | | | | |
-| `audio:upload` | x | x | x | | | | |
-| `audio:review` | x | x | | | | | |
-| `audio:manage` | x | x | | | | | |
+Matrice complète (source : `buildRolePermissions` sur les manifestes `src/modules/*/index.ts`)
+— voir [docs/auth.md](docs/auth.md#permissions) pour le détail intégral par module. Légende :
+SA = Super Admin, Ad = Admin, Sec = Secrétaire, Min = Ministre, RD = Resp. département,
+FD = Faiseur de Disciples, Rep = Reporter, STAR = STAR, QA = Qualificateur agenda,
+Compt = Comptable.
 
-**Visibilite des departements** :
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `planning:view` | x | x | x | x | x | | | x | | |
+| `planning:edit` | x | x | | x | x | | | | | |
+| `planning:department` | x | x | x | x | x | | | | | |
+| `access:manage` | x | x | x | x | | | | | | |
+| `members:view` | x | x | x | x | x | | | | | |
+| `members:manage` | x | x | | x | x | | | | | |
+| `events:view` | x | x | x | x | x | | x | | | |
+| `events:manage` | x | x | x | | | | | | | |
+| `departments:view` | x | x | x | x | x | | | | | |
+| `departments:manage` | x | x | | x | | | | | | |
+| `absences:view` | x | x | x | x | x | | | | | |
+| `absences:manage` | x | x | x | x | x | | | | | |
+| `church:manage` | x | | | | | | | | | |
+| `users:manage` | x | | | | | | | | | |
+| `discipleship:view` | x | x | x | | x | x | | | | |
+| `discipleship:manage` | x | x | x | | | x | | | | |
+| `discipleship:export` | x | | x | | | | | | | |
+| `reports:view` | x | x | x | | | | x | | | |
+| `reports:edit` | x | x | x | | | | x | | | |
+| `audio:listen` | x | x | x | x | x | x | x | x | x | x |
+| `audio:view` | x | x | x | | | | | | | |
+| `audio:upload` | x | x | x | | | | | | | |
+| `audio:review` | x | x | | | | | | | | |
+| `audio:manage` | x | x | | | | | | | | |
+| `media:view` | x | x | x | | | | | | | |
+| `media:upload` | x | x | x | | | | | | | |
+| `media:review` | x | x | | | | | | | | |
+| `media:manage` | x | x | | | | | | | | |
+| `accounting:submit` | x | x | | x | x | | | | | |
+| `accounting:view` | x | x | | x | x | | | | | x |
+| `accounting:manage` | x | x | | | | | | | | x |
+| `accounting:stats` | x | x | x | | | | | | | x |
+| `agenda:view` | x | x | x | | | | | | | |
+| `agenda:manage` | x | x | x | | | | | | | |
+| `agenda:qualify` | x | x | | | | | | | x | |
+| `rooms:view` | x | x | x | x | x | | | | | |
+| `rooms:reserve` | x | x | | x | x | | | | | |
+| `rooms:manage` | x | x | | | | | | | | |
+| `jobs:view`/`post`/`seek`/`freelance` | x | x | x | x | x | x | x | x | x | x |
+| `jobs:manage` | x | x | x | | | | | | | |
+
+Le module `integration` ne déclare aucune permission (accès géré par
+`requireIntegrationAccess()` — Super Admin, `members:manage`/`events:manage`, appartenance au
+département fonction `INTEGRATION`/`MSDP`, ou berger/conseiller assigné). Le module `storage`
+est une infrastructure pure sans permission propre.
+
+**Visibilité des départements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
 - Ministre : départements du ministère assigné
 - Responsable de département : départements assignés via `user_departments` (principal ou adjoint via `isDeputy`)
@@ -299,6 +332,10 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Peut gérer les événements (`events:manage`)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
 - Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
+- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`), mais pas à la
+  qualification des demandes brutes (`agenda:qualify`, réservée au Qualificateur agenda)
+- Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes de
+  compta (`accounting:manage`, réservé au Comptable)
 
 **Spécificités du STAR** (spec 031, issues #462/#463) :
 - N'a pas `planning:department` : pas d'accès à `/dashboard` (grille par département), ni aux
@@ -306,10 +343,27 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Conserve `planning:view` : « Mon planning » (vue macro personnelle), ses événements
   (`/planning/events`) et l'auto-déclaration d'absences restent accessibles
 - Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve` — retirés totalement
+- Conserve `audio:listen` (bibliothèque d'écoute, comme tous les rôles) et les permissions
+  transverses du module emploi (`jobs:view`/`post`/`seek`/`freelance`, hors `jobs:manage`)
 - `getUserDepartmentScope` renvoie systématiquement `{ scoped: true, departmentIds: [] }` pour
   ce rôle (aucun `user_departments`), ce qui produit la restriction totale de `requireDepartmentAccess`
   sans code spécifique — voir ADR-0009. Décision actée : la chaîne d'appartenance (`Member` →
   `member_departments`) n'est pas fusionnée avec le périmètre de responsabilité
+
+**Spécificités du Qualificateur agenda** (`AGENDA_QUALIFIER`) :
+- Seule permission propre : `agenda:qualify` — qualifie les demandes de RDV pastoral à l'état
+  `PENDING`, sans accès à `agenda:view`/`agenda:manage` (vue hebdomadaire et planification)
+- Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
+  `jobs:manage`)
+
+**Spécificités du Comptable** (`ACCOUNTANT`) :
+- Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières
+  (validation, rejet, saisie des paiements)
+- A aussi `accounting:view` (consultation globale, comme Ministre/Resp. département sur leur
+  périmètre) et `accounting:stats`
+- Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
+- Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
+  `jobs:manage`)
 
 **Spécificités du Ministre dans la gestion des accès** (spec 031, issue #467) :
 - `access:manage` remplace l'ancien emprunt de `events:manage` sur
@@ -327,58 +381,59 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Pas d'accès au planning, membres, ou administration
 
 **Spécificités du module audio** — le tableau ci-dessus ne suffit pas :
-- `/audio` est un espace a onglets a droits distincts (spec 021), un seul lien de navigation
-  **« Audio »** conditionne par `audio:listen` — chaque onglet verifie en plus son propre droit
-  server-side (l'onglet masque ne dispense jamais du controle) :
-  - `/audio/ecouter` (+ `/audio/ecouter/[id]`) — **(re)Écouter**, bibliotheque des cultes publies,
-    `audio:listen` — accordee a **tous les roles**, y compris STAR
+- `/audio` est un espace à onglets à droits distincts (spec 021), un seul lien de navigation
+  **« Audio »** conditionné par `audio:listen` — chaque onglet vérifie en plus son propre droit
+  server-side (l'onglet masqué ne dispense jamais du contrôle) :
+  - `/audio/ecouter` (+ `/audio/ecouter/[id]`) — **(re)Écouter**, bibliothèque des cultes publiés,
+    `audio:listen` — accordée à **tous les rôles**, y compris STAR
   - `/audio/production` (+ `/audio/production/[id]`) — **Production**, file d'attente et
-    depot/nommage, `requireAudioAccess("audio:view", …)`
-  - `/audio/parametres` — **Paramètres**, couverture par defaut et modele de sequences,
+    dépot/nommage, `requireAudioAccess("audio:view", …)`
+  - `/audio/parametres` — **Paramètres**, couverture par défaut et modèle de séquences,
     `requireAudioAccess("audio:manage", …)`
-- `requireAudioAccess(permission, churchId)` verifie d'abord les permissions de role, puis
-  retombe sur `isCaptureTeamMember()` — un STAR du departement de captation audio passe
-  donc le controle **quelle que soit la permission demandee**, sans role dedie
+- `requireAudioAccess(permission, churchId)` vérifie d'abord les permissions de rôle, puis
+  retombe sur `isCaptureTeamMember()` — un STAR du département de captation audio passe
+  donc le contrôle **quelle que soit la permission demandée**, sans rôle dédié
 - `requireAudioUnpublishAccess(churchId)` est volontairement plus strict : `audio:manage` ou
-  `isCaptureTeamLead` (responsable/ministre du departement de captation audio) uniquement — pas
-  de passe-droit pour un simple STAR, depublier engageant plus que publier
-- Le departement de captation se configure comme une **fonction de departement**
+  `isCaptureTeamLead` (responsable/ministre du département de captation audio) uniquement — pas
+  de passe-droit pour un simple STAR, dépublier engageant plus que publier
+- Le département de captation se configure comme une **fonction de département**
   (`Department.function = "CAPTATION_AUDIO"`) dans `/admin/departments/functions`
-  (`events:manage`) — plus de colonne dediee sur `AudioSettings`, et plus de page
-  `/admin/audio/settings` (jamais mise en production, supprimee sans redirection)
+  (`events:manage`) — plus de colonne dédiée sur `AudioSettings`, et plus de page
+  `/admin/audio/settings` (jamais mise en production, supprimée sans redirection)
 
 ## Multi-tenant
 
-Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une eglise via `churchId`. Un utilisateur peut avoir des roles differents dans plusieurs eglises via `UserChurchRole`.
+Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à une église via `churchId`. Un utilisateur peut avoir des rôles différents dans plusieurs églises via `UserChurchRole`.
 
 ## Gestion des versions
 
-- Version source de verite : `package.json` > `version`
-- Releases via tags git `v*` (le CI verifie la correspondance tag/version)
-- La version s'affiche dans le footer du layout authentifie
+- Version source de vérité : `package.json` > `version`
+- Releases via tags git `v*` (le CI vérifie la correspondance tag/version)
+- La version s'affiche dans le footer du layout authentifié
 - Changelog dans `CHANGELOG.md`
 
 ## CI/CD
 
 - **GitHub Actions** (`.github/workflows/ci.yml`) : typecheck + lint + lint:boundaries + tests sur chaque PR, validation version sur tags
-- **Dependabot** (`.github/dependabot.yml`) : mises a jour hebdomadaires npm + GitHub Actions (minor/patch uniquement, majeures ignorées)
+- **Dependabot** (`.github/dependabot.yml`) : mises à jour hebdomadaires npm + GitHub Actions (minor/patch uniquement, majeures ignorées)
 
 ## Documentation
 
 | Document | Contenu |
 |---|---|
+| [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, synthèse des autres documents |
 | [Architecture](docs/architecture.md) | Structure, patterns, conventions |
-| [Base de donnees](docs/database.md) | Schema Prisma, modeles, relations |
-| [API](docs/api.md) | Endpoints, requetes, reponses |
+| [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
+| [API](docs/api.md) | Endpoints, requêtes, réponses |
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
-| [Production](docs/production.md) | Deploiement Debian, Traefik, systemd |
-| [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurise, jeu de donnees fictif, connexion sans Google OAuth |
-| [Roadmap](docs/roadmap.md) | Evolutions prevues |
-| [ADR](docs/adr/README.md) | Decisions architecturales structurantes (Architecture Decision Records) |
+| [Production](docs/production.md) | Déploiement Debian, Traefik, systemd |
+| [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
+| [Roadmap](docs/roadmap.md) | Évolutions prévues |
+| [ADR](docs/adr/README.md) | Décisions architecturales structurantes (Architecture Decision Records) |
 
 ## Setup local
 
-Prerequis : Node.js 22, Docker.
+Prérequis : Node.js 22, Docker.
 
 ```bash
 # 1. Installer les dependances
@@ -403,7 +458,7 @@ npm run dev
 
 ### Spec-Driven Development
 
-Les fonctionnalites non triviales sont specifiees avant d'etre codees. Le flux :
+Les fonctionnalités non triviales sont spécifiées avant d'être codées. Le flux :
 
 ```
 /specify <description>  →  /plan  →  /tasks  →  /implement
@@ -411,21 +466,21 @@ Les fonctionnalites non triviales sont specifiees avant d'etre codees. Le flux :
 ```
 
 - Les specs vivent dans `specs/NNN-nom-feature/` (voir `specs/README.md`).
-- `specs/constitution.md` = principes non-negociables que toute spec/plan/implementation respecte.
-- La `spec.md` decrit QUOI/POURQUOI (aucune technique) ; le `plan.md` decrit COMMENT ; le `tasks.md` decoupe.
-- Un fix trivial ne necessite pas de spec.
+- `specs/constitution.md` = principes non-négociables que toute spec/plan/implementation respecte.
+- La `spec.md` décrit QUOI/POURQUOI (aucune technique) ; le `plan.md` décrit COMMENT ; le `tasks.md` découpe.
+- Un fix trivial ne nécessite pas de spec.
 
 ### Conventions de branches
 
-| Prefixe | Usage |
+| Préfixe | Usage |
 |---|---|
-| `feat/<nom>` | Nouvelle fonctionnalite |
+| `feat/<nom>` | Nouvelle fonctionnalité |
 | `fix/<nom>` | Correction de bug |
 | `chore/<nom>` | Maintenance (release, deps, config) |
 
 Ne jamais pusher directement sur `main`.
 
-### Sequence pour une feature
+### Séquence pour une feature
 
 ```bash
 git checkout -b feat/ma-feature
@@ -434,7 +489,7 @@ npm run typecheck && npm run lint && npm run test
 # Ouvrir une PR vers main — CI doit passer avant de merger
 ```
 
-### Sequence de release
+### Séquence de release
 
 ```bash
 # 1. Bumper la version dans package.json + CHANGELOG.md
@@ -452,11 +507,11 @@ gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
 
 ### Features longues (multi-PR)
 
-Creer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `feat/X`. Une seule PR finale `feat/X` → `main`.
+Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `feat/X`. Une seule PR finale `feat/X` → `main`.
 
-## Pieges connus
+## Pièges connus
 
-1. **`next-env.d.ts` regenere automatiquement** — ce fichier change a chaque `npm run dev`. Si `git pull` bloque a cause de lui :
+1. **`next-env.d.ts` regenere automatiquement** — ce fichier change à chaque `npm run dev`. Si `git pull` bloque à cause de lui :
    ```bash
    git stash && git pull && git stash drop
    ```
@@ -471,21 +526,21 @@ Creer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `f
 
 6. **`rolePermissions` pas `hasPermission`** — `src/lib/permissions.ts` est deprecated. Utiliser `rolePermissions` de `@/lib/registry`.
 
-7. **Conflits de migration** — si deux branches modifient `schema.prisma`, rebaser sur `main` avant `npm run db:migrate` pour eviter des conflits de fichiers de migration.
+7. **Conflits de migration** — si deux branches modifient `schema.prisma`, rebaser sur `main` avant `npm run db:migrate` pour éviter des conflits de fichiers de migration.
 
-## Regles pour les agents IA
+## Règles pour les agents IA
 
-1. **Lire avant d'ecrire** : toujours lire un fichier existant avant de le modifier
+1. **Lire avant d'écrire** : toujours lire un fichier existant avant de le modifier
 2. **Suivre les patterns existants** : utiliser les helpers (`requireAuth`, `successResponse`, etc.)
-3. **Valider avec TypeScript** : executer `npm run typecheck` apres les modifications
+3. **Valider avec TypeScript** : exécuter `npm run typecheck` après les modifications
 4. **await params** : dans les route handlers Next.js 15, les params sont des Promise
-5. **Composants UI** : verifier `src/components/ui/` avant de creer un nouveau composant
-6. **Pas de sur-ingenierie** : faire le minimum necessaire pour la fonctionnalite demandee
-7. **Erreurs** : utiliser `ApiError` pour les erreurs metier, Zod pour la validation
-8. **Permissions** : toujours proteger les routes API avec `requireAuth()`, `requireChurchPermission()`
-   ou `requireCurrentChurchPermission()` — jamais de controle de permission sans eglise cible
-9. **Migrations** : toujours creer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schema
+5. **Composants UI** : vérifier `src/components/ui/` avant de créer un nouveau composant
+6. **Pas de sur-ingénierie** : faire le minimum nécessaire pour la fonctionnalité demandée
+7. **Erreurs** : utiliser `ApiError` pour les erreurs métier, Zod pour la validation
+8. **Permissions** : toujours protéger les routes API avec `requireAuth()`, `requireChurchPermission()`
+   ou `requireCurrentChurchPermission()` — jamais de contrôle de permission sans église cible
+9. **Migrations** : toujours créer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schéma
 10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry` (PAS `hasPermission` de `@/lib/permissions` qui est deprecated)
 11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
-12. **Frontieres modules** : verifier `npm run lint:boundaries` apres tout ajout de dependance entre modules
-13. **ADR** : toute decision architecturale/structurante (cross-module, difficile a revenir en arriere, choix de stack ou de pattern durable) est documentee dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une decision de `plan.md` (portee a une seule feature)
+12. **Frontières modules** : vérifier `npm run lint:boundaries` après tout ajout de dépendance entre modules
+13. **ADR** : toute décision architecturale/structurante (cross-module, difficile à revenir en arrière, choix de stack ou de pattern durable) est documentée dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une décision de `plan.md` (portée à une seule feature)

@@ -1,17 +1,17 @@
-# Deploiement en production
+# Déploiement en production
 
-Guide de deploiement de Koinonia sur un serveur Debian avec Traefik, MariaDB et systemd.
+Guide de déploiement de Koinonia sur un serveur Debian avec Traefik, MariaDB et systemd.
 
-## Prerequis
+## Prérequis
 
 - Debian 11+ (ou Ubuntu 22.04+)
 - Node.js 22+ (via [NodeSource](https://github.com/nodesource/distributions))
 - MariaDB 10.11+
-- Traefik configure avec terminaison TLS (Let's Encrypt)
+- Traefik configuré avec terminaison TLS (Let's Encrypt)
 
-## Utilisateur systeme
+## Utilisateur système
 
-Creer un utilisateur dedie :
+Créer un utilisateur dédié :
 
 ```bash
 sudo useradd -r -m -d /opt/koinonia -s /bin/bash koinonia
@@ -32,7 +32,7 @@ L'application utilise une structure Capistrano-like :
     └── .env               # variables d'environnement (persistant)
 ```
 
-Creer la structure :
+Créer la structure :
 
 ```bash
 sudo -u koinonia mkdir -p /opt/koinonia/{releases,shared}
@@ -40,7 +40,7 @@ sudo -u koinonia mkdir -p /opt/koinonia/{releases,shared}
 
 ## Variables d'environnement
 
-Creer le fichier `/opt/koinonia/shared/.env` :
+Créer le fichier `/opt/koinonia/shared/.env` :
 
 ```bash
 DATABASE_URL=mysql://koinonia:MOT_DE_PASSE@localhost:3306/koinonia
@@ -53,17 +53,17 @@ GOOGLE_CLIENT_SECRET=votre-google-client-secret
 SUPER_ADMIN_EMAILS=admin@votre-eglise.com
 ```
 
-Generer le secret NextAuth :
+Générer le secret NextAuth :
 
 ```bash
 openssl rand -base64 32
 ```
 
-`AUTH_TRUST_HOST=true` est obligatoire derriere un reverse proxy (Traefik).
+`AUTH_TRUST_HOST=true` est obligatoire derrière un reverse proxy (Traefik).
 
-## Base de donnees
+## Base de données
 
-Creer la base et l'utilisateur MariaDB :
+Créer la base et l'utilisateur MariaDB :
 
 ```sql
 CREATE DATABASE koinonia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -72,17 +72,17 @@ GRANT ALL PRIVILEGES ON koinonia.* TO 'koinonia'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-## Deploiement
+## Déploiement
 
-> **Important** : le deploiement se fait exclusivement via GitHub Actions (artefact pre-compile en CI).
+> **Important** : le déploiement se fait exclusivement via GitHub Actions (artefact pré-compilé en CI).
 > Aucune compilation ne doit avoir lieu sur le serveur de production.
-> Le `workflow_dispatch` permet de re-deployer une version existante en cas d'urgence. Il ne recompile pas : il exige un run CI **reussi** pour le tag `v<version>` demande et promeut l'artefact de ce run. Un tag sans CI verte, ou dont le commit ne correspond pas a celui valide par la CI, est refuse — il n'existe donc aucun chemin de deploiement qui contourne la CI.
+> Le `workflow_dispatch` permet de re-déployer une version existante en cas d'urgence. Il ne recompile pas : il exige un run CI **réussi** pour le tag `v<version>` demandé et promeut l'artefact de ce run. Un tag sans CI verte, ou dont le commit ne correspond pas à celui validé par la CI, est refusé — il n'existe donc aucun chemin de déploiement qui contourne la CI.
 
-### Premiere installation
+### Première installation
 
-La premiere release est deployee automatiquement apres le premier push de tag `v*` une fois les secrets GitHub configures (voir section "Deploiement automatise").
+La première release est déployée automatiquement après le premier push de tag `v*` une fois les secrets GitHub configurés (voir section "Déploiement automatisé").
 
-Pour initialiser uniquement la base de donnees avant la premiere release :
+Pour initialiser uniquement la base de données avant la première release :
 
 ```bash
 # Appliquer les migrations (depuis le repertoire de la release deployee)
@@ -95,7 +95,7 @@ cd /opt/koinonia/current
 
 ## Service systemd
 
-Creer `/etc/systemd/system/koinonia.service` :
+Créer `/etc/systemd/system/koinonia.service` :
 
 ```ini
 [Unit]
@@ -118,9 +118,9 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-> Le build utilise `output: "standalone"`. Le point d'entree est `server.js` dans le repertoire standalone — ne pas utiliser `next start` ni `npm start`.
+> Le build utilise `output: "standalone"`. Le point d'entrée est `server.js` dans le répertoire standalone — ne pas utiliser `next start` ni `npm start`.
 
-Activer et demarrer :
+Activer et démarrer :
 
 ```bash
 sudo systemctl daemon-reload
@@ -128,7 +128,7 @@ sudo systemctl enable koinonia
 sudo systemctl start koinonia
 ```
 
-### Durcissement systemd (recommande)
+### Durcissement systemd (recommandé)
 
 Ajouter ces directives dans la section `[Service]` pour limiter la surface d'attaque :
 
@@ -179,14 +179,14 @@ http:
           - url: "http://127.0.0.1:3001"   # adapter selon PORT dans shared/.env
 ```
 
-Traefik gere automatiquement le certificat TLS via Let's Encrypt.
+Traefik gère automatiquement le certificat TLS via Let's Encrypt.
 
 ## Cache disque des renditions audio (ADR-0008)
 
-Le module audio (spec 021 — bibliotheque d'ecoute) sert les renditions MP3 depuis un cache
-disque local, alimente au premier acces depuis le stockage S3 media. Sur l'infra actuelle
-(Traefik attaque directement le process Node, port 3001), le process Node sert lui-meme ces
-fichiers en `Range` HTTP natif — aucune configuration supplementaire n'est necessaire.
+Le module audio (spec 021 — bibliothèque d'écoute) sert les renditions MP3 depuis un cache
+disque local, alimenté au premier accès depuis le stockage S3 media. Sur l'infra actuelle
+(Traefik attaque directement le process Node, port 3001), le process Node sert lui-même ces
+fichiers en `Range` HTTP natif — aucune configuration supplémentaire n'est nécessaire.
 
 ```bash
 AUDIO_CACHE_DIR=/opt/koinonia/shared/audio-cache   # defaut : <tmpdir>/koinonia-audio-cache
@@ -194,15 +194,15 @@ AUDIO_CACHE_MAX_BYTES=5368709120                   # defaut : 5 Go, eviction LRU
 ```
 
 Dimensionner `AUDIO_CACHE_MAX_BYTES` selon l'espace disque disponible et le volume de cultes
-publies conserves activement — une rendition non consultee depuis longtemps est evincee
-automatiquement (LRU), le culte reste disponible, seul le prochain acces redeclenche un
-telechargement S3.
+publiés conservés activement — une rendition non consultée depuis longtemps est évincée
+automatiquement (LRU), le culte reste disponible, seul le prochain accès redéclenche un
+téléchargement S3.
 
-### Delegation nginx (X-Accel-Redirect) — annexe optionnelle, non activee
+### Délégation nginx (X-Accel-Redirect) — annexe optionnelle, non activée
 
-Si un nginx est un jour insere devant Koinonia (aujourd'hui Traefik sert Node directement, voir
-ADR-0008), le service peut deleguer la livraison du fichier a nginx via `X-Accel-Redirect`
-plutot que de le streamer lui-meme (`sendfile`, moins de charge sur le process Node) :
+Si un nginx est un jour inséré devant Koinonia (aujourd'hui Traefik sert Node directement, voir
+ADR-0008), le service peut déléguer la livraison du fichier à nginx via `X-Accel-Redirect`
+plutôt que de le streamer lui-même (`sendfile`, moins de charge sur le process Node) :
 
 ```bash
 AUDIO_XACCEL_LOCATION=/protected/audio
@@ -217,17 +217,17 @@ location /protected/audio/ {
 }
 ```
 
-Ne definir `AUDIO_XACCEL_LOCATION` que si ce nginx existe reellement devant Koinonia — sinon les
-requetes audio echoueront (le fichier ne sera jamais servi par personne).
+Ne définir `AUDIO_XACCEL_LOCATION` que si ce nginx existe réellement devant Koinonia — sinon les
+requêtes audio échoueront (le fichier ne sera jamais servi par personne).
 
-Le service ne delegue a nginx qu'apres s'etre assure que la rendition est presente dans
-`AUDIO_CACHE_DIR` (telechargement depuis S3 au besoin) : nginx sert le fichier tel quel et ne
-sait pas le recuperer. Si le cache est indisponible, la delegation est ignoree et le flux est
-servi directement par Node — l'ecoute reste possible.
+Le service ne délègue à nginx qu'après s'être assuré que la rendition est présente dans
+`AUDIO_CACHE_DIR` (téléchargement depuis S3 au besoin) : nginx sert le fichier tel quel et ne
+sait pas le récupérer. Si le cache est indisponible, la délégation est ignorée et le flux est
+servi directement par Node — l'écoute reste possible.
 
 ## Rollback
 
-Pour revenir a une release precedente :
+Pour revenir à une release précédente :
 
 ```bash
 # Lister les releases disponibles
@@ -248,94 +248,94 @@ Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials
 https://votre-domaine.com/api/auth/callback/google
 ```
 
-## Deploiement automatise (CD)
+## Déploiement automatisé (CD)
 
-Le deploiement est automatise via GitHub Actions. Un push de tag `v*` declenche le CI, et le workflow de deploiement ne s'execute que si le CI passe integralement (typecheck, lint, tests). L'application est construite **une seule fois** par le CI (artefact immutable, attache au run CI du tag) puis promue telle quelle par le workflow de deploiement, qui se contente de la transferer sur le serveur : aucune compilation n'a lieu ni au deploiement ni en production.
+Le déploiement est automatisé via GitHub Actions. Un push de tag `v*` déclenche le CI, et le workflow de déploiement ne s'exécute que si le CI passe intégralement (typecheck, lint, tests). L'application est construite **une seule fois** par le CI (artefact immutable, attaché au run CI du tag) puis promue telle quelle par le workflow de déploiement, qui se contente de la transférer sur le serveur : aucune compilation n'a lieu ni au déploiement ni en production.
 
-### Prerequis serveur
+### Prérequis serveur
 
-1. **Cle SSH dediee** : generer une paire Ed25519 pour l'utilisateur `koinonia` :
+1. **Clé SSH dédiée** : générer une paire Ed25519 pour l'utilisateur `koinonia` :
 
 ```bash
 sudo -u koinonia ssh-keygen -t ed25519 -C "deploy@koinonia" -f /home/koinonia/.ssh/id_deploy
 ```
 
-2. **Autoriser la cle** : ajouter la cle publique dans `/home/koinonia/.ssh/authorized_keys` :
+2. **Autoriser la clé** : ajouter la clé publique dans `/home/koinonia/.ssh/authorized_keys` :
 
 ```bash
 sudo -u koinonia bash -c 'cat /home/koinonia/.ssh/id_deploy.pub >> /home/koinonia/.ssh/authorized_keys'
 ```
 
-3. **Sudo restreint** : creer `/etc/sudoers.d/koinonia` :
+3. **Sudo restreint** : créer `/etc/sudoers.d/koinonia` :
 
 ```
 koinonia ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart koinonia
 ```
 
-### GitHub Secrets a configurer
+### GitHub Secrets à configurer
 
 | Secret | Description |
 |--------|-------------|
-| `DEPLOY_SSH_KEY` | Cle privee Ed25519 (`/home/koinonia/.ssh/id_deploy`) |
+| `DEPLOY_SSH_KEY` | Clé privée Ed25519 (`/home/koinonia/.ssh/id_deploy`) |
 | `DEPLOY_HOST` | Adresse IP ou domaine du serveur |
-| `DEPLOY_PORT` | Port SSH personnalise |
+| `DEPLOY_PORT` | Port SSH personnalisé |
 | `DEPLOY_USER` | `koinonia` |
 | `DEPLOY_PATH` | `/opt/koinonia` |
 
-Ces secrets sont a definir **par environnement** (`Settings > Environments`), la recette et la
-production etant deux machines distinctes.
+Ces secrets sont à définir **par environnement** (`Settings > Environments`), la recette et la
+production étant deux machines distinctes.
 
-### Identite SSH de l'hote — risque accepte (audit M-08)
+### Identité SSH de l'hôte — risque accepté (audit M-08)
 
-> **Etat** : non corrige, **risque formellement accepte** le 2026-08-29.
-> **Proprietaire** : responsable technique du projet.
-> **Reexamen** : a la prochaine montee de version des actions de deploiement, et au plus tard
+> **État** : non corrigé, **risque formellement accepté** le 2026-08-29.
+> **Propriétaire** : responsable technique du projet.
+> **Réexamen** : à la prochaine montée de version des actions de déploiement, et au plus tard
 > le 2027-02-28.
 
-Les actions de deploiement n'epinglent pas l'empreinte de la cle d'hote SSH : elles acceptent
-donc la cle presentee, quelle qu'elle soit. Un detournement DNS ou reseau sur le trajet
-GitHub → serveur permettrait a une machine tierce de recevoir l'artefact **et la cle privee de
-deploiement**.
+Les actions de déploiement n'épinglent pas l'empreinte de la clé d'hôte SSH : elles acceptent
+donc la clé présentée, quelle qu'elle soit. Un détournement DNS ou réseau sur le trajet
+GitHub → serveur permettrait à une machine tierce de recevoir l'artefact **et la clé privée de
+déploiement**.
 
-#### Pourquoi ce n'est pas corrige
+#### Pourquoi ce n'est pas corrigé
 
-L'epinglage a ete implemente puis **retire** : il ne peut pas fonctionner en l'etat. Les deux
-etapes du deploiement embarquent des versions differentes de `golang.org/x/crypto`, qui ne
-classent pas les algorithmes de cle d'hote dans le meme ordre :
+L'épinglage a été implémenté puis **retiré** : il ne peut pas fonctionner en l'état. Les deux
+étapes du déploiement embarquent des versions différentes de `golang.org/x/crypto`, qui ne
+classent pas les algorithmes de clé d'hôte dans le même ordre :
 
-| Etape | Binaire | `x/crypto` | Cle negociee |
+| Étape | Binaire | `x/crypto` | Clé négociée |
 |---|---|---|---|
 | `appleboy/scp-action@v0.1.7` | drone-scp 1.6.14 | v0.17.0 | **ECDSA** |
 | `appleboy/ssh-action@v1.2.5` | drone-ssh 1.8.2 | v0.45.0 | **RSA** |
 
-Jusqu'a `x/crypto` v0.37 l'ordre est `ECDSA…, RSA…, ED25519` ; a partir de v0.45 il devient
-`RSA…, ECDSA…, ED25519`. Les deux etapes negocient donc **deux cles d'hote differentes**, et
+Jusqu'à `x/crypto` v0.37 l'ordre est `ECDSA…, RSA…, ED25519` ; à partir de v0.45 il devient
+`RSA…, ECDSA…, ED25519`. Les deux étapes négocient donc **deux clés d'hôte différentes**, et
 une empreinte unique ne peut satisfaire que l'une des deux. Monter `scp-action` en v1.0.0 ne
-change rien : drone-scp 1.8.0 utilise `x/crypto` v0.37.0, encore cote ECDSA.
+change rien : drone-scp 1.8.0 utilise `x/crypto` v0.37.0, encore côté ECDSA.
 
 #### Mesures compensatoires en place
 
-- Cle de deploiement **dediee**, distincte entre recette et production, sans autre usage.
-- `sudo` du compte de deploiement restreint au seul `systemctl restart` des services Koinonia.
-- Le deploiement de production ne transporte que l'artefact **deja construit et teste par la
-  CI**, dont le tag et le commit sont verifies avant transfert : un attaquant en position
-  d'interception ne peut pas faire construire un artefact different par la chaine.
+- Clé de déploiement **dédiée**, distincte entre recette et production, sans autre usage.
+- `sudo` du compte de déploiement restreint au seul `systemctl restart` des services Koinonia.
+- Le déploiement de production ne transporte que l'artefact **déjà construit et testé par la
+  CI**, dont le tag et le commit sont vérifiés avant transfert : un attaquant en position
+  d'interception ne peut pas faire construire un artefact différent par la chaîne.
 - Aucun secret applicatif ne transite par ce canal : `shared/.env` vit sur le serveur.
 
-Ces mesures **ne couvrent pas** le risque principal — la capture de la cle privee de
-deploiement par un hote usurpe. Elles en limitent la portee, elles ne l'annulent pas.
+Ces mesures **ne couvrent pas** le risque principal — la capture de la clé privée de
+déploiement par un hôte usurpé. Elles en limitent la portée, elles ne l'annulent pas.
 
-#### Conditions de levee
+#### Conditions de levée
 
-Deux sorties possibles, a instruire au reexamen :
+Deux sorties possibles, à instruire au réexamen :
 
-1. **Ne faire offrir qu'un seul type de cle d'hote par le serveur** (`HostKey` unique dans
-   `sshd_config`, ed25519 en pratique). Les deux clients negocient alors la meme cle quelle que
-   soit leur version, et une empreinte unique redevient possible. Cout : une modification
-   `sshd` par machine, et une nouvelle acceptation de cle pour les connexions humaines.
-2. **Remplacer les actions tierces par `scp`/`ssh` d'OpenSSH** avec un `known_hosts` epingle.
-   OpenSSH accepte toutes les cles listees : la question de l'ordre disparait, et le job
-   privilegie n'execute plus de code tiers. Cout : reecriture des deux etapes, a valider en
+1. **Ne faire offrir qu'un seul type de clé d'hôte par le serveur** (`HostKey` unique dans
+   `sshd_config`, ed25519 en pratique). Les deux clients négocient alors la même clé quelle que
+   soit leur version, et une empreinte unique redevient possible. Coût : une modification
+   `sshd` par machine, et une nouvelle acceptation de clé pour les connexions humaines.
+2. **Remplacer les actions tierces par `scp`/`ssh` d'OpenSSH** avec un `known_hosts` épinglé.
+   OpenSSH accepte toutes les clés listées : la question de l'ordre disparaît, et le job
+   privilégié n'exécute plus de code tiers. Coût : réécriture des deux étapes, à valider en
    recette.
 
 L'option 2 est la cible souhaitable ; elle rejoint la reduction de surface du chemin de
@@ -344,11 +344,11 @@ deploiement traitee par [le TODO H-10](todo-separation-comptes-deploiement.md).
 ### Fonctionnement
 
 1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
-2. Le CI s'execute (typecheck, tests, verification version) et, sur un tag, **empaquette l'artefact de release** puis le publie comme artefact du run
-3. Si le CI passe, le workflow deploy **telecharge cet artefact depuis le run CI** — il ne recompile rien et ne fait aucun checkout — puis se connecte en SSH au serveur
-4. L'artefact pre-compile est transfere par SCP, extrait, les assets statiques assembles — aucune compilation n'a lieu en production. L'artefact inclut `prisma.config.ts` (requis par Prisma 7 pour la configuration CLI)
-5. Les migrations Prisma sont appliquees, le symlink `current` est bascule, le service redemarre
-6. Les anciennes releases sont nettoyees (3 dernieres conservees)
+2. Le CI s'exécute (typecheck, tests, vérification version) et, sur un tag, **empaquette l'artefact de release** puis le publie comme artefact du run
+3. Si le CI passe, le workflow deploy **télécharge cet artefact depuis le run CI** — il ne recompile rien et ne fait aucun checkout — puis se connecte en SSH au serveur
+4. L'artefact pré-compilé est transféré par SCP, extrait, les assets statiques assemblés — aucune compilation n'a lieu en production. L'artefact inclut `prisma.config.ts` (requis par Prisma 7 pour la configuration CLI)
+5. Les migrations Prisma sont appliquées, le symlink `current` est basculé, le service redémarre
+6. Les anciennes releases sont nettoyées (3 dernières conservées)
 
 ## Configuration SMTP
 
@@ -500,13 +500,13 @@ Configurer un service type [cron-job.org](https://cron-job.org) ou EasyCron :
 
 ## Captures du guide utilisateur
 
-Les captures d'ecran de la page `/guide` sont hebergees sur une **release GitHub dediee** (`guide-assets`) et non dans le code source. Elles sont chargees depuis :
+Les captures d'écran de la page `/guide` sont hébergées sur une **release GitHub dédiée** (`guide-assets`) et non dans le code source. Elles sont chargées depuis :
 
 ```
 https://github.com/iccbretagne/koinonia/releases/download/guide-assets/<fichier>.png
 ```
 
-### Mettre a jour les captures
+### Mettre à jour les captures
 
 ```bash
 # 1. Supprimer l'ancienne release
@@ -524,16 +524,16 @@ gh release upload guide-assets guide-*.png
 | Fichier | Page source |
 |---------|-------------|
 | `guide-planning-view.png` | `/dashboard?dept=<id>` — grille planning |
-| `guide-planning-edit.png` | `/dashboard?dept=<id>` — edition statut |
+| `guide-planning-edit.png` | `/dashboard?dept=<id>` — édition statut |
 | `guide-members-list.png` | `/admin/members` — tableau des STAR |
-| `guide-members-manage.png` | `/admin/members` — formulaire ajout/edition |
-| `guide-events-list.png` | `/events` — liste des evenements |
-| `guide-events-manage.png` | `/admin/events` — formulaire evenement |
-| `guide-admin-departments.png` | `/admin/departments` — tableau departements |
-| `guide-admin-church.png` | `/admin/churches` — parametres eglise |
+| `guide-members-manage.png` | `/admin/members` — formulaire ajout/édition |
+| `guide-events-list.png` | `/events` — liste des événements |
+| `guide-events-manage.png` | `/admin/events` — formulaire événement |
+| `guide-admin-departments.png` | `/admin/departments` — tableau départements |
+| `guide-admin-church.png` | `/admin/churches` — paramètres église |
 | `guide-admin-users.png` | `/admin/users` — gestion utilisateurs |
 
-> Les captures doivent etre prises en **1280x800** pour un ratio 16:9 coherent.
+> Les captures doivent être prises en **1280x800** pour un ratio 16:9 cohérent.
 
 ## Stockage S3
 
@@ -599,11 +599,11 @@ Pour un bucket OVH (Standard à Gravelines) :
 - **Lifecycle backups** : règle d'expiration sur le préfixe `backups/` uniquement (ne pas appliquer sur `media-*`)
 - **Credentials minimum** : chaque utilisateur S3 n'a accès qu'à son propre bucket
 
-### Planification — timer systemd (recommande)
+### Planification — timer systemd (recommandé)
 
-Le backup est declenche via un appel HTTP a l'API Koinonia. Un timer systemd est plus fiable qu'un crontab (journalisation, gestion des echecs, persistance apres reboot).
+Le backup est déclenché via un appel HTTP à l'API Koinonia. Un timer systemd est plus fiable qu'un crontab (journalisation, gestion des échecs, persistance après reboot).
 
-**1. Creer le service** `/etc/systemd/system/koinonia-backup.service` :
+**1. Créer le service** `/etc/systemd/system/koinonia-backup.service` :
 
 ```ini
 [Unit]
@@ -624,9 +624,9 @@ StandardError=journal
 SyslogIdentifier=koinonia-backup
 ```
 
-> On appelle `127.0.0.1:$PORT` en local plutot que le domaine public pour eviter de passer par Traefik/TLS.
+> On appelle `127.0.0.1:$PORT` en local plutôt que le domaine public pour éviter de passer par Traefik/TLS.
 
-**2. Creer le timer** `/etc/systemd/system/koinonia-backup.timer` :
+**2. Créer le timer** `/etc/systemd/system/koinonia-backup.timer` :
 
 ```ini
 [Unit]
@@ -641,8 +641,8 @@ RandomizedDelaySec=300
 WantedBy=timers.target
 ```
 
-- `Persistent=true` : si le serveur etait eteint a 2h00, le backup sera execute au prochain demarrage.
-- `RandomizedDelaySec=300` : delai aleatoire de 0 a 5 min pour eviter les pics de charge.
+- `Persistent=true` : si le serveur était éteint à 2h00, le backup sera exécuté au prochain démarrage.
+- `RandomizedDelaySec=300` : délai aléatoire de 0 à 5 min pour éviter les pics de charge.
 
 **3. Activer le timer** :
 
@@ -651,7 +651,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now koinonia-backup.timer
 ```
 
-**4. Verifier** :
+**4. Vérifier** :
 
 ```bash
 # Etat du timer
@@ -669,7 +669,7 @@ sudo journalctl -u koinonia-backup -n 20
 
 ### Alternative — crontab
 
-Si vous preferez crontab :
+Si vous préférez crontab :
 
 ```bash
 sudo -u koinonia crontab -e
@@ -683,26 +683,26 @@ sudo -u koinonia crontab -e
 
 ### Endpoints
 
-| Methode | URL | Auth | Description |
+| Méthode | URL | Auth | Description |
 |---------|-----|------|-------------|
 | `POST` | `/api/cron/backup` | Bearer token (`CRON_SECRET`) | Backup automatique + nettoyage retention |
 | `GET` | `/api/admin/backups` | Session (SUPER_ADMIN) | Lister les backups disponibles |
-| `POST` | `/api/admin/backups` | Session (SUPER_ADMIN) | Declencher un backup manuel |
+| `POST` | `/api/admin/backups` | Session (SUPER_ADMIN) | Déclencher un backup manuel |
 | `POST` | `/api/admin/backups/restore` | Session (SUPER_ADMIN) | Restaurer un backup (`{"key":"backups/..."}`) |
 
 ### Convention de nommage
 
-Les backups sont stockes sous la cle `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. Le dump est compresse en gzip (mysqldump `--single-transaction --quick --routines --triggers`).
+Les backups sont stockés sous la clé `backups/YYYY-MM-DDTHH-mm-ssZ/db.sql.gz`. Le dump est compressé en gzip (mysqldump `--single-transaction --quick --routines --triggers`).
 
-### Procedure de restauration
+### Procédure de restauration
 
-> **ATTENTION** : la restauration ecrase integralement la base de donnees. Toutes les donnees inserees depuis le backup seront perdues.
+> **ATTENTION** : la restauration écrase intégralement la base de données. Toutes les données insérées depuis le backup seront perdues.
 
-#### Prerequis
+#### Prérequis
 
-- Acces SSH au serveur (ou role SUPER_ADMIN dans l'interface)
-- `mysqldump` et `mysql` installes sur le serveur
-- Acces au bucket S3 configure
+- Accès SSH au serveur (ou rôle SUPER_ADMIN dans l'interface)
+- `mysqldump` et `mysql` installés sur le serveur
+- Accès au bucket S3 configuré
 
 #### Obtenir le cookie de session
 
@@ -725,7 +725,7 @@ COOKIE="__Secure-authjs.session-token=VALEUR_COPIEE"
 COOKIE="authjs.session-token=VALEUR_COPIEE"
 ```
 
-#### Etape 1 — Identifier le backup a restaurer
+#### Étape 1 — Identifier le backup à restaurer
 
 **Via l'API** :
 
@@ -735,25 +735,25 @@ curl -s https://votre-domaine.com/api/admin/backups \
   -H "Cookie: $COOKIE" | jq '.[] | {key, lastModified, sizeMB: (.sizeBytes/1048576 | round)}'
 ```
 
-**Via la CLI S3** (si vous avez `aws` ou `mc` configure) :
+**Via la CLI S3** (si vous avez `aws` ou `mc` configuré) :
 
 ```bash
 aws --endpoint-url https://s3.fr-par.scw.cloud s3 ls s3://koinonia-backups/backups/ --recursive
 ```
 
-Notez la cle du backup souhaite, par exemple : `backups/2026-03-24T02-00-00Z/db.sql.gz`
+Notez la clé du backup souhaité, par exemple : `backups/2026-03-24T02-00-00Z/db.sql.gz`
 
-#### Etape 2 — Arreter l'application
+#### Étape 2 — Arrêter l'application
 
 ```bash
 sudo systemctl stop koinonia
 ```
 
-Cela empeche les ecritures en base pendant la restauration.
+Cela empêche les écritures en base pendant la restauration.
 
-#### Etape 3 — Creer un backup de securite
+#### Étape 3 — Créer un backup de sécurité
 
-Avant de restaurer, sauvegardez l'etat actuel au cas ou :
+Avant de restaurer, sauvegardez l'état actuel au cas où :
 
 ```bash
 sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
@@ -763,9 +763,9 @@ sudo -u koinonia bash -c '. /opt/koinonia/shared/.env && \
     $(echo $DATABASE_URL | sed "s|.*/||") | gzip > /opt/koinonia/shared/pre-restore-backup.sql.gz'
 ```
 
-#### Etape 4 — Restaurer
+#### Étape 4 — Restaurer
 
-**Option A — Via l'API** (recommande) :
+**Option A — Via l'API** (recommandé) :
 
 ```bash
 curl -X POST https://votre-domaine.com/api/admin/backups/restore \
@@ -774,7 +774,7 @@ curl -X POST https://votre-domaine.com/api/admin/backups/restore \
   -d '{"key":"backups/2026-03-24T02-00-00Z/db.sql.gz"}'
 ```
 
-> Note : l'application doit etre demarree pour cette option. Si vous l'avez arretee, redemarrez-la temporairement (`sudo systemctl start koinonia`), lancez la restauration, puis passez a l'etape 5.
+> Note : l'application doit être démarrée pour cette option. Si vous l'avez arrêtée, redémarrez-la temporairement (`sudo systemctl start koinonia`), lancez la restauration, puis passez à l'étape 5.
 
 **Option B — En ligne de commande** (si l'application est inaccessible) :
 
@@ -805,22 +805,22 @@ mc cp koinonia/koinonia-backups/backups/2026-03-24T02-00-00Z/db.sql.gz /tmp/rest
 # Puis suivre l'etape 2 de l'option B
 ```
 
-#### Etape 5 — Redemarrer l'application
+#### Étape 5 — Redémarrer l'application
 
 ```bash
 sudo systemctl start koinonia
 ```
 
-#### Etape 6 — Verifier
+#### Étape 6 — Vérifier
 
-1. Acceder a l'application et verifier que les donnees sont coherentes
-2. Controler les logs :
+1. Accéder à l'application et vérifier que les données sont cohérentes
+2. Contrôler les logs :
 
 ```bash
 sudo journalctl -u koinonia -n 50 --no-pager
 ```
 
-3. Si la restauration est mauvaise, restaurer le backup de securite de l'etape 3 :
+3. Si la restauration est mauvaise, restaurer le backup de sécurité de l'étape 3 :
 
 ```bash
 sudo systemctl stop koinonia
@@ -834,15 +834,15 @@ sudo systemctl start koinonia
 
 ### Troubleshooting
 
-| Symptome | Cause probable | Solution |
+| Symptôme | Cause probable | Solution |
 |----------|----------------|----------|
-| Timer n'execute pas | Timer pas active | `sudo systemctl enable --now koinonia-backup.timer` |
-| `curl: (7) Failed to connect` | Koinonia pas demarre | Verifier `systemctl status koinonia` |
+| Timer n'exécute pas | Timer pas activé | `sudo systemctl enable --now koinonia-backup.timer` |
+| `curl: (7) Failed to connect` | Koinonia pas démarré | Vérifier `systemctl status koinonia` |
 | `mysqldump: command not found` | mariadb-client manquant | `sudo apt install mariadb-client` |
-| `Access denied for user` | Mot de passe incorrect dans DATABASE_URL | Verifier `/opt/koinonia/shared/.env` |
-| Backup vide (0 octets) | Base inaccessible | Verifier `systemctl status mariadb` |
-| Restore echoue `ERROR 1049` | Base inexistante | Recreer la base (voir section BDD) |
-| S3 `AccessDenied` | Cle S3 invalide ou bucket inexistant | Verifier les variables `BACKUP_S3_*` et creer le bucket |
+| `Access denied for user` | Mot de passe incorrect dans DATABASE_URL | Vérifier `/opt/koinonia/shared/.env` |
+| Backup vide (0 octets) | Base inaccessible | Vérifier `systemctl status mariadb` |
+| Restore échoue `ERROR 1049` | Base inexistante | Recréer la base (voir section BDD) |
+| S3 `AccessDenied` | Clé S3 invalide ou bucket inexistant | Vérifier les variables `BACKUP_S3_*` et créer le bucket |
 
 ## Scripts de maintenance S3
 
@@ -1033,16 +1033,16 @@ Pour mettre à jour une instance existante, consulter le guide de migration corr
 
 ## Environnement de recette
 
-Avant de tagger une version et de la deployer en production, il est recommande de la valider sur un **environnement de recette dedie** (VM separee, identique a la production). Le deploiement s'y fait manuellement via le workflow GitHub Actions `Deploy Staging` (`workflow_dispatch`), independamment du pipeline de production decrit ci-dessus.
+Avant de tagger une version et de la déployer en production, il est recommandé de la valider sur un **environnement de recette dédié** (VM séparée, identique à la production). Le déploiement s'y fait manuellement via le workflow GitHub Actions `Deploy Staging` (`workflow_dispatch`), indépendamment du pipeline de production décrit ci-dessus.
 
-Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionnement, secrets, declenchement).
+Voir [docs/staging.md](staging.md) pour la mise en place complète (provisionnement, secrets, déclenchement).
 
 ## Checklist de production
 
-- [ ] Variables d'environnement configurees dans `shared/.env`
-- [ ] `AUTH_SECRET` genere avec `openssl rand -base64 32`
-- [ ] `CRON_SECRET` genere avec `openssl rand -base64 32`
-- [ ] Variables SMTP configurees dans `shared/.env` (optionnel, pour les rappels email)
+- [ ] Variables d'environnement configurées dans `shared/.env`
+- [ ] `AUTH_SECRET` généré avec `openssl rand -base64 32`
+- [ ] `CRON_SECRET` généré avec `openssl rand -base64 32`
+- [ ] Variables SMTP configurées dans `shared/.env` (optionnel, pour les rappels email)
 - [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
 - [ ] Variables `BACKUP_S3_*` configurées pour les backups BDD (optionnel)
 - [ ] Variables `MEDIA_S3_*` configurées pour le bucket média (optionnel)
@@ -1051,11 +1051,11 @@ Voir [docs/staging.md](staging.md) pour la mise en place complete (provisionneme
 - [ ] Timer systemd `koinonia-backup.timer` activé (ou crontab) pour backup quotidien (optionnel)
 - [ ] Backup testé : déclencher manuellement et vérifier la présence dans S3
 - [ ] Restore testé : restaurer un backup sur un environnement de test
-- [ ] `AUTH_TRUST_HOST=true` present
+- [ ] `AUTH_TRUST_HOST=true` présent
 - [ ] `AUTH_URL` pointe vers le domaine de production (HTTPS)
-- [ ] Base de donnees creee avec utilisateur dedie
-- [ ] Migrations appliquees via le pipeline CD (automatique)
-- [ ] Service systemd actif et active au boot
-- [ ] Traefik configure avec certificat TLS
-- [ ] URI de redirection Google OAuth ajoutee
-- [ ] Acces HTTPS fonctionnel
+- [ ] Base de données créée avec utilisateur dédié
+- [ ] Migrations appliquées via le pipeline CD (automatique)
+- [ ] Service systemd actif et activé au boot
+- [ ] Traefik configuré avec certificat TLS
+- [ ] URI de redirection Google OAuth ajoutée
+- [ ] Accès HTTPS fonctionnel

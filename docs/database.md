@@ -1,9 +1,9 @@
-# Base de donnees
+# Base de données
 
 MariaDB 10.11 via Docker. ORM Prisma avec connecteur MySQL.
 Tous les IDs sont des `String @default(cuid())`.
 
-## Schema relationnel
+## Schéma relationnel
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -68,50 +68,56 @@ Tous les IDs sont des `String @default(cuid())`.
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Modeles
+## Modèles
 
 ### NextAuth (gestion automatique)
 
 | Table | Description |
 |---|---|
-| `accounts` | Comptes OAuth lies a un utilisateur (Google) |
+| `accounts` | Comptes OAuth liés à un utilisateur (Google) |
 | `sessions` | Sessions actives |
-| `verification_tokens` | Tokens de verification email |
+| `verification_tokens` | Tokens de vérification email |
 
 ### Domaine
 
 #### `churches`
 
-Tenant principal. Chaque eglise est un espace isole.
+Tenant principal. Chaque église est un espace isolé.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `name` | String | Nom de l'eglise |
+| `name` | String | Nom de l'église |
 | `slug` | String (unique) | Identifiant URL |
-| `createdAt` | DateTime | Date de creation |
-| `updatedAt` | DateTime | Derniere modification |
+| `createdAt` | DateTime | Date de création |
+| `updatedAt` | DateTime | Dernière modification |
+
+> `slug` sert aussi d'**identifiant public de partage** pour le module audio (spec 036) : une
+> église le communique hors application à une autre pour que celle-ci ouvre sa bibliothèque
+> publiée (`audio_library_shares`, voir Module Audio). Deux relations inverses portent ce
+> partage sur `churches` : `audioSharesGranted` (partages accordés, côté propriétaire) et
+> `audioSharesReceived` (partages reçus, côté invitée).
 
 #### `users`
 
-Utilisateurs de l'application. Crees automatiquement a la premiere connexion Google via NextAuth.
+Utilisateurs de l'application. Créés automatiquement à la première connexion Google via NextAuth.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `email` | String (unique) | Adresse email |
-| `name` | String? | Nom affiche (fourni par Google) |
-| `displayName` | String? | Nom d'affichage personnalise (defini par l'utilisateur) |
+| `name` | String? | Nom affiché (fourni par Google) |
+| `displayName` | String? | Nom d'affichage personnalisé (défini par l'utilisateur) |
 | `image` | String? | URL avatar Google |
-| `emailVerified` | DateTime? | Date de verification (NextAuth) |
+| `emailVerified` | DateTime? | Date de vérification (NextAuth) |
 | `isSuperAdmin` | Boolean | Super administrateur global (default: false) |
-| `hasSeenTour` | Boolean | Indique si l'utilisateur a vu la visite guidee (default: false) |
-| `createdAt` | DateTime | Date de creation |
-| `updatedAt` | DateTime | Derniere modification |
+| `hasSeenTour` | Boolean | Indique si l'utilisateur a vu la visite guidée (default: false) |
+| `createdAt` | DateTime | Date de création |
+| `updatedAt` | DateTime | Dernière modification |
 
 #### `user_church_roles`
 
-Association utilisateur-eglise-role. Un utilisateur peut avoir plusieurs roles dans plusieurs eglises.
+Association utilisateur-église-rôle. Un utilisateur peut avoir plusieurs rôles dans plusieurs églises.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -125,7 +131,7 @@ Contrainte unique : `[userId, churchId, role]`
 
 #### `user_departments`
 
-Departements assignes a un role utilisateur-eglise.
+Départements assignés à un rôle utilisateur-église.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -138,40 +144,40 @@ Contrainte unique : `[userChurchRoleId, departmentId]`
 
 #### `ministries`
 
-Ministeres d'une eglise (Accueil, Louange, Communication...).
+Ministères d'une église (Accueil, Louange, Communication...).
 
 | Champ | Type | Description |
 |---|---|---|
-| `name` | String | Nom du ministere |
+| `name` | String | Nom du ministère |
 | `churchId` | String | Ref vers `churches` |
 
 #### `departments`
 
-Departements d'un ministere (Choristes, Musiciens, Son...).
+Départements d'un ministère (Choristes, Musiciens, Son...).
 
 | Champ | Type | Description |
 |---|---|---|
-| `name` | String | Nom du departement |
+| `name` | String | Nom du département |
 | `ministryId` | String | Ref vers `ministries` |
-| `function` | String? | Fonction speciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisee (nullable) |
+| `function` | String? | Fonction spéciale : `SECRETARIAT`, `COMMUNICATION`, `PRODUCTION_MEDIA`, ou valeur personnalisée (nullable) |
 
 #### `members`
 
-Membres d'un departement (les personnes planifiees). Appeles **STAR** (Serviteur Travaillant Activement pour le Royaume).
+Membres d'un département (les personnes planifiées). Appelés **STAR** (Serviteur Travaillant Activement pour le Royaume).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `firstName` | String | Prenom |
+| `firstName` | String | Prénom |
 | `lastName` | String | Nom |
 | `email` | String? | Adresse email (optionnel) |
-| `phone` | String? | Numero de telephone (optionnel) |
+| `phone` | String? | Numéro de téléphone (optionnel) |
 | `departmentId` | String | Ref vers `departments` |
-| `createdAt` | DateTime | Date de creation |
+| `createdAt` | DateTime | Date de création |
 
 #### `member_user_links`
 
-Liaison entre un membre (STAR) et un compte utilisateur. Permet au membre de se connecter et d'acceder a son planning personnel.
+Liaison entre un membre (STAR) et un compte utilisateur. Permet au membre de se connecter et d'accéder à son planning personnel.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -182,26 +188,26 @@ Liaison entre un membre (STAR) et un compte utilisateur. Permet au membre de se 
 | `validatedAt` | DateTime? | Date de validation de la liaison (null = en attente) |
 | `validatedById` | String? | Ref vers `users` (administrateur validateur) |
 
-Contraintes : `memberId` unique ; `[userId, churchId]` unique (un utilisateur ne peut etre lie qu'a un seul membre par eglise).
+Contraintes : `memberId` unique ; `[userId, churchId]` unique (un utilisateur ne peut être lié qu'à un seul membre par église).
 
 #### `member_link_requests`
 
-Demandes de liaison entre un compte utilisateur et un profil membre. Soumises par l'utilisateur, validees par un administrateur.
+Demandes de liaison entre un compte utilisateur et un profil membre. Soumises par l'utilisateur, validées par un administrateur.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `userId` | String | Ref vers `users` (demandeur) |
-| `memberId` | String? | Ref vers `members` (membre selectionne, nullable si inconnu) |
-| `firstName` | String? | Prenom saisi manuellement (si memberId absent) |
+| `memberId` | String? | Ref vers `members` (membre sélectionné, nullable si inconnu) |
+| `firstName` | String? | Prénom saisi manuellement (si memberId absent) |
 | `lastName` | String? | Nom saisi manuellement (si memberId absent) |
-| `phone` | String? | Telephone saisi manuellement (si memberId absent) |
+| `phone` | String? | Téléphone saisi manuellement (si memberId absent) |
 | `churchId` | String | Ref vers `churches` |
 | `status` | MemberLinkRequestStatus | `PENDING`, `APPROVED`, `REJECTED` (default: `PENDING`) |
 | `rejectReason` | String? | Motif de rejet (renseigné si `REJECTED`) |
-| `departmentId` | String? | Ref vers `departments` (departement selectionne lors de l'onboarding) |
-| `ministryId` | String? | Ref vers `ministries` (ministere selectionne lors de l'onboarding) |
-| `requestedRole` | String? | Role demande : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre regulier) |
+| `departmentId` | String? | Ref vers `departments` (département sélectionné lors de l'onboarding) |
+| `ministryId` | String? | Ref vers `ministries` (ministère sélectionné lors de l'onboarding) |
+| `requestedRole` | String? | Rôle demandé : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre régulier) |
 | `notes` | String? (Text) | Notes libres du demandeur |
 | `createdAt` | DateTime | Date de soumission |
 | `reviewedAt` | DateTime? | Date de traitement |
@@ -209,26 +215,26 @@ Demandes de liaison entre un compte utilisateur et un profil membre. Soumises pa
 
 #### `events`
 
-Evenements d'une eglise.
+Événements d'une église.
 
 | Champ | Type | Description |
 |---|---|---|
-| `title` | String | Titre de l'evenement |
+| `title` | String | Titre de l'événement |
 | `type` | String | `CULTE`, `PRIERE`, `PARLONS_PAROLE`, `CONFERENCE` |
 | `date` | DateTime | Date et heure |
 | `churchId` | String | Ref vers `churches` |
-| `allowAnnouncements` | Boolean | Autorise la soumission d'annonces pour cet evenement (default: false) |
+| `allowAnnouncements` | Boolean | Autorise la soumission d'annonces pour cet événement (default: false) |
 | `planningDeadline` | DateTime? | Date limite de modification du planning |
-| `recurrenceRule` | String? | Regle de recurrence (format iCal RRULE) |
-| `seriesId` | String? | ID de l'evenement parent de la serie |
-| `isRecurrenceParent` | Boolean | Indique si cet evenement est le parent d'une serie |
-| `trackedForDiscipleship` | Boolean | Evenement suivi pour la presences discipolat (default: false) |
-| `reportEnabled` | Boolean | Activation du compte-rendu pour cet evenement (default: false) |
-| `statsEnabled` | Boolean | Activation des stats departementales dans le CR (default: false) |
+| `recurrenceRule` | String? | Règle de récurrence (format iCal RRULE) |
+| `seriesId` | String? | ID de l'événement parent de la série |
+| `isRecurrenceParent` | Boolean | Indique si cet événement est le parent d'une série |
+| `trackedForDiscipleship` | Boolean | Événement suivi pour la présences discipolat (default: false) |
+| `reportEnabled` | Boolean | Activation du compte-rendu pour cet événement (default: false) |
+| `statsEnabled` | Boolean | Activation des stats départementales dans le CR (default: false) |
 
 #### `event_departments`
 
-Quels departements sont concernes par un evenement.
+Quels départements sont concernés par un événement.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -239,34 +245,34 @@ Contrainte unique : `[eventId, departmentId]`
 
 #### `plannings`
 
-Statut d'un membre pour un departement a un evenement donne.
+Statut d'un membre pour un département à un événement donné.
 
 | Champ | Type | Description |
 |---|---|---|
 | `eventDepartmentId` | String | Ref vers `event_departments` |
 | `memberId` | String | Ref vers `members` |
-| `status` | ServiceStatus? | Statut (nullable = non renseigne) |
-| `updatedAt` | DateTime | Derniere modification |
+| `status` | ServiceStatus? | Statut (nullable = non renseigné) |
+| `updatedAt` | DateTime | Dernière modification |
 
 Contrainte unique : `[eventDepartmentId, memberId]`
 
 #### `tasks`
 
-Taches definies par departement (ex : "Animation debrief", "Accueil enfants"). Servent a structurer les responsabilites lors d'un evenement.
+Tâches définies par département (ex : "Animation debrief", "Accueil enfants"). Servent à structurer les responsabilités lors d'un événement.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `departmentId` | String | Ref vers `departments` |
-| `name` | String | Nom de la tache |
-| `description` | String? (Text) | Description detaillee (optionnel) |
-| `createdAt` | DateTime | Date de creation |
+| `name` | String | Nom de la tâche |
+| `description` | String? (Text) | Description détaillée (optionnel) |
+| `createdAt` | DateTime | Date de création |
 
 Contrainte unique : `[departmentId, name]`
 
 #### `task_assignments`
 
-Affectation d'un membre a une tache pour un evenement donne.
+Affectation d'un membre à une tâche pour un événement donné.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -280,66 +286,66 @@ Contrainte unique : `[taskId, eventId, memberId]`
 
 #### `discipleships`
 
-Relation de discipolat entre deux membres (disciple et faiseur de disciples). Un seul enregistrement actif par disciple par eglise.
+Relation de discipolat entre deux membres (disciple et faiseur de disciples). Un seul enregistrement actif par disciple par église.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `discipleId` | String | Ref vers `members` (le disciple) |
 | `discipleMakerId` | String | Ref vers `members` (le faiseur de disciples courant) |
-| `firstMakerId` | String | Ref vers `members` (premier faiseur de disciples — ne change jamais, sert pour la lignee) |
+| `firstMakerId` | String | Ref vers `members` (premier faiseur de disciples — ne change jamais, sert pour la lignée) |
 | `churchId` | String | Ref vers `churches` |
-| `startedAt` | DateTime | Date de debut de la relation (default: now) |
+| `startedAt` | DateTime | Date de début de la relation (default: now) |
 
-Contrainte unique : `[discipleId, churchId]` — un seul FD courant par disciple par eglise.
+Contrainte unique : `[discipleId, churchId]` — un seul FD courant par disciple par église.
 
 #### `discipleship_attendances`
 
-Presences des membres suivis pour le discipolat lors des evenements traces (`trackedForDiscipleship = true`).
+Présences des membres suivis pour le discipolat lors des événements tracés (`trackedForDiscipleship = true`).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `memberId` | String | Ref vers `members` |
 | `eventId` | String | Ref vers `events` |
-| `present` | Boolean | Presence effective (default: true) |
+| `present` | Boolean | Présence effective (default: true) |
 
 Contrainte unique : `[memberId, eventId]`
 
 #### `event_reports`
 
-Compte-rendu d'un evenement. Un seul CR par evenement.
+Compte-rendu d'un événement. Un seul CR par événement.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `eventId` | String (unique) | Ref vers `events` (un seul CR par evenement) |
+| `eventId` | String (unique) | Ref vers `events` (un seul CR par événement) |
 | `churchId` | String | Ref vers `churches` |
 | `speaker` | String? | Nom de l'orateur |
 | `messageTitle` | String? | Titre du message |
-| `notes` | String? (Text) | Notes generales du CR |
-| `decisions` | String? (Text) | Decisions prises lors de l'evenement |
+| `notes` | String? (Text) | Notes générales du CR |
+| `decisions` | String? (Text) | Décisions prises lors de l'événement |
 | `authorId` | String? | Ref vers `users` (auteur du CR, nullable) |
-| `createdAt` | DateTime | Date de creation |
-| `updatedAt` | DateTime | Derniere modification |
+| `createdAt` | DateTime | Date de création |
+| `updatedAt` | DateTime | Dernière modification |
 
 #### `event_report_sections`
 
-Sections d'un compte-rendu, organisees par departement ou libres. Chaque section peut contenir des statistiques JSON et des notes texte.
+Sections d'un compte-rendu, organisées par département ou libres. Chaque section peut contenir des statistiques JSON et des notes texte.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `reportId` | String | Ref vers `event_reports` (cascade delete) |
 | `departmentId` | String? | Ref vers `departments` (null = section libre) |
-| `label` | String | Libelle de la section |
+| `label` | String | Libellé de la section |
 | `position` | Int | Ordre d'affichage (default: 0) |
-| `stats` | Json? | Statistiques specifiques au departement (structure libre) |
+| `stats` | Json? | Statistiques spécifiques au département (structure libre) |
 | `notes` | String? (Text) | Notes texte de la section |
 
 #### `announcements`
 
-Annonces soumises par les referents des departements ou ministeres.
+Annonces soumises par les référents des départements ou ministères.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -350,31 +356,31 @@ Annonces soumises par les referents des departements ou ministeres.
 | `ministryId` | String? | Ref vers `ministries` (optionnel) |
 | `title` | String | Titre de l'annonce |
 | `content` | String (Text) | Contenu de l'annonce |
-| `eventDate` | DateTime? | Date de l'evenement concerne (optionnel) |
-| `isSaveTheDate` | Boolean | Calcule auto : true si `eventDate` > 21 jours |
-| `isUrgent` | Boolean | Marquee comme urgente |
+| `eventDate` | DateTime? | Date de l'événement concerné (optionnel) |
+| `isSaveTheDate` | Boolean | Calculé auto : true si `eventDate` > 21 jours |
+| `isUrgent` | Boolean | Marquée comme urgente |
 | `channelInterne` | Boolean | Canal de diffusion interne |
-| `channelExterne` | Boolean | Canal de diffusion externe (reseaux sociaux) |
+| `channelExterne` | Boolean | Canal de diffusion externe (réseaux sociaux) |
 | `status` | AnnouncementStatus | Statut : `EN_ATTENTE`, `EN_COURS`, `TRAITEE`, `ANNULEE` |
 | `submittedAt` | DateTime | Date de soumission |
-| `updatedAt` | DateTime | Derniere modification |
+| `updatedAt` | DateTime | Dernière modification |
 
 Index : `[churchId, status]`
 
 #### `announcement_events`
 
-Table de jointure Announcement ↔ Event (evenements cibles par l'annonce).
+Table de jointure Announcement ↔ Event (événements ciblés par l'annonce).
 
 | Champ | Type | Description |
 |---|---|---|
 | `announcementId` | String | Ref vers `announcements` (cascade delete) |
 | `eventId` | String | Ref vers `events` |
 
-Cle primaire composite : `[announcementId, eventId]`
+Clé primaire composite : `[announcementId, eventId]`
 
 #### `requests`
 
-Modele unifie pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL) et demandes metier (AJOUT_EVENEMENT, MODIFICATION_EVENEMENT, ANNULATION_EVENEMENT, MODIFICATION_PLANNING, DEMANDE_ACCES).
+Modèle unifié pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL) et demandes métier (AJOUT_EVENEMENT, MODIFICATION_EVENEMENT, ANNULATION_EVENEMENT, MODIFICATION_PLANNING, DEMANDE_ACCES).
 
 | Champ | Type | Description |
 |---|---|---|
@@ -383,20 +389,20 @@ Modele unifie pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_SO
 | `type` | RequestType | Type de demande (voir enum ci-dessous) |
 | `status` | RequestStatus | Statut (voir enum ci-dessous) |
 | `title` | String | Titre de la demande |
-| `payload` | Json | Donnees specifiques au type (brief, eventId, changes, etc.) |
+| `payload` | Json | Données spécifiques au type (brief, eventId, changes, etc.) |
 | `submittedById` | String | Ref vers `users` (soumetteur) |
-| `departmentId` | String? | Ref vers `departments` (departement source) |
-| `ministryId` | String? | Ref vers `ministries` (ministere source) |
-| `assignedDeptId` | String? | Ref vers `departments` (departement traitant, resolu via fonction) |
-| `announcementId` | String? | Ref vers `announcements` (si liee a une annonce) |
-| `parentRequestId` | String? | Ref vers `requests` (auto-referentiel : lie un VISUEL a son canal parent) |
+| `departmentId` | String? | Ref vers `departments` (département source) |
+| `ministryId` | String? | Ref vers `ministries` (ministère source) |
+| `assignedDeptId` | String? | Ref vers `departments` (département traitant, résolu via fonction) |
+| `announcementId` | String? | Ref vers `announcements` (si liée à une annonce) |
+| `parentRequestId` | String? | Ref vers `requests` (auto-référentiel : lie un VISUEL à son canal parent) |
 | `reviewNotes` | String? (Text) | Notes du traitant |
 | `reviewedById` | String? | Ref vers `users` (traitant) |
 | `reviewedAt` | DateTime? | Date de traitement |
-| `executedAt` | DateTime? | Date d'execution automatique (demandes metier) |
-| `executionError` | String? (Text) | Message d'erreur si execution echouee |
+| `executedAt` | DateTime? | Date d'exécution automatique (demandes métier) |
+| `executionError` | String? (Text) | Message d'erreur si exécution échouée |
 | `submittedAt` | DateTime | Date de soumission |
-| `updatedAt` | DateTime | Derniere modification |
+| `updatedAt` | DateTime | Dernière modification |
 
 Index : `[churchId, type, status]`, `[assignedDeptId, status]`
 
@@ -424,9 +430,9 @@ INDISPONIBLE        # Absent
 REMPLACANT          # Remplace un membre indisponible
 ```
 
-#### Fonctions departementales (`department.function`)
+#### Fonctions départementales (`department.function`)
 
-Champ `String?` sur le modele `Department` (plus un enum Prisma depuis v1.0). Valeurs conventionnelles :
+Champ `String?` sur le modèle `Department` (plus un enum Prisma depuis v1.0). Valeurs conventionnelles :
 
 ```
 SECRETARIAT       # Departement traitant les diffusions internes et demandes
@@ -435,7 +441,7 @@ PRODUCTION_MEDIA  # Departement traitant les demandes de visuels
 CAPTATION_AUDIO   # Departement de captation audio — pilote isCaptureTeamMember/Lead (module audio)
 ```
 
-Des valeurs personnalisees sont possibles. Un seul departement par fonction et par eglise. Assigne via `PATCH /api/departments/[id]`. Constantes definies dans `src/lib/department-functions.ts`.
+Des valeurs personnalisées sont possibles. Un seul département par fonction et par église. Assigné via `PATCH /api/departments/[id]`. Constantes définies dans `src/lib/department-functions.ts`.
 
 #### `MemberLinkRequestStatus`
 
@@ -480,18 +486,18 @@ ANNULE       # Annulee par le soumetteur ou en cascade
 ERREUR       # Echec de l'execution automatique
 ```
 
-### Module Media
+### Module Média
 
 #### `media_events`
 
-Galerie photos liee a un evenement planning (ou autonome).
+Galerie photos liée à un événement planning (ou autonome).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `churchId` | String | Ref vers `churches` |
-| `name` | String | Nom de l'evenement media |
-| `date` | DateTime | Date de l'evenement |
+| `name` | String | Nom de l'événement média |
+| `date` | DateTime | Date de l'événement |
 | `description` | String? (Text) | Description optionnelle |
 | `status` | MediaEventStatus | Statut : `DRAFT`, `PENDING_REVIEW`, `REVIEWED`, `ARCHIVED` |
 | `planningEventId` | String? (unique) | Ref vers `events` (lien optionnel au planning) |
@@ -500,7 +506,7 @@ Galerie photos liee a un evenement planning (ou autonome).
 
 #### `media_photos`
 
-Photos appartenant a un evenement media.
+Photos appartenant à un événement média.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -510,8 +516,8 @@ Photos appartenant a un evenement media.
 | `mimeType` | String | Type MIME (image/jpeg, image/webp…) |
 | `size` | Int | Taille en octets |
 | `width` / `height` | Int? | Dimensions en pixels |
-| `originalKey` | String | Cle S3 de l'original (JPEG haute resolution) |
-| `thumbnailKey` | String | Cle S3 du thumbnail (WebP 400px) |
+| `originalKey` | String | Clé S3 de l'original (JPEG haute résolution) |
+| `thumbnailKey` | String | Clé S3 du thumbnail (WebP 400px) |
 | `status` | MediaPhotoStatus | Statut de validation |
 | `validatedAt` | DateTime? | Date de validation |
 | `validatedBy` | String? | Identifiant du validateur (token ou user) |
@@ -519,7 +525,7 @@ Photos appartenant a un evenement media.
 
 #### `media_projects`
 
-Conteneur de fichiers de production (videos, visuels) sans lien planning.
+Conteneur de fichiers de production (vidéos, visuels) sans lien planning.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -532,7 +538,7 @@ Conteneur de fichiers de production (videos, visuels) sans lien planning.
 
 #### `media_files`
 
-Fichier de production (video ou visuel) appartenant a un projet.
+Fichier de production (vidéo ou visuel) appartenant à un projet.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -544,7 +550,7 @@ Fichier de production (video ou visuel) appartenant a un projet.
 | `mimeType` | String | Type MIME |
 | `size` | Int | Taille en octets |
 | `width` / `height` | Int? | Dimensions (visuels) |
-| `duration` | Int? | Duree en secondes (videos) |
+| `duration` | Int? | Durée en secondes (vidéos) |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
 #### `media_file_versions`
@@ -555,16 +561,16 @@ Versions successives d'un fichier de production.
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `fileId` | String | Ref vers `media_files` (cascade delete) |
-| `versionNumber` | Int | Numero de version (auto-incremente par fichier) |
-| `originalKey` | String | Cle S3 du fichier |
-| `thumbnailKey` | String | Cle S3 du thumbnail / premiere frame |
+| `versionNumber` | Int | Numéro de version (auto-incrémenté par fichier) |
+| `originalKey` | String | Clé S3 du fichier |
+| `thumbnailKey` | String | Clé S3 du thumbnail / première frame |
 | `notes` | String? (Text) | Notes de la version |
 | `createdById` | String? | Ref vers `users` |
-| `createdAt` | DateTime | Date de creation |
+| `createdAt` | DateTime | Date de création |
 
 #### `media_comments`
 
-Commentaires de revision sur un fichier, avec support des timecodes video.
+Commentaires de révision sur un fichier, avec support des timecodes vidéo.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -573,56 +579,56 @@ Commentaires de revision sur un fichier, avec support des timecodes video.
 | `type` | MediaCommentType | `GENERAL` ou `TIMECODE` |
 | `content` | String (Text) | Contenu du commentaire |
 | `timecode` | Int? | Position en secondes (si `TIMECODE`) |
-| `parentId` | String? | Ref vers `media_comments` (reponses imbriquees) |
+| `parentId` | String? | Ref vers `media_comments` (réponses imbriquées) |
 | `authorId` | String? | Ref vers `users` (null si commentaire externe) |
-| `authorName` | String? | Nom affiche (commentaires externes) |
+| `authorName` | String? | Nom affiché (commentaires externes) |
 | `authorImage` | String? | Avatar (commentaires externes) |
-| `createdAt` | DateTime | Date de creation |
+| `createdAt` | DateTime | Date de création |
 
 #### `media_share_tokens`
 
-Tokens de partage sans authentification. Donne acces a un evenement ou un projet.
+Tokens de partage sans authentification. Donne accès à un événement ou un projet.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `token` | String (unique) | Token aleatoire (URL-safe) |
+| `token` | String (unique) | Token aléatoire (URL-safe) |
 | `type` | MediaTokenType | `GALLERY`, `MEDIA`, `VALIDATOR`, `PREVALIDATOR` |
-| `label` | String? | Etiquette (ex : "Familles") |
+| `label` | String? | Étiquette (ex : "Familles") |
 | `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`) |
 | `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`) |
-| `expiresAt` | DateTime? | Expiration (null = illimite) |
+| `expiresAt` | DateTime? | Expiration (null = illimité) |
 | `usageCount` | Int | Nombre d'utilisations (default: 0) |
 | `createdById` | String | Ref vers `users` |
-| `createdAt` | DateTime | Date de creation |
+| `createdAt` | DateTime | Date de création |
 
 #### `media_zip_jobs`
 
-Jobs asynchrones de generation de ZIP pour le telechargement groupe.
+Jobs asynchrones de génération de ZIP pour le téléchargement groupé.
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `mediaEventId` | String | Ref vers `media_events` |
 | `status` | MediaJobStatus | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
-| `zipKey` | String? | Cle S3 du ZIP genere |
-| `error` | String? (Text) | Message d'erreur si echec |
+| `zipKey` | String? | Clé S3 du ZIP généré |
+| `error` | String? (Text) | Message d'erreur si échec |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
 #### `media_settings`
 
-Parametres globaux du module media par eglise (singleton par eglise).
+Paramètres globaux du module média par église (singleton par église).
 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
 | `churchId` | String (unique) | Ref vers `churches` |
-| `logoKey` | String? | Cle S3 du logo |
-| `faviconKey` | String? | Cle S3 du favicon |
-| `retentionDays` | Int? | Retention en jours (null = indefinie) |
+| `logoKey` | String? | Clé S3 du logo |
+| `faviconKey` | String? | Clé S3 du favicon |
+| `retentionDays` | Int? | Rétention en jours (null = indéfinie) |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
-### Enums media
+### Enums média
 
 #### `MediaEventStatus`
 ```
@@ -687,109 +693,144 @@ FAILED     # Echec de generation
 
 Publication des enregistrements de culte (le traitement `PROBE`/`RENDER` est asynchrone : la
 table `audio_jobs` est le **seul canal** entre l'application et le worker, voir
-[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) et bibliotheque d'ecoute ouverte a tout
+[ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) et bibliothèque d'écoute ouverte à tout
 membre (spec 021), servie depuis un cache disque local
-([ADR-0008](adr/0008-cache-disque-renditions-audio.md)).
+([ADR-0008](adr/0008-cache-disque-renditions-audio.md)). Une église peut aussi ouvrir sa
+bibliothèque publiée à une autre église de la plateforme (`audio_library_shares`, spec 036) :
+octroi dirigé, sans passer par l'annuaire des églises (réservé à l'administration de la
+plateforme).
 
 #### `audio_settings`
 
-Configuration du module par eglise.
+Configuration du module par église.
 
 | Champ | Type | Description |
 |---|---|---|
 | `churchId` | String (unique) | Ref vers `churches` |
-| `defaultCoverKey` | String? | Pochette par defaut (cle S3) |
-| `sequenceTemplate` | Json? | Noms de sequences usuels proposes au nommage |
+| `defaultCoverKey` | String? | Pochette par défaut (clé S3) |
+| `sequenceTemplate` | Json? | Noms de séquences usuels proposés au nommage |
 
-> Le departement de captation audio n'est plus une colonne dediee ici — depuis la spec 021, il
+> Le département de captation audio n'est plus une colonne dédiée ici — depuis la spec 021, il
 > se pilote via `departments.function = "CAPTATION_AUDIO"` (voir `departments` ci-dessous),
-> ramene dans le mecanisme commun des fonctions de departement (`SECRETARIAT`, `COMMUNICATION`…).
-> Migration `move_capture_department_to_function` : les donnees existantes sont reportees avant
+> ramené dans le mécanisme commun des fonctions de département (`SECRETARIAT`, `COMMUNICATION`…).
+> Migration `move_capture_department_to_function` : les données existantes sont reportées avant
 > la suppression de la colonne.
 
 #### `audio_services`
 
-Un culte enregistre.
+Un culte enregistré.
 
 | Champ | Type | Description |
 |---|---|---|
 | `churchId` | String | Ref vers `churches` |
-| `planningEventId` | String? (unique) | Rattachement facultatif a un evenement planning |
+| `planningEventId` | String? (unique) | Rattachement facultatif à un événement planning |
 | `serviceDate` | DateTime | Saisie si aucun `planningEventId` |
-| `title` / `speaker` | String? | Titre et predicateur |
-| `coverKey` | String? | Pochette specifique, sinon `AudioSettings.defaultCoverKey` |
+| `title` / `speaker` | String? | Titre et prédicateur |
+| `series` | String? | Nom de la série / podcast d'origine (import Audiobookshelf, spec 022) — `null` hors série |
+| `type` | String | Nomenclature `EVENT_TYPES` (`@/lib/event-types`) — recopiée depuis `Event.type` au dépôt/rattachement, saisie sinon (default: `AUTRE`) |
+| `coverKey` | String? | Pochette spécifique, sinon `AudioSettings.defaultCoverKey` |
 | `status` | AudioServiceStatus | `DRAFT`, `PENDING_REVIEW`, `READY`, `PUBLISHED`, `UNPUBLISHED` |
 | `publishedAt` / `publishedById` | DateTime? / String? | Horodatage et auteur de la publication |
 | `openCount` | Int | Nombre d'ouvertures du lien public |
 
 #### `audio_sources`
 
-Fichier depose. Un seul `kind` est emis en P1 : `SEQUENCE`.
+Fichier déposé. Un seul `kind` est émis en P1 : `SEQUENCE`.
 
 | Champ | Type | Description |
 |---|---|---|
 | `serviceId` | String | Ref vers `audio_services` |
-| `kind` | AudioSourceKind | `SEQUENCE` (P1) ; `MIX`, `ENVELOPES`, `SOURCE` reserves |
-| `s3Key` | String(512) | Cle S3 — nommee d'apres l'id de la source |
-| `originalFilename` | String(255)? | Nom du fichier tel que depose, affiche pendant le nommage |
-| `uploadId` | String(255)? | Identifiant du multipart S3 en cours (reprise apres coupure) |
+| `kind` | AudioSourceKind | `SEQUENCE` (P1) ; `MIX`, `ENVELOPES`, `SOURCE` réservés |
+| `channelKey` | String? | `null` pour `MIX`/`SEQUENCE` ; nom du canal pour `ENVELOPES`/`SOURCE` (P2) |
+| `s3Key` | String(512) | Clé S3 — nommée d'après l'id de la source |
+| `originalFilename` | String(255)? | Nom du fichier tel que déposé, affiché pendant le nommage |
+| `uploadId` | String(255)? | Identifiant du multipart S3 en cours (reprise après coupure) |
 | `etag` | String(255)? | ETag S3 final — base du `sourceHash` (idempotence du rendu) |
-| `durationMs` / `sizeBytes` | Int? / BigInt? | Renseignes par le job `PROBE` / a l'envoi |
+| `durationMs` / `sizeBytes` | Int? / BigInt? | Renseignés par le job `PROBE` / à l'envoi |
 | `uploadStatus` | String | `PENDING` puis `DONE` |
+| `purgeableAt` | DateTime? | Archive FLAC, purge manuelle (P2, réservé) |
 
-> `sizeBytes` est un `BigInt` : il **doit** etre converti avant toute serialisation JSON
-> (`toJsonSafeAudioSource`), `NextResponse.json` ne sachant pas serialiser ce type.
+> `sizeBytes` est un `BigInt` : il **doit** être converti avant toute sérialisation JSON
+> (`toJsonSafeAudioSource`), `NextResponse.json` ne sachant pas sérialiser ce type.
 
 #### `audio_segments`
 
-Sequence nommee et ordonnee au sein d'un culte.
+Séquence nommée et ordonnée au sein d'un culte.
 
 | Champ | Type | Description |
 |---|---|---|
 | `serviceId` | String | Ref vers `audio_services` |
-| `sourceId` | String? (unique) | Ref vers `audio_sources` (P1 : toujours renseigne) |
+| `sourceId` | String? (unique) | Ref vers `audio_sources` (P1 : toujours renseigné) |
 | `order` | Int | Rang d'affichage — unique par culte |
-| `kind` | AudioSegmentKind | `SEQUENCE` (publiee) ou `DISCARDED` (non diffusee) |
-| `title` | String | Nom saisi (modele ou libre) |
-| `startMs` / `endMs` | Int | `0` et duree de la source en P1 (decoupage en P1.5) |
-| `playCount` | Int | Nombre d'ecoutes |
+| `kind` | AudioSegmentKind | `SEQUENCE` (publiée) ou `DISCARDED` (non diffusée) |
+| `title` | String | Nom saisi (modèle ou libre) |
+| `startMs` / `endMs` | Int | `0` et durée de la source en P1 (découpage en P1.5) |
+| `confidence` | Float? | Confiance de la détection automatique (P2) ; `null` en P1 (placement manuel) |
+| `detectedBy` | String? | `"deposit"` en P1 ; `"manual"` en P1.5 ; nom de l'algo en P2 |
+| `playCount` | Int | Nombre d'écoutes |
 
 #### `audio_renditions`
 
-Rendu sonore normalise d'un segment (une par segment).
+Rendu sonore normalisé d'un segment (une par segment).
 
 | Champ | Type | Description |
 |---|---|---|
 | `segmentId` | String (unique) | Ref vers `audio_segments` |
-| `s3Key` | String(512) | MP3 normalise |
-| `lufs` / `truePeakDb` | Float | Niveau cible (−16 LUFS) et crete vraie mesuree |
-| `sourceHash` | String | Hash de l'ETag source — evite de re-rendre a l'identique |
+| `s3Key` | String(512) | MP3 normalisé |
+| `lufs` / `truePeakDb` | Float | Niveau cible (−16 LUFS) et crête vraie mesurée |
+| `sourceHash` | String | Hash de l'ETag source — évite de re-rendre à l'identique |
 
 #### `audio_jobs`
 
-File de traitement consommee par le worker via `SELECT … FOR UPDATE SKIP LOCKED`.
+File de traitement consommée par le worker via `SELECT … FOR UPDATE SKIP LOCKED`.
 
 | Champ | Type | Description |
 |---|---|---|
 | `serviceId` | String | Ref vers `audio_services` |
-| `type` | AudioJobType | `PROBE`, `RENDER` (P1) ; `ALIGN`, `TRANSCRIBE` reserves |
+| `type` | AudioJobType | `PROBE`, `RENDER` (P1) ; `ALIGN`, `TRANSCRIBE` réservés |
 | `status` | AudioJobStatus | `PENDING`, `RUNNING`, `DONE`, `FAILED` |
 | `attempts` | Int | 3 tentatives avant `FAILED` |
 | `leasedUntil` | DateTime? | Bail (30 min) — permet la reprise si le worker meurt en plein rendu |
-| `payload` / `error` | Json? / Text? | Parametres du job et message d'echec |
+| `payload` / `error` | Json? / Text? | Paramètres du job et message d'échec |
 
 #### `audio_share_tokens`
 
 | Champ | Type | Description |
 |---|---|---|
 | `serviceId` | String | Ref vers `audio_services` |
-| `segmentId` | String? | `null` = lien vers le culte entier ; sinon lien direct vers une sequence |
-| `token` | String (unique) | Utilise par `/ecouter/[token]` |
-| `revokedAt` | DateTime? | Depublier revoque les liens deja partages |
+| `segmentId` | String? | `null` = lien vers le culte entier ; sinon lien direct vers une séquence |
+| `token` | String (unique) | Utilisé par `/ecouter/[token]` |
+| `revokedAt` | DateTime? | Dépublier révoque les liens déjà partagés |
 
 #### `audio_service_templates`
 
-Deroules types par eglise et type d'evenement (`sequenceNames`, `mixingProfile` reserve P2).
+Déroulés types par église et type d'événement (`sequenceNames`, `mixingProfile` réservé P2).
+
+#### `audio_library_shares`
+
+Octroi **dirigé** d'une église (propriétaire) à une autre (invitée) : la bibliothèque des cultes
+publiés de la première devient visible dans l'espace « (re)Écouter » de la seconde (spec 036).
+Geste unilatéral et volontaire — pas de hiérarchie entre églises, pas de réciprocité automatique
+(ouvrir A → B ne donne aucun accès de B vers A).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `ownerChurchId` | String | Ref vers `churches` — église qui ouvre sa bibliothèque |
+| `guestChurchId` | String | Ref vers `churches` — église qui reçoit l'accès en lecture |
+| `createdAt` | DateTime | Date d'octroi |
+
+Contraintes : `[ownerChurchId, guestChurchId]` unique (pas de doublon pour un même couple) ;
+`onDelete: Cascade` sur les deux relations vers `churches` (supprimer l'église propriétaire ou
+l'église invitée supprime le partage). Index sur `guestChurchId` — lecture chaude « qui m'a
+ouvert sa bibliothèque ? », interrogée à chaque chargement de la bibliothèque d'écoute pour
+calculer la liste d'églises accessibles.
+
+> Le partage référence l'**église** (`ownerChurchId`/`guestChurchId`), jamais son `slug` : un
+> renommage de l'identifiant public d'une église (voir `churches` ci-dessus) ne rompt donc aucun
+> partage déjà noué. L'auteur de l'octroi n'est pas stocké dans cette table — la trace nommée
+> exigée par la spec est portée par `audit_logs` (`entityType: "AudioLibraryShare"`, `churchId`
+> = église propriétaire), à l'ouverture comme à la révocation.
 
 ### Enums audio
 
@@ -802,11 +843,11 @@ PUBLISHED      # Lien public actif
 UNPUBLISHED    # Depublie — liens partages inoperants
 ```
 
-> Le depot reste editable (redeposer, supprimer une sequence, renommer/reordonner) dans tous
+> Le dépôt reste éditable (redéposer, supprimer une séquence, renommer/réordonner) dans tous
 > ces statuts **sauf `PUBLISHED`** — voir `EDITABLE_SERVICE_STATUSES` dans
-> `src/modules/audio/services/service.ts`. `READY` en fait partie : un rendu peut echouer (objet
-> S3 absent, ffmpeg en erreur) et laisser le culte bloque dans cet etat sans jamais atteindre
-> `PUBLISHED` — sans cela, aucune correction ni sortie par l'interface n'etait possible.
+> `src/modules/audio/services/service.ts`. `READY` en fait partie : un rendu peut échouer (objet
+> S3 absent, ffmpeg en erreur) et laisser le culte bloqué dans cet état sans jamais atteindre
+> `PUBLISHED` — sans cela, aucune correction ni sortie par l'interface n'était possible.
 
 #### `AudioSourceKind`
 ```
@@ -838,28 +879,28 @@ DONE    # Termine
 FAILED  # Echec apres 3 tentatives
 ```
 
-## Seed (donnees initiales)
+## Seed (données initiales)
 
-Le script `prisma/seed.ts` cree :
+Le script `prisma/seed.ts` crée :
 
-- **1 eglise** : ICC Rennes (`icc-rennes`)
-- **7 ministeres** avec leurs departements :
+- **1 église** : ICC Rennes (`icc-rennes`)
+- **7 ministères** avec leurs départements :
   - Accueil (Accueil, Protocole, Parking)
-  - Louange (Choristes, Musiciens, Son, Video/Regie)
-  - Communication (Reseaux sociaux, Design, Photographie, Videographie)
+  - Louange (Choristes, Musiciens, Son, Vidéo/Régie)
+  - Communication (Réseaux sociaux, Design, Photographie, Vidéographie)
   - Intercession (Intercession culte, Intercession permanente)
-  - Enseignement (Ecole du dimanche, Adolescents, Jeunes adultes)
-  - Technique (Son, Lumiere, Multimedia, Streaming)
-  - Service d'ordre (Securite, Premiers secours)
-- **3-5 membres fictifs** par departement
-- **4 cultes hebdomadaires** + **1 soiree de priere**
-- **Tous les departements** lies au premier evenement
+  - Enseignement (École du dimanche, Adolescents, Jeunes adultes)
+  - Technique (Son, Lumière, Multimédia, Streaming)
+  - Service d'ordre (Sécurité, Premiers secours)
+- **3-5 membres fictifs** par département
+- **4 cultes hebdomadaires** + **1 soirée de prière**
+- **Tous les départements** liés au premier événement
 
 ## Migrations
 
-Depuis v0.5.0, le projet utilise **Prisma Migrate** pour gerer les evolutions du schema.
+Depuis v0.5.0, le projet utilise **Prisma Migrate** pour gérer les évolutions du schéma.
 
-### Workflow developpement
+### Workflow développement
 
 ```bash
 npm run db:migrate         # creer et appliquer une migration (dev)
@@ -876,7 +917,7 @@ npm run db:migrate:deploy  # appliquer les migrations en production (non-interac
 
 ### Migration baseline
 
-La migration `0_init` contient le schema complet initial. Pour une base existante (pre-v0.5.0), marquer cette migration comme deja appliquee :
+La migration `0_init` contient le schéma complet initial. Pour une base existante (pré-v0.5.0), marquer cette migration comme déjà appliquée :
 
 ```bash
 npx prisma migrate resolve --applied 0_init
@@ -885,21 +926,21 @@ npx prisma migrate resolve --applied 0_init
 ### Ajouter une migration
 
 1. Modifier `prisma/schema.prisma`
-2. Lancer `npm run db:migrate` — Prisma genere le SQL et l'applique
+2. Lancer `npm run db:migrate` — Prisma génère le SQL et l'applique
 3. Committer le dossier `prisma/migrations/` avec le code
 
-### Regle : ne jamais toucher a `_prisma_migrations`
+### Règle : ne jamais toucher à `_prisma_migrations`
 
-`_prisma_migrations` (**un seul** underscore) est la table interne ou Prisma tient l'historique
-des migrations appliquees. Aucune migration ne doit la creer, la modifier ni la supprimer :
-Prisma la gere seul, avant et apres chaque migration.
+`_prisma_migrations` (**un seul** underscore) est la table interne où Prisma tient l'historique
+des migrations appliquées. Aucune migration ne doit la créer, la modifier ni la supprimer :
+Prisma la gère seul, avant et après chaque migration.
 
-Une migration ecrite a la main a un jour cree une table `__prisma_migrations` (**deux**
-underscores) — un decoy sans aucun lien avec Prisma, qu'une migration ulterieure a ensuite
-supprime. Inoffensif en pratique, mais suffisamment ressemblant pour faire croire a une
-corruption de l'historique. Les deux lignes ont ete retirees (issue #499).
+Une migration écrite à la main a un jour créé une table `__prisma_migrations` (**deux**
+underscores) — un decoy sans aucun lien avec Prisma, qu'une migration ultérieure a ensuite
+supprimé. Inoffensif en pratique, mais suffisamment ressemblant pour faire croire à une
+corruption de l'historique. Les deux lignes ont été retirées (issue #499).
 
-Pour verifier qu'un historique se rejoue proprement sans toucher a la base de dev, deployer sur
+Pour vérifier qu'un historique se rejoue proprement sans toucher à la base de dev, déployer sur
 une base jetable :
 
 ```bash

@@ -1,15 +1,41 @@
 # Changelog
 
-Toutes les modifications notables de ce projet sont documentees ici.
-Format inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
+Toutes les modifications notables de ce projet sont documentées ici.
+Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [Non publie]
+## [Non publié]
 
-### Securite
+### Ajouté
 
-- Monte `fast-uri` en 3.1.7 via override (GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
-  GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp) — dependance transitive de prisma 7.10 (ajv), la
+- **Partage de bibliothèque audio entre églises** : une église peut ouvrir sa bibliothèque de
+  cultes publiés à d'autres églises de la plateforme, depuis les paramètres de l'espace Audio.
+  Le partage est unilatéral et dirigé — l'église propriétaire décide seule, en saisissant
+  l'identifiant de l'église destinataire, sans qu'aucun annuaire des églises ne soit exposé aux
+  administrateurs d'église. Chez l'église destinataire, les cultes reçus apparaissent dans la
+  bibliothèque avec une marque d'origine et un filtre par église, qui n'apparaît que s'il y a
+  effectivement un partage. L'accès est strictement en écoute : ni dépôt, ni publication, ni
+  dépublication, ni génération de lien public sur le contenu d'autrui. Voir
+  `specs/036-partage-bibliotheque-audio/`.
+
+### Documentation
+
+- **Dossier d'Architecture Technique (`docs/dat.md`)** : nouveau document de synthèse donnant la
+  vue d'ensemble de l'architecture (fonctionnelle, applicative, données, sécurité,
+  infrastructure, exploitation). Il référence les documents détaillés au lieu de les dupliquer —
+  chacun reste la source de vérité sur son domaine.
+- **ADR-0010** : accès transverse inter-églises borné au module demandeur — un partage entre
+  églises s'implémente par un helper dédié au module concerné, jamais en élargissant
+  `requireChurchPermission`.
+- Mise en cohérence de la documentation technique avec le code : tableaux de permissions par
+  rôle complétés (rôles et permissions manquants), champs audio non documentés ajoutés dans
+  `database.md`, arborescence `/audio` et `/api/audio` ajoutée dans `architecture.md`,
+  endpoints de partage documentés dans `api.md`.
+
+### Sécurité
+
+- Monté `fast-uri` en 3.1.7 via override (GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
+  GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp) — dépendance transitive de prisma 7.10 (ajv), la
   porte `npm audit --omit=dev --audit-level=high` de la CI.
 
 ## [v1.19.0] - 2026-09-01
@@ -1194,218 +1220,218 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [v0.12.4] - 2026-03-23
 
-### Nouveautes
+### Nouveautés
 
-- Discipolat : gestion complete pour admins et secretariat — acces a toutes les lignees, modification du FD actuel et du premier FD (#100)
-- Discipolat : le secretariat obtient la permission `discipleship:manage`
-- Discipolat : filtre "Mes disciples" pour les admins/secretaires cumulant le role FD
-- Discipolat : un admin/secretaire avec le role FD conserve la vue admin complete
+- Discipolat : gestion complète pour admins et secrétariat — accès à toutes les lignées, modification du FD actuel et du premier FD (#100)
+- Discipolat : le secrétariat obtient la permission `discipleship:manage`
+- Discipolat : filtre "Mes disciples" pour les admins/secrétaires cumulant le rôle FD
+- Discipolat : un admin/secrétaire avec le rôle FD conserve la vue admin complète
 
 ## [v0.12.3] - 2026-03-23
 
 ### Corrections
 
-- TypeScript : correction des erreurs de lint apres la migration N-N membres/departements (#99)
-- Remplacement de toutes les references `member.department` par `member.departments` dans les routes API et composants
-- Mise a jour des mocks de tests pour reflechir le nouveau schema N-N
+- TypeScript : correction des erreurs de lint après la migration N-N membres/départements (#99)
+- Remplacement de toutes les références `member.department` par `member.departments` dans les routes API et composants
+- Mise à jour des mocks de tests pour refléter le nouveau schéma N-N
 
 ## [v0.12.2] - 2026-03-22
 
 ### Corrections
 
 - Mobile : touch targets agrandis sur la sidebar, les tabs et les boutons d'action
-- Mobile : labels bottom nav passes de 10px a 11px, padding bas ajuste
-- Mobile : grilles stats responsive (presence, integration) sur les comptes rendus
+- Mobile : labels bottom nav passés de 10px à 11px, padding bas ajusté
+- Mobile : grilles stats responsive (présence, intégration) sur les comptes rendus
 - Mobile : export Excel layout vertical avec inputs pleine largeur
-- Mobile : modales de la page Acces en bottom-sheet
-- Mobile : titres d'annonces tronques (line-clamp)
+- Mobile : modales de la page Accès en bottom-sheet
+- Mobile : titres d'annonces tronqués (line-clamp)
 - Mobile : vue cartes pour les tables Relations et Statistiques du discipolat
-- Mobile : selecteur de periode discipolat en layout vertical
+- Mobile : sélecteur de période discipolat en layout vertical
 
 ## [v0.12.1] - 2026-03-22
 
 ### Documentation
 
-- Tour guide : ajout des etapes Membres, Annonces, Discipolat, Comptes rendus
-- Tour guide : visibilite par role (REPORTER voit les CR, DISCIPLE_MAKER voit le discipolat)
-- Tour guide : renommage Administration→Configuration, Departements→Planning
+- Tour guide : ajout des étapes Membres, Annonces, Discipolat, Comptes rendus
+- Tour guide : visibilité par rôle (REPORTER voit les CR, DISCIPLE_MAKER voit le discipolat)
+- Tour guide : renommage Administration→Configuration, Départements→Planning
 - Guide utilisateur : description enrichie des comptes rendus (orateur, export Excel)
 - API docs : champs speaker/messageTitle + endpoint export Excel
 - Database docs : colonnes speaker et messageTitle sur event_reports
-- Roadmap : items export Excel et champs orateur/titre coches
+- Roadmap : items export Excel et champs orateur/titre cochés
 
 ## [v0.12.0] - 2026-03-22
 
 ### Ajouts
 
-- Export Excel des statistiques hebdomadaires des cultes avec selection de periode
-- Champs orateur et titre du message dans les comptes rendus d'evenements
+- Export Excel des statistiques hebdomadaires des cultes avec sélection de période
+- Champs orateur et titre du message dans les comptes rendus d'événements
 - Endpoint API `GET /api/events/reports/export` avec protection contre l'injection de formules Excel
 
 ## [v0.11.3] - 2026-03-22
 
-### Securite
+### Sécurité
 
-- Routes unitaires membres/departements : validation cross-tenant sur departmentId et ministryId cibles
-- Comptes rendus : validation des departmentIds de section contre l'eglise de l'evenement
-- Duplication de planning : verification que l'evenement cible appartient a la meme eglise
+- Routes unitaires membres/départements : validation cross-tenant sur departmentId et ministryId cibles
+- Comptes rendus : validation des departmentIds de section contre l'église de l'événement
+- Duplication de planning : vérification que l'événement cible appartient à la même église
 - Discipolat PATCH : enforcement du scope DISCIPLE_MAKER + validation cross-tenant du nouveau FD
-- Discipolat POST : validation de tous les memberIds (disciple, FD, firstMaker) contre l'eglise
-- Suppression membre : cascade complete incluant discipleship (unitaire et bulk)
+- Discipolat POST : validation de tous les memberIds (disciple, FD, firstMaker) contre l'église
+- Suppression membre : cascade complète incluant discipleship (unitaire et bulk)
 - Middleware : exception /api/cron/* pour authentification par bearer token
 
 ### Tests
 
-- 25 nouveaux tests de securite multi-tenant (105 total)
+- 25 nouveaux tests de sécurité multi-tenant (105 total)
 - Couverture : bulk ops, routes unitaires, discipolat, rapports, duplication planning
 
 ## [v0.11.2] - 2026-03-22
 
-### Securite
+### Sécurité
 
-- Bulk PATCH destination : validation que les champs churchId/ministryId/departmentId cibles appartiennent a la meme eglise (ministeres, departements, membres)
-- Planning PUT : verification que tous les memberIds appartiennent au departement cible
-- Service requests POST : validation des references departmentId et ministryId contre l'eglise specifiee
+- Bulk PATCH destination : validation que les champs churchId/ministryId/departmentId cibles appartiennent à la même église (ministères, départements, membres)
+- Planning PUT : vérification que tous les memberIds appartiennent au département cible
+- Service requests POST : validation des références departmentId et ministryId contre l'église spécifiée
 - Service requests PATCH : application stricte du owner read-only (blocage de toute modification, pas seulement le statut)
 
 ## [v0.11.1] - 2026-03-22
 
-### Securite
+### Sécurité
 
-- Coherence cross-tenant event↔departement : verification que le departement appartient a la meme eglise que l'evenement (planning GET/PUT, event-departments POST/DELETE)
-- Operations bulk : validation que TOUS les IDs appartiennent a la meme eglise (events, departments, members, ministries PATCH)
-- Suppression de roles privilegies : blocage pour les non-super-admins (SUPER_ADMIN, ADMIN, SECRETARY)
-- Service-requests canManage : scope du calcul de permissions a l'eglise demandee
-- Bypass deadline planning : scope de la verification des roles a l'eglise de l'evenement
+- Cohérence cross-tenant event↔département : vérification que le département appartient à la même église que l'événement (planning GET/PUT, event-departments POST/DELETE)
+- Opérations bulk : validation que TOUS les IDs appartiennent à la même église (events, departments, members, ministries PATCH)
+- Suppression de rôles privilégiés : blocage pour les non-super-admins (SUPER_ADMIN, ADMIN, SECRETARY)
+- Service-requests canManage : scope du calcul de permissions à l'église demandée
+- Bypass deadline planning : scope de la vérification des rôles à l'église de l'événement
 
 ## [v0.11.0] - 2026-03-22
 
-### Securite
+### Sécurité
 
-- Autorisation multi-tenant scopee par eglise sur toutes les routes API (requireChurchPermission + resolveChurchId)
-- Server components scopes a l'eglise active via getCurrentChurchId (19 pages)
-- Rate limiting active sur les routes d'authentification et de mutation (3 presets : AUTH, MUTATION, SENSITIVE)
-- Tests de securite : 36 tests couvrant l'isolation multi-tenant, le rate limiting, et le rejet cross-tenant
+- Autorisation multi-tenant scopée par église sur toutes les routes API (requireChurchPermission + resolveChurchId)
+- Server components scopés à l'église active via getCurrentChurchId (19 pages)
+- Rate limiting activé sur les routes d'authentification et de mutation (3 presets : AUTH, MUTATION, SENSITIVE)
+- Tests de sécurité : 36 tests couvrant l'isolation multi-tenant, le rate limiting, et le rejet cross-tenant
 
-### Ajoute
+### Ajouté
 
-- Audit logging systematique sur tous les endpoints de mutation (~50 operations, 25 fichiers)
+- Audit logging systématique sur tous les endpoints de mutation (~50 opérations, 25 fichiers)
 - Standardisation des actions d'audit : CREATE, UPDATE, DELETE
-- churchId ajoute aux logs d'audit du planning
+- churchId ajouté aux logs d'audit du planning
 
-### Corrige
+### Corrigé
 
-- Suppression d'evenements : resolution de la contrainte FK en supprimant les enregistrements dependants dans l'ordre correct
+- Suppression d'événements : résolution de la contrainte FK en supprimant les enregistrements dépendants dans l'ordre correct
 - Routes discipolat : migration de prisma.auditLog.create direct vers le helper logAudit
 
 ## [v0.10.0] - 2026-03-21
 
-### Modifie
+### Modifié
 
 - Renommage de l'application PlanningCenter en **Koinonia** (grec : communion, partage)
-- Repo GitHub renomme en `iccbretagne/koinonia`
-- Mise a jour de tous les fichiers : package.json, metadata, UI, PWA, emails, deploiement, documentation
-- Utilisateur systeme et dossier de deploiement renommes (`planning` → `koinonia`)
-- README reecrit pour refleter la vision elargie de l'application
+- Repo GitHub renommé en `iccbretagne/koinonia`
+- Mise à jour de tous les fichiers : package.json, metadata, UI, PWA, emails, déploiement, documentation
+- Utilisateur système et dossier de déploiement renommés (`planning` → `koinonia`)
+- README réécrit pour refléter la vision élargie de l'application
 
 ## [v0.9.0] - 2026-03-21
 
-### Ajoute
+### Ajouté
 
 - Module Discipolat :
-  - Role `DISCIPLE_MAKER` avec permissions `discipleship:view`, `discipleship:manage`, `discipleship:export`
-  - Modeles `Discipleship` et `DiscipleshipAttendance` (schema Prisma)
-  - Champ `trackedForDiscipleship` sur les evenements
+  - Rôle `DISCIPLE_MAKER` avec permissions `discipleship:view`, `discipleship:manage`, `discipleship:export`
+  - Modèles `Discipleship` et `DiscipleshipAttendance` (schéma Prisma)
+  - Champ `trackedForDiscipleship` sur les événements
   - API REST : `/api/discipleships` (CRUD), `/api/discipleships/attendance` (appel), `/api/discipleships/stats`, `/api/discipleships/export` (Excel)
   - Tableau de bord `/admin/discipleship` avec 3 onglets : Relations, Appel, Statistiques
   - Section "Discipolat" dans la sidebar, visible uniquement aux utilisateurs ayant `discipleship:view`
-  - Onglet Appel : selection d'evenement (mois glissant, tri chronologique, selection automatique sur l'evenement le plus proche), presences groupees par FD, sauvegarde via PUT
-  - Export Excel : feuille statistiques + feuille detail presences
-- Comptes rendus d'evenements :
-  - Modeles `EventReport` et `EventReportSection` (schema Prisma)
-  - Flags `reportEnabled` et `statsEnabled` sur les evenements
+  - Onglet Appel : sélection d'événement (mois glissant, tri chronologique, sélection automatique sur l'événement le plus proche), présences groupées par FD, sauvegarde via PUT
+  - Export Excel : feuille statistiques + feuille détail présences
+- Comptes rendus d'événements :
+  - Modèles `EventReport` et `EventReportSection` (schéma Prisma)
+  - Flags `reportEnabled` et `statsEnabled` sur les événements
   - API REST : `/api/events/[eventId]/report` (GET/PUT)
   - Page de saisie `/admin/events/[eventId]/report` avec sauvegarde auto (debounce)
-  - Statistiques par departement (Accueil, Integration, Sainte-Cene) avec champs configurables
-  - Tableau de bord `/admin/reports` avec liste et onglet statistiques agregees par mois
-- Role `REPORTER` :
+  - Statistiques par département (Accueil, Intégration, Sainte-Cène) avec champs configurables
+  - Tableau de bord `/admin/reports` avec liste et onglet statistiques agrégées par mois
+- Rôle `REPORTER` :
   - Permissions `events:view`, `reports:view`, `reports:edit`
-  - Acces en lecture/ecriture aux comptes rendus sans droits d'administration
-  - Toggle d'attribution dans la page Acces & roles
-- Page Acces & roles (`/admin/access`) :
-  - Onglet "Roles" : attribution des ministres et responsables de departement (principal/adjoint via `isDeputy`)
+  - Accès en lecture/écriture aux comptes rendus sans droits d'administration
+  - Toggle d'attribution dans la page Accès & rôles
+- Page Accès & rôles (`/admin/access`) :
+  - Onglet "Rôles" : attribution des ministres et responsables de département (principal/adjoint via `isDeputy`)
   - Onglet "Comptes rendus" : toggle REPORTER par utilisateur
-  - Remplacement du bouton "Ajouter un role" de la page Utilisateurs
-- Reorganisation du menu sidebar :
-  - 6 sections : Planning, Evenements (Liste, Calendrier, Gestion, CR), Membres, Annonces, Discipolat, Configuration
-  - Visibilite conditionnelle par permissions (REPORTER ne voit pas Planning)
-  - BottomNav mobile adapte (Planning, Evenements, Membres)
-- Configuration evenement : toggle "Suivre les presences pour le discipolat" sur la page de detail
-- Configuration evenement : toggles "Compte rendu" et "Statistiques" sur la page de detail
-- Bouton "Configurer" (renomme depuis "Dep. service") sur la liste des evenements admin
-- Modale contextuelle par action (remplace la checkbox serie globale)
+  - Remplacement du bouton "Ajouter un rôle" de la page Utilisateurs
+- Réorganisation du menu sidebar :
+  - 6 sections : Planning, Événements (Liste, Calendrier, Gestion, CR), Membres, Annonces, Discipolat, Configuration
+  - Visibilité conditionnelle par permissions (REPORTER ne voit pas Planning)
+  - BottomNav mobile adapté (Planning, Événements, Membres)
+- Configuration événement : toggle "Suivre les présences pour le discipolat" sur la page de détail
+- Configuration événement : toggles "Compte rendu" et "Statistiques" sur la page de détail
+- Bouton "Configurer" (renommé depuis "Dep. service") sur la liste des événements admin
+- Modale contextuelle par action (remplace la checkbox série globale)
 - Export des comptes rendus :
-  - Export PDF (jsPDF) avec stats par departement, pagination et footer auteur
-  - Copie message WhatsApp formate (gras, emojis, stats typees par departement)
-- Filtres sur la liste des comptes rendus : mois, type d'evenement, statut, recherche textuelle
+  - Export PDF (jsPDF) avec stats par département, pagination et footer auteur
+  - Copie message WhatsApp formaté (gras, emojis, stats typées par département)
+- Filtres sur la liste des comptes rendus : mois, type d'événement, statut, recherche textuelle
 
-### Ameliore
+### Amélioré
 
-- Boutons Retour en haut/bas de la page CR, coherence couleurs charte ICC
-- Liaison compte utilisateur / membre STAR desormais independante de l'attribution de role
+- Boutons Retour en haut/bas de la page CR, cohérence couleurs charte ICC
+- Liaison compte utilisateur / membre STAR désormais indépendante de l'attribution de rôle
 - Interface admin membres : colonne "Compte" et bouton "Lier" pour liaison directe sans flux de demande
-- Page profil `/profile` : visualisation et demande de liaison STAR pour l'utilisateur connecte
-- Recherche membres et utilisateurs insensible a la casse
-- Guide utilisateur : ajout de l'onglet REPORTER avec matrice d'acces
+- Page profil `/profile` : visualisation et demande de liaison STAR pour l'utilisateur connecté
+- Recherche membres et utilisateurs insensible à la casse
+- Guide utilisateur : ajout de l'onglet REPORTER avec matrice d'accès
 
-### Corrige
+### Corrigé
 
 - Guards de permission manquants sur `/admin/audit-logs` et `/admin/churches/onboard`
-- Permission `reports:edit` separee de `reports:view` pour securiser l'ecriture des CR
+- Permission `reports:edit` séparée de `reports:view` pour sécuriser l'écriture des CR
 
 ## [v0.8.1] - 2026-03-18
 
-### Corrige
+### Corrigé
 
-- Motif de refus (`reviewNotes`) desormais visible par le demandeur dans "Mes annonces"
-- `tsconfig.tsbuildinfo` desindexe de git (etait deja dans `.gitignore`)
+- Motif de refus (`reviewNotes`) désormais visible par le demandeur dans "Mes annonces"
+- `tsconfig.tsbuildinfo` désindexé de git (était déjà dans `.gitignore`)
 
-### Ameliore
+### Amélioré
 
-- ESLint configure (`eslint-config-next`) avec script `npm run lint`
+- ESLint configuré (`eslint-config-next`) avec script `npm run lint`
 - TypeScript : activation `noUnusedLocals` + `noUnusedParameters`
-- `PlanningGrid` : etats d'erreur visibles (`fetchError` / `saveError`) en remplacement des `console.error` silencieux
-- CI : `npm run lint` ajoute dans le pipeline
-- Dependances : `@types/node` 25.3.5 → 25.5.0, `vitest` + `@vitest/coverage-v8` 4.0.18 → 4.1.0
+- `PlanningGrid` : états d'erreur visibles (`fetchError` / `saveError`) en remplacement des `console.error` silencieux
+- CI : `npm run lint` ajouté dans le pipeline
+- Dépendances : `@types/node` 25.3.5 → 25.5.0, `vitest` + `@vitest/coverage-v8` 4.0.18 → 4.1.0
 
 ## [v0.8.0] - 2026-03-18
 
-### Ajoute
+### Ajouté
 
 - Module Annonces et Demandes de service :
-  - Soumission d'annonces par les referents (`/announcements/new`) avec canaux Interne et/ou Externe
-  - Generation automatique de `ServiceRequest` en transaction lors de la soumission (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL)
-  - Dashboards operationnels dedies : Secretariat (`/secretariat/announcements`), Production Media (`/media/requests`), Communication (`/communication/requests`)
+  - Soumission d'annonces par les référents (`/announcements/new`) avec canaux Interne et/ou Externe
+  - Génération automatique de `ServiceRequest` en transaction lors de la soumission (DIFFUSION_INTERNE, RESEAUX_SOCIAUX, VISUEL)
+  - Dashboards opérationnels dédiés : Secrétariat (`/secretariat/announcements`), Production Média (`/media/requests`), Communication (`/communication/requests`)
   - Demandes de visuels standalone (`/media/requests/new`)
-  - Configuration des fonctions departementales (`/admin/departments/functions`)
+  - Configuration des fonctions départementales (`/admin/departments/functions`)
   - Badge de notification dans la sidebar pour les demandes en attente
   - Lien parent-enfant `parentRequestId` entre demande VISUEL et son canal (DIFFUSION_INTERNE ou RESEAUX_SOCIAUX)
   - Bouton "Annuler" dans "Mes annonces" : le demandeur peut annuler ses propres annonces
 
-### Corrige
+### Corrigé
 
-- Annulation en cascade niveau 1 : annuler une `Announcement` annule automatiquement toutes ses `ServiceRequest` liees
-- Annulation en cascade niveau 2 : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liee
+- Annulation en cascade niveau 1 : annuler une `Announcement` annule automatiquement toutes ses `ServiceRequest` liées
+- Annulation en cascade niveau 2 : refuser une demande `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX` annule automatiquement la demande `VISUEL` enfant liée
 - Synchronisation automatique du statut de l'annonce quand une SR parente change de statut (EN_COURS / TRAITEE / ANNULEE)
 
-### Ameliore
+### Amélioré
 
-- Statuts des demandes de service : badges colores (amber/blue/green/gray) a la place de simples icones
-- Formulaire annonce : champ "Source" renomme en "Departement demandeur"
+- Statuts des demandes de service : badges colorés (amber/blue/green/gray) à la place de simples icônes
+- Formulaire annonce : champ "Source" renommé en "Département demandeur"
 
 ## [v0.7.4] - 2026-03-07
 
-### Corrige
+### Corrigé
 
 - Mobile : boutons de la page Utilisateurs qui débordaient hors du viewport (flex-wrap)
 - Mobile : derniers items de la sidebar masqués par la BottomNav (padding-bottom)
@@ -1418,193 +1444,193 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [v0.7.3] - 2026-03-06
 
-### Ajoute
+### Ajouté
 
-- Guide : zoom plein ecran au clic sur les captures d'ecran (modale avec fond sombre)
+- Guide : zoom plein écran au clic sur les captures d'écran (modale avec fond sombre)
 
-### Corrige
+### Corrigé
 
-- Tour guide : correction du bouton "Terminer" qui ne desactivait pas le tour au premier clic
+- Tour guide : correction du bouton "Terminer" qui ne désactivait pas le tour au premier clic
 
 ## [v0.7.2] - 2026-03-06
 
-### Ameliore
+### Amélioré
 
-- Checkbox serie : bandeau violet avec icone de recurrence pour meilleure visibilite
+- Checkbox série : bandeau violet avec icône de récurrence pour meilleure visibilité
 
 ## [v0.7.1] - 2026-03-06
 
-### Corrige
+### Corrigé
 
 - Ajout migration manquante pour la colonne `hasSeenTour` (tour guide)
 
 ## [v0.7.0] - 2026-03-06
 
-### Ajoute
+### Ajouté
 
-- Sidebar : departements groupes par ministere (accordeon imbrique)
-- Tour guide interactif (GuidedTour) avec etapes contextuelles
-- API user preferences pour persister l'etat du tour guide
+- Sidebar : départements groupés par ministère (accordéon imbriqué)
+- Tour guide interactif (GuidedTour) avec étapes contextuelles
+- API user preferences pour persister l'état du tour guide
 - Attributs data-tour sur les composants pour le guidage
 
-### Ameliore
+### Amélioré
 
-- EventSelector, BottomNav, NotificationBell : ameliorations responsive
-- Planning route : optimisation des requetes
-- Suppression de ScreenshotPlaceholder (remplace par images reelles)
+- EventSelector, BottomNav, NotificationBell : améliorations responsive
+- Planning route : optimisation des requêtes
+- Suppression de ScreenshotPlaceholder (remplacé par images réelles)
 
 ## [v0.6.0] - 2026-03-06
 
-### Ajoute
+### Ajouté
 
-- Page Guide des fonctionnalites par role (`/guide`) avec onglets, badges d'acces et captures
-- Conteneur images 16:9 (`aspect-video` + `object-contain`) sans deformation
-- Descriptions d'actions pour chaque fonctionnalite du guide
-- Filtrage par role : masquage des fonctionnalites inaccessibles
-- Deploiement automatise via SSH sur push de tag v* (workflow CD)
-- Declenchement manuel du workflow deploy
-- Script de deploiement manuel `scripts/deploy.sh`
+- Page Guide des fonctionnalités par rôle (`/guide`) avec onglets, badges d'accès et captures
+- Conteneur images 16:9 (`aspect-video` + `object-contain`) sans déformation
+- Descriptions d'actions pour chaque fonctionnalité du guide
+- Filtrage par rôle : masquage des fonctionnalités inaccessibles
+- Déploiement automatisé via SSH sur push de tag v* (workflow CD)
+- Déclenchement manuel du workflow deploy
+- Script de déploiement manuel `scripts/deploy.sh`
 
-### Corrige
+### Corrigé
 
-- Symlink `.env` force lors du deploiement
+- Symlink `.env` forcé lors du déploiement
 - Utilisation de `prisma migrate deploy` en production
 
 ## [v0.5.0] - 2026-03-04
 
-### Ajoute
+### Ajouté
 
-- Modification en serie des evenements recurrents : modal de choix (cet evenement / toute la serie)
-- Propagation de l'heure et du type a toute la serie avec gestion du changement d'heure (DST)
-- Delai de planification intelligent : selecteur de delai (6h a 7j) avec pre-remplissage automatique
-- Calcul de deadline relative par occurrence lors de la creation et modification en serie
-- Taches permanentes par departement avec affectation par evenement
-- Filtres evenements : recherche textuelle, filtre par mois (defaut : mois courant)
+- Modification en série des événements récurrents : modal de choix (cet événement / toute la série)
+- Propagation de l'heure et du type à toute la série avec gestion du changement d'heure (DST)
+- Délai de planification intelligent : sélecteur de délai (6h à 7j) avec pré-remplissage automatique
+- Calcul de deadline relative par occurrence lors de la création et modification en série
+- Tâches permanentes par département avec affectation par événement
+- Filtres événements : recherche textuelle, filtre par mois (défaut : mois courant)
 - Infrastructure de tests Vitest avec couverture V8
 - Tests unitaires : permissions RBAC (10 tests), helpers API (9 tests)
 - Tests API : departments (9 tests), events (8 tests), planning (8 tests)
-- Mocks reutilisables pour Prisma et sessions d'authentification
+- Mocks réutilisables pour Prisma et sessions d'authentification
 - Migrations Prisma : migration baseline `0_init` (remplace `db push`)
 - Scripts npm : `test`, `test:watch`, `test:coverage`, `db:migrate`, `db:migrate:deploy`, `db:reset`
-- CI GitHub Actions : execution des tests apres le typecheck
+- CI GitHub Actions : exécution des tests après le typecheck
 
-### Ameliore
+### Amélioré
 
-- Champ date des evenements en datetime-local (date + heure)
-- Affichage date+heure dans le tableau des evenements
-- Correction du decalage timezone (UTC vs heure locale) dans les formulaires
+- Champ date des événements en datetime-local (date + heure)
+- Affichage date+heure dans le tableau des événements
+- Correction du décalage timezone (UTC vs heure locale) dans les formulaires
 - Variants Button (edit, info) et corrections DataTable
-- Documentation base de donnees : workflow migrations dev/production
-- Roadmap : items responsive (R1-R4) marques comme implementes
+- Documentation base de données : workflow migrations dev/production
+- Roadmap : items responsive (R1-R4) marqués comme implémentés
 
-### Corrige
+### Corrigé
 
-- Variable inutilisee dans cron/reminders (finding CodeQL)
+- Variable inutilisée dans cron/reminders (finding CodeQL)
 
 ## [v0.4.0] - 2026-03-03
 
-### Ajoute
+### Ajouté
 
-- Evenements recurrents : creation hebdomadaire/bi-hebdomadaire/mensuelle avec gestion par serie
-- Date/heure limite de planification : echeance par evenement, lecture seule apres echeance
-- Duplication d'un planning d'un evenement vers un autre
-- Taches/affectations par departement (TaskPanel dans la grille planning)
-- Vue calendrier des evenements avec grille mensuelle interactive
-- Historique des modifications (audit log) avec page admin dediee
+- Événements récurrents : création hebdomadaire/bi-hebdomadaire/mensuelle avec gestion par série
+- Date/heure limite de planification : échéance par événement, lecture seule après échéance
+- Duplication d'un planning d'un événement vers un autre
+- Tâches/affectations par département (TaskPanel dans la grille planning)
+- Vue calendrier des événements avec grille mensuelle interactive
+- Historique des modifications (audit log) avec page admin dédiée
 - Notifications in-app avec cloche, badge et polling (marquer tout comme lu)
 - Notifications email (rappels J-3, J-1) via nodemailer et route cron
 - Super Admin global (`isSuperAdmin` sur User) avec bypass permissions
-- Onboarding nouvelle eglise (formulaire admin avec invitation)
-- Statistiques par departement : taux de presence, services par membre, graphiques recharts
-- Filtre par mois dans le selecteur d'evenements
-- Selecteur de mois direct dans la vue planning mensuelle
+- Onboarding nouvelle église (formulaire admin avec invitation)
+- Statistiques par département : taux de présence, services par membre, graphiques recharts
+- Filtre par mois dans le sélecteur d'événements
+- Sélecteur de mois direct dans la vue planning mensuelle
 - Export PDF du planning mensuel
 - Rate limiting sur les API routes
-- Logs structures avec pino
+- Logs structurés avec pino
 - PWA : manifest, service worker (network-first), installation mobile
-- Responsive mobile R3 : vues metier adaptees (cartes, grilles)
+- Responsive mobile R3 : vues métier adaptées (cartes, grilles)
 
-### Ameliore
+### Amélioré
 
-- Calendrier et date pickers harmonises avec le theme ICC (accent-color violet, en-tetes colores, hover/today)
-- Inputs date/month/select alignes sur le design system (border-2, rounded-lg, shadow-sm, focus ring violet)
-- Navigation mois avec icones SVG et boutons tactiles (min 44x44px)
-- Sidebar : section Evenements avec sous-menu Liste + Calendrier
+- Calendrier et date pickers harmonisés avec le thème ICC (accent-color violet, en-têtes colorés, hover/today)
+- Inputs date/month/select alignés sur le design system (border-2, rounded-lg, shadow-sm, focus ring violet)
+- Navigation mois avec icônes SVG et boutons tactiles (min 44x44px)
+- Sidebar : section Événements avec sous-menu Liste + Calendrier
 
 ## [v0.3.1] - 2026-03-01
 
-### Ajoute
+### Ajouté
 
-- Changement de ministere lors de l'edition d'un departement (Select ministere + validation scope)
+- Changement de ministère lors de l'édition d'un département (Select ministère + validation scope)
 
 ## [v0.3.0] - 2026-03-01
 
-### Ajoute
+### Ajouté
 
-- Permission `departments:manage` pour le role MINISTER (gestion des departements de son ministere)
+- Permission `departments:manage` pour le rôle MINISTER (gestion des départements de son ministère)
 - Chargement du `ministryId` dans la session utilisateur
-- Scoping des departements par ministere pour les Ministres (page admin + API)
-- Verification du scope ministere dans les API departments (POST/PATCH/PUT/DELETE)
-- Icone bulle de discussion pour le statut EN_SERVICE_DEBRIEF
+- Scoping des départements par ministère pour les Ministres (page admin + API)
+- Vérification du scope ministère dans les API departments (POST/PATCH/PUT/DELETE)
+- Icône bulle de discussion pour le statut EN_SERVICE_DEBRIEF
 
-### Corrige
+### Corrigé
 
-- Contraste EN_SERVICE_DEBRIEF : couleur jaune remplacee par violet (PlanningGrid, MonthlyPlanningView, StarView)
-- Couleurs jaunes remplacees par violet dans la vue STAR evenement
-- Overflow de la liste departements sur la page admin evenement (scroll vertical)
+- Contraste EN_SERVICE_DEBRIEF : couleur jaune remplacée par violet (PlanningGrid, MonthlyPlanningView, StarView)
+- Couleurs jaunes remplacées par violet dans la vue STAR événement
+- Overflow de la liste départements sur la page admin événement (scroll vertical)
 
 ## [v0.2.1] - 2026-03-01
 
-### Corrige
+### Corrigé
 
-- Bus error au build : import dynamique de `cookies` dans `getCurrentChurchId()` (evite le chargement de `next/headers` au niveau module)
+- Bus error au build : import dynamique de `cookies` dans `getCurrentChurchId()` (évite le chargement de `next/headers` au niveau module)
 
 ## [v0.2.0] - 2026-03-01
 
-### Ajoute
+### Ajouté
 
-- Bootstrap SUPER_ADMIN : les utilisateurs declares dans `SUPER_ADMIN_EMAILS` peuvent creer la premiere eglise sans role prealable
-- Auto-promotion : creation d'une eglise assigne automatiquement tous les SUPER_ADMIN existants
-- Selecteur d'eglise : dropdown dans le header pour les utilisateurs multi-eglises, persistance via cookie
-- Helper `isSuperAdmin()` pour verifier le statut Super Admin par email
-- Helper `getCurrentChurchId()` pour resoudre l'eglise active (cookie avec fallback)
-- Endpoint POST `/api/current-church` pour changer d'eglise courante
-- Composant `ChurchSwitcher` (dropdown masque si une seule eglise)
-- Auto-generation du slug d'eglise depuis le nom (avec possibilite de modification manuelle)
+- Bootstrap SUPER_ADMIN : les utilisateurs déclarés dans `SUPER_ADMIN_EMAILS` peuvent créer la première église sans rôle préalable
+- Auto-promotion : création d'une église assigne automatiquement tous les SUPER_ADMIN existants
+- Sélecteur d'église : dropdown dans le header pour les utilisateurs multi-églises, persistance via cookie
+- Helper `isSuperAdmin()` pour vérifier le statut Super Admin par email
+- Helper `getCurrentChurchId()` pour résoudre l'église active (cookie avec fallback)
+- Endpoint POST `/api/current-church` pour changer d'église courante
+- Composant `ChurchSwitcher` (dropdown masqué si une seule église)
+- Auto-génération du slug d'église depuis le nom (avec possibilité de modification manuelle)
 
 ## [v0.1.0] - 2026-02-28
 
-### Ajoute
+### Ajouté
 
-- Schema Prisma complet : eglises, utilisateurs, roles, ministeres, departements, membres, evenements, plannings
+- Schéma Prisma complet : églises, utilisateurs, rôles, ministères, départements, membres, événements, plannings
 - Authentification Google OAuth via NextAuth v5
-- Systeme RBAC avec 5 roles et matrice de permissions
+- Système RBAC avec 5 rôles et matrice de permissions
 - Dashboard de planning avec grille interactive et auto-save
 - Vue mensuelle du planning
-- Sidebar unifiee avec 3 sections accordion (Departements, Evenements, Administration)
-- Interface admin : CRUD eglises, utilisateurs, ministeres, departements, membres, evenements
-- API REST complete avec validation Zod
+- Sidebar unifiée avec 3 sections accordion (Départements, Événements, Administration)
+- Interface admin : CRUD églises, utilisateurs, ministères, départements, membres, événements
+- API REST complète avec validation Zod
 - Middleware de protection des routes
-- Seed de donnees ICC Rennes (7 ministeres, departements, membres, evenements)
-- Architecture multi-tenant par eglise
+- Seed de données ICC Rennes (7 ministères, départements, membres, événements)
+- Architecture multi-tenant par église
 - Composants UI : Button, Input, Select, Modal, DataTable, BulkActionBar
 - Export PDF des plannings
-- Page evenements avec selecteur et vue par departement
+- Page événements avec sélecteur et vue par département
 - Auto-promotion Super Admin par email (`SUPER_ADMIN_EMAILS`)
-- Affectation ministere/departements aux roles MINISTER et DEPARTMENT_HEAD depuis l'interface admin
-- Composant `CheckboxGroup` pour la selection multiple de departements
+- Affectation ministère/départements aux rôles MINISTER et DEPARTMENT_HEAD depuis l'interface admin
+- Composant `CheckboxGroup` pour la sélection multiple de départements
 - Endpoint PATCH `/api/users/[userId]/roles` pour modifier les affectations
-- Badges enrichis affichant le ministere/departements associes avec bouton d'edition
-- Helper `requireAnyPermission()` pour verifier plusieurs permissions
-- Helper `getUserDepartmentScope()` pour le filtrage par departement selon le role
-- Permission `members:manage` accordee aux roles MINISTER et DEPARTMENT_HEAD
+- Badges enrichis affichant le ministère/départements associés avec bouton d'édition
+- Helper `requireAnyPermission()` pour vérifier plusieurs permissions
+- Helper `getUserDepartmentScope()` pour le filtrage par département selon le rôle
+- Permission `members:manage` accordée aux rôles MINISTER et DEPARTMENT_HEAD
 - CI GitHub Actions : typecheck et validation de version sur tags
-- Dependabot : mises a jour hebdomadaires npm et GitHub Actions (minor/patch uniquement)
+- Dependabot : mises à jour hebdomadaires npm et GitHub Actions (minor/patch uniquement)
 - Affichage de la version dans le footer (depuis `package.json`)
 - Script `typecheck` dans package.json
-- Guide de deploiement production (Debian, Traefik, systemd)
+- Guide de déploiement production (Debian, Traefik, systemd)
 
-### Corrige
+### Corrigé
 
-- Cascade de suppression des roles avec departements associes (FK constraint MySQL)
-- Permissions des liens sidebar admin (alignees avec les permissions des pages)
+- Cascade de suppression des rôles avec départements associés (FK constraint MySQL)
+- Permissions des liens sidebar admin (alignées avec les permissions des pages)

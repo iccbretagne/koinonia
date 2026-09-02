@@ -2,18 +2,18 @@
 
 Toutes les routes API sont des [Next.js Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers) dans `src/app/api/`.
 
-Toutes les routes (sauf `/api/auth/*` et `/api/cron/*`) necessitent une session NextAuth valide.
+Toutes les routes (sauf `/api/auth/*` et `/api/cron/*`) nécessitent une session NextAuth valide.
 
-## Format des reponses
+## Format des réponses
 
-**Succes** : JSON avec les donnees directement dans le body.
+**Succès** : JSON avec les données directement dans le body.
 
 **Erreur** :
 ```json
 { "error": "Message d'erreur" }
 ```
 
-Codes HTTP utilises : `200`, `201`, `400`, `401`, `403`, `404`, `409`, `500`.
+Codes HTTP utilisés : `200`, `201`, `400`, `401`, `403`, `404`, `409`, `500`.
 
 ---
 
@@ -21,28 +21,28 @@ Codes HTTP utilises : `200`, `201`, `400`, `401`, `403`, `404`, `409`, `500`.
 
 ### `GET/POST /api/auth/[...nextauth]`
 
-Gere par NextAuth. Inclut :
+Gère par NextAuth. Inclut :
 
 - `GET /api/auth/signin` — page de connexion
 - `GET /api/auth/callback/google` — callback OAuth Google
 - `GET /api/auth/session` — session courante
-- `POST /api/auth/signout` — deconnexion
+- `POST /api/auth/signout` — déconnexion
 
 ---
 
-## Eglises
+## Églises
 
 ### `GET /api/churches`
 
-Liste toutes les eglises avec le nombre d'utilisateurs, de ministeres et d'evenements.
+Liste toutes les églises avec le nombre d'utilisateurs, de ministères et d'événements.
 
 **Permission requise** : `church:manage` (ou Super Admin)
 
-**Reponse** : tableau d'eglises avec `_count.users`, `_count.ministries`, `_count.events`.
+**Réponse** : tableau d'églises avec `_count.users`, `_count.ministries`, `_count.events`.
 
 ### `POST /api/churches`
 
-Cree une nouvelle eglise. Assigne automatiquement le role `SUPER_ADMIN` a tous les super admins existants sur cette eglise.
+Crée une nouvelle église. Assigne automatiquement le rôle `SUPER_ADMIN` à tous les super admins existants sur cette église.
 
 **Permission requise** : `church:manage` (ou Super Admin)
 
@@ -54,13 +54,13 @@ Cree une nouvelle eglise. Assigne automatiquement le role `SUPER_ADMIN` a tous l
 }
 ```
 
-- `slug` : optionnel, genere automatiquement depuis le nom si absent
+- `slug` : optionnel, généré automatiquement depuis le nom si absent
 
-**Reponse** : `201` avec l'eglise creee.
+**Réponse** : `201` avec l'église créée.
 
 ### `PATCH /api/churches`
 
-Actions bulk sur plusieurs eglises (suppression ou mise a jour).
+Actions bulk sur plusieurs églises (suppression ou mise à jour).
 
 **Permission requise** : `church:manage` (ou Super Admin)
 
@@ -72,7 +72,7 @@ Actions bulk sur plusieurs eglises (suppression ou mise a jour).
 }
 ```
 
-ou pour une mise a jour :
+ou pour une mise à jour :
 ```json
 {
   "ids": ["clx...", "clx..."],
@@ -81,11 +81,11 @@ ou pour une mise a jour :
 }
 ```
 
-**Reponse** : `{ "deleted": 2 }` ou `{ "updated": 2 }`.
+**Réponse** : `{ "deleted": 2 }` ou `{ "updated": 2 }`.
 
 ### `PUT /api/churches/[churchId]`
 
-Met a jour le nom et le slug d'une eglise.
+Met à jour le nom et le slug d'une église.
 
 **Permission requise** : `church:manage`
 
@@ -97,23 +97,23 @@ Met a jour le nom et le slug d'une eglise.
 }
 ```
 
-**Reponse** : l'eglise mise a jour.
+**Réponse** : l'église mise à jour.
 
 ### `DELETE /api/churches/[churchId]`
 
-Supprime une eglise. Bloquee si l'eglise contient des utilisateurs, ministeres ou evenements.
+Supprime une église. Bloquée si l'église contient des utilisateurs, ministères ou événements.
 
 **Permission requise** : `church:manage`
 
-**Reponse** : `{ "success": true }`.
+**Réponse** : `{ "success": true }`.
 
 **Erreurs** :
-- `404` si l'eglise est introuvable
-- `400` si l'eglise contient des donnees
+- `404` si l'église est introuvable
+- `400` si l'église contient des données
 
 ### `POST /api/churches/onboard`
 
-Cree une nouvelle eglise avec un flux d'onboarding complet : cree l'eglise, assigne optionnellement un admin, et ajoute le super admin courant.
+Crée une nouvelle église avec un flux d'onboarding complet : crée l'église, assigne optionnellement un admin, et ajoute le super admin courant.
 
 **Permission requise** : `church:manage`
 
@@ -127,32 +127,32 @@ Cree une nouvelle eglise avec un flux d'onboarding complet : cree l'eglise, assi
 ```
 
 - `slug` : doit correspondre au pattern `[a-z0-9-]+`
-- `adminEmail` : optionnel ; si fourni, cree ou trouve l'utilisateur et lui assigne le role `ADMIN`
+- `adminEmail` : optionnel ; si fourni, crée ou trouve l'utilisateur et lui assigne le rôle `ADMIN`
 
-**Reponse** : `201` avec l'eglise creee.
+**Réponse** : `201` avec l'église créée.
 
-**Erreur** : `409` si le slug est deja utilise.
+**Erreur** : `409` si le slug est déjà utilisé.
 
 ---
 
-## Evenements
+## Événements
 
 ### `GET /api/events`
 
-Liste les evenements avec filtres.
+Liste les événements avec filtres.
 
 **Permission requise** : `events:view`
 
 **Query params** :
-- `churchId` (optionnel) — filtre par eglise
-- `trackedForDiscipleship=true` (optionnel) — filtre les evenements suivis pour le discipolat (tries par date croissante)
+- `churchId` (optionnel) — filtre par église
+- `trackedForDiscipleship=true` (optionnel) — filtre les événements suivis pour le discipolat (triés par date croissante)
 - `from` (optionnel) — date ISO minimale
 
-**Reponse** : tableau d'evenements avec `church` et `eventDepts[].department`.
+**Réponse** : tableau d'événements avec `church` et `eventDepts[].department`.
 
 ### `POST /api/events`
 
-Cree un evenement (ponctuel ou serie recurrente).
+Crée un événement (ponctuel ou série récurrente).
 
 **Permission requise** : `events:manage`
 
@@ -171,17 +171,17 @@ Cree un evenement (ponctuel ou serie recurrente).
 ```
 
 - `planningDeadline` : date limite absolue (optionnel)
-- `deadlineOffset` : offset relatif avant l'evenement, format `{n}h` ou `{n}d` (optionnel, ignore si `planningDeadline` est fourni)
+- `deadlineOffset` : offset relatif avant l'événement, format `{n}h` ou `{n}d` (optionnel, ignoré si `planningDeadline` est fourni)
 - `recurrenceRule` : `"weekly"`, `"biweekly"` ou `"monthly"` (optionnel)
-- `recurrenceEnd` : date de fin de la serie (requis si `recurrenceRule` est fourni)
+- `recurrenceEnd` : date de fin de la série (requis si `recurrenceRule` est fourni)
 
-**Logique de recurrence** : l'evenement principal est marque `isRecurrenceParent: true`, les evenements enfants sont lies via `seriesId`.
+**Logique de récurrence** : l'événement principal est marque `isRecurrenceParent: true`, les événements enfants sont lies via `seriesId`.
 
-**Reponse** : `201` avec l'evenement cree (ou l'evenement parent + `childrenCreated: N`).
+**Réponse** : `201` avec l'événement créé (ou l'événement parent + `childrenCreated: N`).
 
 ### `PATCH /api/events`
 
-Actions bulk sur plusieurs evenements.
+Actions bulk sur plusieurs événements.
 
 **Permission requise** : `events:manage`
 
@@ -193,7 +193,7 @@ Actions bulk sur plusieurs evenements.
 }
 ```
 
-ou pour une mise a jour :
+ou pour une mise à jour :
 ```json
 {
   "ids": ["clx...", "clx..."],
@@ -202,15 +202,15 @@ ou pour une mise a jour :
 }
 ```
 
-**Reponse** : `{ "deleted": 2 }` ou `{ "updated": 2 }`.
+**Réponse** : `{ "deleted": 2 }` ou `{ "updated": 2 }`.
 
 ### `GET /api/churches/[churchId]/events`
 
-Liste les evenements d'une eglise, tries par date croissante.
+Liste les événements d'une église, triés par date croissante.
 
-**Parametres** : `churchId` — ID de l'eglise (cuid)
+**Parametres** : `churchId` — ID de l'église (cuid)
 
-**Reponse** :
+**Réponse** :
 ```json
 [
   {
@@ -239,11 +239,11 @@ Liste les evenements d'une eglise, tries par date croissante.
 
 ### `GET /api/events/[eventId]`
 
-Detail d'un evenement avec ses departements et ministeres.
+Détail d'un événement avec ses départements et ministères.
 
-**Parametres** : `eventId` — ID de l'evenement (cuid)
+**Parametres** : `eventId` — ID de l'événement (cuid)
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "id": "clx...",
@@ -267,11 +267,11 @@ Detail d'un evenement avec ses departements et ministeres.
 }
 ```
 
-**Erreur** : `404` si l'evenement n'existe pas.
+**Erreur** : `404` si l'événement n'existe pas.
 
 ### `PATCH /api/events/[eventId]`
 
-Active ou desactive les annonces pour un evenement.
+Active ou désactive les annonces pour un événement.
 
 **Permission requise** : `events:manage`
 
@@ -282,11 +282,11 @@ Active ou desactive les annonces pour un evenement.
 }
 ```
 
-**Reponse** : `{ "id": "clx...", "allowAnnouncements": true }`.
+**Réponse** : `{ "id": "clx...", "allowAnnouncements": true }`.
 
 ### `POST /api/events/[eventId]/departments`
 
-Lie un departement a un evenement. Supporte l'application a toute une serie recurrente.
+Lie un département à un événement. Supporte l'application à toute une série récurrente.
 
 **Permission requise** : `events:manage`
 
@@ -298,13 +298,13 @@ Lie un departement a un evenement. Supporte l'application a toute une serie recu
 }
 ```
 
-- `applyToSeries` : si `true`, applique a tous les evenements futurs de la serie (y compris le courant)
+- `applyToSeries` : si `true`, applique à tous les événements futurs de la série (y compris le courant)
 
-**Reponse** : `201` avec le lien `eventDept` cree (ou `{ "created": N }` si serie).
+**Réponse** : `201` avec le lien `eventDept` créé (ou `{ "created": N }` si série).
 
 ### `DELETE /api/events/[eventId]/departments`
 
-Retire le lien entre un departement et un evenement. Supprime les plannings associes en cascade. Supporte la serie.
+Retire le lien entre un département et un événement. Supprime les plannings associes en cascade. Supporte la série.
 
 **Permission requise** : `events:manage`
 
@@ -316,15 +316,15 @@ Retire le lien entre un departement et un evenement. Supprime les plannings asso
 }
 ```
 
-**Reponse** : `{ "success": true }`.
+**Réponse** : `{ "success": true }`.
 
 ### `GET /api/events/[eventId]/star-view`
 
-Vue publique d'un evenement avec tous les membres en service (statuts `EN_SERVICE`, `EN_SERVICE_DEBRIEF`, `REMPLACANT`), regroupes par departement.
+Vue publique d'un événement avec tous les membres en service (statuts `EN_SERVICE`, `EN_SERVICE_DEBRIEF`, `REMPLACANT`), regroupés par département.
 
-**Authentification** : session valide uniquement (pas de permission specifique)
+**Authentification** : session valide uniquement (pas de permission spécifique)
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "event": {
@@ -349,7 +349,7 @@ Vue publique d'un evenement avec tous les membres en service (statuts `EN_SERVIC
 
 ### `POST /api/events/[eventId]/duplicate-planning`
 
-Duplique le planning d'un evenement source vers un evenement cible. Seuls les departements communs aux deux evenements sont copies.
+Duplique le planning d'un événement source vers un événement cible. Seuls les départements communs aux deux événements sont copies.
 
 **Permission requise** : `planning:edit`
 
@@ -360,19 +360,19 @@ Duplique le planning d'un evenement source vers un evenement cible. Seuls les de
 }
 ```
 
-**Reponse** : `{ "copied": 15, "departments": 3 }`.
+**Réponse** : `{ "copied": 15, "departments": 3 }`.
 
 **Erreurs** :
 - `400` si source et cible sont identiques
-- `404` si l'evenement source n'a pas de departements
+- `404` si l'événement source n'a pas de départements
 
 ### `GET /api/events/[eventId]/report`
 
-Recupere le compte rendu d'un evenement. Retourne `null` si aucun CR n'existe encore.
+Recupere le compte rendu d'un événement. Retourne `null` si aucun CR n'existe encore.
 
 **Permission requise** : `events:manage` ou `reports:view`
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "id": "clx...",
@@ -397,11 +397,11 @@ Recupere le compte rendu d'un evenement. Retourne `null` si aucun CR n'existe en
 }
 ```
 
-**Erreur** : `403` si les comptes rendus ne sont pas actives pour cet evenement.
+**Erreur** : `403` si les comptes rendus ne sont pas actives pour cet événement.
 
 ### `PUT /api/events/[eventId]/report`
 
-Cree ou remplace entierement le compte rendu d'un evenement. Les sections existantes sont supprimees et recrées a chaque appel.
+Crée ou remplace entièrement le compte rendu d'un événement. Les sections existantes sont supprimées et recrées à chaque appel.
 
 **Permission requise** : `events:manage` ou `reports:edit`
 
@@ -426,55 +426,55 @@ Cree ou remplace entierement le compte rendu d'un evenement. Les sections exista
 
 - `speaker` : nom de l'orateur (optionnel)
 - `messageTitle` : titre du message (optionnel)
-- `notes` : notes generales du CR (optionnel)
-- `decisions` : decisions prises lors de l'evenement (optionnel)
-- `sections` : tableau de sections (peut etre vide)
-  - `label` : intitule de la section (requis)
-  - `position` : ordre d'affichage (defaut : index dans le tableau)
-  - `departmentId` : ID du departement associe (optionnel)
-  - `stats` : objet JSON libre cle/valeur numeriques (optionnel). Par convention, les sections "Accueil" et "Integration" utilisent les cles `hommes`, `femmes`, `enfants`, `passage`, `convertis` pour alimenter l'export Excel.
-  - `notes` : notes specifiques a la section (optionnel)
+- `notes` : notes générales du CR (optionnel)
+- `decisions` : décisions prises lors de l'événement (optionnel)
+- `sections` : tableau de sections (peut être vide)
+  - `label` : intitulé de la section (requis)
+  - `position` : ordre d'affichage (défaut : index dans le tableau)
+  - `departmentId` : ID du département associe (optionnel)
+  - `stats` : objet JSON libre clé/valeur numériques (optionnel). Par convention, les sections "Accueil" et "Integration" utilisent les clés `hommes`, `femmes`, `enfants`, `passage`, `convertis` pour alimenter l'export Excel.
+  - `notes` : notes spécifiques à la section (optionnel)
 
-**Reponse** : le CR complet avec ses sections.
+**Réponse** : le CR complet avec ses sections.
 
 **Erreurs** :
-- `404` si l'evenement est introuvable
-- `403` si les comptes rendus ne sont pas actives pour cet evenement
+- `404` si l'événement est introuvable
+- `403` si les comptes rendus ne sont pas actives pour cet événement
 
 ### `GET /api/events/reports/export`
 
-Exporte les statistiques des cultes au format Excel (`.xlsx`) sur une periode donnee.
+Exporte les statistiques des cultes au format Excel (`.xlsx`) sur une période donnée.
 
 **Permission requise** : `reports:view`
 
 **Parametres** (query string) :
-- `churchId` (requis) : ID de l'eglise
-- `from` (optionnel) : date de debut ISO (defaut : 1er jour du mois courant)
-- `to` (optionnel) : date de fin ISO (defaut : dernier jour du mois courant)
+- `churchId` (requis) : ID de l'église
+- `from` (optionnel) : date de début ISO (défaut : 1er jour du mois courant)
+- `to` (optionnel) : date de fin ISO (défaut : dernier jour du mois courant)
 
-**Reponse** : fichier Excel avec une feuille **"Statistiques cultes"** contenant 13 colonnes :
+**Réponse** : fichier Excel avec une feuille **"Statistiques cultes"** contenant 13 colonnes :
 
 | Colonne | Source |
 |---|---|
-| Date du culte | `event.date` formate `fr-FR` |
-| Eglise | nom de l'eglise |
+| Date du culte | `event.date` formaté `fr-FR` |
+| Église | nom de l'église |
 | Orateur | `report.speaker` |
 | Titre du message | `report.messageTitle` |
 | Hommes | `section["Accueil"].stats.hommes` |
 | Femmes | `section["Accueil"].stats.femmes` |
 | Enfants | `section["Accueil"].stats.enfants` |
 | Total adultes | `hommes + femmes` (null si l'un manque) |
-| Total general | `totalAdultes + enfants` (null si l'un manque) |
+| Total général | `totalAdultes + enfants` (null si l'un manque) |
 | Nouveaux arrivants (H) | `section["Integration"].stats.hommes` |
 | Nouveaux arrivants (F) | `section["Integration"].stats.femmes` |
 | De passage | `section["Integration"].stats.passage` |
 | Nouveaux convertis | `section["Integration"].stats.convertis` |
 
-**Convention des sections** : les sections sont localisees par leur `label` de maniere insensible a la casse et aux accents (NFD normalization). La section "Accueil" est recherchee par correspondance exacte (`label` normalise = `"accueil"`). La section "Integration" est recherchee par prefixe (`label` normalise commence par `"integration"`).
+**Convention des sections** : les sections sont localisées par leur `label` de manière insensible à la casse et aux accents (NFD normalization). La section "Accueil" est recherchée par correspondance exacte (`label` normalisé = `"accueil"`). La section "Integration" est recherchée par préfixe (`label` normalisé commence par `"integration"`).
 
-Si la section ou la cle est absente, la colonne vaut `null` dans le fichier.
+Si la section ou la clé est absente, la colonne vaut `null` dans le fichier.
 
-**Securite Excel** : les valeurs commencant par `=`, `+`, `-`, `@`, tabulation ou retour chariot sont prefixees d'une apostrophe pour prevenir l'injection de formules.
+**Sécurité Excel** : les valeurs commençant par `=`, `+`, `-`, `@`, tabulation ou retour chariot sont préfixées d'une apostrophe pour prévenir l'injection de formules.
 
 **Nom du fichier** : `statistiques-cultes-{mois}-{annee}.xlsx` (ou plage si multi-mois)
 
@@ -484,15 +484,15 @@ Si la section ou la cle est absente, la colonne vaut `null` dans le fichier.
 
 ---
 
-## Departements
+## Départements
 
 ### `GET /api/departments/[departmentId]/members`
 
-Liste les membres d'un departement, tries par nom.
+Liste les membres d'un département, triés par nom.
 
-**Parametres** : `departmentId` — ID du departement (cuid)
+**Parametres** : `departmentId` — ID du département (cuid)
 
-**Reponse** :
+**Réponse** :
 ```json
 [
   {
@@ -507,7 +507,7 @@ Liste les membres d'un departement, tries par nom.
 
 ### `PATCH /api/departments/[departmentId]`
 
-Assigne ou retire la fonction speciale d'un departement (`DepartmentFunction`).
+Assigne ou retire la fonction spéciale d'un département (`DepartmentFunction`).
 
 **Permission requise** : `events:manage` (et non `departments:manage`)
 
@@ -520,22 +520,22 @@ Assigne ou retire la fonction speciale d'un departement (`DepartmentFunction`).
 
 Valeurs possibles : `"SECRETARIAT"`, `"COMMUNICATION"`, `"PRODUCTION_MEDIA"`, `null` (pour retirer la fonction).
 
-**Regle metier** : une seule fonction par type est autorisee par eglise. Si un autre departement de la meme eglise possede deja cette fonction, elle lui est retiree automatiquement.
+**Règle métier** : une seule fonction par type est autorisée par église. Si un autre département de la meme église possède déjà cette fonction, elle lui est retirée automatiquement.
 
-**Reponse** : `{ "id": "clx...", "name": "Secretariat Rennes", "function": "SECRETARIAT" }`.
+**Réponse** : `{ "id": "clx...", "name": "Secretariat Rennes", "function": "SECRETARIAT" }`.
 
 ### `GET /api/departments/[departmentId]/stats`
 
-Statistiques de service d'un departement sur une periode donnee.
+Statistiques de service d'un département sur une période donnée.
 
 **Permission requise** : `planning:view`
 
 **Query params** :
-- `months` (optionnel, defaut : `6`) — periode glissante en mois en arriere depuis aujourd'hui (ignore si `from`/`to` sont fournis)
-- `from` (optionnel) — debut de periode ISO, ex : `2026-01-01` (prend le pas sur `months`)
-- `to` (optionnel) — fin de periode ISO, ex : `2026-03-31`
+- `months` (optionnel, défaut : `6`) — période glissante en mois en arrière depuis aujourd'hui (ignore si `from`/`to` sont fournis)
+- `from` (optionnel) — début de période ISO, ex : `2026-01-01` (prend le pas sur `months`)
+- `to` (optionnel) — fin de période ISO, ex : `2026-03-31`
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "department": { "id": "clx...", "name": "Choristes" },
@@ -573,29 +573,29 @@ Statistiques de service d'un departement sur une periode donnee.
 ```
 
 **Calculs** :
-- `members[].services` — nombre d'evenements ou le statut de planning est `EN_SERVICE` ou `EN_SERVICE_DEBRIEF`
-- `members[].indisponible` — nombre d'evenements ou le statut est `INDISPONIBLE`
+- `members[].services` — nombre d'événements ou le statut de planning est `EN_SERVICE` ou `EN_SERVICE_DEBRIEF`
+- `members[].indisponible` — nombre d'événements ou le statut est `INDISPONIBLE`
 - `members[].rate` — `round(services / totalEvents * 100)`, vaut `0` si `totalEvents === 0`
 - `trend[].enService` — nombre de creneaux EN_SERVICE ou EN_SERVICE_DEBRIEF pour le mois
 - `trend[].totalSlots` — nombre total de creneaux de planning (toutes lignes du tableau)
-- `taskStats.tasks[].count` — nombre total d'affectations de la tache sur la periode
-- `taskStats.memberTasks[].totalAssignments` — somme de toutes les affectations de taches pour le membre
+- `taskStats.tasks[].count` — nombre total d'affectations de la tâche sur la période
+- `taskStats.memberTasks[].totalAssignments` — somme de toutes les affectations de tâches pour le membre
 
-Les listes `members` et `memberTasks` sont triees par valeur decroissante (`services` et `totalAssignments` respectivement).
+Les listes `members` et `memberTasks` sont triées par valeur décroissante (`services` et `totalAssignments` respectivement).
 
-**Erreur** : `404` si le departement est introuvable.
+**Erreur** : `404` si le département est introuvable.
 
 ### `GET /api/departments/[departmentId]/tasks`
 
-Liste les taches configurees pour un departement.
+Liste les tâches configurées pour un département.
 
 **Permission requise** : `planning:view`
 
-**Reponse** : tableau de taches `{ id, name, description, departmentId, createdAt }`.
+**Réponse** : tableau de tâches `{ id, name, description, departmentId, createdAt }`.
 
 ### `POST /api/departments/[departmentId]/tasks`
 
-Cree une nouvelle tache pour un departement.
+Crée une nouvelle tâche pour un département.
 
 **Permission requise** : `planning:edit`
 
@@ -607,13 +607,13 @@ Cree une nouvelle tache pour un departement.
 }
 ```
 
-**Reponse** : `201` avec la tache creee.
+**Réponse** : `201` avec la tâche créée.
 
-**Erreur** : `409` si une tache avec ce nom existe deja dans ce departement.
+**Erreur** : `409` si une tâche avec ce nom existe déjà dans ce département.
 
 ### `DELETE /api/departments/[departmentId]/tasks`
 
-Supprime une tache d'un departement.
+Supprime une tâche d'un département.
 
 **Permission requise** : `planning:edit`
 
@@ -624,18 +624,18 @@ Supprime une tache d'un departement.
 }
 ```
 
-**Reponse** : `{ "success": true }`.
+**Réponse** : `{ "success": true }`.
 
 ### `GET /api/departments/[departmentId]/monthly-planning`
 
-Vue mensuelle du planning d'un departement (membres en service et leurs taches).
+Vue mensuelle du planning d'un département (membres en service et leurs tâches).
 
-**Authentification** : session valide uniquement (pas de permission specifique)
+**Authentification** : session valide uniquement (pas de permission spécifique)
 
 **Query params** :
-- `month` (optionnel) — mois au format `YYYY-MM` (defaut : mois courant)
+- `month` (optionnel) — mois au format `YYYY-MM` (défaut : mois courant)
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "events": [
@@ -663,14 +663,14 @@ Vue mensuelle du planning d'un departement (membres en service et leurs taches).
 
 ### `GET /api/events/[eventId]/departments/[deptId]/planning`
 
-Recupere le planning d'un departement pour un evenement.
-Retourne tous les membres du departement avec leur statut.
+Recupere le planning d'un département pour un événement.
+Retourne tous les membres du département avec leur statut.
 
 **Parametres** :
-- `eventId` — ID de l'evenement (cuid)
-- `deptId` — ID du departement (cuid)
+- `eventId` — ID de l'événement (cuid)
+- `deptId` — ID du département (cuid)
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "eventDepartment": {
@@ -701,16 +701,16 @@ Retourne tous les membres du departement avec leur statut.
 }
 ```
 
-**Erreur** : `404` si le lien evenement-departement n'existe pas.
+**Erreur** : `404` si le lien événement-département n'existe pas.
 
 ### `PUT /api/events/[eventId]/departments/[deptId]/planning`
 
-Met a jour le planning d'un departement pour un evenement.
-Cree le lien evenement-departement s'il n'existe pas.
+Met à jour le planning d'un département pour un événement.
+Crée le lien événement-département s'il n'existe pas.
 
 **Parametres** :
-- `eventId` — ID de l'evenement (cuid)
-- `deptId` — ID du departement (cuid)
+- `eventId` — ID de l'événement (cuid)
+- `deptId` — ID du département (cuid)
 
 **Body** (valide par Zod) :
 ```json
@@ -725,9 +725,9 @@ Cree le lien evenement-departement s'il n'existe pas.
 
 Valeurs possibles pour `status` : `"EN_SERVICE"`, `"EN_SERVICE_DEBRIEF"`, `"INDISPONIBLE"`, `"REMPLACANT"`, `null`.
 
-**Regle metier** : un seul membre par departement par evenement peut avoir le statut `EN_SERVICE_DEBRIEF`.
+**Règle métier** : un seul membre par département par événement peut avoir le statut `EN_SERVICE_DEBRIEF`.
 
-**Reponse** : tableau des plannings upserted.
+**Réponse** : tableau des plannings upserted.
 
 **Erreurs** :
 - `400` si plus d'un `EN_SERVICE_DEBRIEF`
@@ -735,15 +735,15 @@ Valeurs possibles pour `status` : `"EN_SERVICE"`, `"EN_SERVICE_DEBRIEF"`, `"INDI
 
 ### `GET /api/events/[eventId]/departments/[deptId]/tasks`
 
-Liste les taches du departement pour un evenement avec leurs assignations.
+Liste les tâches du département pour un événement avec leurs assignations.
 
 **Permission requise** : `planning:view`
 
-**Reponse** : tableau de taches avec `assignments[].member` (membres assignes pour cet evenement).
+**Réponse** : tableau de tâches avec `assignments[].member` (membres assignés pour cet événement).
 
 ### `PUT /api/events/[eventId]/departments/[deptId]/tasks`
 
-Assigne des membres a une tache pour un evenement. Remplace les assignations existantes.
+Assigne des membres à une tâche pour un événement. Remplace les assignations existantes.
 
 **Permission requise** : `planning:edit`
 
@@ -755,38 +755,38 @@ Assigne des membres a une tache pour un evenement. Remplace les assignations exi
 }
 ```
 
-**Regle metier** : seuls les membres avec le statut `EN_SERVICE` ou `EN_SERVICE_DEBRIEF` pour cet evenement peuvent etre assignes.
+**Règle métier** : seuls les membres avec le statut `EN_SERVICE` ou `EN_SERVICE_DEBRIEF` pour cet événement peuvent être assignés.
 
-**Reponse** : la tache mise a jour avec ses assignations.
+**Réponse** : la tâche mise à jour avec ses assignations.
 
 **Erreurs** :
-- `400` si un membre n'est pas en service pour cet evenement
-- `404` si la tache ou le lien evenement-departement est introuvable
+- `400` si un membre n'est pas en service pour cet événement
+- `404` si la tâche ou le lien événement-département est introuvable
 
 ---
 
-## Utilisateurs et roles
+## Utilisateurs et rôles
 
 ### `GET /api/users`
 
-Liste les utilisateurs avec leurs roles par eglise.
+Liste les utilisateurs avec leurs rôles par église.
 
 **Permission requise** : `members:manage`
 
 **Query params** :
-- `churchId` (optionnel) — filtre par eglise
+- `churchId` (optionnel) — filtre par église
 
-**Reponse** : tableau d'utilisateurs avec `churchRoles[].church`.
+**Réponse** : tableau d'utilisateurs avec `churchRoles[].church`.
 
 ### `GET /api/users/search`
 
-Recherche d'utilisateurs par nom pour l'autocomplete (non documente separement, utilise dans la gestion des roles).
+Recherche d'utilisateurs par nom pour l'autocomplete (non documenté séparément, utilisé dans la gestion des rôles).
 
 ### `PATCH /api/users/[userId]/profile`
 
-Met a jour le nom d'affichage d'un utilisateur.
+Met à jour le nom d'affichage d'un utilisateur.
 
-**Autorisation** : l'utilisateur peut modifier son propre profil ; les roles `SUPER_ADMIN`, `ADMIN` et `SECRETARY` peuvent modifier n'importe quel profil.
+**Autorisation** : l'utilisateur peut modifier son propre profil ; les rôles `SUPER_ADMIN`, `ADMIN` et `SECRETARY` peuvent modifier n'importe quel profil.
 
 **Body** :
 ```json
@@ -795,11 +795,11 @@ Met a jour le nom d'affichage d'un utilisateur.
 }
 ```
 
-**Reponse** : `{ "id": "clx...", "displayName": "Marie Dupont" }`.
+**Réponse** : `{ "id": "clx...", "displayName": "Marie Dupont" }`.
 
 ### `POST /api/users/[userId]/roles`
 
-Ajoute un role a un utilisateur dans une eglise.
+Ajoute un rôle à un utilisateur dans une église.
 
 **Permission requise** : `users:manage` ou `departments:manage`
 
@@ -818,17 +818,17 @@ Ajoute un role a un utilisateur dans une eglise.
 ```
 
 - `role` : valeurs possibles : `"SUPER_ADMIN"`, `"ADMIN"`, `"SECRETARY"`, `"MINISTER"`, `"DEPARTMENT_HEAD"`, `"DISCIPLE_MAKER"`, `"REPORTER"`
-- `ministryId` : optionnel, utilise si `role` = `"MINISTER"`
+- `ministryId` : optionnel, utilisé si `role` = `"MINISTER"`
 - `departments` : format enrichi `{ id, isDeputy }[]` pour `DEPARTMENT_HEAD` — distingue responsable principal (`isDeputy: false`) et adjoint (`isDeputy: true`)
-- `departmentIds` : format legacy `string[]`, equivalent a `departments` avec `isDeputy: false` pour tous
+- `departmentIds` : format legacy `string[]`, équivalent à `departments` avec `isDeputy: false` pour tous
 
-Les roles privilegies (`SUPER_ADMIN`, `ADMIN`, `SECRETARY`) ne peuvent etre assignes que par un `SUPER_ADMIN`.
+Les rôles privilégiés (`SUPER_ADMIN`, `ADMIN`, `SECRETARY`) ne peuvent être assignés que par un `SUPER_ADMIN`.
 
-**Reponse** : `201` avec le role cree (inclut `church`, `ministry`, `departments`).
+**Réponse** : `201` avec le rôle créé (inclut `church`, `ministry`, `departments`).
 
 ### `PATCH /api/users/[userId]/roles`
 
-Modifie l'affectation d'un role existant (ministere ou departements).
+Modifie l'affectation d'un rôle existant (ministère ou départements).
 
 **Permission requise** : `users:manage` ou `departments:manage`
 
@@ -847,13 +847,13 @@ Modifie l'affectation d'un role existant (ministere ou departements).
 - `ministryId` : `string | null` pour MINISTER
 - `departments` / `departmentIds` : meme logique que pour POST (remplace les assignations existantes)
 
-**Reponse** : `200` avec le role mis a jour.
+**Réponse** : `200` avec le rôle mis à jour.
 
-**Erreur** : `404` si le role n'appartient pas a l'utilisateur.
+**Erreur** : `404` si le rôle n'appartient pas à l'utilisateur.
 
 ### `DELETE /api/users/[userId]/roles`
 
-Supprime un role d'un utilisateur. Supprime en cascade les `UserDepartment` associes.
+Supprime un rôle d'un utilisateur. Supprime en cascade les `UserDepartment` associes.
 
 **Permission requise** : `users:manage` ou `departments:manage`
 
@@ -865,7 +865,7 @@ Supprime un role d'un utilisateur. Supprime en cascade les `UserDepartment` asso
 }
 ```
 
-**Reponse** : `200` avec `{ "success": true }`.
+**Réponse** : `200` avec `{ "success": true }`.
 
 ---
 
@@ -873,16 +873,16 @@ Supprime un role d'un utilisateur. Supprime en cascade les `UserDepartment` asso
 
 ### `GET /api/members/search`
 
-Recherche de STAR par nom pour l'autocomplete (utilisee depuis la page de liaison de compte). Retourne uniquement les membres sans lien utilisateur existant.
-La recherche est insensible aux accents et a la casse (normalisation NFD cote serveur).
+Recherche de STAR par nom pour l'autocomplete (utilisée depuis la page de liaison de compte). Retourne uniquement les membres sans lien utilisateur existant.
+La recherche est insensible aux accents et à la casse (normalisation NFD côté serveur).
 
-**Authentification** : session valide uniquement (pas de permission specifique)
+**Authentification** : session valide uniquement (pas de permission spécifique)
 
 **Query params** :
-- `q` (requis) — terme de recherche (minimum 2 caracteres)
-- `churchId` (requis) — ID de l'eglise
+- `q` (requis) — terme de recherche (minimum 2 caractères)
+- `churchId` (requis) — ID de l'église
 
-**Reponse** : tableau de membres `{ id, firstName, lastName }` (max 10 resultats).
+**Réponse** : tableau de membres `{ id, firstName, lastName }` (max 10 résultats).
 
 ---
 
@@ -890,7 +890,7 @@ La recherche est insensible aux accents et a la casse (normalisation NFD cote se
 
 ### `POST /api/member-user-links`
 
-Cree un lien direct entre un utilisateur et un STAR (sans workflow de validation). Met a jour le nom d'affichage de l'utilisateur avec le nom du STAR.
+Crée un lien direct entre un utilisateur et un STAR (sans workflow de validation). Met à jour le nom d'affichage de l'utilisateur avec le nom du STAR.
 
 **Permission requise** : `members:manage`
 
@@ -903,17 +903,17 @@ Cree un lien direct entre un utilisateur et un STAR (sans workflow de validation
 }
 ```
 
-**Reponse** : `201` avec le lien cree.
+**Réponse** : `201` avec le lien créé.
 
 **Erreurs** :
 - `404` si le STAR ou l'utilisateur est introuvable
-- `409` si le STAR est deja lie a un compte ou si l'utilisateur est deja lie a un STAR dans cette eglise
+- `409` si le STAR est déjà lié à un compte ou si l'utilisateur est déjà lié à un STAR dans cette église
 
 ### `POST /api/member-link-requests`
 
-Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de validation par un admin). Trois modes : liaison a un STAR existant, creation d'un nouveau STAR, ou role transverse sans carte STAR.
+Soumet une demande de liaison d'un compte utilisateur à un STAR (workflow de validation par un admin). Trois modes : liaison à un STAR existant, création d'un nouveau STAR, ou rôle transverse sans carte STAR.
 
-**Authentification** : session valide uniquement (tout utilisateur authentifie peut soumettre)
+**Authentification** : session valide uniquement (tout utilisateur authentifié peut soumettre)
 
 **Body — mode lien vers STAR existant** :
 ```json
@@ -927,7 +927,7 @@ Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de val
 }
 ```
 
-**Body — mode creation de nouveau STAR** :
+**Body — mode création de nouveau STAR** :
 ```json
 {
   "type": "new",
@@ -941,7 +941,7 @@ Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de val
 }
 ```
 
-**Body — mode role transverse (sans carte STAR)** :
+**Body — mode rôle transverse (sans carte STAR)** :
 ```json
 {
   "type": "no_star",
@@ -952,29 +952,29 @@ Soumet une demande de liaison d'un compte utilisateur a un STAR (workflow de val
 ```
 
 Champs optionnels communs :
-- `departmentId` — departement associe (requis pour DEPARTMENT_HEAD / DEPUTY)
-- `ministryId` — ministere associe (requis pour MINISTER)
-- `requestedRole` — role demande : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre regulier)
+- `departmentId` — département associe (requis pour DEPARTMENT_HEAD / DEPUTY)
+- `ministryId` — ministère associe (requis pour MINISTER)
+- `requestedRole` — rôle demande : `DEPARTMENT_HEAD`, `DEPUTY`, `MINISTER`, `DISCIPLE_MAKER`, `REPORTER`, ou null (membre régulier)
 - `notes` — notes libres
 
-**Reponse** : `201` avec la demande creee.
+**Réponse** : `201` avec la demande créée.
 
 **Erreurs** :
-- `409` si une demande `PENDING` existe deja pour cet utilisateur
-- `409` si l'utilisateur est deja lie a un STAR dans cette eglise
-- `409` si le STAR vise est deja lie a un autre compte
+- `409` si une demande `PENDING` existe déjà pour cet utilisateur
+- `409` si l'utilisateur est déjà lié à un STAR dans cette église
+- `409` si le STAR visé est déjà lié à un autre compte
 
 ### `GET /api/member-link-requests`
 
-Liste les demandes de liaison, filtrees par statut.
+Liste les demandes de liaison, filtrées par statut.
 
 **Permission requise** : `members:manage`
 
 **Query params** :
-- `churchId` (optionnel) — filtre par eglise
-- `status` (optionnel, defaut : `"PENDING"`) — `"PENDING"`, `"APPROVED"` ou `"REJECTED"`
+- `churchId` (optionnel) — filtre par église
+- `status` (optionnel, défaut : `"PENDING"`) — `"PENDING"`, `"APPROVED"` ou `"REJECTED"`
 
-**Reponse** : tableau de demandes avec `user`, `member` (si existant) et `church`.
+**Réponse** : tableau de demandes avec `user`, `member` (si existant) et `church`.
 
 ### `PATCH /api/member-link-requests/[id]`
 
@@ -998,21 +998,21 @@ ou pour un rejet :
 }
 ```
 
-- `departmentId` : requis uniquement si `action` = `"approve"` et la demande est de type `"new"` (creation d'un nouveau STAR)
+- `departmentId` : requis uniquement si `action` = `"approve"` et la demande est de type `"new"` (création d'un nouveau STAR)
 
 **Logique d'approbation** :
-- Si le STAR existait : cree le lien `MemberUserLink` directement
-- Si c'est une nouvelle demande : cree le STAR dans le departement specifie, puis cree le lien
-- Met a jour le `displayName` de l'utilisateur avec le nom du STAR dans tous les cas
-- **Creation de roles automatique selon `requestedRole`** :
-  - `null` → `MemberUserLink` uniquement (membre regulier, pas de role admin)
+- Si le STAR existait : crée le lien `MemberUserLink` directement
+- Si c'est une nouvelle demande : crée le STAR dans le département spécifié, puis crée le lien
+- Met à jour le `displayName` de l'utilisateur avec le nom du STAR dans tous les cas
+- **Création de rôles automatique selon `requestedRole`** :
+  - `null` → `MemberUserLink` uniquement (membre régulier, pas de rôle admin)
   - `DEPARTMENT_HEAD` / `DEPUTY` → `UserChurchRole(DEPARTMENT_HEAD)` + `UserDepartment` (adjoint si `DEPUTY`)
   - `MINISTER` → `UserChurchRole(MINISTER)` avec `ministryId`
   - `DISCIPLE_MAKER` / `REPORTER` → `UserChurchRole` uniquement (pas de `MemberUserLink` pour le type `no_star`)
 
-**Reponse** : `{ "approved": true }` ou la demande mise a jour (si rejet).
+**Réponse** : `{ "approved": true }` ou la demande mise à jour (si rejet).
 
-**Erreur** : `409` si la demande a deja ete traitee.
+**Erreur** : `409` si la demande a déjà été traitée.
 
 ---
 
@@ -1020,18 +1020,18 @@ ou pour un rejet :
 
 ### `GET /api/announcements`
 
-Liste les annonces. Les utilisateurs avec `events:manage` voient toutes les annonces de l'eglise ; les autres voient uniquement leurs propres soumissions.
+Liste les annonces. Les utilisateurs avec `events:manage` voient toutes les annonces de l'église ; les autres voient uniquement leurs propres soumissions.
 
 **Query params** :
-- `churchId` (requis) — ID de l'eglise
+- `churchId` (requis) — ID de l'église
 
-**Reponse** : tableau d'annonces avec `submittedBy`, `department`, `ministry`, `targetEvents` et `serviceRequests` (hors demandes enfants).
+**Réponse** : tableau d'annonces avec `submittedBy`, `department`, `ministry`, `targetEvents` et `serviceRequests` (hors demandes enfants).
 
 ### `POST /api/announcements`
 
-Soumet une nouvelle annonce et genere automatiquement les `ServiceRequest` correspondants selon les canaux coches.
+Soumet une nouvelle annonce et génère automatiquement les `ServiceRequest` correspondants selon les canaux cochés.
 
-**Permission requise** : `planning:view` (tout utilisateur authentifie peut soumettre)
+**Permission requise** : `planning:view` (tout utilisateur authentifié peut soumettre)
 
 **Body** (valide par Zod) :
 ```json
@@ -1050,28 +1050,28 @@ Soumet une nouvelle annonce et genere automatiquement les `ServiceRequest` corre
 ```
 
 - `channelInterne` et/ou `channelExterne` : au moins un des deux est requis
-- `isSaveTheDate` : calcule automatiquement si `eventDate` est dans plus de 21 jours
+- `isSaveTheDate` : calculé automatiquement si `eventDate` est dans plus de 21 jours
 
-**Logique de generation des ServiceRequests** :
-- Canal INTERNE : cree `DIFFUSION_INTERNE` (assigne au dept Secretariat) + `VISUEL` (assigne au dept Production Media, format : Slide/Affiche, lie au `DIFFUSION_INTERNE`)
-- Canal EXTERNE : cree `RESEAUX_SOCIAUX` (assigne au dept Communication) + `VISUEL` (assigne au dept Production Media, format : Story/Post, lie au `RESEAUX_SOCIAUX`)
-- Multicanal : 4 `ServiceRequest` crees
+**Logique de génération des ServiceRequests** :
+- Canal INTERNE : crée `DIFFUSION_INTERNE` (assigne au dept Secrétariat) + `VISUEL` (assigne au dept Production Media, format : Slide/Affiche, lié au `DIFFUSION_INTERNE`)
+- Canal EXTERNE : crée `RESEAUX_SOCIAUX` (assigne au dept Communication) + `VISUEL` (assigne au dept Production Media, format : Story/Post, lié au `RESEAUX_SOCIAUX`)
+- Multicanal : 4 `ServiceRequest` créés
 
-**Reponse** : `201` avec l'annonce creee.
+**Réponse** : `201` avec l'annonce créée.
 
 ### `GET /api/announcements/[id]`
 
-Detail d'une annonce avec ses `serviceRequests` (avec enfants VISUEL).
+Détail d'une annonce avec ses `serviceRequests` (avec enfants VISUEL).
 
 **Erreur** : `404` si introuvable.
 
 ### `PATCH /api/announcements/[id]`
 
-Met a jour une annonce (statut, titre, contenu, urgence).
+Met à jour une annonce (statut, titre, contenu, urgence).
 
 **Autorisation** :
 - Gestionnaires (`events:manage`) : peuvent modifier tous les champs et tous les statuts
-- Proprietaire de l'annonce : peut uniquement passer le statut a `"ANNULEE"` (annulation)
+- Propriétaire de l'annonce : peut uniquement passer le statut à `"ANNULEE"` (annulation)
 
 **Body** (tous les champs sont optionnels) :
 ```json
@@ -1084,15 +1084,15 @@ Met a jour une annonce (statut, titre, contenu, urgence).
 ```
 
 Valeurs possibles pour `status` : `"EN_ATTENTE"`, `"EN_COURS"`, `"TRAITEE"`, `"ANNULEE"`.
-Le proprietaire est restreint a `"ANNULEE"` uniquement.
+Le propriétaire est restreint à `"ANNULEE"` uniquement.
 
-**Annulation en cascade** : si `status` = `"ANNULEE"`, toutes les `ServiceRequest` liees a l'annonce (`announcementId`) sont automatiquement annulees dans la meme transaction (y compris les demandes VISUEL enfants).
+**Annulation en cascade** : si `status` = `"ANNULEE"`, toutes les `ServiceRequest` liées à l'annonce (`announcementId`) sont automatiquement annulées dans la même transaction (y compris les demandes VISUEL enfants).
 
 ### `DELETE /api/announcements/[id]`
 
-Supprime une annonce. Autorise pour les gestionnaires ou le proprietaire.
+Supprime une annonce. Autorisé pour les gestionnaires ou le propriétaire.
 
-**Reponse** : `200` avec `{ "deleted": "clx..." }`.
+**Réponse** : `200` avec `{ "deleted": "clx..." }`.
 
 ---
 
@@ -1103,15 +1103,15 @@ Supprime une annonce. Autorise pour les gestionnaires ou le proprietaire.
 Liste les demandes de service. Les gestionnaires (`events:manage`) voient tout ; les autres voient leurs propres demandes.
 
 **Query params** :
-- `churchId` (requis) — ID de l'eglise
+- `churchId` (requis) — ID de l'église
 - `type` (optionnel) — filtre par type : `VISUEL`, `DIFFUSION_INTERNE`, `RESEAUX_SOCIAUX`
-- `assignedDeptId` (optionnel) — filtre par departement assigne
+- `assignedDeptId` (optionnel) — filtre par département assigne
 
-**Reponse** : tableau de demandes parentes (hors demandes enfants VISUEL), avec `submittedBy`, `department`, `ministry`, `assignedDept`, `announcement`, `childRequests`.
+**Réponse** : tableau de demandes parentes (hors demandes enfants VISUEL), avec `submittedBy`, `department`, `ministry`, `assignedDept`, `announcement`, `childRequests`.
 
 ### `POST /api/service-requests`
 
-Cree une demande de service `VISUEL` standalone (sans annonce liee).
+Crée une demande de service `VISUEL` standalone (sans annonce liée).
 
 **Permission requise** : `planning:view`
 
@@ -1128,21 +1128,21 @@ Cree une demande de service `VISUEL` standalone (sans annonce liee).
 }
 ```
 
-La demande est automatiquement assignee au departement ayant la fonction `PRODUCTION_MEDIA`.
+La demande est automatiquement assignée au département ayant la fonction `PRODUCTION_MEDIA`.
 
-**Reponse** : `201` avec la demande creee.
+**Réponse** : `201` avec la demande créée.
 
 ### `GET /api/service-requests/[id]`
 
-Detail d'une demande avec `submittedBy`, `assignedDept`, `reviewedBy`, `announcement`, `parentRequest`, `childRequests`.
+Détail d'une demande avec `submittedBy`, `assignedDept`, `reviewedBy`, `announcement`, `parentRequest`, `childRequests`.
 
 **Erreur** : `404` si introuvable.
 
 ### `PATCH /api/service-requests/[id]`
 
-Met a jour une demande de service (statut, lien de livraison, notes de revue, format, brief, deadline).
+Met à jour une demande de service (statut, lien de livraison, notes de revue, format, brief, deadline).
 
-**Autorisation** : gestionnaires (`events:manage`), membre du departement assigne ou proprietaire de la demande.
+**Autorisation** : gestionnaires (`events:manage`), membre du département assigne ou propriétaire de la demande.
 
 **Body** (tous les champs sont optionnels) :
 ```json
@@ -1151,38 +1151,38 @@ Met a jour une demande de service (statut, lien de livraison, notes de revue, fo
   "deliveryLink": "https://drive.google.com/...",
   "reviewNotes": "Livraison conforme",
   "format": "Story 1080x1920",
-  "brief": "Description mise a jour",
+  "brief": "Description mise à jour",
   "deadline": "2026-04-01T00:00:00.000Z"
 }
 ```
 
 Valeurs possibles pour `status` : `"EN_ATTENTE"`, `"EN_COURS"`, `"LIVRE"`, `"ANNULE"`.
 
-Lors d'un changement de statut, `reviewedById` et `reviewedAt` sont automatiquement renseignes.
+Lors d'un changement de statut, `reviewedById` et `reviewedAt` sont automatiquement renseignés.
 
-**Annulation en cascade** : si `status` = `"ANNULE"` et que la demande est de type `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`, la demande `VISUEL` enfant (liee via `parentRequestId`) est automatiquement annulee dans la meme transaction.
+**Annulation en cascade** : si `status` = `"ANNULE"` et que la demande est de type `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`, la demande `VISUEL` enfant (liée via `parentRequestId`) est automatiquement annulée dans la même transaction.
 
 ---
 
 ## Discipolat
 
-Les endpoints de discipolat utilisent deux permissions specifiques :
+Les endpoints de discipolat utilisent deux permissions spécifiques :
 - `discipleship:view` — lecture des relations et statistiques
-- `discipleship:manage` — creation, modification, suppression
+- `discipleship:manage` — création, modification, suppression
 - `discipleship:export` — export Excel
 
-Le perimetre est controle par `getDiscipleshipScope()` : les roles `DISCIPLE_MAKER` voient et gerent uniquement leurs propres disciples ; les admins ont acces a tout.
+Le périmètre est contrôle par `getDiscipleshipScope()` : les rôles `DISCIPLE_MAKER` voient et gèrent uniquement leurs propres disciples ; les admins ont accès à tout.
 
 ### `GET /api/discipleships`
 
-Liste les relations de discipolat d'une eglise.
+Liste les relations de discipolat d'une église.
 
 **Permission requise** : `discipleship:view`
 
 **Query params** :
-- `churchId` (requis) — ID de l'eglise
+- `churchId` (requis) — ID de l'église
 
-**Reponse** : tableau de relations avec `disciple`, `discipleMaker` et `firstMaker`.
+**Réponse** : tableau de relations avec `disciple`, `discipleMaker` et `firstMaker`.
 
 ```json
 [
@@ -1206,7 +1206,7 @@ Liste les relations de discipolat d'une eglise.
 
 ### `POST /api/discipleships`
 
-Cree une nouvelle relation de discipolat. Supporte deux modes : liaison a un STAR existant ou creation d'un nouveau STAR (place dans le departement systeme).
+Crée une nouvelle relation de discipolat. Supporte deux modes : liaison à un STAR existant ou création d'un nouveau STAR (place dans le département système).
 
 **Permission requise** : `discipleship:manage`
 
@@ -1231,17 +1231,17 @@ Cree une nouvelle relation de discipolat. Supporte deux modes : liaison a un STA
 ```
 
 - `firstMakerId` : optionnel ; si absent, prend la valeur de `discipleMakerId`
-- Un `DISCIPLE_MAKER` ne peut creer des relations que pour lui-meme
+- Un `DISCIPLE_MAKER` ne peut créer des relations que pour lui-meme
 
-**Reponse** : `201` avec la relation creee.
+**Réponse** : `201` avec la relation créée.
 
 **Erreurs** :
 - `400` si le disciple et le FD sont la meme personne
-- `409` si le STAR a deja un FD dans cette eglise
+- `409` si le STAR a déjà un FD dans cette église
 
 ### `PATCH /api/discipleships/[id]`
 
-Change le FD courant d'une relation de discipolat en conservant le `firstMakerId` d'origine. Remet `startedAt` a la date courante.
+Change le FD courant d'une relation de discipolat en conservant le `firstMakerId` d'origine. Remet `startedAt` à la date courante.
 
 **Permission requise** : `discipleship:manage`
 
@@ -1252,7 +1252,7 @@ Change le FD courant d'une relation de discipolat en conservant le `firstMakerId
 }
 ```
 
-**Reponse** : la relation mise a jour avec `disciple` et `discipleMaker`.
+**Réponse** : la relation mise à jour avec `disciple` et `discipleMaker`.
 
 **Erreur** : `400` si le nouveau FD est le disciple lui-meme.
 
@@ -1262,11 +1262,11 @@ Supprime une relation de discipolat. Un `DISCIPLE_MAKER` ne peut supprimer que s
 
 **Permission requise** : `discipleship:manage`
 
-**Reponse** : `{ "deleted": true }`.
+**Réponse** : `{ "deleted": true }`.
 
 ### `PATCH /api/discipleships/[id]/member`
 
-Met a jour le profil (nom, email, telephone) du disciple d'une relation. Un `DISCIPLE_MAKER` ne peut modifier que ses propres disciples.
+Met à jour le profil (nom, email, téléphone) du disciple d'une relation. Un `DISCIPLE_MAKER` ne peut modifier que ses propres disciples.
 
 **Permission requise** : `discipleship:manage`
 
@@ -1280,28 +1280,28 @@ Met a jour le profil (nom, email, telephone) du disciple d'une relation. Un `DIS
 }
 ```
 
-**Reponse** : le membre mis a jour avec son departement et ministere.
+**Réponse** : le membre mis à jour avec son département et ministère.
 
 ### `GET /api/discipleships/attendance`
 
-Liste les presences enregistrees pour un evenement suivi.
+Liste les présences enregistrées pour un événement suivi.
 
 **Permission requise** : `discipleship:view`
 
 **Query params** :
-- `eventId` (requis) — ID de l'evenement
+- `eventId` (requis) — ID de l'événement
 
-**Reponse** : tableau `{ memberId, present }`.
+**Réponse** : tableau `{ memberId, present }`.
 
 ### `PUT /api/discipleships/attendance`
 
-Enregistre les presences pour un evenement suivi. Remplace les presences existantes.
+Enregistre les présences pour un événement suivi. Remplace les présences existantes.
 
 **Permission requise** : `discipleship:manage`
 
-**Comportement selon le perimetre** :
-- `DISCIPLE_MAKER` : met a jour uniquement les presences de ses propres disciples
-- Admin/Secretaire : remplace toutes les presences de l'evenement
+**Comportement selon le périmètre** :
+- `DISCIPLE_MAKER` : met à jour uniquement les présences de ses propres disciples
+- Admin/Secrétaire : remplace toutes les présences de l'événement
 
 **Body** :
 ```json
@@ -1311,26 +1311,26 @@ Enregistre les presences pour un evenement suivi. Remplace les presences existan
 }
 ```
 
-Les membres absents de `presentMemberIds` sont automatiquement marques absents.
+Les membres absents de `presentMemberIds` sont automatiquement marqués absents.
 
-**Reponse** : `{ "saved": true }`.
+**Réponse** : `{ "saved": true }`.
 
 **Erreurs** :
-- `404` si l'evenement est introuvable
-- `400` si l'evenement n'est pas suivi pour le discipolat (`trackedForDiscipleship: false`)
+- `404` si l'événement est introuvable
+- `400` si l'événement n'est pas suivi pour le discipolat (`trackedForDiscipleship: false`)
 
 ### `GET /api/discipleships/stats`
 
-Statistiques de participation aux evenements de discipolat sur une periode glissante.
+Statistiques de participation aux événements de discipolat sur une période glissante.
 
 **Permission requise** : `discipleship:view`
 
 **Query params** :
-- `churchId` (requis) — ID de l'eglise
-- `from` (optionnel) — debut de periode ISO (defaut : 1er du mois courant)
-- `to` (optionnel) — fin de periode ISO (defaut : dernier jour du mois courant)
+- `churchId` (requis) — ID de l'église
+- `from` (optionnel) — début de période ISO (défaut : 1er du mois courant)
+- `to` (optionnel) — fin de période ISO (défaut : dernier jour du mois courant)
 
-**Reponse** :
+**Réponse** :
 ```json
 {
   "period": { "from": "2026-03-01T00:00:00.000Z", "to": "2026-03-31T23:59:59.000Z" },
@@ -1350,10 +1350,10 @@ Statistiques de participation aux evenements de discipolat sur une periode gliss
 ```
 
 **Calculs** :
-- `stats.present` — nombre d'evenements ou une presence `present: true` est enregistree pour le disciple
+- `stats.present` — nombre d'événements où une présence `present: true` est enregistrée pour le disciple
 - `stats.absent` — `totalEvents - present`
 - `stats.rate` — `round(present / totalEvents * 100)`, vaut `null` si `totalEvents === 0`
-- Le perimetre est controle par `getDiscipleshipScope()` : un `DISCIPLE_MAKER` ne voit que ses propres disciples
+- Le périmètre est contrôle par `getDiscipleshipScope()` : un `DISCIPLE_MAKER` ne voit que ses propres disciples
 ```
 
 ### `GET /api/discipleships/tree`
@@ -1367,7 +1367,7 @@ Arbre de lignee recursif (profondeur illimitee) via requete SQL `WITH RECURSIVE`
 - `mode` (optionnel) — `"primary"` (lignee via `firstMakerId`, defaut) ou `"current"` (structure actuelle via `discipleMakerId`)
 - `rootId` (optionnel) — ID du membre racine ; si absent, part des racines naturelles de l'arbre. Ignore pour les `DISCIPLE_MAKER` (ancre sur leur propre noeud)
 
-**Reponse** : tableau de noeuds enrichis, tries par profondeur :
+**Réponse** : tableau de noeuds enrichis, triés par profondeur :
 ```json
 [
   {
@@ -1386,7 +1386,7 @@ Arbre de lignee recursif (profondeur illimitee) via requete SQL `WITH RECURSIVE`
 
 ### `GET /api/discipleships/export`
 
-Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une periode donnee.
+Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une période donnée.
 
 **Permission requise** : `discipleship:export`
 
@@ -1422,7 +1422,7 @@ Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une periode
 | Date | Date formatée `fr-FR` |
 | Présent | `"Oui"` ou `"Non"` |
 
-**Securite Excel** : valeurs commencant par `=`, `+`, `-`, `@`, tabulation ou retour chariot prefixees d'une apostrophe.
+**Securite Excel** : valeurs commencant par `=`, `+`, `-`, `@`, tabulation ou retour chariot préfixées d'une apostrophe.
 
 **Erreurs** :
 - `400` si `churchId` est manquant
@@ -1660,10 +1660,10 @@ Demande une URL pré-signée S3 pour un upload direct depuis le navigateur (évi
 **Body** :
 ```json
 {
-  "filename": "video-clip.mp4",
-  "contentType": "video/mp4",
+  "filename": "vidéo-clip.mp4",
+  "contentType": "vidéo/mp4",
   "size": 52428800,
-  "type": "VIDEO",
+  "type": "VIDÉO",
   "mediaProjectId": "clx..."
 }
 ```
@@ -1691,7 +1691,7 @@ Met à jour le statut ou l'`originalKey` (confirmation post-upload).
 ```json
 {
   "status": "IN_REVIEW",
-  "originalKey": "media-projects/clx.../files/clx.../v1/video.mp4"
+  "originalKey": "media-projects/clx.../files/clx.../v1/vidéo.mp4"
 }
 ```
 
@@ -1723,7 +1723,7 @@ Crée une nouvelle version et retourne une URL pré-signée S3 pour l'upload dir
 ```json
 {
   "filename": "clip-v2.mp4",
-  "contentType": "video/mp4",
+  "contentType": "vidéo/mp4",
   "size": 54000000,
   "notes": "Correction du générique"
 }
@@ -1822,10 +1822,10 @@ Génère une URL de téléchargement signée pour une photo approuvée.
 Publication des enregistrements de culte (depot des sequences, nommage/ordonnancement, rendu
 sonore normalise, diffusion via un lien public — voir
 [ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md) pour le traitement asynchrone) et
-bibliotheque d'ecoute ouverte a tout membre (spec 021), servie depuis un cache disque local
+bibliotheque d'ecoute ouverte à tout membre (spec 021), servie depuis un cache disque local
 (voir [ADR-0008](adr/0008-cache-disque-renditions-audio.md)).
 
-L'espace `/audio` est a onglets a droits distincts : **(re)Écouter** (`audio:listen`, tous les
+L'espace `/audio` est à onglets à droits distincts : **(re)Écouter** (`audio:listen`, tous les
 roles), **Production** (`audio:view`) et **Paramètres** (`audio:manage`).
 
 ### Permissions
@@ -1838,7 +1838,7 @@ roles), **Production** (`audio:view`) et **Paramètres** (`audio:manage`).
 
 Le controle passe par `requireAudioAccess()`, qui accepte **aussi** un membre du departement de
 captation audio (`Department.function = "CAPTATION_AUDIO"`, configure dans
-`/admin/departments/functions`), sans role dedie. La depublication utilise
+`/admin/departments/functions`), sans rôle dédié. La dépublication utilise
 `requireAudioUnpublishAccess()`, plus strict (voir [auth.md](auth.md)).
 
 ### Cultes
@@ -1846,42 +1846,51 @@ captation audio (`Department.function = "CAPTATION_AUDIO"`, configure dans
 | Methode | Endpoint | Permission | Role |
 |---|---|---|---|
 | `GET` | `/api/audio/services` | `audio:view` | File d'attente des cultes de l'eglise |
-| `POST` | `/api/audio/services` | `audio:upload` | Cree un culte (titre, orateur, date, rattachable a un evenement) |
-| `GET` | `/api/audio/services/events` | `audio:upload` | Evenements de l'eglise a une date donnee, pour proposer un rattachement au depot |
+| `POST` | `/api/audio/services` | `audio:upload` | Crée un culte (titre, orateur, date, rattachable à un evenement) |
+| `GET` | `/api/audio/services/events` | `audio:upload` | Événements de l'église à une date donnée, pour proposer un rattachement au depot |
 | `GET` | `/api/audio/services/[id]` | `audio:view` | Detail : sources, segments, rendus |
 | `PATCH` | `/api/audio/services/[id]` | `audio:review` | Modifie titre, orateur, date, rattachement, couverture |
 | `DELETE` | `/api/audio/services/[id]` | *(voir ci-dessus)* | Supprime le culte entier (tant qu'il n'est pas publie) |
 | `PUT` | `/api/audio/services/[id]/sequences` | `audio:upload` | Enregistre l'ordre et les titres |
 | `DELETE` | `/api/audio/services/[id]/sources/[sourceId]` | `audio:upload` | Supprime une sequence deposee (tant que le culte n'est pas publie) |
-| `POST` | `/api/audio/services/[id]/publish` | `audio:review` | Cree les jobs `RENDER` manquants et publie |
+| `POST` | `/api/audio/services/[id]/publish` | `audio:review` | Crée les jobs `RENDER` manquants et publie |
 | `POST` | `/api/audio/services/[id]/unpublish` | *(voir ci-dessus)* | Rend les liens partages inoperants |
 
-> Le culte passe en `READY` a la publication tant que des rendus restent a calculer, puis en
+> Le culte passe en `READY` à la publication tant que des rendus restent à calculer, puis en
 > `PUBLISHED` automatiquement quand le worker a termine — aucune seconde action manuelle.
 
 ### Depot (upload multipart S3)
 
 | Methode | Endpoint | Role |
 |---|---|---|
-| `POST` | `/api/audio/services/[id]/upload/sign` | Cree l'`AudioSource` et renvoie une URL signee par part |
+| `POST` | `/api/audio/services/[id]/upload/sign` | Crée l'`AudioSource` et renvoie une URL signée par part |
 | `GET` | `/api/audio/services/[id]/upload/parts` | Parts deja recues (reprise apres coupure) |
 | `POST` | `/api/audio/services/[id]/upload/complete` | Finalise le multipart et programme le job `PROBE` |
 
-Le navigateur envoie chaque part directement a S3. Le bucket doit exposer l'en-tete `ETag`
+Le navigateur envoie chaque part directement à S3. Le bucket doit exposer l'en-tete `ETag`
 (CORS `ExposeHeaders`), faute de quoi la finalisation echoue.
 
-### Ecoute (bibliotheque, membre authentifie)
+### Écoute (bibliothèque, membre authentifié)
 
 | Methode | Endpoint | Permission | Role |
 |---|---|---|---|
-| `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `audio:listen` (+ eglise du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
-| `POST` | `/api/audio/services/[id]/play` | `audio:listen` | Incremente `AudioSegment.playCount` |
-| `POST` | `/api/audio/services/[id]/share` | `audio:listen` | Reutilise ou cree un lien de partage (culte entier ou segment) |
+| `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `requireAudioListenAccess` (+ eglise du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
+| `POST` | `/api/audio/services/[id]/play` | `requireAudioListenAccess` | Incremente `AudioSegment.playCount` |
+| `POST` | `/api/audio/services/[id]/share` | `audio:listen` (role dans l'eglise du culte, inchangé) | Réutilise ou crée un lien de partage (culte entier ou segment) |
 
-Le culte doit etre `PUBLISHED` (sinon `410`) ; appartenir a une autre eglise repond `403`
+Le culte doit etre `PUBLISHED` (sinon `410`) ; appartenir à une autre eglise repond `403`
 (ecart au 404 uniforme initialement envisage — coherent avec `requireAudioAccess` ailleurs
 dans le module, voir `specs/021-audio-bibliotheque-ecoute/plan.md`). Pas de route de liste :
 l'onglet **(re)Écouter** est un Server Component qui lit directement le service `library.ts`.
+
+`play` et `stream` passent par `requireAudioListenAccess()` (spec 036) plutot que
+`requireChurchPermission("audio:listen", …)` : le controle passe si l'appelant a `audio:listen`
+dans l'eglise du culte **ou** si son eglise figure comme destinataire d'un partage de
+bibliotheque ouvert par l'eglise du culte (voir *Partage de bibliotheque entre eglises*
+ci-dessous et [auth.md](auth.md)). `share` reste volontairement sur
+`requireChurchPermission("audio:listen", …)` : un membre invite par un partage n'a aucun role
+dans l'église propriétaire, donc échoue naturellement — générer un lien de partage public sur
+le contenu d'une autre eglise est refuse sans code dedie.
 
 ### Parametres
 
@@ -1891,6 +1900,76 @@ l'onglet **(re)Écouter** est un Server Component qui lit directement le service
 
 Couverture par defaut et modele de noms de sequences. Le departement de captation audio n'y est
 plus configure — voir *Permissions* ci-dessus.
+
+### Partage de bibliotheque entre eglises (spec 036)
+
+Une eglise (Super Admin/Admin, `audio:manage`) peut ouvrir sa bibliotheque de cultes publies à
+une autre eglise de la plateforme, identifiee par son identifiant public (`Church.slug`). Le
+partage est unilateral : ouvrir sa bibliotheque à une eglise ne donne aucun acces retour, et
+aucune route n'expose la liste des eglises de la plateforme — le noeud se fait par saisie d'un
+identifiant communique hors application.
+
+#### `GET /api/audio/shares`
+
+Liste les eglises auxquelles l'eglise courante a ouvert sa bibliotheque, avec le propre
+identifiant (slug) de l'eglise courante à communiquer à une eglise destinataire.
+
+**Permission requise** : `audio:manage` (eglise courante)
+
+**Reponse** :
+```json
+{
+  "ownSlug": "icc-rennes",
+  "shares": [
+    { "id": "clx...", "churchName": "ICC Brest", "churchSlug": "icc-brest", "createdAt": "2026-09-02T10:00:00.000Z" }
+  ]
+}
+```
+
+#### `POST /api/audio/shares`
+
+Resout un identifiant (slug) d'eglise puis, si confirme, ouvre la bibliotheque de l'eglise
+courante à l'eglise resolue. Resolution en deux temps sur un seul endpoint (plutot qu'un
+endpoint de resolution separe) pour n'exposer qu'une seule surface d'enumeration
+identifiant → nom, gardee par `audio:manage` et limitee en debit.
+
+**Permission requise** : `audio:manage` (eglise courante) — **limite en debit**
+(`RATE_LIMIT_SENSITIVE`, cle par utilisateur)
+
+**Body** (valide par Zod) :
+```json
+{ "slug": "icc-brest", "confirm": false }
+```
+
+- `slug` : identifiant de l'eglise à inviter
+- `confirm` : `false` resout le slug et renvoie le nom de l'eglise **sans rien creer** (etape de
+  vérification avant confirmation) ; `true` crée le partage
+
+**Reponse** :
+- `confirm: false` → `200` avec `{ "churchName": "ICC Brest" }`
+- `confirm: true` → `201` avec `{ "id": "clx...", "churchName": "ICC Brest", "churchId": "clx...", "createdAt": "..." }`
+
+**Erreurs** :
+- `404` si le slug ne correspond à aucune eglise
+- `400` si le slug saisi est celui de l'eglise courante (une eglise ne peut pas s'ouvrir sa
+  bibliotheque à elle-meme)
+- `409` si l'eglise resolue est deja destinataire d'un partage
+
+Une creation reussie (`confirm: true`) est journalisee dans l'historique des modifications
+(`AuditLog`, `entityType: "AudioLibraryShare"`, `churchId` = eglise proprietaire).
+
+#### `DELETE /api/audio/shares/[id]`
+
+Revoque un partage de bibliotheque : l'eglise destinataire perd immediatement l'acces aux
+cultes publies de l'eglise courante.
+
+**Permission requise** : `audio:manage` (eglise courante) — le partage doit appartenir à
+l'eglise courante (`404` sinon si l'ID ne correspond à aucun partage de l'eglise courante,
+jamais confiance dans l'ID seul)
+
+**Reponse** : `200` avec `{ "ok": true }`
+
+Revocation journalisee dans l'historique des modifications au meme titre que la creation.
 
 ### Acces public via token (sans authentification)
 
@@ -2006,7 +2085,7 @@ Definit l'eglise active de l'utilisateur via un cookie HTTP-only (duree : 30 jou
 
 **Reponse** : `{ "churchId": "clx..." }`.
 
-**Erreur** : `403` si l'utilisateur n'a pas acces a cette eglise.
+**Erreur** : `403` si l'utilisateur n'a pas accès à cette église.
 
 ---
 
@@ -2014,14 +2093,14 @@ Definit l'eglise active de l'utilisateur via un cookie HTTP-only (duree : 30 jou
 
 ### `POST /api/cron/reminders`
 
-Envoie les rappels de service (emails + notifications in-app) pour les evenements a J-1 et J-3.
+Envoie les rappels de service (emails + notifications in-app) pour les evenements à J-1 et J-3.
 
 **Authentification** : token secret via header `Authorization: Bearer {CRON_SECRET}`
 
 **Comportement** :
 - Identifie les evenements ayant lieu dans 1 ou 3 jours
 - Pour chaque membre en service (`EN_SERVICE` ou `EN_SERVICE_DEBRIEF`) : envoie un email si SMTP est configure et si le membre a une adresse email
-- Pour chaque responsable de departement concerne : cree une notification in-app
+- Pour chaque responsable de département concerné : crée une notification in-app
 
 **Reponse** :
 ```json
@@ -2033,12 +2112,12 @@ Envoie les rappels de service (emails + notifications in-app) pour les evenement
 
 ---
 
-## Utilisateur — preferences
+## Utilisateur — préférences
 
 ### `PATCH /api/user/tour-seen`
 
-Marque le tutoriel de decouverte comme vu pour l'utilisateur courant.
+Marque le tutoriel de découverte comme vu pour l'utilisateur courant.
 
 **Authentification** : session valide uniquement
 
-**Reponse** : `{ "hasSeenTour": true }`.
+**Réponse** : `{ "hasSeenTour": true }`.
