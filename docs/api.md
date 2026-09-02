@@ -1354,18 +1354,17 @@ Statistiques de participation aux événements de discipolat sur une période gl
 - `stats.absent` — `totalEvents - present`
 - `stats.rate` — `round(present / totalEvents * 100)`, vaut `null` si `totalEvents === 0`
 - Le périmètre est contrôlé par `getDiscipleshipScope()` : un `DISCIPLE_MAKER` ne voit que ses propres disciples
-```
 
 ### `GET /api/discipleships/tree`
 
-Arbre de lignee récursif (profondeur illimitee) via requête SQL `WITH RECURSIVE`.
+Arbre de lignée récursif (profondeur illimitée) via requête SQL `WITH RECURSIVE`.
 
 **Permission requise** : `discipleship:view`
 
 **Query params** :
 - `churchId` (requis) — ID de l'église
-- `mode` (optionnel) — `"primary"` (lignee via `firstMakerId`, défaut) ou `"current"` (structure actuelle via `discipleMakerId`)
-- `rootId` (optionnel) — ID du membre racine ; si absent, part des racines naturelles de l'arbre. Ignore pour les `DISCIPLE_MAKER` (ancre sur leur propre noeud)
+- `mode` (optionnel) — `"primary"` (lignée via `firstMakerId`, défaut) ou `"current"` (structure actuelle via `discipleMakerId`)
+- `rootId` (optionnel) — ID du membre racine ; si absent, part des racines naturelles de l'arbre. Ignoré pour les `DISCIPLE_MAKER` (ancre sur leur propre noeud)
 
 **Réponse** : tableau de noeuds enrichis, triés par profondeur :
 ```json
@@ -1397,7 +1396,7 @@ Exporte les statistiques de discipolat au format Excel (`.xlsx`) sur une périod
 
 **Réponse** : fichier `.xlsx` (`Content-Disposition: attachment; filename="discipolat-{mois}-{annee}.xlsx"`) avec deux feuilles :
 
-**Feuille 1 — "Statistiques"** (une ligne par disciple, triee par FD puis disciple) :
+**Feuille 1 — "Statistiques"** (une ligne par disciple, triée par FD puis disciple) :
 
 | Colonne | Description |
 |---|---|
@@ -1830,14 +1829,14 @@ rôles), **Production** (`audio:view`) et **Paramètres** (`audio:manage`).
 
 ### Permissions
 
-- `audio:listen` — écoute des cultes publies (bibliothèque + fiche d'événement), **tous les rôles**
+- `audio:listen` — écoute des cultes publiés (bibliothèque + fiche d'événement), **tous les rôles**
 - `audio:view` — file d'attente et détail d'un culte
 - `audio:upload` — dépôt et suppression de séquences
 - `audio:review` — publication / depublication
 - `audio:manage` — parametres du module
 
 Le contrôle passe par `requireAudioAccess()`, qui accepte **aussi** un membre du département de
-captation audio (`Department.function = "CAPTATION_AUDIO"`, configure dans
+captation audio (`Department.function = "CAPTATION_AUDIO"`, configuré dans
 `/admin/departments/functions`), sans rôle dédié. La dépublication utilise
 `requireAudioUnpublishAccess()`, plus strict (voir [auth.md](auth.md)).
 
@@ -1850,47 +1849,47 @@ captation audio (`Department.function = "CAPTATION_AUDIO"`, configure dans
 | `GET` | `/api/audio/services/events` | `audio:upload` | Événements de l'église à une date donnée, pour proposer un rattachement au dépôt |
 | `GET` | `/api/audio/services/[id]` | `audio:view` | Détail : sources, segments, rendus |
 | `PATCH` | `/api/audio/services/[id]` | `audio:review` | Modifie titre, orateur, date, rattachement, couverture |
-| `DELETE` | `/api/audio/services/[id]` | *(voir ci-dessus)* | Supprime le culte entier (tant qu'il n'est pas publie) |
+| `DELETE` | `/api/audio/services/[id]` | *(voir ci-dessus)* | Supprime le culte entier (tant qu'il n'est pas publié) |
 | `PUT` | `/api/audio/services/[id]/sequences` | `audio:upload` | Enregistre l'ordre et les titres |
-| `DELETE` | `/api/audio/services/[id]/sources/[sourceId]` | `audio:upload` | Supprime une séquence deposee (tant que le culte n'est pas publie) |
+| `DELETE` | `/api/audio/services/[id]/sources/[sourceId]` | `audio:upload` | Supprime une séquence déposée (tant que le culte n'est pas publié) |
 | `POST` | `/api/audio/services/[id]/publish` | `audio:review` | Crée les jobs `RENDER` manquants et publie |
-| `POST` | `/api/audio/services/[id]/unpublish` | *(voir ci-dessus)* | Rend les liens partages inoperants |
+| `POST` | `/api/audio/services/[id]/unpublish` | *(voir ci-dessus)* | Rend les liens partagés inopérants |
 
 > Le culte passe en `READY` à la publication tant que des rendus restent à calculer, puis en
-> `PUBLISHED` automatiquement quand le worker a termine — aucune seconde action manuelle.
+> `PUBLISHED` automatiquement quand le worker a terminé — aucune seconde action manuelle.
 
 ### Dépôt (upload multipart S3)
 
 | Méthode | Endpoint | Rôle |
 |---|---|---|
 | `POST` | `/api/audio/services/[id]/upload/sign` | Crée l'`AudioSource` et renvoie une URL signée par part |
-| `GET` | `/api/audio/services/[id]/upload/parts` | Parts déjà recues (reprise après coupure) |
+| `GET` | `/api/audio/services/[id]/upload/parts` | Parts déjà reçues (reprise après coupure) |
 | `POST` | `/api/audio/services/[id]/upload/complete` | Finalise le multipart et programme le job `PROBE` |
 
 Le navigateur envoie chaque part directement à S3. Le bucket doit exposer l'en-tête `ETag`
-(CORS `ExposeHeaders`), faute de quoi la finalisation echoue.
+(CORS `ExposeHeaders`), faute de quoi la finalisation échoue.
 
 ### Écoute (bibliothèque, membre authentifié)
 
 | Méthode | Endpoint | Permission | Rôle |
 |---|---|---|---|
 | `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `requireAudioListenAccess` (+ église du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
-| `POST` | `/api/audio/services/[id]/play` | `requireAudioListenAccess` | Incremente `AudioSegment.playCount` |
+| `POST` | `/api/audio/services/[id]/play` | `requireAudioListenAccess` | Incrémente `AudioSegment.playCount` |
 | `POST` | `/api/audio/services/[id]/share` | `audio:listen` (rôle dans l'église du culte, inchangé) | Réutilise ou crée un lien de partage (culte entier ou segment) |
 
-Le culte doit être `PUBLISHED` (sinon `410`) ; appartenir à une autre église repond `403`
-(ecart au 404 uniforme initialement envisage — cohérent avec `requireAudioAccess` ailleurs
+Le culte doit être `PUBLISHED` (sinon `410`) ; appartenir à une autre église répond `403`
+(écart au 404 uniforme initialement envisagé — cohérent avec `requireAudioAccess` ailleurs
 dans le module, voir `specs/021-audio-bibliotheque-ecoute/plan.md`). Pas de route de liste :
 l'onglet **(re)Écouter** est un Server Component qui lit directement le service `library.ts`.
 
-`play` et `stream` passent par `requireAudioListenAccess()` (spec 036) plutot que
+`play` et `stream` passent par `requireAudioListenAccess()` (spec 036) plutôt que
 `requireChurchPermission("audio:listen", …)` : le contrôle passe si l'appelant a `audio:listen`
 dans l'église du culte **ou** si son église figure comme destinataire d'un partage de
 bibliothèque ouvert par l'église du culte (voir *Partage de bibliothèque entre églises*
 ci-dessous et [auth.md](auth.md)). `share` reste volontairement sur
-`requireChurchPermission("audio:listen", …)` : un membre invite par un partage n'a aucun rôle
+`requireChurchPermission("audio:listen", …)` : un membre invité par un partage n'a aucun rôle
 dans l'église propriétaire, donc échoue naturellement — générer un lien de partage public sur
-le contenu d'une autre église est refuse sans code dedie.
+le contenu d'une autre église est refusé sans code dédié.
 
 ### Parametres
 
@@ -1899,15 +1898,15 @@ le contenu d'une autre église est refuse sans code dedie.
 | `GET` / `PUT` | `/api/audio/settings` | `audio:manage` |
 
 Couverture par défaut et modèle de noms de séquences. Le département de captation audio n'y est
-plus configure — voir *Permissions* ci-dessus.
+plus configuré — voir *Permissions* ci-dessus.
 
 ### Partage de bibliothèque entre églises (spec 036)
 
-Une église (Super Admin/Admin, `audio:manage`) peut ouvrir sa bibliothèque de cultes publies à
-une autre église de la plateforme, identifiee par son identifiant public (`Church.slug`). Le
+Une église (Super Admin/Admin, `audio:manage`) peut ouvrir sa bibliothèque de cultes publiés à
+une autre église de la plateforme, identifiée par son identifiant public (`Church.slug`). Le
 partage est unilatéral : ouvrir sa bibliothèque à une église ne donne aucun accès retour, et
 aucune route n'expose la liste des églises de la plateforme — le noeud se fait par saisie d'un
-identifiant communique hors application.
+identifiant communiqué hors application.
 
 #### `GET /api/audio/shares`
 
@@ -1928,10 +1927,10 @@ identifiant (slug) de l'église courante à communiquer à une église destinata
 
 #### `POST /api/audio/shares`
 
-Resout un identifiant (slug) d'église puis, si confirme, ouvre la bibliothèque de l'église
-courante à l'église resolue. Resolution en deux temps sur un seul endpoint (plutot qu'un
-endpoint de resolution separe) pour n'exposer qu'une seule surface d'enumeration
-identifiant → nom, gardee par `audio:manage` et limitee en débit.
+Résout un identifiant (slug) d'église puis, si confirmé, ouvre la bibliothèque de l'église
+courante à l'église résolue. Résolution en deux temps sur un seul endpoint (plutôt qu'un
+endpoint de résolution séparé) pour n'exposer qu'une seule surface d'énumération
+identifiant → nom, gardée par `audio:manage` et limitée en débit.
 
 **Permission requise** : `audio:manage` (église courante) — **limite en débit**
 (`RATE_LIMIT_SENSITIVE`, clé par utilisateur)
@@ -1942,7 +1941,7 @@ identifiant → nom, gardee par `audio:manage` et limitee en débit.
 ```
 
 - `slug` : identifiant de l'église à inviter
-- `confirm` : `false` resout le slug et renvoie le nom de l'église **sans rien créer** (etape de
+- `confirm` : `false` résout le slug et renvoie le nom de l'église **sans rien créer** (étape de
   vérification avant confirmation) ; `true` crée le partage
 
 **Réponse** :
@@ -1953,15 +1952,15 @@ identifiant → nom, gardee par `audio:manage` et limitee en débit.
 - `404` si le slug ne correspond à aucune église
 - `400` si le slug saisi est celui de l'église courante (une église ne peut pas s'ouvrir sa
   bibliothèque à elle-même)
-- `409` si l'église resolue est déjà destinataire d'un partage
+- `409` si l'église résolue est déjà destinataire d'un partage
 
-Une création reussie (`confirm: true`) est journalisee dans l'historique des modifications
+Une création réussie (`confirm: true`) est journalisée dans l'historique des modifications
 (`AuditLog`, `entityType: "AudioLibraryShare"`, `churchId` = église propriétaire).
 
 #### `DELETE /api/audio/shares/[id]`
 
-Revoque un partage de bibliothèque : l'église destinataire perd immediatement l'accès aux
-cultes publies de l'église courante.
+Révoque un partage de bibliothèque : l'église destinataire perd immédiatement l'accès aux
+cultes publiés de l'église courante.
 
 **Permission requise** : `audio:manage` (église courante) — le partage doit appartenir à
 l'église courante (`404` sinon si l'ID ne correspond à aucun partage de l'église courante,
@@ -1969,17 +1968,17 @@ jamais confiance dans l'ID seul)
 
 **Réponse** : `200` avec `{ "ok": true }`
 
-Révocation journalisee dans l'historique des modifications au même titre que la création.
+Révocation journalisée dans l'historique des modifications au même titre que la création.
 
 ### Accès public via token (sans authentification)
 
 | Méthode | Endpoint | Rôle |
 |---|---|---|
-| `GET` | `/api/audio/public/[token]` | Culte publie et ses segments |
+| `GET` | `/api/audio/public/[token]` | Culte publié et ses segments |
 | `POST` | `/api/audio/public/[token]/play` | Journalise une écoute (limite en débit) |
-| `GET` | `/api/audio/public/[token]/stream/[segmentId]` | Flux audio (`Range` HTTP) depuis le cache disque — **modifie** (spec 021) : servait auparavant une redirection `302` vers une URL S3 signee |
+| `GET` | `/api/audio/public/[token]/stream/[segmentId]` | Flux audio (`Range` HTTP) depuis le cache disque — **modifié** (spec 021) : servait auparavant une redirection `302` vers une URL S3 signée |
 
-Page de lecture associee : `/ecouter/[token]`, qui reutilise le même composant `<AudioPlayer>`
+Page de lecture associée : `/ecouter/[token]`, qui réutilise le même composant `<AudioPlayer>`
 que la bibliothèque interne.
 
 ---
@@ -1988,7 +1987,7 @@ que la bibliothèque interne.
 
 ### `GET /api/notifications`
 
-Liste les 20 dernieres notifications de l'utilisateur courant avec le nombre de non-lues.
+Liste les 20 dernières notifications de l'utilisateur courant avec le nombre de non-lues.
 
 **Authentification** : session valide uniquement
 
@@ -2038,7 +2037,7 @@ Marque des notifications comme lues.
 
 ### `GET /api/audit-logs`
 
-Liste les journaux d'audit de l'église courante, pagines.
+Liste les journaux d'audit de l'église courante, paginés.
 
 **Permission requise** : `church:manage`
 
@@ -2072,7 +2071,7 @@ Liste les journaux d'audit de l'église courante, pagines.
 
 ### `POST /api/current-church`
 
-Definit l'église active de l'utilisateur via un cookie HTTP-only (duree : 30 jours).
+Définit l'église active de l'utilisateur via un cookie HTTP-only (durée : 30 jours).
 
 **Authentification** : session valide uniquement
 
@@ -2099,7 +2098,7 @@ Envoie les rappels de service (emails + notifications in-app) pour les événeme
 
 **Comportement** :
 - Identifie les événements ayant lieu dans 1 ou 3 jours
-- Pour chaque membre en service (`EN_SERVICE` ou `EN_SERVICE_DEBRIEF`) : envoie un email si SMTP est configure et si le membre a une adresse email
+- Pour chaque membre en service (`EN_SERVICE` ou `EN_SERVICE_DEBRIEF`) : envoie un email si SMTP est configuré et si le membre a une adresse email
 - Pour chaque responsable de département concerné : crée une notification in-app
 
 **Réponse** :
