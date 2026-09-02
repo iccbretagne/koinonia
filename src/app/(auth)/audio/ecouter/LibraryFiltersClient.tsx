@@ -14,6 +14,7 @@ interface Filters {
   from: string;
   to: string;
   sort: string;
+  church: string;
 }
 
 const SORT_OPTIONS = [
@@ -28,11 +29,13 @@ export default function LibraryFiltersClient({
   speakers,
   seriesOptions,
   typeOptions,
+  churchOptions,
   current,
 }: {
   speakers: string[];
   seriesOptions: string[];
   typeOptions: { value: string; label: string }[];
+  churchOptions: { value: string; label: string }[];
   current: Filters;
 }) {
   const router = useRouter();
@@ -42,7 +45,12 @@ export default function LibraryFiltersClient({
   const [mobileOpen, setMobileOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activeCount = [current.q, current.speaker, current.series, current.type, current.from, current.to].filter(Boolean).length;
+  const activeCount = [current.q, current.speaker, current.series, current.type, current.from, current.to, current.church].filter(
+    Boolean
+  ).length;
+  // Filtre église rendu seulement si plus d'une bibliothèque est accessible (spec 036) — invisible
+  // tant que personne n'a ouvert ni reçu de partage.
+  const showChurchFilter = churchOptions.length > 1;
 
   function pushParams(next: Partial<Filters>) {
     const merged: Filters = { ...current, q, ...next };
@@ -78,13 +86,26 @@ export default function LibraryFiltersClient({
         </Button>
       </div>
 
-      <div className={`${mobileOpen ? "grid" : "hidden"} md:grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 mb-2`}>
+      <div
+        className={`${mobileOpen ? "grid" : "hidden"} md:grid gap-3 grid-cols-1 sm:grid-cols-2 ${
+          showChurchFilter ? "lg:grid-cols-7" : "lg:grid-cols-6"
+        } mb-2`}
+      >
         <Input
           label="Recherche"
           placeholder="Titre du culte…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
+        {showChurchFilter && (
+          <Select
+            label="Église"
+            placeholder="Toutes"
+            options={churchOptions}
+            value={current.church}
+            onChange={(e) => pushParams({ church: e.target.value })}
+          />
+        )}
         <Select
           label="Orateur"
           placeholder="Tous"

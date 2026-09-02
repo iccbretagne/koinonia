@@ -80,6 +80,9 @@ beforeEach(() => {
   mockAuth.mockResolvedValue(starSession());
   mockService();
   mockSegment();
+  // requireAudioListenAccess (spec 036) retombe sur les partages entrants quand le rôle direct
+  // manque — aucun partage par défaut ici, chaque test le renseigne s'il en a besoin.
+  prismaMock.audioLibraryShare.findMany.mockResolvedValue([]);
 });
 
 describe("audio:listen exigé", () => {

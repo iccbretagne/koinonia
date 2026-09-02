@@ -4,7 +4,7 @@
  * la diffusion d'un lien de partage, une sémantique distincte).
  */
 import { z } from "zod";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireAudioListenAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
@@ -21,7 +21,7 @@ export async function POST(
     const service = await prisma.audioService.findUnique({ where: { id }, select: { churchId: true, status: true } });
     if (!service) throw new ApiError(404, "Culte audio introuvable");
 
-    await requireChurchPermission("audio:listen", service.churchId);
+    await requireAudioListenAccess(service.churchId);
 
     if (service.status !== "PUBLISHED") throw new ApiError(410, "Ce culte n'est plus disponible.");
 

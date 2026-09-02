@@ -1,7 +1,7 @@
 import { z } from "zod";
 import Link from "next/link";
 import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
-import { listPublishedServices, listSpeakers, listSeries } from "@/modules/audio";
+import { listPublishedServices, listSpeakers, listSeries, listAccessibleLibraryChurches } from "@/modules/audio";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import LibraryFiltersClient from "./LibraryFiltersClient";
 import ResumeBanner from "./ResumeBanner";
@@ -15,6 +15,7 @@ const searchParamsSchema = z.object({
   from: z.string().trim().min(1).optional().catch(undefined),
   to: z.string().trim().min(1).optional().catch(undefined),
   sort: z.enum(["recent", "oldest", "speaker"]).optional().catch(undefined),
+  church: z.string().trim().min(1).optional().catch(undefined),
 });
 
 function formatDuration(ms: number): string {
@@ -41,11 +42,21 @@ export default async function AudioLibraryPage({
   );
   const filters = parsed.success ? parsed.data : {};
 
-  const hasActiveFilters = Boolean(filters.q || filters.speaker || filters.series || filters.type || filters.from || filters.to);
+  // Périmètre d'églises lisibles, calculé serveur (spec 036) — le paramètre `church` de l'URL
+  // n'est JAMAIS utilisé directement dans la requête : il ne fait qu'intersecter ce périmètre.
+  const accessibleChurches = await listAccessibleLibraryChurches(churchId);
+  const accessibleChurchIds = accessibleChurches.map((c) => c.id);
+  const selectedChurchId =
+    filters.church && accessibleChurchIds.includes(filters.church) ? filters.church : undefined;
+  const scopedChurchIds = selectedChurchId ? [selectedChurchId] : accessibleChurchIds;
+
+  const hasActiveFilters = Boolean(
+    filters.q || filters.speaker || filters.series || filters.type || filters.from || filters.to || selectedChurchId
+  );
 
   const [services, speakers, series] = await Promise.all([
     listPublishedServices({
-      churchId,
+      churchIds: scopedChurchIds,
       q: filters.q,
       speaker: filters.speaker,
       series: filters.series,
@@ -54,8 +65,8 @@ export default async function AudioLibraryPage({
       to: filters.to ? new Date(filters.to) : undefined,
       sort: filters.sort,
     }),
-    listSpeakers(churchId),
-    listSeries(churchId),
+    listSpeakers(scopedChurchIds),
+    listSeries(scopedChurchIds),
   ]);
 
   return (
@@ -66,6 +77,7 @@ export default async function AudioLibraryPage({
         speakers={speakers}
         seriesOptions={series}
         typeOptions={EVENT_TYPE_OPTIONS}
+        churchOptions={accessibleChurches.map((c) => ({ value: c.id, label: c.name }))}
         current={{
           q: filters.q ?? "",
           speaker: filters.speaker ?? "",
@@ -74,6 +86,7 @@ export default async function AudioLibraryPage({
           from: filters.from ?? "",
           to: filters.to ?? "",
           sort: filters.sort ?? "recent",
+          church: selectedChurchId ?? "",
         }}
       />
 
@@ -107,11 +120,21 @@ export default async function AudioLibraryPage({
                 href={`/audio/ecouter/${s.id}`}
                 className="block bg-white rounded-xl shadow border-2 border-gray-100 p-4 hover:border-icc-violet/40 transition-colors h-full"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet">
-                    {getEventTypeLabel(s.type)}
-                  </span>
-                  <span className="text-xs text-gray-400">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet shrink-0">
+                      {getEventTypeLabel(s.type)}
+                    </span>
+                    {s.churchId !== churchId && (
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full text-white truncate"
+                        style={{ backgroundColor: s.churchPrimaryColor }}
+                      >
+                        {s.churchName}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 shrink-0">
                     {new Date(s.serviceDate).toLocaleDateString("fr-FR")}
                   </span>
                 </div>

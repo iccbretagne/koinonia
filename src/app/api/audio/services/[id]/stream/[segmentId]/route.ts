@@ -3,7 +3,7 @@
  * Streaming interne (bibliothèque d'écoute, spec 021) — distinct de la route publique par
  * token : ici l'accès passe par une session authentifiée et `audio:listen`.
  */
-import { requireChurchPermission } from "@/lib/auth";
+import { requireAudioListenAccess } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, ApiError } from "@/lib/api-utils";
 import { buildRenditionResponse } from "@/modules/audio";
@@ -18,7 +18,7 @@ export async function GET(
     const service = await prisma.audioService.findUnique({ where: { id }, select: { churchId: true, status: true } });
     if (!service) throw new ApiError(404, "Culte audio introuvable");
 
-    await requireChurchPermission("audio:listen", service.churchId);
+    await requireAudioListenAccess(service.churchId);
 
     if (service.status !== "PUBLISHED") throw new ApiError(410, "Ce culte n'est plus disponible.");
 

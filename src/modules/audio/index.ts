@@ -94,5 +94,14 @@ export {
 export { listPublishedServices, listSpeakers, listSeries, getPublishedServiceForMember } from "./services/library";
 export type { LibrarySort, ListPublishedServicesInput, LibraryServiceSummary } from "./services/library";
 
+export {
+  listAccessibleLibraryChurchIds,
+  listAccessibleLibraryChurches,
+  listOutgoingShares,
+  grantLibraryShare,
+  revokeLibraryShare,
+} from "./services/sharing";
+export type { AccessibleLibraryChurch, OutgoingShare, GrantLibraryShareResult } from "./services/sharing";
+
 export { getCachedRenditionPath, primeRenditionCache, getCacheDir } from "./services/rendition-cache";
 export { buildRenditionResponse } from "./services/stream";
