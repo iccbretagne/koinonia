@@ -6,6 +6,12 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Securite
+
+- Monte `fast-uri` en 3.1.7 via override (GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
+  GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp) — dependance transitive de prisma 7.10 (ajv), la
+  porte `npm audit --omit=dev --audit-level=high` de la CI.
+
 ## [v1.19.0] - 2026-09-01
 
 ### Ajouté
