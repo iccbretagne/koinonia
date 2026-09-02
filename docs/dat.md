@@ -328,6 +328,7 @@ Chaque document ci-dessous fait **autorité sur son domaine** ; ce DAT n'en est 
 | [dev-onboarding.md](dev-onboarding.md) | Environnement de développement |
 | [security-exceptions.md](security-exceptions.md) | Exceptions de sécurité acceptées |
 | [roadmap.md](roadmap.md) | Trajectoire fonctionnelle et technique |
+| [roadmap-modularite.md](roadmap-modularite.md) | État de la modularité du monolithe et chantiers proposés |
 | [adr/](adr/README.md) | Décisions architecturales |
 | `specs/` | Spécifications par feature (`spec.md` → `plan.md` → `tasks.md`) |
 
