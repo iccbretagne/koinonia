@@ -2,20 +2,20 @@
 
 ## Stack technique
 
-| Technologie | Version | Role |
+| Technologie | Version | Rôle |
 |---|---|---|
 | Next.js | 16 | Framework fullstack (App Router + Turbopack) |
 | React | 19 | UI (Server Components + Client Components) |
 | Tailwind CSS | 4 | Styles (PostCSS) |
 | NextAuth (Auth.js) | 5 beta | Authentification Google OAuth |
 | Prisma | 7 | ORM (driver adapter MariaDB, ESM-only) |
-| MariaDB | 10.11 | Base de donnees (Docker) |
-| Zod | 3 | Validation des donnees cote API |
+| MariaDB | 10.11 | Base de données (Docker) |
+| Zod | 3 | Validation des données côté API |
 | TypeScript | 5 | Typage strict |
 
 ## Architecture modulaire (v1.0)
 
-Koinonia suit une architecture **monolithe modulaire** : une seule base de code deployee ensemble, mais organisee en modules avec des frontieres strictes.
+Koinonia suit une architecture **monolithe modulaire** : une seule base de code déployée ensemble, mais organisée en modules avec des frontières strictes.
 
 ```
 src/
@@ -28,35 +28,35 @@ src/
 
 Fournit le "système de plugins" que les modules utilisent :
 
-| Fichier | Role |
+| Fichier | Rôle |
 |---|---|
 | `module-registry.ts` | `ModuleRegistry` (register, validateDeps, resolveLoadOrder, collectPermissions) + `defineModule()` |
 | `event-bus.ts` | `EventBus<TEvents>` — bus in-process, typé, transaction-aware |
 | `boot.ts` | `boot()` — lit `ENABLED_MODULES`, charge les modules, valide les dépendances |
-| `permissions.ts` | `buildRolePermissions(registry)` — derive la matrice roles→permissions depuis les manifestes |
+| `permissions.ts` | `buildRolePermissions(registry)` — dérive la matrice rôles→permissions depuis les manifestes |
 
 ### Couche modules (`src/modules/`)
 
-Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, sa navigation, et ses exports publics. La couche `src/app/` ne peut importer qu'a partir de l'index du module (regle CI `app-only-module-public-api`).
+Chaque module expose un **manifeste** (`index.ts`) qui déclare ses permissions, sa navigation, et ses exports publics. La couche `src/app/` ne peut importer qu'à partir de l'index du module (règle CI `app-only-module-public-api`).
 
-| Module | Perimetre |
+| Module | Périmètre |
 |---|---|
-| `core` | Gestion des eglises (`church:manage`), des utilisateurs (`users:manage`) et des acces/roles au sein d'une eglise (`access:manage`) — module racine, sans dependance |
-| `planning` | Evenements, planning, membres, annonces, demandes (Request workflow), espace STAR, auto-declaration d'absences |
-| `discipleship` | Suivi discipolat, relations, presences, stats. Depend de `planning` |
-| `storage` | Primitifs de stockage S3 et de jeton, extraits de `media` ([ADR-0006](adr/0006-extraction-module-storage.md)). Pas de modele Prisma propre |
-| `media` | Galeries photos evenements, projets de production, versionnage fichiers, tokens de partage. Depend de `storage` ; optionnellement lie a `planning` |
-| `audio` | Publication audio des cultes : depot des sequences, nommage, rendu sonore, diffusion par lien public, bibliotheque d'ecoute (`audio:listen`, ouverte a tous les roles) et partage de cette bibliotheque entre eglises (spec 036, `services/sharing.ts`). Depend de `storage` et `planning`. Seul module a embarquer un **worker hors Next.js** ([ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) |
-| `agenda` | Agenda pastoral : profils pastoraux (Pasteur, Berger, Assistante), demandes de RDV, qualification, planification. Depend de `core` |
-| `accounting` | Demandes de depenses/remboursements, paiements, justificatifs, statistiques financieres. Depend de `core` et `planning` |
-| `rooms` | Reservation de salles (partage cross-eglise via liste blanche `RoomAccess`) et main courante (ouverture/fermeture, controle). Depend de `core` |
-| `integration` | Suivi des parcours d'integration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Depend de `core` |
-| `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, moderation. Module transversal ouvert a tous les roles authentifies. Depend de `core` |
+| `core` | Gestion des églises (`church:manage`), des utilisateurs (`users:manage`) et des accès/rôles au sein d'une église (`access:manage`) — module racine, sans dépendance |
+| `planning` | Événements, planning, membres, annonces, demandes (Request workflow), espace STAR, auto-déclaration d'absences |
+| `discipleship` | Suivi discipolat, relations, présences, stats. Dépend de `planning` |
+| `storage` | Primitifs de stockage S3 et de jeton, extraits de `media` ([ADR-0006](adr/0006-extraction-module-storage.md)). Pas de modèle Prisma propre |
+| `media` | Galeries photos événements, projets de production, versionnage fichiers, tokens de partage. Dépend de `storage` ; optionnellement lié à `planning` |
+| `audio` | Publication audio des cultes : dépôt des séquences, nommage, rendu sonore, diffusion par lien public, bibliothèque d'écoute (`audio:listen`, ouverte à tous les rôles) et partage de cette bibliothèque entre églises (spec 036, `services/sharing.ts`). Dépend de `storage` et `planning`. Seul module à embarquer un **worker hors Next.js** ([ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) |
+| `agenda` | Agenda pastoral : profils pastoraux (Pasteur, Berger, Assistante), demandes de RDV, qualification, planification. Dépend de `core` |
+| `accounting` | Demandes de dépenses/remboursements, paiements, justificatifs, statistiques financières. Dépend de `core` et `planning` |
+| `rooms` | Réservation de salles (partage cross-église via liste blanche `RoomAccess`) et main courante (ouverture/fermeture, contrôle). Dépend de `core` |
+| `integration` | Suivi des parcours d'intégration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Dépend de `core` |
+| `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, modération. Module transversal ouvert à tous les rôles authentifiés. Dépend de `core` |
 
 **Exports du module `media` :**
 - `mediaModule` — manifeste
 - `uploadMediaFile`, `deleteMediaFile` — upload/suppression S3
-- `getSignedThumbnailUrl`, `getSignedOriginalUrl`, `getSignedDownloadUrl` — URLs signees
+- `getSignedThumbnailUrl`, `getSignedOriginalUrl`, `getSignedDownloadUrl` — URLs signées
 - `processImage`, `validatePhotoFile` — traitement et validation images (sharp)
 - `createMediaShareToken`, `validateMediaShareToken` — gestion des tokens de partage
 - `createMultipartUpload`, `getSignedPartUrl`, `completeMultipartUpload`, `abortMultipartUpload` — upload multipart S3
@@ -64,22 +64,22 @@ Chaque module expose un **manifeste** (`index.ts`) qui declare ses permissions, 
 **Exports du module `planning` :**
 - `planningModule` — manifeste
 - `planningBus` — `EventBus<PlanningEvents>` singleton
-- `PlanningEvents` — carte des evenements emis
-- `executeRequest()` — executor des demandes approuvees
+- `PlanningEvents` — carte des événements émis
+- `executeRequest()` — executor des demandes approuvées
 - `ExecutionResult` — type de retour de l'executor
 
-**Exports du module `audio` lies au partage de bibliotheque entre eglises (spec 036,
+**Exports du module `audio` liés au partage de bibliothèque entre églises (spec 036,
 `services/sharing.ts`) :**
 - `listAccessibleLibraryChurchIds(churchId)` / `listAccessibleLibraryChurches(churchId)` —
-  fonction pivot : l'eglise elle-meme, plus les eglises qui lui ont ouvert leur bibliotheque
+  fonction pivot : l'église elle-même, plus les églises qui lui ont ouvert leur bibliothèque
   (jamais l'inverse — un partage sortant ne donne rien en retour)
 - `listOutgoingShares(ownerChurchId)`, `grantLibraryShare(ownerChurchId, slug, options)`,
-  `revokeLibraryShare(ownerChurchId, shareId)` — administration des partages (ecran
+  `revokeLibraryShare(ownerChurchId, shareId)` — administration des partages (écran
   `/audio/parametres`, garde par `audio:manage`)
 
 ### Registry (`src/lib/registry.ts`)
 
-Singleton process-level : boot avec tous les modules actifs + matrice `rolePermissions` pre-calculee.
+Singleton process-level : boot avec tous les modules actifs + matrice `rolePermissions` pré-calculée.
 
 ```typescript
 export const registry = boot({
@@ -89,11 +89,11 @@ export const registry = boot({
 export const rolePermissions = buildRolePermissions(registry);
 ```
 
-`rolePermissions` est importe directement par les routes API et composants qui ont besoin de tester une permission.
+`rolePermissions` est importé directement par les routes API et composants qui ont besoin de tester une permission.
 
-### Bus d'evenements (`planningBus`)
+### Bus d'événements (`planningBus`)
 
-Le bus est transaction-aware : les handlers s'executent dans la meme `Prisma.TransactionClient` que l'emetteur. Si un handler throw, la transaction est rollback.
+Le bus est transaction-aware : les handlers s'exécutent dans la même `Prisma.TransactionClient` que l'émetteur. Si un handler throw, la transaction est rollback.
 
 ```typescript
 await prisma.$transaction(async (tx) => {
@@ -104,19 +104,19 @@ await prisma.$transaction(async (tx) => {
 });
 ```
 
-Evenements definis : `planning:event:created`, `planning:event:cancelled`, `planning:request:executed`, `planning:status:changed`.
+Événements définis : `planning:event:created`, `planning:event:cancelled`, `planning:request:executed`, `planning:status:changed`.
 
-### Frontieres modules (dependency-cruiser)
+### Frontières modules (dependency-cruiser)
 
-CI enforce les regles suivantes via `npm run lint:boundaries` :
+CI enforce les règles suivantes via `npm run lint:boundaries` :
 
-| Regle | Description |
+| Règle | Description |
 |---|---|
 | `no-planning-imports-other-modules` | `planning` n'importe pas d'un autre module |
 | `no-discipleship-imports-other-modules` | `discipleship` n'importe pas d'un autre module |
 | `no-core-module-imports-other-modules` | `core` n'importe pas d'un autre module |
 | `no-integration-imports-other-modules` | `integration` n'importe pas d'un autre module |
-| `no-modules-static-import-registry` | Un module ne peut pas importer statiquement `src/lib/registry.ts` (cycle avec la racine de composition — issue #446) ; un import dynamique reste autorise |
+| `no-modules-static-import-registry` | Un module ne peut pas importer statiquement `src/lib/registry.ts` (cycle avec la racine de composition — issue #446) ; un import dynamique reste autorisé |
 | `core-no-modules-import` | `src/core/` n'importe pas de `src/modules/` |
 | `app-only-module-public-api` | `src/app/` importe uniquement depuis `src/modules/X/index.ts` ou `src/modules/X/auth.ts` |
 
@@ -419,10 +419,10 @@ koinonia/
 
 ### Server vs Client components
 
-- **Server Components** (par defaut) : pages, layouts, chargement de donnees initiales
+- **Server Components** (par défaut) : pages, layouts, chargement de données initiales
 - **Client Components** (`"use client"`) : interactions utilisateur
 
-Les pages chargent les donnees cote serveur et les passent en props aux composants client.
+Les pages chargent les données côté serveur et les passent en props aux composants client.
 
 ### API Route handlers
 
@@ -441,29 +441,29 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 ### Helpers d'authentification (`src/lib/auth.ts`)
 
-> **Il n'existe pas de helper `requirePermission(perm, churchId?)`.** Une permission ne s'evalue
-> jamais hors d'une eglise : le `churchId` n'est jamais optionnel (voir `specs/024-*`). Utiliser
-> `requireChurchPermission` quand l'eglise est deja resolue, `requireCurrentChurchPermission`
+> **Il n'existe pas de helper `requirePermission(perm, churchId?)`.** Une permission ne s'évalue
+> jamais hors d'une église : le `churchId` n'est jamais optionnel (voir `specs/024-*`). Utiliser
+> `requireChurchPermission` quand l'église est déjà résolue, `requireCurrentChurchPermission`
 > sinon.
 
 | Helper | Description |
 |---|---|
-| `requireAuth()` | Verifie la session, throw `UNAUTHORIZED` |
-| `requireChurchPermission(perm, churchId)` | Verifie une permission dans une eglise precise — `churchId` obligatoire |
-| `requireCurrentChurchPermission(perm)` | Resout l'eglise courante puis verifie la permission dedans |
-| `requireChurchAccess(churchId)` | Verifie un role quelconque dans l'eglise, sans permission precise |
-| `requireSuperAdmin()` | Action reservee a l'administration de la plateforme |
-| `requirePlatformPermission(perm)` | Permissions volontairement transverses aux eglises (liste blanche testee) |
-| `requireDepartmentAccess(session, churchId, departmentId)` | Garde de perimetre departement (ADR-0009) |
+| `requireAuth()` | Vérifie la session, throw `UNAUTHORIZED` |
+| `requireChurchPermission(perm, churchId)` | Vérifie une permission dans une église précise — `churchId` obligatoire |
+| `requireCurrentChurchPermission(perm)` | Résout l'église courante puis vérifie la permission dedans |
+| `requireChurchAccess(churchId)` | Vérifie un rôle quelconque dans l'église, sans permission précise |
+| `requireSuperAdmin()` | Action réservée à l'administration de la plateforme |
+| `requirePlatformPermission(perm)` | Permissions volontairement transverses aux églises (liste blanche testée) |
+| `requireDepartmentAccess(session, churchId, departmentId)` | Garde de périmètre département (ADR-0009) |
 | `getUserDepartmentScope(session)` | `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` |
-| `getUserMinistryScope(session, churchId)` | Symetrique pour le ministere (Ministre borne a ses ministeres) |
-| `getDiscipleshipScope(session, churchId)` | Portee discipolat (scoped ou non) |
+| `getUserMinistryScope(session, churchId)` | Symétrique pour le ministère (Ministre borné à ses ministères) |
+| `getDiscipleshipScope(session, churchId)` | Portée discipolat (scoped ou non) |
 | `resolveChurchId(type, id)` | Retrouve le `churchId` d'une ressource par son type |
-| `getCurrentChurchId(session)` | Eglise active (cookie ou premiere de la liste) |
+| `getCurrentChurchId(session)` | Église active (cookie ou première de la liste) |
 | `requireMediaAccess` / `UploadAccess` / `ManageAccess` / `ReviewAccess` | Gardes propres au module media |
-| `requireAudioAccess(perm, churchId)` | Permission de role **ou** membre du departement de captation |
-| `requireAudioListenAccess(churchId)` | Ecoute : role dans l'eglise **ou** bibliotheque partagee (ADR-0010) |
-| `requireAudioUnpublishAccess(churchId)` | `audio:manage` ou responsable du departement de captation |
+| `requireAudioAccess(perm, churchId)` | Permission de rôle **ou** membre du département de captation |
+| `requireAudioListenAccess(churchId)` | Écoute : rôle dans l'église **ou** bibliothèque partagée (ADR-0010) |
+| `requireAudioUnpublishAccess(churchId)` | `audio:manage` ou responsable du département de captation |
 
 ### Permissions dans les composants
 
@@ -488,12 +488,12 @@ const data = schema.parse(await request.json());
 
 ### Prisma
 
-ESM-only, driver adapter `PrismaMariaDb`. Client genere dans `src/generated/prisma/`.
+ESM-only, driver adapter `PrismaMariaDb`. Client généré dans `src/generated/prisma/`.
 Datasource URL dans `prisma.config.ts` (pas dans `schema.prisma`).
 
 ### Middleware
 
-`src/proxy.ts` (ex `src/middleware.ts`) — protege `/dashboard/*` et `/api/*`.
+`src/proxy.ts` (ex `src/middleware.ts`) — protège `/dashboard/*` et `/api/*`.
 Exporte `proxy` (pas `middleware`), runtime Node.js.
 
 ---
@@ -508,28 +508,28 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `GOOGLE_CLIENT_ID` | Client ID Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) |
-| `ENABLED_MODULES` | Modules a charger (virgule) — tous si absent |
+| `ENABLED_MODULES` | Modules à charger (virgule) — tous si absent |
 | `BACKUP_S3_ENDPOINT` | Endpoint S3-compatible (backups BDD) |
-| `BACKUP_S3_REGION` | Region du bucket backups |
+| `BACKUP_S3_REGION` | Région du bucket backups |
 | `BACKUP_S3_BUCKET` | Nom du bucket backups |
-| `BACKUP_S3_ACCESS_KEY_ID` | Cle d'acces backups |
+| `BACKUP_S3_ACCESS_KEY_ID` | Clé d'accès backups |
 | `BACKUP_S3_SECRET_ACCESS_KEY` | Secret backups |
-| `BACKUP_RETENTION_DAYS` | Retention des backups en jours (defaut : 30) |
-| `MEDIA_S3_ENDPOINT` | Endpoint S3-compatible (module media — photos, visuels, videos) |
-| `MEDIA_S3_REGION` | Region du bucket media |
+| `BACKUP_RETENTION_DAYS` | Rétention des backups en jours (défaut : 30) |
+| `MEDIA_S3_ENDPOINT` | Endpoint S3-compatible (module media — photos, visuels, vidéos) |
+| `MEDIA_S3_REGION` | Région du bucket media |
 | `MEDIA_S3_BUCKET` | Nom du bucket media |
-| `MEDIA_S3_ACCESS_KEY_ID` | Cle d'acces media |
+| `MEDIA_S3_ACCESS_KEY_ID` | Clé d'accès media |
 | `MEDIA_S3_SECRET_ACCESS_KEY` | Secret media |
-| `ACCOUNTING_S3_BUCKET` / `ACCOUNTING_S3_REGION` / `ACCOUNTING_S3_ENDPOINT` / `ACCOUNTING_S3_ACCESS_KEY` / `ACCOUNTING_S3_SECRET_KEY` | Stockage des pieces jointes comptabilite (`src/lib/file-storage.ts`) — fallback disque si absentes |
-| `AUTH_TRUST_HOST` | `true` si derriere un reverse proxy (Traefik, nginx) |
-| `PORT` | Port d'ecoute du serveur Next.js |
+| `ACCOUNTING_S3_BUCKET` / `ACCOUNTING_S3_REGION` / `ACCOUNTING_S3_ENDPOINT` / `ACCOUNTING_S3_ACCESS_KEY` / `ACCOUNTING_S3_SECRET_KEY` | Stockage des pièces jointes comptabilité (`src/lib/file-storage.ts`) — fallback disque si absentes |
+| `AUTH_TRUST_HOST` | `true` si derrière un reverse proxy (Traefik, nginx) |
+| `PORT` | Port d'écoute du serveur Next.js |
 | `AUTH_DEV_LOGIN` | Active la connexion sans Google OAuth (dev/recette uniquement) |
-| `CRON_SECRET` | Protege les routes `/api/cron/*` |
+| `CRON_SECRET` | Protège les routes `/api/cron/*` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Envoi d'emails (nodemailer) — notifications, rappels |
-| `SMTP_IGNORE_TLS` / `SMTP_TLS_REJECT_UNAUTHORIZED` | Ajustements TLS pour un relay local ou un certificat auto-signe |
+| `SMTP_IGNORE_TLS` / `SMTP_TLS_REJECT_UNAUTHORIZED` | Ajustements TLS pour un relay local ou un certificat auto-signé |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur les formulaires publics (`agenda-public`, `rejoindre`) |
-| `AUDIO_CACHE_DIR` / `AUDIO_CACHE_MAX_BYTES` | Cache local du module audio, eviction LRU (defaut : 5 Go) |
-| `AUDIO_XACCEL_LOCATION` | Active la delegation de diffusion audio au reverse proxy (X-Accel) |
+| `AUDIO_CACHE_DIR` / `AUDIO_CACHE_MAX_BYTES` | Cache local du module audio, éviction LRU (défaut : 5 Go) |
+| `AUDIO_XACCEL_LOCATION` | Active la délégation de diffusion audio au reverse proxy (X-Accel) |
 
 > Les variables `MEDIA_S3_*` sont obligatoires — aucun fallback sur `BACKUP_S3_*`. Les deux buckets doivent être configurés séparément.
 
@@ -537,7 +537,7 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 
 ## Module Demandes (Request workflow)
 
-Systeme unifie de soumission et traitement des demandes (annonces + evenements + acces).
+Système unifié de soumission et traitement des demandes (annonces + événements + accès).
 
 ### Types de demandes (`RequestType`)
 
@@ -545,117 +545,117 @@ Systeme unifie de soumission et traitement des demandes (annonces + evenements +
 |---|---|---|
 | `DIFFUSION_INTERNE` | Tous (planning:view) | SECRETARIAT |
 | `RESEAUX_SOCIAUX` | Tous | COMMUNICATION |
-| `VISUEL` | Systeme (enfant d'une annonce) | PRODUCTION_MEDIA |
+| `VISUEL` | Système (enfant d'une annonce) | PRODUCTION_MEDIA |
 | `AJOUT_EVENEMENT` | planning:edit | SECRETARIAT |
 | `MODIFICATION_EVENEMENT` | planning:edit | SECRETARIAT |
 | `ANNULATION_EVENEMENT` | planning:edit | SECRETARIAT |
 | `MODIFICATION_PLANNING` | planning:edit | SECRETARIAT |
 | `DEMANDE_ACCES` | planning:edit | SECRETARIAT |
 
-### Execution automatique
+### Exécution automatique
 
-Quand une demande de type evenement est approuvee, `executeRequest()` (dans `src/modules/planning/services/request-executor.ts`) l'execute en transaction et emet les evenements planningBus correspondants. Le statut passe a `EXECUTEE` ou `ERREUR` selon le resultat.
+Quand une demande de type événement est approuvée, `executeRequest()` (dans `src/modules/planning/services/request-executor.ts`) l'exécute en transaction et émet les événements planningBus correspondants. Le statut passe à `EXECUTEE` ou `ERREUR` selon le résultat.
 
 ### Annulation en cascade
 
-- Annuler une `Announcement` → toutes ses `Request` liees passent en `ANNULE`
+- Annuler une `Announcement` → toutes ses `Request` liées passent en `ANNULE`
 - Annuler une `Request` parente `DIFFUSION_INTERNE`/`RESEAUX_SOCIAUX` → la `Request` enfant `VISUEL` passe en `ANNULE`
 
 ---
 
-## Module Media
+## Module Média
 
-Perimetre : galeries photos (evenements) et projets de production (videos, visuels).
+Périmètre : galeries photos (événements) et projets de production (vidéos, visuels).
 
-### Dependances
+### Dépendances
 
 - `core` : obligatoire (churchId, permissions)
-- `planning` : optionnelle — lie un `MediaEvent` a un evenement du planning (`planningEventId`)
+- `planning` : optionnelle — lie un `MediaEvent` à un événement du planning (`planningEventId`)
 
 ### Permissions
 
-| Permission | Roles | Description |
+| Permission | Rôles | Description |
 |---|---|---|
 | `media:view` | SUPER_ADMIN, ADMIN, SECRETARY | Consulter galeries, projets, fichiers |
 | `media:upload` | SUPER_ADMIN, ADMIN, SECRETARY | Uploader, supprimer photos et fichiers |
 | `media:review` | SUPER_ADMIN, ADMIN | Valider / rejeter photos et fichiers |
-| `media:manage` | SUPER_ADMIN, ADMIN | Creer/supprimer evenements et projets, gerer les tokens |
+| `media:manage` | SUPER_ADMIN, ADMIN | Créer/supprimer événements et projets, gérer les tokens |
 
 ### Services (`src/modules/media/services/`)
 
-| Fichier | Role |
+| Fichier | Rôle |
 |---|---|
 | `image.ts` | Traitement d'images via `sharp` : redimensionnement, conversion WebP, validation MIME |
 | `files.ts` | Constantes fichiers (`MAX_FILE_SIZE`) |
-| `tokens.ts` | Generation et validation des tokens de partage (`MediaShareToken`), resolution des donnees galerie/collection/validateur |
+| `tokens.ts` | Génération et validation des tokens de partage (`MediaShareToken`), résolution des données galerie/collection/validateur |
 
-L'interaction S3 (upload, suppression, URLs signees, multipart) vit dans le module `storage`
-([ADR-0006](adr/0006-extraction-module-storage.md)) — `media` la reexporte depuis
+L'interaction S3 (upload, suppression, URLs signées, multipart) vit dans le module `storage`
+([ADR-0006](adr/0006-extraction-module-storage.md)) — `media` la réexporte depuis
 `@/modules/storage` (voir `src/modules/media/index.ts`).
 
 ### Flux d'upload photos
 
 1. `POST /api/media-events/[id]/photos` — multipart form-data
 2. Serveur : `validatePhotoFile` → `processImage` (sharp) → `uploadMediaFile` (original + thumbnail S3)
-3. BDD : creation `MediaPhoto` avec `originalKey` + `thumbnailKey`
+3. BDD : création `MediaPhoto` avec `originalKey` + `thumbnailKey`
 
 ### Flux d'upload fichiers (projets)
 
-Upload direct navigateur vers S3 (evite le transit serveur pour les gros fichiers) :
+Upload direct navigateur vers S3 (évite le transit serveur pour les gros fichiers) :
 
-1. `POST /api/media/files/upload/sign` → URL pre-signee S3 + `fileId`
+1. `POST /api/media/files/upload/sign` → URL pré-signée S3 + `fileId`
 2. Navigateur : `PUT {uploadUrl}` directement vers S3 (XHR avec suivi de progression)
-3. `PATCH /api/media/files/[fileId]` avec `{ originalKey }` — confirmation cote serveur
+3. `PATCH /api/media/files/[fileId]` avec `{ originalKey }` — confirmation côté serveur
 
-### Acces publics (tokens de partage)
+### Accès publics (tokens de partage)
 
-Quatre types de tokens controlent les acces sans authentification :
+Quatre types de tokens contrôlent les accès sans authentification :
 
 | Type | Route | Droits |
 |---|---|---|
-| `GALLERY` | `/media/g/[token]` | Lecture seule, galerie photos approuvees |
-| `MEDIA` | `/media/d/[token]` | Telechargement photos approuvees |
+| `GALLERY` | `/media/g/[token]` | Lecture seule, galerie photos approuvées |
+| `MEDIA` | `/media/d/[token]` | Téléchargement photos approuvées |
 | `VALIDATOR` | `/media/v/[token]` | Valider/rejeter des photos (APPROVED/REJECTED) |
-| `PREVALIDATOR` | `/media/v/[token]` | Pre-valider (PREVALIDATED/PREREJECTED) |
+| `PREVALIDATOR` | `/media/v/[token]` | Pré-valider (PREVALIDATED/PREREJECTED) |
 
 ---
 
-## Qualite du code
+## Qualité du code
 
 - **TypeScript strict** : `noUnusedLocals` + `noUnusedParameters`
 - **ESLint** : `eslint.config.mjs` (`eslint-config-next` + `eslint-plugin-react-hooks`)
-- **dependency-cruiser** : frontieres modules enforces en CI (`npm run lint:boundaries`)
+- **dependency-cruiser** : frontières modules enforces en CI (`npm run lint:boundaries`)
 - **Tests** : Vitest, `npm run test`
 - **CI** : typecheck + lint + lint:boundaries + tests + `npm audit --omit=dev --audit-level=high`
   sur chaque PR
 
-### Dependances vulnerables : le champ `overrides`
+### Dépendances vulnérables : le champ `overrides`
 
-`npm audit --omit=dev --audit-level=high` bloque la CI si une dependance de **production**
-presente une faille haute ou critique. Le perimetre s'arrete volontairement a la production :
-une faille dans un outil de build ou de test n'est pas exposee aux utilisateurs, et faire
-echouer la CI dessus finirait par pousser a desactiver le garde-fou.
+`npm audit --omit=dev --audit-level=high` bloque la CI si une dépendance de **production**
+présente une faille haute ou critique. Le périmètre s'arrête volontairement à la production :
+une faille dans un outil de build ou de test n'est pas exposée aux utilisateurs, et faire
+échouer la CI dessus finirait par pousser à désactiver le garde-fou.
 
-Quand la correction depend d'un paquet intermediaire qui n'a pas encore relache la version
-saine, le champ `overrides` de `package.json` force la version corrigee dans tout l'arbre.
-Chaque entree existe pour une faille precise et doit **disparaitre** des que le paquet parent
-publie une version qui embarque deja le correctif :
+Quand la correction dépend d'un paquet intermédiaire qui n'a pas encore relâché la version
+saine, le champ `overrides` de `package.json` force la version corrigée dans tout l'arbre.
+Chaque entrée existe pour une faille précise et doit **disparaître** dès que le paquet parent
+publie une version qui embarque déjà le correctif :
 
-| Override | Pourquoi | A retirer quand |
+| Override | Pourquoi | À retirer quand |
 |---|---|---|
-| `@prisma/adapter-mariadb > mariadb: ^3.5.3` | L'adaptateur epingle `mariadb@3.4.5`, qui fuit le mot de passe en clair face a un MitM malgre `ssl: true` | L'adaptateur epingle une version >= 3.5.3 |
-| `mysql2: ^3.24.2` | Faille GHSA-3f6p-5ww8-9rcr | Le paquet parent qui tire `mysql2` depend de >= 3.24.2 |
-| `fast-uri: ^3.1.7` | Faille GHSA-5jgf-p345-68v8 | Le paquet parent qui tire `fast-uri` depend de >= 3.1.7 |
-| `nodemailer: ^9.0.6` | Injections de commandes SMTP (CRLF) sur `<= 9.0.0` ; `next-auth` et `@auth/core` declarent encore `^7 \|\| ^8`, ce qui reintroduisait une copie vulnerable | `next-auth` accepte `^9` |
-| `deepmerge-ts: ^8.0.0` | Epuisement de pile dans `@prisma/config` (chargement de configuration, hors chemin de requete) | `@prisma/config` depend de `>= 8` |
-| `uuid: ^11.1.1` | Borne de buffer manquante, tiree par `exceljs` | `exceljs` depend de `>= 11.1.1` |
+| `@prisma/adapter-mariadb > mariadb: ^3.5.3` | L'adaptateur épingle `mariadb@3.4.5`, qui fuit le mot de passe en clair face à un MitM malgré `ssl: true` | L'adaptateur épingle une version >= 3.5.3 |
+| `mysql2: ^3.24.2` | Faille GHSA-3f6p-5ww8-9rcr | Le paquet parent qui tire `mysql2` dépend de >= 3.24.2 |
+| `fast-uri: ^3.1.7` | Faille GHSA-5jgf-p345-68v8 | Le paquet parent qui tire `fast-uri` dépend de >= 3.1.7 |
+| `nodemailer: ^9.0.6` | Injections de commandes SMTP (CRLF) sur `<= 9.0.0` ; `next-auth` et `@auth/core` déclarent encore `^7 \|\| ^8`, ce qui réintroduisait une copie vulnérable | `next-auth` accepte `^9` |
+| `deepmerge-ts: ^8.0.0` | Épuisement de pile dans `@prisma/config` (chargement de configuration, hors chemin de requête) | `@prisma/config` dépend de `>= 8` |
+| `uuid: ^11.1.1` | Borne de buffer manquante, tirée par `exceljs` | `exceljs` dépend de `>= 11.1.1` |
 
-Un override est un contournement, pas une solution : verifier a chaque montee de version si le
-paquet parent a rattrape son retard, et retirer la ligne devenue inutile.
+Un override est un contournement, pas une solution : vérifier à chaque montée de version si le
+paquet parent a rattrapé son retard, et retirer la ligne devenue inutile.
 
 ---
 
 ## Multi-tenant
 
-Chaque eglise (`Church`) est un tenant isole. Toutes les donnees sont rattachees via `churchId`.
-Un utilisateur peut avoir des roles differents dans plusieurs eglises via `UserChurchRole`.
+Chaque église (`Church`) est un tenant isolé. Toutes les données sont rattachées via `churchId`.
+Un utilisateur peut avoir des rôles différents dans plusieurs églises via `UserChurchRole`.

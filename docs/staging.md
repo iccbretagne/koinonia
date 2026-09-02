@@ -1,30 +1,30 @@
 # Environnement de recette (staging)
 
-Guide de mise en place d'une VM de recette dediee pour valider un deploiement avant la bascule en production.
+Guide de mise en place d'une VM de recette dédiée pour valider un déploiement avant la bascule en production.
 
 ## Objectif
 
-L'environnement de recette est une **VM dediee, distincte du serveur de production**, mais configuree de maniere identique (memes chemins, meme service systemd `koinonia`, meme Traefik, meme MariaDB). Elle permet de deployer et valider une branche **avant** de la tagger et de la mettre en production.
+L'environnement de recette est une **VM dédiée, distincte du serveur de production**, mais configurée de manière identique (mêmes chemins, même service systemd `koinonia`, même Traefik, même MariaDB). Elle permet de déployer et valider une branche **avant** de la tagger et de la mettre en production.
 
 Flux de travail :
 
-1. On deploie une branche sur la recette **manuellement** (workflow `Deploy Staging`, `workflow_dispatch`)
+1. On déploie une branche sur la recette **manuellement** (workflow `Deploy Staging`, `workflow_dispatch`)
 2. On valide fonctionnellement sur `https://recette.votre-domaine.com`
-3. Une fois valide, on tagge (`git tag vX.Y.Z && git push origin vX.Y.Z`)
-4. La production se deploie automatiquement via le pipeline habituel (`deploy.yml`, voir [docs/production.md](production.md))
+3. Une fois validé, on tagge (`git tag vX.Y.Z && git push origin vX.Y.Z`)
+4. La production se déploie automatiquement via le pipeline habituel (`deploy.yml`, voir [docs/production.md](production.md))
 
-La recette n'intervient jamais dans le pipeline de production : ce sont deux workflows, deux VMs et deux jeux de secrets totalement independants.
+La recette n'intervient jamais dans le pipeline de production : ce sont deux workflows, deux VMs et deux jeux de secrets totalement indépendants.
 
 ## Provisionnement de la VM
 
-L'installation de base (utilisateur systeme, structure Capistrano-like `/opt/koinonia`, service systemd `koinonia`, durcissement, Node.js 22, MariaDB) est **identique** a la production. Suivre integralement [docs/production.md](production.md) sections "Prerequis" a "Service systemd", puis appliquer uniquement les differences ci-dessous.
+L'installation de base (utilisateur système, structure Capistrano-like `/opt/koinonia`, service systemd `koinonia`, durcissement, Node.js 22, MariaDB) est **identique** à la production. Suivre intégralement [docs/production.md](production.md) sections "Prérequis" à "Service systemd", puis appliquer uniquement les différences ci-dessous.
 
-### Sous-domaine dedie
+### Sous-domaine dédié
 
 Utiliser un sous-domaine distinct, par exemple `recette.votre-domaine.com` :
 
-- Ajouter une entree DNS `recette.votre-domaine.com` pointant vers l'IP de la VM de recette
-- Creer un router Traefik dedie (fichier separe, ex. `/etc/traefik/dynamic/koinonia-staging.yml`) pointant vers le port local de l'instance de recette :
+- Ajouter une entrée DNS `recette.votre-domaine.com` pointant vers l'IP de la VM de recette
+- Créer un router Traefik dédié (fichier séparé, ex. `/etc/traefik/dynamic/koinonia-staging.yml`) pointant vers le port local de l'instance de recette :
 
 ```yaml
 http:
@@ -44,9 +44,9 @@ http:
           - url: "http://127.0.0.1:3001" # adapter selon PORT dans shared/.env de la recette
 ```
 
-### `shared/.env` propre a la recette
+### `shared/.env` propre à la recette
 
-Ne jamais reutiliser le `.env` de production. Creer un fichier `/opt/koinonia/shared/.env` dedie sur la VM de recette avec :
+Ne jamais réutiliser le `.env` de production. Créer un fichier `/opt/koinonia/shared/.env` dédié sur la VM de recette avec :
 
 ```bash
 DATABASE_URL=mysql://koinonia_staging:MOT_DE_PASSE@localhost:3306/koinonia_staging
@@ -61,13 +61,13 @@ SUPER_ADMIN_EMAILS=admin-test@votre-eglise.com
 
 Points d'attention :
 
-- **Base de donnees dediee** : `koinonia_staging`, avec un utilisateur MariaDB dedie (`CREATE DATABASE`/`CREATE USER` comme en production, voir section "Base de donnees" de production.md, en adaptant les noms)
+- **Base de données dédiée** : `koinonia_staging`, avec un utilisateur MariaDB dédié (`CREATE DATABASE`/`CREATE USER` comme en production, voir section "Base de données" de production.md, en adaptant les noms)
 - **`AUTH_SECRET` distinct** de celui de production : `openssl rand -base64 32`
 - **`SUPER_ADMIN_EMAILS`** doit pointer vers des adresses de test, pas les vrais super admins de production
 
-### Bucket S3 media separe
+### Bucket S3 média séparé
 
-**Ne jamais pointer la recette sur le bucket S3 de production.** Creer un bucket dedie, par exemple `koinonia-media-staging`, avec ses propres credentials S3 :
+**Ne jamais pointer la recette sur le bucket S3 de production.** Créer un bucket dédié, par exemple `koinonia-media-staging`, avec ses propres credentials S3 :
 
 ```bash
 MEDIA_S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
@@ -77,7 +77,7 @@ MEDIA_S3_ACCESS_KEY_ID=<access-key-media-staging>
 MEDIA_S3_SECRET_ACCESS_KEY=<secret-key-media-staging>
 ```
 
-Si les backups S3 sont actives sur la recette (voir garde-fous ci-dessous), utiliser de meme un bucket `koinonia-backups-staging` distinct, avec ses propres credentials.
+Si les backups S3 sont activés sur la recette (voir garde-fous ci-dessous), utiliser de même un bucket `koinonia-backups-staging` distinct, avec ses propres credentials.
 
 ### URI de redirection Google OAuth
 
@@ -87,17 +87,17 @@ Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials
 https://recette.votre-domaine.com/api/auth/callback/google
 ```
 
-### Timers cron/backup — garde-fou non negociable
+### Timers cron/backup — garde-fou non négociable
 
-Les timers systemd `koinonia-cron.timer` (rappels email) et `koinonia-backup.timer` (backup BDD) **ne doivent pas etre actives tels quels sur la recette**, sous peine de :
+Les timers systemd `koinonia-cron.timer` (rappels email) et `koinonia-backup.timer` (backup BDD) **ne doivent pas être activés tels quels sur la recette**, sous peine de :
 
-- Envoyer de **vrais emails** de rappel de service a de vrais STAR (si la base de recette contient des donnees reelles restaurees depuis la production)
-- **Ecraser les backups de production** si le bucket S3 backups n'est pas correctement separe
+- Envoyer de **vrais emails** de rappel de service à de vrais STAR (si la base de recette contient des données réelles restaurées depuis la production)
+- **Écraser les backups de production** si le bucket S3 backups n'est pas correctement séparé
 
-Deux options, a choisir selon le besoin :
+Deux options, à choisir selon le besoin :
 
-1. **Ne pas activer les timers** sur la VM de recette (`sudo systemctl disable --now koinonia-cron.timer koinonia-backup.timer` ou simplement ne jamais les creer) — recommande si la recette sert uniquement a valider un deploiement technique
-2. **Rediriger le SMTP vers un catch-all de test** (ex. [Mailtrap](https://mailtrap.io)) dans le `shared/.env` de la recette, si l'on souhaite quand meme valider les emails :
+1. **Ne pas activer les timers** sur la VM de recette (`sudo systemctl disable --now koinonia-cron.timer koinonia-backup.timer` ou simplement ne jamais les créer) — recommandé si la recette sert uniquement à valider un déploiement technique
+2. **Rediriger le SMTP vers un catch-all de test** (ex. [Mailtrap](https://mailtrap.io)) dans le `shared/.env` de la recette, si l'on souhaite quand même valider les emails :
 
 ```bash
 SMTP_HOST=sandbox.smtp.mailtrap.io
@@ -108,79 +108,79 @@ SMTP_PASS=<pass-mailtrap>
 SMTP_FROM=Koinonia Recette <noreply@recette.votre-domaine.com>
 ```
 
-Dans tous les cas, le bucket `BACKUP_S3_*` de la recette (si utilise) doit etre distinct de celui de production — jamais de partage.
+Dans tous les cas, le bucket `BACKUP_S3_*` de la recette (si utilisé) doit être distinct de celui de production — jamais de partage.
 
 ## Configuration GitHub — Environment `staging`
 
-Le workflow `Deploy Staging` utilise une [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) nommee `staging` pour injecter les secrets propres a la VM de recette.
+Le workflow `Deploy Staging` utilise une [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) nommée `staging` pour injecter les secrets propres à la VM de recette.
 
 1. Aller dans les **Settings** du repository GitHub → **Environments** → **New environment** → nommer `staging`
-2. Ajouter les secrets suivants (propres a la VM de recette, distincts des secrets `production`) :
+2. Ajouter les secrets suivants (propres à la VM de recette, distincts des secrets `production`) :
 
 | Secret | Description |
 |--------|-------------|
 | `DEPLOY_HOST` | Adresse IP ou domaine de la VM de recette |
 | `DEPLOY_PORT` | Port SSH de la VM de recette |
 | `DEPLOY_USER` | `koinonia` |
-| `DEPLOY_SSH_KEY` | Cle privee SSH dediee a la VM de recette (ne pas reutiliser la cle de production) |
+| `DEPLOY_SSH_KEY` | Clé privée SSH dédiée à la VM de recette (ne pas réutiliser la clé de production) |
 | `DEPLOY_PATH` | `/opt/koinonia` |
 
-3. Optionnel : ajouter des regles de protection sur l'Environment (ex. reviewers requis avant execution) si l'on souhaite restreindre qui peut declencher un deploiement de recette
+3. Optionnel : ajouter des règles de protection sur l'Environment (ex. reviewers requis avant exécution) si l'on souhaite restreindre qui peut déclencher un déploiement de recette
 
-## Declencher un deploiement recette
+## Déclencher un déploiement recette
 
 1. GitHub → onglet **Actions** → workflow **"Deploy Staging"**
 2. **"Run workflow"**
-3. Selectionner la branche (ou le tag) a valider dans le menu "Use workflow from"
-4. Renseigner eventuellement le champ `note` (raison du deploiement, libre)
+3. Sélectionner la branche (ou le tag) à valider dans le menu "Use workflow from"
+4. Renseigner éventuellement le champ `note` (raison du déploiement, libre)
 5. **Run workflow**
 
 Le pipeline :
 
-1. Construit l'artefact (`build`) depuis la ref choisie — pas d'exigence de correspondance de version avec `package.json`, la version est calculee automatiquement (`<version-package.json>-<sha-court>`, ex. `1.9.2-abc1234`). Cette version est injectee dans le bundle via `NEXT_PUBLIC_BUILD_VERSION` et **s'affiche dans le footer** : c'est le code reellement deploye qui est identifie, et non le `package.json` de la branche, fige sur la derniere version publiee. En production la variable est absente et `package.json` reprend la main — sa version y correspond au tag deploye.
-2. Deploie (`deploy`) sur la VM de recette en utilisant les secrets de l'Environment `staging` : transfert de l'artefact, extraction, assemblage du bundle standalone, migrations Prisma, bascule du symlink `current`, redemarrage du service `koinonia`, nettoyage (3 dernieres releases conservees)
+1. Construit l'artefact (`build`) depuis la ref choisie — pas d'exigence de correspondance de version avec `package.json`, la version est calculée automatiquement (`<version-package.json>-<sha-court>`, ex. `1.9.2-abc1234`). Cette version est injectée dans le bundle via `NEXT_PUBLIC_BUILD_VERSION` et **s'affiche dans le footer** : c'est le code réellement déployé qui est identifié, et non le `package.json` de la branche, figé sur la dernière version publiée. En production la variable est absente et `package.json` reprend la main — sa version y correspond au tag déployé.
+2. Déploie (`deploy`) sur la VM de recette en utilisant les secrets de l'Environment `staging` : transfert de l'artefact, extraction, assemblage du bundle standalone, migrations Prisma, bascule du symlink `current`, redémarrage du service `koinonia`, nettoyage (3 dernières releases conservées)
 
 ### Pourquoi la recette compile, alors que la production promeut l'artefact de la CI
 
-La production ne recompile jamais : `deploy.yml` telecharge l'artefact du run CI du tag deploye
+La production ne recompile jamais : `deploy.yml` télécharge l'artefact du run CI du tag déployé
 (voir [docs/production.md](production.md)). La recette, elle, **construit son propre artefact**.
-Ce n'est pas une incoherence :
+Ce n'est pas une incohérence :
 
 - la CI n'empaquette un artefact que **sur un tag `v*`** ; une branche en cours de validation
-  n'en a donc aucun a promouvoir ;
-- le job `build` de ce workflow n'a **pas** de cle `environment:` — seul le job `deploy` porte
-  `environment: staging`. La compilation n'a donc acces a aucun secret de recette (cle SSH,
-  empreinte d'hote, `DEPLOY_HOST`). La propriete recherchee — ne pas compiler dans un contexte
-  privilegie — est preservee.
+  n'en a donc aucun à promouvoir ;
+- le job `build` de ce workflow n'a **pas** de clé `environment:` — seul le job `deploy` porte
+  `environment: staging`. La compilation n'a donc accès à aucun secret de recette (clé SSH,
+  empreinte d'hôte, `DEPLOY_HOST`). La propriété recherchée — ne pas compiler dans un contexte
+  privilégié — est préservée.
 
 **Le build de recette ne lance ni `typecheck`, ni `lint`, ni les tests.** C'est **volontaire** :
-la recette sert a valider un travail en cours, y compris avant que la CI ne soit verte. Exiger
-une CI reussie interdirait precisement l'usage auquel elle est destinee.
+la recette sert à valider un travail en cours, y compris avant que la CI ne soit verte. Exiger
+une CI réussie interdirait précisément l'usage auquel elle est destinée.
 
-La contrepartie doit etre connue : **on peut deployer en recette du code dont les tests
-echouent**. Devant un comportement inattendu sur la recette, verifier l'etat de la CI de la
-branche deployee fait partie du diagnostic — l'anomalie peut venir d'une regression que la CI
-signalait deja. La production, elle, reste inaccessible sans CI verte : c'est la qu'est
-l'exigence, et elle n'est pas negociable.
+La contrepartie doit être connue : **on peut déployer en recette du code dont les tests
+échouent**. Devant un comportement inattendu sur la recette, vérifier l'état de la CI de la
+branche déployée fait partie du diagnostic — l'anomalie peut venir d'une régression que la CI
+signalait déjà. La production, elle, reste inaccessible sans CI verte : c'est là qu'est
+l'exigence, et elle n'est pas négociable.
 
-## Donnees de recette
+## Données de recette
 
-Pour tester dans des conditions realistes, il est recommande de restaurer periodiquement un backup de production dans la base `koinonia_staging`, en **anonymisant les donnees personnelles** (emails des STAR, noms si necessaire) avant ou apres restauration.
+Pour tester dans des conditions réalistes, il est recommandé de restaurer périodiquement un backup de production dans la base `koinonia_staging`, en **anonymisant les données personnelles** (emails des STAR, noms si nécessaire) avant ou après restauration.
 
-La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est deja disponible et documentee dans la section ["Procedure de restauration"](production.md#procedure-de-restauration) de `docs/production.md` — s'y referer directement pour la marche a suivre technique, en l'appliquant sur la base et l'environnement de recette.
+La machinerie de backup/restauration S3 (endpoints `/api/admin/backups`, `/api/admin/backups/restore`) est déjà disponible et documentée dans la section ["Procédure de restauration"](production.md#procédure-de-restauration) de `docs/production.md` — s'y référer directement pour la marche à suivre technique, en l'appliquant sur la base et l'environnement de recette.
 
-## Jeu de donnees de formation
+## Jeu de données de formation
 
-Pour animer une formation aupres des ministres et responsables de departement, la recette peut etre
-regeneree avec la **structure et les comptes reels**, mais un **contenu metier entierement fabrique** :
-les participants retrouvent leurs ministeres, leurs departements et leur propre compte Google, sans
-qu'aucune donnee personnelle (membres, familles, demandes d'integration, comptabilite) ne soit exposee.
+Pour animer une formation auprès des ministres et responsables de département, la recette peut être
+régénérée avec la **structure et les comptes réels**, mais un **contenu métier entièrement fabriqué** :
+les participants retrouvent leurs ministères, leurs départements et leur propre compte Google, sans
+qu'aucune donnée personnelle (membres, familles, demandes d'intégration, comptabilité) ne soit exposée.
 
 ### 1. Exporter la configuration depuis la production
 
 Dans l'application : **Administration → Sauvegardes → Exporter la configuration**. Le fichier JSON
-obtenu contient la structure, les comptes et leurs roles. Il contient aussi les fiches membres
-reelles — l'etape suivante les ignore volontairement.
+obtenu contient la structure, les comptes et leurs rôles. Il contient aussi les fiches membres
+réelles — l'étape suivante les ignore volontairement.
 
 ### 2. Construire la fixture
 
@@ -188,19 +188,19 @@ reelles — l'etape suivante les ignore volontairement.
 npm run fixture:training -- ~/Downloads/koinonia-config-<date>.json
 ```
 
-Produit `prisma/fixtures/training-real.json` : eglises, ministeres, departements, comptes et roles.
-Ce fichier contient les emails des participants — il est **gitignore** et ne doit jamais etre commite.
+Produit `prisma/fixtures/training-real.json` : églises, ministères, départements, comptes et rôles.
+Ce fichier contient les emails des participants — il est **gitignore** et ne doit jamais être commité.
 
-Ce qui est volontairement laisse de cote : les fiches membres, les liaisons membre-compte, et les
-adresses de notification (secretariat, comptabilite) — qu'on ne veut surtout pas voir servir depuis
+Ce qui est volontairement laissé de côté : les fiches membres, les liaisons membre-compte, et les
+adresses de notification (secrétariat, comptabilité) — qu'on ne veut surtout pas voir servir depuis
 un environnement de formation.
 
-### 3. Regenerer la base de recette — depuis votre poste, via un tunnel SSH
+### 3. Régénérer la base de recette — depuis votre poste, via un tunnel SSH
 
-**Le seed ne peut pas s'executer sur la VM de recette.** L'artefact deploye est elague de ses
+**Le seed ne peut pas s'exécuter sur la VM de recette.** L'artefact déployé est élagué de ses
 devDependencies (`npm prune --omit=dev`) : ni `tsx` ni `@faker-js/faker` n'y survivent, et le tar
-exclut explicitement `prisma/scripts`. On execute donc le seed **depuis un poste de developpement**,
-ou tout est installe, en pointant la base de recette a travers un tunnel SSH — MariaDB y ecoute sur
+exclut explicitement `prisma/scripts`. On exécute donc le seed **depuis un poste de développement**,
+où tout est installé, en pointant la base de recette à travers un tunnel SSH — MariaDB y écoute sur
 `localhost:3306` et n'est pas joignable autrement.
 
 ```bash
@@ -214,61 +214,61 @@ DATABASE_URL="mysql://koinonia_staging:MOT_DE_PASSE@127.0.0.1:3307/koinonia_stag
 
 Le mot de passe est celui de `DATABASE_URL` dans le `shared/.env` de la recette.
 
-**Ce script vide integralement la base avant de la regenerer** — comptes et sessions compris, donc
-toute personne connectee a la recette est deconnectee. Il affiche la base visee avant de la vider :
+**Ce script vide intégralement la base avant de la régénérer** — comptes et sessions compris, donc
+toute personne connectée à la recette est déconnectée. Il affiche la base visée avant de la vider :
 
 ```
 Cible : 127.0.0.1:3307/koinonia_staging — la base va être VIDÉE puis régénérée.
 ```
 
-**Lire cette ligne avant de laisser faire.** `import "dotenv/config"` n'ecrase pas une variable deja
-posee (verifie), donc le `DATABASE_URL` de la ligne de commande gagne sur celui du `.env` local — mais
+**Lire cette ligne avant de laisser faire.** `import "dotenv/config"` n'écrase pas une variable déjà
+posée (vérifié), donc le `DATABASE_URL` de la ligne de commande gagne sur celui du `.env` local — mais
 une faute de frappe sur le port renverrait sur la base locale.
 
-Se placer sur le **meme commit que la recette** : le client Prisma genere localement doit correspondre
-au schema applique sur la VM par `migrate deploy`.
+Se placer sur le **même commit que la recette** : le client Prisma généré localement doit correspondre
+au schéma appliqué sur la VM par `migrate deploy`.
 
-Le seed fabrique membres, plannings, evenements, absences, taches, salles, comptes rendus, discipolat
-et demandes sur la structure reelle.
+Le seed fabrique membres, plannings, événements, absences, tâches, salles, comptes rendus, discipolat
+et demandes sur la structure réelle.
 
-> **Si le seed de formation devient recurrent**, la bonne reponse n'est plus le tunnel mais un bundle :
-> `npm run build:worker` bundle deja le worker audio avec esbuild pour qu'il n'ait besoin ni de `src/`
-> ni de `tsx` sur le serveur (ADR-0007). Le meme traitement applique au seed produirait un
-> `dist/seed.mjs` executable par `node` sur la VM — `dist/` est deja embarque dans l'artefact. Non fait
-> ici : cela alourdirait chaque deploiement de recette pour un besoin ponctuel.
+> **Si le seed de formation devient récurrent**, la bonne réponse n'est plus le tunnel mais un bundle :
+> `npm run build:worker` bundle déjà le worker audio avec esbuild pour qu'il n'ait besoin ni de `src/`
+> ni de `tsx` sur le serveur (ADR-0007). Le même traitement appliqué au seed produirait un
+> `dist/seed.mjs` exécutable par `node` sur la VM — `dist/` est déjà embarqué dans l'artefact. Non fait
+> ici : cela alourdirait chaque déploiement de recette pour un besoin ponctuel.
 
-### Ce que le jeu de donnees couvre
+### Ce que le jeu de données couvre
 
-| Sujet | Donnees generees |
+| Sujet | Données générées |
 |---|---|
-| Planning | 15 evenements (6 passes, 6 a venir), plannings par departement |
-| Gestion des STAR | ~200 fiches membres reparties sur tous les departements |
-| Connexion STAR / adjoint | chaque compte STAR est lie a une fiche membre ; les departements a plusieurs responsables ont un principal et des adjoints |
-| Absences | absences avec backup designe |
-| Taches | taches par departement, affectees sur les prochains cultes |
-| Salles | salle, reservations et main courante |
-| Comptes rendus | comptes rendus des cultes passes, avec sections par departement |
+| Planning | 15 événements (6 passés, 6 à venir), plannings par département |
+| Gestion des STAR | ~200 fiches membres réparties sur tous les départements |
+| Connexion STAR / adjoint | chaque compte STAR est lié à une fiche membre ; les départements à plusieurs responsables ont un principal et des adjoints |
+| Absences | absences avec backup désigné |
+| Tâches | tâches par département, affectées sur les prochains cultes |
+| Salles | salle, réservations et main courante |
+| Comptes rendus | comptes rendus des cultes passés, avec sections par département |
 | Bergers de famille | affectation de berger |
 
 ### Limites connues
 
-- L'export de configuration ne porte pas `isDeputy` : la qualite d'adjoint est **reconstruite** (sur un
-  departement tenu par plusieurs responsables, le premier declare est principal, les suivants adjoints).
-  Ce n'est pas l'organisation reelle — a ajuster depuis l'application si la formation s'y attarde.
-- Les noms d'affichage des comptes sont deduits de l'adresse email : l'export ne porte pas les noms.
-  Google renseigne le vrai nom a la premiere connexion du participant.
-- Le seed genere peu d'absences et de demandes (de quoi montrer l'ecran, pas de quoi le remplir) ;
-  les participants en creent eux-memes pendant la formation.
+- L'export de configuration ne porte pas `isDeputy` : la qualité d'adjoint est **reconstruite** (sur un
+  département tenu par plusieurs responsables, le premier déclaré est principal, les suivants adjoints).
+  Ce n'est pas l'organisation réelle — à ajuster depuis l'application si la formation s'y attarde.
+- Les noms d'affichage des comptes sont déduits de l'adresse email : l'export ne porte pas les noms.
+  Google renseigne le vrai nom à la première connexion du participant.
+- Le seed génère peu d'absences et de demandes (de quoi montrer l'écran, pas de quoi le remplir) ;
+  les participants en créent eux-mêmes pendant la formation.
 
-### Apres la formation
+### Après la formation
 
-Redeployer la recette depuis `main` et rejouer le seed habituel, ou restaurer un backup — la base de
-formation n'a pas vocation a survivre a la session.
+Redéployer la recette depuis `main` et rejouer le seed habituel, ou restaurer un backup — la base de
+formation n'a pas vocation à survivre à la session.
 
 ## Garde-fous
 
-> **A respecter systematiquement lors de toute manipulation sur la recette :**
+> **À respecter systématiquement lors de toute manipulation sur la recette :**
 >
-> - La recette ne doit **jamais** ecrire dans les buckets S3 de production (`koinonia-media`, `koinonia-backups`) — toujours utiliser des buckets `*-staging` distincts
-> - La recette ne doit **jamais** envoyer de vrais emails aux STAR — desactiver les timers cron/backup ou rediriger le SMTP vers un catch-all de test (Mailtrap)
-> - Tous les secrets (`AUTH_SECRET`, `DEPLOY_SSH_KEY`, credentials S3, `CRON_SECRET`) doivent etre **distincts** de ceux de production
+> - La recette ne doit **jamais** écrire dans les buckets S3 de production (`koinonia-media`, `koinonia-backups`) — toujours utiliser des buckets `*-staging` distincts
+> - La recette ne doit **jamais** envoyer de vrais emails aux STAR — désactiver les timers cron/backup ou rediriger le SMTP vers un catch-all de test (Mailtrap)
+> - Tous les secrets (`AUTH_SECRET`, `DEPLOY_SSH_KEY`, credentials S3, `CRON_SECRET`) doivent être **distincts** de ceux de production
