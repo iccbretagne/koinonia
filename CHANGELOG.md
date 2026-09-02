@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [v1.20.0] - 2026-09-03
 
 ### Ajouté
 
@@ -31,6 +31,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   rôle complétés (rôles et permissions manquants), champs audio non documentés ajoutés dans
   `database.md`, arborescence `/audio` et `/api/audio` ajoutée dans `architecture.md`,
   endpoints de partage documentés dans `api.md`.
+- **Description du projet réécrite** (`README.md`, `docs/dat.md`, `CLAUDE.md`) : la précédente
+  réduisait Koinonia à la gestion des plannings de service alors que l'application couvre onze
+  modules métier. La nouvelle énonce le périmètre réel et le constat d'origine — sortir la vie
+  de service des groupes WhatsApp et des tableaux Excel pour la ramener à une source de vérité
+  unique.
+- **Accentuation française normalisée** dans toute la documentation (`README.md`, `CLAUDE.md`,
+  `CHANGELOG.md`, `docs/*.md`) : le corpus mélangeait des passages anciens sans accents et des
+  ajouts récents accentués. Les blocs de code, le contenu entre backticks, les arborescences
+  ASCII, les URLs et les valeurs d'enum sont restés inchangés ; `specs/` est exclu, les specs
+  livrées étant des artefacts historiques.
 
 ### Sécurité
 
