@@ -101,6 +101,8 @@ model Church {
   audioSettings             AudioSettings?
   audioServices             AudioService[]
   audioServiceTemplates     AudioServiceTemplate[]
+  audioSharesGranted        AudioLibraryShare[]        @relation("AudioSharesGranted")
+  audioSharesReceived       AudioLibraryShare[]        @relation("AudioSharesReceived")
   // Module pastoral
   responsibleProfileId      String?                    @unique
   supervisorProfileId       String?
@@ -1968,6 +1970,23 @@ model AudioServiceTemplate {
 
   @@unique([churchId, eventType])
   @@map("audio_service_templates")
+}
+
+// Partage de bibliothèque audio entre églises (spec 036) — octroi dirigé, sans hiérarchie
+// ni réciprocité : ownerChurchId ouvre sa bibliothèque publiée à guestChurchId. L'auteur de
+// l'octroi n'est pas stocké ici : AuditLog fournit déjà la trace nommée exigée par la spec.
+model AudioLibraryShare {
+  id            String   @id @default(cuid())
+  ownerChurchId String // l'église qui ouvre sa bibliothèque
+  guestChurchId String // l'église qui reçoit l'accès en lecture
+  createdAt     DateTime @default(now())
+
+  ownerChurch Church @relation("AudioSharesGranted", fields: [ownerChurchId], references: [id], onDelete: Cascade)
+  guestChurch Church @relation("AudioSharesReceived", fields: [guestChurchId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerChurchId, guestChurchId])
+  @@index([guestChurchId])
+  @@map("audio_library_shares")
 }
 
 model AudioJob {
