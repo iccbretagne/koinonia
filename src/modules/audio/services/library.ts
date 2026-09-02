@@ -16,7 +16,7 @@ async function defaultDb(): Promise<DbClient> {
 export type LibrarySort = "recent" | "oldest" | "speaker";
 
 export interface ListPublishedServicesInput {
-  churchId: string;
+  churchIds: string[];
   q?: string;
   speaker?: string;
   type?: string;
@@ -38,6 +38,11 @@ export interface LibraryServiceSummary {
   // IDs des séquences rendues — permet au bandeau « Reprendre l'écoute » (localStorage, indexé
   // par ID de séquence) de retrouver le culte correspondant sans requête supplémentaire.
   segmentIds: string[];
+  // Église d'origine du culte (spec 036) — permet le badge de provenance dans une bibliothèque
+  // partagée entre plusieurs églises.
+  churchId: string;
+  churchName: string;
+  churchPrimaryColor: string;
 }
 
 function buildOrderBy(sort: LibrarySort | undefined): Prisma.AudioServiceOrderByWithRelationInput {
@@ -63,7 +68,7 @@ export async function listPublishedServices(
   db ??= await defaultDb();
 
   const where: Prisma.AudioServiceWhereInput = {
-    churchId: input.churchId,
+    churchId: { in: input.churchIds },
     status: "PUBLISHED",
     ...(input.speaker ? { speaker: input.speaker } : {}),
     ...(input.type ? { type: input.type } : {}),
@@ -86,6 +91,7 @@ export async function listPublishedServices(
         where: { kind: "SEQUENCE" },
         include: { rendition: { select: { durationMs: true } } },
       },
+      church: { select: { id: true, name: true, primaryColor: true } },
     },
     orderBy: buildOrderBy(input.sort),
   });
@@ -102,16 +108,19 @@ export async function listPublishedServices(
       segmentCount: renderedSegments.length,
       totalDurationMs: renderedSegments.reduce((sum, seg) => sum + (seg.rendition?.durationMs ?? 0), 0),
       segmentIds: renderedSegments.map((seg) => seg.id),
+      churchId: s.church.id,
+      churchName: s.church.name,
+      churchPrimaryColor: s.church.primaryColor,
     };
   });
 }
 
 /** Séries distinctes renseignées parmi les cultes publiés — pour le filtre « Série ». */
-export async function listSeries(churchId: string, db?: DbClient): Promise<string[]> {
+export async function listSeries(churchIds: string[], db?: DbClient): Promise<string[]> {
   db ??= await defaultDb();
 
   const rows = await db.audioService.findMany({
-    where: { churchId, status: "PUBLISHED", series: { not: null } },
+    where: { churchId: { in: churchIds }, status: "PUBLISHED", series: { not: null } },
     select: { series: true },
     distinct: ["series"],
     orderBy: { series: "asc" },
@@ -121,11 +130,11 @@ export async function listSeries(churchId: string, db?: DbClient): Promise<strin
 }
 
 /** Orateurs distincts renseignés parmi les cultes publiés — pour un choix plutôt qu'une saisie libre. */
-export async function listSpeakers(churchId: string, db?: DbClient): Promise<string[]> {
+export async function listSpeakers(churchIds: string[], db?: DbClient): Promise<string[]> {
   db ??= await defaultDb();
 
   const rows = await db.audioService.findMany({
-    where: { churchId, status: "PUBLISHED", speaker: { not: null } },
+    where: { churchId: { in: churchIds }, status: "PUBLISHED", speaker: { not: null } },
     select: { speaker: true },
     distinct: ["speaker"],
     orderBy: { speaker: "asc" },
@@ -142,7 +151,7 @@ export async function listSpeakers(churchId: string, db?: DbClient): Promise<str
  */
 export async function getPublishedServiceForMember(
   serviceId: string,
-  churchId: string,
+  churchIds: string[],
   db?: DbClient
 ): Promise<PublicAudioService | null> {
   db ??= await defaultDb();
@@ -158,7 +167,7 @@ export async function getPublishedServiceForMember(
     },
   });
 
-  if (!service || service.churchId !== churchId || service.status !== "PUBLISHED") return null;
+  if (!service || !churchIds.includes(service.churchId) || service.status !== "PUBLISHED") return null;
 
   return {
     title: service.title,

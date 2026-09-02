@@ -695,6 +695,41 @@ export async function requireAudioAccess(permission: string, churchId: string) {
 }
 
 /**
+ * Autorise l'écoute d'un culte publié de `churchId` — élargi aux bibliothèques partagées
+ * (spec 036). Passe si : rôle portant `audio:listen` dans `churchId` (comportement existant)
+ * OU une des propres églises de l'utilisateur portant `audio:listen` figure comme destinataire
+ * d'un partage ouvert par `churchId` (bibliothèque ouverte à l'utilisateur, indirectement).
+ * Rayon d'action volontairement borné à l'audio — ne touche pas `requireChurchPermission`,
+ * qui garde tout le multi-tenant (plan.md).
+ */
+export async function requireAudioListenAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const { rolePermissions } = await import("./registry");
+
+  const rolesInChurch = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const userPerms = new Set(rolesInChurch.flatMap((r) => rolePermissions[r.role] ?? []));
+  if (userPerms.has("audio:listen")) return session;
+
+  const guestChurchIds = Array.from(
+    new Set(
+      session.user.churchRoles
+        .filter((r) => (rolePermissions[r.role] ?? []).includes("audio:listen"))
+        .map((r) => r.churchId)
+    )
+  );
+
+  if (guestChurchIds.length > 0) {
+    const { listOutgoingShares } = await import("@/modules/audio");
+    const shares = await listOutgoingShares(churchId);
+    if (shares.some((s) => guestChurchIds.includes(s.churchId))) return session;
+  }
+
+  throw new Error("FORBIDDEN");
+}
+
+/**
  * Autorise la dépublication d'un culte audio — geste plus lourd que publier (un lien déjà
  * partagé devient inopérant). Passe si : `audio:manage` (ADMIN/SECRETARY…) OU
  * responsable (`DEPARTMENT_HEAD`/`MINISTER`) du département de captation configuré.

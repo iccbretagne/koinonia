@@ -81,6 +81,7 @@ export const prismaMock = {
   audioServiceTemplate: createModelMock(),
   audioJob: createModelMock(),
   audioShareToken: createModelMock(),
+  audioLibraryShare: createModelMock(),
   // Module intégration
   familyIntegrationRequest: createModelMock(),
   familyLeaderAssignment: createModelMock(),

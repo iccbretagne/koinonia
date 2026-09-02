@@ -26,6 +26,9 @@ export interface AudioPlayerService {
   speaker: string | null;
   coverUrl: string | null;
   segments: AudioPlayerSegment[];
+  // Église d'origine (spec 036) — non-null uniquement quand le culte vient d'une bibliothèque
+  // partagée, jamais pour un culte de l'église de l'auditeur.
+  churchName?: string | null;
 }
 
 interface Props {
@@ -178,6 +181,11 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
             {new Date(service.serviceDate).toLocaleDateString("fr-FR")}
             {service.speaker && ` · ${service.speaker}`}
           </p>
+          {service.churchName && (
+            <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet">
+              {service.churchName}
+            </span>
+          )}
         </div>
         {onShare && (
           <Button variant="secondary" size="sm" onClick={() => onShare(null)}>

@@ -22,6 +22,10 @@ export async function POST(
     const service = await prisma.audioService.findUnique({ where: { id }, select: { churchId: true, status: true } });
     if (!service) throw new ApiError(404, "Culte audio introuvable");
 
+    // Volontairement inchangé (spec 036, plan.md) : `requireChurchPermission`, pas
+    // `requireAudioListenAccess`. Un membre invité par un partage de bibliothèque n'a aucun
+    // rôle dans l'église propriétaire, donc échoue ici naturellement — le refus de générer un
+    // lien public sur le contenu d'autrui est obtenu sans code dédié.
     await requireChurchPermission("audio:listen", service.churchId);
 
     if (service.status !== "PUBLISHED") throw new ApiError(410, "Ce culte n'est plus disponible.");
