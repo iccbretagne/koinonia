@@ -22,8 +22,13 @@ de données (voir `database.md`).
 
 ## 2. Présentation générale
 
-**Koinonia** est une application web de gestion des plannings de service pour églises, conçue
-pour ICC Bretagne et adaptable à toute église structurée en ministères et départements.
+**Koinonia** est une application web de gestion opérationnelle pour églises : planning de
+service, événements et comptes rendus, discipolat, demandes internes et communication, audio des
+cultes, médias, salles, comptabilité et agenda pastoral.
+
+Elle a été conçue pour ICC Bretagne afin de remplacer une organisation éclatée entre groupes
+WhatsApp et tableaux Excel par une source de vérité unique, avec un accès adapté à chaque rôle.
+Elle est adaptable à toute église structurée en ministères et départements.
 
 | | |
 |---|---|

@@ -1,9 +1,17 @@
 # Koinonia
 
-Plateforme de gestion communautaire pour eglises.
-Plannings de service, comptes rendus, discipolat, annonces et communication — le tout dans une application web moderne, multi-tenant et accessible sur mobile.
+**Le back-office opérationnel de votre église, en une seule application.**
 
-> **Koinonia** (grec : *communion, partage*) — Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et departements.
+Koinonia est né d'un constat simple : la vie de service d'une église finissait dispersée entre
+des groupes WhatsApp et des tableaux Excel. L'information s'y noie dans le flux, les plannings
+se recopient à la main, et plus personne ne sait quelle version fait foi.
+
+Du planning de service à la publication audio des cultes — en passant par les comptes rendus, le
+discipolat, les demandes internes, les médias, les salles, la comptabilité et l'agenda pastoral —
+Koinonia rassemble tout cela derrière une source de vérité unique, avec un accès adapté à chaque
+rôle. Auto-hébergée, multi-tenant, sous licence libre et pensée pour le mobile.
+
+> **Koinonia** (grec : *communion, partage*) — Conçue pour ICC Bretagne, adaptable à toute église structurée en ministères et départements.
 
 ## Fonctionnalites
 

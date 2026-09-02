@@ -4,7 +4,11 @@ Contexte pour les agents IA travaillant sur ce projet.
 
 ## Projet
 
-**Koinonia** est une application web de gestion des plannings de service pour eglises.
+**Koinonia** est une application web de gestion operationnelle pour eglises : planning de
+service, evenements et comptes rendus, discipolat, demandes internes et communication, audio des
+cultes, medias, salles, comptabilite et agenda pastoral.
+Elle remplace une organisation eclatee entre groupes WhatsApp et tableaux Excel par une source de
+verite unique, avec un acces adapte a chaque role.
 Concue pour ICC Bretagne, adaptable a toute eglise structuree en ministeres et departements.
 
 - **Repository** : https://github.com/iccbretagne/koinonia
