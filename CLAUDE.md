@@ -262,30 +262,59 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 
 ## Roles et permissions
 
-| Permission | Super Admin | Admin | Secrétaire | Ministre | Resp. département | Faiseur de Disciples | Reporter |
-|---|---|---|---|---|---|---|---|
-| `planning:view` | x | x | x | x | x | | |
-| `planning:edit` | x | x | | x | x | | |
-| `planning:department` | x | x | x | x | x | | |
-| `access:manage` | x | x | x | x | | | |
-| `members:view` | x | x | x | x | x | | |
-| `members:manage` | x | x | | x | x | | |
-| `events:view` | x | x | x | x | x | | x |
-| `events:manage` | x | x | x | | | | |
-| `departments:view` | x | x | x | x | x | | |
-| `departments:manage` | x | x | | | | | |
-| `church:manage` | x | | | | | | |
-| `users:manage` | x | | | | | | |
-| `discipleship:view` | x | x | x | | x | x | |
-| `discipleship:manage` | x | x | x | | | x | |
-| `discipleship:export` | x | | x | | | | |
-| `reports:view` | x | x | x | | | | x |
-| `reports:edit` | x | x | x | | | | x |
-| `audio:listen` | x | x | x | x | x | x | x |
-| `audio:view` | x | x | x | | | | |
-| `audio:upload` | x | x | x | | | | |
-| `audio:review` | x | x | | | | | |
-| `audio:manage` | x | x | | | | | |
+Matrice complète (source : `buildRolePermissions` sur les manifestes `src/modules/*/index.ts`)
+— voir [docs/auth.md](docs/auth.md#permissions) pour le détail intégral par module. Légende :
+SA = Super Admin, Ad = Admin, Sec = Secrétaire, Min = Ministre, RD = Resp. département,
+FD = Faiseur de Disciples, Rep = Reporter, STAR = STAR, QA = Qualificateur agenda,
+Compt = Comptable.
+
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `planning:view` | x | x | x | x | x | | | x | | |
+| `planning:edit` | x | x | | x | x | | | | | |
+| `planning:department` | x | x | x | x | x | | | | | |
+| `access:manage` | x | x | x | x | | | | | | |
+| `members:view` | x | x | x | x | x | | | | | |
+| `members:manage` | x | x | | x | x | | | | | |
+| `events:view` | x | x | x | x | x | | x | | | |
+| `events:manage` | x | x | x | | | | | | | |
+| `departments:view` | x | x | x | x | x | | | | | |
+| `departments:manage` | x | x | | x | | | | | | |
+| `absences:view` | x | x | x | x | x | | | | | |
+| `absences:manage` | x | x | x | x | x | | | | | |
+| `church:manage` | x | | | | | | | | | |
+| `users:manage` | x | | | | | | | | | |
+| `discipleship:view` | x | x | x | | x | x | | | | |
+| `discipleship:manage` | x | x | x | | | x | | | | |
+| `discipleship:export` | x | | x | | | | | | | |
+| `reports:view` | x | x | x | | | | x | | | |
+| `reports:edit` | x | x | x | | | | x | | | |
+| `audio:listen` | x | x | x | x | x | x | x | x | x | x |
+| `audio:view` | x | x | x | | | | | | | |
+| `audio:upload` | x | x | x | | | | | | | |
+| `audio:review` | x | x | | | | | | | | |
+| `audio:manage` | x | x | | | | | | | | |
+| `media:view` | x | x | x | | | | | | | |
+| `media:upload` | x | x | x | | | | | | | |
+| `media:review` | x | x | | | | | | | | |
+| `media:manage` | x | x | | | | | | | | |
+| `accounting:submit` | x | x | | x | x | | | | | |
+| `accounting:view` | x | x | | x | x | | | | | x |
+| `accounting:manage` | x | x | | | | | | | | x |
+| `accounting:stats` | x | x | x | | | | | | | x |
+| `agenda:view` | x | x | x | | | | | | | |
+| `agenda:manage` | x | x | x | | | | | | | |
+| `agenda:qualify` | x | x | | | | | | | x | |
+| `rooms:view` | x | x | x | x | x | | | | | |
+| `rooms:reserve` | x | x | | x | x | | | | | |
+| `rooms:manage` | x | x | | | | | | | | |
+| `jobs:view`/`post`/`seek`/`freelance` | x | x | x | x | x | x | x | x | x | x |
+| `jobs:manage` | x | x | x | | | | | | | |
+
+Le module `integration` ne déclare aucune permission (accès géré par
+`requireIntegrationAccess()` — Super Admin, `members:manage`/`events:manage`, appartenance au
+département fonction `INTEGRATION`/`MSDP`, ou berger/conseiller assigné). Le module `storage`
+est une infrastructure pure sans permission propre.
 
 **Visibilite des departements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
@@ -299,6 +328,10 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Peut gérer les événements (`events:manage`)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
 - Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
+- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`), mais pas à la
+  qualification des demandes brutes (`agenda:qualify`, réservée au Qualificateur agenda)
+- Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes de
+  compta (`accounting:manage`, réservé au Comptable)
 
 **Spécificités du STAR** (spec 031, issues #462/#463) :
 - N'a pas `planning:department` : pas d'accès à `/dashboard` (grille par département), ni aux
@@ -306,10 +339,27 @@ Style coherent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composant
 - Conserve `planning:view` : « Mon planning » (vue macro personnelle), ses événements
   (`/planning/events`) et l'auto-déclaration d'absences restent accessibles
 - Aucun accès au module salles : ni `rooms:view` ni `rooms:reserve` — retirés totalement
+- Conserve `audio:listen` (bibliothèque d'écoute, comme tous les rôles) et les permissions
+  transverses du module emploi (`jobs:view`/`post`/`seek`/`freelance`, hors `jobs:manage`)
 - `getUserDepartmentScope` renvoie systématiquement `{ scoped: true, departmentIds: [] }` pour
   ce rôle (aucun `user_departments`), ce qui produit la restriction totale de `requireDepartmentAccess`
   sans code spécifique — voir ADR-0009. Décision actée : la chaîne d'appartenance (`Member` →
   `member_departments`) n'est pas fusionnée avec le périmètre de responsabilité
+
+**Spécificités du Qualificateur agenda** (`AGENDA_QUALIFIER`) :
+- Seule permission propre : `agenda:qualify` — qualifie les demandes de RDV pastoral à l'état
+  `PENDING`, sans accès à `agenda:view`/`agenda:manage` (vue hebdomadaire et planification)
+- Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
+  `jobs:manage`)
+
+**Spécificités du Comptable** (`ACCOUNTANT`) :
+- Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières
+  (validation, rejet, saisie des paiements)
+- A aussi `accounting:view` (consultation globale, comme Ministre/Resp. département sur leur
+  périmètre) et `accounting:stats`
+- Pas d'accès au planning, aux membres, aux événements, au discipolat ni à la section admin
+- Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
+  `jobs:manage`)
 
 **Spécificités du Ministre dans la gestion des accès** (spec 031, issue #467) :
 - `access:manage` remplace l'ancien emprunt de `events:manage` sur
@@ -367,6 +417,7 @@ Chaque eglise (`Church`) est un tenant isole. Les donnees sont rattachees a une 
 
 | Document | Contenu |
 |---|---|
+| [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, synthese des autres documents |
 | [Architecture](docs/architecture.md) | Structure, patterns, conventions |
 | [Base de donnees](docs/database.md) | Schema Prisma, modeles, relations |
 | [API](docs/api.md) | Endpoints, requetes, reponses |

@@ -36,6 +36,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0007](0007-worker-hors-nextjs-table-jobs.md) | Worker hors Next.js, piloté par une table de jobs | Proposé |
 | [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Accepté |
 | [0009](0009-garde-perimetre-explicite.md) | Garde de périmètre explicite au point d'entrée | Accepté |
+| [0010](0010-acces-transverse-inter-eglises.md) | Accès transverse inter-églises borné au module demandeur | Accepté |
 
 ## Note sur les ADR 0001–0003
 

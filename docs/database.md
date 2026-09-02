@@ -92,6 +92,12 @@ Tenant principal. Chaque eglise est un espace isole.
 | `createdAt` | DateTime | Date de creation |
 | `updatedAt` | DateTime | Derniere modification |
 
+> `slug` sert aussi d'**identifiant public de partage** pour le module audio (spec 036) : une
+> eglise le communique hors application a une autre pour que celle-ci ouvre sa bibliotheque
+> publiee (`audio_library_shares`, voir Module Audio). Deux relations inverses portent ce
+> partage sur `churches` : `audioSharesGranted` (partages accordes, cote proprietaire) et
+> `audioSharesReceived` (partages recus, cote invitee).
+
 #### `users`
 
 Utilisateurs de l'application. Crees automatiquement a la premiere connexion Google via NextAuth.
@@ -689,7 +695,10 @@ Publication des enregistrements de culte (le traitement `PROBE`/`RENDER` est asy
 table `audio_jobs` est le **seul canal** entre l'application et le worker, voir
 [ADR-0007](adr/0007-worker-hors-nextjs-table-jobs.md)) et bibliotheque d'ecoute ouverte a tout
 membre (spec 021), servie depuis un cache disque local
-([ADR-0008](adr/0008-cache-disque-renditions-audio.md)).
+([ADR-0008](adr/0008-cache-disque-renditions-audio.md)). Une eglise peut aussi ouvrir sa
+bibliotheque publiee a une autre eglise de la plateforme (`audio_library_shares`, spec 036) :
+octroi dirige, sans passer par l'annuaire des eglises (reserve a l'administration de la
+plateforme).
 
 #### `audio_settings`
 
@@ -717,6 +726,8 @@ Un culte enregistre.
 | `planningEventId` | String? (unique) | Rattachement facultatif a un evenement planning |
 | `serviceDate` | DateTime | Saisie si aucun `planningEventId` |
 | `title` / `speaker` | String? | Titre et predicateur |
+| `series` | String? | Nom de la serie / podcast d'origine (import Audiobookshelf, spec 022) — `null` hors serie |
+| `type` | String | Nomenclature `EVENT_TYPES` (`@/lib/event-types`) — recopiee depuis `Event.type` au depot/rattachement, saisie sinon (default: `AUTRE`) |
 | `coverKey` | String? | Pochette specifique, sinon `AudioSettings.defaultCoverKey` |
 | `status` | AudioServiceStatus | `DRAFT`, `PENDING_REVIEW`, `READY`, `PUBLISHED`, `UNPUBLISHED` |
 | `publishedAt` / `publishedById` | DateTime? / String? | Horodatage et auteur de la publication |
@@ -730,12 +741,14 @@ Fichier depose. Un seul `kind` est emis en P1 : `SEQUENCE`.
 |---|---|---|
 | `serviceId` | String | Ref vers `audio_services` |
 | `kind` | AudioSourceKind | `SEQUENCE` (P1) ; `MIX`, `ENVELOPES`, `SOURCE` reserves |
+| `channelKey` | String? | `null` pour `MIX`/`SEQUENCE` ; nom du canal pour `ENVELOPES`/`SOURCE` (P2) |
 | `s3Key` | String(512) | Cle S3 — nommee d'apres l'id de la source |
 | `originalFilename` | String(255)? | Nom du fichier tel que depose, affiche pendant le nommage |
 | `uploadId` | String(255)? | Identifiant du multipart S3 en cours (reprise apres coupure) |
 | `etag` | String(255)? | ETag S3 final — base du `sourceHash` (idempotence du rendu) |
 | `durationMs` / `sizeBytes` | Int? / BigInt? | Renseignes par le job `PROBE` / a l'envoi |
 | `uploadStatus` | String | `PENDING` puis `DONE` |
+| `purgeableAt` | DateTime? | Archive FLAC, purge manuelle (P2, reserve) |
 
 > `sizeBytes` est un `BigInt` : il **doit** etre converti avant toute serialisation JSON
 > (`toJsonSafeAudioSource`), `NextResponse.json` ne sachant pas serialiser ce type.
@@ -752,6 +765,8 @@ Sequence nommee et ordonnee au sein d'un culte.
 | `kind` | AudioSegmentKind | `SEQUENCE` (publiee) ou `DISCARDED` (non diffusee) |
 | `title` | String | Nom saisi (modele ou libre) |
 | `startMs` / `endMs` | Int | `0` et duree de la source en P1 (decoupage en P1.5) |
+| `confidence` | Float? | Confiance de la detection automatique (P2) ; `null` en P1 (placement manuel) |
+| `detectedBy` | String? | `"deposit"` en P1 ; `"manual"` en P1.5 ; nom de l'algo en P2 |
 | `playCount` | Int | Nombre d'ecoutes |
 
 #### `audio_renditions`
@@ -790,6 +805,32 @@ File de traitement consommee par le worker via `SELECT … FOR UPDATE SKIP LOCKE
 #### `audio_service_templates`
 
 Deroules types par eglise et type d'evenement (`sequenceNames`, `mixingProfile` reserve P2).
+
+#### `audio_library_shares`
+
+Octroi **dirige** d'une eglise (proprietaire) a une autre (invitee) : la bibliotheque des cultes
+publies de la premiere devient visible dans l'espace « (re)Ecouter » de la seconde (spec 036).
+Geste unilateral et volontaire — pas de hierarchie entre eglises, pas de reciprocite automatique
+(ouvrir A → B ne donne aucun acces de B vers A).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `ownerChurchId` | String | Ref vers `churches` — eglise qui ouvre sa bibliotheque |
+| `guestChurchId` | String | Ref vers `churches` — eglise qui recoit l'acces en lecture |
+| `createdAt` | DateTime | Date d'octroi |
+
+Contraintes : `[ownerChurchId, guestChurchId]` unique (pas de doublon pour un meme couple) ;
+`onDelete: Cascade` sur les deux relations vers `churches` (supprimer l'eglise proprietaire ou
+l'eglise invitee supprime le partage). Index sur `guestChurchId` — lecture chaude « qui m'a
+ouvert sa bibliotheque ? », interrogee a chaque chargement de la bibliotheque d'ecoute pour
+calculer la liste d'eglises accessibles.
+
+> Le partage reference l'**eglise** (`ownerChurchId`/`guestChurchId`), jamais son `slug` : un
+> renommage de l'identifiant public d'une eglise (voir `churches` ci-dessus) ne rompt donc aucun
+> partage deja noue. L'auteur de l'octroi n'est pas stocke dans cette table — la trace nommee
+> exigee par la spec est portee par `audit_logs` (`entityType: "AudioLibraryShare"`, `churchId`
+> = eglise proprietaire), a l'ouverture comme a la revocation.
 
 ### Enums audio
 

@@ -62,6 +62,7 @@ Next.js 15 &middot; React 19 &middot; Tailwind CSS v4 &middot; NextAuth v5 &midd
 | Document | Contenu |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Contexte complet pour les agents IA |
+| [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, point d'entree |
 | [Architecture](docs/architecture.md) | Structure du projet, patterns, conventions |
 | [Base de donnees](docs/database.md) | Schema Prisma, modeles, relations |
 | [API](docs/api.md) | Endpoints, requetes, reponses |

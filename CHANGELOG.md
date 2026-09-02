@@ -6,6 +6,32 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publie]
 
+### Ajoute
+
+- **Partage de bibliotheque audio entre eglises** : une eglise peut ouvrir sa bibliotheque de
+  cultes publies a d'autres eglises de la plateforme, depuis les parametres de l'espace Audio.
+  Le partage est unilateral et dirige — l'eglise proprietaire decide seule, en saisissant
+  l'identifiant de l'eglise destinataire, sans qu'aucun annuaire des eglises ne soit expose aux
+  administrateurs d'eglise. Chez l'eglise destinataire, les cultes recus apparaissent dans la
+  bibliotheque avec une marque d'origine et un filtre par eglise, qui n'apparait que s'il y a
+  effectivement un partage. L'acces est strictement en ecoute : ni depot, ni publication, ni
+  depublication, ni generation de lien public sur le contenu d'autrui. Voir
+  `specs/036-partage-bibliotheque-audio/`.
+
+### Documentation
+
+- **Dossier d'Architecture Technique (`docs/dat.md`)** : nouveau document de synthese donnant la
+  vue d'ensemble de l'architecture (fonctionnelle, applicative, donnees, securite,
+  infrastructure, exploitation). Il reference les documents detailles au lieu de les dupliquer —
+  chacun reste la source de verite sur son domaine.
+- **ADR-0010** : acces transverse inter-eglises borne au module demandeur — un partage entre
+  eglises s'implemente par un helper dedie au module concerne, jamais en elargissant
+  `requireChurchPermission`.
+- Mise en coherence de la documentation technique avec le code : tableaux de permissions par
+  role completes (roles et permissions manquants), champs audio non documentes ajoutes dans
+  `database.md`, arborescence `/audio` et `/api/audio` ajoutee dans `architecture.md`,
+  endpoints de partage documentes dans `api.md`.
+
 ### Securite
 
 - Monte `fast-uri` en 3.1.7 via override (GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,

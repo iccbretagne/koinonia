@@ -9,7 +9,7 @@
 ## Vérification de conformité (constitution)
 
 - [ ] **Frontières modules** : les imports `src/app/` → module passent par l'index (`@/modules/X`)
-- [ ] **Sécurité** : toutes les routes protégées par `requireAuth`/`requirePermission` ; multi-tenant `churchId` respecté
+- [ ] **Sécurité** : toutes les routes protégées par `requireAuth` / `requireChurchPermission(perm, churchId)` / `requireCurrentChurchPermission(perm)` ; multi-tenant `churchId` respecté (jamais optionnel)
 - [ ] **Permissions** via `rolePermissions` (`@/lib/registry`)
 - [ ] **Validation** Zod sur toutes les mutations
 - [ ] **Migration** Prisma prévue si le schéma change (pas de `db push`)

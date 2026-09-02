@@ -1874,14 +1874,23 @@ Le navigateur envoie chaque part directement a S3. Le bucket doit exposer l'en-t
 
 | Methode | Endpoint | Permission | Role |
 |---|---|---|---|
-| `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `audio:listen` (+ eglise du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
-| `POST` | `/api/audio/services/[id]/play` | `audio:listen` | Incremente `AudioSegment.playCount` |
-| `POST` | `/api/audio/services/[id]/share` | `audio:listen` | Reutilise ou cree un lien de partage (culte entier ou segment) |
+| `GET` | `/api/audio/services/[id]/stream/[segmentId]` | `requireAudioListenAccess` (+ eglise du culte) | Flux audio (`Range` HTTP, `200`/`206`) depuis le cache disque |
+| `POST` | `/api/audio/services/[id]/play` | `requireAudioListenAccess` | Incremente `AudioSegment.playCount` |
+| `POST` | `/api/audio/services/[id]/share` | `audio:listen` (role dans l'eglise du culte, inchange) | Reutilise ou cree un lien de partage (culte entier ou segment) |
 
 Le culte doit etre `PUBLISHED` (sinon `410`) ; appartenir a une autre eglise repond `403`
 (ecart au 404 uniforme initialement envisage — coherent avec `requireAudioAccess` ailleurs
 dans le module, voir `specs/021-audio-bibliotheque-ecoute/plan.md`). Pas de route de liste :
 l'onglet **(re)Écouter** est un Server Component qui lit directement le service `library.ts`.
+
+`play` et `stream` passent par `requireAudioListenAccess()` (spec 036) plutot que
+`requireChurchPermission("audio:listen", …)` : le controle passe si l'appelant a `audio:listen`
+dans l'eglise du culte **ou** si son eglise figure comme destinataire d'un partage de
+bibliotheque ouvert par l'eglise du culte (voir *Partage de bibliotheque entre eglises*
+ci-dessous et [auth.md](auth.md)). `share` reste volontairement sur
+`requireChurchPermission("audio:listen", …)` : un membre invite par un partage n'a aucun role
+dans l'eglise proprietaire, donc echoue naturellement — generer un lien de partage public sur
+le contenu d'une autre eglise est refuse sans code dedie.
 
 ### Parametres
 
@@ -1891,6 +1900,76 @@ l'onglet **(re)Écouter** est un Server Component qui lit directement le service
 
 Couverture par defaut et modele de noms de sequences. Le departement de captation audio n'y est
 plus configure — voir *Permissions* ci-dessus.
+
+### Partage de bibliotheque entre eglises (spec 036)
+
+Une eglise (Super Admin/Admin, `audio:manage`) peut ouvrir sa bibliotheque de cultes publies a
+une autre eglise de la plateforme, identifiee par son identifiant public (`Church.slug`). Le
+partage est unilateral : ouvrir sa bibliotheque a une eglise ne donne aucun acces retour, et
+aucune route n'expose la liste des eglises de la plateforme — le noeud se fait par saisie d'un
+identifiant communique hors application.
+
+#### `GET /api/audio/shares`
+
+Liste les eglises auxquelles l'eglise courante a ouvert sa bibliotheque, avec le propre
+identifiant (slug) de l'eglise courante a communiquer a une eglise destinataire.
+
+**Permission requise** : `audio:manage` (eglise courante)
+
+**Reponse** :
+```json
+{
+  "ownSlug": "icc-rennes",
+  "shares": [
+    { "id": "clx...", "churchName": "ICC Brest", "churchSlug": "icc-brest", "createdAt": "2026-09-02T10:00:00.000Z" }
+  ]
+}
+```
+
+#### `POST /api/audio/shares`
+
+Resout un identifiant (slug) d'eglise puis, si confirme, ouvre la bibliotheque de l'eglise
+courante a l'eglise resolue. Resolution en deux temps sur un seul endpoint (plutot qu'un
+endpoint de resolution separe) pour n'exposer qu'une seule surface d'enumeration
+identifiant → nom, gardee par `audio:manage` et limitee en debit.
+
+**Permission requise** : `audio:manage` (eglise courante) — **limite en debit**
+(`RATE_LIMIT_SENSITIVE`, cle par utilisateur)
+
+**Body** (valide par Zod) :
+```json
+{ "slug": "icc-brest", "confirm": false }
+```
+
+- `slug` : identifiant de l'eglise a inviter
+- `confirm` : `false` resout le slug et renvoie le nom de l'eglise **sans rien creer** (etape de
+  verification avant confirmation) ; `true` cree le partage
+
+**Reponse** :
+- `confirm: false` → `200` avec `{ "churchName": "ICC Brest" }`
+- `confirm: true` → `201` avec `{ "id": "clx...", "churchName": "ICC Brest", "churchId": "clx...", "createdAt": "..." }`
+
+**Erreurs** :
+- `404` si le slug ne correspond a aucune eglise
+- `400` si le slug saisi est celui de l'eglise courante (une eglise ne peut pas s'ouvrir sa
+  bibliotheque a elle-meme)
+- `409` si l'eglise resolue est deja destinataire d'un partage
+
+Une creation reussie (`confirm: true`) est journalisee dans l'historique des modifications
+(`AuditLog`, `entityType: "AudioLibraryShare"`, `churchId` = eglise proprietaire).
+
+#### `DELETE /api/audio/shares/[id]`
+
+Revoque un partage de bibliotheque : l'eglise destinataire perd immediatement l'acces aux
+cultes publies de l'eglise courante.
+
+**Permission requise** : `audio:manage` (eglise courante) — le partage doit appartenir a
+l'eglise courante (`404` sinon si l'ID ne correspond a aucun partage de l'eglise courante,
+jamais confiance dans l'ID seul)
+
+**Reponse** : `200` avec `{ "ok": true }`
+
+Revocation journalisee dans l'historique des modifications au meme titre que la creation.
 
 ### Acces public via token (sans authentification)
 
