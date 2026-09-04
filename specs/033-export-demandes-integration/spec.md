@@ -98,6 +98,7 @@ Une ligne par demande, une colonne par information, dans cet ordre :
 | Prénom | Prénom |
 | Téléphone | Vide si non renseigné |
 | Email | Vide si non renseigné |
+| Adresse | Adresse postale, vide si non renseignée |
 | Ville | Vide si non renseignée |
 | Tranche d'âge | Jeune (−18 ans) / Jeune adulte (18–30 ans) / Adulte (30–60 ans) / Senior (60+ ans) |
 | Statut dans l'église | Visiteur / Régulier / Engagé |
@@ -120,10 +121,12 @@ n'ouvrent pas l'application.
 d'abandon**. Ce sont des champs de texte libre où l'équipe consigne des éléments
 confidentiels sur des personnes (situation familiale, difficultés, raisons d'un
 abandon). Un tableur circule par mail et se retrouve dans des boîtes qu'on ne maîtrise
-pas : ces deux champs restent dans l'application, où leur accès est tracé. L'**adresse
-postale précise** est également exclue, seule la **ville** figure au fichier — suffisante
-pour organiser une répartition géographique, sans constituer un fichier d'adresses
-personnelles.
+pas : ces deux champs restent dans l'application, où leur accès est tracé.
+
+L'**adresse postale** figure en revanche au fichier lorsqu'elle a été renseignée (cellule
+vide sinon) : la répartition géographique par famille d'impact se fait à l'adresse, pas à
+la ville. Décision révisée le 2026-09-04 — la version initiale de la spec excluait
+l'adresse au profit de la seule ville.
 
 ### Traçabilité
 
@@ -168,14 +171,15 @@ rendre compte ; sans trace, la question « qui a sorti ce fichier ? » reste san
 - [ ] La **recherche texte** est respectée par l'export.
 - [ ] Les deux filtres **combinés** produisent l'intersection, à l'écran comme dans le
       fichier.
-- [ ] Le fichier comporte une ligne d'en-têtes en français et les **17 colonnes** listées
+- [ ] Le fichier comporte une ligne d'en-têtes en français et les **18 colonnes** listées
       ci-dessus, dans cet ordre.
 - [ ] Les valeurs sont les **libellés affichés à l'écran**, pas des codes internes.
 - [ ] Les colonnes « Appel au salut » et « Soin pastoral demandé » valent **Oui** ou
       **Non**.
 - [ ] Les dates d'étapes non atteintes sont **vides**.
-- [ ] Le fichier **ne contient ni** les notes internes, **ni** le motif d'abandon, **ni**
-      l'adresse postale précise.
+- [ ] Le fichier **ne contient ni** les notes internes, **ni** le motif d'abandon.
+- [ ] La colonne « Adresse » reprend l'adresse postale quand elle est renseignée, et reste
+      **vide** sinon.
 - [ ] Une valeur commençant par `=`, `+`, `-` ou `@` est présentée comme du **texte** dans
       le tableur, et n'y est jamais évaluée comme une formule.
 - [ ] Aucune demande d'une **autre église** ne figure dans le fichier, quelles que soient
@@ -207,9 +211,9 @@ rendre compte ; sans trace, la question « qui a sorti ce fichier ? » reste san
 
 *Toutes tranchées le 2026-08-30 :*
 
-- **Colonnes** → « annuaire + marqueurs pastoraux ». Notes internes, motif d'abandon et
-  adresse postale précise exclus (texte libre confidentiel / donnée personnelle non
-  nécessaire à l'usage visé).
+- **Colonnes** → « annuaire + marqueurs pastoraux ». Notes internes et motif d'abandon
+  exclus (texte libre confidentiel). L'adresse postale, d'abord exclue elle aussi, a été
+  réintégrée le 2026-09-04 : elle est nécessaire à la répartition géographique.
 - **Filtres** → les deux filtres existants uniquement (statut + recherche texte).
 - **Droit d'export** → équipe Intégration, Admin, Secrétaire, Super Admin. Le berger au
   périmètre restreint consulte mais n'extrait pas, par cohérence avec le traitement déjà

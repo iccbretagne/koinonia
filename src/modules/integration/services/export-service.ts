@@ -1,10 +1,11 @@
 /**
  * Projection des demandes d'intégration en lignes de tableur.
  *
- * Fonction **pure** : aucun accès BDD, aucune I/O. Elle porte les 17 colonnes de l'export
+ * Fonction **pure** : aucun accès BDD, aucune I/O. Elle porte les 18 colonnes de l'export
  * (spec 033), les libellés français (jamais de code interne dans le fichier), la règle
  * « étape non atteinte → cellule vide » et l'exclusion des champs sensibles (notes
- * internes, motif d'abandon, adresse postale précise — seule la ville figure).
+ * internes, motif d'abandon). L'adresse postale figure au fichier quand elle a été
+ * renseignée — cellule vide sinon.
  */
 
 /** En-têtes de l'export, dans l'ordre imposé par la spec. */
@@ -13,6 +14,7 @@ export const EXPORT_COLUMNS = [
   "Prénom",
   "Téléphone",
   "Email",
+  "Adresse",
   "Ville",
   "Tranche d'âge",
   "Statut dans l'église",
@@ -56,6 +58,7 @@ export interface IntegrationExportInput {
   lastName: string;
   phone: string | null;
   email: string | null;
+  address: string | null;
   city: string | null;
   ageRange: string;
   churchStatus: string;
@@ -88,6 +91,7 @@ export function buildIntegrationExportRows(
     Prénom: r.firstName,
     Téléphone: r.phone ?? "",
     Email: r.email ?? "",
+    Adresse: r.address ?? "",
     Ville: r.city ?? "",
     "Tranche d'âge": AGE_RANGE_LABELS[r.ageRange] ?? r.ageRange,
     "Statut dans l'église": CHURCH_STATUS_LABELS[r.churchStatus] ?? r.churchStatus,
