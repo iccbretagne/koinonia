@@ -11,6 +11,7 @@ function makeRequest(overrides: Partial<IntegrationExportInput> = {}): Integrati
     lastName: "Durand",
     phone: "0612345678",
     email: "marie@exemple.fr",
+    address: "12 rue des Lilas",
     city: "Rennes",
     ageRange: "ADULT",
     churchStatus: "VISITOR",
@@ -29,10 +30,10 @@ function makeRequest(overrides: Partial<IntegrationExportInput> = {}): Integrati
 }
 
 describe("buildIntegrationExportRows", () => {
-  it("produit les 17 colonnes de la spec, dans l'ordre", () => {
+  it("produit les 18 colonnes de la spec, dans l'ordre", () => {
     const [row] = buildIntegrationExportRows([makeRequest()]);
     expect(Object.keys(row)).toEqual([...EXPORT_COLUMNS]);
-    expect(EXPORT_COLUMNS).toHaveLength(17);
+    expect(EXPORT_COLUMNS).toHaveLength(18);
   });
 
   it("projette les codes vers les libellés français, jamais le code brut", () => {
@@ -66,12 +67,13 @@ describe("buildIntegrationExportRows", () => {
       makeRequest({
         phone: null,
         email: null,
+        address: null,
         city: null,
         assignedFamilyName: null,
         assignedBerger: null,
       }),
     ]);
-    for (const key of ["Téléphone", "Email", "Ville", "Famille assignée", "Berger assigné"]) {
+    for (const key of ["Téléphone", "Email", "Adresse", "Ville", "Famille assignée", "Berger assigné"]) {
       expect(row[key]).toBe("");
     }
   });
@@ -83,12 +85,15 @@ describe("buildIntegrationExportRows", () => {
     expect(row["Berger assigné"]).toBe("Paul Berger");
   });
 
-  it("n'expose ni notes internes, ni motif d'abandon, ni adresse postale précise", () => {
+  it("expose l'adresse postale quand elle est renseignée", () => {
+    const [row] = buildIntegrationExportRows([makeRequest({ address: "12 rue des Lilas" })]);
+    expect(row["Adresse"]).toBe("12 rue des Lilas");
+  });
+
+  it("n'expose ni notes internes, ni motif d'abandon", () => {
     const [row] = buildIntegrationExportRows([makeRequest()]);
     const keys = Object.keys(row).join(" ").toLowerCase();
     expect(keys).not.toContain("note");
     expect(keys).not.toContain("abandon");
-    expect(keys).not.toContain("adresse");
-    expect(Object.keys(row)).not.toContain("Adresse");
   });
 });

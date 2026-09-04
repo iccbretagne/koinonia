@@ -61,7 +61,7 @@
       *(fichier : `src/modules/integration/auth.ts`)*
 
 - [x] **T6** `[P]` — Créer le service de projection, **fonction pure** sans Prisma ni I/O :
-      `EXPORT_COLUMNS` (les **17 en-têtes**, dans l'ordre de la spec) et
+      `EXPORT_COLUMNS` (les **18 en-têtes**, dans l'ordre de la spec) et
       `buildIntegrationExportRows(requests)`. Il porte :
       - les tables de correspondance vers les **libellés affichés à l'écran** (statut,
         tranche d'âge, statut d'église) — jamais de code interne dans le fichier ;
@@ -126,7 +126,7 @@
       **toutes** les valeurs et préserve les clés.
       *(fichier : `src/lib/__tests__/excel.test.ts`)* *(dépend de T1)*
 
-- [x] **T12** `[P]` — Tests du service de projection : les **17 colonnes dans l'ordre** ;
+- [x] **T12** `[P]` — Tests du service de projection : les **18 colonnes dans l'ordre** ;
       libellés français et non codes internes (`SUBMITTED` → « En attente », `ADULT` →
       « Adulte (30–60 ans) », `VISITOR` → « Visiteur ») ; `Oui`/`Non` sur les deux
       marqueurs pastoraux ; **étape non atteinte → cellule vide** ; champs `null` → chaîne
@@ -155,7 +155,7 @@
 - [ ] **T14** — Recette manuelle : le rendu React n'est pas testable automatiquement
       (`vitest` en `environment: "node"`, `*.test.ts` uniquement). Vérifier :
       - **compte équipe Intégration** : bouton présent, compteur cohérent avec la liste,
-        fichier téléchargé conforme (17 colonnes, libellés lisibles) ;
+        fichier téléchargé conforme (18 colonnes, libellés lisibles) ;
       - **compte berger** : **aucun** bouton d'export ;
       - **filtre statut** puis **recherche texte**, puis **les deux combinés** : le fichier
         suit à chaque fois ;
@@ -178,7 +178,7 @@
 | Filtre **statut** respecté | T10 |
 | **Recherche texte** respectée | T10 |
 | Filtres **combinés** = intersection | T10, T14 |
-| Ligne d'en-têtes française, **17 colonnes** dans l'ordre | T6, T12 |
+| Ligne d'en-têtes française, **18 colonnes** dans l'ordre | T6, T12 |
 | Libellés affichés à l'écran, pas de codes internes | T6, T12 |
 | « Appel au salut » / « Soin pastoral » valent **Oui**/**Non** | T6, T12 |
 | Dates d'étapes non atteintes **vides** | T6, T12 |

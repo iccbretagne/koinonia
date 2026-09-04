@@ -43,7 +43,7 @@ Le fil directeur en quatre points :
    courante, le périmètre de l'appelant et l'exclusion des archivées. Tout identifiant qui
    ne survit pas au recoupement est silencieusement absent du fichier.
 3. **La projection en lignes est une fonction pure**, isolée dans le module et testable
-   sans HTTP — c'est là que vivent les 17 colonnes, les libellés français, les `Oui/Non` et
+   sans HTTP — c'est là que vivent les 18 colonnes, les libellés français, les `Oui/Non` et
    la règle « étape non atteinte → cellule vide ».
 4. **La neutralisation anti-formule devient un helper partagé** au lieu d'une quatrième
    copie (cf. **D2**) — c'est une mesure de sécurité, elle ne doit pas exister en quatre
@@ -104,7 +104,7 @@ Exportée via `src/modules/integration/index.ts`.
 
 ```
 buildIntegrationExportRows(requests) → Record<string, string>[]
-EXPORT_COLUMNS : les 17 en-têtes, dans l'ordre de la spec
+EXPORT_COLUMNS : les 18 en-têtes, dans l'ordre de la spec
 ```
 
 Fonction **pure**, sans Prisma ni I/O. Elle porte :
@@ -119,7 +119,7 @@ Fonction **pure**, sans Prisma ni I/O. Elle porte :
 - les champs optionnels `null` → **chaîne vide**, jamais `"null"`.
 
 Placement conforme à la constitution §I (« la logique métier vit dans
-`src/modules/X/services/`, pas dans les route handlers ») et surtout : **17 colonnes avec
+`src/modules/X/services/`, pas dans les route handlers ») et surtout : **18 colonnes avec
 des règles de projection, c'est exactement ce qu'un test unitaire doit verrouiller**.
 
 ### `src/lib/excel.ts` — neutralisation anti-formule (nouveau, partagé)
@@ -276,7 +276,7 @@ Le cœur sécurité de la feature, aujourd'hui **testé nulle part** malgré ses
 
 ### `src/modules/integration/__tests__/export-service.test.ts` (nouveau)
 
-- les **17 colonnes** sont produites, **dans l'ordre** de la spec ;
+- les **18 colonnes** sont produites, **dans l'ordre** de la spec ;
 - les codes sont projetés vers les **libellés français** (`SUBMITTED` → « En attente »,
   `ADULT` → « Adulte (30–60 ans) », `VISITOR` → « Visiteur ») ;
 - `salvationCall` / `pastoralCareRequested` deviennent **`Oui` / `Non`** ;
