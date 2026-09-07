@@ -780,7 +780,26 @@ Liste les utilisateurs avec leurs rôles par église.
 
 ### `GET /api/users/search`
 
-Recherche d'utilisateurs par nom pour l'autocomplete (non documenté séparément, utilisé dans la gestion des rôles).
+Recherche d'utilisateurs pour l'écran de liaison compte↔STAR (`GET /admin/members`).
+
+**Permission requise** : `members:manage` sur `churchId`
+
+**Query params** :
+- `q` (requis) — terme de recherche (minimum 2 caractères)
+- `churchId` (requis) — ID de l'église
+
+Deux mécanismes distincts, cumulés :
+- **Par nom/prénom** (`contains`, insensible à la casse) : uniquement parmi les utilisateurs
+  ayant déjà un rôle ou une demande de liaison dans `churchId`. Ne sort jamais de l'église.
+- **Par email** (spec 037) : uniquement si `q` contient `@`, correspondance **exacte** sur
+  l'email, sur toute la plateforme. Permet de retrouver un compte déjà rattaché à un STAR d'une
+  autre église, pour le rattacher aussi à celle-ci — voir `POST /api/member-user-links`. Aucun
+  `contains` sur l'email : une correspondance exacte suppose de connaître déjà l'adresse
+  complète, elle ne permet pas d'énumérer des comptes (voir `docs/security-exceptions.md`, T11).
+
+Les utilisateurs déjà liés à un STAR dans `churchId` sont exclus des deux mécanismes.
+
+**Réponse** : tableau `{ id, name, displayName, image }` (max 10 résultats).
 
 ### `PATCH /api/users/[userId]/profile`
 
@@ -890,11 +909,14 @@ La recherche est insensible aux accents et à la casse (normalisation NFD côté
 
 ### `POST /api/member-user-links`
 
-Crée un lien direct entre un utilisateur et un STAR (sans workflow de validation). Met à jour le nom d'affichage de l'utilisateur avec le nom du STAR.
+Rattache directement un compte à un STAR — une **admission complète** (spec 037) : la personne
+reçoit aussi un accès effectif à l'église (rôle STAR par défaut si elle n'a encore aucun rôle
+dans cette église), pas seulement un lien. Aucune exigence de rattachement préalable à cette
+église : c'est précisément la condition que cet appel crée.
 
 **Permission requise** : `members:manage`
 
-**Body** :
+**Body — compte déjà identifié** (`userId`, typiquement issu de `GET /api/users/search`) :
 ```json
 {
   "memberId": "clx...",
@@ -903,11 +925,30 @@ Crée un lien direct entre un utilisateur et un STAR (sans workflow de validatio
 }
 ```
 
+**Body — par email exact**, pour un compte introuvable par la recherche par nom (aucun rôle ni
+demande dans cette église — voir `GET /api/users/search`) :
+```json
+{
+  "memberId": "clx...",
+  "email": "personne@example.com",
+  "churchId": "clx...",
+  "confirmCreate": true
+}
+```
+
+Si `email` ne correspond à aucun compte existant, la réponse est `409 { "accountNotFound": true }`
+sans rien créer, sauf si `confirmCreate: true` — le compte est alors créé (dormant, sans mot de
+passe : il se lie à la première connexion Google grâce à `allowDangerousEmailAccountLinking`) et
+admis dans la foulée. Cette confirmation explicite évite qu'une erreur de frappe ne rattache
+silencieusement un STAR à une adresse inexistante.
+
 **Réponse** : `201` avec le lien créé.
 
 **Erreurs** :
-- `404` si le STAR ou l'utilisateur est introuvable
-- `409` si le STAR est déjà lié à un compte ou si l'utilisateur est déjà lié à un STAR dans cette église
+- `400` si ni `userId` ni `email` n'est fourni
+- `404` si le STAR ou l'utilisateur (`userId`) est introuvable
+- `409` si le STAR est déjà lié à un compte, si le compte est déjà lié à un STAR dans cette
+  église, ou (`accountNotFound`) si `email` est inconnu sans `confirmCreate`
 
 ### `POST /api/member-link-requests`
 

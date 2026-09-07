@@ -265,3 +265,17 @@ export async function assertSelfLinkAllowed(
     throw new ApiError(403, "Cette fiche est déjà liée à un compte");
   }
 }
+
+/**
+ * Églises proposables à un utilisateur pour une nouvelle demande de rattachement (spec 037) :
+ * toutes celles de la plateforme, sauf celles où il a déjà un pied — un rôle, un lien STAR déjà
+ * validé, ou une demande en attente. Extraite en fonction pure pour rester vérifiable sans
+ * dépendre du rendu du composant serveur qui l'utilise (`/profile`).
+ */
+export function excludeChurchesAlreadyReached<T extends { id: string }>(
+  churches: T[],
+  reachedChurchIds: Iterable<string>
+): T[] {
+  const reached = new Set(reachedChurchIds);
+  return churches.filter((c) => !reached.has(c.id));
+}
