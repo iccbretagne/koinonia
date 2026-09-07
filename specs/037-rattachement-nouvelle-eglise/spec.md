@@ -82,13 +82,10 @@ feature n'introduit aucun écran de validation nouveau.
 
 ### Scénario principal B — la personne demande à rejoindre une église
 
-1. L'église B diffuse **son identifiant public** à ceux qu'elle accueille — par ses propres
-   moyens : bulletin, responsable de département, affichage, QR code. C'est le même identifiant
-   que celui déjà utilisé pour le partage de bibliothèque audio, pas un nouveau code.
-2. Emmanuella, déjà utilisatrice de Koinonia pour l'église A, ouvre son profil et demande à
-   rejoindre une nouvelle église. Elle saisit l'identifiant que l'église B lui a communiqué. Le
-   nom de l'église correspondante s'affiche, pour qu'elle vérifie qu'elle s'adresse bien à la
-   bonne église, puis elle confirme.
+1. Emmanuella, déjà utilisatrice de Koinonia pour l'église A, ouvre son profil et demande à
+   rejoindre une nouvelle église.
+2. Elle choisit l'église B dans la liste des églises de la plateforme — **le même parcours que
+   celui déjà proposé aujourd'hui à un nouvel arrivant qui n'appartient à aucune église**.
 3. Elle indique la fiche STAR à laquelle elle veut être rattachée, ou demande la création d'une
    fiche, comme le permet déjà le formulaire existant.
 4. Sa demande part en attente ; les administrateurs de l'église B en sont informés.
@@ -107,19 +104,11 @@ feature n'introduit aucun écran de validation nouveau.
   actuel, conservé.
 - **Si une demande de la même personne est déjà en attente dans cette église**, le système ne
   crée pas de doublon.
-- **À aucun moment l'application ne propose la liste des églises** à l'utilisateur : ni à la
-  saisie, ni en suggestion, ni en autocomplétion. L'identifiant vient toujours de l'extérieur —
-  même règle que pour le partage de bibliothèque audio.
-- **Si l'identifiant saisi ne correspond à aucune église**, l'utilisateur reçoit un message
-  l'invitant à le vérifier auprès de l'église concernée, et rien n'est créé.
-- **Si l'utilisateur saisit l'identifiant d'une église où il a déjà un rôle ou une demande en
-  attente**, il en est informé et aucun doublon n'est créé.
-- **Les tentatives répétées de saisie d'identifiants sont limitées en débit.** Afficher le nom
-  d'une église en regard de son identifiant est nécessaire pour éviter d'adresser sa demande à
-  la mauvaise assemblée, mais ne doit pas devenir un moyen de reconstituer l'annuaire des
-  églises par sondage. Ce contrôle existe déjà pour le partage audio ; il s'applique ici à un
-  public plus large — tout utilisateur authentifié, et non plus les seuls administrateurs — ce
-  qui rend son réglage d'autant plus important.
+- **Les églises où l'utilisateur a déjà un rôle, un rattachement ou une demande en attente ne
+  lui sont pas proposées** : la liste ne contient que des destinations utiles, et aucun doublon
+  ne peut être créé.
+- **La liste ne contient que des noms d'églises** — aucune donnée de personne, aucun effectif,
+  aucun contact.
 - **Si l'administrateur cherche par nom** (et non par email), il ne voit que les personnes déjà
   rattachées à son église : ce comportement est **inchangé et voulu**. Aucun annuaire des
   personnes des autres églises n'est exposé.
@@ -140,12 +129,11 @@ feature n'introduit aucun écran de validation nouveau.
 - [ ] Une recherche par **fragment** d'adresse email ne renvoie rien : seule l'adresse complète
       et exacte donne un résultat.
 - [ ] Un utilisateur peut, depuis son profil, soumettre une demande de rattachement à une église
-      où il n'a aucun rôle, en saisissant l'identifiant public que cette église lui a communiqué.
-- [ ] À aucun endroit du parcours l'utilisateur ne se voit proposer la liste des églises de la
-      plateforme — ni liste, ni suggestion, ni autocomplétion.
-- [ ] Un identifiant inconnu ne crée rien et n'indique pas si l'église existe autrement que par
-      l'absence de nom affiché.
-- [ ] Les saisies répétées d'identifiants sont limitées en débit.
+      où il n'a aucun rôle, en la choisissant dans la liste des églises.
+- [ ] Les églises où il a déjà un rôle, un rattachement ou une demande en attente ne lui sont pas
+      proposées.
+- [ ] Le parcours depuis le profil est le même que celui déjà proposé à un nouvel arrivant sans
+      église : même formulaire, mêmes étapes.
 - [ ] Cette demande n'accorde aucun droit tant qu'un administrateur de l'église visée ne l'a pas
       validée.
 - [ ] Une demande validée produit exactement la même admission que le chemin administrateur.
@@ -170,29 +158,33 @@ feature n'introduit aucun écran de validation nouveau.
 
 ## Décisions prises
 
-### Désignation de l'église par l'utilisateur — par identifiant, pas par liste *(tranché)*
+### Désignation de l'église par l'utilisateur — par la liste des églises *(tranché)*
 
-L'orientation initiale — proposer la liste de toutes les églises de la plateforme dans le
-formulaire de profil — a été écartée : elle contredisait frontalement une décision déjà
-implémentée et en production.
+**Décision** : l'utilisateur choisit l'église dans la **liste des églises de la plateforme**,
+exactement comme le fait aujourd'hui un nouvel arrivant qui n'appartient à aucune église. Le
+critère retenu est la **cohérence** : ce parcours existe déjà et fonctionne, il n'y a pas de
+raison qu'une même personne ait droit à la liste avant d'avoir rejoint sa première église, puis
+en soit privée ensuite.
 
-La spec 036 (partage de bibliothèque audio, livrée en v1.20.0) pose comme contrainte
-structurante que *« seule l'administration de la plateforme connaît la liste des églises
-hébergées ; un administrateur d'église n'a — volontairement — aucun moyen de les énumérer »*.
-Elle porte le critère d'acceptation validé : *« à aucun endroit du parcours l'Admin de A ne se
-voit proposer la liste des églises de la plateforme »*. Or tout administrateur d'église est
-aussi un utilisateur disposant d'un profil : afficher la liste complète des églises dans cet
-écran lui aurait remis, à un clic, l'annuaire que la 036 lui refuse — et vidé de son sens le
-mécanisme d'identifiant mis en place quelques jours plus tôt.
+Cette décision a d'abord été prise en sens inverse — saisie d'un identifiant d'église, sur le
+motif que la spec 036 (partage de bibliothèque audio) interdit d'exposer l'annuaire des églises.
+L'exploration du code a montré que **cet annuaire est déjà exposé** : l'écran d'accueil des
+utilisateurs sans église liste toutes les églises de la plateforme, sans filtre, avec leurs
+ministères et départements. Fermer ce parcours-ci pendant que l'autre reste ouvert n'aurait rien
+protégé — seulement ajouté une étape.
 
-**Décision** : l'utilisateur saisit **l'identifiant public de l'église**, que celle-ci lui
-communique elle-même hors application. Même mécanisme, même identifiant et mêmes garde-fous que
-le partage de bibliothèque audio — nom affiché pour confirmation avant validation, saisies
-limitées en débit, aucune liste ni autocomplétion. La 036 reste valide et cohérente.
+**Conséquence à assumer explicitement** : l'écran de profil est accessible à tous, y compris aux
+administrateurs d'église. La liste des églises leur devient donc visible, alors que la spec 036
+énonçait qu'*« un administrateur d'église n'a — volontairement — aucun moyen de les énumérer »*.
+Son critère d'acceptation littéral reste vrai (le parcours de partage audio, lui, ne propose
+toujours aucune liste), mais **sa justification ne l'est plus**. La documentation de la 036 et le
+registre des exceptions de sécurité doivent être mis à jour dans le même mouvement : le mécanisme
+d'identifiant du partage audio reste pertinent comme garde-fou d'usage — on ne partage qu'avec
+une église dont on a reçu l'identifiant, ce qui évite l'erreur de destinataire — mais il cesse
+d'être présenté comme une mesure de confidentialité de l'annuaire.
 
-Conséquence à porter au plan : ce parcours ouvre la saisie d'identifiant à **tout utilisateur
-authentifié**, alors que la 036 la réservait aux administrateurs. Le contrôle anti-sondage
-existe déjà, mais son réglage doit être revu à l'aune de ce public plus large.
+Ce qui reste exposé se limite à des **noms d'églises, de ministères et de départements**. Aucune
+donnée de personne n'est concernée.
 
 ### Accès accordé par le chemin administrateur — l'accès de base du STAR *(tranché par défaut)*
 
