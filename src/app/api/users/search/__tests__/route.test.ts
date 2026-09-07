@@ -56,15 +56,64 @@ describe("GET /api/users/search — isolation inter-tenant", () => {
     expect(JSON.stringify(findManyCall.where)).toContain("churchRoles");
   });
 
-  it("ne filtre pas par email (évite les fuites d'email)", async () => {
+  it("ne fait pas de recherche floue par email (évite l'énumération par nom)", async () => {
     prismaMock.user.findMany.mockResolvedValue([] as never);
 
     const request = new Request("http://localhost/api/users/search?q=jean&churchId=church-1");
     await GET(request);
 
     const findManyCall = prismaMock.user.findMany.mock.calls[0][0];
-    // La requête ne doit pas chercher par email
+    // La recherche floue (contains) ne doit pas porter sur l'email
     expect(JSON.stringify(findManyCall.where)).not.toContain('"email"');
+  });
+
+  it("retrouve par email exact un compte sans rôle ni demande dans cette église (STAR d'une autre église)", async () => {
+    prismaMock.user.findMany.mockResolvedValue([] as never);
+    prismaMock.user.findFirst.mockResolvedValue({
+      id: "user-other-church",
+      name: "Emmanuella Sohou",
+      displayName: null,
+      image: null,
+      memberLinks: [], // aucun lien dans church-1, seulement dans une autre église
+    } as never);
+
+    const request = new Request(
+      "http://localhost/api/users/search?q=sohouemmanuella%40gmail.com&churchId=church-1"
+    );
+    const res = await GET(request);
+    const body = await res.json();
+
+    expect(body).toHaveLength(1);
+    expect(body[0].id).toBe("user-other-church");
+    // La correspondance email est exacte, jamais floue
+    const findFirstCall = prismaMock.user.findFirst.mock.calls[0][0];
+    expect(findFirstCall.where).toEqual({ email: "sohouemmanuella@gmail.com" });
+  });
+
+  it("ne cherche pas par email si la requête ne contient pas '@'", async () => {
+    prismaMock.user.findMany.mockResolvedValue([] as never);
+
+    const request = new Request("http://localhost/api/users/search?q=jean&churchId=church-1");
+    await GET(request);
+
+    expect(prismaMock.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("exclut le résultat email si déjà lié dans cette église", async () => {
+    prismaMock.user.findMany.mockResolvedValue([] as never);
+    prismaMock.user.findFirst.mockResolvedValue({
+      id: "user-already-linked",
+      name: "Jean Déjà Lié",
+      displayName: null,
+      image: null,
+      memberLinks: [{ id: "link-1" }],
+    } as never);
+
+    const request = new Request("http://localhost/api/users/search?q=jean%40example.com&churchId=church-1");
+    const res = await GET(request);
+    const body = await res.json();
+
+    expect(body).toHaveLength(0);
   });
 
   it("exclut les utilisateurs déjà liés à un STAR dans cette église", async () => {
