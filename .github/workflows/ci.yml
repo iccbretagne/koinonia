@@ -30,6 +30,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run lint:boundaries
+      - run: npm run lint:prisma-boundary
       - run: npm run test:coverage
       # Bloque l'ajout d'une dependance de PRODUCTION vulnerable (haute ou critique). Limite a
       # `--omit=dev` volontairement : une faille dans un outil de build ou de test n'est pas

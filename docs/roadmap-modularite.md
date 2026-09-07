@@ -74,13 +74,21 @@ Ce sont de bons candidats de départ : le gain y est visible et le risque borné
 
 Aucun ne suppose de réécriture massive. Ils sont ordonnés par rapport valeur/risque.
 
-### 1. Arrêter l'hémorragie avant de la résorber
+### 1. Arrêter l'hémorragie avant de la résorber — ✅ fait
 
 Interdire **tout nouvel** accès direct à Prisma depuis `src/app` pour les écritures métier, via
 une règle `dependency-cruiser` en `warn` puis en `error` sur les nouveaux fichiers. Les 147
 routes existantes restent tolérées le temps de la migration.
 
 *Pourquoi d'abord* : sans cliquet, tout déplacement est repris par la route suivante écrite.
+
+*Réalisé différemment* : pas de règle `dependency-cruiser`, qui aurait demandé de lister les 147
+exceptions dans la config et de la maintenir à chaque déplacement. À la place, `scripts/
+check-prisma-boundary.sh` compare le compte de route handlers important Prisma directement à un
+seuil committé (`scripts/prisma-boundary-baseline.txt`, initialisé à 147) et échoue en CI si ce
+compte **dépasse ou est inférieur** au seuil — dépasse : nouvelle route à migrer ; inférieur :
+seuil à baisser dans le même commit pour verrouiller le progrès. Le seuil committé EST l'historique
+du chantier 2, sans config à maintenir en parallèle du code.
 
 ### 2. Déplacer les cas les plus coûteux vers des services de module
 
@@ -164,7 +172,7 @@ De quoi mesurer le progrès sans se raconter d'histoires :
 
 | Indicateur | Aujourd'hui | Cible |
 |---|---|---|
-| Route handlers important Prisma directement | 147 / 170 | en baisse à chaque release, jamais en hausse |
+| Route handlers important Prisma directement | 147 / 170, **cliquet CI actif** | en baisse à chaque release, jamais en hausse |
 | Modules couverts par une règle de frontière | **11 / 11** ✅ | 11 / 11 |
 | Imports dynamiques `auth`→`audio` (règles métier hors module) | 3 | 0 |
 | Imports dynamiques module→registry (imposés par la règle anti-cycle) | 5 | 5, sauf inversion de la composition (ADR préalable) |
