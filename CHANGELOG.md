@@ -4,6 +4,55 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.22.0] - 2026-09-08
+
+### Ajouté
+
+- **Rattachement d'une personne à une nouvelle église** (spec 037) : un compte déjà lié à un
+  STAR dans une église peut désormais être rattaché à un STAR d'une autre église. Quatre verrous
+  circulaires levés — pour entrer dans une église, il fallait déjà y être : la recherche admin ne
+  renvoyait que les comptes de l'église courante, l'écriture du lien exigeait ce même
+  rattachement, l'écran des accès filtrait pareil, et le profil ne proposait que les églises déjà
+  rejointes.
+  - `GET /api/users/search` cherche aussi par email **exact**, cross-église ; la recherche par
+    nom reste strictement bornée à l'église courante.
+  - `POST /api/member-user-links` n'exige plus de rattachement préalable : il résout la cible par
+    `userId` ou email exact, et crée le compte sur confirmation explicite (`confirmCreate`) si
+    l'adresse est inconnue.
+  - `/profile` propose toutes les églises de la plateforme — comme `/no-access` le fait déjà pour
+    un utilisateur sans église — moins celles où la personne a déjà un rôle, un lien ou une
+    demande en attente.
+
+### Modifié
+
+- **Service d'admission partagé** `admitToChurch()` (`src/lib/admission.ts`), extrait de la
+  transaction d'approbation d'une demande de liaison : il lie le STAR **et** attribue un rôle
+  (STAR par défaut si aucun rôle dans l'église) — lier sans donner d'accès laissait la personne
+  dans une église sans y avoir accès. La route d'approbation délègue à ce service sans changement
+  de comportement, couvert par des tests de non-régression écrits avant l'extraction (ce chemin
+  n'avait aucun test).
+- `displayName` n'est plus écrasé s'il existe déjà lors d'un rattachement.
+- **Cliquet CI sur les routes important Prisma** (chantier 1 de `docs/roadmap-modularite.md`) :
+  `npm run lint:prisma-boundary` compare le nombre de route handlers important Prisma
+  directement à un seuil committé (`scripts/prisma-boundary-baseline.txt`, à 147). Le compte ne
+  peut plus remonter, et toute baisse doit verrouiller le progrès en abaissant le seuil dans le
+  même commit.
+
+### Sécurité
+
+- La correspondance **email exacte** de `GET /api/users/search` traverse volontairement la
+  frontière multi-tenant, contrairement à la recherche par nom. Jamais de `contains` sur l'email :
+  il faut déjà connaître l'adresse complète, aucune énumération n'est possible. Même compromis
+  qu'un « mot de passe oublié » standard. Documentée dans `docs/security-exceptions.md`.
+
+### Documentation
+
+- `docs/api.md` et `docs/security-exceptions.md` (entrée T11 mise à jour + nouvelle entrée).
+- Note de correction sur la spec 036 : son critère d'acceptation reste vrai (le partage audio ne
+  propose toujours aucune liste d'églises), mais sa justification — « aucun annuaire d'églises
+  exposé » — ne l'est plus, `/profile` exposant désormais la liste complète par cohérence avec
+  `/no-access`.
+
 ## [v1.21.1] - 2026-09-06
 
 ### Corrigé
