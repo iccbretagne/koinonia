@@ -16,8 +16,6 @@ export default async function RejoindrePublicPage({
 
   if (!church) return notFound();
 
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-icc-violet px-4 py-6">
@@ -33,7 +31,7 @@ export default async function RejoindrePublicPage({
       </header>
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8">
-        <JoinForm churchId={church.id} churchName={church.name} turnstileSiteKey={turnstileSiteKey} />
+        <JoinForm churchId={church.id} churchName={church.name} />
       </main>
 
       <footer className="text-center text-xs text-gray-400 py-5 border-t border-gray-200">

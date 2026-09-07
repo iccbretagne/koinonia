@@ -1,16 +1,17 @@
 /**
- * Verification Cloudflare Turnstile — preuve d'humanite sur les formulaires publics
- * (demande de RDV `/agenda-public`, integration `/rejoindre`).
+ * Verification Cloudflare Turnstile — preuve d'humanite sur le formulaire public de demande
+ * de RDV (`/agenda-public`).
  *
- * Mutualisee ici plutot que dupliquee par route : c'est un controle de securite, et deux
- * copies finissent par diverger le jour ou le fournisseur, l'URL de verification ou le
- * traitement d'erreur change — en laissant une route en arriere sans que personne le voie.
+ * Desactivee sur le formulaire d'integration famille (`/rejoindre`) : la dependance a
+ * `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (inlinee au build, pas au runtime) rendait ce formulaire
+ * indisponible en production faute d'etre passee au pipeline de build — voir
+ * specs/030-captcha-formulaire-integration/. Ce formulaire reste protege par le rate-limit
+ * IP de `POST /api/integration/requests`.
  *
  * FAIL-CLOSED VOLONTAIRE : sans `TURNSTILE_SECRET_KEY`, la fonction retourne `false`, donc
  * toute soumission est refusee. Ce n'est pas un oubli : un repli permissif serait un
  * interrupteur silencieux desactivant la protection selon la configuration. Consequence a
- * connaitre — un environnement sans cette variable rend les formulaires publics
- * inutilisables (voir specs/030-captcha-formulaire-integration/).
+ * connaitre — un environnement sans cette variable rend `/agenda-public` inutilisable.
  */
 export async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;

@@ -527,7 +527,7 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `CRON_SECRET` | Protège les routes `/api/cron/*` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Envoi d'emails (nodemailer) — notifications, rappels |
 | `SMTP_IGNORE_TLS` / `SMTP_TLS_REJECT_UNAUTHORIZED` | Ajustements TLS pour un relay local ou un certificat auto-signé |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur les formulaires publics (`agenda-public`, `rejoindre`) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile sur le formulaire public `agenda-public` (désactivé sur `rejoindre`) |
 | `AUDIO_CACHE_DIR` / `AUDIO_CACHE_MAX_BYTES` | Cache local du module audio, éviction LRU (défaut : 5 Go) |
 | `AUDIO_XACCEL_LOCATION` | Active la délégation de diffusion audio au reverse proxy (X-Accel) |
 

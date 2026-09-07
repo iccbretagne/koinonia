@@ -69,9 +69,16 @@ jobs:
       # affichée dans le footer devient celle du code réellement déployé (`1.18.0-abc1234`)
       # et non le `package.json` de la branche, figé sur la dernière version publiée. Le
       # transmettre au serveur ne suffirait pas — l'artefact doit le porter.
+      #
+      # Idem pour NEXT_PUBLIC_TURNSTILE_SITE_KEY (spec 030) : c'est une clé publique inlinée
+      # côté client, la renseigner uniquement dans shared/.env sur le serveur de recette ne
+      # suffit pas. Variable de repository (non secrète) donc lisible sans `environment:`, ce
+      # qui préserve la séparation voulue par ce job (aucun secret privilégié en contexte
+      # de compilation).
       - run: npm run build
         env:
           NEXT_PUBLIC_BUILD_VERSION: ${{ steps.version.outputs.version }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
 
       # Élague les devDependencies APRÈS le build : l'archive n'embarque plus typescript,
       # vitest, eslint, esbuild… La CLI `prisma` est en `dependencies` (requise sur le serveur

@@ -4,6 +4,21 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.21.1] - 2026-09-06
+
+### Corrigé
+
+- **Formulaire public d'intégration famille inutilisable en production**
+  (`/rejoindre/[churchSlug]`) : `NEXT_PUBLIC_TURNSTILE_SITE_KEY` est inlinée dans le bundle
+  client au moment du build (`npm run build`), pas lue au runtime — le pipeline CI qui produit
+  l'artefact déployé (`.github/workflows/ci.yml`) ne la passait pas à cette étape, le widget
+  Turnstile ne s'affichait donc jamais, mais la soumission continuait d'exiger un jeton
+  (fail-closed volontaire, spec 030) : impossible de valider le formulaire, sans CAPTCHA visible
+  pour le résoudre. Turnstile est retiré de ce formulaire (la protection anti-spam repose
+  désormais uniquement sur le rate-limit IP existant de `POST /api/integration/requests`) ; le
+  formulaire de demande de RDV pastoral (`/agenda-public`) conserve Turnstile et récupère malgré
+  tout la clé désormais correctement propagée au build (`ci.yml` et `deploy-staging.yml`).
+
 ## [v1.21.0] - 2026-09-06
 
 ### Ajouté

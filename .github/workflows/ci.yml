@@ -58,7 +58,15 @@ jobs:
       - run: npx prisma generate
       # `npm run build` produit aussi dist/worker.mjs (esbuild) — le worker audio est bundlé,
       # il n'a donc besoin ni de src/ ni de tsx sur le serveur (ADR-0007).
+      #
+      # NEXT_PUBLIC_TURNSTILE_SITE_KEY est inliné dans le bundle client au moment du build : la
+      # renseigner uniquement dans shared/.env sur le serveur ne suffit pas, le widget Turnstile
+      # du formulaire public `/agenda-public` resterait vide en production et bloquerait toute
+      # soumission (spec 030). C'est une clé publique (destinée à être exposée côté client),
+      # donc une variable de repository plutôt qu'un secret.
       - run: npm run build
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
 
       # --- Empaquetage de l'artefact de release (tags uniquement) ---------------------
       # L'artefact deploye est construit ICI, dans le contexte non privilegie de la CI, et

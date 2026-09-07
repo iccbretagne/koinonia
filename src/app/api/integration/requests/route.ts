@@ -4,7 +4,6 @@ import { requireIntegrationAccess, buildConfirmationEmail } from "@/modules/inte
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
 import { requireRateLimit, getClientIp } from "@/lib/rate-limit";
-import { verifyTurnstile } from "@/lib/turnstile";
 import { z } from "zod";
 import type { FamilyAgeRange, FamilyChurchStatus, FamilyIntegrationStatus, Prisma } from "@/generated/prisma/client";
 
@@ -70,7 +69,6 @@ const createSchema = z.object({
   // Lien membre optionnel (si connecté)
   memberId:    z.string().optional(),
   churchId:    z.string().min(1),
-  turnstileToken: z.string().min(1, "Vérification CAPTCHA manquante"),
 });
 
 export async function POST(request: Request) {
@@ -79,15 +77,6 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const data = createSchema.parse(body);
-
-    // Preuve d'humanite verifiee AVANT tout effet de bord : chaque soumission declenche
-    // sinon un geocodage externe, plusieurs creations en base et un email vers une adresse
-    // choisie par l'appelant. Le rate-limit par IP seul ne distingue pas un script d'un
-    // humain (spec 030).
-    const humanVerified = await verifyTurnstile(data.turnstileToken, getClientIp(request));
-    if (!humanVerified) {
-      throw new ApiError(400, "Vérification CAPTCHA échouée. Veuillez réessayer.");
-    }
 
     // Vérifier que l'église existe
     const church = await prisma.church.findUnique({

@@ -75,7 +75,6 @@ function useAddressSuggestions(query: string) {
 interface Props {
   churchId: string;
   churchName: string;
-  turnstileSiteKey: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -151,7 +150,7 @@ interface SuccessData {
   pastoralCare: boolean;
 }
 
-export default function JoinForm({ churchId, churchName, turnstileSiteKey }: Props) {
+export default function JoinForm({ churchId, churchName }: Props) {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -170,30 +169,6 @@ export default function JoinForm({ churchId, churchName, turnstileSiteKey }: Pro
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const { suggestions: addressSuggestions, clear: clearSuggestions } = useAddressSuggestions(form.address);
   const familySuggestion = useFamilySuggestion(churchId);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!turnstileSiteKey) return;
-    function init() {
-      if (!widgetRef.current || widgetId.current) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      widgetId.current = (window as any).turnstile?.render(widgetRef.current, {
-        sitekey: turnstileSiteKey,
-        callback: (token: string) => setTurnstileToken(token),
-        "expired-callback": () => setTurnstileToken(null),
-        "error-callback": () => setTurnstileToken(null),
-      });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).turnstile) { init(); } else {
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true; script.defer = true; script.onload = init;
-      document.head.appendChild(script);
-    }
-  }, [turnstileSiteKey]);
 
   function set(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -202,10 +177,6 @@ export default function JoinForm({ churchId, churchName, turnstileSiteKey }: Pro
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!turnstileToken) {
-      setGlobalError("Veuillez compléter la vérification CAPTCHA.");
-      return;
-    }
     setSubmitting(true);
     setGlobalError(null);
     setFieldErrors({});
@@ -220,7 +191,6 @@ export default function JoinForm({ churchId, churchName, turnstileSiteKey }: Pro
           address: form.address || undefined,
           pastoralMessage: form.pastoralMessage || undefined,
           churchId,
-          turnstileToken,
         }),
       });
 
@@ -580,16 +550,9 @@ export default function JoinForm({ churchId, churchName, turnstileSiteKey }: Pro
         </p>
       )}
 
-      <div>
-        <div ref={widgetRef} />
-        {!turnstileToken && (
-          <p className="text-xs text-gray-400 mt-1">Vérification anti-spam requise.</p>
-        )}
-      </div>
-
       <button
         type="submit"
-        disabled={submitting || (!!turnstileSiteKey && !turnstileToken)}
+        disabled={submitting}
         className="w-full bg-icc-violet text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-icc-violet disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}
