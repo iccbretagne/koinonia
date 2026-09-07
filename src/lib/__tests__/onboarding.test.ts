@@ -16,6 +16,7 @@ const {
   rankMembersByName,
   matchStrength,
   STRONG_MATCH_THRESHOLD,
+  excludeChurchesAlreadyReached,
 } = await import("../onboarding");
 
 // Fabrique une fiche telle que renvoyée par findMany (avec département principal)
@@ -321,5 +322,28 @@ describe("rankMembersByName", () => {
 
   it("returns an empty array when nothing matches", () => {
     expect(rankMembersByName("Zorglub", members)).toHaveLength(0);
+  });
+});
+
+describe("excludeChurchesAlreadyReached", () => {
+  const churches = [
+    { id: "church-A", name: "Église A" },
+    { id: "church-B", name: "Église B" },
+    { id: "church-C", name: "Église C" },
+  ];
+
+  it("exclut les églises où l'utilisateur a déjà un pied (rôle, lien ou demande)", () => {
+    const result = excludeChurchesAlreadyReached(churches, ["church-A", "church-C"]);
+    expect(result.map((c) => c.id)).toEqual(["church-B"]);
+  });
+
+  it("ne modifie rien si aucune église n'est déjà atteinte", () => {
+    const result = excludeChurchesAlreadyReached(churches, []);
+    expect(result).toHaveLength(3);
+  });
+
+  it("dédoublonne les identifiants atteints sans effet de bord", () => {
+    const result = excludeChurchesAlreadyReached(churches, ["church-A", "church-A"]);
+    expect(result.map((c) => c.id)).toEqual(["church-B", "church-C"]);
   });
 });

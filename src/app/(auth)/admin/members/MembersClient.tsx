@@ -95,21 +95,39 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     }, 300);
   }, [userQuery, linkModal]);
 
+  // Une adresse email exacte, sans compte trouvé par la recherche : la recherche interroge déjà
+  // toute la plateforme par correspondance exacte (spec 037), donc un résultat vide à ce stade
+  // signifie réellement qu'aucun compte n'existe avec cette adresse — pas seulement qu'aucun
+  // compte de cette église ne la porte.
+  const canLinkByEmail =
+    !selectedUser && !userSearching && userResults.length === 0 && userQuery.trim().includes("@");
+
   async function handleLink() {
-    if (!linkModal || !selectedUser) return;
+    if (!linkModal) return;
+    if (!selectedUser && !canLinkByEmail) return;
     setLinkError(null);
     setLinkLoading(true);
     try {
+      const body = selectedUser
+        ? { memberId: linkModal.id, userId: selectedUser.id, churchId: linkModal.churchId }
+        : { memberId: linkModal.id, email: userQuery.trim(), churchId: linkModal.churchId, confirmCreate: true };
       const res = await fetch("/api/member-user-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: linkModal.id, userId: selectedUser.id, churchId: linkModal.churchId }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
       setMembers((prev) => prev.map((m) =>
         m.id === linkModal.id
-          ? { ...m, userLink: { userId: selectedUser.id, userName: selectedUser.name, userEmail: selectedUser.email } }
+          ? {
+              ...m,
+              userLink: {
+                userId: json.userId,
+                userName: selectedUser?.displayName ?? selectedUser?.name ?? null,
+                userEmail: selectedUser?.email ?? userQuery.trim(),
+              },
+            }
           : m
       ));
       setLinkModal(null);
@@ -693,13 +711,20 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               </ul>
             )}
             {userQuery.length >= 2 && !userSearching && userResults.length === 0 && !selectedUser && (
-              <p className="text-xs text-gray-400 mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
+              canLinkByEmail ? (
+                <p className="text-xs text-gray-500 mt-1">
+                  Aucun compte n&apos;existe avec cette adresse. Un compte sera créé et rattaché à
+                  ce STAR dès sa première connexion.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
+              )
             )}
           </div>
           {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" onClick={() => setLinkModal(null)}>Annuler</Button>
-            <Button onClick={handleLink} disabled={!selectedUser || linkLoading}>
+            <Button onClick={handleLink} disabled={(!selectedUser && !canLinkByEmail) || linkLoading}>
               {linkLoading ? "En cours..." : "Lier"}
             </Button>
           </div>

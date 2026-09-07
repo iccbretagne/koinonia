@@ -32,6 +32,16 @@ d'un identifiant** que l'église destinataire communique elle-même, hors applic
 consiste qu'à **donner** accès à son propre contenu : une erreur de saisie n'expose que l'église
 qui la commet, jamais un tiers.
 
+> **Note (spec 037, 2026-09)** — cette contrainte structurante ne tient plus dans son intégralité.
+> La spec 037 (rattachement d'une personne à une nouvelle église) expose désormais la liste
+> complète des églises dans l'écran de profil, accessible à tout utilisateur authentifié — y
+> compris un administrateur d'église. Le critère d'acceptation ci-dessous reste vrai à la lettre
+> (le parcours de partage audio ne propose toujours aucune liste), mais sa **justification**
+> — « un administrateur n'a aucun moyen d'énumérer les églises » — ne l'est plus. Le mécanisme
+> d'identifiant reste pertinent : il évite l'erreur de destinataire lors d'un partage. Il cesse
+> d'être une mesure de confidentialité de l'annuaire des églises. Voir
+> `docs/security-exceptions.md` (entrée « Annuaire des noms d'églises visible depuis `/profile` »).
+
 ## Utilisateurs concernés
 
 **Côté église propriétaire (celle qui ouvre sa bibliothèque)**

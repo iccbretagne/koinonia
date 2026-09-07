@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { Role } from "@/generated/prisma/client";
 import { findDuplicateCandidates } from "@/lib/onboarding";
+import { admitToChurch } from "@/lib/admission";
 import { z } from "zod";
 
 const schema = z.object({
@@ -110,149 +110,24 @@ export async function PATCH(
     }
 
     await prisma.$transaction(async (tx) => {
-      let memberId = linkRequest.memberId;
-      let memberName: { firstName: string; lastName: string } | null = null;
-
-      // ── Créer le Member si nouveau STAR ──────────────────────────────────────
-      if (isNewStar && !isNoStarRole) {
-        const dept = await tx.department.findUnique({
-          where: { id: effectiveDeptId! },
-          include: { ministry: { select: { churchId: true } } },
-        });
-        if (!dept || dept.ministry.churchId !== linkRequest.churchId) {
-          throw new ApiError(400, "Ce département n'appartient pas à cette église");
-        }
-
-        const newMember = await tx.member.create({
-          data: {
-            firstName: linkRequest.firstName!,
-            lastName: linkRequest.lastName!,
-            phone: linkRequest.phone ?? undefined,
-            departments: { create: { departmentId: effectiveDeptId!, isPrimary: true } },
-          },
-        });
-        memberId = newMember.id;
-        memberName = { firstName: newMember.firstName, lastName: newMember.lastName };
-      } else if (linkRequest.member) {
-        memberName = { firstName: linkRequest.member.firstName, lastName: linkRequest.member.lastName };
-      }
-
-      // ── Créer MemberUserLink (sauf rôle sans STAR) ───────────────────────────
-      if (!isNoStarRole && memberId) {
-        await tx.memberUserLink.create({
-          data: {
-            memberId,
-            userId: linkRequest.userId,
-            churchId: linkRequest.churchId,
-            validatedAt: new Date(),
-            validatedById: session.user.id,
-          },
-        });
-      }
-
-      // ── Mettre à jour le displayName ─────────────────────────────────────────
-      if (memberName) {
-        await tx.user.update({
-          where: { id: linkRequest.userId },
-          data: { displayName: `${memberName.firstName} ${memberName.lastName}` },
-        });
-      }
-
-      // ── Créer le rôle selon requestedRole ────────────────────────────────────
-      if (requestedRole) {
-        const prismaRole = (requestedRole === "DEPUTY" ? "DEPARTMENT_HEAD" : requestedRole) as Role;
-        const existingRole = await tx.userChurchRole.findFirst({
-          where: {
-            userId: linkRequest.userId,
-            churchId: linkRequest.churchId,
-            role: prismaRole,
-          },
-        });
-
-        if (requestedRole === "MINISTER") {
-          if (!effectiveMinistryId) throw new ApiError(400, "Le ministère est requis pour le rôle Ministre");
-          // Valider que le ministère appartient bien à l'église de la demande
-          const ministry = await tx.ministry.findUnique({
-            where: { id: effectiveMinistryId },
-            select: { churchId: true },
-          });
-          if (!ministry || ministry.churchId !== linkRequest.churchId) {
-            throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
-          }
-          if (existingRole) {
-            await tx.userChurchRole.update({
-              where: { id: existingRole.id },
-              data: { ministryId: effectiveMinistryId },
-            });
-          } else {
-            await tx.userChurchRole.create({
-              data: {
-                userId: linkRequest.userId,
-                churchId: linkRequest.churchId,
-                role: "MINISTER",
-                ministryId: effectiveMinistryId,
-              },
-            });
-          }
-        } else if (requestedRole === "DEPARTMENT_HEAD" || requestedRole === "DEPUTY") {
-          if (!effectiveDeptId) throw new ApiError(400, "Le département est requis pour ce rôle");
-          // Valider que le département appartient à l'église de la demande
-          // (le contrôle sur les nouveaux STAR est déjà fait plus haut, mais pas pour les STAR existants)
-          if (!isNewStar || isNoStarRole) {
-            const roleDept = await tx.department.findUnique({
-              where: { id: effectiveDeptId },
-              include: { ministry: { select: { churchId: true } } },
-            });
-            if (!roleDept || roleDept.ministry.churchId !== linkRequest.churchId) {
-              throw new ApiError(400, "Ce département n'appartient pas à cette église");
-            }
-          }
-          const isDeputy = requestedRole === "DEPUTY";
-
-          if (existingRole) {
-            await tx.userDepartment.create({
-              data: {
-                userChurchRoleId: existingRole.id,
-                departmentId: effectiveDeptId,
-                isDeputy,
-              },
-            });
-          } else {
-            await tx.userChurchRole.create({
-              data: {
-                userId: linkRequest.userId,
-                churchId: linkRequest.churchId,
-                role: "DEPARTMENT_HEAD",
-                departments: {
-                  create: { departmentId: effectiveDeptId, isDeputy },
-                },
-              },
-            });
-          }
-        } else if (requestedRole === "DISCIPLE_MAKER" || requestedRole === "REPORTER") {
-          if (!existingRole) {
-            await tx.userChurchRole.create({
-              data: {
-                userId: linkRequest.userId,
-                churchId: linkRequest.churchId,
-                role: prismaRole,
-              },
-            });
-          }
-        }
-      }
-
-      // ── Auto-assigner le rôle STAR si aucun rôle dans l'église ─────────────
-      if (!isNoStarRole && memberId) {
-        const hasAnyRole = await tx.userChurchRole.findFirst({
-          where: { userId: linkRequest.userId, churchId: linkRequest.churchId },
-        });
-        if (!hasAnyRole) {
-          await tx.userChurchRole.create({
-            data: { userId: linkRequest.userId, churchId: linkRequest.churchId, role: "STAR" },
-          });
-        }
-      }
+      const { memberId } = await admitToChurch(tx, {
+        userId: linkRequest.userId,
+        churchId: linkRequest.churchId,
+        validatedById: session.user.id,
+        memberId: isNewStar ? null : linkRequest.memberId,
+        newMember:
+          isNewStar && !isNoStarRole
+            ? {
+                firstName: linkRequest.firstName!,
+                lastName: linkRequest.lastName!,
+                phone: linkRequest.phone,
+                departmentId: effectiveDeptId!,
+              }
+            : undefined,
+        requestedRole,
+        departmentId: effectiveDeptId,
+        ministryId: effectiveMinistryId,
+      });
 
       // ── Mettre à jour la demande ──────────────────────────────────────────────
       await tx.memberLinkRequest.update({

@@ -1,7 +1,7 @@
 # Spec — Rattachement d'une personne à une nouvelle église
 
 - **Numéro** : 037
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-07
 - **Branche suggérée** : `feat/rattachement-nouvelle-eglise`
 

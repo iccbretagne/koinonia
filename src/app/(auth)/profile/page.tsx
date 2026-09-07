@@ -1,16 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { excludeChurchesAlreadyReached } from "@/lib/onboarding";
 import ProfileClient from "./ProfileClient";
 import JobSubscriptionClient from "./JobSubscriptionClient";
 
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user) redirect("/");
-
-  const churchIds = Array.from(
-    new Set(session.user.churchRoles.map((r) => r.churchId))
-  );
 
   // Liens STAR existants
   const links = await prisma.memberUserLink.findMany({
@@ -44,22 +41,25 @@ export default async function ProfilePage() {
     orderBy: { reviewedAt: "desc" },
   });
 
-  // Églises sans lien ni demande en attente (l'utilisateur peut en faire une)
-  const linkedChurchIds = new Set(links.map((l) => l.church.id));
-  const pendingChurchIds = new Set(pendingRequests.map((r) => r.church.id));
+  // Églises proposables pour une nouvelle demande : ni déjà liée, ni déjà un rôle, ni demande
+  // en attente. Toutes les églises de la plateforme sont éligibles — pas seulement celles où
+  // l'utilisateur a déjà un rôle (spec 037 : rejoindre une église où l'on n'a encore aucun pied
+  // doit être possible, avec le même parcours que /no-access pour un utilisateur sans église).
+  const reachedChurchIds = [
+    ...links.map((l) => l.church.id),
+    ...pendingRequests.map((r) => r.church.id),
+    ...session.user.churchRoles.map((r) => r.churchId),
+  ];
 
-  const churches = await prisma.church.findMany({
-    where: churchIds.length > 0 ? { id: { in: churchIds } } : undefined,
+  const allChurches = await prisma.church.findMany({
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
 
-  const unlinkableChurches = churches.filter(
-    (c) => !linkedChurchIds.has(c.id) && !pendingChurchIds.has(c.id)
-  );
+  const unlinkableChurches = excludeChurchesAlreadyReached(allChurches, reachedChurchIds);
 
   const ministries = await prisma.ministry.findMany({
-    where: churchIds.length > 0 ? { churchId: { in: churchIds }, isSystem: false } : undefined,
+    where: { isSystem: false },
     select: {
       id: true,
       name: true,

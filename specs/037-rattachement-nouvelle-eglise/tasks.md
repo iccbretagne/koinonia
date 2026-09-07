@@ -1,7 +1,7 @@
 # Tâches — Rattachement d'une personne à une nouvelle église
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -19,7 +19,7 @@
 > transaction la plus chargée du domaine et celle que la tâche T2 va déplacer. Écrire ces tests
 > d'abord est ce qui rend l'extraction vérifiable au lieu d'être un pari.
 
-- [ ] **T1** — Tests de non-régression de l'approbation d'une demande, sur le comportement
+- [x] **T1** — Tests de non-régression de l'approbation d'une demande, sur le comportement
       **actuel** : rôle `STAR` attribué quand la personne n'a aucun rôle dans l'église, **non**
       attribué quand elle en a déjà un ; création du STAR pour une demande de nouvelle fiche ;
       attribution du rôle demandé (Ministre / Responsable / Faiseur de disciples / Reporter) ;
@@ -28,80 +28,84 @@
 
 ### 1. Logique métier (service partagé)
 
-- [ ] **T2** — Créer `admitToChurch(tx, …)` par **extraction** de la transaction d'approbation,
+- [x] **T2** — Créer `admitToChurch(tx, …)` par **extraction** de la transaction d'approbation,
       sans changement de comportement : création du `Member` si nouvelle fiche, `MemberUserLink`,
       `displayName`, rôle demandé, rôle `STAR` par défaut si aucun rôle, validations
       d'appartenance département/ministère → église. *(fichier : `src/lib/admission.ts`)*
-- [ ] **T3** — Faire déléguer la route d'approbation à `admitToChurch`. **T1 doit rester vert
+- [x] **T3** — Faire déléguer la route d'approbation à `admitToChurch`. **T1 doit rester vert
       sans être modifié** — c'est le critère de réussite de l'extraction.
       *(fichier : `src/app/api/member-link-requests/[id]/route.ts`)*
-- [ ] **T4** — Ne plus écraser `displayName` s'il est déjà renseigné. Aujourd'hui un rattachement
+- [x] **T4** — Ne plus écraser `displayName` s'il est déjà renseigné. Aujourd'hui un rattachement
       dans l'église B écrase le nom défini par l'église A ; cette feature rend le cas courant.
       *(fichier : `src/lib/admission.ts`)*
 
 ### 2. API (route handlers)
 
-- [ ] **T5** [P] — Recherche par **email exact** cross-église dans la recherche d'utilisateurs :
+- [x] **T5** [P] — Recherche par **email exact** cross-église dans la recherche d'utilisateurs :
       déclenchée seulement si la requête contient `@`, jamais de `contains` sur l'email, recherche
       par nom inchangée et toujours bornée à l'église. *(fichier : `src/app/api/users/search/route.ts`)*
-- [ ] **T6** — Lever le verrou d'écriture du rattachement : remplacer le contrôle qui exige un
+- [x] **T6** — Lever le verrou d'écriture du rattachement : remplacer le contrôle qui exige un
       rôle ou une demande préalable dans l'église par la résolution de la cible (`userId` **ou**
       `email` exact), puis appel de `admitToChurch`. Conserver la garde `members:manage` et les
       refus métier existants (STAR déjà lié, compte déjà lié dans cette église).
       *(fichier : `src/app/api/member-user-links/route.ts`)*
-- [ ] **T7** — Cas de l'adresse inconnue : répondre 409 avec un marqueur explicite, et ne créer le
+- [x] **T7** — Cas de l'adresse inconnue : répondre 409 avec un marqueur explicite, et ne créer le
       compte que si le client renvoie `confirmCreate: true` (double confirmation exigée par la
       spec). *(fichier : `src/app/api/member-user-links/route.ts`)*
 
 ### 3. UI
 
-- [ ] **T8** [P] — Le profil propose **toutes** les églises : charger la liste complète et les
+- [x] **T8** [P] — Le profil propose **toutes** les églises : charger la liste complète et les
       ministères sans restriction, puis appliquer le filtre `unlinkableChurches` existant pour
       retirer celles où l'utilisateur a déjà un lien, un rôle ou une demande en attente.
       `NoAccessClient` n'est pas modifié. *(fichier : `src/app/(auth)/profile/page.tsx`)*
-- [ ] **T9** [P] — Modale « Lier un compte » : quand la saisie contient `@` et qu'aucun compte ne
+- [x] **T9** [P] — Modale « Lier un compte » : quand la saisie contient `@` et qu'aucun compte ne
       correspond, proposer explicitement de rattacher tout de même l'adresse (`confirmCreate`), en
       indiquant que la personne sera admise à sa première connexion. Réutiliser `Modal`, `Input`,
       `Button`. *(fichier : `src/app/(auth)/admin/members/MembersClient.tsx`)*
 
 ### 4. Tests
 
-- [ ] **T10** — Tests du service d'admission : rôle `STAR` attribué / non attribué, création du
+- [x] **T10** — Tests du service d'admission : rôle `STAR` attribué / non attribué, création du
       `Member`, refus département ou ministère hors église, `displayName` **non** écrasé s'il
       existe déjà (T4). *(fichier : `src/lib/__tests__/admission.test.ts`)*
-- [ ] **T11** [P] — Tests de la recherche : correspondance email exacte retrouve un compte sans
+- [x] **T11** [P] — Tests de la recherche : correspondance email exacte retrouve un compte sans
       rattachement dans l'église courante ; aucune recherche email sans `@` ; résultat exclu si
       déjà lié dans cette église ; la recherche par nom ne porte jamais sur l'email.
       *(fichier : `src/app/api/users/search/__tests__/route.test.ts`)*
-- [ ] **T12** [P] — Tests du rattachement : un compte sans aucun rattachement dans l'église est
+- [x] **T12** [P] — Tests du rattachement : un compte sans aucun rattachement dans l'église est
       admis **et reçoit un rôle** (le test qui aurait attrapé le défaut de la PR #524) ; refus
       conservés (STAR déjà lié, compte déjà lié) ; création sur adresse inconnue seulement avec
       `confirmCreate`. *(fichier : `src/app/api/member-user-links/__tests__/route.test.ts`)*
-- [ ] **T13** [P] — Test d'isolation multi-tenant : une admission dans l'église B ne modifie aucun
+- [x] **T13** [P] — Test d'isolation multi-tenant : une admission dans l'église B ne modifie aucun
       rôle, lien ni fiche dans l'église A. *(fichier : `src/lib/__tests__/admission.test.ts`)*
-- [ ] **T14** [P] — Test du profil : la liste proposée exclut les églises où l'utilisateur a déjà
-      un lien, un rôle ou une demande en attente.
-      *(fichier : `src/app/(auth)/profile/__tests__/page.test.ts`)*
+- [x] **T14** [P] — Test du profil : la liste proposée exclut les églises où l'utilisateur a déjà
+      un lien, un rôle ou une demande en attente. **Réalisé différemment** : aucun `page.tsx` du
+      repo n'a de test aujourd'hui (rendu de composant serveur, aucune infrastructure existante) —
+      en écrire une pour un filtre de trois lignes aurait été la mauvaise proportion. L'exclusion
+      est extraite en fonction pure `excludeChurchesAlreadyReached()` dans `src/lib/onboarding.ts`
+      (précédent direct : ce fichier héberge déjà ce type de logique partagée), et testée là où
+      vivent ses tests. *(fichiers : `src/lib/onboarding.ts`, `src/lib/__tests__/onboarding.test.ts`)*
 
 ### 5. Documentation & cohérence
 
 > Ces tâches ne sont pas de la finition : sans elles, la documentation affirme le contraire du
 > code livré.
 
-- [ ] **T15** [P] — Documenter les deux endpoints modifiés : recherche par email exact, et
+- [x] **T15** [P] — Documenter les deux endpoints modifiés : recherche par email exact, et
       rattachement par email avec `confirmCreate`. *(fichier : `docs/api.md`, sections
       `GET /api/users/search` (l. 781) et `POST /api/member-user-links` (l. 891))*
-- [ ] **T16** [P] — Mettre à jour l'entrée T11 du registre des exceptions : la recherche par email
+- [x] **T16** [P] — Mettre à jour l'entrée T11 du registre des exceptions : la recherche par email
       exact traverse volontairement la frontière d'église, et l'annuaire des noms d'églises est
       visible de tout utilisateur authentifié. *(fichier : `docs/security-exceptions.md`)*
-- [ ] **T17** [P] — Porter une note dans la spec 036 : son critère d'acceptation reste vrai (le
+- [x] **T17** [P] — Porter une note dans la spec 036 : son critère d'acceptation reste vrai (le
       parcours de partage audio ne propose aucune liste) mais **sa justification ne l'est plus** —
       le mécanisme d'identifiant reste un garde-fou contre l'erreur de destinataire, pas une
       mesure de confidentialité de l'annuaire.
       *(fichier : `specs/036-partage-bibliotheque-audio/spec.md`)*
-- [ ] **T18** — Si les routes touchées cessent d'importer Prisma après délégation au service,
-      **abaisser le seuil** du cliquet dans le même commit — sinon la CI échoue, par conception.
-      *(fichier : `scripts/prisma-boundary-baseline.txt`)*
+- [x] **T18** — Vérifié : les deux routes touchées continuent d'importer Prisma directement
+      (validations avant l'ouverture de la transaction). Seuil inchangé (147/170), `npm run
+      lint:prisma-boundary` passe sans modification de `scripts/prisma-boundary-baseline.txt`.
 
 ## Couverture des critères d'acceptation
 
@@ -126,10 +130,10 @@ test sans le modifier.
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary`
-- [ ] `npm run test`
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
-- [ ] PR ouverte vers `main`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary`
+- [x] `npm run test`
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] PR ouverte vers `main`
