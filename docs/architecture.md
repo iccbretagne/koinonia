@@ -37,7 +37,9 @@ Fournit le "système de plugins" que les modules utilisent :
 
 ### Couche modules (`src/modules/`)
 
-Chaque module expose un **manifeste** (`index.ts`) qui déclare ses permissions, sa navigation, et ses exports publics. La couche `src/app/` ne peut importer qu'à partir de l'index du module (règle CI `app-only-module-public-api`).
+Chaque module expose un **manifeste** (`manifest.ts`) qui déclare ses permissions, sa navigation et ses dépendances, et un **index** (`index.ts`) qui re-exporte ce manifeste avec les services publics du module. La couche `src/app/` ne peut importer qu'à partir de l'index (règle CI `app-only-module-public-api`).
+
+Le manifeste vit dans son propre fichier parce que l'index tire les services — donc Prisma, NextAuth et le client S3. Un manifeste isolé est importable depuis un test `node` sans mock, ce qui permet de couvrir les 11 modules dans `src/modules/__tests__/manifests.test.ts` et `src/core/__tests__/permissions.test.ts` — voir [ADR-0011](adr/0011-manifeste-separe-de-l-index.md).
 
 | Module | Périmètre |
 |---|---|
@@ -142,42 +144,43 @@ koinonia/
 │   │   └── __tests__/             # Tests unitaires core
 │   ├── modules/                   # Logique metier par domaine (11 modules, voir tableau plus haut)
 │   │   ├── core/
-│   │   │   └── index.ts           # Manifeste : church:manage, users:manage, access:manage
+│   │   │   └── manifest.ts        # Manifeste : church:manage, users:manage, access:manage
 │   │   ├── planning/
-│   │   │   ├── index.ts           # Manifeste + exports publics
+│   │   │   ├── manifest.ts        # Manifeste : planning, membres, événements, absences, comptes rendus
+│   │   │   ├── index.ts           # API publique : manifeste + planningBus, executeRequest…
 │   │   │   ├── bus.ts             # planningBus = EventBus<PlanningEvents>
 │   │   │   ├── events.ts          # PlanningEvents type map
 │   │   │   └── services/          # request-executor, event.service, absence.service…
 │   │   ├── discipleship/
-│   │   │   └── index.ts           # Manifeste : discipleship:view/manage/export
+│   │   │   └── manifest.ts        # Manifeste : discipleship:view/manage/export
 │   │   ├── storage/
-│   │   │   ├── index.ts           # Manifeste : primitifs S3 + jetons, sans permission propre
+│   │   │   ├── manifest.ts        # Manifeste : primitifs S3 + jetons, sans permission propre
 │   │   │   └── services/          # s3.ts, token.ts
 │   │   ├── media/
-│   │   │   ├── index.ts           # Manifeste : media:view/upload/review/manage
+│   │   │   ├── manifest.ts        # Manifeste : media:view/upload/review/manage
 │   │   │   └── services/          # image, files, tokens (galeries, projets, versions)
 │   │   ├── audio/
-│   │   │   ├── index.ts           # Manifeste : audio:listen/view/upload/review/manage
+│   │   │   ├── manifest.ts        # Manifeste : audio:listen/view/upload/review/manage
 │   │   │   ├── services/          # Depot, sequences, publication, tokens, acces, partage (sharing.ts, spec 036)
 │   │   │   └── worker/            # Hors Next.js — runner + handlers probe/render
 │   │   ├── agenda/
-│   │   │   ├── index.ts           # Manifeste : agenda:view/manage/qualify — agenda pastoral
+│   │   │   ├── manifest.ts        # Manifeste : agenda:view/manage/qualify — agenda pastoral
 │   │   │   ├── auth.ts            # Guards specifiques (2e point d'entree)
 │   │   │   └── __tests__/
 │   │   ├── accounting/
-│   │   │   ├── index.ts           # Manifeste : accounting:submit/view/manage/stats
+│   │   │   ├── manifest.ts        # Manifeste : accounting:submit/view/manage/stats
 │   │   │   └── services/          # attachments.ts (pieces jointes)
 │   │   ├── rooms/
-│   │   │   ├── index.ts           # Manifeste : rooms:view/reserve/manage
+│   │   │   ├── manifest.ts        # Manifeste : rooms:view/reserve/manage
 │   │   │   └── services/          # reservation.service, checklist.service (main courante)
 │   │   ├── integration/
-│   │   │   ├── index.ts           # Manifeste : suivi parcours d'integration (pas de permission propre)
+│   │   │   ├── manifest.ts        # Manifeste : suivi parcours d'integration (pas de permission propre)
 │   │   │   ├── bus.ts             # integrationBus = EventBus<IntegrationEvents>
 │   │   │   ├── auth.ts            # Guards specifiques (2e point d'entree)
 │   │   │   ├── events.ts
 │   │   │   └── services/          # export-service, family-service, msdp-service
 │   │   ├── jobs/
-│   │   │   ├── index.ts           # Manifeste : jobs:view/post/seek/freelance/manage
+│   │   │   ├── manifest.ts        # Manifeste : jobs:view/post/seek/freelance/manage
 │   │   │   └── services/          # lifecycle-service (expiration/archivage)
 │   │   └── __tests__/             # Tests unitaires transverses (manifests, planning-bus…)
 │   ├── app/
@@ -477,7 +480,7 @@ const userPermissions = new Set(
 const canEdit = userPermissions.has("planning:edit");
 ```
 
-Ne pas utiliser `hasPermission()` de `src/lib/permissions.ts` — deprecated.
+`hasPermission()` de `src/lib/permissions.ts` a été supprimé — utiliser `rolePermissions`.
 
 ### Validation
 

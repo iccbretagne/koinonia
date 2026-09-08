@@ -26,7 +26,8 @@ export const registry = boot({
 
 /**
  * Matrice rôles → permissions pré-calculée depuis les manifestes.
- * Remplace ROLE_PERMISSIONS de src/lib/permissions.ts dans les guards API.
+ * Seule source de vérité des permissions dans les guards API (l'ancien helper
+ * src/lib/permissions.ts a été supprimé).
  */
 export const rolePermissions = buildRolePermissions(registry);
 
