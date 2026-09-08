@@ -178,7 +178,7 @@ Un utilisateur peut avoir **plusieurs rôles** dans **plusieurs églises** via l
 
 ## Permissions
 
-La matrice rôle-permissions est **dérivée dynamiquement** depuis les manifestes de modules (`src/modules/*/index.ts`) via `buildRolePermissions(registry)`. La source de vérité est les blocs `permissions` de chaque manifeste, pas le fichier `src/lib/permissions.ts` (deprecated).
+La matrice rôle-permissions est **dérivée dynamiquement** depuis les manifestes de modules (`src/modules/*/manifest.ts`) via `buildRolePermissions(registry)`. La source de vérité est les blocs `permissions` de chaque manifeste. L'ancien helper `src/lib/permissions.ts` (`hasPermission`) a été supprimé : il ne connaissait que 4 modules sur 11 et ne servait plus qu'à un test. La matrice attendue est désormais figée en dur dans `src/core/__tests__/permissions.test.ts`, qui échoue à toute modification de droits non répercutée ici.
 
 Le singleton `rolePermissions` (pré-calculé au démarrage dans `src/lib/registry.ts`) est utilisé directement dans les routes API et composants :
 

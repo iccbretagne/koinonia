@@ -62,16 +62,17 @@ koinonia/
 │   │   ├── boot.ts              # boot() : charge et valide les modules actifs
 │   │   └── permissions.ts       # buildRolePermissions(registry)
 │   ├── modules/                 # Logique metier par domaine
-│   │   ├── core/index.ts        # Manifeste : church:manage, users:manage
+│   │   ├── core/manifest.ts     # Manifeste : church:manage, users:manage, access:manage
 │   │   ├── planning/
-│   │   │   ├── index.ts         # Manifeste + exports publics (planningBus, executeRequest…)
+│   │   │   ├── manifest.ts      # Manifeste (sans dépendance runtime : testable isolément)
+│   │   │   ├── index.ts         # API publique : re-exporte le manifeste + planningBus, executeRequest…
 │   │   │   ├── bus.ts           # planningBus = EventBus<PlanningEvents>
 │   │   │   ├── events.ts        # PlanningEvents type map
 │   │   │   └── services/
 │   │   │       └── request-executor.ts  # Executor demandes approuvees + emissions bus
-│   │   ├── discipleship/index.ts # Manifeste : discipleship:view/manage/export
+│   │   ├── discipleship/manifest.ts # Manifeste : discipleship:view/manage/export
 │   │   └── audio/               # Publication (ADR-0007) + bibliotheque d'ecoute (spec 021)
-│   │       ├── index.ts         # Manifeste : audio:view/upload/review/manage
+│   │       ├── manifest.ts      # Manifeste : audio:listen/view/upload/review/manage
 │   │       ├── services/        # Depot, sequences, publication, tokens, acces
 │   │       └── worker/          # Process hors Next.js (runner + handlers probe/render)
 │   ├── app/
@@ -154,7 +155,6 @@ koinonia/
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
 │   │   ├── audit.ts             # logAudit() — journal des actions
 │   │   ├── rate-limit.ts        # Limiteur de debit par utilisateur
-│   │   └── permissions.ts       # DEPRECATED — utiliser rolePermissions de @/lib/registry
 │   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
 │   └── adr/                     # Architecture Decision Records (decisions structurantes)
@@ -524,7 +524,7 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
 
 5. **Imports Prisma** — les types enum (ex. `Role`) viennent de `@/generated/prisma/client`, pas de `@prisma/client`.
 
-6. **`rolePermissions` pas `hasPermission`** — `src/lib/permissions.ts` est deprecated. Utiliser `rolePermissions` de `@/lib/registry`.
+6. **`rolePermissions` est la seule matrice** — `src/lib/permissions.ts` (`hasPermission`) a été supprimé. Utiliser `rolePermissions` de `@/lib/registry`.
 
 7. **Conflits de migration** — si deux branches modifient `schema.prisma`, rebaser sur `main` avant `npm run db:migrate` pour éviter des conflits de fichiers de migration.
 
@@ -540,7 +540,10 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
 8. **Permissions** : toujours protéger les routes API avec `requireAuth()`, `requireChurchPermission()`
    ou `requireCurrentChurchPermission()` — jamais de contrôle de permission sans église cible
 9. **Migrations** : toujours créer une migration Prisma (`prisma migrate dev`) au lieu de `db push` pour tout changement de schéma
-10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry` (PAS `hasPermission` de `@/lib/permissions` qui est deprecated)
+10. **Permissions dans le code** : utiliser `rolePermissions` de `@/lib/registry`. Modifier les
+    droits d'un rôle se fait dans le manifeste du module (`src/modules/*/manifest.ts`) ; la
+    matrice figée de `src/core/__tests__/permissions.test.ts` et le tableau ci-dessus doivent
+    être mis à jour dans le même commit
 11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
 12. **Frontières modules** : vérifier `npm run lint:boundaries` après tout ajout de dépendance entre modules
 13. **ADR** : toute décision architecturale/structurante (cross-module, difficile à revenir en arrière, choix de stack ou de pattern durable) est documentée dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une décision de `plan.md` (portée à une seule feature)

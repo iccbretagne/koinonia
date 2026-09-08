@@ -146,17 +146,29 @@ Soit le renommer en ce qu'il est (un drapeau de visibilité fonctionnelle), soit
 vrai chargement optionnel — mais seulement si des déploiements partiels sont réellement demandés.
 Aujourd'hui ils ne le sont pas ; l'option honnête est le renommage.
 
-### 7. Étendre les tests de manifestes et de RBAC aux 11 modules
+### 7. Étendre les tests de manifestes et de RBAC aux 11 modules — ✅ fait
 
-Chantier peu coûteux, à faire tôt : il transforme les six autres chantiers en refactorings
-vérifiables. Au passage, clarifier le sort de `src/lib/__tests__/permissions.test.ts` — soit
-supprimer le test avec le helper déprécié qu'il couvre, soit le renommer pour qu'il cesse de se
-faire passer pour la couverture RBAC du projet.
+Les deux tests couvrent désormais les 11 modules et les 10 rôles :
+`src/modules/__tests__/manifests.test.ts` (graphe de dépendances figé, propriétaire de chaque
+permission, ordre topologique, entrées de navigation) et
+`src/core/__tests__/permissions.test.ts` (matrice RBAC figée en dur).
 
-*Ordre imposé* : `core/__tests__/permissions.test.ts:9` importe `hasPermission` comme matrice de
-référence pour valider `buildRolePermissions`. Il faut donc d'abord **figer la matrice attendue
-en dur dans ce test**, et seulement ensuite supprimer le helper déprécié et son fichier de test.
-L'inverse casse la couverture RBAC au moment précis où on l'étend.
+L'ordre imposé a été respecté : la matrice attendue a d'abord été figée en dur dans
+`core/__tests__/permissions.test.ts`, puis le helper déprécié `src/lib/permissions.ts` et son
+fichier de test ont été supprimés. Le helper n'avait plus aucun consommateur applicatif : il ne
+servait qu'à ce test, et ne connaissait que 4 modules sur 11 — la « couverture RBAC du projet »
+se comparait donc à une source de vérité périmée.
+
+**Ce que le chantier a révélé** — il n'était pas « peu coûteux » pour la raison annoncée. Les
+manifestes vivaient dans les `index.ts`, à côté des re-exports de services : les importer tirait
+Prisma, NextAuth et le client S3, indisponibles dans l'environnement de test `node`. C'est la
+vraie raison pour laquelle la couverture plafonnait à 3-4 modules, et non un oubli. Chaque
+manifeste a donc été extrait dans `src/modules/<module>/manifest.ts`, l'`index.ts` le
+re-exportant — l'API publique des modules est inchangée, et la règle
+`app-only-module-public-api` reste satisfaite.
+
+Effet de bord utile : le manifeste est maintenant lisible sans traverser 60 lignes de
+re-exports, et un test de manifeste ne peut plus casser à cause d'un service.
 
 ## Ce qu'on ne fait pas
 
@@ -176,8 +188,8 @@ De quoi mesurer le progrès sans se raconter d'histoires :
 | Modules couverts par une règle de frontière | **11 / 11** ✅ | 11 / 11 |
 | Imports dynamiques `auth`→`audio` (règles métier hors module) | 3 | 0 |
 | Imports dynamiques module→registry (imposés par la règle anti-cycle) | 5 | 5, sauf inversion de la composition (ADR préalable) |
-| Modules couverts par les tests de manifestes | 3 / 11 | 11 / 11 |
-| Modules couverts par les tests RBAC registry | 4 / 11 | 11 / 11 |
+| Modules couverts par les tests de manifestes | **11 / 11** ✅ | 11 / 11 |
+| Modules couverts par les tests RBAC registry | **11 / 11** ✅ | 11 / 11 |
 
 ## Voir aussi
 
