@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/audio";
 import AudioServiceClient from "./AudioServiceClient";

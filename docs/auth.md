@@ -98,17 +98,7 @@ Cela permet d'assigner le rôle STAR sans aucune entrée `user_departments` : le
   Contexte d'**affichage**, jamais une autorisation à lui seul : la valeur peut venir d'un cookie
   posé par le client. Toute décision d'autorisation doit vérifier la permission **dans** l'église
   ainsi désignée (`requireCurrentChurchPermission`), jamais s'y fier seule.
-- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** appartenance au département
-  de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`) : un STAR
-  de ce département passe le contrôle quelle que soit la permission demandée
-- `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre du
-  département de captation audio (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
-- `requireAudioListenAccess(churchId)` — autorise l'écoute d'un culte publié de `churchId` (spec
-  036) : passe si un rôle portant `audio:listen` existe dans `churchId` (comportement historique),
-  **ou** si une des propres églises de l'appelant, elle-même porteuse de `audio:listen`, figure
-  comme destinataire d'un partage de bibliothèque ouvert par `churchId`
-  (`listOutgoingShares` de `@/modules/audio`). Ne vérifie jamais une permission dans l'église
-  propriétaire elle-même pour l'appelant — seulement l'existence du partage.
+
 
 `audio:listen` (bibliothèque d'écoute, spec 021) est accordée à **tous les rôles** — voir
 [api.md](api.md#audio-des-cultes).
@@ -147,6 +137,24 @@ propriétaire :
   `src/modules/audio/services/sharing.ts`).
 
 ---
+
+### Gardes propres au module audio (`@/modules/audio/auth`)
+
+Ces trois gardes sont des règles du domaine audio, pas de l'infrastructure d'authentification :
+elles vivent dans le module, comme celles d'`agenda` et d'`integration` (chantier 4 de
+`docs/roadmap-modularite.md`). Leur comportement est inchangé.
+
+- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** appartenance au département
+  de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`) : un STAR
+  de ce département passe le contrôle quelle que soit la permission demandée
+- `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre du
+  département de captation audio (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
+- `requireAudioListenAccess(churchId)` — autorise l'écoute d'un culte publié de `churchId` (spec
+  036) : passe si un rôle portant `audio:listen` existe dans `churchId` (comportement historique),
+  **ou** si une des propres églises de l'appelant, elle-même porteuse de `audio:listen`, figure
+  comme destinataire d'un partage de bibliothèque ouvert par `churchId`
+  (`listOutgoingShares` de `@/modules/audio`). Ne vérifie jamais une permission dans l'église
+  propriétaire elle-même pour l'appelant — seulement l'existence du partage.
 
 ## Rôles
 

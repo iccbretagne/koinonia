@@ -9,7 +9,7 @@ import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireAudioAccess = vi.fn();
 const mockRequireAudioUnpublishAccess = vi.fn();
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/modules/audio/auth", () => ({
   requireAudioAccess: (...args: unknown[]) => mockRequireAudioAccess(...args),
   requireAudioUnpublishAccess: (...args: unknown[]) => mockRequireAudioUnpublishAccess(...args),
 }));

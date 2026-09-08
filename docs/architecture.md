@@ -464,9 +464,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 | `resolveChurchId(type, id)` | Retrouve le `churchId` d'une ressource par son type |
 | `getCurrentChurchId(session)` | Église active (cookie ou première de la liste) |
 | `requireMediaAccess` / `UploadAccess` / `ManageAccess` / `ReviewAccess` | Gardes propres au module media |
-| `requireAudioAccess(perm, churchId)` | Permission de rôle **ou** membre du département de captation |
-| `requireAudioListenAccess(churchId)` | Écoute : rôle dans l'église **ou** bibliothèque partagée (ADR-0010) |
-| `requireAudioUnpublishAccess(churchId)` | `audio:manage` ou responsable du département de captation |
+| `requireAudioAccess` / `ListenAccess` / `UnpublishAccess` | Gardes propres au module audio — **`@/modules/audio/auth`**, plus dans `lib/auth` |
 
 ### Permissions dans les composants
 

@@ -2,7 +2,7 @@
  * GET /api/audio/services/[id]/upload/parts?sourceId=...
  * Liste les parts déjà reçues côté S3 pour un upload multipart en cours — reprise après coupure.
  */
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getUploadedParts } from "@/modules/audio";

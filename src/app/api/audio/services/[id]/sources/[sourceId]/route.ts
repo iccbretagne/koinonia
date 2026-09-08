@@ -3,7 +3,7 @@
  * Retire une séquence déposée par erreur (mauvais fichier, doublon…) tant que le culte est
  * encore en dépôt (DRAFT/PENDING_REVIEW).
  */
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteAudioSource } from "@/modules/audio";

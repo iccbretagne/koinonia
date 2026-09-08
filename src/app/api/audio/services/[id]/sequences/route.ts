@@ -3,7 +3,7 @@
  * Applique le nommage/ordre des séquences déjà déposées (chemin P1 — dépôt de séquences).
  */
 import { z } from "zod";
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { applySequences } from "@/modules/audio";

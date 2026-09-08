@@ -3,7 +3,8 @@
  * POST /api/audio/services — crée un culte audio en DRAFT.
  */
 import { z } from "zod";
-import { requireAuth, requireAudioAccess, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createAudioService } from "@/modules/audio";

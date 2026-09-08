@@ -3,7 +3,7 @@
  * Streaming interne (bibliothèque d'écoute, spec 021) — distinct de la route publique par
  * token : ici l'accès passe par une session authentifiée et `audio:listen`.
  */
-import { requireAudioListenAccess } from "@/lib/auth";
+import { requireAudioListenAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, ApiError } from "@/lib/api-utils";
 import { buildRenditionResponse } from "@/modules/audio";

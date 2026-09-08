@@ -5,7 +5,8 @@
  * doublon avant même de tenter la création.
  */
 import { z } from "zod";
-import { requireAudioAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 

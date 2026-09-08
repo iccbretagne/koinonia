@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { requireAuth, requireAudioAccess, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { getSignedStreamUrl } from "@/modules/storage";
 import { listOutgoingShares } from "@/modules/audio";

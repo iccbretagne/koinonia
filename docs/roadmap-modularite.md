@@ -114,13 +114,26 @@ formule donc en un seul `pathNot`, adossé à l'ADR-0006 qui actait déjà `stor
 infrastructure partagée. `storage`, lui, n'importe aucun module. Chaque règle a été vérifiée par
 un import sonde temporaire — une règle qui passe pourrait n'être qu'un motif de chemin vide.
 
-### 4. Sortir les gardes métier de `lib/auth`
+### 4. Sortir les gardes métier de `lib/auth` — ✅ fait
 
-`requireAudioAccess`, `requireAudioListenAccess` et `requireAudioUnpublishAccess` sont des règles
-du module audio hébergées dans l'infrastructure d'authentification. Les déplacer dans
-`src/modules/audio/auth.ts` — le motif existe déjà dans `agenda/auth.ts` et `integration/auth.ts`.
+`requireAudioAccess`, `requireAudioListenAccess` et `requireAudioUnpublishAccess` étaient des
+règles du module audio hébergées dans l'infrastructure d'authentification. Elles vivent désormais
+dans `src/modules/audio/auth.ts`, sur le motif déjà appliqué par `agenda/auth.ts` et
+`integration/auth.ts`.
 
-Les trois imports `auth.ts` → `audio` disparaissent avec ce déplacement.
+*Réalisé* : les trois imports dynamiques `auth.ts` → `audio` ont disparu — ils sont devenus des
+imports statiques internes au module (`./services/access`, `./services/sharing`), donc visibles
+dans le graphe de dépendances. `src/lib/auth.ts` passe de 836 à 752 lignes et **n'importe plus
+aucun module**. Les 17 appelants (`src/app/api/audio/**`, pages `/audio/**`) importent maintenant
+`@/modules/audio/auth`, chemin autorisé par la règle `app-only-module-public-api` au même titre
+que l'index. Aucun changement de comportement : `requireAuth` reste importé de `@/lib/auth`, et
+l'import de `rolePermissions` reste dynamique, imposé par `no-modules-static-import-registry`
+(ADR-0004).
+
+*Effet de bord révélé par les tests* : un test qui mockait `@/modules/audio` pour intercepter
+`listOutgoingShares` ne l'interceptait plus, la garde traversant désormais `./services/sharing`
+directement. Le mock a été reciblé sur le vrai collaborateur — le test dit maintenant la vraie
+dépendance au lieu de passer par l'index.
 
 Les cinq imports `module` → `registry`, eux, **ne se retirent pas par déplacement de fichier** :
 ils sont imposés par la règle `no-modules-static-import-registry`, qui protège d'un cycle réel
@@ -187,7 +200,7 @@ De quoi mesurer le progrès sans se raconter d'histoires :
 |---|---|---|
 | Route handlers important Prisma directement | 147 / 170, **cliquet CI actif** | en baisse à chaque release, jamais en hausse |
 | Modules couverts par une règle de frontière | **11 / 11** ✅ | 11 / 11 |
-| Imports dynamiques `auth`→`audio` (règles métier hors module) | 3 | 0 |
+| Imports dynamiques `auth`→`audio` (règles métier hors module) | **0** ✅ | 0 |
 | Imports dynamiques module→registry (imposés par la règle anti-cycle) | 5 | 5, sauf inversion de la composition (ADR préalable) |
 | Modules couverts par les tests de manifestes | **11 / 11** ✅ | 11 / 11 |
 | Modules couverts par les tests RBAC registry | **11 / 11** ✅ | 11 / 11 |

@@ -3,7 +3,7 @@
  * Dépublie un culte — les liens déjà partagés deviennent inopérants. Geste plus lourd que
  * publier : audio:manage OU responsable (DEPARTMENT_HEAD/MINISTER) du département de captation.
  */
-import { requireAudioUnpublishAccess } from "@/lib/auth";
+import { requireAudioUnpublishAccess } from "@/modules/audio/auth";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";

@@ -3,7 +3,7 @@
  * Finalise un upload multipart S3 d'une AudioSource(kind: SEQUENCE) et programme son job PROBE.
  */
 import { z } from "zod";
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { completeSequenceUpload } from "@/modules/audio";

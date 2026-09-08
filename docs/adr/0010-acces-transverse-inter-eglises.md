@@ -102,8 +102,10 @@ assoupli pour faire passer le partage, c'est le signal que la dérogation a déb
 
 - `specs/036-partage-bibliotheque-audio/spec.md`, `plan.md`, `tasks.md`
 - PR #510
-- `src/lib/auth.ts` (`requireChurchPermission`, `requireAudioAccess`,
-  `requireAudioListenAccess`, `PASTORAL_READ_PERMISSIONS`)
+- `src/lib/auth.ts` (`requireChurchPermission`, `PASTORAL_READ_PERMISSIONS`)
+- `src/modules/audio/auth.ts` (`requireAudioAccess`, `requireAudioListenAccess`,
+  `requireAudioUnpublishAccess`) — déplacés de `src/lib/auth.ts` par le chantier 4 de
+  `docs/roadmap-modularite.md`, sans changement de comportement
 - `src/modules/audio/services/sharing.ts`
 - ADR-0002 (multi-tenant par `churchId`) — cet ADR définit la seule manière sanctionnée d'y
   déroger

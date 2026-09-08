@@ -226,8 +226,10 @@ export async function GET(
 - `resolveChurchId(type, resourceId)` — retrouve le `churchId` d'une ressource par son type et ID.
   Pour toute action portant sur un objet identifié, cette église fait autorité — jamais le
   contexte d'église affiché, qui peut être manipulé côté client
-- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** membre du département de captation
-- `requireAudioUnpublishAccess(churchId)` — `audio:manage` ou responsable du département de captation
+
+Les gardes propres à un module vivent **dans le module**, pas ici : `@/modules/audio/auth`
+(`requireAudioAccess`, `requireAudioListenAccess`, `requireAudioUnpublishAccess`),
+`@/modules/agenda/auth`, `@/modules/integration/auth`.
 
 ### Réponses API (`src/lib/api-utils.ts`)
 
