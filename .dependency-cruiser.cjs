@@ -215,6 +215,25 @@ module.exports = {
         pathNot: "^src/modules/[^/]+/(index|auth)\\.ts$",
       },
     },
+
+    /**
+     * Règle 4 — le proxy ne dépend que des manifestes (spec 038).
+     *
+     * `src/proxy.ts` s'exécute avant toute notion d'identité, sur toute requête. Il ne
+     * doit importer ni `src/lib/registry.ts` (qui tire les index de modules, donc
+     * Prisma/NextAuth/S3 — exactement le couplage qu'ADR-0011 a démonté), ni un module
+     * directement (même via `index.ts`/`auth.ts`, eux aussi trop lourds pour tourner sur
+     * chaque requête sans base de données). Seul `src/lib/module-routes.ts` (manifestes
+     * seuls) est autorisé.
+     */
+    {
+      name: "proxy-only-module-routes",
+      severity: "error",
+      comment:
+        "src/proxy.ts ne doit importer ni src/lib/registry.ts ni un module (src/modules/) — seuls les manifestes, via src/lib/module-routes.ts.",
+      from: { path: "^src/proxy\\.ts$" },
+      to: { path: "^src/(lib/registry\\.ts$|modules/)" },
+    },
   ],
 
   options: {

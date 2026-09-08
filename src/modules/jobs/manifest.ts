@@ -16,6 +16,11 @@ export const jobsModule = defineModule({
   version: "1.0.0",
   dependsOn: ["core"],
 
+  routes: {
+    authenticated: [{ path: "/jobs" }, { path: "/admin/jobs" }],
+    api: [{ path: "/api/jobs" }],
+  },
+
   permissions: {
     "jobs:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
     "jobs:post":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],

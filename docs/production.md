@@ -51,6 +51,7 @@ PORT=3000
 GOOGLE_CLIENT_ID=votre-google-client-id
 GOOGLE_CLIENT_SECRET=votre-google-client-secret
 SUPER_ADMIN_EMAILS=admin@votre-eglise.com
+ENABLED_MODULES=
 ```
 
 Générer le secret NextAuth :
@@ -60,6 +61,29 @@ openssl rand -base64 32
 ```
 
 `AUTH_TRUST_HOST=true` est obligatoire derrière un reverse proxy (Traefik).
+
+## Modules optionnels
+
+`ENABLED_MODULES` restreint l'instance à une liste de modules, séparés par des virgules (ex.
+`core,planning,agenda`) — absente ou vide, tous les modules sont actifs. Un module qui n'est pas
+dans la liste est **absent de l'instance** : ses pages et son API répondent 404, pour tous les
+rôles, y compris le Super Admin. Ses données restent en base, intactes — les réactiver revient à
+réactiver le module et redémarrer.
+
+Points d'attention avant de désactiver un module en production :
+
+- `core` est le seul module non désactivable — il porte la gestion des églises, des comptes et
+  des accès. Son absence de `ENABLED_MODULES` fait échouer le démarrage (fail-fast).
+- Une dépendance manquante (un module activé qui dépend d'un module absent de la liste) ou un
+  nom de module inconnu (faute de frappe) fait aussi échouer le démarrage, avec un message qui
+  nomme le problème — jamais de désactivation silencieuse.
+- Le Super Admin perd l'accès applicatif aux données du module désactivé (404, comme tout autre
+  rôle) — ce n'est pas une perte de données, seulement d'accès, et c'est réversible.
+- Les suppressions en cascade qui nettoient les données liées à un module désactivé (ex.
+  discipolat → événement) continuent de s'exécuter normalement ; seules les créations de
+  nouvelles données dépendant d'un module désactivé sont coupées.
+
+Voir [ADR-0012](adr/0012-manifeste-declare-surface-http.md) pour le mécanisme.
 
 ## Base de données
 

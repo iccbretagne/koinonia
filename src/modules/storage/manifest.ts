@@ -16,4 +16,7 @@ export const storageModule = defineModule({
   name: "storage",
   version: "1.0.0",
   dependsOn: [],
+  // Aucune surface HTTP propre : storage n'expose ni page ni route API, seulement des
+  // primitifs consommés par media et audio. Volontairement omis (et non `routes: {}` —
+  // le champ absent et le champ vide se valent pour le test d'exhaustivité).
 });

@@ -14,6 +14,13 @@ export const audioModule = defineModule({
   version: "1.0.0",
   dependsOn: ["core", "storage", "planning"],
 
+  routes: {
+    authenticated: [{ path: "/audio" }],
+    api: [{ path: "/api/audio" }],
+    // Liens de partage d'écoute par jeton (spec 036) — accessibles sans compte Koinonia.
+    public: [{ path: "/ecouter" }, { path: "/api/audio/public" }],
+  },
+
   permissions: {
     // Écoute des cultes publiés (bibliothèque + fiche d'événement) — tout membre authentifié
     // (spec 021 : « restreindre la liste plus que le lien de partage n'aurait pas de sens »)

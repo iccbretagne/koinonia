@@ -409,3 +409,42 @@ describe("roleHasPermission", () => {
     expect(roleHasPermission(registry, "ADMIN", "unknown:perm")).toBe(false);
   });
 });
+
+/**
+ * Spec 038 (CA : « les permissions d'un module désactivé n'apparaissent dans les droits
+ * d'aucun rôle ») — les tests ci-dessus utilisent tous `buildFullRegistry()` (les 11
+ * modules) ; celui-ci construit un registry **partiel**, comme le ferait `boot()` avec
+ * `ENABLED_MODULES` réduit, pour vérifier que `buildRolePermissions` n'expose bien que les
+ * permissions des modules effectivement enregistrés.
+ */
+describe("buildRolePermissions — registry partiel (spec 038)", () => {
+  it("un module absent du registry ne contribue aucune permission à la matrice", () => {
+    const registry = new ModuleRegistry();
+    registry.register(coreModule);
+    registry.register(planningModule);
+    // accounting, jobs, audio… ne sont pas enregistrés.
+
+    const rolePermissions = buildRolePermissions(registry);
+
+    for (const perms of Object.values(rolePermissions)) {
+      expect(perms).not.toContain("accounting:manage");
+      expect(perms).not.toContain("jobs:view");
+      expect(perms).not.toContain("audio:listen");
+    }
+    // Les permissions des modules actifs restent présentes.
+    expect(rolePermissions.ADMIN).toContain("planning:edit");
+    expect(rolePermissions.SUPER_ADMIN).toContain("church:manage");
+  });
+
+  it("le seul module racine actif ne laisse que ses propres permissions", () => {
+    const registry = new ModuleRegistry();
+    registry.register(coreModule);
+
+    const rolePermissions = buildRolePermissions(registry);
+
+    expect(rolePermissions.SUPER_ADMIN.sort()).toEqual(
+      ["access:manage", "church:manage", "users:manage"].sort()
+    );
+    expect(rolePermissions.ACCOUNTANT ?? []).toHaveLength(0);
+  });
+});

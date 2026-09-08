@@ -18,6 +18,39 @@ export const planningModule = defineModule({
   dependsOn: ["core"],
   optionalDependencies: ["media"],
 
+  routes: {
+    authenticated: [
+      { path: "/dashboard" },
+      { path: "/events" },
+      { path: "/planning" },
+      { path: "/absences" },
+      { path: "/requests" },
+      { path: "/secretariat" },
+      { path: "/communication" },
+      { path: "/admin/departments" },
+      { path: "/admin/ministries" },
+      { path: "/admin/members" },
+      { path: "/admin/events" },
+      { path: "/admin/reports" },
+      { path: "/admin/users" },
+      { path: "/admin/welcome-duty" },
+    ],
+    api: [
+      { path: "/api/absences" },
+      { path: "/api/announcements" },
+      { path: "/api/departments" },
+      { path: "/api/events" },
+      { path: "/api/members" },
+      { path: "/api/ministries" },
+      { path: "/api/requests" },
+      { path: "/api/welcome-duty" },
+      { path: "/api/planning" },
+      { path: "/api/admin/members" },
+      { path: "/api/member-user-links" },
+      { path: "/api/member-link-requests" },
+    ],
+  },
+
   permissions: {
     // Planning
     "planning:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "STAR"],

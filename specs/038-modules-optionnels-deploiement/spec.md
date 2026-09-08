@@ -1,7 +1,7 @@
 # Spec — Modules optionnels par déploiement
 
 - **Numéro** : 038
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-08
 - **Branche suggérée** : `feat/modules-optionnels-deploiement`
 

@@ -5,6 +5,13 @@ export type RoleName = string;
 
 export interface RouteDescriptor {
   path: string;
+  /**
+   * Restreint une entrée `routes.public` à une méthode HTTP (ex. "POST" pour un
+   * formulaire de soumission publique dont la consultation, elle, reste protégée).
+   * Absent = toutes méthodes. Sans effet sur `routes.authenticated`/`routes.api`
+   * (l'appartenance à un module ne dépend pas de la méthode).
+   */
+  method?: string;
 }
 
 export interface NavigationItem {

@@ -15,5 +15,19 @@ export const integrationModule = defineModule({
   name: "integration",
   version: "1.0.0",
   dependsOn: ["core"],
+
+  routes: {
+    authenticated: [{ path: "/integration" }],
+    api: [{ path: "/api/integration" }],
+    // Formulaire "rejoindre" (page /rejoindre/[churchSlug]) — hors session, Turnstile-protégé.
+    public: [
+      { path: "/rejoindre" },
+      // GET (liste, réservé à requireIntegrationAccess) reste protégé — seule la
+      // soumission POST est publique.
+      { path: "/api/integration/requests", method: "POST" },
+      { path: "/api/integration/families/suggest" },
+    ],
+  },
+
   permissions: {},
 });

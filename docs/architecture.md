@@ -494,8 +494,13 @@ Datasource URL dans `prisma.config.ts` (pas dans `schema.prisma`).
 
 ### Middleware
 
-`src/proxy.ts` (ex `src/middleware.ts`) — protège `/dashboard/*` et `/api/*`.
-Exporte `proxy` (pas `middleware`), runtime Node.js.
+`src/proxy.ts` (ex `src/middleware.ts`) — matcher élargi à toute l'application (hors assets
+statiques). Deux contrôles, dans l'ordre : (1) la route appartient-elle à un module actif —
+`src/lib/module-routes.ts`, construit depuis `ModuleManifest.routes` de chaque module et une
+liste noyau explicite ; sinon 404 avant toute autre vérification, y compris pour le Super Admin
+(ADR-0012) ; (2) présence d'un cookie de session, sauf routes publiques déclarées
+(`routes.public`, éventuellement restreintes à une méthode HTTP). Exporte `proxy` (pas
+`middleware`), runtime Node.js.
 
 ---
 
@@ -509,7 +514,7 @@ Exporte `proxy` (pas `middleware`), runtime Node.js.
 | `GOOGLE_CLIENT_ID` | Client ID Google OAuth |
 | `GOOGLE_CLIENT_SECRET` | Client Secret Google OAuth |
 | `SUPER_ADMIN_EMAILS` | Emails auto-promus Super Admin (virgule) |
-| `ENABLED_MODULES` | Modules à charger (virgule) — tous si absent |
+| `ENABLED_MODULES` | Modules à charger (virgule) — tous si absent. `core` non désactivable, fail-fast sinon (voir docs/production.md#modules-optionnels, ADR-0012) |
 | `BACKUP_S3_ENDPOINT` | Endpoint S3-compatible (backups BDD) |
 | `BACKUP_S3_REGION` | Région du bucket backups |
 | `BACKUP_S3_BUCKET` | Nom du bucket backups |

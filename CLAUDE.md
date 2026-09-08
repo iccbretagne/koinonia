@@ -549,3 +549,19 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
 11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
 12. **Frontières modules** : vérifier `npm run lint:boundaries` après tout ajout de dépendance entre modules
 13. **ADR** : toute décision architecturale/structurante (cross-module, difficile à revenir en arrière, choix de stack ou de pattern durable) est documentée dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une décision de `plan.md` (portée à une seule feature)
+14. **Surface HTTP des modules** (ADR-0012) : toute nouvelle page ou route API doit être déclarée
+    dans le `routes` du manifeste de son module (`authenticated`/`api`/`public`, avec `method` si
+    la route publique n'est ouverte que sur une méthode) — ou dans `NOYAU_ROUTES` de
+    `src/lib/module-routes.ts` si elle ne relève d'aucun module. Sans déclaration, le proxy la
+    traite comme absente de l'instance (404) ; `route-exhaustiveness.test.ts` échoue si un
+    `route.ts`/`page.tsx` réel n'est couvert par aucun préfixe ou par plusieurs à la fois
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

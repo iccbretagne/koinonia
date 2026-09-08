@@ -5,6 +5,11 @@ export const accountingModule = defineModule({
   version: "1.0.0",
   dependsOn: ["core", "planning"],
 
+  routes: {
+    authenticated: [{ path: "/accounting" }],
+    api: [{ path: "/api/accounting" }],
+  },
+
   permissions: {
     // Soumettre une demande (resp. et co-resp. de département, admins)
     "accounting:submit":  ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
