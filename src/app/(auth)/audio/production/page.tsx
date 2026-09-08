@@ -1,4 +1,5 @@
-import { requireAudioAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import AudioQueueClient from "./AudioQueueClient";
 

@@ -16,12 +16,15 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/lib/auth")>();
   return { ...original, auth: () => mockAuth() };
 });
-vi.mock("@/modules/audio", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@/modules/audio")>();
+// La garde vit désormais dans le module et importe son collaborateur directement : le mock
+// cible `services/sharing` et non plus l'index `@/modules/audio`, qu'elle ne traverse plus.
+vi.mock("../services/sharing", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../services/sharing")>();
   return { ...original, listOutgoingShares: (...args: unknown[]) => mockListOutgoingShares(...args) };
 });
 
-const { requireAudioListenAccess, requireChurchPermission } = await import("@/lib/auth");
+const { requireAudioListenAccess } = await import("../auth");
+const { requireChurchPermission } = await import("@/lib/auth");
 
 const ownerChurchId = "church-owner";
 const guestChurchId = "church-guest";

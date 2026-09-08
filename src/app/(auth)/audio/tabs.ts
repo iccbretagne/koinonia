@@ -1,4 +1,5 @@
-import { requireAudioAccess, requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 
 export interface AudioTab {
   href: string;

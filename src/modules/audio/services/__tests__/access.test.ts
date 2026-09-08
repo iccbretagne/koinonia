@@ -14,7 +14,7 @@ vi.mock("@/lib/auth", async (importOriginal) => {
 });
 
 const { getCaptureDepartmentId, isCaptureTeamMember, isCaptureTeamLead } = await import("../access");
-const { requireAudioAccess, requireAudioUnpublishAccess } = await import("@/lib/auth");
+const { requireAudioAccess, requireAudioUnpublishAccess } = await import("../../auth");
 
 const churchId = "church-1";
 const captureDepartmentId = "dept-son";
@@ -129,7 +129,7 @@ describe("isCaptureTeamLead", () => {
   });
 });
 
-describe("requireAudioAccess / requireAudioUnpublishAccess (src/lib/auth.ts)", () => {
+describe("requireAudioAccess / requireAudioUnpublishAccess (modules/audio/auth.ts)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

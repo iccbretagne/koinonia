@@ -4,7 +4,7 @@
  * multipart S3. P1 : uniquement kind SEQUENCE — kind MIX (P1.5, mix à découper) rejeté.
  */
 import { z } from "zod";
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";

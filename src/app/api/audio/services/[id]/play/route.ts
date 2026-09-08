@@ -4,7 +4,7 @@
  * la diffusion d'un lien de partage, une sémantique distincte).
  */
 import { z } from "zod";
-import { requireAudioListenAccess } from "@/lib/auth";
+import { requireAudioListenAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 

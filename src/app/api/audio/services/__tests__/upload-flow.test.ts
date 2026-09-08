@@ -7,7 +7,7 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireAudioAccess = vi.fn();
-vi.mock("@/lib/auth", () => ({
+vi.mock("@/modules/audio/auth", () => ({
   requireAudioAccess: (...args: unknown[]) => mockRequireAudioAccess(...args),
 }));
 

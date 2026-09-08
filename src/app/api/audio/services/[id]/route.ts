@@ -4,7 +4,7 @@
  * DELETE /api/audio/services/[id] — supprime le culte (tant qu'il n'est pas publié).
  */
 import { z } from "zod";
-import { requireAudioAccess, requireAudioUnpublishAccess } from "@/lib/auth";
+import { requireAudioAccess, requireAudioUnpublishAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {

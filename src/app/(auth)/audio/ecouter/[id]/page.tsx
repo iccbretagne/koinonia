@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { requireAuth, requireAudioListenAccess, getCurrentChurchId } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { requireAudioListenAccess } from "@/modules/audio/auth";
 import { getPublishedServiceForMember } from "@/modules/audio";
 import { prisma } from "@/lib/prisma";
 import MemberAudioPlayer from "./MemberAudioPlayer";

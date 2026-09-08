@@ -2,7 +2,7 @@
  * POST /api/audio/services/[id]/publish
  * Génère les jobs RENDER manquants (idempotence sourceHash) et publie le culte.
  */
-import { requireAudioAccess } from "@/lib/auth";
+import { requireAudioAccess } from "@/modules/audio/auth";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
