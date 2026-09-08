@@ -39,7 +39,7 @@ Fournit le "système de plugins" que les modules utilisent :
 
 Chaque module expose un **manifeste** (`manifest.ts`) qui déclare ses permissions, sa navigation et ses dépendances, et un **index** (`index.ts`) qui re-exporte ce manifeste avec les services publics du module. La couche `src/app/` ne peut importer qu'à partir de l'index (règle CI `app-only-module-public-api`).
 
-Le manifeste vit dans son propre fichier parce que l'index tire les services — donc Prisma, NextAuth et le client S3. Un manifeste isolé est importable depuis un test `node` sans mock, ce qui permet de couvrir les 11 modules dans `src/modules/__tests__/manifests.test.ts` et `src/core/__tests__/permissions.test.ts`.
+Le manifeste vit dans son propre fichier parce que l'index tire les services — donc Prisma, NextAuth et le client S3. Un manifeste isolé est importable depuis un test `node` sans mock, ce qui permet de couvrir les 11 modules dans `src/modules/__tests__/manifests.test.ts` et `src/core/__tests__/permissions.test.ts` — voir [ADR-0011](adr/0011-manifeste-separe-de-l-index.md).
 
 | Module | Périmètre |
 |---|---|

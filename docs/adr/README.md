@@ -37,6 +37,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0008](0008-cache-disque-renditions-audio.md) | Cache disque local des renditions audio, servies par l'application | Accepté |
 | [0009](0009-garde-perimetre-explicite.md) | Garde de périmètre explicite au point d'entrée | Accepté |
 | [0010](0010-acces-transverse-inter-eglises.md) | Accès transverse inter-églises borné au module demandeur | Accepté |
+| [0011](0011-manifeste-separe-de-l-index.md) | Manifeste de module séparé de son index public | Accepté |
 
 ## Note sur les ADR 0001–0003
 

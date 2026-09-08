@@ -165,7 +165,8 @@ Prisma, NextAuth et le client S3, indisponibles dans l'environnement de test `no
 vraie raison pour laquelle la couverture plafonnait à 3-4 modules, et non un oubli. Chaque
 manifeste a donc été extrait dans `src/modules/<module>/manifest.ts`, l'`index.ts` le
 re-exportant — l'API publique des modules est inchangée, et la règle
-`app-only-module-public-api` reste satisfaite.
+`app-only-module-public-api` reste satisfaite. Décision tracée dans
+[ADR-0011](adr/0011-manifeste-separe-de-l-index.md).
 
 Effet de bord utile : le manifeste est maintenant lisible sans traverser 60 lignes de
 re-exports, et un test de manifeste ne peut plus casser à cause d'un service.
@@ -196,4 +197,5 @@ De quoi mesurer le progrès sans se raconter d'histoires :
 - [DAT](dat.md) — vue d'ensemble de l'architecture
 - [Architecture](architecture.md) — structure, patterns, conventions
 - [ADR-0010](adr/0010-acces-transverse-inter-eglises.md) — accès transverse borné au module
+- [ADR-0011](adr/0011-manifeste-separe-de-l-index.md) — manifeste séparé de l'index public
 - [`specs/constitution.md`](../specs/constitution.md) — principes non négociables
