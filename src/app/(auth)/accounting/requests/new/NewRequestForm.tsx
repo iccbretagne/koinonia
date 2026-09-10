@@ -11,25 +11,38 @@ interface Department {
   ministry: { name: string };
 }
 
+export interface CorrectionSource {
+  id: string;
+  type: "EXPENSE_REPORT" | "BUDGET_ADVANCE";
+  departmentId: string | null;
+  label: string;
+  description: string | null;
+  amount: string;
+  attachmentCount: number;
+}
+
 interface Props {
   departments: Department[];
+  /** Demande rejetée à corriger : pré-remplit le formulaire et lie la nouvelle demande. */
+  correction?: CorrectionSource | null;
 }
 
 type RequestMode = "one_shot" | "recurring";
 
-export default function NewRequestForm({ departments }: Props) {
+export default function NewRequestForm({ departments, correction }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<RequestMode>("one_shot");
-  const [type, setType] = useState<"EXPENSE_REPORT" | "BUDGET_ADVANCE">("EXPENSE_REPORT");
+  const [type, setType] = useState<"EXPENSE_REPORT" | "BUDGET_ADVANCE">(correction?.type ?? "EXPENSE_REPORT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
   const [form, setForm] = useState({
-    departmentId: departments[0]?.id ?? "",
-    label:        "",
-    description:  "",
-    amount:       "",
+    // Correction : "" = demande personnelle (sans département), comme dans le sélecteur
+    departmentId: correction ? (correction.departmentId ?? "") : (departments[0]?.id ?? ""),
+    label:        correction?.label ?? "",
+    description:  correction?.description ?? "",
+    amount:       correction?.amount ?? "",
   });
   const [recurrence, setRecurrence] = useState({
     every:     "1",
@@ -78,6 +91,7 @@ export default function NewRequestForm({ departments }: Props) {
             description:   form.description || undefined,
             amount,
             attachmentIds: attachments.map((a) => a.id),
+            correctionOfId: correction?.id,
           }),
         });
       }
@@ -92,7 +106,24 @@ export default function NewRequestForm({ departments }: Props) {
 
   return (
     <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
-      <h1 className="text-lg font-bold text-gray-900">Nouvelle demande financière</h1>
+      <h1 className="text-lg font-bold text-gray-900">
+        {correction ? "Corriger la demande financière" : "Nouvelle demande financière"}
+      </h1>
+
+      {correction && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800 space-y-1">
+          <p>
+            Correction de <span className="font-medium">&ldquo;{correction.label}&rdquo;</span> — les
+            informations de la demande rejetée sont reprises, modifiez ce qui doit l&apos;être.
+          </p>
+          {correction.attachmentCount > 0 && (
+            <p className="text-xs">
+              Les pièces jointes restent sur la demande rejetée : redéposez celles qui sont toujours
+              valables.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Mode */}
       <div className="space-y-2">
@@ -102,7 +133,7 @@ export default function NewRequestForm({ departments }: Props) {
             { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
             { value: "one_shot",  label: "Avance one-shot",   desc: "Dépense à venir, ponctuelle", type: "BUDGET_ADVANCE" as const },
             { value: "recurring", label: "Avance récurrente", desc: "Virement régulier planifié" },
-          ].map((opt, i) => {
+          ].filter((opt) => !correction || opt.value !== "recurring").map((opt, i) => {
             const isActive = mode === opt.value && (opt.type ? type === opt.type : type === "EXPENSE_REPORT" || opt.value === "recurring");
             return (
               <button

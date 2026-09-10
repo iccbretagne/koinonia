@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import NewRequestForm from "./NewRequestForm";
 
-export default async function NewAccountingRequestPage() {
+export default async function NewAccountingRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ correctionOf?: string }>;
+}) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) redirect("/accounting/requests");
@@ -82,6 +86,35 @@ export default async function NewAccountingRequestPage() {
     }
   }
 
+  // « Corriger et resoumettre » : pré-remplit le formulaire depuis la demande rejetée —
+  // uniquement la sienne, dans l'église courante, et encore à l'état REJECTED.
+  const { correctionOf } = await searchParams;
+  const original = correctionOf
+    ? await prisma.financialRequest.findFirst({
+        where: { id: correctionOf, churchId, submittedById: session.user.id!, status: "REJECTED" },
+        select: {
+          id: true,
+          type: true,
+          departmentId: true,
+          label: true,
+          description: true,
+          amount: true,
+          _count: { select: { attachments: true } },
+        },
+      })
+    : null;
+  const correction = original
+    ? {
+        id: original.id,
+        type: original.type,
+        departmentId: original.departmentId,
+        label: original.label,
+        description: original.description,
+        amount: original.amount.toString(),
+        attachmentCount: original._count.attachments,
+      }
+    : null;
+
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-2">
@@ -89,9 +122,11 @@ export default async function NewAccountingRequestPage() {
           ← Demandes
         </Link>
         <span className="text-gray-300">/</span>
-        <span className="text-sm text-gray-600 font-medium">Nouvelle demande</span>
+        <span className="text-sm text-gray-600 font-medium">
+          {correction ? "Correction" : "Nouvelle demande"}
+        </span>
       </div>
-      <NewRequestForm departments={departments} />
+      <NewRequestForm departments={departments} correction={correction} />
     </div>
   );
 }
