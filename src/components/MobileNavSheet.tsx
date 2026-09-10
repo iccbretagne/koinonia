@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { activeHref } from "@/lib/nav-match";
 
 type SheetView = "root" | "planning" | "evenements" | "pastoral" | "communaute" | "operations" | "ressources" | "config";
 
@@ -303,7 +304,7 @@ export default function MobileNavSheet({
     pathname.startsWith("/secretariat") ||
     pathname === "/agenda/request";
   const isMediaActive =
-    pathname.startsWith("/media") || pathname.startsWith("/communication");
+    pathname.startsWith("/media") || pathname.startsWith("/communication") || pathname.startsWith("/audio");
   const isIntegrationActive = pathname.startsWith("/integration");
   const isAccountingActive = pathname.startsWith("/accounting");
   const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
@@ -325,6 +326,12 @@ export default function MobileNavSheet({
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
   const isRessourcesActive = isAccountingActive || isJobsActive || isRoomsActive;
+
+  // Lien actif d'une liste : le plus spécifique parmi ses frères (voir nav-match)
+  const activeAgendaHref = activeHref(pathname, agendaLinks.map((l) => l.href));
+  const activeOperationsHref = activeHref(pathname, [...requestLinks, ...mediaLinks].map((l) => l.href));
+  const activeIntegrationHref = activeHref(pathname, integrationLinks.map((l) => l.href));
+  const activeConfigHref = activeHref(pathname, configLinks.map((l) => l.href));
 
   const hasCommunaute =
     hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
@@ -552,7 +559,7 @@ export default function MobileNavSheet({
             <>
               {(hasMembersAccess || hasDiscipleship) && <SubDivider />}
               {integrationLinks.map((link) => (
-                <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+                <SubRow key={link.href} href={link.href} label={link.label} isActive={link.href === activeIntegrationHref} onClose={onClose} />
               ))}
             </>
           )}
@@ -593,14 +600,11 @@ export default function MobileNavSheet({
       <>
         <SheetSubHeader title="Gestion pastorale" onBack={() => setView("root")} />
         <div>
-          {agendaLinks.map((link) => {
-            const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
-            return (
-              <SubRow key={link.href} href={link.href} label={link.label}
-                isActive={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
-                onClose={onClose} />
-            );
-          })}
+          {agendaLinks.map((link) => (
+            <SubRow key={link.href} href={link.href} label={link.label}
+              isActive={link.href === activeAgendaHref}
+              onClose={onClose} />
+          ))}
         </div>
       </>
     );
@@ -612,11 +616,11 @@ export default function MobileNavSheet({
         <SheetSubHeader title="Opérations" onBack={() => setView("root")} />
         <div>
           {requestLinks.map((link) => (
-            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={link.href === activeOperationsHref} onClose={onClose} />
           ))}
           {mediaLinks.length > 0 && requestLinks.length > 0 && <SubDivider />}
           {mediaLinks.map((link) => (
-            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname.startsWith(link.href)} onClose={onClose} />
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={link.href === activeOperationsHref} onClose={onClose} />
           ))}
         </div>
       </>
@@ -655,7 +659,7 @@ export default function MobileNavSheet({
         <SheetSubHeader title="Configuration" onBack={() => setView("root")} />
         <div>
           {configLinks.map((link) => (
-            <SubRow key={link.href} href={link.href} label={link.label} isActive={pathname === link.href} onClose={onClose} />
+            <SubRow key={link.href} href={link.href} label={link.label} isActive={link.href === activeConfigHref} onClose={onClose} />
           ))}
         </div>
       </>

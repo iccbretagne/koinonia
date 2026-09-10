@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { activeHref } from "@/lib/nav-match";
 
 interface BottomNavProps {
   hasMembersAccess?: boolean;
@@ -120,6 +121,8 @@ export default function BottomNav({
       icon: <IconCalendar className="w-5 h-5" />,
     },
   ].filter(Boolean) as { href: string; label: string; matchPrefix: string; icon: React.ReactNode }[];
+  // « Mon planning » (/planning) ne doit pas rester allumé sur /planning/events
+  const activeLinkPrefix = activeHref(pathname, links.map((l) => l.matchPrefix));
 
   return (
     <nav
@@ -128,7 +131,7 @@ export default function BottomNav({
     >
       <div className="flex justify-around items-center h-14">
         {links.map((item) => {
-          const isActive = pathname.startsWith(item.matchPrefix);
+          const isActive = item.matchPrefix === activeLinkPrefix;
           return (
             <Link
               key={item.href}
