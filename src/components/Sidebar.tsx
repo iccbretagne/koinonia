@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname } from "next/navigation";
+import { activeHref } from "@/lib/nav-match";
 
 interface SidebarProps {
   departments: { id: string; name: string; ministryName?: string }[];
@@ -365,7 +366,8 @@ export default function Sidebar({
     pathname === "/agenda/request";
   const isMediaActive =
     pathname.startsWith("/media") ||
-    pathname.startsWith("/communication");
+    pathname.startsWith("/communication") ||
+    pathname.startsWith("/audio");
   const isAccountingActive = pathname.startsWith("/accounting");
   const isJobsActive = pathname.startsWith("/jobs") || pathname.startsWith("/admin/jobs");
   const isConfigActive =
@@ -383,6 +385,12 @@ export default function Sidebar({
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive;
   const isRessourcesActive = isAccountingActive || isJobsActive || isRoomsActive;
+
+  // Lien actif d'une liste : le plus spécifique parmi ses frères (voir nav-match)
+  const activeAgendaHref = activeHref(pathname, agendaLinks.map((l) => l.href));
+  const activeOperationsHref = activeHref(pathname, [...requestLinks, ...mediaLinks].map((l) => l.href));
+  const activeIntegrationHref = activeHref(pathname, integrationLinks.map((l) => l.href));
+  const activeConfigHref = activeHref(pathname, configLinks.map((l) => l.href));
 
   function activeSection() {
     if (isGestionPastoraleActive) return "pastoral";
@@ -459,16 +467,13 @@ export default function Sidebar({
           <AccordionSection title="Agenda pastoral" icon={<IconAgenda className="w-4 h-4" />}
             open={openSection === "agenda"} onToggle={() => toggle("agenda")} isActive={isPastoralAgenda}>
             <nav className="space-y-0.5 pl-6">
-              {agendaLinks.map((link) => {
-                const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
-                return (
-                  <NavLink key={link.href} href={link.href}
-                    active={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
-                    onClose={onClose}>
-                    {link.label}
-                  </NavLink>
-                );
-              })}
+              {agendaLinks.map((link) => (
+                <NavLink key={link.href} href={link.href}
+                  active={link.href === activeAgendaHref}
+                  onClose={onClose}>
+                  {link.label}
+                </NavLink>
+              ))}
             </nav>
           </AccordionSection>
         )}
@@ -633,7 +638,7 @@ export default function Sidebar({
               <>
                 {(hasMembersAccess || hasDiscipleship) && <hr className="my-1 border-gray-100" />}
                 {integrationLinks.map((link) => (
-                  <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+                  <NavLink key={link.href} href={link.href} active={link.href === activeIntegrationHref} onClose={onClose}>
                     {link.label}
                   </NavLink>
                 ))}
@@ -704,16 +709,13 @@ export default function Sidebar({
           isActive={isGestionPastoraleActive}
         >
           <nav className="space-y-0.5 pl-6">
-            {agendaLinks.map((link) => {
-              const hasChildLink = agendaLinks.some(l => l.href !== link.href && l.href.startsWith(link.href + "/"));
-              return (
-                <NavLink key={link.href} href={link.href}
-                  active={pathname === link.href || (!hasChildLink && pathname.startsWith(link.href + "/"))}
-                  onClose={onClose}>
-                  {link.label}
-                </NavLink>
-              );
-            })}
+            {agendaLinks.map((link) => (
+              <NavLink key={link.href} href={link.href}
+                active={link.href === activeAgendaHref}
+                onClose={onClose}>
+                {link.label}
+              </NavLink>
+            ))}
           </nav>
         </AccordionSection>
       )}
@@ -730,7 +732,7 @@ export default function Sidebar({
         >
           <nav className="space-y-0.5 pl-6">
             {requestLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+              <NavLink key={link.href} href={link.href} active={link.href === activeOperationsHref} onClose={onClose}>
                 {link.label}
               </NavLink>
             ))}
@@ -738,7 +740,7 @@ export default function Sidebar({
               <hr className="my-1 border-gray-100" />
             )}
             {mediaLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname.startsWith(link.href)} onClose={onClose}>
+              <NavLink key={link.href} href={link.href} active={link.href === activeOperationsHref} onClose={onClose}>
                 {link.label}
               </NavLink>
             ))}
@@ -797,7 +799,7 @@ export default function Sidebar({
         >
           <nav className="space-y-0.5 pl-6">
             {configLinks.map((link) => (
-              <NavLink key={link.href} href={link.href} active={pathname === link.href} onClose={onClose}>
+              <NavLink key={link.href} href={link.href} active={link.href === activeConfigHref} onClose={onClose}>
                 {link.label}
               </NavLink>
             ))}
