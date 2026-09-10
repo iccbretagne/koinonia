@@ -1,7 +1,7 @@
-# Spec — Feuille d'annonces hebdomadaire
+# Spec — Feuille d'annonces d'un culte
 
 - **Numéro** : 040
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/annonces-hebdomadaires`
 
@@ -12,80 +12,83 @@
 
 Chaque semaine, le Secrétariat et/ou la Coordination préparent la **feuille d'annonces** lue
 pendant le culte. Aujourd'hui c'est un document Word (docx) qui circule par WhatsApp ou mail :
-le modérateur du culte, la Coordination et les départements concernés ne savent pas toujours
-où trouver la dernière version, ni si elle a été modifiée.
+le modérateur, la Coordination et les équipes techniques et médias ne savent pas toujours où
+trouver la dernière version, ni si elle a été modifiée.
 
 Koinonia gère déjà les **demandes d'annonce** déposées par les départements (circuit de
 validation par le Secrétariat), mais pas le **document final consolidé** qui en résulte. Cette
-feature donne un endroit unique où ce document est déposé et récupéré.
+feature donne un endroit unique où ce document est déposé et récupéré, **rattaché à l'événement
+(culte) auquel il se rapporte**.
 
 ## Utilisateurs concernés
 
-- **Déposants** : le Secrétariat (rôle Secrétaire et membres du département fonction
-  Secrétariat) et la Coordination [À CLARIFIER: « Coordination » = le ministère « Coordination
-  générale » (son Ministre et ses responsables de département), ou un rôle/une personne précise ?].
-  Admin et Super Admin peuvent aussi déposer.
-- **Lecteurs** :
-  - le **modérateur de service** du culte concerné [À CLARIFIER: comment Koinonia sait qui est
-    modérateur — une tâche « Modération » assignée dans le planning d'un département, un
-    département dédié, ou simplement un rôle existant ?] ;
+- **Déposent** (et peuvent retirer) :
+  - le Secrétariat : rôle Secrétaire et membres du département ayant la fonction Secrétariat ;
+  - la Coordination : le Ministre et les responsables de département du ministère
+    « Coordination générale » ;
+  - Admin et Super Admin.
+- **Récupèrent** (téléchargement) :
+  - les membres du département **Modération** (le modérateur de service en fait partie) ;
   - la Coordination ;
-  - les départements du **MCIM** [À CLARIFIER: quel ministère désigne « MCIM » ; tous ses
-    départements (responsables et STAR) ou seulement les responsables ?].
-- Les autres rôles ne voient pas la feuille d'annonces.
+  - les membres des départements ayant la fonction **Communication**, **Régie** (captation) et
+    **Production média** ;
+  - les déposants eux-mêmes.
+- Les autres rôles et membres ne voient pas la feuille d'annonces.
 
 ## Comportement attendu
 
 ### Scénario principal
 
-1. En fin de semaine, une personne du Secrétariat ouvre l'espace « Annonces de la semaine ».
-2. Elle choisit le culte concerné [À CLARIFIER: une feuille par **semaine** ou par **culte /
-   événement** ? par défaut : par événement de type culte], et dépose le document (docx).
-3. Le document apparaît immédiatement pour ce culte, avec la date de dépôt et le nom du déposant.
-4. Le modérateur, la Coordination et les départements du MCIM retrouvent la feuille depuis leur
-   espace et la téléchargent (ou la consultent directement dans le navigateur
-   [À CLARIFIER: consultation en ligne attendue, ou le téléchargement suffit ?]).
-5. [À CLARIFIER: les lecteurs reçoivent-ils une notification (cloche / e-mail) au dépôt ?
-   par défaut : notification dans l'application.]
+1. En fin de semaine, une personne du Secrétariat ouvre le culte de dimanche prochain.
+2. Elle y dépose la feuille d'annonces (docx ou PDF).
+3. Le document apparaît immédiatement sur cet événement, avec la date de dépôt et le nom du
+   déposant.
+4. Les lecteurs reçoivent une notification dans l'application les invitant à la récupérer.
+5. Le modérateur, la Coordination et les équipes Communication, Régie et Production média
+   retrouvent la feuille depuis l'événement (et depuis une liste des feuilles des prochains
+   cultes) et la téléchargent.
 
 ### Scénarios alternatifs / cas limites
 
 - **Si** une nouvelle version est déposée pour le même culte, elle remplace la précédente pour
-  les lecteurs ; la date de mise à jour est visible pour qu'on sache qu'elle a changé.
-- **Si** aucune feuille n'est encore déposée pour le prochain culte, les lecteurs voient un
-  message explicite (« pas encore disponible ») plutôt qu'une ancienne feuille sans avertissement.
-- **Si** le fichier n'est pas dans un format accepté ou est trop volumineux, le dépôt est refusé
-  avec un message clair [À CLARIFIER: docx seulement, ou aussi PDF ?].
+  les lecteurs ; la date de mise à jour est visible et les lecteurs sont de nouveau notifiés.
+- **Si** aucune feuille n'est encore déposée pour un culte à venir, les lecteurs voient
+  « pas encore disponible » plutôt qu'une ancienne feuille.
+- **Si** le fichier n'est ni un docx ni un PDF, ou est trop volumineux, le dépôt est refusé avec
+  un message clair.
 - **Quand** une personne sans droit tente d'accéder à une feuille (lien partagé), l'accès est refusé.
-- **Multi-église** : une feuille n'est visible que dans l'église où elle a été déposée.
+- **Si** l'événement est supprimé, sa feuille d'annonces disparaît avec lui.
+- **Multi-église** : une feuille n'est visible que dans l'église de son événement.
 - Un déposant peut retirer une feuille déposée par erreur.
+- Les feuilles des cultes passés restent consultables par les mêmes lecteurs.
 
 ## Critères d'acceptation
 
-- [ ] Le Secrétariat et la Coordination peuvent déposer une feuille d'annonces rattachée à un culte.
-- [ ] Le modérateur du culte, la Coordination et les départements du MCIM peuvent la récupérer.
-- [ ] Aucun autre rôle n'y a accès, y compris par lien direct.
-- [ ] Un nouveau dépôt remplace la version visible et affiche sa date de mise à jour.
-- [ ] L'absence de feuille pour le prochain culte est signalée explicitement.
-- [ ] Un format non accepté est refusé avec un message clair.
+- [ ] Le Secrétariat, la Coordination, Admin et Super Admin peuvent déposer une feuille
+      d'annonces (docx ou PDF) sur un événement.
+- [ ] Une seule feuille est visible par événement ; un nouveau dépôt la remplace et affiche sa
+      date de mise à jour.
+- [ ] Les membres de la Modération, de la Coordination et des départements Communication, Régie
+      et Production média peuvent la télécharger.
+- [ ] Aucun autre utilisateur n'y a accès, y compris par lien direct.
+- [ ] Les lecteurs sont notifiés dans l'application à chaque dépôt.
+- [ ] L'absence de feuille pour un culte à venir est signalée explicitement.
+- [ ] Un format autre que docx/PDF est refusé avec un message clair.
 - [ ] Les feuilles sont cloisonnées par église.
-- [ ] L'espace est utilisable sur mobile (dépôt et récupération).
+- [ ] Dépôt et récupération sont utilisables sur mobile.
 
 ## Hors périmètre
 
 - Génération automatique de la feuille à partir des demandes d'annonce validées.
-- Édition du document dans Koinonia.
+- Édition ou prévisualisation du document dans Koinonia (le téléchargement suffit).
+- Notification par e-mail.
 - Diffusion externe (réseaux sociaux, site web).
 - Modification du circuit existant des demandes d'annonce par les départements.
 
-## Questions ouvertes
+## Décisions (clarifications du 2026-09-11)
 
-- [À CLARIFIER: « Coordination » — ministère Coordination générale ou rôle précis ?]
-- [À CLARIFIER: identification du modérateur de service]
-- [À CLARIFIER: périmètre « MCIM »]
-- [À CLARIFIER: unité — semaine ou culte]
-- [À CLARIFIER: formats acceptés]
-- [À CLARIFIER: consultation en ligne ou téléchargement]
-- [À CLARIFIER: notification au dépôt]
-- Conservation de l'historique : par défaut, les feuilles passées restent consultables par les
-  mêmes lecteurs.
+- Unité : **une feuille par événement** (culte).
+- « Coordination » = le ministère **Coordination générale**.
+- Modérateur de service = membres du **département Modération**.
+- Départements lecteurs : fonctions **Communication**, **Régie** et **Production média**.
+- Formats : **docx et PDF** ; **téléchargement** seul ; notification **dans l'application**.
