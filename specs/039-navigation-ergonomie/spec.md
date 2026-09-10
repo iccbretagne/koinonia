@@ -1,7 +1,7 @@
 # Spec — Ergonomie de la navigation : libellé de gestion des événements et place de la Comptabilité
 
 - **Numéro** : 039
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/navigation-ergonomie`
 
@@ -76,9 +76,10 @@ voit toujours pas.
 ## Critères d'acceptation
 
 - [ ] Dans la section *Événements*, l'entrée menant à la création/configuration des événements a
-      un libellé qui mentionne les événements et l'action de gestion (voir question ouverte 1),
+      le libellé « Gérer les événements »,
       identique dans la barre latérale et dans le menu mobile.
-- [ ] Aucune entrée du menu ne s'intitule plus seulement « Gestion ».
+- [ ] Aucune entrée du menu ne s'intitule plus seulement « Gestion » ; l'entrée du tableau de
+      bord du Secrétariat s'intitule « Traitement des demandes ».
 - [ ] L'entrée Comptabilité apparaît dans la section *Opérations* et n'apparaît plus dans la
       section *Ressources*, dans la barre latérale comme dans le menu mobile.
 - [ ] Un Comptable voit la section *Opérations* avec l'entrée Comptabilité.
@@ -99,12 +100,7 @@ voit toujours pas.
   Secrétariat).
 - Toute modification de droits.
 
-## Questions ouvertes
+## Décisions (clarifications du 2026-09-11)
 
-- [À CLARIFIER: libellé de l'entrée de la section *Événements*. Proposition par défaut :
-  **« Gérer les événements »**. Alternatives : « Créer & configurer », « Administration des
-  événements ».]
-- [À CLARIFIER: l'autre entrée « Gestion » (section *Opérations*, tableau de bord du Secrétariat
-  pour les demandes internes) est-elle renommée dans cette même spec ? Proposition par défaut :
-  **oui**, en **« Traitement des demandes »**, pour lever l'homonymie — le critère « aucune entrée
-  ne s'intitule seulement “Gestion” » en dépend.]
+- L'entrée de la section *Événements* s'intitule **« Gérer les événements »**.
+- L'entrée « Gestion » de la section *Opérations* est renommée **« Traitement des demandes »**.
