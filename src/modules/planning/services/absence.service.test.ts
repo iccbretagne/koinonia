@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -592,6 +592,11 @@ describe("updateAbsence", () => {
   };
 
   beforeEach(() => {
+    // `updateAbsence` compare `endDate` à `new Date()` (absence passée = non modifiable) : les
+    // dates du fixture sont fixes, l'horloge doit donc l'être aussi pour ne pas dépendre de la
+    // date réelle d'exécution des tests.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-25"));
     vi.clearAllMocks();
     planningBus.clear();
     prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
@@ -604,6 +609,10 @@ describe("updateAbsence", () => {
     prismaMock.absenceBackup.deleteMany.mockResolvedValue({ count: 0 } as never);
     prismaMock.absenceBackup.createMany.mockResolvedValue({ count: 0 } as never);
     prismaMock.notification.create.mockResolvedValue({} as never);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("modifie la période et notifie ABSENCE_UPDATED", async () => {
