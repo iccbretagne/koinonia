@@ -13,6 +13,7 @@ const createSchema = z.object({
   amount:        z.number().positive(),
   departmentId:  z.string().min(1).optional(), // null/omis = note de frais personnelle
   attachmentIds: z.array(z.string()).optional(),
+  correctionOfId: z.string().min(1).optional(), // demande rejetée que celle-ci corrige
 });
 
 export async function GET(request: Request) {
@@ -97,6 +98,15 @@ export async function POST(request: Request) {
       if (!dept) throw new ApiError(404, "Département introuvable");
     }
 
+    // Une correction ne peut porter que sur sa propre demande rejetée, dans cette église
+    if (body.correctionOfId) {
+      const original = await prisma.financialRequest.findFirst({
+        where: { id: body.correctionOfId, churchId, submittedById: session.user.id!, status: "REJECTED" },
+        select: { id: true },
+      });
+      if (!original) throw new ApiError(404, "Demande à corriger introuvable");
+    }
+
     const req = await prisma.$transaction(async (tx) => {
       if (body.attachmentIds?.length) {
         await assertAttachmentsAssignable(
@@ -116,6 +126,7 @@ export async function POST(request: Request) {
           description: body.description,
           amount:      body.amount,
           status:      "SUBMITTED",
+          correctionOfId: body.correctionOfId,
           ...(body.attachmentIds?.length
             ? { attachments: { connect: body.attachmentIds.map((id) => ({ id })) } }
             : {}),
