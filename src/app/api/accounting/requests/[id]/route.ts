@@ -278,7 +278,8 @@ async function notifySubmitter(
   });
 
   // Email — fire-and-forget, ne bloque pas la réponse
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
   prisma.user.findUnique({ where: { id: req.submittedById }, select: { name: true, email: true } })
     .then(async (user) => {
       if (!user?.email) return;

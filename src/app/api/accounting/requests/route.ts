@@ -168,7 +168,8 @@ async function notifyAccountingTeam(
   // Email aux adresses comptabilité configurées
   const emails = parseEmailList(church?.accountingEmails);
   if (emails.length > 0) {
-    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+    const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
     const { subject, html } = buildAccountingNewRequestEmail({
       requestLabel:   req.label,
