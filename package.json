@@ -41,7 +41,7 @@
     "mariadb": "^3.5.4",
     "next": "^16.3.4",
     "next-auth": "5.0.0-beta.32",
-    "nodemailer": "^9.0.6",
+    "nodemailer": "^9.1.1",
     "pino": "^10.3.1",
     "prisma": "^7.10.0",
     "react": "^19.2.8",
@@ -74,7 +74,7 @@
     },
     "mysql2": "^3.24.2",
     "fast-uri": "^3.1.7",
-    "nodemailer": "^9.0.6",
+    "nodemailer": "^9.1.1",
     "deepmerge-ts": "^8.0.0",
     "uuid": "^11.1.1"
   }
