@@ -1,7 +1,7 @@
 # Spec — Service d'ouverture et de fermeture de l'église
 
 - **Numéro** : 041
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/ouverture-fermeture-eglise`
 
@@ -21,11 +21,10 @@ d'ouverture et de fermeture, et que cette information soit **visible sur le plan
 
 ## Utilisateurs concernés
 
-- **Désignent** : les responsables (et adjoints) du département Sécurité et du département
-  Secrétariat ; le rôle Secrétaire ; Admin et Super Admin.
-  [À CLARIFIER: les STAR de ces départements peuvent-ils aussi désigner, ou seulement les responsables ?]
-- **Désignés** : [À CLARIFIER: uniquement des STAR des départements Sécurité et Secrétariat, ou
-  n'importe quel membre de l'église ?]
+- **Désignent** : les responsables (et adjoints) du département Sécurité ; **tous les membres**
+  du département Secrétariat ; le rôle Secrétaire ; Admin et Super Admin. Les simples membres de
+  la Sécurité ne désignent pas.
+- **Désignés** : n'importe quel membre de l'église.
 - **Consultent** : tous ceux qui voient le planning de l'événement (y compris la personne
   désignée dans « Mon planning »).
 
@@ -41,11 +40,8 @@ d'ouverture et de fermeture, et que cette information soit **visible sur le plan
 
 ### Scénarios alternatifs / cas limites
 
-- **Unité** : [À CLARIFIER: la désignation se fait **par événement** (chaque culte/activité), ou
-  **par jour** (une ouverture/fermeture couvre tous les événements d'une même journée) ? par
-  défaut : par événement.]
-- **Plusieurs personnes** : [À CLARIFIER: une seule personne par créneau, ou plusieurs possibles ?
-  par défaut : une ou plusieurs.]
+- **Unité** : la désignation se fait **par événement**.
+- **Plusieurs personnes** : un créneau peut compter plusieurs personnes.
 - **Si** la Sécurité et le Secrétariat désignent chacun quelqu'un pour le même créneau, les deux
   voient la désignation de l'autre avant de la modifier (pas d'écrasement silencieux).
 - **Si** la personne désignée a déclaré une absence à cette date, le désignateur en est averti.
@@ -53,15 +49,15 @@ d'ouverture et de fermeture, et que cette information soit **visible sur le plan
   « non pourvu ».
 - Une désignation peut être modifiée ou retirée jusqu'à l'événement.
 - **Multi-église** : les désignations sont propres à chaque église.
-- [À CLARIFIER: la personne désignée doit-elle être notifiée ? par défaut : notification dans
-  l'application.]
+- La personne désignée (ou retirée) est notifiée dans l'application.
 
 ## Critères d'acceptation
 
-- [ ] Sécurité et Secrétariat (responsables, Secrétaire, Admin) peuvent désigner qui ouvre et qui ferme.
+- [ ] Responsables Sécurité, membres du Secrétariat, Secrétaire, Admin et Super Admin peuvent
+      désigner une ou plusieurs personnes (n'importe quel membre) à l'ouverture et à la fermeture.
 - [ ] Les autres rôles ne peuvent pas modifier ces désignations.
 - [ ] Les noms désignés sont affichés sur le planning de l'événement.
-- [ ] La personne désignée voit ce service dans « Mon planning ».
+- [ ] La personne désignée voit ce service dans « Mon planning » et en est notifiée.
 - [ ] Un créneau sans désignation est affiché « non pourvu ».
 - [ ] Désigner une personne absente déclenche un avertissement.
 - [ ] Les désignations sont cloisonnées par église.
@@ -74,10 +70,7 @@ d'ouverture et de fermeture, et que cette information soit **visible sur le plan
 - Rotation automatique des personnes.
 - Autres créneaux logistiques (installation, rangement…).
 
-## Questions ouvertes
+## Décisions (clarifications du 2026-09-11)
 
-- [À CLARIFIER: qui peut désigner (responsables seulement, ou STAR aussi)]
-- [À CLARIFIER: qui peut être désigné]
-- [À CLARIFIER: par événement ou par jour]
-- [À CLARIFIER: une ou plusieurs personnes par créneau]
-- [À CLARIFIER: notification de la personne désignée]
+- Désignent : responsables Sécurité et membres du Secrétariat (+ Secrétaire, Admin, Super Admin).
+- Désignés : n'importe quel membre ; plusieurs par créneau ; par événement ; notification in-app.
