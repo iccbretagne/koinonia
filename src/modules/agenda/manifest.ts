@@ -22,6 +22,13 @@ export const agendaModule = defineModule({
   version: "1.0.0",
   dependsOn: ["core"],
 
+  routes: {
+    authenticated: [{ path: "/agenda" }],
+    api: [{ path: "/api/agenda" }],
+    // Formulaire de demande de RDV ouvert (Turnstile-protégé, pas de session requise).
+    public: [{ path: "/agenda-public" }, { path: "/api/agenda/requests/public" }],
+  },
+
   permissions: {
     // Vue lecture : rôles admin + Protocole (dept function) + profil pastoral lié (vérifié dans les routes)
     // AGENDA_QUALIFIER n'a PAS agenda:view — il ne voit que les demandes PENDING via agenda:qualify

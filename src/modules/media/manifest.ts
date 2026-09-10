@@ -20,6 +20,23 @@ export const mediaModule = defineModule({
   dependsOn: ["core", "storage"],
   optionalDependencies: ["planning"],
 
+  routes: {
+    authenticated: [{ path: "/media" }],
+    api: [
+      { path: "/api/media" },
+      { path: "/api/media-events" },
+      { path: "/api/media-projects" },
+      { path: "/api/admin/media" },
+    ],
+    // Liens de partage par jeton — pas de session requise (galerie, validation, téléchargement).
+    public: [
+      { path: "/api/media/validate" },
+      { path: "/api/media/gallery" },
+      { path: "/api/media/download" },
+      { path: "/api/media/collection" },
+    ],
+  },
+
   permissions: {
     // Accès en lecture aux galeries et médias
     "media:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY"],

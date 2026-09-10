@@ -236,27 +236,31 @@ contredit.
 régression. Mais documenter chaque relation inter-domaine comme un contrat d'intégration
 explicite, et couvrir les suppressions/cascades par des tests.
 
-### 6. Rendre `ENABLED_MODULES` réel — devenu la spec 038
+### 6. Dire la vérité sur `ENABLED_MODULES` — ✅ fait (spec 038)
 
 *L'énoncé initial — « le renommer, ou investir dans un vrai chargement optionnel » — est dépassé.*
-Il présentait la question comme un choix de nom. L'analyse du 2026-09-08 a montré autre chose.
+Il présentait la question comme un choix de nom. L'analyse du 2026-09-08 a montré autre chose :
+le réglage n'était **défini nulle part** (ni variables d'exemple, ni CI, ni procédures de
+déploiement), et son inefficacité allait plus loin que « il ne filtre que les manifestes » — le
+Super Admin court-circuitait le contrôle de permission dans une dizaine de gardes, les accès
+obtenus par appartenance à un département survivaient à la désactivation, un module qui ne
+déclare aucune permission n'était pas touché du tout, les liens de partage publics par jeton
+restaient ouverts, et le cron appelait les services des modules sans condition. Désactiver un
+module masquait un menu ; ça ne retirait pas une capacité.
 
-Le réglage n'est **défini nulle part** : ni dans les variables d'exemple, ni en CI, ni dans les
-deux procédures de déploiement. Et son inefficacité va plus loin que « il ne filtre que les
-manifestes » : le Super Admin court-circuite le contrôle de permission dans une dizaine de gardes,
-les accès obtenus par appartenance à un département survivent à la désactivation, un module qui
-ne déclare aucune permission n'est pas touché du tout, les liens de partage publics par jeton
-restent ouverts, et le cron appelle les services des modules sans condition. Désactiver un module
-masque un menu ; ça ne retire pas une capacité.
-
-Le besoin retenu est le **déploiement d'instances distinctes et allégées** — pas l'activation par
-église, qui serait une donnée par tenant et non un réglage d'environnement, et qu'aucune brique
-existante n'anticipe.
-
-C'est donc une feature de contrôle d'accès, pas un renommage : elle est spécifiée dans
-[`specs/038-modules-optionnels-deploiement/`](../specs/038-modules-optionnels-deploiement/spec.md).
-Définition retenue de « désactivé » : **la surface accessible disparaît ; les données et les
-gardiens d'intégrité référentielle restent.**
+Un déploiement partiel a fini par être réellement demandé — le besoin retenu est le
+**déploiement d'instances distinctes et allégées**, pas l'activation par église (une donnée par
+tenant, pas un réglage d'environnement, qu'aucune brique existante n'anticipe). L'option retenue
+est donc un vrai chargement optionnel, pas un renommage : `ENABLED_MODULES` charge désormais
+réellement un sous-ensemble de modules. Chaque manifeste déclare sa surface HTTP
+(`routes.authenticated`/`api`/`public`), et le proxy (`src/proxy.ts`, matcher élargi à toute
+l'application) refuse en 404 toute route dont le préfixe n'appartient à aucun module actif —
+avant toute résolution de session, donc y compris pour le Super Admin. `core` est le seul module
+non désactivable ; une dépendance manquante ou un nom de module inconnu dans `ENABLED_MODULES`
+fait échouer le démarrage (fail-fast). Un test d'exhaustivité garantit que chaque route réelle de
+`src/app/` est couverte par exactement un module ou par la liste noyau explicite. Décision tracée
+dans [ADR-0012](adr/0012-manifeste-declare-surface-http.md), spec
+[038](../specs/038-modules-optionnels-deploiement/spec.md).
 
 ### 7. Étendre les tests de manifestes et de RBAC aux 11 modules — ✅ fait
 

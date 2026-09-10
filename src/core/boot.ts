@@ -4,6 +4,8 @@ export interface BootOptions {
   modules: ModuleManifest[];
   /** Liste explicite de modules à activer. Si omise, lit process.env.ENABLED_MODULES. */
   enabled?: string[];
+  /** Coupe le journal d'une ligne des modules actifs (silence les tests). */
+  quiet?: boolean;
 }
 
 export function parseEnabledModules(raw: string | undefined): string[] | null {
@@ -13,12 +15,40 @@ export function parseEnabledModules(raw: string | undefined): string[] | null {
 }
 
 /**
+ * Module racine : seul module non désactivable (spec 038). Porte la gestion des églises,
+ * des comptes et des accès — sans lui l'instance serait inadministrable.
+ */
+export const ROOT_MODULE = "core";
+
+/**
  * Enregistre les modules activés, valide les dépendances, et retourne un registry prêt.
- * Throw si une dépendance requise manque ou si un cycle est détecté.
+ * Throw (démarrage refusé, fail-fast — spec 038) si :
+ *   - le module racine (`ROOT_MODULE`) est absent de la liste activée ;
+ *   - `ENABLED_MODULES` nomme un module qui n'existe pas (faute de frappe = désactivation
+ *     silencieuse aujourd'hui, jamais signalée — c'est le même défaut de fond que celui
+ *     que cette fonctionnalité corrige) ;
+ *   - une dépendance requise manque, ou un cycle est détecté (validations préexistantes).
  */
 export function boot(options: BootOptions): ModuleRegistry {
   const enabled =
     options.enabled ?? parseEnabledModules(process.env.ENABLED_MODULES);
+
+  if (enabled) {
+    const knownNames = new Set(options.modules.map((m) => m.name));
+    const unknown = enabled.filter((name) => !knownNames.has(name));
+    if (unknown.length > 0) {
+      throw new Error(
+        `Boot échoué : module(s) inconnu(s) dans ENABLED_MODULES : ${unknown.join(", ")}. ` +
+          `Modules disponibles : ${[...knownNames].sort().join(", ")}.`
+      );
+    }
+    if (!enabled.includes(ROOT_MODULE)) {
+      throw new Error(
+        `Boot échoué : le module racine "${ROOT_MODULE}" est absent de ENABLED_MODULES. ` +
+          `Sans lui l'instance ne peut ni créer d'église ni attribuer d'accès — il n'est pas désactivable.`
+      );
+    }
+  }
 
   const registry = new ModuleRegistry();
 
@@ -37,6 +67,14 @@ export function boot(options: BootOptions): ModuleRegistry {
 
   // Valide qu'aucun cycle n'existe
   registry.resolveLoadOrder();
+
+  if (!options.quiet) {
+    // Seul point de diagnostic de la configuration effective (spec 038, question ouverte
+    // 1) : pas de point exposé côté application, un exploitant a déjà accès aux journaux.
+    // src/core reste framework-agnostic, sans dépendance à src/lib/logger (pino) pour une
+    // seule ligne au démarrage du process.
+    console.log(`[boot] modules actifs : ${registry.list().map((m) => m.name).sort().join(", ")}`);
+  }
 
   return registry;
 }

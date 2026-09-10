@@ -64,7 +64,10 @@ export default async function AuthLayout({
   async function switchToAdminMode() {
     "use server";
     (await cookies()).set("koinonia-view-mode", "admin", { path: "/", maxAge: 2592000 });
-    redirect("/dashboard");
+    // "/dashboard" appartient au module planning (spec 038) : sur une instance qui le
+    // désactive, ou pour un rôle sans planning:department (spec 031/#462), il mènerait à
+    // un 404/FORBIDDEN. "/profile" appartient au noyau, toujours disponible.
+    redirect(canAccessDashboard ? "/dashboard" : "/profile");
   }
   async function switchToPastoralMode() {
     "use server";
@@ -127,6 +130,9 @@ export default async function AuthLayout({
     .filter((r) => r.churchId === currentChurchId)
     .map((r) => r.role);
   const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
+  // Utilisé par switchToAdminMode (ci-dessus, fermeture sur une primitive plutôt que sur
+  // le Set — plus sûr à sérialiser dans une server action).
+  const canAccessDashboard = session.user.isSuperAdmin || userPermissions.has("planning:department");
   // Super admins have all permissions regardless of church roles
   if (session.user.isSuperAdmin) {
     configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
@@ -392,6 +398,36 @@ export default async function AuthLayout({
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
+
+  // Spec 038 (CA10) : un utilisateur dont TOUS les rôles ne portent que sur des modules
+  // désactivés sur cette instance (ex. Comptable sans le module accounting) conserve un
+  // `churchRoles.length > 0` — le garde-fou de tête (ligne ~47) ne le voit donc pas. Le
+  // critère réel est « aucune entrée de navigation disponible », vérifié ici une fois
+  // toutes les sections construites. Aucun écran ni message spécifique à la désactivation
+  // n'est ajouté : c'est le même parcours « aucun accès » que pour un utilisateur sans
+  // rôle du tout.
+  const hasAnyNavigation =
+    session.user.isSuperAdmin ||
+    visibleConfigLinks.length > 0 ||
+    requestLinks.length > 0 ||
+    mediaLinks.length > 0 ||
+    integrationLinks.length > 0 ||
+    agendaLinks.length > 0 ||
+    hasDiscipleship ||
+    hasAccounting ||
+    hasJobs ||
+    hasEventsAccess ||
+    hasPlanningAccess ||
+    hasMembersAccess ||
+    hasReports ||
+    hasRooms ||
+    hasMyPlanning ||
+    showStarEvents ||
+    hasAbsences;
+
+  if (!hasAnyNavigation) {
+    redirect("/no-access");
+  }
 
   return (
     <AuthLayoutShell

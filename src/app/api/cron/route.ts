@@ -1,8 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList } from "@/lib/email";
-import { runInactivityNotifications, runMsdpInactivityNotifications } from "@/modules/integration";
-import { runJobOffersLifecycle } from "@/modules/jobs";
+import { registry } from "@/lib/registry";
+
+/**
+ * `/api/cron` est une adresse du **noyau** (spec 038, `NOYAU_ROUTES`) : elle répond
+ * toujours, quels que soient les modules actifs — c'est le proxy qui la laisse toujours
+ * passer. Mais les traitements qu'elle déclenche appartiennent, eux, à des modules
+ * optionnels : sur une instance sans `integration`/`jobs`, aucun de leurs travaux planifiés
+ * ne doit s'exécuter (« ne pas créer de donnée pour un module absent »). D'où l'import
+ * dynamique, gardé par `registry.has(...)`, plutôt que l'import statique précédent.
+ */
+async function runIntegrationInactivityTasks(appUrl: string) {
+  if (!registry.has("integration")) return null;
+  const { runInactivityNotifications, runMsdpInactivityNotifications } = await import(
+    "@/modules/integration"
+  );
+  const [integrationInactivityResult, msdpInactivityResult] = await Promise.all([
+    runInactivityNotifications(appUrl),
+    runMsdpInactivityNotifications(appUrl),
+  ]);
+  return { integrationInactivityResult, msdpInactivityResult };
+}
+
+async function runJobsLifecycleTask(appUrl: string) {
+  if (!registry.has("jobs")) return null;
+  const { runJobOffersLifecycle } = await import("@/modules/jobs");
+  return runJobOffersLifecycle(appUrl);
+}
 
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -213,25 +238,19 @@ export async function POST(request: Request) {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [
-      remindersResult,
-      digestResult,
-      integrationInactivityResult,
-      msdpInactivityResult,
-      jobOffersLifecycleResult,
-    ] = await Promise.all([
-      runReminders(),
-      runPlanningDigest(),
-      runInactivityNotifications(appUrl),
-      runMsdpInactivityNotifications(appUrl),
-      runJobOffersLifecycle(appUrl),
-    ]);
+    const [remindersResult, digestResult, integrationResult, jobOffersLifecycleResult] =
+      await Promise.all([
+        runReminders(),
+        runPlanningDigest(),
+        runIntegrationInactivityTasks(appUrl),
+        runJobsLifecycleTask(appUrl),
+      ]);
 
     return successResponse({
       reminders: remindersResult,
       planningDigest: digestResult,
-      integrationInactivity: integrationInactivityResult,
-      msdpInactivity: msdpInactivityResult,
+      integrationInactivity: integrationResult?.integrationInactivityResult ?? null,
+      msdpInactivity: integrationResult?.msdpInactivityResult ?? null,
       jobOffersLifecycle: jobOffersLifecycleResult,
     });
   } catch (error) {

@@ -18,6 +18,11 @@ export const roomsModule = defineModule({
   version: "1.0.0",
   dependsOn: ["core"],
 
+  routes: {
+    authenticated: [{ path: "/rooms" }, { path: "/admin/rooms" }],
+    api: [{ path: "/api/rooms" }, { path: "/api/room-reservations" }],
+  },
+
   permissions: {
     // STAR retiré : réservation de salle réservée aux responsables (spec 031, issue #463)
     "rooms:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
