@@ -14,12 +14,13 @@ vi.mock("next-auth", () => ({
 }));
 
 const mockSendEmail = vi.fn().mockResolvedValue(undefined);
+const mockBuildEmail = vi.fn().mockReturnValue({ subject: "subject", html: "<p>html</p>" });
 vi.mock("@/lib/email", async () => {
   const actual = await vi.importActual<typeof import("@/lib/email")>("@/lib/email");
   return {
     ...actual,
     sendEmail: (...args: unknown[]) => mockSendEmail(...args),
-    buildAccountingNewRequestEmail: () => ({ subject: "subject", html: "<p>html</p>" }),
+    buildAccountingNewRequestEmail: (...args: unknown[]) => mockBuildEmail(...args),
   };
 });
 
@@ -81,6 +82,20 @@ describe("POST /api/accounting/requests — notification emails multiples", () =
     // Laisse le temps à la notification fire-and-forget de s'exécuter
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("construit le lien du mail sur AUTH_URL quand APP_URL n'est pas défini", async () => {
+    vi.stubEnv("APP_URL", "");
+    vi.stubEnv("AUTH_URL", "https://koinonia.example.org");
+    prismaMock.church.findUnique.mockResolvedValue({ accountingEmails: "compta@icc.fr", name: "ICC Rennes" });
+
+    await POST(postRequest({ type: "EXPENSE_REPORT", label: "Taxi", amount: 42 }));
+
+    await vi.waitFor(() => expect(mockBuildEmail).toHaveBeenCalled());
+    expect(mockBuildEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ requestUrl: "https://koinonia.example.org/accounting/requests/req-1" })
+    );
+    vi.unstubAllEnvs();
   });
 
   it("continue de fonctionner avec une seule adresse configurée (non-régression)", async () => {

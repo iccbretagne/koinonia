@@ -85,7 +85,8 @@ export async function PATCH(
     });
 
     // Email — fire-and-forget
-    const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+    // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+    const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const trancheNumber = await prisma.financialPayment.count({
       where: { requestId: payment.requestId, scheduledDate: { lte: payment.scheduledDate } },
     });
