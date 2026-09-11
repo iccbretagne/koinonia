@@ -25,11 +25,13 @@ interface Props {
   departments: Department[];
   /** Demande rejetée à corriger : pré-remplit le formulaire et lie la nouvelle demande. */
   correction?: CorrectionSource | null;
+  /** Page de retour après soumission (spec 043 : "/requests" si on vient de Mes demandes). */
+  redirectTo?: string;
 }
 
 type RequestMode = "one_shot" | "recurring";
 
-export default function NewRequestForm({ departments, correction }: Props) {
+export default function NewRequestForm({ departments, correction, redirectTo = "/accounting/requests" }: Props) {
   const router = useRouter();
   const [mode, setMode] = useState<RequestMode>("one_shot");
   const [type, setType] = useState<"EXPENSE_REPORT" | "BUDGET_ADVANCE">(correction?.type ?? "EXPENSE_REPORT");
@@ -98,7 +100,7 @@ export default function NewRequestForm({ departments, correction }: Props) {
 
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Erreur"); return; }
-      router.push("/accounting/requests");
+      router.push(redirectTo);
       router.refresh();
     } catch { setError("Erreur réseau"); }
     finally { setLoading(false); }
@@ -271,7 +273,7 @@ export default function NewRequestForm({ departments, correction }: Props) {
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
 
       <div className="flex gap-3 justify-end pt-1">
-        <Link href="/accounting/requests" className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</Link>
+        <Link href={redirectTo} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</Link>
         <button
           type="submit"
           disabled={loading}

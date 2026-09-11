@@ -33,7 +33,7 @@ export default async function AnnouncementSheetsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Feuilles d&apos;annonces</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Trame des annonces</h1>
         <p className="text-sm text-gray-500 mt-1">Prochains cultes de l&apos;église</p>
       </div>
 

@@ -36,6 +36,8 @@ export interface EditData {
 interface Props {
   churchId: string;
   canSubmitDemands: boolean;
+  showAgendaTile?: boolean;
+  showAccountingTile?: boolean;
   announcementEvents: { id: string; title: string; type: string; date: string }[];
   events: { id: string; title: string; type: string; date: string }[];
   sourceOptions: { type: "department" | "ministry"; id: string; label: string }[];
@@ -171,6 +173,8 @@ function initFromEditData(editData: EditData): {
 export default function RequestForm({
   churchId,
   canSubmitDemands,
+  showAgendaTile = false,
+  showAccountingTile = false,
   announcementEvents,
   events,
   sourceOptions,
@@ -477,6 +481,32 @@ export default function RequestForm({
                   </div>
                 </button>
               ))}
+            </div>
+          </>
+        )}
+
+        {(showAgendaTile || showAccountingTile) && (
+          <>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">Autres demandes</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {showAgendaTile && (
+                <Link
+                  href="/agenda/request?from=requests"
+                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors flex items-center gap-3"
+                >
+                  <span className="text-xl">🗓️</span>
+                  <p className="font-medium text-gray-900 text-sm">Rendez-vous pastoral</p>
+                </Link>
+              )}
+              {showAccountingTile && (
+                <Link
+                  href="/accounting/requests/new?from=requests"
+                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors flex items-center gap-3"
+                >
+                  <span className="text-xl">💶</span>
+                  <p className="font-medium text-gray-900 text-sm">Demande comptable</p>
+                </Link>
+              )}
             </div>
           </>
         )}

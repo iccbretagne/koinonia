@@ -5,6 +5,7 @@ import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions } from "@/lib/registry";
+import { buildMediaSpaceTabs } from "@/lib/media-space";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
@@ -160,7 +161,7 @@ export default async function AuthLayout({
   }
 
   // ── Section "Médias" (module Media + dashboards production) ─────────────────
-  const mediaLinks: { href: string; label: string }[] = [];
+  const mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[] = [];
   let isProtocoleMember = false;
 
   if (currentChurchId && userPermissions.has("planning:view")) {
@@ -187,23 +188,37 @@ export default async function AuthLayout({
 
     if (isMemberOf("SECRETARIAT"))
       requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
-    if (isMemberOf("PRODUCTION_MEDIA"))
-      mediaLinks.push({ href: "/media/requests", label: "Visuels" });
-    if (isMemberOf("COMMUNICATION"))
-      mediaLinks.push({ href: "/communication/requests", label: "Communication" });
 
-    if (userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION")) {
-      mediaLinks.push({ href: "/media/events", label: "Événements" });
-      mediaLinks.push({ href: "/media/projects", label: "Projets" });
-    }
-    if (userPermissions.has("media:manage") || isMemberOf("PRODUCTION_MEDIA")) {
-      mediaLinks.push({ href: "/media/collections", label: "Collections" });
+    // Espace « Communication & Production » (spec 043, sur le modèle d'Audio — spec 021) :
+    // un seul lien de menu, les onglets réellement affichés dépendent de l'équipe/permissions —
+    // même logique que `resolveMediaSpaceAccess` (@/lib/media-space), construite ici à partir
+    // des données déjà chargées (`serviceDepts`/`isMemberOf`) sans requête supplémentaire.
+    const mediaSpaceTabs = buildMediaSpaceTabs({
+      visuals: isMemberOf("PRODUCTION_MEDIA"),
+      social: isMemberOf("COMMUNICATION"),
+      browse:
+        userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION"),
+      collections:
+        userPermissions.has("media:manage") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION"),
+    });
+    if (mediaSpaceTabs.length > 0) {
+      mediaLinks.push({
+        href: "/media",
+        label: "Communication & Production",
+        matchPrefixes: ["/media", "/communication"],
+      });
     }
 
     // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
     isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
 
-    requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    // Spec 043 : pour qui a "members:view" (accès à "Mes demandes"), la demande de RDV
+    // pastoral devient une tuile dans /requests/new — lien de menu autonome retiré pour ne
+    // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
+    // il garde ce lien autonome, seul moyen d'accès pour lui.
+    if (!userPermissions.has("members:view")) {
+      requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    }
   }
 
   // ── Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière) ──

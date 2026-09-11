@@ -69,15 +69,15 @@ export default function JobsListClient({
   return (
     <div>
       {/* Tabs */}
-      <div className="flex items-center justify-between gap-2 mb-6 border-b border-gray-200">
-        <div className="flex gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 border-b border-gray-200">
+        <div className="flex gap-1 overflow-x-auto">
           {(["ALL", "EMPLOI", "STAGE", "ALTERNANCE"] as const).map((t) => {
             const count = t === "ALL" ? jobs.length : jobs.filter((j) => j.type === t).length;
             return (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
                   filter === t
                     ? "border-icc-violet text-icc-violet"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -92,7 +92,7 @@ export default function JobsListClient({
         {filtered.length > 0 && (
           <button
             onClick={copyRecap}
-            className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 mb-1 rounded-lg border border-icc-violet/30 text-icc-violet hover:bg-icc-violet/10 transition-colors font-medium"
+            className="self-start shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 mb-1 rounded-lg border border-icc-violet/30 text-icc-violet hover:bg-icc-violet/10 transition-colors font-medium"
           >
             {copied ? (
               <>

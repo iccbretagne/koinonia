@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { activeHref } from "@/lib/nav-match";
+import { activeHref, activeLinkHref } from "@/lib/nav-match";
 import { Badge } from "@/components/ui/Badge";
 
 type SheetView = "root" | "planning" | "evenements" | "pastoral" | "communaute" | "operations" | "ressources" | "config";
@@ -12,7 +12,7 @@ interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
-  mediaLinks: { href: string; label: string }[];
+  mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
   famillesUrl?: string | null;
@@ -332,14 +332,20 @@ export default function MobileNavSheet({
     pathname.startsWith("/admin/members") ||
     pathname.startsWith("/admin/discipleship") ||
     isIntegrationActive;
-  const isEvenementsActive = isEventsActive;
+  // STAR (showStarEvents) navigue vers /planning/events plutôt que /events — l'accordéon
+  // "Événements" doit s'ouvrir aussi dans ce cas (spec 043).
+  const isEvenementsActive = isEventsActive || pathname.startsWith("/planning/events");
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive || isAccountingActive;
   const isRessourcesActive = isJobsActive || isRoomsActive;
 
   // Lien actif d'une liste : le plus spécifique parmi ses frères (voir nav-match)
   const activeAgendaHref = activeHref(pathname, agendaLinks.map((l) => l.href));
-  const activeOperationsHref = activeHref(pathname, [...requestLinks.map((l) => l.href), ...mediaLinks.map((l) => l.href), "/accounting/requests"]);
+  const activeOperationsHref = activeLinkHref(pathname, [
+    ...requestLinks.map((l) => ({ href: l.href })),
+    ...mediaLinks,
+    { href: "/accounting/requests" },
+  ]);
   const activeIntegrationHref = activeHref(pathname, integrationLinks.map((l) => l.href));
   const activeConfigHref = activeHref(pathname, configLinks.map((l) => l.href));
 
@@ -430,24 +436,6 @@ export default function MobileNavSheet({
             onClose={onClose}
           />
         )}
-        {showStarEvents && (
-          <RootRow
-            label="Événements"
-            icon={<IconCalendar className="w-5 h-5" />}
-            href="/planning/events"
-            isActive={pathname.startsWith("/planning/events")}
-            onClose={onClose}
-          />
-        )}
-        {showStarEvents && (
-          <RootRow
-            label="Feuilles d'annonces"
-            icon={<IconCalendar className="w-5 h-5" />}
-            href="/events/announcement-sheets"
-            isActive={pathname.startsWith("/events/announcement-sheets")}
-            onClose={onClose}
-          />
-        )}
         {hasAbsences && (
           <RootRow
             label="Absences"
@@ -475,7 +463,7 @@ export default function MobileNavSheet({
             onClick={() => setView("communaute")}
           />
         )}
-        {hasEventsAccess && (
+        {(hasEventsAccess || showStarEvents) && (
           <RootRow
             label="Événements"
             icon={<IconCalendar className="w-5 h-5" />}
@@ -596,13 +584,25 @@ export default function MobileNavSheet({
   }
 
   function renderEvenements() {
+    // STAR sans events:view : vue réduite (vue hebdomadaire + trame des annonces uniquement).
+    if (showStarEvents && !hasEventsAccess) {
+      return (
+        <>
+          <SheetSubHeader title="Événements" onBack={() => setView("root")} />
+          <div>
+            <SubRow href="/planning/events" label="Mes événements" isActive={pathname.startsWith("/planning/events")} onClose={onClose} />
+            <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
+          </div>
+        </>
+      );
+    }
     return (
       <>
         <SheetSubHeader title="Événements" onBack={() => setView("root")} />
         <div>
           <SubRow href="/events" label="Liste" isActive={pathname === "/events"} onClose={onClose} />
           <SubRow href="/events/calendar" label="Calendrier" isActive={pathname === "/events/calendar"} onClose={onClose} />
-          <SubRow href="/events/announcement-sheets" label="Feuilles d'annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
+          <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
           {hasEventsManage && (
             <SubRow href="/admin/events" label="Gérer les événements" isActive={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />
           )}
@@ -714,7 +714,7 @@ export default function MobileNavSheet({
 
       {/* Sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-[60] md:hidden bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh] transform transition-transform duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-[60] md:hidden bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85dvh] transform transition-transform duration-300 ease-out ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
         aria-modal="true"

@@ -4,7 +4,7 @@
 // Sans ce test, une régression future sur la dissociation faite en T17 (hasPlanningAccess
 // vs. hasMyPlanning/showStarEvents) ne serait détectée par aucun autre test.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createStarSession, createAdminSession } from "@/__mocks__/auth";
+import { createStarSession, createAdminSession, createDepartmentHeadSession } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockAuth = vi.fn();
@@ -72,5 +72,82 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
     prismaMock.memberUserLink.findUnique.mockResolvedValue(null);
     const element = await AuthLayout({ children: null as never });
     expect(shellProps(element).hasPlanningAccess).toBe(true);
+  });
+});
+
+// Spec 043 — la « Demande RDV pastoral » devient une tuile de /requests/new pour qui a
+// "Mes demandes" (members:view). Le STAR n'y a pas accès (pas de members:view) : il garde
+// le lien de menu autonome, seul moyen d'accès pour lui.
+describe("Lien « Demande RDV pastoral » après spec 043", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCurrentChurchId.mockResolvedValue("church-1");
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.department.findFirst.mockResolvedValue(null);
+    prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
+    prismaMock.pastoralProfile.findFirst.mockResolvedValue(null);
+    prismaMock.memberUserLink.findUnique.mockResolvedValue({ id: "link-1" } as never);
+  });
+
+  it("un STAR (planning:view sans members:view) garde le lien autonome dans requestLinks", async () => {
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+    const element = await AuthLayout({ children: null as never });
+    const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
+    expect(requestLinks).toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  });
+
+  it("un Admin (members:view) n'a plus le lien autonome — devenu une tuile dans « Mes demandes »", async () => {
+    mockAuth.mockResolvedValue(createAdminSession("church-1"));
+    prismaMock.memberUserLink.findUnique.mockResolvedValue(null);
+    const element = await AuthLayout({ children: null as never });
+    const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
+    expect(requestLinks).not.toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  });
+});
+
+// Spec 043 — Visuels / Communication / Événements / Projets / Collections deviennent un seul
+// lien de menu « Communication & Production », les onglets réels dépendant de l'équipe.
+describe("Espace « Communication & Production » après spec 043", () => {
+  const PROD_MEDIA_DEPT = { id: "dept-prod-media", name: "Production Média", function: "PRODUCTION_MEDIA" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCurrentChurchId.mockResolvedValue("church-1");
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.department.findFirst.mockResolvedValue(null);
+    prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
+    prismaMock.pastoralProfile.findFirst.mockResolvedValue(null);
+    prismaMock.memberUserLink.findUnique.mockResolvedValue({ id: "link-1" } as never);
+  });
+
+  it("un membre Production média a une seule entrée « Communication & Production », plus aucun lien Visuels/Projets/Collections séparé", async () => {
+    prismaMock.department.findMany.mockResolvedValue([PROD_MEDIA_DEPT] as never);
+    mockAuth.mockResolvedValue(createDepartmentHeadSession([PROD_MEDIA_DEPT], "church-1"));
+    const element = await AuthLayout({ children: null as never });
+    const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
+    expect(mediaLinks).toContainEqual(
+      expect.objectContaining({ href: "/media", label: "Communication & Production" })
+    );
+    expect(mediaLinks.find((l) => l.href === "/media/requests")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/media/projects")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/media/collections")).toBeUndefined();
+    expect(mediaLinks.find((l) => l.href === "/communication/requests")).toBeUndefined();
+  });
+
+  it("un utilisateur sans droit média n'a pas l'entrée « Communication & Production »", async () => {
+    prismaMock.department.findMany.mockResolvedValue([]);
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+    const element = await AuthLayout({ children: null as never });
+    const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
+    expect(mediaLinks.find((l) => l.href === "/media")).toBeUndefined();
+  });
+
+  it("Audio reste présent et distinct de « Communication & Production »", async () => {
+    prismaMock.department.findMany.mockResolvedValue([PROD_MEDIA_DEPT] as never);
+    mockAuth.mockResolvedValue(createDepartmentHeadSession([PROD_MEDIA_DEPT], "church-1"));
+    const element = await AuthLayout({ children: null as never });
+    const mediaLinks = shellProps(element).mediaLinks as { href: string; label: string }[];
+    expect(mediaLinks).toContainEqual({ href: "/audio", label: "Audio" });
   });
 });

@@ -190,10 +190,10 @@ export async function notifyReaders(
   if (userIds.length === 0) return;
 
   const { createNotification } = await import("@/lib/notifications");
-  const title = isUpdate ? "Feuille d'annonces mise à jour" : "Feuille d'annonces disponible";
+  const title = isUpdate ? "Trame des annonces mise à jour" : "Trame des annonces disponible";
   const message = isUpdate
-    ? `La feuille d'annonces de « ${eventTitle} » a été mise à jour.`
-    : `La feuille d'annonces de « ${eventTitle} » est disponible.`;
+    ? `La trame des annonces de « ${eventTitle} » a été mise à jour.`
+    : `La trame des annonces de « ${eventTitle} » est disponible.`;
 
   await Promise.all(
     userIds.map((userId) =>

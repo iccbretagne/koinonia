@@ -403,6 +403,23 @@ est une infrastructure pure sans permission propre.
   (`events:manage`) — plus de colonne dédiée sur `AudioSettings`, et plus de page
   `/admin/audio/settings` (jamais mise en production, supprimée sans redirection)
 
+**Spécificités de l'espace « Communication & Production »** (spec 043, même pattern que
+l'espace Audio ci-dessus) :
+- `/media` est un espace à onglets à droits distincts, un seul lien de navigation
+  **« Communication & Production »** — chaque onglet vérifie en plus son propre droit
+  server-side. Onglets possibles (`buildMediaSpaceTabs`, `src/lib/media-space.ts`) :
+  Demandes visuels (`/media/requests`), Demandes réseaux sociaux (`/communication/requests`),
+  Projets (`/media/projects`), Événements médias (`/media/events`), Collections
+  (`/media/collections`) — calculés une fois par `resolveMediaSpaceAccess` (layouts
+  `/media` et `/communication`) ou reconstruits sans requête supplémentaire dans
+  `(auth)/layout.tsx` à partir des données déjà chargées pour le menu
+- `requireMediaCollectionAccess(churchId)` (`src/lib/auth.ts`) protège les Collections :
+  `media:manage` OU membre `PRODUCTION_MEDIA` OU membre `COMMUNICATION` — volontairement
+  distinct de `requireMediaManageAccess`, qui protège en plus la suppression/le partage des
+  projets, événements médias et fichiers, non ouverts à la Communication
+- Le lien « Audio » reste séparé : équipe et permissions différentes (`audio:listen` ouvert à
+  tous les rôles, contrairement aux permissions média réservées aux 2 équipes)
+
 ## Multi-tenant
 
 Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à une église via `churchId`. Un utilisateur peut avoir des rôles différents dans plusieurs églises via `UserChurchRole`.

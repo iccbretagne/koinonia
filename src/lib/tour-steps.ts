@@ -54,7 +54,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-service"]',
     title: "Opérations",
     content:
-      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. On y trouve aussi les Médias (projets, collections de photos et validation) et la Comptabilité (notes de frais, avances de budget). Les responsables Secrétariat, Communication, Production Média et le Comptable traitent les demandes depuis leur tableau de bord.",
+      "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les actions des équipes Communication et Production Média (demandes, projets, événements, collections de photos), sur le modèle de l'espace Audio. La Comptabilité (notes de frais, avances de budget) reste accessible séparément pour son équipe.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },

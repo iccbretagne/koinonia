@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   defaultEmail: string;
   defaultIsStar?: string;
   defaultDepartment?: string;
+  /** Présent quand on arrive depuis « Mes demandes » (spec 043) : proposé après soumission. */
+  redirectTo?: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -40,7 +43,7 @@ function RadioGroup({ name, options, value, onChange }: {
   );
 }
 
-export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "" }: Props) {
+export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "", redirectTo }: Props) {
   const [form, setForm] = useState({
     firstName: defaultFirstName,
     lastName: defaultLastName,
@@ -134,6 +137,11 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
         <p className="text-sm text-gray-600">
           Votre demande a bien été reçue. Un qualificateur la traitera prochainement et vous sera assigné un créneau.
         </p>
+        {redirectTo && (
+          <Link href={redirectTo} className="inline-block text-sm text-icc-violet hover:underline">
+            ← Retour à mes demandes
+          </Link>
+        )}
       </div>
     );
   }

@@ -9,9 +9,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
-const mockRequireMediaManageAccess = vi.fn();
+const mockRequireMediaCollectionAccess = vi.fn();
 vi.mock("@/lib/auth", () => ({
-  requireMediaManageAccess: (...args: unknown[]) => mockRequireMediaManageAccess(...args),
+  requireMediaCollectionAccess: (...args: unknown[]) => mockRequireMediaCollectionAccess(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -38,7 +38,7 @@ function makeRequest(body: Record<string, unknown>) {
 describe("POST /api/admin/media/collections — includeAllPhotos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireMediaManageAccess.mockResolvedValue(createAdminSession());
+    mockRequireMediaCollectionAccess.mockResolvedValue(createAdminSession());
     prismaMock.mediaEvent.findMany.mockResolvedValue([{ id: "evt-1" }] as never);
     mockCreateMediaShareToken.mockResolvedValue({
       id: "token-1",
@@ -88,5 +88,23 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     expect(mockLogAudit).toHaveBeenCalledWith(
       expect.objectContaining({ details: expect.objectContaining({ includeAllPhotos: false }) })
     );
+  });
+
+  // Spec 043 : requireMediaCollectionAccess ouvre les collections à la Communication,
+  // contrairement à l'ancien requireMediaManageAccess.
+  it("un membre Communication (accepté par requireMediaCollectionAccess) obtient 201", async () => {
+    mockRequireMediaCollectionAccess.mockResolvedValue(createAdminSession());
+
+    const res = await POST(
+      makeRequest({
+        churchId: "church-1",
+        scope: "photos",
+        eventIds: ["evt-1"],
+        projectIds: [],
+      })
+    );
+
+    expect(res.status).toBe(201);
+    expect(mockRequireMediaCollectionAccess).toHaveBeenCalledWith("church-1");
   });
 });

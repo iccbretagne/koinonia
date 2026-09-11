@@ -25,7 +25,7 @@ interface AuthLayoutShellProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
-  mediaLinks: { href: string; label: string }[];
+  mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
   famillesUrl?: string | null;

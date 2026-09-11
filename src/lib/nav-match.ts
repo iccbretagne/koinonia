@@ -18,3 +18,29 @@ export function activeHref(pathname: string, hrefs: readonly string[]): string |
   }
   return best;
 }
+
+export interface NavLinkMatch {
+  href: string;
+  /** Préfixes supplémentaires qui allument ce lien (spec 043 : `/media` couvre aussi
+   * `/communication`, deux préfixes de routes pour un seul lien de menu). */
+  matchPrefixes?: string[];
+}
+
+/**
+ * Variante de `activeHref` pour des liens dont un seul peut couvrir plusieurs préfixes de
+ * routes distincts (`matchPrefixes`) — retourne le `href` du lien le plus spécifique.
+ */
+export function activeLinkHref(pathname: string, links: readonly NavLinkMatch[]): string | null {
+  let best: string | null = null;
+  let bestLen = -1;
+  for (const link of links) {
+    const candidates = link.matchPrefixes && link.matchPrefixes.length > 0 ? link.matchPrefixes : [link.href];
+    for (const candidate of candidates) {
+      if (matchesPath(pathname, candidate) && candidate.length > bestLen) {
+        best = link.href;
+        bestLen = candidate.length;
+      }
+    }
+  }
+  return best;
+}

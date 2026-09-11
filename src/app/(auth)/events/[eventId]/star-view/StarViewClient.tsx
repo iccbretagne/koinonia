@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
-import AnnouncementSheetManager, { type AnnouncementSheetData } from "./AnnouncementSheetManager";
-import OpeningClosingManager, { type OpeningClosingData } from "./OpeningClosingManager";
+import { type OpeningClosingData } from "./OpeningClosingManager";
+import { type AnnouncementSheetData } from "./AnnouncementSheetManager";
+import PreparationBanner from "./PreparationBanner";
 
 interface MemberItem {
   id: string;
@@ -32,8 +33,8 @@ interface StarViewData {
   totalStars: number;
   welcomeFamilies: string[];
   audioLink: { url: string } | null;
-  announcementSheet: AnnouncementSheetData;
   openingClosing: OpeningClosingData;
+  announcementSheet: AnnouncementSheetData;
 }
 
 interface Props {
@@ -248,6 +249,16 @@ export default function StarViewClient({ eventId }: Props) {
         </a>
       )}
 
+      <PreparationBanner
+        eventId={eventId}
+        openingClosing={data.openingClosing}
+        announcementSheet={data.announcementSheet}
+        onOpeningClosingChange={(openingClosing) => setData((d) => (d ? { ...d, openingClosing } : d))}
+        onAnnouncementSheetChange={(announcementSheet) =>
+          setData((d) => (d ? { ...d, announcementSheet } : d))
+        }
+      />
+
       {/* Printable zone */}
       <div ref={printRef} className="rounded-2xl overflow-hidden shadow-xl">
         {/* Header */}
@@ -353,22 +364,6 @@ export default function StarViewClient({ eventId }: Props) {
             </div>
           )}
         </div>
-      </div>
-
-      <OpeningClosingManager
-        eventId={eventId}
-        data={data.openingClosing}
-        onChange={(openingClosing) => setData((d) => (d ? { ...d, openingClosing } : d))}
-      />
-
-      <div className="mt-6">
-        <AnnouncementSheetManager
-          eventId={eventId}
-          data={data.announcementSheet}
-          onChange={(announcementSheet) =>
-            setData((d) => (d ? { ...d, announcementSheet } : d))
-          }
-        />
       </div>
     </div>
   );

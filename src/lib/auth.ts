@@ -667,6 +667,34 @@ export async function requireMediaReviewAccess(churchId: string) {
   throw new Error("FORBIDDEN");
 }
 
+/**
+ * Autorise la gestion des collections média (liens de partage de sélections).
+ * Passe si : permission `media:manage` (ADMIN…) OU membre PRODUCTION_MEDIA OU membre COMMUNICATION.
+ *
+ * Distinct de `requireMediaManageAccess` (spec 043) : ce dernier protège aussi la
+ * suppression/le partage des projets, événements médias et fichiers, que la Communication ne
+ * doit pas obtenir — seules les collections lui sont ouvertes, sur demande explicite.
+ */
+export async function requireMediaCollectionAccess(churchId: string) {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return session;
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (
+    userPerms.has("media:manage") ||
+    (await isProductionMediaMember(session, churchId)) ||
+    (await isCommunicationMember(session, churchId))
+  )
+    return session;
+
+  throw new Error("FORBIDDEN");
+}
+
 // Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie
 // posé par le client. Elle ne fait que sélectionner, parmi les églises où la session a
 // un rattachement (rôle ou supervision pastorale), laquelle regarder — elle ne confère

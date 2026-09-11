@@ -172,16 +172,16 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
   {
-    name: "Visuels (Prod. Média)",
-    description: "Traitez les demandes de création de visuels depuis /media/requests. Mettez à jour le statut et partagez le lien de livraison. Visible pour les membres du département Production Média.",
+    name: "Demandes visuels (Prod. Média)",
+    description: "Traitez les demandes de création de visuels depuis l'onglet « Demandes visuels » du menu « Communication & Production ». Mettez à jour le statut et partagez le lien de livraison. Visible pour les membres du département Production Média.",
     category: "Demandes",
     screenshotTitle: "Dashboard Production Média",
     screenshotFile: "guide-media-dashboard.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
   {
-    name: "Communication",
-    description: "Traitez les demandes de publication réseaux sociaux depuis /communication/requests. Confirmez la publication ou signalez un refus avec note. Visible pour les membres du département Communication.",
+    name: "Demandes réseaux sociaux (Communication)",
+    description: "Traitez les demandes de publication réseaux sociaux depuis l'onglet « Demandes réseaux sociaux » du menu « Communication & Production ». Confirmez la publication ou signalez un refus avec note. Visible pour les membres du département Communication.",
     category: "Demandes",
     screenshotTitle: "Dashboard Communication",
     screenshotFile: "guide-communication-dashboard.png",
@@ -297,7 +297,7 @@ const FEATURES: Feature[] = [
   // ── Agenda pastoral ──────────────────────────────────────────────────────
   {
     name: "Demande de RDV pastoral",
-    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis /agenda/request. Disponible pour toute personne ayant accès au planning de son église.",
+    description: "Déposez une demande de rendez-vous avec un pasteur ou responsable depuis une tuile « Rendez-vous pastoral » dans « Mes demandes » (ou le lien de menu autonome pour le STAR, sans accès à « Mes demandes »). Disponible pour toute personne ayant accès au planning de son église.",
     category: "Agenda pastoral",
     screenshotTitle: "Demande de RDV pastoral",
     screenshotFile: "guide-agenda-demande.png",
@@ -582,7 +582,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
         )}
         {activeRole === "SUPER_ADMIN" && (
           <p className="text-xs text-gray-500 mt-2 italic">
-            * Les dashboards Secrétariat, Visuels et Communication sont visibles selon l&apos;appartenance au département concerné (fonction système).
+            * Les dashboards Secrétariat, Demandes visuels et Demandes réseaux sociaux sont visibles selon l&apos;appartenance au département concerné (fonction système) — ces deux derniers regroupés sous le menu « Communication & Production ».
           </p>
         )}
       </div>
