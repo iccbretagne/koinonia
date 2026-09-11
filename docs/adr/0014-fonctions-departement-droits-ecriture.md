@@ -1,6 +1,6 @@
 # ADR-0014 — Certaines fonctions de département confèrent des droits d'écriture, nommément
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-09-12
 
 ## Contexte
