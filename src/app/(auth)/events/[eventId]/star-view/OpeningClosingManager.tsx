@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Button from "@/components/ui/Button";
 
 interface Member {
   id: string;
@@ -131,14 +132,16 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
           <div key={s}>
             <SlotList label={SLOT_LABELS[s]} assignments={data[s === "OPENING" ? "opening" : "closing"]} />
             {data.canManage && data[s === "OPENING" ? "opening" : "closing"].map((a) => (
-              <button
+              <Button
                 key={a.id}
+                variant="danger"
+                size="sm"
                 onClick={() => removeAssignment(a.id, s)}
                 disabled={removing === a.id}
-                className="mt-1 text-xs text-icc-rouge hover:underline disabled:opacity-50"
+                className="mt-1"
               >
                 Retirer {a.member.firstName} {a.member.lastName}
-              </button>
+              </Button>
             ))}
           </div>
         ))}
