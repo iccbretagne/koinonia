@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -25,15 +26,6 @@ const updateSchema = z.object({
   phone: z.string().nullable().optional(),
 });
 
-function getChurchDeptScope(session: { user: { isSuperAdmin: boolean; churchRoles: { churchId: string; role: string; departments: { department: { id: string } }[] }[] } }, churchId: string) {
-  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
-  const hasGlobalRole = session.user.isSuperAdmin || churchRoles.some((r) => GLOBAL_ROLES.includes(r.role));
-  return hasGlobalRole
-    ? null
-    : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
-}
-
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ memberId: string }> }
@@ -42,7 +34,8 @@ export async function PUT(
     const { memberId } = await params;
     const churchId = await resolveChurchId("member", memberId);
     const session = await requireChurchPermission("members:manage", churchId);
-    const scopedDeptIds = getChurchDeptScope(session, churchId);
+    const scope = await resolveMemberDepartmentScope(session, churchId);
+    const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
     const body = await request.json();
     const { departmentId, additionalDepartmentIds = [], ...memberData } = updateSchema.parse(body);
 
@@ -164,7 +157,8 @@ export async function DELETE(
     const { memberId } = await params;
     const churchId = await resolveChurchId("member", memberId);
     const session = await requireChurchPermission("members:manage", churchId);
-    const scopedDeptIds = getChurchDeptScope(session, churchId);
+    const scope = await resolveMemberDepartmentScope(session, churchId);
+    const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
 
     const member = await prisma.member.findUnique({
       where: { id: memberId },

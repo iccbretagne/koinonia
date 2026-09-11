@@ -2,6 +2,7 @@ import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import SwitchChurchLink from "@/components/SwitchChurchLink";
+import { buttonClasses } from "@/components/ui/Button";
 
 const roleLabel: Record<string, string> = {
   PASTEUR: "Pasteur",
@@ -163,28 +164,28 @@ export default async function PastoralDashboardPage() {
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/members"
-                    className="text-xs text-icc-violet hover:underline"
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Membres →
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/events"
-                    className="text-xs text-icc-violet hover:underline"
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Événements →
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/reports"
-                    className="text-xs text-icc-violet hover:underline"
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Comptes rendus →
                   </SwitchChurchLink>
                   <SwitchChurchLink
                     churchId={church.id}
                     href="/pastoral/accounting"
-                    className="text-xs text-icc-violet hover:underline"
+                    className={buttonClasses("ghost", "sm")}
                   >
                     Comptabilité →
                   </SwitchChurchLink>
@@ -200,7 +201,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-700">Mon agenda</h2>
-            <a href={`/agenda/${profile.id}`} className="text-xs text-icc-violet hover:underline">
+            <a href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
               Tout voir →
             </a>
           </div>
@@ -229,7 +230,7 @@ export default async function PastoralDashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-700">Événements</h2>
-            <a href="/events" className="text-xs text-icc-violet hover:underline">
+            <a href="/events" className={buttonClasses("ghost", "sm")}>
               Calendrier →
             </a>
           </div>

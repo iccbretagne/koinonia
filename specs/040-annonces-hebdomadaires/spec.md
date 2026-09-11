@@ -24,8 +24,9 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 
 - **Déposent** (et peuvent retirer) :
   - le Secrétariat : rôle Secrétaire et membres du département ayant la fonction Secrétariat ;
-  - la Coordination : le Ministre et les responsables de département du ministère
-    « Coordination générale » ;
+  - la Coordination : le Ministre, les responsables de département et les membres des
+    départements du ministère « Coordination générale » (élargi aux membres le 2026-09-12 :
+    ce sont les deux équipes qui préparent la trame, pas seulement leurs responsables) ;
   - Admin et Super Admin.
 - **Récupèrent** (téléchargement) :
   - les membres STAR du département **Modération** (le modérateur de service en fait partie) ;

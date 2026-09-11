@@ -52,8 +52,10 @@ export async function findCoordinationMinistryId(
  * ne peut pas s'exprimer comme une entrée `rolePermissions` classique :
  *   1. `events:manage` (Super Admin / Admin / Secrétaire) — géré en amont par l'appelant.
  *   2. N'importe quel membre du département de fonction SECRETARIAT, peu importe son rôle.
- *   3. Ministre du ministère Coordination générale (`getUserMinistryScope`).
- *   4. Responsable ou adjoint d'un département du ministère Coordination générale
+ *   3. N'importe quel membre d'un département du ministère Coordination générale, peu importe
+ *      son rôle — symétrique de 2.
+ *   4. Ministre du ministère Coordination générale (`getUserMinistryScope`).
+ *   5. Responsable ou adjoint d'un département du ministère Coordination générale
  *      (`getUserDepartmentScope`).
  */
 export async function canDepositAnnouncementSheet(
@@ -81,6 +83,16 @@ export async function canDepositAnnouncementSheet(
 
   const coordinationMinistryId = await findCoordinationMinistryId(churchId, db);
   if (!coordinationMinistryId) return false;
+
+  // Appartenance à un département de la Coordination générale, quel que soit le rôle — pendant
+  // exact de l'appartenance au Secrétariat ci-dessus : ce sont ces deux équipes qui préparent la
+  // trame, pas seulement leurs responsables.
+  if (link) {
+    const coordinationMembership = await db.memberDepartment.count({
+      where: { memberId: link.memberId, department: { ministryId: coordinationMinistryId } },
+    });
+    if (coordinationMembership > 0) return true;
+  }
 
   if (ministryScope.ministryIds.includes(coordinationMinistryId)) return true;
 

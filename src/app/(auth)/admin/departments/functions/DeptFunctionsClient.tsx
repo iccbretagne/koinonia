@@ -56,20 +56,31 @@ const FUNCTIONS = [
     description: "Enregistre et dépose les cultes ; ses membres accèdent à l'espace Audio (spec 021).",
     icon: "🎙️",
   },
+  {
+    key: "MODERATION" as const,
+    label: "Modération",
+    description: "Anime le culte ; ses membres STAR accèdent à la trame des annonces.",
+    icon: "🎤",
+  },
+  {
+    key: "SECURITE" as const,
+    label: "Sécurité",
+    description: "Ses responsables désignent les personnes d'ouverture et de fermeture des cultes.",
+    icon: "🔐",
+  },
 ];
+
+type FnKey = (typeof FUNCTIONS)[number]["key"];
 
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
 
-  function getAssigned(fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP" | "CAPTATION_AUDIO") {
+  function getAssigned(fn: FnKey) {
     return depts.find((d) => d.function === fn)?.id ?? "";
   }
 
-  async function handleChange(
-    fn: "SECRETARIAT" | "COMMUNICATION" | "PRODUCTION_MEDIA" | "PROTOCOLE" | "INTEGRATION" | "MSDP" | "CAPTATION_AUDIO",
-    newDeptId: string
-  ) {
+  async function handleChange(fn: FnKey, newDeptId: string) {
     setSaving(fn);
     const prevDeptId = getAssigned(fn);
 

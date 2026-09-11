@@ -156,7 +156,7 @@ export default function CalendarClient({ events }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState<"pdf" | "png" | "copy" | null>(null);
 
-  const [mode, setMode] = useState<"single" | "multi">("single");
+  const [mode, setMode] = useState<"single" | "multi" | "list">("single");
   const [currentMonth, setCurrentMonth] = useState(currentYM);
   const [startMonth, setStartMonth] = useState(currentYM);
   const [endMonth, setEndMonth] = useState(() => {
@@ -206,10 +206,19 @@ export default function CalendarClient({ events }: Props) {
     return buildMonthDays(year, month);
   }, [mode, year, month]);
 
+  // Événements du mois courant, pour la vue liste
+  const monthEvents = useMemo(() => {
+    if (mode !== "list") return [];
+    const prefix = `${year}-${String(month).padStart(2, "0")}`;
+    return events
+      .filter((ev) => ev.date.slice(0, 7) === prefix)
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [mode, events, year, month]);
+
   const todayStr = localDateStr(new Date());
 
   const printTitle =
-    mode === "single"
+    mode !== "multi"
       ? `${MONTHS_FR[month - 1]} ${year}`
       : months.length > 0
         ? `${MONTHS_FR[months[0].month - 1]} ${months[0].year} — ${MONTHS_FR[months[months.length - 1].month - 1]} ${months[months.length - 1].year}`
@@ -295,9 +304,20 @@ export default function CalendarClient({ events }: Props) {
           >
             Vue multi-mois
           </button>
+          <button
+            onClick={() => setMode("list")}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              mode === "list"
+                ? "bg-icc-violet text-white"
+                : "bg-white text-icc-violet hover:bg-icc-violet-light"
+            }`}
+          >
+            Vue liste
+          </button>
         </div>
 
-        {/* Export buttons */}
+        {/* Export buttons — les exports capturent la grille, sans objet en vue liste */}
+        {mode !== "list" && (
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.print()}
@@ -345,10 +365,11 @@ export default function CalendarClient({ events }: Props) {
             Copier
           </button>
         </div>
+        )}
       </div>
 
-      {/* Single-month navigation */}
-      {mode === "single" && (
+      {/* Navigation mensuelle — partagée par la vue mensuelle et la vue liste */}
+      {mode !== "multi" && (
         <div className="flex items-center justify-center gap-2 mb-6 print:hidden">
           <button
             onClick={() => navigateMonth(-1)}
@@ -415,7 +436,43 @@ export default function CalendarClient({ events }: Props) {
       </div>
 
       {/* Calendar content */}
-      {mode === "single" ? (
+      {mode === "list" ? (
+        <div className="space-y-2">
+          {monthEvents.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg bg-white">
+              Aucun événement ce mois-ci.
+            </div>
+          ) : (
+            monthEvents.map((ev) => {
+              const colors = getEventTypeColors(ev.type);
+              const d = new Date(ev.date);
+              return (
+                <Link
+                  key={ev.id}
+                  href={`/events/${ev.id}/star-view`}
+                  className="flex items-center gap-4 bg-white rounded-xl border-2 border-gray-100 px-4 py-3 hover:border-icc-violet/40 transition-colors"
+                >
+                  <div className="w-12 shrink-0 text-center">
+                    <p className="text-[11px] uppercase text-gray-400">
+                      {d.toLocaleDateString("fr-FR", { weekday: "short" })}
+                    </p>
+                    <p className="text-xl font-bold text-gray-800 leading-none">{d.getDate()}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{ev.title}</p>
+                    <p className="text-xs text-gray-400">
+                      {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
+                    {colors.label}
+                  </span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+      ) : mode === "single" ? (
         <>
           <div className="bg-white rounded-xl shadow-md border-2 border-gray-100 overflow-hidden">
             <div className="grid grid-cols-7 bg-icc-violet">

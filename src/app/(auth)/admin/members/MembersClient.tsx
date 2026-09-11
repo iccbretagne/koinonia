@@ -29,16 +29,27 @@ interface Member {
 
 type DuplicateCandidate = { id: string; firstName: string; lastName: string; email: string | null };
 
+type LookupResult = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  departmentIds: string[];
+  departmentNames: string[];
+};
+
 interface Props {
   initialMembers: Member[];
   departments: { id: string; name: string; ministryName: string }[];
   readOnly?: boolean;
+  /** L'appelant ne gère qu'une partie des départements : il lui faut retirer/rattacher un STAR. */
+  scoped?: boolean;
+  churchId: string;
 }
 
 const LS_FILTER_DEPT = "members_filter_dept";
 const LS_FILTER_SEARCH = "members_filter_search";
 
-export default function MembersClient({ initialMembers, departments, readOnly = false }: Props) {
+export default function MembersClient({ initialMembers, departments, readOnly = false, scoped = false, churchId }: Props) {
   const [members, setMembers] = useState(initialMembers);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -75,6 +86,143 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const userSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Retrait d'un département / rattachement d'un STAR existant
+  const [removeModal, setRemoveModal] = useState<Member | null>(null);
+  const [removeLoading, setRemoveLoading] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [lookupQuery, setLookupQuery] = useState("");
+  const [lookupResults, setLookupResults] = useState<LookupResult[]>([]);
+  const [lookupSearching, setLookupSearching] = useState(false);
+  const [lookupSelected, setLookupSelected] = useState<LookupResult | null>(null);
+  const [addDeptId, setAddDeptId] = useState(departments[0]?.id ?? "");
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const manageableIds = new Set(departments.map((d) => d.id));
+
+  useEffect(() => {
+    if (!addOpen || lookupQuery.trim().length < 2) { setLookupResults([]); return; }
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    lookupTimer.current = setTimeout(async () => {
+      setLookupSearching(true);
+      try {
+        const res = await fetch(
+          `/api/members/lookup?churchId=${encodeURIComponent(churchId)}&q=${encodeURIComponent(lookupQuery.trim())}`
+        );
+        const json = await res.json();
+        setLookupResults(Array.isArray(json) ? json : (json?.data ?? []));
+      } finally {
+        setLookupSearching(false);
+      }
+    }, 300);
+  }, [addOpen, lookupQuery, churchId]);
+
+  async function handleRemoveDept(m: Member, deptId: string) {
+    setRemoveError(null);
+    setRemoveLoading(deptId);
+    try {
+      const res = await fetch(
+        `/api/members/${m.id}/departments?departmentId=${encodeURIComponent(deptId)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Erreur lors du retrait");
+      }
+      const remaining = m.allDepartments.filter((d) => d.id !== deptId);
+      const lostPrimary = m.allDepartments.find((d) => d.id === deptId)?.isPrimary ?? false;
+      const nextDepts = remaining.map((d, i) => ({ ...d, isPrimary: lostPrimary ? i === 0 : d.isPrimary }));
+      const nextPrimary = nextDepts.find((d) => d.isPrimary) ?? null;
+      // Hors périmètre après retrait : le STAR disparaît de la liste, qui n'affiche que le périmètre
+      const stillVisible = nextDepts.some((d) => manageableIds.has(d.id));
+      setMembers((prev) =>
+        stillVisible
+          ? prev.map((x) =>
+              x.id === m.id
+                ? {
+                    ...x,
+                    allDepartments: nextDepts,
+                    primaryDepartment: nextPrimary
+                      ? { id: nextPrimary.id, name: nextPrimary.name, ministry: nextPrimary.ministry }
+                      : null,
+                  }
+                : x
+            )
+          : prev.filter((x) => x.id !== m.id)
+      );
+      if (!stillVisible || nextDepts.filter((d) => manageableIds.has(d.id)).length === 0) {
+        setRemoveModal(null);
+      } else {
+        setRemoveModal((cur) => (cur && cur.id === m.id ? { ...cur, allDepartments: nextDepts } : cur));
+      }
+    } catch (e) {
+      setRemoveError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setRemoveLoading(null);
+    }
+  }
+
+  function openAddExisting() {
+    setLookupQuery("");
+    setLookupResults([]);
+    setLookupSelected(null);
+    setAddDeptId(departments[0]?.id ?? "");
+    setAddError(null);
+    setAddOpen(true);
+  }
+
+  async function handleAddExisting() {
+    if (!lookupSelected || !addDeptId) return;
+    setAddError(null);
+    setAddLoading(true);
+    try {
+      const res = await fetch(`/api/members/${lookupSelected.id}/departments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ departmentId: addDeptId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Erreur lors du rattachement");
+      }
+      const dept = departments.find((d) => d.id === addDeptId)!;
+      const newRef: DeptRef = {
+        id: dept.id,
+        name: dept.name,
+        isPrimary: false,
+        ministry: { id: "", name: dept.ministryName },
+      };
+      setMembers((prev) => {
+        const existing = prev.find((x) => x.id === lookupSelected.id);
+        if (existing) {
+          return prev.map((x) =>
+            x.id === lookupSelected.id ? { ...x, allDepartments: [...x.allDepartments, newRef] } : x
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: lookupSelected.id,
+            firstName: lookupSelected.firstName,
+            lastName: lookupSelected.lastName,
+            email: null,
+            churchId,
+            primaryDepartment: null,
+            allDepartments: [newRef],
+            userLink: null,
+          },
+        ];
+      });
+      setAddOpen(false);
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setAddLoading(false);
+    }
+  }
 
   // Persist filters
   useEffect(() => { localStorage.setItem(LS_FILTER_DEPT, filterDept); }, [filterDept]);
@@ -428,6 +576,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       {/* Toolbar */}
       <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         {!readOnly && <Button onClick={openCreate}>Nouveau STAR</Button>}
+        {!readOnly && scoped && (
+          <Button variant="secondary" onClick={openAddExisting}>
+            Ajouter un STAR existant
+          </Button>
+        )}
         <div className="flex-1 min-w-0">
           <input
             type="search"
@@ -550,6 +703,16 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                     <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>
                       Modifier
                     </Button>
+                    {m.allDepartments.length > 1 &&
+                      m.allDepartments.some((d) => manageableIds.has(d.id)) && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => { setRemoveError(null); setRemoveModal(m); }}
+                        >
+                          Retirer
+                        </Button>
+                      )}
                     <Button variant="danger" size="sm" onClick={() => handleDelete(m)}>
                       Supprimer
                     </Button>
@@ -726,6 +889,110 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             <Button variant="secondary" onClick={() => setLinkModal(null)}>Annuler</Button>
             <Button onClick={handleLink} disabled={(!selectedUser && !canLinkByEmail) || linkLoading}>
               {linkLoading ? "En cours..." : "Lier"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Retirer d'un département */}
+      <Modal
+        open={!!removeModal}
+        onClose={() => setRemoveModal(null)}
+        title={`Retirer ${removeModal?.firstName} ${removeModal?.lastName} d'un département`}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            La fiche du STAR est conservée. Ses affectations de planning et ses tâches à venir dans
+            le département retiré sont supprimées.
+          </p>
+          <ul className="space-y-2">
+            {(removeModal?.allDepartments ?? [])
+              .filter((d) => manageableIds.has(d.id))
+              .map((d) => (
+                <li key={d.id} className="flex items-center justify-between gap-3 border-2 border-gray-200 rounded-lg px-3 py-2">
+                  <span className="text-sm text-gray-700">
+                    {d.name}
+                    {d.isPrimary && <span className="text-xs text-icc-violet ml-1">principal</span>}
+                  </span>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={removeLoading !== null}
+                    onClick={() => removeModal && handleRemoveDept(removeModal, d.id)}
+                  >
+                    {removeLoading === d.id ? "Retrait…" : "Retirer"}
+                  </Button>
+                </li>
+              ))}
+          </ul>
+          {removeError && <p className="text-sm text-icc-rouge">{removeError}</p>}
+          <div className="flex justify-end">
+            <Button variant="secondary" onClick={() => setRemoveModal(null)}>Fermer</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Ajouter un STAR existant */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Ajouter un STAR existant">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Recherchez un STAR déjà enregistré dans l&apos;église, même hors de votre périmètre,
+            pour le rattacher à l&apos;un de vos départements.
+          </p>
+          <div>
+            <Input
+              label="Rechercher un STAR"
+              value={lookupQuery}
+              onChange={(e) => { setLookupQuery(e.target.value); setLookupSelected(null); }}
+              placeholder="Nom ou prénom..."
+            />
+            {lookupSearching && <p className="text-xs text-gray-400 mt-1">Recherche...</p>}
+            {lookupResults.length > 0 && !lookupSelected && (
+              <ul className="mt-1 border-2 border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                {lookupResults.map((r) => (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      onClick={() => { setLookupSelected(r); setLookupResults([]); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-icc-violet/5 transition-colors"
+                    >
+                      <span className="font-medium">{r.lastName} {r.firstName}</span>
+                      {r.departmentNames.length > 0 && (
+                        <span className="text-gray-400 ml-1 text-xs">{r.departmentNames.join(", ")}</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {lookupQuery.trim().length >= 2 && !lookupSearching && lookupResults.length === 0 && !lookupSelected && (
+              <p className="text-xs text-gray-400 mt-1">Aucun STAR trouvé.</p>
+            )}
+            {lookupSelected && (
+              <p className="text-sm text-gray-700 mt-2">
+                Sélectionné : <span className="font-medium">{lookupSelected.lastName} {lookupSelected.firstName}</span>
+              </p>
+            )}
+          </div>
+          <Select
+            label="Rattacher au département"
+            value={addDeptId}
+            onChange={(e) => setAddDeptId(e.target.value)}
+            options={departments.map((d) => ({ value: d.id, label: `${d.name} (${d.ministryName})` }))}
+          />
+          {lookupSelected?.departmentIds.includes(addDeptId) && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Ce STAR appartient déjà à ce département.
+            </p>
+          )}
+          {addError && <p className="text-sm text-icc-rouge">{addError}</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setAddOpen(false)}>Annuler</Button>
+            <Button
+              onClick={handleAddExisting}
+              disabled={!lookupSelected || !addDeptId || addLoading || lookupSelected.departmentIds.includes(addDeptId)}
+            >
+              {addLoading ? "Rattachement…" : "Rattacher"}
             </Button>
           </div>
         </div>

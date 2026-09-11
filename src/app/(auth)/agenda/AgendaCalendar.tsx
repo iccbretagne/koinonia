@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { buttonClasses } from "@/components/ui/Button";
 
 interface Profile { id: string; name: string; role: string }
 interface EntryRequest { id: string; firstName: string; lastName: string; qualificationNote: string | null }
@@ -96,7 +97,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                 <span className="font-semibold text-gray-900">{profile.name}</span>
                 <span className="ml-2 text-xs text-gray-500">{ROLE_LABELS[profile.role] ?? profile.role}</span>
               </div>
-              <a href={`/agenda/${profile.id}`} className="text-xs text-icc-violet hover:underline">
+              <a href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
                 Voir l&apos;agenda →
               </a>
             </div>

@@ -2,6 +2,7 @@ import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/Button";
 
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
@@ -117,7 +118,7 @@ export default async function PastoralReportsPage() {
                 </div>
                 <Link
                   href={`/admin/events/${e.id}/report`}
-                  className="text-xs text-icc-violet hover:underline shrink-0 ml-2"
+                  className={`${buttonClasses("ghost", "sm")} shrink-0 ml-2`}
                 >
                   Rédiger →
                 </Link>

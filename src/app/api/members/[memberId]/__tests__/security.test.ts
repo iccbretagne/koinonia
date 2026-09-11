@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createAuthScopeMocks } from "@/__mocks__/auth";
 
 const mockRequirePermission = vi.fn();
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
+  ...createAuthScopeMocks(),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));

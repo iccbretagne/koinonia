@@ -2,6 +2,7 @@ import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/Button";
 
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
@@ -134,7 +135,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-700">À venir</h2>
-            <Link href="/events/calendar" className="text-xs text-icc-violet hover:underline">Calendrier →</Link>
+            <Link href="/events" className={buttonClasses("ghost", "sm")}>Agenda de l&apos;église →</Link>
           </div>
           {upcoming.length === 0 ? (
             <p className="text-sm text-gray-400 italic">Aucun événement planifié.</p>
@@ -186,7 +187,7 @@ export default async function PastoralEventsPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-700">30 derniers jours</h2>
-            <Link href="/pastoral/reports" className="text-xs text-icc-violet hover:underline">CRs →</Link>
+            <Link href="/pastoral/reports" className={buttonClasses("ghost", "sm")}>CRs →</Link>
           </div>
           {recent.length === 0 ? (
             <p className="text-sm text-gray-400 italic">Aucun événement sur les 30 derniers jours.</p>

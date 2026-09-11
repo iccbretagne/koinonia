@@ -121,10 +121,10 @@ export default async function NewAccountingRequestPage({
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-2">
         <Link
-          href={fromRequests ? "/requests" : "/accounting/requests"}
+          href={fromRequests ? "/requests/new" : "/accounting/requests"}
           className="text-sm text-gray-400 hover:text-icc-violet transition-colors"
         >
-          ← {fromRequests ? "Mes demandes" : "Demandes"}
+          ← {fromRequests ? "Nouvelle demande" : "Demandes"}
         </Link>
         <span className="text-gray-300">/</span>
         <span className="text-sm text-gray-600 font-medium">

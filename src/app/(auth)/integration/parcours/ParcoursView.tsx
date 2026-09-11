@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Button from "@/components/ui/Button";
+import Button, { buttonClasses } from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 
@@ -259,7 +259,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
               {selected.sourceRequest && (
                 <a
                   href={`/integration/requests/${selected.sourceRequest.id}`}
-                  className="text-xs text-icc-violet hover:underline mt-1 block"
+                  className={`${buttonClasses("ghost", "sm")} mt-1`}
                 >
                   Voir la demande d&apos;intégration →
                 </a>

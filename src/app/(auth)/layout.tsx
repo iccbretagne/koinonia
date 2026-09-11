@@ -20,7 +20,9 @@ const configLinksDef = [
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
   { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
   // Personnes
-  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"] },
+  // Réservé à l'administration d'église : inutile aux Ministres/Resp. département, qui gèrent
+  // leurs STAR depuis /admin/members.
+  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"], adminOnly: true },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
   { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:manage"] },
   // Système
@@ -149,6 +151,10 @@ export default async function AuthLayout({
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
       if (link.superAdminOnly) return session.user.isSuperAdmin;
+      if (link.adminOnly && !session.user.isSuperAdmin) {
+        const isChurchAdmin = churchRoles.some((r) => r.churchId === currentChurchId && r.role === "ADMIN");
+        if (!isChurchAdmin) return false;
+      }
       return link.permissions.some((p) => userPermissions.has(p));
     })
     .map(({ href, label }) => ({ href, label }));

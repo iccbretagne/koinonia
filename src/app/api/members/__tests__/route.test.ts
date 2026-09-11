@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createAuthScopeMocks } from "@/__mocks__/auth";
 
 // Mock auth before importing route handlers
 const mockRequireChurchPermission = vi.fn();
@@ -8,6 +8,7 @@ const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
+  ...createAuthScopeMocks(),
 }));
 
 // Mock prisma

@@ -70,6 +70,19 @@ describe("canDepositAnnouncementSheet", () => {
     });
   });
 
+  it("autorise n'importe quel membre d'un département de la Coordination générale", async () => {
+    const session = createStarSession();
+    prismaMock.memberUserLink.findUnique.mockResolvedValue({ memberId: "member-1" } as never);
+    prismaMock.ministry.findFirst.mockResolvedValue({ id: COORDINATION_ID } as never);
+    // 1er appel : appartenance Secrétariat → non. 2e : appartenance Coordination → oui.
+    prismaMock.memberDepartment.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+    expect(await canDepositAnnouncementSheet(session, "church-1")).toBe(true);
+    expect(prismaMock.memberDepartment.count).toHaveBeenLastCalledWith({
+      where: { memberId: "member-1", department: { ministryId: COORDINATION_ID } },
+    });
+  });
+
   it("autorise le Ministre du ministère Coordination générale", async () => {
     const session = createMinisterSession(COORDINATION_ID);
     prismaMock.memberDepartment.count.mockResolvedValue(0);

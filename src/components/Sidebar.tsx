@@ -506,8 +506,9 @@ export default function Sidebar({
           <AccordionSection title="Agenda événements" icon={<IconCalendar className="w-4 h-4" />}
             open={openSection === "events"} onToggle={() => toggle("events")} isActive={isPastoralEvents}>
             <nav className="space-y-0.5 pl-6">
-              <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
-              <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
+              <NavLink href="/events" active={pathname === "/events" || pathname === "/events/calendar"} onClose={onClose}>
+                Agenda de l&apos;église
+              </NavLink>
             </nav>
           </AccordionSection>
         )}
@@ -577,7 +578,7 @@ export default function Sidebar({
         >
           <nav className="space-y-0.5 pl-6">
             <NavLink href="/planning/events" active={isStarEventsActive} onClose={onClose}>
-              Mes événements
+              Agenda de l&apos;église
             </NavLink>
             <NavLink
               href="/events/announcement-sheets"
@@ -701,8 +702,9 @@ export default function Sidebar({
           dataTour="sidebar-events"
         >
           <nav className="space-y-0.5 pl-6">
-            <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
-            <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
+            <NavLink href="/events" active={pathname === "/events" || pathname === "/events/calendar"} onClose={onClose}>
+              Agenda de l&apos;église
+            </NavLink>
             <NavLink href="/events/announcement-sheets" active={pathname.startsWith("/events/announcement-sheets")} onClose={onClose}>
               Trame des annonces
             </NavLink>

@@ -30,6 +30,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
 }
 
+/** Classes du bouton, réutilisables sur un `<Link>`/`<a>` pour qu'un lien d'action ait l'apparence d'un bouton. */
+export function buttonClasses(variant: Variant = "primary", size: Size = "md"): string {
+  return `inline-flex items-center justify-center gap-1.5 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${sizeClasses[size]} ${variantClasses[variant]}`;
+}
+
 export default function Button({
   variant = "primary",
   size = "md",

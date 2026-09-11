@@ -5,6 +5,7 @@ import { rolePermissions } from "@/lib/registry";
 import { isControlTeamMember } from "@/modules/rooms";
 import { prisma } from "@/lib/prisma";
 import RoomChecklistsClient from "./RoomChecklistsClient";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default async function RoomChecklistsPage() {
   const session = await requireAuth();
@@ -46,7 +47,7 @@ export default async function RoomChecklistsPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Contrôle des mains courantes</h1>
-        <Link href="/rooms" className="text-sm text-icc-violet hover:underline font-medium">
+        <Link href="/rooms" className={buttonClasses("secondary", "sm")}>
           ← Réservation des salles
         </Link>
       </div>
