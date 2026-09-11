@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaManageAccess } from "@/lib/auth";
+import { requireMediaCollectionAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken } from "@/modules/media";
 import { logAudit } from "@/lib/audit";
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const session = await requireMediaManageAccess(data.churchId);
+    const session = await requireMediaCollectionAccess(data.churchId);
 
     if (data.eventIds.length === 0 && data.projectIds.length === 0) {
       throw new ApiError(400, "Sélectionnez au moins un événement ou projet");

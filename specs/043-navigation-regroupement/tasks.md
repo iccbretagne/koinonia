@@ -94,72 +94,72 @@
 
 ### Volet 4 — Espace « Communication & Production »
 
-- [ ] **T21** — Ajouter `requireMediaCollectionAccess(churchId)` dans `auth.ts` : passe si
+- [x] **T21** — Ajouter `requireMediaCollectionAccess(churchId)` dans `auth.ts` : passe si
       `media:manage`, ou membre `PRODUCTION_MEDIA`, ou membre `COMMUNICATION` ; ne pas toucher
       `requireMediaManageAccess` (qui protège aussi projets/événements médias/fichiers/partage)
       *(fichier : `src/lib/auth.ts`)*
-- [ ] **T22** — Faire passer la page Collections et la route de création sur ce nouveau garde
+- [x] **T22** — Faire passer la page Collections et la route de création sur ce nouveau garde
       *(fichiers : `src/app/(auth)/media/collections/page.tsx`,
       `src/app/api/admin/media/collections/route.ts`)*
-- [ ] **T23** — Créer `resolveMediaSpaceAccess(session, churchId)` et `buildMediaSpaceTabs(access)`
+- [x] **T23** — Créer `resolveMediaSpaceAccess(session, churchId)` et `buildMediaSpaceTabs(access)`
       (fonction pure) définissant les 5 onglets possibles (Demandes visuels, Demandes réseaux
       sociaux, Projets, Événements médias, Collections) et leurs conditions d'affichage
       *(fichier : `src/lib/media-space.ts`, nouveau)*
-- [ ] **T24** [P] — Extraire un composant générique `SpaceTabs` à partir d'`AudioTabs` (props
+- [x] **T24** [P] — Extraire un composant générique `SpaceTabs` à partir d'`AudioTabs` (props
       `tabs`, `ariaLabel`), avec `overflow-x-auto` pour tenir 5 onglets sur mobile
       *(fichier : `src/components/SpaceTabs.tsx`, nouveau ; supprime
       `src/app/(auth)/audio/AudioTabs.tsx`)*
-- [ ] **T25** [P] — Faire utiliser `SpaceTabs` par l'espace Audio existant (rendu inchangé)
+- [x] **T25** [P] — Faire utiliser `SpaceTabs` par l'espace Audio existant (rendu inchangé)
       *(fichier : `src/app/(auth)/audio/layout.tsx`)*
-- [ ] **T26** — Créer le layout de l'espace Médias : appelle `resolveMediaSpaceAccess` +
+- [x] **T26** — Créer le layout de l'espace Médias : appelle `resolveMediaSpaceAccess` +
       `buildMediaSpaceTabs`, affiche `SpaceTabs` si plus d'un onglet
       *(fichier : `src/app/(auth)/media/layout.tsx`, nouveau)*
-- [ ] **T27** — Même layout côté Communication (même logique, même accès)
+- [x] **T27** — Même layout côté Communication (même logique, même accès)
       *(fichier : `src/app/(auth)/communication/layout.tsx`, nouveau)*
-- [ ] **T28** — Créer `/media` : redirige vers le premier onglet accessible, `notFound()` sinon
+- [x] **T28** — Créer `/media` : redirige vers le premier onglet accessible, `notFound()` sinon
       (calqué sur `audio/page.tsx`)
       *(fichier : `src/app/(auth)/media/page.tsx`, nouveau)*
-- [ ] **T29** — Remplacer les liens Visuels/Communication/Événements/Projets/Collections par une
+- [x] **T29** — Remplacer les liens Visuels/Communication/Événements/Projets/Collections par une
       entrée unique `{ href: "/media", label: "Communication & Production" }`, présente si
       `buildMediaSpaceTabs(access)` n'est pas vide ; construire `access` à partir des données déjà
       chargées (`serviceDepts`/`isMemberOf`) sans requête supplémentaire
       *(fichier : `src/app/(auth)/layout.tsx`)*
-- [ ] **T30** — Ajouter un `matchPrefixes` optionnel aux types de liens de `Sidebar.tsx` et
+- [x] **T30** — Ajouter un `matchPrefixes` optionnel aux types de liens de `Sidebar.tsx` et
       l'utiliser dans `activeOperationsHref` pour que `/communication/*` allume le lien `/media`
       *(fichier : `src/components/Sidebar.tsx`)*
-- [ ] **T31** — Même changement côté `MobileNavSheet.tsx`
+- [x] **T31** — Même changement côté `MobileNavSheet.tsx`
       *(fichier : `src/components/MobileNavSheet.tsx`)*
-- [ ] **T32** [P] — Aligner les titres de page sur les libellés d'onglets : « Demandes visuels »,
+- [x] **T32** [P] — Aligner les titres de page sur les libellés d'onglets : « Demandes visuels »,
       « Demandes réseaux sociaux », « Événements médias »
       *(fichiers : `src/app/(auth)/media/requests/page.tsx`,
       `src/app/(auth)/communication/requests/page.tsx`,
       `src/app/(auth)/media/events/page.tsx`)*
-- [ ] **T33** [P] — Renommer le libellé de navigation du manifeste média
+- [x] **T33** [P] — Renommer le libellé de navigation du manifeste média
       « Médias » → « Communication & Production »
       *(fichier : `src/modules/media/manifest.ts`)*
-- [ ] **T34** — Tests `buildMediaSpaceTabs` : Production média seule (4 onglets, sans Réseaux
+- [x] **T34** — Tests `buildMediaSpaceTabs` : Production média seule (4 onglets, sans Réseaux
       sociaux), Communication seule (4 onglets, sans Visuels), les deux (5, sans doublon), Admin
       (5), Secrétaire (sans Collections si hors périmètre), aucun droit (vide), ordre stable
       *(fichier : `src/lib/__tests__/media-space.test.ts`, nouveau)*
-- [ ] **T35** — Tests `requireMediaCollectionAccess` (accepte `media:manage`, membre Production
+- [x] **T35** — Tests `requireMediaCollectionAccess` (accepte `media:manage`, membre Production
       média, membre Communication ; refuse un STAR sans département de service) et non-régression
       de `requireMediaManageAccess` (refuse toujours un membre Communication)
       *(fichier : `src/lib/__tests__/auth-media-collections.test.ts`, nouveau)*
-- [ ] **T36** — Étendre le test de la route Collections : un membre Communication obtient 201
+- [x] **T36** — Étendre le test de la route Collections : un membre Communication obtient 201
       *(fichier : `src/app/api/admin/media/collections/__tests__/route.test.ts`)*
-- [ ] **T37** — Étendre `star-navigation.test.ts` : un membre Production média a une seule entrée
+- [x] **T37** — Étendre `star-navigation.test.ts` : un membre Production média a une seule entrée
       « Communication & Production » (plus aucun lien Visuels/Projets/Collections séparé) ; un
       utilisateur sans droit média n'a pas l'entrée ; Audio reste présent et distinct
       *(fichier : `src/app/(auth)/__tests__/star-navigation.test.ts`)*
 
 ### Documentation utilisateur [P]
 
-- [ ] **T38** [P] — Mettre à jour le texte de l'étape guidée du menu (section Opérations)
+- [x] **T38** [P] — Mettre à jour le texte de l'étape guidée du menu (section Opérations)
       *(fichier : `src/lib/tour-steps.ts`)*
-- [ ] **T39** [P] — Mettre à jour les cartes du guide (Visuels, Communication, RDV pastoral, note
+- [x] **T39** [P] — Mettre à jour les cartes du guide (Visuels, Communication, RDV pastoral, note
       de bas de page) avec les nouveaux libellés/points d'entrée
       *(fichier : `src/components/GuideContent.tsx`)*
-- [ ] **T40** [P] — Documenter l'espace « Communication & Production » et le nouveau garde
+- [x] **T40** [P] — Documenter l'espace « Communication & Production » et le nouveau garde
       Collections dans les spécificités du module média
       *(fichier : `CLAUDE.md`)*
 

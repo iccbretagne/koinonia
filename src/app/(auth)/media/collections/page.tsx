@@ -1,4 +1,4 @@
-import { requireMediaManageAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaCollectionAccess, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import CollectionBuilder from "./CollectionBuilder";
 
@@ -7,7 +7,7 @@ export default async function CollectionsPage() {
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
 
-  await requireMediaManageAccess(churchId);
+  await requireMediaCollectionAccess(churchId);
 
   const [events, projects, totalPhotoCounts] = await Promise.all([
     prisma.mediaEvent.findMany({

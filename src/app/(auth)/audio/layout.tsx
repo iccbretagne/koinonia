@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import AudioTabs from "./AudioTabs";
+import SpaceTabs from "@/components/SpaceTabs";
 import { getAccessibleAudioTabs } from "./tabs";
 
 /**
@@ -18,7 +18,7 @@ export default async function AudioLayout({ children }: { children: React.ReactN
 
   return (
     <div>
-      {tabs.length > 1 && <AudioTabs tabs={tabs} />}
+      {tabs.length > 1 && <SpaceTabs tabs={tabs} ariaLabel="Onglets Audio" />}
       {children}
     </div>
   );

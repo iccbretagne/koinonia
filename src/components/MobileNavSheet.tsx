@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { activeHref } from "@/lib/nav-match";
+import { activeHref, activeLinkHref } from "@/lib/nav-match";
 import { Badge } from "@/components/ui/Badge";
 
 type SheetView = "root" | "planning" | "evenements" | "pastoral" | "communaute" | "operations" | "ressources" | "config";
@@ -12,7 +12,7 @@ interface MobileNavSheetProps {
   departments: { id: string; name: string; ministryName?: string }[];
   configLinks: { href: string; label: string }[];
   requestLinks: { href: string; label: string }[];
-  mediaLinks: { href: string; label: string }[];
+  mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
   agendaLinks?: { href: string; label: string }[];
   integrationLinks?: { href: string; label: string }[];
   famillesUrl?: string | null;
@@ -341,7 +341,11 @@ export default function MobileNavSheet({
 
   // Lien actif d'une liste : le plus spécifique parmi ses frères (voir nav-match)
   const activeAgendaHref = activeHref(pathname, agendaLinks.map((l) => l.href));
-  const activeOperationsHref = activeHref(pathname, [...requestLinks.map((l) => l.href), ...mediaLinks.map((l) => l.href), "/accounting/requests"]);
+  const activeOperationsHref = activeLinkHref(pathname, [
+    ...requestLinks.map((l) => ({ href: l.href })),
+    ...mediaLinks,
+    { href: "/accounting/requests" },
+  ]);
   const activeIntegrationHref = activeHref(pathname, integrationLinks.map((l) => l.href));
   const activeConfigHref = activeHref(pathname, configLinks.map((l) => l.href));
 

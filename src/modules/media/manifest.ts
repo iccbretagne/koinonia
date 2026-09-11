@@ -49,6 +49,6 @@ export const mediaModule = defineModule({
   },
 
   navigation: [
-    { label: "Médias", icon: "media", href: "/media", permission: "media:view" },
+    { label: "Communication & Production", icon: "media", href: "/media", permission: "media:view" },
   ],
 });
