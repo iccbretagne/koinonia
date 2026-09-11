@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { activeHref } from "@/lib/nav-match";
+import { Badge } from "@/components/ui/Badge";
 
 type SheetView = "root" | "planning" | "evenements" | "pastoral" | "communaute" | "operations" | "ressources" | "config";
 
@@ -28,6 +29,7 @@ interface MobileNavSheetProps {
   hasAccounting?: boolean;
   hasJobs?: boolean;
   hasJobsManage?: boolean;
+  jobsUnseenCount?: number;
   isPastoral?: boolean;
   open: boolean;
   onClose: () => void;
@@ -135,6 +137,7 @@ function RootRow({
   href,
   onClose,
   onClick,
+  badge,
 }: {
   label: string;
   icon: React.ReactNode;
@@ -143,6 +146,7 @@ function RootRow({
   href?: string;
   onClose?: () => void;
   onClick?: () => void;
+  badge?: React.ReactNode;
 }) {
   const base = `flex items-center gap-4 w-full px-5 py-4 text-left transition-colors border-b border-gray-50 last:border-0 ${
     isActive
@@ -157,6 +161,7 @@ function RootRow({
           {icon}
         </span>
         <span className="flex-1 font-medium text-[15px]">{label}</span>
+        {badge}
         {isActive && <span className="w-2 h-2 rounded-full bg-icc-violet shrink-0" />}
       </Link>
     );
@@ -168,6 +173,7 @@ function RootRow({
         {icon}
       </span>
       <span className="flex-1 font-medium text-[15px]">{label}</span>
+      {badge}
       {hasChildren && <IconChevron className="w-5 h-5 text-gray-300 shrink-0" />}
     </button>
   );
@@ -178,23 +184,26 @@ function SubRow({
   label,
   isActive,
   onClose,
+  badge,
 }: {
   href: string;
   label: string;
   isActive: boolean;
   onClose: () => void;
+  badge?: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
       onClick={onClose}
-      className={`flex items-center justify-between px-6 py-4 text-[15px] border-b border-gray-50 last:border-0 transition-colors ${
+      className={`flex items-center justify-between gap-2 px-6 py-4 text-[15px] border-b border-gray-50 last:border-0 transition-colors ${
         isActive
           ? "text-icc-violet font-semibold bg-violet-50"
           : "text-gray-700 hover:bg-gray-50 active:bg-gray-100"
       }`}
     >
-      <span>{label}</span>
+      <span className="flex-1">{label}</span>
+      {badge}
       {isActive && <span className="w-2 h-2 rounded-full bg-icc-violet shrink-0" />}
     </Link>
   );
@@ -262,6 +271,7 @@ export default function MobileNavSheet({
   hasAccounting = false,
   hasJobs = false,
   hasJobsManage = false,
+  jobsUnseenCount = 0,
   isPastoral = false,
   open,
   onClose,
@@ -390,6 +400,7 @@ export default function MobileNavSheet({
             icon={<IconResources className="w-5 h-5" />}
             hasChildren
             isActive={isJobsActive}
+            badge={<Badge count={jobsUnseenCount} />}
             onClick={() => setView("ressources")}
           />
         )}
@@ -489,6 +500,7 @@ export default function MobileNavSheet({
             hasChildren
             isActive={isRessourcesActive}
             onClick={() => setView("ressources")}
+            badge={<Badge count={jobsUnseenCount} />}
           />
         )}
         {configLinks.length > 0 && (
@@ -642,7 +654,7 @@ export default function MobileNavSheet({
           {hasJobs && (
             <>
               {hasRooms && <SubDivider />}
-              <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} />
+              <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} badge={<Badge count={jobsUnseenCount} />} />
               {hasJobsManage && (
                 <SubRow href="/admin/jobs" label="Modération offres" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
               )}
