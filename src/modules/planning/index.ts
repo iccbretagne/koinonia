@@ -18,12 +18,6 @@ export {
 } from "./services/absence.service";
 export type { AbsenceConflict, BackupInput, BackupOption } from "./services/absence.service";
 export {
-  canManageOpeningClosing,
-  findActiveAbsenceForMember,
-  notifyAssignment,
-  notifyRemoval,
-} from "./services/opening-closing.service";
-export {
   findCoordinationMinistryId,
   canDepositAnnouncementSheet,
   canReadAnnouncementSheet,
@@ -32,5 +26,11 @@ export {
   getAnnouncementSheetKey,
   ALLOWED_SHEET_MIME_TYPES,
 } from "./services/announcement-sheet.service";
+export {
+  canManageOpeningClosing,
+  findActiveAbsenceForMember,
+  notifyAssignment,
+  notifyRemoval,
+} from "./services/opening-closing.service";
 
 export { planningModule } from "./manifest";

@@ -195,10 +195,10 @@ model User {
   roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
   roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
   roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
-  // Service d'ouverture/fermeture de l'église (spec 041)
-  openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
   // Feuille d'annonces d'un culte (spec 040)
   announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
+  // Service d'ouverture/fermeture de l'église (spec 041)
+  openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
