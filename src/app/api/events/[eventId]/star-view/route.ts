@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { canDepositAnnouncementSheet, canReadAnnouncementSheet } from "@/modules/planning";
+import {
+  canManageOpeningClosing,
+  canDepositAnnouncementSheet,
+  canReadAnnouncementSheet,
+} from "@/modules/planning";
 
 export async function GET(
   _request: Request,
@@ -18,6 +22,10 @@ export async function GET(
         church: { select: { name: true } },
         welcomeDutyAssignments: {
           include: { welcomeDutyFamily: { select: { familyName: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+        openingClosingAssignments: {
+          include: { member: { select: { id: true, firstName: true, lastName: true } } },
           orderBy: { createdAt: "asc" },
         },
         announcementSheet: {
@@ -82,6 +90,16 @@ export async function GET(
     const audioLink =
       audioService?.status === "PUBLISHED" ? { url: `/audio/ecouter/${audioService.id}` } : null;
 
+    const openingClosing = {
+      opening: event.openingClosingAssignments
+        .filter((a) => a.slot === "OPENING")
+        .map((a) => ({ id: a.id, member: a.member })),
+      closing: event.openingClosingAssignments
+        .filter((a) => a.slot === "CLOSING")
+        .map((a) => ({ id: a.id, member: a.member })),
+      canManage: await canManageOpeningClosing(session, churchId),
+    };
+
     const [canDeposit, canRead] = await Promise.all([
       canDepositAnnouncementSheet(session, churchId),
       canReadAnnouncementSheet(session, churchId),
@@ -105,6 +123,7 @@ export async function GET(
       totalStars,
       welcomeFamilies,
       audioLink,
+      openingClosing,
       announcementSheet,
     });
   } catch (error) {

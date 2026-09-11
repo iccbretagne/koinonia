@@ -26,5 +26,11 @@ export {
   getAnnouncementSheetKey,
   ALLOWED_SHEET_MIME_TYPES,
 } from "./services/announcement-sheet.service";
+export {
+  canManageOpeningClosing,
+  findActiveAbsenceForMember,
+  notifyAssignment,
+  notifyRemoval,
+} from "./services/opening-closing.service";
 
 export { planningModule } from "./manifest";

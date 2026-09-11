@@ -96,11 +96,46 @@ export default function AuthLayoutShell({
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSidebarOpen(false);
   }, [pathname]);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
+  // ── Pastille "nouvelles offres" (spec 042) ──────────────────────────────
+  // Centralisé ici plutôt que dans Sidebar/MobileNavSheet : les deux sont montés
+  // simultanément (responsive), un seul sondage réseau évite les doublons et les
+  // remises à zéro incohérentes entre eux.
+  const [jobsUnseenCount, setJobsUnseenCount] = useState(0);
+
+  useEffect(() => {
+    if (!hasJobs) return;
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("/api/jobs/unseen-count");
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setJobsUnseenCount(data.count ?? 0);
+      } catch {
+        // Silencieux : la pastille reste simplement à sa dernière valeur connue.
+      }
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [hasJobs]);
+
+  useEffect(() => {
+    if (!hasJobs || pathname !== "/jobs" || jobsUnseenCount === 0) return;
+    setJobsUnseenCount(0);
+    fetch("/api/jobs/unseen-count", { method: "POST" }).catch(() => {
+      // Silencieux : au pire le compteur se recale au prochain sondage.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, hasJobs]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,6 +182,7 @@ export default function AuthLayoutShell({
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
             hasJobsManage={hasJobsManage}
+            jobsUnseenCount={jobsUnseenCount}
             isPastoral={isPastoral}
             onClose={closeSidebar}
           />
@@ -174,6 +210,7 @@ export default function AuthLayoutShell({
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
           hasJobsManage={hasJobsManage}
+          jobsUnseenCount={jobsUnseenCount}
           isPastoral={isPastoral}
           open={sidebarOpen}
           onClose={closeSidebar}

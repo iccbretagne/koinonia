@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import AnnouncementSheetManager, { type AnnouncementSheetData } from "./AnnouncementSheetManager";
+import OpeningClosingManager, { type OpeningClosingData } from "./OpeningClosingManager";
 
 interface MemberItem {
   id: string;
@@ -32,6 +33,7 @@ interface StarViewData {
   welcomeFamilies: string[];
   audioLink: { url: string } | null;
   announcementSheet: AnnouncementSheetData;
+  openingClosing: OpeningClosingData;
 }
 
 interface Props {
@@ -283,6 +285,27 @@ export default function StarViewClient({ eventId }: Props) {
               )}
             </div>
           )}
+          <div className="flex items-start gap-4 mt-3 flex-wrap">
+            {(["opening", "closing"] as const).map((key) => (
+              <div key={key} className="flex items-center gap-2 flex-wrap">
+                <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">
+                  {key === "opening" ? "Ouverture" : "Fermeture"} :
+                </span>
+                {data.openingClosing[key].length === 0 ? (
+                  <span className="text-white/30 text-xs italic">Non pourvu</span>
+                ) : (
+                  data.openingClosing[key].map((a) => (
+                    <span
+                      key={a.id}
+                      className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full"
+                    >
+                      {a.member.firstName} {a.member.lastName}
+                    </span>
+                  ))
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Body */}
@@ -331,6 +354,12 @@ export default function StarViewClient({ eventId }: Props) {
           )}
         </div>
       </div>
+
+      <OpeningClosingManager
+        eventId={eventId}
+        data={data.openingClosing}
+        onChange={(openingClosing) => setData((d) => (d ? { ...d, openingClosing } : d))}
+      />
 
       <div className="mt-6">
         <AnnouncementSheetManager
