@@ -48,17 +48,17 @@
 
 ### Volet 2 — Bandeau de préparation (page événement)
 
-- [ ] **T11** — Ajouter une prop `embedded` à `OpeningClosingManager` qui retire sa carte propre
+- [x] **T11** — Ajouter une prop `embedded` à `OpeningClosingManager` qui retire sa carte propre
       (`bg-white shadow mb-6`) quand `true`
       *(fichier : `src/app/(auth)/events/[eventId]/star-view/OpeningClosingManager.tsx`)*
-- [ ] **T12** — Même prop `embedded` sur `AnnouncementSheetManager`
+- [x] **T12** — Même prop `embedded` sur `AnnouncementSheetManager`
       *(fichier : `src/app/(auth)/events/[eventId]/star-view/AnnouncementSheetManager.tsx`)*
-- [ ] **T13** — Créer `PreparationBanner.tsx` : `<details>` replié par défaut, `print:hidden`,
-      `<summary>` avec l'état de la trame (`Badge`), contient `OpeningClosingManager`
+- [x] **T13** — Créer `PreparationBanner.tsx` : `<details>` replié par défaut, `print:hidden`,
+      `<summary>` avec l'état de la trame (pastille de statut), contient `OpeningClosingManager`
       (si `canManage`) puis `AnnouncementSheetManager` (si `canDeposit || canRead`) en `embedded`,
       séparés par `divide-y` ; ne rend rien si aucune des deux parties ne concerne l'utilisateur
       *(fichier : `src/app/(auth)/events/[eventId]/star-view/PreparationBanner.tsx`, nouveau)*
-- [ ] **T14** — Intégrer `PreparationBanner` dans `StarViewClient.tsx` après le lien audio et
+- [x] **T14** — Intégrer `PreparationBanner` dans `StarViewClient.tsx` après le lien audio et
       avant la zone imprimable (`printRef`) ; retirer les deux gestionnaires de leur ancien
       emplacement en bas de page
       *(fichier : `src/app/(auth)/events/[eventId]/star-view/StarViewClient.tsx`)*

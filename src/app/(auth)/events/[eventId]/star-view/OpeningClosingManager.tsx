@@ -23,6 +23,9 @@ interface Props {
   eventId: string;
   data: OpeningClosingData;
   onChange: (data: OpeningClosingData) => void;
+  /** Retire la carte propre (fond, ombre, marge) quand le composant est inséré dans un
+   * conteneur qui gère déjà cette présentation (ex. PreparationBanner, spec 043). */
+  embedded?: boolean;
 }
 
 const SLOT_LABELS: Record<"OPENING" | "CLOSING", string> = {
@@ -49,7 +52,7 @@ function SlotList({ label, assignments }: { label: string; assignments: Assignme
   );
 }
 
-export default function OpeningClosingManager({ eventId, data, onChange }: Props) {
+export default function OpeningClosingManager({ eventId, data, onChange, embedded = false }: Props) {
   const [slot, setSlot] = useState<"OPENING" | "CLOSING">("OPENING");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Member[]>([]);
@@ -118,8 +121,10 @@ export default function OpeningClosingManager({ eventId, data, onChange }: Props
   }
 
   return (
-    <div className="mb-6 p-4 bg-white rounded-lg shadow print:hidden">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">Ouverture / Fermeture</h2>
+    <div className={embedded ? "print:hidden" : "mb-6 p-4 bg-white rounded-lg shadow print:hidden"}>
+      <h2 className={embedded ? "text-sm font-semibold text-gray-700 mb-3" : "text-lg font-semibold text-gray-900 mb-3"}>
+        Ouverture / Fermeture
+      </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {(["OPENING", "CLOSING"] as const).map((s) => (

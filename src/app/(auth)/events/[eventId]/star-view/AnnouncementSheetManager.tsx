@@ -13,6 +13,9 @@ interface Props {
   eventId: string;
   data: AnnouncementSheetData;
   onChange: (data: AnnouncementSheetData) => void;
+  /** Retire la carte propre (fond, ombre, marge) quand le composant est inséré dans un
+   * conteneur qui gère déjà cette présentation (ex. PreparationBanner, spec 043). */
+  embedded?: boolean;
 }
 
 function formatDate(iso: string) {
@@ -25,7 +28,7 @@ function formatDate(iso: string) {
   });
 }
 
-export default function AnnouncementSheetManager({ eventId, data, onChange }: Props) {
+export default function AnnouncementSheetManager({ eventId, data, onChange, embedded = false }: Props) {
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -120,8 +123,10 @@ export default function AnnouncementSheetManager({ eventId, data, onChange }: Pr
   }
 
   return (
-    <div className="mb-6 p-4 bg-white rounded-lg shadow print:hidden">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">Trame des annonces</h2>
+    <div className={embedded ? "print:hidden" : "mb-6 p-4 bg-white rounded-lg shadow print:hidden"}>
+      <h2 className={embedded ? "text-sm font-semibold text-gray-700 mb-3" : "text-lg font-semibold text-gray-900 mb-3"}>
+        Trame des annonces
+      </h2>
 
       {data.filename ? (
         <div className="flex flex-wrap items-center gap-3">
