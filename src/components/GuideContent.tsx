@@ -164,10 +164,10 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
   {
-    name: "Gestion (Secrétariat)",
+    name: "Traitement des demandes (Secrétariat)",
     description: "Vue centralisée de toutes les demandes de diffusion interne depuis /secretariat/requests. Marquez les annonces en cours, diffusées ou annulées. Visible pour les membres du département Secrétariat.",
     category: "Demandes",
-    screenshotTitle: "Gestion des demandes — Secrétariat",
+    screenshotTitle: "Traitement des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },

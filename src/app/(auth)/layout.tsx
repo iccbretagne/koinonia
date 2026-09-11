@@ -186,7 +186,7 @@ export default async function AuthLayout({
       serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
 
     if (isMemberOf("SECRETARIAT"))
-      requestLinks.push({ href: "/secretariat/requests", label: "Gestion" });
+      requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
     if (isMemberOf("PRODUCTION_MEDIA"))
       mediaLinks.push({ href: "/media/requests", label: "Visuels" });
     if (isMemberOf("COMMUNICATION"))
