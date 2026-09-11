@@ -32,7 +32,7 @@ export default async function MyPlanningPage() {
     );
   }
 
-  const [plannings, taskAssignments] = await Promise.all([
+  const [plannings, taskAssignments, openingClosingAssignments] = await Promise.all([
     prisma.planning.findMany({
       where: {
         memberId: link.memberId,
@@ -52,7 +52,26 @@ export default async function MyPlanningPage() {
       where: { memberId: link.memberId },
       select: { eventId: true, task: { select: { name: true, departmentId: true } } },
     }),
+    prisma.openingClosingAssignment.findMany({
+      where: { memberId: link.memberId },
+      include: { event: { select: { id: true, title: true, type: true, date: true } } },
+      orderBy: { event: { date: "asc" } },
+    }),
   ]);
+
+  // Service d'ouverture/fermeture (spec 041) — pas de département propre, représenté comme une
+  // entrée de planning synthétique pour réutiliser l'affichage existant de `MyPlanningView`.
+  const openingClosingEntries = openingClosingAssignments.map((a) => ({
+    id: `opening-closing-${a.id}`,
+    status: "EN_SERVICE" as const,
+    eventDepartment: {
+      event: a.event,
+      department: {
+        id: "opening-closing",
+        name: a.slot === "OPENING" ? "Ouverture de l'église" : "Fermeture de l'église",
+      },
+    },
+  }));
 
   // Map eventId_departmentId → task names (clé composite pour éviter les croisements)
   const tasksByEvent = new Map<string, string[]>();
@@ -71,7 +90,10 @@ export default async function MyPlanningPage() {
         <h1 className="text-2xl font-bold text-gray-900">Mon planning</h1>
         <p className="text-sm text-gray-500 mt-1">{memberName}</p>
       </div>
-      <MyPlanningView plannings={plannings} tasksByEvent={Object.fromEntries(tasksByEvent)} />
+      <MyPlanningView
+        plannings={[...plannings, ...openingClosingEntries]}
+        tasksByEvent={Object.fromEntries(tasksByEvent)}
+      />
     </div>
   );
 }

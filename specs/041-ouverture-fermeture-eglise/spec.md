@@ -1,7 +1,7 @@
 # Spec — Service d'ouverture et de fermeture de l'église
 
 - **Numéro** : 041
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/ouverture-fermeture-eglise`
 

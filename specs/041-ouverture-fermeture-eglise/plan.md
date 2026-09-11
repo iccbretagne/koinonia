@@ -129,18 +129,29 @@ valident avec Zod, et délèguent au service.
 
 ## UI / composants
 
-- **Fiche événement admin** (`src/app/(auth)/admin/events/[eventId]/EventDetailClient.tsx`) :
-  nouvelle section « Ouverture / Fermeture », visible aux seuls utilisateurs habilités (le
-  serveur ne renvoie les actions de désignation que si `canManageOpeningClosing` — cohérent avec
-  le principe « l'onglet masqué ne dispense jamais du contrôle serveur »). Deux listes (Ouverture
-  / Fermeture), chacune avec les noms désignés + bouton retirer, et un sélecteur de membre
-  (réutilise le pattern de recherche de membre déjà utilisé pour les désignations d'accueil) +
-  bouton ajouter. Créneau vide → badge « Non pourvu ». Absence détectée → toast d'avertissement
-  non bloquant après ajout (`absenceWarning` dans la réponse POST).
-- **Vue consultation événement** (`src/app/(auth)/events/[eventId]/star-view/StarViewClient.tsx`
-  + son API `src/app/api/events/[eventId]/star-view/route.ts`) : ajoute
+> **Révisé pendant l'implémentation** (voir `tasks.md`, note en tête de section 4) : la fiche
+> événement admin (`/admin/events/[eventId]`) est gardée par `events:manage`, qui exclut les
+> responsables Sécurité et les membres simples du Secrétariat — deux des trois populations
+> habilitées par la spec. `/events/[eventId]/star-view` (gardée par `planning:view`, commune aux
+> trois) est donc le seul point d'intégration viable sans restructurer le guard de la fiche
+> admin.
+
+- **Vue événement** (`src/app/(auth)/events/[eventId]/star-view/`) : la gestion et la
+  consultation vivent au même endroit. `StarViewClient.tsx` affiche les désignations (ou « Non
+  pourvu ») dans l'en-tête imprimable, visible à tous les détenteurs de `planning:view`. En
+  dessous (hors zone imprimable), `OpeningClosingManager.tsx` (nouveau composant client) rend les
+  contrôles de désignation — deux listes avec bouton retirer, sélecteur de créneau + recherche de
+  membre + bouton ajouter — visibles uniquement si `openingClosing.canManage` (renvoyé par le
+  serveur, jamais calculé côté client). Absence détectée → avertissement non bloquant après ajout
+  (`absenceWarning` dans la réponse POST).
+- Recherche de membre : nouvel endpoint dédié `GET /api/events/[eventId]/opening-closing/members`
+  plutôt que `/api/members` — celui-ci scope par département de responsabilité
+  (`getUserDepartmentScope`), ce qui empêcherait un responsable Sécurité de désigner un membre en
+  dehors de son propre département alors que la spec exige « n'importe quel membre de l'église ».
+- **API `star-view`** (`src/app/api/events/[eventId]/star-view/route.ts`) : ajoute
   `openingClosingAssignments` à l'`include` Prisma existant (même endroit que
-  `welcomeDutyAssignments`, déjà présent), affichage en lecture seule sous les départements.
+  `welcomeDutyAssignments`), la réponse mappée (`opening`/`closing`), et `canManage`
+  (résultat de `canManageOpeningClosing`).
 - **Mon planning** (`src/app/(auth)/planning/page.tsx` + `MyPlanningView.tsx`) : nouvelle requête
   `prisma.openingClosingAssignment.findMany({ where: { memberId: link.memberId }, include: { event: true } })`
   en plus des `plannings`/`taskAssignments` existants, passée en prop et rendue comme carte
