@@ -17,5 +17,11 @@ export {
   listBackupOptions,
 } from "./services/absence.service";
 export type { AbsenceConflict, BackupInput, BackupOption } from "./services/absence.service";
+export {
+  canManageOpeningClosing,
+  findActiveAbsenceForMember,
+  notifyAssignment,
+  notifyRemoval,
+} from "./services/opening-closing.service";
 
 export { planningModule } from "./manifest";

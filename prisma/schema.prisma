@@ -93,6 +93,8 @@ model Church {
   // Module service d'accueil
   welcomeDutyFamilies       WelcomeDutyFamily[]
   welcomeDutyAssignments    WelcomeDutyAssignment[]
+  // Service d'ouverture/fermeture de l'église (spec 041)
+  openingClosingAssignments OpeningClosingAssignment[]
   // Module rooms (réservation de salles)
   rooms                     Room[]
   roomAccesses              RoomAccess[]
@@ -190,6 +192,8 @@ model User {
   roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
   roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
   roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
+  // Service d'ouverture/fermeture de l'église (spec 041)
+  openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
@@ -288,6 +292,9 @@ model Member {
 
   absences       Absence[]
   absenceBackups AbsenceBackup[]
+
+  // Service d'ouverture/fermeture de l'église (spec 041)
+  openingClosingAssignments OpeningClosingAssignment[]
 
   @@map("members")
 }
@@ -419,6 +426,8 @@ model Event {
   integrationRequests     FamilyIntegrationRequest[]
   // Module service d'accueil
   welcomeDutyAssignments  WelcomeDutyAssignment[]
+  // Service d'ouverture/fermeture de l'église (spec 041)
+  openingClosingAssignments OpeningClosingAssignment[]
   // Module rooms (réservation de salles)
   roomReservations        RoomReservation[]
   // Module audio
@@ -1508,6 +1517,37 @@ model WelcomeDutyAssignment {
   @@unique([eventId, welcomeDutyFamilyId])
   @@index([churchId])
   @@map("welcome_duty_assignments")
+}
+
+// ─── Service d'ouverture/fermeture de l'église (spec 041) ──────────
+
+enum DutySlot {
+  OPENING
+  CLOSING
+}
+
+/// Désignation nominative pour l'ouverture/fermeture de l'église à un événement.
+/// Plusieurs personnes possibles par créneau : l'unicité porte sur (événement, créneau,
+/// membre), pas sur le créneau seul.
+model OpeningClosingAssignment {
+  id              String   @id @default(cuid())
+  churchId        String
+  eventId         String
+  slot            DutySlot
+  memberId        String
+  note            String?  @db.VarChar(500)
+  createdById     String
+  createdAt       DateTime @default(now())
+
+  church    Church @relation(fields: [churchId], references: [id])
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member    Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("OpeningClosingAssignmentCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([eventId, slot, memberId])
+  @@index([churchId])
+  @@index([memberId])
+  @@map("opening_closing_assignments")
 }
 
 // ─── Module emploi ────────────────────────────────────────────────
