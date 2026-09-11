@@ -383,12 +383,12 @@ export default function Sidebar({
   const isCommunauteActive = isMembersActive || isDiscipleshipActive || isIntegrationActive;
   const isEvenementsActive = isEventsActive;
   const isGestionPastoraleActive = isAgendaActive;
-  const isOperationsActive = isRequestsActive || isMediaActive;
-  const isRessourcesActive = isAccountingActive || isJobsActive || isRoomsActive;
+  const isOperationsActive = isRequestsActive || isMediaActive || isAccountingActive;
+  const isRessourcesActive = isJobsActive || isRoomsActive;
 
   // Lien actif d'une liste : le plus spécifique parmi ses frères (voir nav-match)
   const activeAgendaHref = activeHref(pathname, agendaLinks.map((l) => l.href));
-  const activeOperationsHref = activeHref(pathname, [...requestLinks, ...mediaLinks].map((l) => l.href));
+  const activeOperationsHref = activeHref(pathname, [...requestLinks.map((l) => l.href), ...mediaLinks.map((l) => l.href), "/accounting/requests"]);
   const activeIntegrationHref = activeHref(pathname, integrationLinks.map((l) => l.href));
   const activeConfigHref = activeHref(pathname, configLinks.map((l) => l.href));
 
@@ -510,8 +510,8 @@ export default function Sidebar({
   }
 
   const hasCommunaute = hasMembersAccess || hasDiscipleship || integrationLinks.length > 0 || !!famillesUrl;
-  const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0;
-  const hasRessources = !!(hasRooms || hasAccounting || hasJobs);
+  const hasOperations = requestLinks.length > 0 || mediaLinks.length > 0 || hasAccounting;
+  const hasRessources = !!(hasRooms || hasJobs);
 
   return (
     <aside className="w-64 min-h-0 md:min-h-[calc(100vh-73px)] bg-white border-r border-gray-200 p-4 pb-20 md:pb-4 space-y-1 overflow-y-auto">
@@ -679,7 +679,7 @@ export default function Sidebar({
             <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
             {hasEventsManage && (
               <NavLink href="/admin/events" active={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>
-                Gestion
+                Gérer les événements
               </NavLink>
             )}
             {hasEventsManage && (
@@ -720,7 +720,7 @@ export default function Sidebar({
         </AccordionSection>
       )}
 
-      {/* 5. Opérations — Demandes + Médias */}
+      {/* 5. Opérations — Demandes + Médias + Comptabilité */}
       {hasOperations && (
         <AccordionSection
           title="Opérations"
@@ -744,11 +744,21 @@ export default function Sidebar({
                 {link.label}
               </NavLink>
             ))}
+            {hasAccounting && (
+              <>
+                {(requestLinks.length > 0 || mediaLinks.length > 0) && (
+                  <hr className="my-1 border-gray-100" />
+                )}
+                <NavLink href="/accounting/requests" active={isAccountingActive} onClose={onClose}>
+                  Comptabilité
+                </NavLink>
+              </>
+            )}
           </nav>
         </AccordionSection>
       )}
 
-      {/* 6. Ressources — Salles + Comptabilité + Emploi */}
+      {/* 6. Ressources — Salles + Emploi */}
       {hasRessources && (
         <AccordionSection
           title="Ressources"
@@ -764,17 +774,9 @@ export default function Sidebar({
                 Salles
               </NavLink>
             )}
-            {hasAccounting && (
-              <>
-                {hasRooms && <hr className="my-1 border-gray-100" />}
-                <NavLink href="/accounting/requests" active={isAccountingActive} onClose={onClose}>
-                  Comptabilité
-                </NavLink>
-              </>
-            )}
             {hasJobs && (
               <>
-                {(hasRooms || hasAccounting) && <hr className="my-1 border-gray-100" />}
+                {hasRooms && <hr className="my-1 border-gray-100" />}
                 <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose}>Offres</NavLink>
                 {hasJobsManage && (
                   <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>

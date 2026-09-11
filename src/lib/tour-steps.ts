@@ -5,7 +5,7 @@ const CONFIG_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"
 const MEMBERS_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
 const REPORT_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"];
 const DISCIPLESHIP_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DEPARTMENT_HEAD", "DISCIPLE_MAKER"];
-const SERVICE_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
+const SERVICE_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "ACCOUNTANT"];
 // « Gestion pastorale » n'apparaît que pour les roles qui qualifient ou traitent les demandes de RDV.
 const PASTORAL_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "AGENDA_QUALIFIER"];
 
@@ -54,7 +54,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-service"]',
     title: "Opérations",
     content:
-      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. On y trouve aussi les Médias : projets, collections de photos et validation. Les responsables Secrétariat, Communication et Production Média traitent les demandes depuis leur tableau de bord.",
+      "Soumettez des demandes de diffusion (annonce interne, réseaux sociaux, visuel) et suivez leur avancement. On y trouve aussi les Médias (projets, collections de photos et validation) et la Comptabilité (notes de frais, avances de budget). Les responsables Secrétariat, Communication, Production Média et le Comptable traitent les demandes depuis leur tableau de bord.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },
@@ -80,7 +80,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-ressources"]',
     title: "Ressources",
     content:
-      "Réservez une salle et suivez vos réservations, déposez une demande financière (note de frais, avance de budget), consultez les offres d'emploi et les cultes audio publiés.",
+      "Réservez une salle et suivez vos réservations, consultez les offres d'emploi et les cultes audio publiés.",
     viewport: "desktop",
   },
   {
