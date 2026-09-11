@@ -714,7 +714,7 @@ export default function MobileNavSheet({
 
       {/* Sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-[60] md:hidden bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh] transform transition-transform duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-[60] md:hidden bg-white rounded-t-2xl shadow-2xl flex flex-col max-h-[85dvh] transform transition-transform duration-300 ease-out ${
           open ? "translate-y-0" : "translate-y-full"
         }`}
         aria-modal="true"
