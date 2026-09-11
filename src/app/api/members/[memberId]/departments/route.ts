@@ -1,20 +1,9 @@
-import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { attachMemberToDepartment, detachMemberFromDepartment } from "@/modules/planning";
 import { z } from "zod";
-
-const memberDepartmentsInclude = {
-  departments: {
-    include: {
-      department: {
-        select: { id: true, name: true, ministry: { select: { id: true, name: true } } },
-      },
-    },
-    orderBy: { isPrimary: "desc" as const },
-  },
-};
 
 const addSchema = z.object({ departmentId: z.string().min(1, "Le département est requis") });
 
@@ -40,25 +29,7 @@ export async function POST(
       throw new ApiError(403, "Ce département n'est pas dans votre périmètre");
     }
 
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      include: {
-        departments: {
-          select: { departmentId: true, department: { select: { ministry: { select: { churchId: true } } } } },
-        },
-      },
-    });
-    if (!member) throw new ApiError(404, "STAR introuvable");
-    if (member.departments.some((d) => d.department.ministry.churchId !== churchId)) {
-      throw new ApiError(403, "Ce STAR n'appartient pas à cette église");
-    }
-    if (member.departments.some((d) => d.departmentId === departmentId)) {
-      throw new ApiError(409, "Ce STAR appartient déjà à ce département");
-    }
-
-    await prisma.memberDepartment.create({
-      data: { memberId, departmentId, isPrimary: member.departments.length === 0 },
-    });
+    const updated = await attachMemberToDepartment(memberId, departmentId, churchId);
 
     await logAudit({
       userId: session.user.id,
@@ -69,9 +40,7 @@ export async function POST(
       details: { addedDepartmentId: departmentId },
     });
 
-    return successResponse(
-      await prisma.member.findUnique({ where: { id: memberId }, include: memberDepartmentsInclude })
-    );
+    return successResponse(updated);
   } catch (error) {
     return errorResponse(error);
   }
@@ -100,46 +69,7 @@ export async function DELETE(
       throw new ApiError(403, "Ce département n'est pas dans votre périmètre");
     }
 
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
-      include: { departments: { select: { departmentId: true, isPrimary: true } } },
-    });
-    if (!member) throw new ApiError(404, "STAR introuvable");
-
-    const target = member.departments.find((d) => d.departmentId === departmentId);
-    if (!target) throw new ApiError(404, "Ce STAR n'appartient pas à ce département");
-    if (member.departments.length === 1) {
-      throw new ApiError(
-        400,
-        "C'est le seul département de ce STAR : supprimez sa fiche plutôt que de l'en retirer."
-      );
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.memberDepartment.deleteMany({ where: { memberId, departmentId } });
-
-      // Le planning et les tâches à venir dans ce département n'ont plus lieu d'être
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      await tx.planning.deleteMany({
-        where: {
-          memberId,
-          eventDepartment: { departmentId, event: { date: { gte: today } } },
-        },
-      });
-      await tx.taskAssignment.deleteMany({
-        where: { memberId, event: { date: { gte: today } }, task: { departmentId } },
-      });
-
-      // Le STAR garde un département principal
-      if (target.isPrimary) {
-        const next = member.departments.find((d) => d.departmentId !== departmentId)!;
-        await tx.memberDepartment.update({
-          where: { memberId_departmentId: { memberId, departmentId: next.departmentId } },
-          data: { isPrimary: true },
-        });
-      }
-    });
+    const updated = await detachMemberFromDepartment(memberId, departmentId);
 
     await logAudit({
       userId: session.user.id,
@@ -150,9 +80,7 @@ export async function DELETE(
       details: { removedDepartmentId: departmentId },
     });
 
-    return successResponse(
-      await prisma.member.findUnique({ where: { id: memberId }, include: memberDepartmentsInclude })
-    );
+    return successResponse(updated);
   } catch (error) {
     return errorResponse(error);
   }

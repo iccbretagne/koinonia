@@ -49,5 +49,11 @@ export type {
   CreateTeamEventResult,
   TeamEventWriteInput,
 } from "./services/team-event.service";
+export {
+  searchMembersChurchWide,
+  attachMemberToDepartment,
+  detachMemberFromDepartment,
+} from "./services/member-directory.service";
+export type { MemberLookupResult } from "./services/member-directory.service";
 
 export { planningModule } from "./manifest";

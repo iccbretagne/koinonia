@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { searchMembersChurchWide } from "@/modules/planning";
 
 /**
  * Recherche de STAR à l'échelle de l'église, sans filtre de périmètre.
@@ -18,32 +18,7 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
     await requireChurchPermission("members:manage", churchId);
 
-    if (q.length < 2) return successResponse([]);
-
-    const members = await prisma.member.findMany({
-      where: {
-        departments: { some: { department: { ministry: { churchId } } } },
-        OR: [{ firstName: { contains: q } }, { lastName: { contains: q } }],
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        departments: { select: { departmentId: true, department: { select: { name: true } } } },
-      },
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      take: 20,
-    });
-
-    return successResponse(
-      members.map((m) => ({
-        id: m.id,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        departmentIds: m.departments.map((d) => d.departmentId),
-        departmentNames: m.departments.map((d) => d.department.name),
-      }))
-    );
+    return successResponse(await searchMembersChurchWide(churchId, q));
   } catch (error) {
     return errorResponse(error);
   }
