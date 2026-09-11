@@ -64,6 +64,7 @@ export const prismaMock = {
   // Module emploi
   jobOffer: createModelMock(),
   jobSeeker: createModelMock(),
+  jobLastSeen: createModelMock(),
   jobNotificationSubscription: createModelMock(),
   freelanceMission: createModelMock(),
   freelanceProfile: createModelMock(),

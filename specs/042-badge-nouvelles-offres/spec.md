@@ -1,7 +1,7 @@
 # Spec — Pastille « nouvelles offres » dans le menu
 
 - **Numéro** : 042
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/badge-nouvelles-offres`
 

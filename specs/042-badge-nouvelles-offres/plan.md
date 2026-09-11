@@ -1,7 +1,7 @@
 # Plan technique — Pastille « nouvelles offres » dans le menu
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Mis à jour le** : 2026-09-11
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
