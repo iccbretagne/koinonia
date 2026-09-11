@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import OpeningClosingManager, { type OpeningClosingData } from "./OpeningClosingManager";
+import AnnouncementSheetManager, { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 
 interface MemberItem {
   id: string;
@@ -32,6 +33,7 @@ interface StarViewData {
   welcomeFamilies: string[];
   audioLink: { url: string } | null;
   openingClosing: OpeningClosingData;
+  announcementSheet: AnnouncementSheetData;
 }
 
 interface Props {
@@ -358,6 +360,16 @@ export default function StarViewClient({ eventId }: Props) {
         data={data.openingClosing}
         onChange={(openingClosing) => setData((d) => (d ? { ...d, openingClosing } : d))}
       />
+
+      <div className="mt-6">
+        <AnnouncementSheetManager
+          eventId={eventId}
+          data={data.announcementSheet}
+          onChange={(announcementSheet) =>
+            setData((d) => (d ? { ...d, announcementSheet } : d))
+          }
+        />
+      </div>
     </div>
   );
 }
