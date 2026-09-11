@@ -1,10 +1,17 @@
 import { requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import RequestForm from "./RequestForm";
 
-export default async function AgendaRequestPage() {
+export default async function AgendaRequestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
   const session = await requireAuth();
+  const { from } = await searchParams;
+  const fromRequests = from === "requests";
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
@@ -31,6 +38,11 @@ export default async function AgendaRequestPage() {
 
   return (
     <div className="max-w-xl mx-auto">
+      {fromRequests && (
+        <Link href="/requests" className="text-sm text-gray-400 hover:text-icc-violet transition-colors mb-4 inline-block">
+          ← Mes demandes
+        </Link>
+      )}
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Demande de RDV pastoral</h1>
       <p className="text-sm text-gray-500 mb-6">
         Soumettez votre demande. Un qualificateur la traitera et vous sera assigné un créneau.
@@ -43,6 +55,7 @@ export default async function AgendaRequestPage() {
         defaultEmail={session.user.email ?? ""}
         defaultIsStar={isStar}
         defaultDepartment={department}
+        redirectTo={fromRequests ? "/requests" : undefined}
       />
     </div>
   );

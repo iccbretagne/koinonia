@@ -203,7 +203,13 @@ export default async function AuthLayout({
     // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
     isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
 
-    requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    // Spec 043 : pour qui a "members:view" (accès à "Mes demandes"), la demande de RDV
+    // pastoral devient une tuile dans /requests/new — lien de menu autonome retiré pour ne
+    // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
+    // il garde ce lien autonome, seul moyen d'accès pour lui.
+    if (!userPermissions.has("members:view")) {
+      requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+    }
   }
 
   // ── Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière) ──

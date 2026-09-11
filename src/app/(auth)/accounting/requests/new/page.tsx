@@ -8,11 +8,13 @@ import NewRequestForm from "./NewRequestForm";
 export default async function NewAccountingRequestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ correctionOf?: string }>;
+  searchParams: Promise<{ correctionOf?: string; from?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) redirect("/accounting/requests");
+  const { from } = await searchParams;
+  const fromRequests = from === "requests";
 
   // Vérifier la permission de soumission (rôle ou profil pastoral)
   const roles = session.user.churchRoles
@@ -118,15 +120,22 @@ export default async function NewAccountingRequestPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center gap-2">
-        <Link href="/accounting/requests" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
-          ← Demandes
+        <Link
+          href={fromRequests ? "/requests" : "/accounting/requests"}
+          className="text-sm text-gray-400 hover:text-icc-violet transition-colors"
+        >
+          ← {fromRequests ? "Mes demandes" : "Demandes"}
         </Link>
         <span className="text-gray-300">/</span>
         <span className="text-sm text-gray-600 font-medium">
           {correction ? "Correction" : "Nouvelle demande"}
         </span>
       </div>
-      <NewRequestForm departments={departments} correction={correction} />
+      <NewRequestForm
+        departments={departments}
+        correction={correction}
+        redirectTo={fromRequests ? "/requests" : "/accounting/requests"}
+      />
     </div>
   );
 }

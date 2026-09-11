@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
+import { rolePermissions, registry } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import RequestForm from "./RequestForm";
 
@@ -15,6 +15,14 @@ export default async function NewRequestPage() {
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
+
+  // « Autres demandes » (spec 043) : liens vers des formulaires dédiés, conditionnés par
+  // l'activation du module et — pour la compta — le même droit de soumission que sa page dédiée.
+  const showAgendaTile = registry.has("agenda");
+  const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
+  const showAccountingTile =
+    registry.has("accounting") &&
+    (churchPermissions.has("accounting:submit") || isPastoral);
 
   const now = new Date();
   const in90days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
@@ -89,6 +97,8 @@ export default async function NewRequestPage() {
       <RequestForm
         churchId={churchId}
         canSubmitDemands={canSubmitDemands}
+        showAgendaTile={showAgendaTile}
+        showAccountingTile={showAccountingTile}
         announcementEvents={announcementEvents.map((e) => ({
           id: e.id,
           title: e.title,

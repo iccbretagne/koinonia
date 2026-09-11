@@ -65,29 +65,29 @@
 
 ### Volet 3 — Rendez-vous pastoral et demande comptable dans « Mes demandes »
 
-- [ ] **T15** — Ajouter une rubrique « Autres demandes » à l'étape 1 du formulaire unifié, avec
+- [x] **T15** — Ajouter une rubrique « Autres demandes » à l'étape 1 du formulaire unifié, avec
       des tuiles qui redirigent (pas de soumission locale) : « Rendez-vous pastoral » vers
       `/agenda/request?from=requests` (si `registry.has("agenda")`), « Demande comptable » vers
       `/accounting/requests/new?from=requests` (si `registry.has("accounting")` et l'utilisateur a
       le droit de soumettre — même règle que la page comptable)
       *(fichiers : `src/app/(auth)/requests/new/RequestForm.tsx`,
       `src/app/(auth)/requests/new/page.tsx`)*
-- [ ] **T16** — Gérer `from=requests` (liste blanche, seule valeur acceptée) sur la page RDV
+- [x] **T16** — Gérer `from=requests` (liste blanche, seule valeur acceptée) sur la page RDV
       pastoral : lien retour et redirection après soumission vers `/requests`
       *(fichier : `src/app/(auth)/agenda/request/page.tsx` et/ou `RequestForm.tsx` associé)*
-- [ ] **T17** — Même gestion de `from=requests` sur la page de nouvelle demande comptable
+- [x] **T17** — Même gestion de `from=requests` sur la page de nouvelle demande comptable
       *(fichier : `src/app/(auth)/accounting/requests/new/page.tsx`,
       `NewRequestForm.tsx`)*
-- [ ] **T18** — Retirer le lien de menu « Demande RDV pastoral » de `requestLinks` pour les
+- [x] **T18** — Retirer le lien de menu « Demande RDV pastoral » de `requestLinks` pour les
       utilisateurs qui ont `members:view` (donc « Mes demandes ») ; le garder pour ceux qui ont
       seulement `planning:view` (le STAR)
       *(fichier : `src/app/(auth)/layout.tsx`)*
-- [ ] **T19** — Ajouter une section « Demandes comptables » à la page « Mes demandes » listant les
+- [x] **T19** — Ajouter une section « Demandes comptables » à la page « Mes demandes » listant les
       demandes financières de l'utilisateur (église courante) avec libellé/montant/statut et lien
       vers `/accounting/requests/[id]` ; absente si le module est désactivé ou si l'utilisateur
       n'en a aucune
       *(fichier : `src/app/(auth)/requests/page.tsx`)*
-- [ ] **T20** — Étendre `star-navigation.test.ts` : un utilisateur avec `members:view` n'a plus
+- [x] **T20** — Étendre `star-navigation.test.ts` : un utilisateur avec `members:view` n'a plus
       « Demande RDV pastoral » dans `requestLinks` ; un STAR (sans `members:view`, avec
       `planning:view`) le garde
       *(fichier : `src/app/(auth)/__tests__/star-navigation.test.ts`)*

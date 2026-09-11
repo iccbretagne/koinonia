@@ -74,3 +74,34 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
     expect(shellProps(element).hasPlanningAccess).toBe(true);
   });
 });
+
+// Spec 043 — la « Demande RDV pastoral » devient une tuile de /requests/new pour qui a
+// "Mes demandes" (members:view). Le STAR n'y a pas accès (pas de members:view) : il garde
+// le lien de menu autonome, seul moyen d'accès pour lui.
+describe("Lien « Demande RDV pastoral » après spec 043", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCurrentChurchId.mockResolvedValue("church-1");
+    prismaMock.church.findUnique.mockResolvedValue({ name: "Test Church", primaryColor: "#5E17EB" } as never);
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.department.findFirst.mockResolvedValue(null);
+    prismaMock.familyLeaderAssignment.count.mockResolvedValue(0);
+    prismaMock.pastoralProfile.findFirst.mockResolvedValue(null);
+    prismaMock.memberUserLink.findUnique.mockResolvedValue({ id: "link-1" } as never);
+  });
+
+  it("un STAR (planning:view sans members:view) garde le lien autonome dans requestLinks", async () => {
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+    const element = await AuthLayout({ children: null as never });
+    const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
+    expect(requestLinks).toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  });
+
+  it("un Admin (members:view) n'a plus le lien autonome — devenu une tuile dans « Mes demandes »", async () => {
+    mockAuth.mockResolvedValue(createAdminSession("church-1"));
+    prismaMock.memberUserLink.findUnique.mockResolvedValue(null);
+    const element = await AuthLayout({ children: null as never });
+    const requestLinks = shellProps(element).requestLinks as { href: string; label: string }[];
+    expect(requestLinks).not.toContainEqual({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  });
+});
