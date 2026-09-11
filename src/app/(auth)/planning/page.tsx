@@ -2,8 +2,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import { listTeamEventsForMember } from "@/modules/planning";
 import MyPlanningView from "./MyPlanningView";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function MyPlanningPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

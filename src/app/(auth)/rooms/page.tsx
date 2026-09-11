@@ -3,8 +3,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth, getUserDepart
 import { rolePermissions } from "@/lib/registry";
 import { isControlTeamMember } from "@/modules/rooms";
 import RoomsBookingClient from "./RoomsBookingClient";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function RoomsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

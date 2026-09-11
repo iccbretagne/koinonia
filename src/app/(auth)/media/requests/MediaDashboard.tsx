@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Button, { buttonClasses } from "@/components/ui/Button";
-
+import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 interface ParentRequest {
   id: string;
   type: string;

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Button, { buttonClasses } from "@/components/ui/Button";
-
+import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 interface Props {
   churchId: string;
   churchName: string;

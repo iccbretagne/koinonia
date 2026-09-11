@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 type Author = { id: string; name: string | null; displayName: string | null; image: string | null };
 
 type Mission = {

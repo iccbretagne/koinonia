@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Button, { buttonClasses } from "@/components/ui/Button";
+import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 

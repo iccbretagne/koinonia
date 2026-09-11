@@ -2,8 +2,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function DuplicatesPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

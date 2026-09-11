@@ -2,8 +2,7 @@ import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }

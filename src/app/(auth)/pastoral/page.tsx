@@ -2,8 +2,7 @@ import { auth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import SwitchChurchLink from "@/components/SwitchChurchLink";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 const roleLabel: Record<string, string> = {
   PASTEUR: "Pasteur",
   ASSISTANT_PASTEUR: "Assistant pasteur",

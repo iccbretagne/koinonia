@@ -3,7 +3,7 @@ import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import MembersClient from "./MembersClient";
 import LinkRequestsClient from "./LinkRequestsClient";
 

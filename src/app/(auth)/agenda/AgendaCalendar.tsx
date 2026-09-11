@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 interface Profile { id: string; name: string; role: string }
 interface EntryRequest { id: string; firstName: string; lastName: string; qualificationNote: string | null }
 interface Entry {

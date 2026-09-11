@@ -2,7 +2,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { rolePermissions, registry } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { buttonClasses } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import RequestsList from "./RequestsList";
 
 export default async function MyRequestsPage() {

@@ -5,8 +5,7 @@ import { rolePermissions } from "@/lib/registry";
 import { isControlTeamMember } from "@/modules/rooms";
 import { prisma } from "@/lib/prisma";
 import RoomChecklistsClient from "./RoomChecklistsClient";
-import { buttonClasses } from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function RoomChecklistsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
