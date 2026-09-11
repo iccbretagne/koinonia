@@ -32,5 +32,22 @@ export {
   notifyAssignment,
   notifyRemoval,
 } from "./services/opening-closing.service";
+export {
+  listDepartmentTeamEvents,
+  getTeamEventScopeInfo,
+  createTeamEvent,
+  updateTeamEvent,
+  deleteTeamEvent,
+  listTeamEventsForMember,
+} from "./services/team-event.service";
+export type {
+  TeamEventDTO,
+  TeamEventScopeInfo,
+  RecurrenceRule,
+  TeamEventUpdateScope,
+  CreateTeamEventInput,
+  CreateTeamEventResult,
+  TeamEventWriteInput,
+} from "./services/team-event.service";
 
 export { planningModule } from "./manifest";

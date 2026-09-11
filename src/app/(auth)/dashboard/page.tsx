@@ -9,6 +9,7 @@ import DashboardActions from "@/components/DashboardActions";
 import MonthlyPlanningView from "@/components/MonthlyPlanningView";
 import DepartmentTasksView from "@/components/DepartmentTasksView";
 import WeeklyPlanningView from "@/components/WeeklyPlanningView";
+import TeamEventsView from "@/components/TeamEventsView";
 
 interface DashboardProps {
   searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
@@ -119,7 +120,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
   // Fetch department name (for month, tasks and week views)
   const selectedDepartment =
-    (view === "month" || view === "tasks" || view === "week") && selectedDeptId
+    (view === "month" || view === "tasks" || view === "week" || view === "team") && selectedDeptId
       ? await prisma.department.findUnique({
           where: { id: selectedDeptId },
           select: { name: true },
@@ -195,6 +196,18 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       ) : view === "month" ? (
         selectedDeptId ? (
           <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
+        ) : (
+          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+            Sélectionnez un département dans le menu
+          </div>
+        )
+      ) : view === "team" ? (
+        selectedDeptId ? (
+          <TeamEventsView
+            departmentId={selectedDeptId}
+            departmentName={selectedDepartment?.name}
+            canEdit={canEditPlanning}
+          />
         ) : (
           <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
             Sélectionnez un département dans le menu

@@ -70,6 +70,19 @@ export default function DashboardActions() {
         Tâches
       </Link>
       <Link
+        href={buildHref("team")}
+        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
+          currentView === "team"
+            ? "bg-icc-violet text-white border-icc-violet"
+            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1a4 4 0 10-4-4 4 4 0 004 4zm6-1a4 4 0 10-4-4" />
+        </svg>
+        Équipe
+      </Link>
+      <Link
         href={dept ? `/dashboard/stats?dept=${dept}` : "/dashboard/stats"}
         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
       >

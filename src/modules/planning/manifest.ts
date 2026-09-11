@@ -45,6 +45,7 @@ export const planningModule = defineModule({
       { path: "/api/requests" },
       { path: "/api/welcome-duty" },
       { path: "/api/planning" },
+      { path: "/api/team-events" },
       { path: "/api/admin/members" },
       { path: "/api/member-user-links" },
       { path: "/api/member-link-requests" },

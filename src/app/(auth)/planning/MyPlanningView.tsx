@@ -33,9 +33,25 @@ type PlanningEntry = {
   };
 };
 
+type TeamEventEntry = {
+  id: string;
+  title: string;
+  startsAt: Date | string;
+  endsAt: Date | string;
+  location: string | null;
+  department: { id: string; name: string };
+};
+
 interface Props {
   plannings: PlanningEntry[];
   tasksByEvent?: Record<string, string[]>;
+  teamEvents?: TeamEventEntry[];
+}
+
+function formatTimeRange(start: Date | string, end: Date | string) {
+  const s = typeof start === "string" ? new Date(start) : start;
+  const e = typeof end === "string" ? new Date(end) : end;
+  return `${s.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} – ${e.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 function formatDate(date: Date | string) {
@@ -76,19 +92,24 @@ function currentMonthKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) {
+export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvents = [] }: Props) {
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
 
+  const hasAny = plannings.length > 0 || teamEvents.length > 0;
+
   const { minKey, maxKey } = useMemo(() => {
-    if (plannings.length === 0) return { minKey: currentMonthKey(), maxKey: currentMonthKey() };
-    const keys = plannings.map((p) => monthKeyOf(p.eventDepartment.event.date)).sort();
+    if (!hasAny) return { minKey: currentMonthKey(), maxKey: currentMonthKey() };
+    const keys = [
+      ...plannings.map((p) => monthKeyOf(p.eventDepartment.event.date)),
+      ...teamEvents.map((t) => monthKeyOf(t.startsAt)),
+    ].sort();
     // Extend range to include current month
     const cur = currentMonthKey();
     return {
       minKey: keys[0] < cur ? keys[0] : cur,
       maxKey: keys[keys.length - 1] > cur ? keys[keys.length - 1] : cur,
     };
-  }, [plannings]);
+  }, [plannings, teamEvents, hasAny]);
 
   const entries = useMemo(
     () => plannings.filter((p) => monthKeyOf(p.eventDepartment.event.date) === selectedMonth)
@@ -96,14 +117,20 @@ export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) 
     [plannings, selectedMonth]
   );
 
+  const monthTeamEvents = useMemo(
+    () => teamEvents.filter((t) => monthKeyOf(t.startsAt) === selectedMonth)
+             .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
+    [teamEvents, selectedMonth]
+  );
+
   const { year, month } = parseMonthKey(selectedMonth);
   const canPrev = selectedMonth > minKey;
   const canNext = selectedMonth < maxKey;
 
-  if (plannings.length === 0) {
+  if (!hasAny) {
     return (
       <div className="text-center py-12 text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        <p className="text-lg">Aucun service planifié.</p>
+        <p className="text-lg">Aucun service ni événement d&apos;équipe.</p>
         <p className="text-sm mt-1">
           Votre responsable de département vous assignera à des événements.
         </p>
@@ -140,12 +167,45 @@ export default function MyPlanningView({ plannings, tasksByEvent = {} }: Props) 
         </button>
       </div>
 
-      {entries.length === 0 ? (
+      {entries.length === 0 && monthTeamEvents.length === 0 ? (
         <div className="text-center py-8 text-gray-400 border-2 border-gray-100 border-dashed rounded-lg">
-          <p>Aucun service ce mois-ci.</p>
+          <p>Aucun service ni événement d&apos;équipe ce mois-ci.</p>
         </div>
       ) : (
         <div className="space-y-2">
+          {monthTeamEvents.map((t) => {
+            const isPast = new Date(t.startsAt) < new Date();
+            return (
+              <div
+                key={`team-${t.id}`}
+                className={`bg-white rounded-lg border-2 px-4 py-3 ${
+                  isPast ? "border-gray-100 opacity-70" : "border-gray-200"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{t.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatDate(t.startsAt)}
+                      <span className="mx-1.5">·</span>
+                      {formatTimeRange(t.startsAt, t.endsAt)}
+                      <span className="mx-1.5">·</span>
+                      <span className="font-semibold text-gray-700">{t.department.name}</span>
+                      {t.location ? (
+                        <>
+                          <span className="mx-1.5">·</span>
+                          {t.location}
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full bg-icc-violet/10 text-icc-violet">
+                    Équipe
+                  </span>
+                </div>
+              </div>
+            );
+          })}
           {entries.map((p) => {
             const event = p.eventDepartment.event;
             const dept = p.eventDepartment.department;

@@ -39,6 +39,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0010](0010-acces-transverse-inter-eglises.md) | Accès transverse inter-églises borné au module demandeur | Accepté |
 | [0011](0011-manifeste-separe-de-l-index.md) | Manifeste de module séparé de son index public | Accepté |
 | [0012](0012-manifeste-declare-surface-http.md) | Le manifeste déclare la surface HTTP du module ; le proxy l'applique | Accepté |
+| [0013](0013-perimetre-appartenance-lecture-seule.md) | Périmètre d'appartenance, en lecture seule, distinct du périmètre de responsabilité | Accepté |
 
 ## Note sur les ADR 0001–0003
 

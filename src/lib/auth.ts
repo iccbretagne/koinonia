@@ -438,7 +438,7 @@ export async function requireChurchAccess(churchId: string) {
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
 export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile",
+  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent",
   resourceId: string
 ): Promise<string> {
   const { ApiError } = await import("./api-utils");
@@ -546,6 +546,14 @@ export async function resolveChurchId(
       });
       if (!pp) throw new ApiError(404, "Profil pastoral introuvable");
       return pp.churchId;
+    }
+    case "teamEvent": {
+      const te = await prisma.teamEvent.findUnique({
+        where: { id: resourceId },
+        select: { churchId: true },
+      });
+      if (!te) throw new ApiError(404, "Événement d'équipe introuvable");
+      return te.churchId;
     }
   }
 }
