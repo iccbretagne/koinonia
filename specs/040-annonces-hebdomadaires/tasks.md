@@ -137,4 +137,4 @@
 - [x] `npm run lint:boundaries`
 - [x] `npm run test` (146 fichiers, 1558 tests)
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits
-- [ ] PR ouverte vers `main`
+- [x] PR ouverte vers `main` ([#538](https://github.com/iccbretagne/koinonia/pull/538))
