@@ -564,6 +564,22 @@ export default function Sidebar({
         </Link>
       )}
 
+      {/* Feuilles d'annonces (STAR uniquement — Coordination/Secrétariat/lecteurs sans events:view) */}
+      {showStarEvents && (
+        <Link
+          href="/events/announcement-sheets"
+          onClick={onClose}
+          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
+            pathname.startsWith("/events/announcement-sheets")
+              ? "bg-icc-violet-light text-icc-violet"
+              : "text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          <IconCalendar className="w-4 h-4" />
+          Feuilles d&apos;annonces
+        </Link>
+      )}
+
       {/* Vue pastorale — si l'utilisateur a aussi un profil pastoral dans cette église */}
       {isPastoral && (
         <Link
@@ -677,6 +693,9 @@ export default function Sidebar({
           <nav className="space-y-0.5 pl-6">
             <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
             <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
+            <NavLink href="/events/announcement-sheets" active={pathname.startsWith("/events/announcement-sheets")} onClose={onClose}>
+              Feuilles d&apos;annonces
+            </NavLink>
             {hasEventsManage && (
               <NavLink href="/admin/events" active={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>
                 Gestion

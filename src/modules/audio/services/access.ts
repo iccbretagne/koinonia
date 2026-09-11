@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
+import { DEPT_FN } from "@/lib/department-functions";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -17,7 +18,7 @@ async function defaultDb(): Promise<DbClient> {
 export async function getCaptureDepartmentId(churchId: string, db?: DbClient): Promise<string | null> {
   db ??= await defaultDb();
   const department = await db.department.findFirst({
-    where: { function: "CAPTATION_AUDIO", ministry: { churchId } },
+    where: { function: DEPT_FN.CAPTATION_AUDIO, ministry: { churchId } },
     select: { id: true },
   });
   return department?.id ?? null;

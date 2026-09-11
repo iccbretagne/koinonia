@@ -61,6 +61,8 @@ export const prismaMock = {
   // Module service d'accueil
   welcomeDutyFamily: createModelMock(),
   welcomeDutyAssignment: createModelMock(),
+  // Feuille d'annonces d'un culte (spec 040)
+  announcementSheet: createModelMock(),
   // Module emploi
   jobOffer: createModelMock(),
   jobSeeker: createModelMock(),

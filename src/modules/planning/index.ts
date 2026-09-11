@@ -17,5 +17,14 @@ export {
   listBackupOptions,
 } from "./services/absence.service";
 export type { AbsenceConflict, BackupInput, BackupOption } from "./services/absence.service";
+export {
+  findCoordinationMinistryId,
+  canDepositAnnouncementSheet,
+  canReadAnnouncementSheet,
+  notifyReaders,
+  validateSheetFile,
+  getAnnouncementSheetKey,
+  ALLOWED_SHEET_MIME_TYPES,
+} from "./services/announcement-sheet.service";
 
 export { planningModule } from "./manifest";

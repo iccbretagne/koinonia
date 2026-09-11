@@ -428,6 +428,15 @@ export default function MobileNavSheet({
             onClose={onClose}
           />
         )}
+        {showStarEvents && (
+          <RootRow
+            label="Feuilles d'annonces"
+            icon={<IconCalendar className="w-5 h-5" />}
+            href="/events/announcement-sheets"
+            isActive={pathname.startsWith("/events/announcement-sheets")}
+            onClose={onClose}
+          />
+        )}
         {hasAbsences && (
           <RootRow
             label="Absences"
@@ -581,6 +590,7 @@ export default function MobileNavSheet({
         <div>
           <SubRow href="/events" label="Liste" isActive={pathname === "/events"} onClose={onClose} />
           <SubRow href="/events/calendar" label="Calendrier" isActive={pathname === "/events/calendar"} onClose={onClose} />
+          <SubRow href="/events/announcement-sheets" label="Feuilles d'annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
           {hasEventsManage && (
             <SubRow href="/admin/events" label="Gestion" isActive={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />
           )}

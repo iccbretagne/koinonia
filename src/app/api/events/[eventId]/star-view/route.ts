@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { canDepositAnnouncementSheet, canReadAnnouncementSheet } from "@/modules/planning";
 
 export async function GET(
   _request: Request,
@@ -9,7 +10,7 @@ export async function GET(
   try {
     const { eventId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("planning:view", churchId);
+    const session = await requireChurchPermission("planning:view", churchId);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -18,6 +19,9 @@ export async function GET(
         welcomeDutyAssignments: {
           include: { welcomeDutyFamily: { select: { familyName: true } } },
           orderBy: { createdAt: "asc" },
+        },
+        announcementSheet: {
+          select: { filename: true, uploadedAt: true },
         },
         eventDepts: {
           include: {
@@ -78,6 +82,17 @@ export async function GET(
     const audioLink =
       audioService?.status === "PUBLISHED" ? { url: `/audio/ecouter/${audioService.id}` } : null;
 
+    const [canDeposit, canRead] = await Promise.all([
+      canDepositAnnouncementSheet(session, churchId),
+      canReadAnnouncementSheet(session, churchId),
+    ]);
+    const announcementSheet = {
+      filename: event.announcementSheet?.filename ?? null,
+      uploadedAt: event.announcementSheet?.uploadedAt.toISOString() ?? null,
+      canDeposit,
+      canRead,
+    };
+
     return successResponse({
       event: {
         id: event.id,
@@ -90,6 +105,7 @@ export async function GET(
       totalStars,
       welcomeFamilies,
       audioLink,
+      announcementSheet,
     });
   } catch (error) {
     return errorResponse(error);

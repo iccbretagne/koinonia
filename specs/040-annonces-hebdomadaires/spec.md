@@ -1,7 +1,7 @@
 # Spec — Feuille d'annonces d'un culte
 
 - **Numéro** : 040
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/annonces-hebdomadaires`
 
@@ -64,18 +64,18 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 
 ## Critères d'acceptation
 
-- [ ] Le Secrétariat, la Coordination, Admin et Super Admin peuvent déposer une feuille
+- [x] Le Secrétariat, la Coordination, Admin et Super Admin peuvent déposer une feuille
       d'annonces (docx ou PDF) sur un événement.
-- [ ] Une seule feuille est visible par événement ; un nouveau dépôt la remplace et affiche sa
+- [x] Une seule feuille est visible par événement ; un nouveau dépôt la remplace et affiche sa
       date de mise à jour.
-- [ ] Les membres de la Modération, de la Coordination et des départements Communication, Régie
+- [x] Les membres de la Modération, de la Coordination et des départements Communication, Régie
       et Production média peuvent la télécharger.
-- [ ] Aucun autre utilisateur n'y a accès, y compris par lien direct.
-- [ ] Les lecteurs sont notifiés dans l'application à chaque dépôt.
-- [ ] L'absence de feuille pour un culte à venir est signalée explicitement.
-- [ ] Un format autre que docx/PDF est refusé avec un message clair.
-- [ ] Les feuilles sont cloisonnées par église.
-- [ ] Dépôt et récupération sont utilisables sur mobile.
+- [x] Aucun autre utilisateur n'y a accès, y compris par lien direct.
+- [x] Les lecteurs sont notifiés dans l'application à chaque dépôt.
+- [x] L'absence de feuille pour un culte à venir est signalée explicitement.
+- [x] Un format autre que docx/PDF est refusé avec un message clair.
+- [x] Les feuilles sont cloisonnées par église.
+- [x] Dépôt et récupération sont utilisables sur mobile.
 
 ## Hors périmètre
 
