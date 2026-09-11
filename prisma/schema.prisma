@@ -95,6 +95,8 @@ model Church {
   welcomeDutyAssignments    WelcomeDutyAssignment[]
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignments OpeningClosingAssignment[]
+  // Événements d'équipe (spec 044)
+  teamEvents                TeamEvent[]
   // Module rooms (réservation de salles)
   rooms                     Room[]
   roomAccesses              RoomAccess[]
@@ -199,6 +201,8 @@ model User {
   announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
+  // Événements d'équipe (spec 044)
+  teamEventsCreated                 TeamEvent[]                  @relation("TeamEventCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
   @@map("users")
@@ -269,6 +273,8 @@ model Department {
   linkRequests      MemberLinkRequest[]  @relation("LinkRequestDept")
   financialSeries   FinancialSeries[]
   financialRequests FinancialRequest[]
+  // Événements d'équipe (spec 044)
+  teamEvents        TeamEvent[]
 
   @@map("departments")
 }
@@ -1575,6 +1581,35 @@ model OpeningClosingAssignment {
   @@index([churchId])
   @@index([memberId])
   @@map("opening_closing_assignments")
+}
+
+/// Rendez-vous interne à un département (spec 044). Distinct de `Event` : ne porte ni planning
+/// de service, ni compte rendu, ni audio, ni médias, ni salles. Toutes les occurrences d'une
+/// série (la première comprise) partagent le même `seriesId`, ce qui simplifie les mises à
+/// jour "cette occurrence et les suivantes" à une seule condition sur `startsAt`.
+model TeamEvent {
+  id             String   @id @default(cuid())
+  churchId       String
+  departmentId   String
+  title          String   @db.VarChar(200)
+  startsAt       DateTime
+  endsAt         DateTime
+  location       String?  @db.VarChar(200)
+  description    String?  @db.Text
+  recurrenceRule String? // "weekly" | "biweekly" | "monthly" — mêmes valeurs que Event
+  seriesId       String?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  church     Church     @relation(fields: [churchId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("TeamEventCreatedBy", fields: [createdById], references: [id])
+
+  @@index([churchId])
+  @@index([departmentId, startsAt])
+  @@index([seriesId])
+  @@map("team_events")
 }
 
 // ─── Module emploi ────────────────────────────────────────────────

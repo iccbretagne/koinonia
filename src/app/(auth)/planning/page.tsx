@@ -1,5 +1,6 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { listTeamEventsForMember } from "@/modules/planning";
 import MyPlanningView from "./MyPlanningView";
 
 export default async function MyPlanningPage() {
@@ -32,7 +33,7 @@ export default async function MyPlanningPage() {
     );
   }
 
-  const [plannings, taskAssignments, openingClosingAssignments] = await Promise.all([
+  const [plannings, taskAssignments, openingClosingAssignments, teamEvents] = await Promise.all([
     prisma.planning.findMany({
       where: {
         memberId: link.memberId,
@@ -57,6 +58,7 @@ export default async function MyPlanningPage() {
       include: { event: { select: { id: true, title: true, type: true, date: true } } },
       orderBy: { event: { date: "asc" } },
     }),
+    listTeamEventsForMember(churchId, link.memberId),
   ]);
 
   // Service d'ouverture/fermeture (spec 041) — pas de département propre, représenté comme une
@@ -93,6 +95,7 @@ export default async function MyPlanningPage() {
       <MyPlanningView
         plannings={[...plannings, ...openingClosingEntries]}
         tasksByEvent={Object.fromEntries(tasksByEvent)}
+        teamEvents={teamEvents}
       />
     </div>
   );

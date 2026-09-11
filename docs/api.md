@@ -763,6 +763,79 @@ Assigne des membres à une tâche pour un événement. Remplace les assignations
 - `400` si un membre n'est pas en service pour cet événement
 - `404` si la tâche ou le lien événement-département est introuvable
 
+## Événements d'équipe
+
+Rendez-vous internes à un département (répétition, réunion, formation), distincts des
+événements d'église : ni planning de service, ni compte rendu, ni audio/médias/salles (spec 044,
+issue #522). Visibles par les membres du département dans « Mon planning », en lecture seule —
+voir [ADR-0013](adr/0013-perimetre-appartenance-lecture-seule.md).
+
+### `GET /api/departments/[departmentId]/team-events`
+
+Liste les événements d'équipe d'un département.
+
+**Permission requise** : `planning:department` + `requireDepartmentAccess`
+
+**Paramètres de requête** : `period` — `"upcoming"` (défaut, tri croissant) ou `"past"` (tri décroissant)
+
+**Réponse** : tableau d'événements d'équipe (`id`, `title`, `startsAt`, `endsAt`, `location`,
+`description`, `recurrenceRule`, `seriesId`, `department`).
+
+### `POST /api/departments/[departmentId]/team-events`
+
+Crée un événement d'équipe, éventuellement récurrent.
+
+**Permission requise** : `planning:edit` + `requireDepartmentAccess`
+
+**Body** (validé par Zod) :
+```json
+{
+  "title": "Répétition",
+  "startsAt": "2026-09-14T18:00:00",
+  "endsAt": "2026-09-14T20:00:00",
+  "location": "Salle B",
+  "description": null,
+  "recurrence": { "rule": "weekly", "until": "2026-12-14" }
+}
+```
+
+`recurrence` est optionnel ; `rule` vaut `"weekly"`, `"biweekly"` ou `"monthly"`. Toutes les
+occurrences d'une série (la première comprise) partagent le même `seriesId`. Plafonnée à 104
+occurrences (~2 ans), comme les événements d'église.
+
+**Réponse** (`201`) : `{ "created": <nombre d'occurrences créées>, "truncated": <bool> }`
+
+**Erreurs** : `400` si `endsAt <= startsAt` ou body invalide.
+
+### `PUT /api/team-events/[teamEventId]`
+
+Modifie un événement d'équipe. Le département visé est résolu depuis l'événement lui-même
+(jamais depuis un `departmentId` fourni par le client) avant d'appliquer la garde de périmètre.
+
+**Permission requise** : `planning:edit` + `requireDepartmentAccess`
+
+**Body** (validé par Zod) : mêmes champs que la création (sans `recurrence`), plus
+`scope` — `"occurrence"` (défaut, ne modifie que cet événement) ou `"following"` (déplace cette
+occurrence et toutes les suivantes de la série, en conservant le jour de chacune ; le passé
+n'est jamais modifié).
+
+**Réponse** : `{ "updated": <nombre d'occurrences modifiées> }`
+
+**Erreurs** : `400` si `endsAt <= startsAt` ; `403` hors périmètre ; `404` si introuvable.
+
+### `DELETE /api/team-events/[teamEventId]`
+
+Supprime un événement d'équipe.
+
+**Permission requise** : `planning:edit` + `requireDepartmentAccess`
+
+**Paramètres de requête** : `scope` — `"occurrence"` (défaut) ou `"following"` (supprime cette
+occurrence et toutes les suivantes de la série ; le passé n'est jamais touché).
+
+**Réponse** : `{ "deleted": <nombre d'occurrences supprimées> }`
+
+**Erreurs** : `403` hors périmètre ; `404` si introuvable.
+
 ---
 
 ## Utilisateurs et rôles

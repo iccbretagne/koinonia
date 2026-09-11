@@ -406,6 +406,35 @@ Modèle unifié pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_
 
 Index : `[churchId, type, status]`, `[assignedDeptId, status]`
 
+#### `team_events`
+
+Rendez-vous internes à un département (répétition, réunion, formation), distincts des
+événements d'église : ni planning de service, ni compte rendu, ni audio/médias/salles (spec 044,
+issue #522).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `departmentId` | String | Ref vers `departments` (`onDelete: Cascade`) |
+| `title` | String | Titre |
+| `startsAt` | DateTime | Début |
+| `endsAt` | DateTime | Fin |
+| `location` | String? | Lieu (optionnel) |
+| `description` | String? (Text) | Description (optionnel) |
+| `recurrenceRule` | String? | `"weekly"` \| `"biweekly"` \| `"monthly"` — mêmes valeurs que `events.recurrenceRule` |
+| `seriesId` | String? | Id de la première occurrence de la série ; toutes les occurrences (la première comprise) partagent ce `seriesId` — schéma « plat », distinct du couple `seriesId`/`isRecurrenceParent` de `events` |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` | DateTime | Date de création |
+| `updatedAt` | DateTime | Dernière modification |
+
+Index : `[churchId]`, `[departmentId, startsAt]`, `[seriesId]`
+
+> Visibilité : gérée par `planning:department`/`planning:edit` + `requireDepartmentAccess`
+> (aucune permission propre). Visible en lecture seule par les membres du département dans leur
+> agenda personnel via un périmètre d'**appartenance** distinct du périmètre de responsabilité
+> ci-dessus — voir [ADR-0013](adr/0013-perimetre-appartenance-lecture-seule.md).
+
 ### Enums
 
 #### `Role`

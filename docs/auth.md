@@ -342,6 +342,16 @@ Infrastructure pure (client S3, jetons opaques), aucune permission propre — co
   avec le périmètre de responsabilité (`user_departments`) : voir ADR-0009
 - Attribution requiert une liaison compte-membre valide (`MemberUserLink`)
 
+**Événements d'équipe** (spec 044, issue #522) : rendez-vous internes à un département
+(répétition, réunion, formation), distincts des événements d'église. Gestion via les permissions
+existantes `planning:department`/`planning:edit` + `requireDepartmentAccess` (aucune permission
+propre) ; visibilité en lecture seule par les membres du département dans leur agenda personnel
+via `listTeamEventsForMember` (`src/modules/planning/services/team-event.service.ts`), un
+**périmètre d'appartenance** distinct du périmètre de responsabilité ci-dessus — voir
+[ADR-0013](adr/0013-perimetre-appartenance-lecture-seule.md), qui formalise pourquoi ce
+périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requireDepartmentAccess`
+(ADR-0009).
+
 **Spécificités du Qualificateur agenda** (`AGENDA_QUALIFIER`) :
 - Seule permission propre : `agenda:qualify` — qualifie les demandes de RDV pastoral à l'état
   `PENDING`
