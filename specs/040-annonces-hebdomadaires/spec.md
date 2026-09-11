@@ -28,12 +28,12 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
     « Coordination générale » ;
   - Admin et Super Admin.
 - **Récupèrent** (téléchargement) :
-  - les membres du département **Modération** (le modérateur de service en fait partie) ;
-  - la Coordination ;
-  - les membres des départements ayant la fonction **Communication**, **Régie** (captation) et
-    **Production média** ;
+  - les membres STAR du département **Modération** (le modérateur de service en fait partie) ;
+  - les responsables (et adjoints) de n'importe quel département ;
   - les déposants eux-mêmes.
-- Les autres rôles et membres ne voient pas la feuille d'annonces.
+- Les autres rôles et membres ne voient pas la feuille d'annonces (retiré depuis le
+  2026-09-11 : les membres des départements Communication, Régie et Production média n'ont plus
+  d'accès dédié — un responsable de ces départements y accède via son rôle de responsable).
 
 ## Comportement attendu
 
@@ -44,9 +44,8 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 3. Le document apparaît immédiatement sur cet événement, avec la date de dépôt et le nom du
    déposant.
 4. Les lecteurs reçoivent une notification dans l'application les invitant à la récupérer.
-5. Le modérateur, la Coordination et les équipes Communication, Régie et Production média
-   retrouvent la feuille depuis l'événement (et depuis une liste des feuilles des prochains
-   cultes) et la téléchargent.
+5. Le modérateur et les responsables de département retrouvent la feuille depuis l'événement
+   (et depuis une liste des feuilles des prochains cultes) et la téléchargent.
 
 ### Scénarios alternatifs / cas limites
 
@@ -68,8 +67,8 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
       d'annonces (docx ou PDF) sur un événement.
 - [x] Une seule feuille est visible par événement ; un nouveau dépôt la remplace et affiche sa
       date de mise à jour.
-- [x] Les membres de la Modération, de la Coordination et des départements Communication, Régie
-      et Production média peuvent la télécharger.
+- [x] Les membres STAR de la Modération et les responsables de département (tous départements)
+      peuvent la télécharger.
 - [x] Aucun autre utilisateur n'y a accès, y compris par lien direct.
 - [x] Les lecteurs sont notifiés dans l'application à chaque dépôt.
 - [x] L'absence de feuille pour un culte à venir est signalée explicitement.
@@ -90,5 +89,12 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 - Unité : **une feuille par événement** (culte).
 - « Coordination » = le ministère **Coordination générale**.
 - Modérateur de service = membres du **département Modération**.
-- Départements lecteurs : fonctions **Communication**, **Régie** et **Production média**.
 - Formats : **docx et PDF** ; **téléchargement** seul ; notification **dans l'application**.
+
+## Décisions (révision du 2026-09-11)
+
+- Restriction des lecteurs, à la demande du Secrétariat : ne conservent l'accès lecture que les
+  membres STAR du département Modération et les responsables de département (tous départements,
+  plus seulement Coordination). Les départements Communication, Régie (captation) et Production
+  média perdent leur accès dédié — un responsable de ces départements accède désormais via son
+  rôle de responsable, pas via la fonction de son département.
