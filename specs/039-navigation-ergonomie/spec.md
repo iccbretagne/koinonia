@@ -1,7 +1,7 @@
 # Spec — Ergonomie de la navigation : libellé de gestion des événements et place de la Comptabilité
 
 - **Numéro** : 039
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/navigation-ergonomie`
 
