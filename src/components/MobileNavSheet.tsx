@@ -332,7 +332,9 @@ export default function MobileNavSheet({
     pathname.startsWith("/admin/members") ||
     pathname.startsWith("/admin/discipleship") ||
     isIntegrationActive;
-  const isEvenementsActive = isEventsActive;
+  // STAR (showStarEvents) navigue vers /planning/events plutôt que /events — l'accordéon
+  // "Événements" doit s'ouvrir aussi dans ce cas (spec 043).
+  const isEvenementsActive = isEventsActive || pathname.startsWith("/planning/events");
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive || isAccountingActive;
   const isRessourcesActive = isJobsActive || isRoomsActive;
@@ -430,24 +432,6 @@ export default function MobileNavSheet({
             onClose={onClose}
           />
         )}
-        {showStarEvents && (
-          <RootRow
-            label="Événements"
-            icon={<IconCalendar className="w-5 h-5" />}
-            href="/planning/events"
-            isActive={pathname.startsWith("/planning/events")}
-            onClose={onClose}
-          />
-        )}
-        {showStarEvents && (
-          <RootRow
-            label="Feuilles d'annonces"
-            icon={<IconCalendar className="w-5 h-5" />}
-            href="/events/announcement-sheets"
-            isActive={pathname.startsWith("/events/announcement-sheets")}
-            onClose={onClose}
-          />
-        )}
         {hasAbsences && (
           <RootRow
             label="Absences"
@@ -475,7 +459,7 @@ export default function MobileNavSheet({
             onClick={() => setView("communaute")}
           />
         )}
-        {hasEventsAccess && (
+        {(hasEventsAccess || showStarEvents) && (
           <RootRow
             label="Événements"
             icon={<IconCalendar className="w-5 h-5" />}
@@ -596,13 +580,25 @@ export default function MobileNavSheet({
   }
 
   function renderEvenements() {
+    // STAR sans events:view : vue réduite (vue hebdomadaire + trame des annonces uniquement).
+    if (showStarEvents && !hasEventsAccess) {
+      return (
+        <>
+          <SheetSubHeader title="Événements" onBack={() => setView("root")} />
+          <div>
+            <SubRow href="/planning/events" label="Mes événements" isActive={pathname.startsWith("/planning/events")} onClose={onClose} />
+            <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
+          </div>
+        </>
+      );
+    }
     return (
       <>
         <SheetSubHeader title="Événements" onBack={() => setView("root")} />
         <div>
           <SubRow href="/events" label="Liste" isActive={pathname === "/events"} onClose={onClose} />
           <SubRow href="/events/calendar" label="Calendrier" isActive={pathname === "/events/calendar"} onClose={onClose} />
-          <SubRow href="/events/announcement-sheets" label="Feuilles d'annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
+          <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
           {hasEventsManage && (
             <SubRow href="/admin/events" label="Gérer les événements" isActive={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />
           )}

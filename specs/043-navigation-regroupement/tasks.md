@@ -16,34 +16,35 @@
 
 ### Volet 1 — « Trame des annonces » + menu Événements du STAR
 
-- [ ] **T1** [P] — Renommer « Feuilles d'annonces » → « Trame des annonces » dans `Sidebar.tsx`
+- [x] **T1** [P] — Renommer « Feuilles d'annonces » → « Trame des annonces » dans `Sidebar.tsx`
       (les deux occurrences : lien STAR autonome et sous-entrée de l'accordéon Événements)
       *(fichier : `src/components/Sidebar.tsx`)*
-- [ ] **T2** [P] — Même renommage dans `MobileNavSheet.tsx` (2 occurrences)
+- [x] **T2** [P] — Même renommage dans `MobileNavSheet.tsx` (2 occurrences)
       *(fichier : `src/components/MobileNavSheet.tsx`)*
-- [ ] **T3** [P] — Renommer le titre `<h1>` de la page de liste
+- [x] **T3** [P] — Renommer le titre `<h1>` de la page de liste
       *(fichier : `src/app/(auth)/events/announcement-sheets/page.tsx`)*
-- [ ] **T4** [P] — Renommer le titre et les confirmations dans le composant de dépôt/consultation
+- [x] **T4** [P] — Renommer le titre et les confirmations dans le composant de dépôt/consultation
       *(fichier : `src/app/(auth)/events/[eventId]/star-view/AnnouncementSheetManager.tsx`)*
-- [ ] **T5** [P] — Renommer les titres/corps des notifications
+- [x] **T5** [P] — Renommer les titres/corps des notifications
       *(fichier : `src/modules/planning/services/announcement-sheet.service.ts`)*
-- [ ] **T6** [P] — Renommer les messages `ApiError`
+- [x] **T6** [P] — Renommer les messages `ApiError`
       *(fichiers : `src/app/api/events/[eventId]/announcement-sheet/route.ts`,
       `src/app/api/events/[eventId]/announcement-sheet/sign/route.ts`)*
-- [ ] **T7** — Fusionner les deux liens autonomes STAR (Événements + Trame des annonces) en un
+- [x] **T7** — Fusionner les deux liens autonomes STAR (Événements + Trame des annonces) en un
       `AccordionSection` « Événements » à deux sous-entrées (« Mes événements »,
       « Trame des annonces ») ; étendre `isEvenementsActive`/`activeSection()` pour que
       l'accordéon s'ouvre sur `/planning/events` et `/events/announcement-sheets`
       *(fichier : `src/components/Sidebar.tsx`)*
-- [ ] **T8** — Même fusion en `RootRow`/`SubRow` côté tiroir mobile
+- [x] **T8** — Même fusion en `RootRow`/`SubRow` côté tiroir mobile
       *(fichier : `src/components/MobileNavSheet.tsx`)*
-- [ ] **T9** [P] — Mettre à jour les tests existants qui référencent l'ancien libellé ou les
-      anciens messages d'erreur
+- [x] **T9** [P] — Mettre à jour les tests existants qui référencent l'ancien libellé ou les
+      anciens messages d'erreur — aucun test n'assertait ces chaînes, rien à changer
       *(fichiers : `src/app/api/events/__tests__/announcement-sheet.test.ts`,
       `src/app/api/events/__tests__/announcement-sheets-list.test.ts`)*
-- [ ] **T10** — Étendre `star-navigation.test.ts` : un STAR sans `events:view` a une seule entrée
-      « Événements » (pas deux liens autonomes) contenant les deux sous-liens attendus
-      *(fichier : `src/app/(auth)/__tests__/star-navigation.test.ts`)*
+- [x] **T10** — Non applicable en Vitest : `showStarEvents` (le seul flag calculé par
+      `layout.tsx`) ne change pas de valeur, seule la présentation dans `Sidebar.tsx`/
+      `MobileNavSheet.tsx` change — le projet ne teste pas le rendu des composants (cf. `plan.md`).
+      Reportée sur la vérification manuelle **T42**.
 
 ### Volet 2 — Bandeau de préparation (page événement)
 

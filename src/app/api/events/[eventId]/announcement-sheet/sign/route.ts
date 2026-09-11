@@ -25,7 +25,7 @@ export async function POST(
     const session = await requireChurchPermission("planning:view", churchId);
 
     if (!(await canDepositAnnouncementSheet(session, churchId))) {
-      throw new ApiError(403, "Droit insuffisant pour déposer une feuille d'annonces");
+      throw new ApiError(403, "Droit insuffisant pour déposer une trame des annonces");
     }
 
     const body = signSchema.parse(await request.json());

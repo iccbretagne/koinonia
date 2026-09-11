@@ -391,7 +391,9 @@ export default function Sidebar({
 
   // ── Sections composites ─────────────────────────────────
   const isCommunauteActive = isMembersActive || isDiscipleshipActive || isIntegrationActive;
-  const isEvenementsActive = isEventsActive;
+  // STAR (showStarEvents) navigue vers /planning/events plutôt que /events — l'accordéon
+  // "Événements" doit s'ouvrir aussi dans ce cas (spec 043).
+  const isEvenementsActive = isEventsActive || isStarEventsActive;
   const isGestionPastoraleActive = isAgendaActive;
   const isOperationsActive = isRequestsActive || isMediaActive || isAccountingActive;
   const isRessourcesActive = isJobsActive || isRoomsActive;
@@ -559,36 +561,29 @@ export default function Sidebar({
         </Link>
       )}
 
-      {/* Événements (STAR uniquement — vue hebdomadaire en lecture seule) */}
+      {/* Événements (STAR uniquement — vue hebdomadaire + trame des annonces, groupées dans un
+          seul accordéon pour ne pas allonger le menu au premier niveau, spec 043) */}
       {showStarEvents && (
-        <Link
-          href="/planning/events"
-          onClick={onClose}
-          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
-            isStarEventsActive
-              ? "bg-icc-violet-light text-icc-violet"
-              : "text-gray-600 hover:bg-gray-50"
-          }`}
+        <AccordionSection
+          title="Événements"
+          icon={<IconCalendar className="w-4 h-4" />}
+          open={openSection === "evenements"}
+          onToggle={() => toggle("evenements")}
+          isActive={isEvenementsActive}
         >
-          <IconCalendar className="w-4 h-4" />
-          Événements
-        </Link>
-      )}
-
-      {/* Feuilles d'annonces (STAR uniquement — Coordination/Secrétariat/lecteurs sans events:view) */}
-      {showStarEvents && (
-        <Link
-          href="/events/announcement-sheets"
-          onClick={onClose}
-          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-semibold tracking-wide transition-colors ${
-            pathname.startsWith("/events/announcement-sheets")
-              ? "bg-icc-violet-light text-icc-violet"
-              : "text-gray-600 hover:bg-gray-50"
-          }`}
-        >
-          <IconCalendar className="w-4 h-4" />
-          Feuilles d&apos;annonces
-        </Link>
+          <nav className="space-y-0.5 pl-6">
+            <NavLink href="/planning/events" active={isStarEventsActive} onClose={onClose}>
+              Mes événements
+            </NavLink>
+            <NavLink
+              href="/events/announcement-sheets"
+              active={pathname.startsWith("/events/announcement-sheets")}
+              onClose={onClose}
+            >
+              Trame des annonces
+            </NavLink>
+          </nav>
+        </AccordionSection>
       )}
 
       {/* Vue pastorale — si l'utilisateur a aussi un profil pastoral dans cette église */}
@@ -705,7 +700,7 @@ export default function Sidebar({
             <NavLink href="/events" active={pathname === "/events"} onClose={onClose}>Liste</NavLink>
             <NavLink href="/events/calendar" active={pathname === "/events/calendar"} onClose={onClose}>Calendrier</NavLink>
             <NavLink href="/events/announcement-sheets" active={pathname.startsWith("/events/announcement-sheets")} onClose={onClose}>
-              Feuilles d&apos;annonces
+              Trame des annonces
             </NavLink>
             {hasEventsManage && (
               <NavLink href="/admin/events" active={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose}>

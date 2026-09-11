@@ -102,7 +102,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange }: Pr
   }
 
   async function handleRemove() {
-    if (!confirm("Retirer la feuille d'annonces déposée ?")) return;
+    if (!confirm("Retirer la trame des annonces déposée ?")) return;
     setRemoving(true);
     try {
       const res = await fetch(`/api/events/${eventId}/announcement-sheet`, { method: "DELETE" });
@@ -121,7 +121,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange }: Pr
 
   return (
     <div className="mb-6 p-4 bg-white rounded-lg shadow print:hidden">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">Feuille d&apos;annonces</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-3">Trame des annonces</h2>
 
       {data.filename ? (
         <div className="flex flex-wrap items-center gap-3">

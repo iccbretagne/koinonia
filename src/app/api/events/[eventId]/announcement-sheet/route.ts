@@ -25,7 +25,7 @@ export async function POST(
     const session = await requireChurchPermission("planning:view", churchId);
 
     if (!(await canDepositAnnouncementSheet(session, churchId))) {
-      throw new ApiError(403, "Droit insuffisant pour déposer une feuille d'annonces");
+      throw new ApiError(403, "Droit insuffisant pour déposer une trame des annonces");
     }
 
     const body = confirmSchema.parse(await request.json());
@@ -80,7 +80,7 @@ export async function GET(
     const session = await requireChurchPermission("planning:view", churchId);
 
     if (!(await canReadAnnouncementSheet(session, churchId))) {
-      throw new ApiError(403, "Droit insuffisant pour consulter la feuille d'annonces");
+      throw new ApiError(403, "Droit insuffisant pour consulter la trame des annonces");
     }
 
     const sheet = await prisma.announcementSheet.findUnique({
@@ -115,11 +115,11 @@ export async function DELETE(
     const session = await requireChurchPermission("planning:view", churchId);
 
     if (!(await canDepositAnnouncementSheet(session, churchId))) {
-      throw new ApiError(403, "Droit insuffisant pour retirer la feuille d'annonces");
+      throw new ApiError(403, "Droit insuffisant pour retirer la trame des annonces");
     }
 
     const sheet = await prisma.announcementSheet.findUnique({ where: { eventId } });
-    if (!sheet) throw new ApiError(404, "Aucune feuille d'annonces déposée pour cet événement");
+    if (!sheet) throw new ApiError(404, "Aucune trame des annonces déposée pour cet événement");
 
     await prisma.announcementSheet.delete({ where: { eventId } });
     await deleteMediaFile(sheet.key);
