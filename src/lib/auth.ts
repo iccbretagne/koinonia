@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import type { Role } from "@/generated/prisma/client";
+import { DEPT_FN } from "@/lib/department-functions";
 
 /**
  * Le mode de connexion développement (choix d'un compte de test généré par
@@ -59,6 +60,13 @@ declare module "next-auth" {
         departments: {
           department: { id: string; name: string };
         }[];
+        /**
+         * Entrée non persistée en base (spec 045) : injectée pour un membre d'un
+         * département de fonction Secrétariat, afin qu'il obtienne la parité des
+         * droits du rôle Secrétaire sans qu'un `UserChurchRole` existe. Ne jamais
+         * proposer au retrait/à la modification comme un rôle réel.
+         */
+        virtual?: boolean;
       }[];
     };
   }
@@ -163,25 +171,43 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      // For STAR roles, load departments from the member link
+      // For STAR roles, load departments from the member link. Cette même liaison sert
+      // aussi à détecter l'appartenance à l'équipe Secrétariat (spec 045), indépendamment
+      // du rôle détenu : un Faiseur de Disciples ou un Reporter membre de ce département
+      // doit être détecté au même titre qu'un STAR — d'où une résolution par église
+      // (et non filtrée sur `role === "STAR"`) plutôt qu'un second `starDeptMap`.
       const starDeptMap = new Map<string, { id: string; name: string }[]>();
-      for (const cr of churchRoles) {
-        if (cr.role === "STAR") {
-          const link = await prisma.memberUserLink.findUnique({
-            where: { userId_churchId: { userId: user.id, churchId: cr.churchId } },
-            include: {
-              member: {
-                include: {
-                  departments: {
-                    include: { department: { select: { id: true, name: true } } },
+      const secretariatChurchIds = new Set<string>();
+      const distinctChurchIds = Array.from(new Set(churchRoles.map((cr) => cr.churchId)));
+      for (const churchId of distinctChurchIds) {
+        const link = await prisma.memberUserLink.findUnique({
+          where: { userId_churchId: { userId: user.id, churchId } },
+          include: {
+            member: {
+              include: {
+                departments: {
+                  include: {
+                    department: { select: { id: true, name: true, function: true } },
                   },
                 },
               },
             },
-          });
-          if (link) {
-            starDeptMap.set(cr.id, link.member.departments.map((d) => d.department));
-          }
+          },
+        });
+        if (!link) continue;
+
+        const departments = link.member.departments.map((d) => d.department);
+        const starRole = churchRoles.find(
+          (cr) => cr.role === "STAR" && cr.churchId === churchId
+        );
+        if (starRole) {
+          starDeptMap.set(
+            starRole.id,
+            departments.map(({ id, name }) => ({ id, name }))
+          );
+        }
+        if (departments.some((d) => d.function === DEPT_FN.SECRETARIAT)) {
+          secretariatChurchIds.add(churchId);
         }
       }
 
@@ -240,6 +266,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           departments,
         };
       });
+
+      // Parité des droits de l'équipe Secrétariat (spec 045, étape 1/2) : une entrée de
+      // rôle SECRETARY non persistée, ajoutée pour chaque église où l'appartenance a été
+      // détectée ci-dessus, sauf si un rôle SECRETARY réel existe déjà (idempotence). Elle
+      // ne porte ni ministryId ni départements : elle n'existe que pour la matrice de
+      // permissions (voir ADR-0014, plan.md).
+      for (const churchId of secretariatChurchIds) {
+        const hasRealSecretaryRole = session.user.churchRoles.some(
+          (cr) => cr.churchId === churchId && cr.role === "SECRETARY"
+        );
+        if (hasRealSecretaryRole) continue;
+
+        const churchInfo = session.user.churchRoles.find((cr) => cr.churchId === churchId)?.church
+          ?? churchRoles.find((cr) => cr.churchId === churchId)?.church;
+        if (!churchInfo) continue;
+
+        session.user.churchRoles.push({
+          id: `virtual-secretariat-${churchId}`,
+          churchId,
+          role: "SECRETARY",
+          ministryId: null,
+          church: churchInfo,
+          departments: [],
+          virtual: true,
+        });
+      }
 
       return session;
     },

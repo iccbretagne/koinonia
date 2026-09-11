@@ -1,7 +1,7 @@
 # Plan technique — L'équipe Secrétariat porte les droits du Secrétariat
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-09-12
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.

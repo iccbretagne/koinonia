@@ -1,7 +1,7 @@
 # Spec — L'équipe Secrétariat porte les droits du Secrétariat
 
 - **Numéro** : 045
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-12
 - **Branche suggérée** : `feat/droits-equipe-secretariat`
 
@@ -101,27 +101,27 @@ consultation des comptes rendus, exactement comme aujourd'hui.
 
 ## Critères d'acceptation
 
-- [ ] Un membre d'un département de fonction Secrétariat, lié à une fiche STAR et sans rôle
+- [x] Un membre d'un département de fonction Secrétariat, lié à une fiche STAR et sans rôle
       Secrétaire/Admin/Super Admin, dispose de **tous** les droits listés ci-dessus.
-- [ ] Il peut créer, modifier et supprimer un événement, et rattacher/détacher les départements
+- [x] Il peut créer, modifier et supprimer un événement, et rattacher/détacher les départements
       attendus.
-- [ ] Il accède au service d'accueil et aux comptes rendus.
-- [ ] Il attribue et retire des rôles dans les mêmes limites qu'un porteur du rôle Secrétaire
+- [x] Il accède au service d'accueil et aux comptes rendus.
+- [x] Il attribue et retire des rôles dans les mêmes limites qu'un porteur du rôle Secrétaire
       aujourd'hui, sans jamais pouvoir accorder un niveau supérieur au sien.
-- [ ] Les entrées de menu correspondantes lui sont visibles, y compris le raccourci de gestion
+- [x] Les entrées de menu correspondantes lui sont visibles, y compris le raccourci de gestion
       sur l'agenda de l'église.
-- [ ] Pour chacun de ces droits, un membre de l'équipe et un porteur du rôle Secrétaire obtiennent
+- [x] Pour chacun de ces droits, un membre de l'équipe et un porteur du rôle Secrétaire obtiennent
       **le même résultat** — c'est ce qui rendra le retrait du rôle sans effet à l'étape 2.
-- [ ] Un STAR d'un autre département, un Responsable de département, un Ministre et un Reporter
+- [x] Un STAR d'un autre département, un Responsable de département, un Ministre et un Reporter
       n'obtiennent aucun droit nouveau, ni par le menu ni par lien direct.
-- [ ] Le retrait de la personne du département lui retire tous ces droits sans autre action.
-- [ ] Un compte non lié à une fiche STAR n'obtient aucun droit par cette voie.
-- [ ] Les droits actuels de Super Admin, Admin, Secrétaire et de tous les autres rôles sont
+- [x] Le retrait de la personne du département lui retire tous ces droits sans autre action.
+- [x] Un compte non lié à une fiche STAR n'obtient aucun droit par cette voie.
+- [x] Les droits actuels de Super Admin, Admin, Secrétaire et de tous les autres rôles sont
       inchangés.
-- [ ] Le cloisonnement par église est respecté.
-- [ ] Les protections contre l'escalade de privilèges restent effectives pour un membre de
+- [x] Le cloisonnement par église est respecté.
+- [x] Les protections contre l'escalade de privilèges restent effectives pour un membre de
       l'équipe.
-- [ ] L'ensemble reste utilisable sur mobile.
+- [x] L'ensemble reste utilisable sur mobile.
 
 ## Hors périmètre
 
