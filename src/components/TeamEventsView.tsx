@@ -157,13 +157,16 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     }
   }
 
-  async function handleDeleteClick(ev: TeamEventItem) {
+  function handleDeleteClick(ev: TeamEventItem) {
     if (ev.seriesId) {
       setEditing(ev);
+      setError(null);
       setScopeStep("delete");
+      setModalOpen(true);
       return;
     }
-    await doDelete(ev, "occurrence");
+    if (!confirm(`Supprimer l'événement d'équipe « ${ev.title} » ?`)) return;
+    doDelete(ev, "occurrence");
   }
 
   async function doDelete(ev: TeamEventItem, scope: "occurrence" | "following") {
@@ -176,6 +179,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       }
       setScopeStep(null);
       setEditing(null);
+      setModalOpen(false);
       await fetchEvents();
     } catch {
       alert("Erreur réseau");
@@ -325,10 +329,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
               </Button>
               <button
                 type="button"
-                onClick={() => {
-                  setScopeStep(null);
-                  setEditing(null);
-                }}
+                onClick={closeModal}
                 className="text-sm text-gray-500 hover:text-gray-700 underline mt-1"
               >
                 Annuler
