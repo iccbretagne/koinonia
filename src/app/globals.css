@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-html {
+/* overflow-x sur <body>, jamais <html> : sur mobile, une valeur d'overflow sur
+   <html> transforme son containing block et les éléments position:fixed (menu,
+   bottom nav) défilent alors avec la page au lieu de rester ancrés au viewport. */
+body {
   overflow-x: hidden;
 }
 
