@@ -116,7 +116,7 @@ export default function BottomNav({
     },
     {
       href: showStarEvents ? "/planning/events" : "/events",
-      label: "Événements",
+      label: "Agenda",
       matchPrefix: showStarEvents ? "/planning/events" : "/events",
       icon: <IconCalendar className="w-5 h-5" />,
     },

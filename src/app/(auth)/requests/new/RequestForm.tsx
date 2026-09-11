@@ -57,6 +57,10 @@ const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
 
 const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
 
+// Les demandes d'accès n'ont rien à voir avec l'agenda des événements : sections distinctes.
+const EVENT_DEMANDS = DEMAND_TYPES.filter((d) => d.key !== "DEMANDE_ACCES");
+const ACCESS_DEMANDS = DEMAND_TYPES.filter((d) => d.key === "DEMANDE_ACCES");
+
 const VISUAL_FORMATS = [
   "Story Instagram",
   "Post carré (1:1)",
@@ -434,7 +438,7 @@ export default function RequestForm({
       <div className="max-w-2xl">
         <p className="text-sm text-gray-600 mb-6">Que souhaitez-vous faire ?</p>
 
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Annonces</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Communication</h3>
         <button
           onClick={() => setCategory("announcement")}
           className="w-full text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors mb-6"
@@ -448,7 +452,7 @@ export default function RequestForm({
           </div>
         </button>
 
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Médias</h3>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Production média</h3>
         <button
           onClick={() => setCategory("visual")}
           className="w-full text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors mb-6"
@@ -464,9 +468,32 @@ export default function RequestForm({
 
         {canSubmitDemands && (
           <>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Demandes</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              Événements &amp; planning
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {DEMAND_TYPES.map((dt) => (
+              {EVENT_DEMANDS.map((dt) => (
+                <button
+                  key={dt.key}
+                  onClick={() => {
+                    setCategory("demand");
+                    setDemandType(dt.key);
+                  }}
+                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{dt.icon}</span>
+                    <p className="font-medium text-gray-900 text-sm">{dt.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
+              Accès &amp; habilitations
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {ACCESS_DEMANDS.map((dt) => (
                 <button
                   key={dt.key}
                   onClick={() => {
@@ -487,7 +514,9 @@ export default function RequestForm({
 
         {(showAgendaTile || showAccountingTile) && (
           <>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">Autres demandes</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
+              Accompagnement &amp; finances
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {showAgendaTile && (
                 <Link
@@ -517,6 +546,16 @@ export default function RequestForm({
   // Step 2: Form
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+      {/* Retour au choix du type de demande — en édition, il n'y a pas d'étape 1 à regagner */}
+      {!isEditMode && (
+        <button
+          type="button"
+          onClick={reset}
+          className="text-sm text-gray-400 hover:text-icc-violet transition-colors"
+        >
+          ← Nouvelle demande
+        </button>
+      )}
 
       {category === "announcement" && (
         <>

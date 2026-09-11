@@ -70,6 +70,19 @@ describe("canDepositAnnouncementSheet", () => {
     });
   });
 
+  it("autorise n'importe quel membre d'un département de la Coordination générale", async () => {
+    const session = createStarSession();
+    prismaMock.memberUserLink.findUnique.mockResolvedValue({ memberId: "member-1" } as never);
+    prismaMock.ministry.findFirst.mockResolvedValue({ id: COORDINATION_ID } as never);
+    // 1er appel : appartenance Secrétariat → non. 2e : appartenance Coordination → oui.
+    prismaMock.memberDepartment.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+
+    expect(await canDepositAnnouncementSheet(session, "church-1")).toBe(true);
+    expect(prismaMock.memberDepartment.count).toHaveBeenLastCalledWith({
+      where: { memberId: "member-1", department: { ministryId: COORDINATION_ID } },
+    });
+  });
+
   it("autorise le Ministre du ministère Coordination générale", async () => {
     const session = createMinisterSession(COORDINATION_ID);
     prismaMock.memberDepartment.count.mockResolvedValue(0);
@@ -130,22 +143,25 @@ describe("canReadAnnouncementSheet", () => {
     expect(await canReadAnnouncementSheet(admin, "church-1")).toBe(true);
   });
 
-  it("autorise un membre d'un département lecteur (Modération/Communication/Régie/Production média)", async () => {
+  it("autorise un membre STAR du département Modération", async () => {
     const session = createStarSession();
     prismaMock.memberUserLink.findUnique.mockResolvedValue({ memberId: "member-1" } as never);
     // Premier appel (vérif Secrétariat dans canDepositAnnouncementSheet) : refusé.
-    // Second appel (vérif populations lecteurs) : autorisé.
+    // Second appel (vérif Modération) : autorisé.
     prismaMock.memberDepartment.count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
 
     expect(await canReadAnnouncementSheet(session, "church-1")).toBe(true);
     expect(prismaMock.memberDepartment.count).toHaveBeenLastCalledWith({
-      where: {
-        memberId: "member-1",
-        department: {
-          function: { in: ["MODERATION", "COMMUNICATION", "CAPTATION_AUDIO", "PRODUCTION_MEDIA"] },
-        },
-      },
+      where: { memberId: "member-1", department: { function: "MODERATION" } },
     });
+  });
+
+  it("autorise un responsable de département, quel que soit son ministère", async () => {
+    const session = createDepartmentHeadSession([{ id: "dept-son", name: "Son" }]);
+    prismaMock.ministry.findFirst.mockResolvedValue({ id: COORDINATION_ID } as never);
+    prismaMock.department.count.mockResolvedValue(0);
+
+    expect(await canReadAnnouncementSheet(session, "church-1")).toBe(true);
   });
 
   it("refuse un STAR hors de toute population habilitée", async () => {

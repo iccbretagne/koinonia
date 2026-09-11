@@ -3,7 +3,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth, getUserDepart
 import { rolePermissions } from "@/lib/registry";
 import { isControlTeamMember } from "@/modules/rooms";
 import RoomsBookingClient from "./RoomsBookingClient";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function RoomsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -26,7 +26,7 @@ export default async function RoomsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Salles</h1>
         {isControlTeam && (
-          <Link href="/rooms/checklists" className="text-sm text-icc-violet hover:underline font-medium">
+          <Link href="/rooms/checklists" className={buttonClasses("secondary", "sm")}>
             Contrôle des mains courantes →
           </Link>
         )}

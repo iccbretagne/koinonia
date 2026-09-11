@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
+import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
@@ -27,13 +28,9 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
     const session = await requireChurchPermission("members:view", churchId);
 
-    // Scope par département : seuls les rôles dans cette église comptent
-    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-    const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
-    const hasGlobalRole = session.user.isSuperAdmin || churchRoles.some((r) => GLOBAL_ROLES.includes(r.role));
-    const scopedDeptIds = hasGlobalRole
-      ? null
-      : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
+    // Périmètre de gestion : responsabilité explicite + départements du ministère (Ministre)
+    const scope = await resolveMemberDepartmentScope(session, churchId);
+    const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
 
     if (scopedDeptIds && departmentId && !scopedDeptIds.includes(departmentId)) {
       throw new ApiError(403, "Accès refusé à ce département");
@@ -90,13 +87,9 @@ export async function PATCH(request: Request) {
     const session = await requireChurchPermission("members:manage", firstMemberChurchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
-    // Scope par département dans cette église
-    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === firstMemberChurchId);
-    const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
-    const hasGlobalRole = session.user.isSuperAdmin || churchRoles.some((r) => GLOBAL_ROLES.includes(r.role));
-    const scopedDeptIds = hasGlobalRole
-      ? null
-      : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
+    // Périmètre de gestion : responsabilité explicite + départements du ministère (Ministre)
+    const scope = await resolveMemberDepartmentScope(session, firstMemberChurchId);
+    const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
 
     if (scopedDeptIds) {
       const manageable = new Set(scopedDeptIds);
@@ -211,13 +204,9 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("members:manage", deptChurchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
-    // Scope par département dans cette église
-    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === deptChurchId);
-    const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
-    const hasGlobalRole = session.user.isSuperAdmin || churchRoles.some((r) => GLOBAL_ROLES.includes(r.role));
-    const scopedDeptIds = hasGlobalRole
-      ? null
-      : Array.from(new Set(churchRoles.flatMap((r) => r.departments.map((d) => d.department.id))));
+    // Périmètre de gestion : responsabilité explicite + départements du ministère (Ministre)
+    const scope = await resolveMemberDepartmentScope(session, deptChurchId);
+    const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
 
     if (scopedDeptIds && !scopedDeptIds.includes(departmentId)) {
       throw new ApiError(403, "Vous ne pouvez pas créer un STAR dans ce département");

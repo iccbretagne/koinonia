@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 interface Props {
   churchId: string;
   churchName: string;
@@ -12,8 +12,9 @@ interface Props {
   defaultEmail: string;
   defaultIsStar?: string;
   defaultDepartment?: string;
-  /** Présent quand on arrive depuis « Mes demandes » (spec 043) : proposé après soumission. */
+  /** Écran de retour proposé après soumission. */
   redirectTo?: string;
+  redirectLabel?: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -43,7 +44,7 @@ function RadioGroup({ name, options, value, onChange }: {
   );
 }
 
-export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "", redirectTo }: Props) {
+export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "", redirectTo, redirectLabel = "mes demandes" }: Props) {
   const [form, setForm] = useState({
     firstName: defaultFirstName,
     lastName: defaultLastName,
@@ -138,8 +139,8 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
           Votre demande a bien été reçue. Un qualificateur la traitera prochainement et vous sera assigné un créneau.
         </p>
         {redirectTo && (
-          <Link href={redirectTo} className="inline-block text-sm text-icc-violet hover:underline">
-            ← Retour à mes demandes
+          <Link href={redirectTo} className={buttonClasses("secondary")}>
+            ← {redirectLabel}
           </Link>
         )}
       </div>

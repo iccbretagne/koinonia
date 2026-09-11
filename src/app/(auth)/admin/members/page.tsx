@@ -1,7 +1,9 @@
-import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
+import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/button-classes";
 import MembersClient from "./MembersClient";
 import LinkRequestsClient from "./LinkRequestsClient";
 
@@ -15,7 +17,7 @@ export default async function MembersPage() {
     churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canManage = userPermissions.has("members:manage");
-  const scope = getUserDepartmentScope(session, churchId);
+  const scope = await resolveMemberDepartmentScope(session, churchId);
 
   const membersWhere = scope.scoped
     ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }
@@ -94,10 +96,7 @@ export default async function MembersPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">STAR</h1>
         {canManage && (
-          <Link
-            href="/admin/members/duplicates"
-            className="text-sm text-icc-violet hover:underline font-medium"
-          >
+          <Link href="/admin/members/duplicates" className={buttonClasses("secondary", "sm")}>
             Doublons potentiels →
           </Link>
         )}
@@ -171,6 +170,8 @@ export default async function MembersPage() {
           ministryName: d.ministry.name,
         }))}
         readOnly={!canManage}
+        scoped={scope.scoped}
+        churchId={churchId}
       />
     </div>
   );

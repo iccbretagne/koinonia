@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 type Author = { id: string; name: string | null; displayName: string | null; image: string | null };
 
 type Mission = {
@@ -188,7 +188,7 @@ export default function FreelanceTabContent({
               <p className="text-gray-500 text-sm mb-3">Aucune mission pour le moment</p>
               <Link
                 href="/jobs/freelance/missions/new"
-                className="text-sm text-icc-violet font-medium hover:underline"
+                className={buttonClasses("primary", "sm")}
               >
                 Proposer une mission →
               </Link>
@@ -211,7 +211,7 @@ export default function FreelanceTabContent({
               <p className="text-gray-500 text-sm mb-3">Aucun freelance disponible pour le moment</p>
               <Link
                 href="/jobs/freelance/profiles/new"
-                className="text-sm text-icc-violet font-medium hover:underline"
+                className={buttonClasses("primary", "sm")}
               >
                 Proposer mes services →
               </Link>

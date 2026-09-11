@@ -10,6 +10,9 @@ export default async function UsersPage() {
 
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
+  if (!session.user.isSuperAdmin && !churchRoles.some((r) => r.role === "ADMIN")) {
+    throw new Error("FORBIDDEN");
+  }
 
   const users = await prisma.user.findMany({
     where: {

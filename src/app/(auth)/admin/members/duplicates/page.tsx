@@ -2,7 +2,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function DuplicatesPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -98,7 +98,7 @@ export default async function DuplicatesPage() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/members" className="text-sm text-icc-violet hover:underline">
+        <Link href="/admin/members" className={buttonClasses("secondary", "sm")}>
           ← Retour
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Doublons potentiels</h1>

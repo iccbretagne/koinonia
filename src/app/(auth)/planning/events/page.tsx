@@ -49,8 +49,8 @@ export default async function StarWeeklyEventsPage({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Événements</h1>
-        <p className="text-sm text-gray-500 mt-1">Agenda hebdomadaire de l&apos;église</p>
+        <h1 className="text-2xl font-bold text-gray-900">Agenda de l&apos;église</h1>
+        <p className="text-sm text-gray-500 mt-1">Vue de la semaine</p>
       </div>
 
       {/* Navigation semaine */}

@@ -2,7 +2,7 @@ import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/
 import { prisma } from "@/lib/prisma";
 import { listTeamEventsForMember } from "@/modules/planning";
 import MyPlanningView from "./MyPlanningView";
-
+import { buttonClasses } from "@/components/ui/button-classes";
 export default async function MyPlanningPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -25,7 +25,7 @@ export default async function MyPlanningPage() {
         </p>
         <a
           href="/profile"
-          className="inline-block mt-4 text-sm text-icc-violet hover:underline"
+          className={`${buttonClasses("primary", "sm")} mt-4`}
         >
           Gérer mon profil →
         </a>

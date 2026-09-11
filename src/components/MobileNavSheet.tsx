@@ -590,7 +590,7 @@ export default function MobileNavSheet({
         <>
           <SheetSubHeader title="Événements" onBack={() => setView("root")} />
           <div>
-            <SubRow href="/planning/events" label="Mes événements" isActive={pathname.startsWith("/planning/events")} onClose={onClose} />
+            <SubRow href="/planning/events" label="Agenda de l'église" isActive={pathname.startsWith("/planning/events")} onClose={onClose} />
             <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
           </div>
         </>
@@ -600,8 +600,7 @@ export default function MobileNavSheet({
       <>
         <SheetSubHeader title="Événements" onBack={() => setView("root")} />
         <div>
-          <SubRow href="/events" label="Liste" isActive={pathname === "/events"} onClose={onClose} />
-          <SubRow href="/events/calendar" label="Calendrier" isActive={pathname === "/events/calendar"} onClose={onClose} />
+          <SubRow href="/events" label="Agenda de l'église" isActive={pathname === "/events" || pathname === "/events/calendar"} onClose={onClose} />
           <SubRow href="/events/announcement-sheets" label="Trame des annonces" isActive={pathname.startsWith("/events/announcement-sheets")} onClose={onClose} />
           {hasEventsManage && (
             <SubRow href="/admin/events" label="Gérer les événements" isActive={pathname.startsWith("/admin/events") && !pathname.startsWith("/admin/welcome-duty")} onClose={onClose} />

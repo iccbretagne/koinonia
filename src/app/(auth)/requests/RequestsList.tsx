@@ -233,6 +233,8 @@ export default function RequestsList({ requests }: Props) {
   const [items, setItems] = useState<RequestItem[]>(requests);
   const [category, setCategory] = useState<FilterCategory>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   function handleUpdated(id: string, patch: Partial<RequestItem>) {
     setItems((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -242,10 +244,34 @@ export default function RequestsList({ requests }: Props) {
     if (category === "announcements" && !ANNOUNCEMENT_TYPES.includes(r.type)) return false;
     if (category === "demands" && ANNOUNCEMENT_TYPES.includes(r.type)) return false;
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
+    if (typeFilter !== "all" && r.type !== typeFilter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const haystack = [
+        r.announcement?.title ?? r.title,
+        r.announcement?.content ?? "",
+        r.department?.name ?? r.ministry?.name ?? "",
+        r.assignedDept?.name ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
     return true;
   });
 
+  // Types et statuts réellement présents : un filtre ne propose que des valeurs qui ramènent
+  // quelque chose, et reste utile quand la liste s'allonge.
   const statuses = Array.from(new Set(items.map((r) => r.status)));
+  const types = Array.from(new Set(items.map((r) => r.type)));
+  const hasFilters = category !== "all" || statusFilter !== "all" || typeFilter !== "all" || search.trim() !== "";
+
+  function resetFilters() {
+    setCategory("all");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setSearch("");
+  }
 
   if (items.length === 0) {
     return (
@@ -275,6 +301,18 @@ export default function RequestsList({ requests }: Props) {
           ))}
         </div>
         <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
+        >
+          <option value="all">Tous types</option>
+          {types.map((t) => (
+            <option key={t} value={t}>
+              {TYPE_LABEL[t] ?? t}
+            </option>
+          ))}
+        </select>
+        <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
@@ -286,7 +324,29 @@ export default function RequestsList({ requests }: Props) {
             </option>
           ))}
         </select>
+        <div className="flex-1 min-w-[12rem]">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un titre, un département..."
+            className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
+          />
+        </div>
+        {hasFilters && (
+          <button
+            onClick={resetFilters}
+            className="text-sm text-gray-400 hover:text-gray-600 whitespace-nowrap"
+          >
+            Réinitialiser
+          </button>
+        )}
       </div>
+
+      <p className="text-sm text-gray-500 mb-3">
+        {filtered.length} demande{filtered.length > 1 ? "s" : ""}
+        {hasFilters && ` sur ${items.length}`}
+      </p>
 
       <div className="space-y-4">
         {filtered.map((req) => (

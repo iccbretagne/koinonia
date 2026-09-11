@@ -1,5 +1,42 @@
 import type { Session } from "next-auth";
 
+const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
+
+/**
+ * Implémentations légères de `getUserDepartmentScope` / `getUserMinistryScope` à injecter dans une
+ * factory `vi.mock("@/lib/auth", …)`.
+ *
+ * Le module réel charge next-auth et prisma au niveau module : un test de route handler ne peut pas
+ * l'importer, mais les helpers qui en dépendent (`@/lib/member-scope`) ont besoin de ces deux
+ * fonctions. Même règle que la vraie : Super Admin / Admin / Secrétaire ne sont pas scopés.
+ */
+export function createAuthScopeMocks() {
+  return {
+    getUserDepartmentScope: (session: Session, churchId: string) => {
+      const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+      if (session.user.isSuperAdmin || roles.some((r) => GLOBAL_ROLES.includes(r.role))) {
+        return { scoped: false as const };
+      }
+      return {
+        scoped: true as const,
+        departmentIds: Array.from(
+          new Set(roles.flatMap((r) => r.departments.map((d) => d.department.id)))
+        ),
+      };
+    },
+    getUserMinistryScope: (session: Session, churchId: string) => {
+      const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+      if (session.user.isSuperAdmin || roles.some((r) => GLOBAL_ROLES.includes(r.role))) {
+        return { scoped: false as const };
+      }
+      return {
+        scoped: true as const,
+        ministryIds: roles.map((r) => r.ministryId).filter((id): id is string => !!id),
+      };
+    },
+  };
+}
+
 // Factory helpers for creating test sessions
 export function createSession(overrides: Partial<Session["user"]> = {}): Session {
   return {

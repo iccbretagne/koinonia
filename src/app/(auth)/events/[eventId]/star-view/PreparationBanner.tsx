@@ -54,22 +54,22 @@ export default function PreparationBanner({
         )}
       </summary>
       <div className="divide-y divide-gray-100 border-t border-gray-100 px-4 pb-4">
-        {showOpeningClosing && (
-          <div className="pt-4">
-            <OpeningClosingManager
-              eventId={eventId}
-              data={openingClosing}
-              onChange={onOpeningClosingChange}
-              embedded
-            />
-          </div>
-        )}
         {showAnnouncementSheet && (
           <div className="pt-4">
             <AnnouncementSheetManager
               eventId={eventId}
               data={announcementSheet}
               onChange={onAnnouncementSheetChange}
+              embedded
+            />
+          </div>
+        )}
+        {showOpeningClosing && (
+          <div className="pt-4">
+            <OpeningClosingManager
+              eventId={eventId}
+              data={openingClosing}
+              onChange={onOpeningClosingChange}
               embedded
             />
           </div>
