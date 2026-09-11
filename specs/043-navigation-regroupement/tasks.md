@@ -1,7 +1,7 @@
 # Tâches — Regroupement et ergonomie de la navigation
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Implémentée
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles. Les tâches `[P]` sont parallélisables entre elles (fichiers indépendants).
@@ -9,8 +9,8 @@
 
 ## Prérequis
 
-- [ ] Branche créée : `feat/navigation-regroupement`
-- [ ] Aucune migration Prisma (pas de changement de schéma)
+- [x] Branche créée : `feat/navigation-regroupement`
+- [x] Aucune migration Prisma (pas de changement de schéma)
 
 ## Tâches
 
@@ -173,9 +173,9 @@
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test` (151 fichiers, 1612 tests)
 - [ ] Tous les critères d'acceptation de `spec.md` satisfaits
 - [ ] PR ouverte vers `main`

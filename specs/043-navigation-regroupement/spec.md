@@ -1,7 +1,7 @@
 # Spec — Regroupement et ergonomie de la navigation (retours de recette 039-042)
 
 - **Numéro** : 043
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-11
 - **Branche suggérée** : `feat/navigation-regroupement`
 
@@ -123,45 +123,45 @@ Communication & Production · Audio.
 
 ## Critères d'acceptation
 
-- [ ] « Feuilles d'annonces » n'apparaît plus nulle part ; remplacé par « Trame des annonces »
+- [x] « Feuilles d'annonces » n'apparaît plus nulle part ; remplacé par « Trame des annonces »
       (menus desktop et mobile, titre de page, bloc de la page d'un événement).
-- [ ] Un STAR sans accès complet aux événements voit une seule entrée « Événements » contenant
+- [x] Un STAR sans accès complet aux événements voit une seule entrée « Événements » contenant
       « Mes événements » et « Trame des annonces ».
-- [ ] Sur la page d'un événement, un bandeau compact replié par défaut, placé avant le bloc
+- [x] Sur la page d'un événement, un bandeau compact replié par défaut, placé avant le bloc
       planning, regroupe les actions d'ouverture/fermeture et de trame des annonces.
-- [ ] Les noms d'ouverture/fermeture restent dans l'en-tête de l'événement, sans doublon dans le
+- [x] Les noms d'ouverture/fermeture restent dans l'en-tête de l'événement, sans doublon dans le
       bandeau.
-- [ ] Le bloc planning reste immédiatement visible sous le bandeau, avec un espacement net, sur
+- [x] Le bloc planning reste immédiatement visible sous le bandeau, avec un espacement net, sur
       desktop et sur mobile.
-- [ ] L'export PNG/PDF du planning est identique à aujourd'hui (le bandeau n'y figure pas).
-- [ ] Le formulaire de nouvelle demande propose « Rendez-vous pastoral » ; le lien de menu séparé
+- [x] L'export PNG/PDF du planning est identique à aujourd'hui (le bandeau n'y figure pas).
+- [x] Le formulaire de nouvelle demande propose « Rendez-vous pastoral » ; le lien de menu séparé
       « Demande RDV pastoral » n'existe plus pour les utilisateurs qui ont « Mes demandes », et
       reste présent pour le STAR.
-- [ ] Le formulaire de nouvelle demande propose « Demande comptable » uniquement aux utilisateurs
+- [x] Le formulaire de nouvelle demande propose « Demande comptable » uniquement aux utilisateurs
       qui ont le droit d'en soumettre.
-- [ ] Une demande comptable soumise apparaît avec son statut dans la liste « Mes demandes » de son
+- [x] Une demande comptable soumise apparaît avec son statut dans la liste « Mes demandes » de son
       auteur.
-- [ ] Une demande comptable ou de RDV pastoral soumise depuis « Mes demandes » suit exactement le
+- [x] Une demande comptable ou de RDV pastoral soumise depuis « Mes demandes » suit exactement le
       même traitement que depuis son point d'entrée actuel.
-- [ ] La page Comptabilité existante reste accessible et inchangée pour le Comptable.
-- [ ] La demande d'intégration familles n'est ni modifiée ni proposée dans « Mes demandes ».
-- [ ] Les liens « Visuels », « Communication », « Événements » (médias), « Projets » et
+- [x] La page Comptabilité existante reste accessible et inchangée pour le Comptable.
+- [x] La demande d'intégration familles n'est ni modifiée ni proposée dans « Mes demandes ».
+- [x] Les liens « Visuels », « Communication », « Événements » (médias), « Projets » et
       « Collections » sont remplacés par une seule entrée « Communication & Production ».
-- [ ] Chaque utilisateur n'y voit que les onglets auxquels il a droit (Demandes visuels, Demandes
+- [x] Chaque utilisateur n'y voit que les onglets auxquels il a droit (Demandes visuels, Demandes
       réseaux sociaux, Projets, Événements médias, Collections), sans doublon.
-- [ ] Un membre de l'équipe Communication a les mêmes droits que la Production média sur les
+- [x] Un membre de l'équipe Communication a les mêmes droits que la Production média sur les
       collections, et aucun droit supplémentaire sur les projets, événements médias, fichiers ou
       liens de partage.
-- [ ] Un onglet masqué reste interdit côté serveur : accéder directement à son adresse sans le
+- [x] Un onglet masqué reste interdit côté serveur : accéder directement à son adresse sans le
       droit correspondant est refusé.
-- [ ] Les anciens liens (notifications, favoris) vers les pages médias et communication mènent au
+- [x] Les anciens liens (notifications, favoris) vers les pages médias et communication mènent au
       bon onglet du nouvel espace.
-- [ ] Le lien « Audio » reste inchangé et séparé.
-- [ ] La section Opérations contient, selon les droits : Mes demandes, Traitement des demandes,
+- [x] Le lien « Audio » reste inchangé et séparé.
+- [x] La section Opérations contient, selon les droits : Mes demandes, Traitement des demandes,
       Comptabilité, Communication & Production, Audio.
-- [ ] Le parcours guidé du menu et le guide utilisateur reflètent les nouveaux libellés et le
+- [x] Le parcours guidé du menu et le guide utilisateur reflètent les nouveaux libellés et le
       nouveau regroupement.
-- [ ] Menus desktop et mobile restent strictement cohérents pour chaque changement.
+- [x] Menus desktop et mobile restent strictement cohérents pour chaque changement.
 
 ## Hors périmètre
 
