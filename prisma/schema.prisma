@@ -99,6 +99,8 @@ model Church {
   rooms                     Room[]
   roomAccesses              RoomAccess[]
   roomReservations          RoomReservation[]
+  // Feuille d'annonces d'un culte (spec 040)
+  announcementSheets        AnnouncementSheet[]
   // Module audio
   audioSettings             AudioSettings?
   audioServices             AudioService[]
@@ -193,6 +195,8 @@ model User {
   roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
   roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
   roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
+  // Feuille d'annonces d'un culte (spec 040)
+  announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
@@ -433,6 +437,8 @@ model Event {
   roomReservations        RoomReservation[]
   // Module audio
   audioService            AudioService?
+  // Feuille d'annonces d'un culte (spec 040)
+  announcementSheet       AnnouncementSheet?
 
   @@map("events")
 }
@@ -470,6 +476,26 @@ model EventReportSection {
   department Department? @relation(fields: [departmentId], references: [id])
 
   @@map("event_report_sections")
+}
+
+/// Feuille d'annonces d'un culte (spec 040) — une seule par événement, remplacée à chaque dépôt
+/// (le fichier S3 précédent est supprimé au remplacement, pas d'historique versionné).
+model AnnouncementSheet {
+  id           String   @id @default(cuid())
+  churchId     String
+  eventId      String   @unique
+  key          String
+  filename     String
+  mimeType     String
+  uploadedById String
+  uploadedAt   DateTime @default(now())
+
+  church     Church @relation(fields: [churchId], references: [id])
+  event      Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation("AnnouncementSheetUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([churchId])
+  @@map("announcement_sheets")
 }
 
 model EventDepartment {

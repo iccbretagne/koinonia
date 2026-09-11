@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { canManageOpeningClosing } from "@/modules/planning";
+import {
+  canManageOpeningClosing,
+  canDepositAnnouncementSheet,
+  canReadAnnouncementSheet,
+} from "@/modules/planning";
 
 export async function GET(
   _request: Request,
@@ -23,6 +27,9 @@ export async function GET(
         openingClosingAssignments: {
           include: { member: { select: { id: true, firstName: true, lastName: true } } },
           orderBy: { createdAt: "asc" },
+        },
+        announcementSheet: {
+          select: { filename: true, uploadedAt: true },
         },
         eventDepts: {
           include: {
@@ -93,6 +100,17 @@ export async function GET(
       canManage: await canManageOpeningClosing(session, churchId),
     };
 
+    const [canDeposit, canRead] = await Promise.all([
+      canDepositAnnouncementSheet(session, churchId),
+      canReadAnnouncementSheet(session, churchId),
+    ]);
+    const announcementSheet = {
+      filename: event.announcementSheet?.filename ?? null,
+      uploadedAt: event.announcementSheet?.uploadedAt.toISOString() ?? null,
+      canDeposit,
+      canRead,
+    };
+
     return successResponse({
       event: {
         id: event.id,
@@ -106,6 +124,7 @@ export async function GET(
       welcomeFamilies,
       audioLink,
       openingClosing,
+      announcementSheet,
     });
   } catch (error) {
     return errorResponse(error);
