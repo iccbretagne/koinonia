@@ -974,6 +974,13 @@ une base jetable :
 
 ```bash
 docker exec koinonia-db-1 mariadb -uroot -proot -e "CREATE DATABASE koinonia_check;"
-# puis un prisma.config.ts temporaire pointant sur koinonia_check
-npx prisma migrate deploy --config <config-temporaire>
+# DATABASE_URL surcharge .env (dotenv ne remplace pas une variable déjà définie)
+export DATABASE_URL="mysql://root:root@127.0.0.1:3306/koinonia_check"
+npx prisma migrate deploy
+npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+docker exec koinonia-db-1 mariadb -uroot -proot -e "DROP DATABASE koinonia_check;"
 ```
+
+La CI fait exactement cela à chaque PR (job `migrations` de `.github/workflows/ci.yml`, #500) :
+une migration invalide, un historique qui ne se rejoue pas ou un `schema.prisma` modifié sans
+migration fait échouer le build.
