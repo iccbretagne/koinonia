@@ -28,7 +28,7 @@
       `getFunctionDepartmentsMap(churchId, fns, db?)` → `Map<fn, { id, name }[]>` en **une**
       requête, noms triés. Import différé de Prisma (même motif que `defaultDb` d'audio).
       *(fichier : `src/lib/function-departments.ts`)*
-- [ ] **T3** — Ajouter à T2 `formatAssignedDepts(fn, depts)` (pur) → « Nom » / « A, B » /
+- [ ] **T3** — Ajouter (à côté de T1) `formatAssignedDepts(fn, depts)` (pur) → « Nom » / « A, B » /
       « {libellé} (non configuré) », réutilisé par l'UI et l'export.
       *(fichier : `src/lib/department-functions.ts` — pur, importable client)*
 
