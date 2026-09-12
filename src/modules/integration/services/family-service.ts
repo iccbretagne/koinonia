@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { DEPT_FN } from "@/lib/department-functions";
+import { getFunctionDepartmentIds } from "@/lib/function-departments";
 
 // ─── Emails ──────────────────────────────────────────────────────────────────
 
@@ -217,16 +219,18 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
 
   async function getManagers(churchId: string) {
     if (managersByChurch[churchId]) return managersByChurch[churchId];
-    const integrationDept = await prisma.department.findFirst({
-      where: { function: "INTEGRATION", ministry: { churchId } },
-      select: { id: true },
-    });
-    if (!integrationDept) { managersByChurch[churchId] = []; return []; }
+    // Une fonction peut être portée par plusieurs départements (spec 046) — dédoublonnage par
+    // userId pour qu'une personne membre de plusieurs d'entre eux ne soit notifiée qu'une fois.
+    const integrationDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.INTEGRATION);
+    if (integrationDeptIds.length === 0) { managersByChurch[churchId] = []; return []; }
     const memberships = await prisma.userDepartment.findMany({
-      where: { departmentId: integrationDept.id },
+      where: { departmentId: { in: integrationDeptIds } },
       include: { userChurchRole: { select: { userId: true, user: { select: { id: true, email: true } } } } },
     });
-    const managers = memberships.map((m) => ({ id: m.userChurchRole.userId, email: m.userChurchRole.user.email }));
+    const managersById = new Map(
+      memberships.map((m) => [m.userChurchRole.userId, { id: m.userChurchRole.userId, email: m.userChurchRole.user.email }])
+    );
+    const managers = Array.from(managersById.values());
     managersByChurch[churchId] = managers;
     return managers;
   }

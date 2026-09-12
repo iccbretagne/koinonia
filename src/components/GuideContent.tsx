@@ -235,7 +235,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Ministères & départements",
-    description: "Créez et organisez les ministères et leurs départements. Configurez les fonctions système (Secrétariat, Communication, Production Média) et les fonctions personnalisées.",
+    description: "Créez et organisez les ministères et leurs départements. Configurez les fonctions système (Secrétariat, Communication, Production Média) et les fonctions personnalisées — une fonction peut être partagée par plusieurs départements.",
     category: "Administration",
     screenshotTitle: "Gestion des ministères et départements",
     screenshotFile: "guide-admin-departments.png",

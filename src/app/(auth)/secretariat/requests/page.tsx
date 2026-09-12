@@ -1,7 +1,8 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
-import { DEPT_FN } from "@/lib/department-functions";
+import { DEPT_FN, requestTypesForFunction } from "@/lib/department-functions";
+import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { notFound } from "next/navigation";
 import RequestsDashboard from "./RequestsDashboard";
 
@@ -11,10 +12,7 @@ export default async function SecretariatRequestsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
 
-  const secretariatDept = await prisma.department.findFirst({
-    where: { function: DEPT_FN.SECRETARIAT, ministry: { churchId } },
-    select: { id: true, name: true },
-  });
+  const secretariatDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.SECRETARIAT);
 
   // Access check: events:manage OR member of secretariat dept
   // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
@@ -23,13 +21,13 @@ export default async function SecretariatRequestsPage() {
   const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
   const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
 
-  if (secretariatDept) {
+  if (secretariatDeptIds.length > 0) {
     const userDeptIds = churchRoles.flatMap((r) => r.departments.map((d) => d.department.id));
-    const isDeptMember = userDeptIds.includes(secretariatDept.id);
+    const isDeptMember = userDeptIds.some((id) => secretariatDeptIds.includes(id));
     if (!canManage && !isDeptMember) return notFound();
   }
 
-  if (!secretariatDept) {
+  if (secretariatDeptIds.length === 0) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Traitement des demandes</h1>
@@ -43,12 +41,12 @@ export default async function SecretariatRequestsPage() {
     );
   }
 
-  // Fetch all requests assigned to the secretariat department
+  // Fetch all requests whose type is routed to the Secrétariat function (spec 046)
   // This includes DIFFUSION_INTERNE (announcements) AND demand types
   const requests = await prisma.request.findMany({
     where: {
       churchId,
-      assignedDeptId: secretariatDept.id,
+      type: { in: requestTypesForFunction(DEPT_FN.SECRETARIAT) },
       parentRequestId: null,
     },
     include: {

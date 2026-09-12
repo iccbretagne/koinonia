@@ -2,6 +2,7 @@ import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { DEPT_FN } from "@/lib/department-functions";
+import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { notFound } from "next/navigation";
 import CommunicationDashboard from "./CommunicationDashboard";
 
@@ -11,22 +12,19 @@ export default async function CommunicationRequestsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
 
-  const commDept = await prisma.department.findFirst({
-    where: { function: DEPT_FN.COMMUNICATION, ministry: { churchId } },
-    select: { id: true, name: true },
-  });
+  const commDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.COMMUNICATION);
 
-  if (commDept) {
+  if (commDeptIds.length > 0) {
     // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
     // responsable de l'église A obtient events:manage dans l'église B (issue #490).
     const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
     const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
     const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
     const userDeptIds = churchRoles.flatMap((r) => r.departments.map((d) => d.department.id));
-    if (!canManage && !userDeptIds.includes(commDept.id)) return notFound();
+    if (!canManage && !userDeptIds.some((id) => commDeptIds.includes(id))) return notFound();
   }
 
-  if (!commDept) {
+  if (commDeptIds.length === 0) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Demandes réseaux sociaux</h1>
@@ -41,7 +39,7 @@ export default async function CommunicationRequestsPage() {
   }
 
   const requests = await prisma.request.findMany({
-    where: { type: "RESEAUX_SOCIAUX", assignedDeptId: commDept.id, churchId },
+    where: { type: "RESEAUX_SOCIAUX", churchId },
     include: {
       submittedBy: { select: { name: true, displayName: true } },
       department: { select: { name: true } },

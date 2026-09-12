@@ -3,9 +3,38 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
-import { DEPT_FN } from "@/lib/department-functions";
+import { DEPT_FN, functionForRequestType, type DeptFunction } from "@/lib/department-functions";
+import { getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { notifyDeptMembers } from "@/lib/notifications";
 import { z } from "zod";
+import type { RequestType } from "@/generated/prisma/client";
+
+/**
+ * Attache le destinataire d'une demande (spec 046) : la fonction déduite de son type, et les
+ * départements qui la portent **actuellement** (0, 1 ou N). Une seule requête pour toutes les
+ * demandes passées, y compris leurs sous-demandes.
+ */
+async function attachAssignedDepts<
+  T extends { type: RequestType; childRequests?: { type: RequestType }[] },
+>(churchId: string, requests: T[]): Promise<(T & { assignedFunction: DeptFunction; assignedDepts: { id: string; name: string }[] })[]> {
+  const allTypes = new Set<RequestType>();
+  for (const r of requests) {
+    allTypes.add(r.type);
+    for (const child of r.childRequests ?? []) allTypes.add(child.type);
+  }
+  const fnsNeeded = Array.from(new Set(Array.from(allTypes).map(functionForRequestType)));
+  const deptsByFn = await getFunctionDepartmentsMap(churchId, fnsNeeded);
+
+  function decorate<U extends { type: RequestType }>(r: U) {
+    const fn = functionForRequestType(r.type);
+    return { ...r, assignedFunction: fn, assignedDepts: deptsByFn.get(fn) ?? [] };
+  }
+
+  return requests.map((r) => ({
+    ...decorate(r),
+    ...(r.childRequests ? { childRequests: r.childRequests.map(decorate) } : {}),
+  })) as never;
+}
 
 const DEMAND_TYPES = [
   "AJOUT_EVENEMENT",
@@ -40,7 +69,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     const type = searchParams.get("type");
-    const assignedDeptId = searchParams.get("assignedDeptId");
     const submittedByMe = searchParams.get("submittedByMe");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
@@ -59,7 +87,6 @@ export async function GET(request: Request) {
         churchId,
         parentRequestId: null,
         ...(type ? { type: type as never } : {}),
-        ...(assignedDeptId ? { assignedDeptId } : {}),
         ...(submittedByMe === "true"
           ? { submittedById: session.user.id }
           : canManage
@@ -70,7 +97,6 @@ export async function GET(request: Request) {
         submittedBy: { select: { id: true, name: true, displayName: true } },
         department: { select: { id: true, name: true } },
         ministry: { select: { id: true, name: true } },
-        assignedDept: { select: { id: true, name: true } },
         announcement: {
           select: {
             id: true,
@@ -85,14 +111,13 @@ export async function GET(request: Request) {
             type: true,
             status: true,
             payload: true,
-            assignedDept: { select: { id: true, name: true } },
           },
         },
       },
       orderBy: { submittedAt: "desc" },
     });
 
-    return successResponse(requests);
+    return successResponse(await attachAssignedDepts(churchId, requests));
   } catch (error) {
     return errorResponse(error);
   }
@@ -141,14 +166,6 @@ async function createVisuel(_request: Request, body: unknown) {
     }
   }
 
-  const productionDept = await prisma.department.findFirst({
-    where: {
-      function: DEPT_FN.PRODUCTION_MEDIA,
-      ministry: { churchId: data.churchId },
-    },
-    select: { id: true },
-  });
-
   const created = await prisma.request.create({
     data: {
       churchId: data.churchId,
@@ -156,7 +173,6 @@ async function createVisuel(_request: Request, body: unknown) {
       submittedById: session.user.id,
       departmentId: data.departmentId ?? null,
       ministryId: data.ministryId ?? null,
-      assignedDeptId: productionDept?.id ?? null,
       title: data.title,
       payload: {
         brief: data.brief ?? null,
@@ -202,15 +218,6 @@ async function createDemand(_request: Request, body: unknown) {
     }
   }
 
-  // Demands are assigned to the secretariat department
-  const secretariatDept = await prisma.department.findFirst({
-    where: {
-      function: DEPT_FN.SECRETARIAT,
-      ministry: { churchId: data.churchId },
-    },
-    select: { id: true },
-  });
-
   const created = await prisma.request.create({
     data: {
       churchId: data.churchId,
@@ -218,7 +225,6 @@ async function createDemand(_request: Request, body: unknown) {
       submittedById: session.user.id,
       departmentId: data.departmentId ?? null,
       ministryId: data.ministryId ?? null,
-      assignedDeptId: secretariatDept?.id ?? null,
       title: data.title,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: data.payload as any,

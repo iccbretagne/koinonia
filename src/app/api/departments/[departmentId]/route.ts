@@ -106,18 +106,10 @@ export async function PATCH(
       throw new ApiError(403, "Ce département système ne peut pas être modifié");
     }
 
-    // Clear existing dept with same function in the same church before assigning
-    if (data.function !== null) {
-      await prisma.department.updateMany({
-        where: {
-          function: data.function,
-          ministry: { churchId: dept.ministry.churchId },
-          NOT: { id: departmentId },
-        },
-        data: { function: null },
-      });
-    }
-
+    // Une fonction peut désormais être portée par plusieurs départements (spec 046) : on
+    // n'assigne plus la fonction ici en désassignant les autres. Un département ne porte
+    // toujours qu'une seule fonction à la fois (contrainte du champ), l'UI empêche d'en
+    // assigner une nouvelle à un département qui en porte déjà une autre.
     const updated = await prisma.department.update({
       where: { id: departmentId },
       data: { function: data.function },

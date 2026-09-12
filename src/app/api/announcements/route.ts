@@ -4,8 +4,10 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { DEPT_FN } from "@/lib/department-functions";
+import { DEPT_FN, functionForRequestType } from "@/lib/department-functions";
+import { getFunctionDepartmentIds, getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { z } from "zod";
+import type { RequestType } from "@/generated/prisma/client";
 
 const createSchema = z
   .object({
@@ -30,12 +32,6 @@ function computeIsSaveTheDate(eventDate: Date): boolean {
   return eventDate > threeWeeksFromNow;
 }
 
-async function findDeptByFunction(churchId: string, fn: string) {
-  return prisma.department.findFirst({
-    where: { function: fn, ministry: { churchId } },
-    select: { id: true },
-  });
-}
 
 export async function GET(request: Request) {
   try {
@@ -74,7 +70,6 @@ export async function GET(request: Request) {
             type: true,
             status: true,
             payload: true,
-            assignedDept: { select: { id: true, name: true } },
             childRequests: {
               select: {
                 id: true,
@@ -89,7 +84,30 @@ export async function GET(request: Request) {
       orderBy: { submittedAt: "desc" },
     });
 
-    return successResponse(announcements);
+    const allTypes = new Set<RequestType>();
+    for (const ann of announcements) {
+      for (const r of ann.requests) {
+        allTypes.add(r.type);
+        for (const child of r.childRequests) allTypes.add(child.type);
+      }
+    }
+    const fnsNeeded = Array.from(new Set(Array.from(allTypes).map(functionForRequestType)));
+    const deptsByFn = await getFunctionDepartmentsMap(churchId, fnsNeeded);
+
+    function decorate<U extends { type: RequestType }>(r: U) {
+      const fn = functionForRequestType(r.type);
+      return { ...r, assignedFunction: fn, assignedDepts: deptsByFn.get(fn) ?? [] };
+    }
+
+    const decorated = announcements.map((ann) => ({
+      ...ann,
+      requests: ann.requests.map((r) => ({
+        ...decorate(r),
+        childRequests: r.childRequests.map(decorate),
+      })),
+    }));
+
+    return successResponse(decorated);
   } catch (error) {
     return errorResponse(error);
   }
@@ -133,22 +151,17 @@ export async function POST(request: Request) {
     const eventDate = data.eventDate ? new Date(data.eventDate) : null;
     const saveTheDate = eventDate ? computeIsSaveTheDate(eventDate) : false;
 
-    const [secretariatDept, communicationDept, productionDept] =
-      await Promise.all([
-        data.channelInterne
-          ? findDeptByFunction(data.churchId, DEPT_FN.SECRETARIAT)
-          : null,
-        data.channelExterne
-          ? findDeptByFunction(data.churchId, DEPT_FN.COMMUNICATION)
-          : null,
-        findDeptByFunction(data.churchId, DEPT_FN.PRODUCTION_MEDIA),
-      ]);
-
-    if (data.channelInterne && !secretariatDept) {
-      throw new ApiError(400, "Le département Secrétariat n'est pas configuré. Contactez un administrateur.");
+    if (data.channelInterne) {
+      const secretariatDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.SECRETARIAT);
+      if (secretariatDeptIds.length === 0) {
+        throw new ApiError(400, "Le département Secrétariat n'est pas configuré. Contactez un administrateur.");
+      }
     }
-    if (data.channelExterne && !communicationDept) {
-      throw new ApiError(400, "Le département Communication n'est pas configuré. Contactez un administrateur.");
+    if (data.channelExterne) {
+      const communicationDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.COMMUNICATION);
+      if (communicationDeptIds.length === 0) {
+        throw new ApiError(400, "Le département Communication n'est pas configuré. Contactez un administrateur.");
+      }
     }
 
     const announcement = await prisma.$transaction(async (tx) => {
@@ -181,7 +194,6 @@ export async function POST(request: Request) {
             submittedById: session.user.id,
             departmentId: data.departmentId ?? null,
             ministryId: data.ministryId ?? null,
-            assignedDeptId: secretariatDept?.id ?? null,
             announcementId: ann.id,
             title: data.title,
             payload: {
@@ -197,7 +209,6 @@ export async function POST(request: Request) {
             submittedById: session.user.id,
             departmentId: data.departmentId ?? null,
             ministryId: data.ministryId ?? null,
-            assignedDeptId: productionDept?.id ?? null,
             announcementId: ann.id,
             parentRequestId: diffusion.id,
             title: `Visuel — ${data.title}`,
@@ -218,7 +229,6 @@ export async function POST(request: Request) {
             submittedById: session.user.id,
             departmentId: data.departmentId ?? null,
             ministryId: data.ministryId ?? null,
-            assignedDeptId: communicationDept?.id ?? null,
             announcementId: ann.id,
             title: data.title,
             payload: {
@@ -234,7 +244,6 @@ export async function POST(request: Request) {
             submittedById: session.user.id,
             departmentId: data.departmentId ?? null,
             ministryId: data.ministryId ?? null,
-            assignedDeptId: productionDept?.id ?? null,
             announcementId: ann.id,
             parentRequestId: social.id,
             title: `Visuel réseaux — ${data.title}`,

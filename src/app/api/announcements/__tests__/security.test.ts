@@ -18,13 +18,17 @@ vi.mock("@/lib/rate-limit", () => ({
   requireRateLimit: vi.fn(),
   RATE_LIMIT_MUTATION: {},
 }));
-vi.mock("@/lib/department-functions", () => ({
-  DEPT_FN: {
-    SECRETARIAT: "SECRETARIAT",
-    COMMUNICATION: "COMMUNICATION",
-    PRODUCTION_MEDIA: "PRODUCTION_MEDIA",
-  },
-}));
+vi.mock("@/lib/department-functions", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/lib/department-functions")>();
+  return {
+    ...original,
+    DEPT_FN: {
+      SECRETARIAT: "SECRETARIAT",
+      COMMUNICATION: "COMMUNICATION",
+      PRODUCTION_MEDIA: "PRODUCTION_MEDIA",
+    },
+  };
+});
 
 const { GET, POST } = await import("../route");
 const { PATCH } = await import("../../announcements/[id]/route");
@@ -34,6 +38,7 @@ describe("GET /api/announcements — authorization", () => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.announcement.findMany.mockResolvedValue([]);
+    prismaMock.department.findMany.mockResolvedValue([]);
   });
 
   it("gates the list on members:view (not planning:view)", async () => {
@@ -68,6 +73,8 @@ describe("POST /api/announcements — cross-tenant validation", () => {
     mockRequirePermission.mockResolvedValue(createAdminSession());
     // Default: department.findFirst returns a valid dept (same church)
     prismaMock.department.findFirst.mockResolvedValue({ id: "dept-1" });
+    // Default: department.findMany returns at least one dept per fonction (spec 046)
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-fn-1" }]);
     // Default: ministry.findFirst returns a valid ministry (same church)
     prismaMock.ministry.findFirst.mockResolvedValue({ id: "min-1" });
     // Default: event.count returns matching count
@@ -75,6 +82,36 @@ describe("POST /api/announcements — cross-tenant validation", () => {
     // Default: $transaction resolves with created announcement
     prismaMock.announcement.create.mockResolvedValue({ id: "ann-new" });
     prismaMock.request.create.mockResolvedValue({ id: "req-1" });
+  });
+
+  it("crée l'annonce quand la fonction destinataire est portée par plusieurs départements (spec 046)", async () => {
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-A" }, { id: "dept-B" }]);
+
+    const request = new Request("http://localhost/api/announcements", {
+      method: "POST",
+      body: JSON.stringify(basePostBody),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(201);
+    // Plus d'assignedDeptId sur les demandes créées : le routage se fait par fonction.
+    for (const call of prismaMock.request.create.mock.calls) {
+      expect(call[0].data).not.toHaveProperty("assignedDeptId");
+    }
+  });
+
+  it("refuse la création si aucun département ne porte la fonction Secrétariat", async () => {
+    prismaMock.department.findMany.mockResolvedValue([]);
+
+    const request = new Request("http://localhost/api/announcements", {
+      method: "POST",
+      body: JSON.stringify(basePostBody),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain("Secrétariat");
   });
 
   it("returns 400 when departmentId belongs to another church", async () => {

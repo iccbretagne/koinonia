@@ -393,7 +393,7 @@ Modèle unifié pour toutes les demandes : annonces (DIFFUSION_INTERNE, RESEAUX_
 | `submittedById` | String | Ref vers `users` (soumetteur) |
 | `departmentId` | String? | Ref vers `departments` (département source) |
 | `ministryId` | String? | Ref vers `ministries` (ministère source) |
-| `assignedDeptId` | String? | Ref vers `departments` (département traitant, résolu via fonction) |
+| `assignedDeptId` | String? | **Obsolète (spec 046)** — n'est plus renseigné à la création ; conservé pour compatibilité historique. Le destinataire d'une demande se déduit désormais de son `type` via `functionForRequestType` (`src/lib/department-functions.ts`), puis des départements portant actuellement cette fonction (`getFunctionDepartmentsMap`) — une demande suit la fonction, pas un département résolu une fois pour toutes |
 | `announcementId` | String? | Ref vers `announcements` (si liée à une annonce) |
 | `parentRequestId` | String? | Ref vers `requests` (auto-référentiel : lie un VISUEL à son canal parent) |
 | `reviewNotes` | String? (Text) | Notes du traitant |

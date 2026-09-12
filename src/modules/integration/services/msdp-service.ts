@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
 import { sendEmail } from "@/lib/email";
+import { DEPT_FN } from "@/lib/department-functions";
+import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { isIntegrationMember, isMsdpMember } from "../auth";
 import { z } from "zod";
 import type { Session } from "next-auth";
@@ -252,16 +254,18 @@ export async function runMsdpInactivityNotifications(
 
   async function getMsdpManagers(churchId: string) {
     if (managersByChurch[churchId]) return managersByChurch[churchId];
-    const msdpDept = await prisma.department.findFirst({
-      where: { function: "MSDP", ministry: { churchId } },
-      select: { id: true },
-    });
-    if (!msdpDept) { managersByChurch[churchId] = []; return []; }
+    // Une fonction peut être portée par plusieurs départements (spec 046) — dédoublonnage par
+    // userId pour qu'une personne membre de plusieurs d'entre eux ne soit notifiée qu'une fois.
+    const msdpDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.MSDP);
+    if (msdpDeptIds.length === 0) { managersByChurch[churchId] = []; return []; }
     const memberships = await prisma.userDepartment.findMany({
-      where: { departmentId: msdpDept.id },
+      where: { departmentId: { in: msdpDeptIds } },
       include: { userChurchRole: { select: { userId: true, user: { select: { id: true, email: true } } } } },
     });
-    const managers = memberships.map((m) => ({ id: m.userChurchRole.userId, email: m.userChurchRole.user.email }));
+    const managersById = new Map(
+      memberships.map((m) => [m.userChurchRole.userId, { id: m.userChurchRole.userId, email: m.userChurchRole.user.email }])
+    );
+    const managers = Array.from(managersById.values());
     managersByChurch[churchId] = managers;
     return managers;
   }

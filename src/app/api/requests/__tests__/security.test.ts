@@ -25,6 +25,7 @@ describe("GET /api/requests — authorization", () => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.request.findMany.mockResolvedValue([]);
+    prismaMock.department.findMany.mockResolvedValue([]);
   });
 
   it("gates the list on members:view (not planning:view)", async () => {
@@ -41,6 +42,27 @@ describe("GET /api/requests — authorization", () => {
     const res = await GET(request);
 
     expect(res.status).toBe(403);
+  });
+
+  it("expose assignedFunction et assignedDepts (spec 046) au lieu d'un unique assignedDept", async () => {
+    prismaMock.request.findMany.mockResolvedValue([
+      { id: "req-1", type: "VISUEL", childRequests: [] },
+    ] as never);
+    prismaMock.department.findMany.mockResolvedValue([
+      { id: "dept-1", name: "Média A", function: "PRODUCTION_MEDIA" },
+      { id: "dept-2", name: "Média B", function: "PRODUCTION_MEDIA" },
+    ] as never);
+
+    const request = new Request("http://localhost/api/requests?churchId=church-1");
+    const res = await GET(request);
+    const body = await res.json();
+
+    expect(body[0].assignedFunction).toBe("PRODUCTION_MEDIA");
+    expect(body[0].assignedDepts.map((d: { name: string }) => d.name)).toEqual([
+      "Média A",
+      "Média B",
+    ]);
+    expect(body[0].assignedDept).toBeUndefined();
   });
 });
 
@@ -138,6 +160,7 @@ describe("PATCH /api/requests/[id] — authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
+    prismaMock.department.findMany.mockResolvedValue([]);
   });
 
   it("returns 401 when not authenticated", async () => {
@@ -225,6 +248,45 @@ describe("PATCH /api/requests/[id] — authorization", () => {
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toContain("Accès refusé");
+  });
+
+  it("autorise un membre d'un second département portant la même fonction (spec 046)", async () => {
+    const secondDeptSession = {
+      ...createAdminSession(),
+      user: {
+        ...createAdminSession().user,
+        id: "user-1",
+        isSuperAdmin: false,
+        churchRoles: [
+          {
+            id: "role-1",
+            churchId: "church-1",
+            role: "DEPARTMENT_HEAD" as const,
+            ministryId: null,
+            church: { id: "church-1", name: "Test Church", slug: "test-church" },
+            departments: [{ department: { id: "dept-second", name: "Média B" } }],
+          },
+        ],
+      },
+    };
+    mockRequirePermission.mockResolvedValue(secondDeptSession);
+    prismaMock.request.findUnique.mockResolvedValue(existingRequest);
+    // "dept-second" porte aussi PRODUCTION_MEDIA (fonction du type VISUEL), sans être le
+    // premier département historiquement assigné.
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-second" }] as never);
+    prismaMock.request.update.mockResolvedValue({
+      id: "req-1",
+      type: "VISUEL",
+      status: "EN_COURS",
+    } as never);
+
+    const request = new Request("http://localhost/api/requests/req-1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "EN_COURS" }),
+    });
+    const res = await PATCH(request, { params: Promise.resolve({ id: "req-1" }) });
+
+    expect(res.status).toBe(200);
   });
 
   it("returns 403 when owner tries to set status other than ANNULE", async () => {

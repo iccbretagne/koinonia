@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import { formatAssignedDepts, type DeptFunction } from "@/lib/department-functions";
 
 const ANNOUNCEMENT_TYPES = ["VISUEL", "DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"];
 
@@ -63,7 +64,8 @@ interface RequestItem {
   submittedAt: Date;
   department: { id: string; name: string } | null;
   ministry: { id: string; name: string } | null;
-  assignedDept: { id: string; name: string } | null;
+  assignedFunction: DeptFunction;
+  assignedDepts: { id: string; name: string }[];
   announcement: {
     id: string;
     title: string;
@@ -77,7 +79,8 @@ interface RequestItem {
     type: string;
     status: string;
     payload: unknown;
-    assignedDept: { id: string; name: string } | null;
+    assignedFunction: DeptFunction;
+    assignedDepts: { id: string; name: string }[];
   }[];
   reviewedBy: { id: string; name: string | null; displayName: string | null } | null;
 }
@@ -133,8 +136,8 @@ function RequestCard({ req, onUpdated }: { req: RequestItem; onUpdated: (updated
             {req.announcement ? req.announcement.title : req.title}
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {source && <>{source} · </>}
-            {req.assignedDept && <>→ {req.assignedDept.name} · </>}
+            {source && <>{source} · </>}→{" "}
+            {formatAssignedDepts(req.assignedFunction, req.assignedDepts)} ·{" "}
             {new Date(req.submittedAt).toLocaleDateString("fr-FR", {
               day: "2-digit",
               month: "short",
@@ -187,9 +190,9 @@ function RequestCard({ req, onUpdated }: { req: RequestItem; onUpdated: (updated
                 }`}
               />
               <span>{TYPE_LABEL[child.type] ?? child.type}</span>
-              {child.assignedDept && (
-                <span className="text-gray-400">→ {child.assignedDept.name}</span>
-              )}
+              <span className="text-gray-400">
+                → {formatAssignedDepts(child.assignedFunction, child.assignedDepts)}
+              </span>
               <span className="text-gray-400">{STATUS_LABEL[child.status] ?? child.status}</span>
             </div>
           ))}
@@ -251,7 +254,7 @@ export default function RequestsList({ requests }: Props) {
         r.announcement?.title ?? r.title,
         r.announcement?.content ?? "",
         r.department?.name ?? r.ministry?.name ?? "",
-        r.assignedDept?.name ?? "",
+        r.assignedDepts.map((d) => d.name).join(" "),
       ]
         .join(" ")
         .toLowerCase();

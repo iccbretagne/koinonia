@@ -172,19 +172,38 @@ describe("runMsdpInactivityNotifications", () => {
     prismaMock.msdpFollowUp.findMany.mockResolvedValue([
       makeFollowUp({ status: "SUBMITTED", assignedConseillerMsdp: null }),
     ] as never);
-    prismaMock.department.findFirst.mockResolvedValue({ id: "dept-msdp" } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
     prismaMock.userDepartment.findMany.mockResolvedValue([
       { userChurchRole: { userId: "manager-1", user: { id: "manager-1", email: "manager@example.com" } } },
     ] as never);
 
     const result = await runMsdpInactivityNotifications("https://koinonia.example");
 
-    expect(prismaMock.department.findFirst).toHaveBeenCalledWith(
+    expect(prismaMock.department.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ function: "MSDP" }) })
     );
     expect(prismaMock.notification.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ userId: "manager-1" }) })
     );
+    expect(result.notified).toBe(1);
+  });
+
+  it("MSDP porté par deux départements : une personne membre des deux n'est notifiée qu'une fois (spec 046)", async () => {
+    prismaMock.msdpFollowUp.findMany.mockResolvedValue([
+      makeFollowUp({ status: "SUBMITTED", assignedConseillerMsdp: null }),
+    ] as never);
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp-1" }, { id: "dept-msdp-2" }] as never);
+    prismaMock.userDepartment.findMany.mockResolvedValue([
+      { userChurchRole: { userId: "manager-1", user: { id: "manager-1", email: "manager@example.com" } } },
+      { userChurchRole: { userId: "manager-1", user: { id: "manager-1", email: "manager@example.com" } } },
+    ] as never);
+
+    const result = await runMsdpInactivityNotifications("https://koinonia.example");
+
+    expect(prismaMock.userDepartment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { departmentId: { in: ["dept-msdp-1", "dept-msdp-2"] } } })
+    );
+    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
     expect(result.notified).toBe(1);
   });
 

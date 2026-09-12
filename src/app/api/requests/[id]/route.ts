@@ -5,6 +5,8 @@ import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { executeRequest, planningBus } from "@/modules/planning";
 import { createNotification } from "@/lib/notifications";
+import { functionForRequestType } from "@/lib/department-functions";
+import { isMemberOfFunction, getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -39,7 +41,7 @@ export async function GET(
     // Resolve churchId + ownership without a full join
     const minimal = await prisma.request.findUnique({
       where: { id },
-      select: { churchId: true, submittedById: true, assignedDeptId: true },
+      select: { churchId: true, submittedById: true, type: true },
     });
     if (!minimal) throw new ApiError(404, "Demande introuvable");
 
@@ -56,10 +58,13 @@ export async function GET(
       .flatMap((r) => r.departments.map((d) => d.department.id));
 
     const isOwner = minimal.submittedById === session.user.id;
-    const isAssignedDeptMember =
-      minimal.assignedDeptId !== null && userDeptIds.includes(minimal.assignedDeptId);
+    const isAssignedFunctionMember = await isMemberOfFunction(
+      userDeptIds,
+      minimal.churchId,
+      functionForRequestType(minimal.type)
+    );
 
-    if (!canManage && !isAssignedDeptMember && !isOwner) {
+    if (!canManage && !isAssignedFunctionMember && !isOwner) {
       throw new ApiError(403, "Accès refusé");
     }
 
@@ -69,7 +74,6 @@ export async function GET(
         submittedBy: { select: { id: true, name: true, displayName: true } },
         department: { select: { id: true, name: true } },
         ministry: { select: { id: true, name: true } },
-        assignedDept: { select: { id: true, name: true } },
         reviewedBy: { select: { id: true, name: true, displayName: true } },
         announcement: {
           select: {
@@ -91,15 +95,26 @@ export async function GET(
         parentRequest: {
           select: { id: true, type: true, status: true },
         },
-        childRequests: {
-          include: {
-            assignedDept: { select: { id: true, name: true } },
-          },
-        },
+        childRequests: true,
       },
     });
+    if (!req) throw new ApiError(404, "Demande introuvable");
 
-    return successResponse(req);
+    const fnsNeeded = Array.from(
+      new Set([req.type, ...req.childRequests.map((c) => c.type)].map(functionForRequestType))
+    );
+    const deptsByFn = await getFunctionDepartmentsMap(minimal.churchId, fnsNeeded);
+
+    return successResponse({
+      ...req,
+      assignedFunction: functionForRequestType(req.type),
+      assignedDepts: deptsByFn.get(functionForRequestType(req.type)) ?? [],
+      childRequests: req.childRequests.map((c) => ({
+        ...c,
+        assignedFunction: functionForRequestType(c.type),
+        assignedDepts: deptsByFn.get(functionForRequestType(c.type)) ?? [],
+      })),
+    });
   } catch (error) {
     return errorResponse(error);
   }
@@ -117,7 +132,6 @@ export async function PATCH(
       select: {
         id: true,
         submittedById: true,
-        assignedDeptId: true,
         churchId: true,
         type: true,
         status: true,
@@ -141,9 +155,11 @@ export async function PATCH(
     const userDeptIds = session.user.churchRoles
       .filter((r) => r.churchId === existing.churchId)
       .flatMap((r) => r.departments.map((d) => d.department.id));
-    const isAssignedDeptMember =
-      existing.assignedDeptId !== null &&
-      userDeptIds.includes(existing.assignedDeptId);
+    const isAssignedDeptMember = await isMemberOfFunction(
+      userDeptIds,
+      existing.churchId,
+      functionForRequestType(existing.type)
+    );
 
     const isOwner = existing.submittedById === session.user.id;
 

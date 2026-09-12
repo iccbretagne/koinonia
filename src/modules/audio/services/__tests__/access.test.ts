@@ -13,31 +13,33 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return { ...original, auth: () => mockAuth() };
 });
 
-const { getCaptureDepartmentId, isCaptureTeamMember, isCaptureTeamLead } = await import("../access");
+const { getCaptureDepartmentIds, isCaptureTeamMember, isCaptureTeamLead } = await import("../access");
 const { requireAudioAccess, requireAudioUnpublishAccess } = await import("../../auth");
 
 const churchId = "church-1";
 const captureDepartmentId = "dept-son";
+const captureDepartmentId2 = "dept-son-2";
 
-function mockCaptureDepartment(id: string | null) {
-  prismaMock.department.findFirst.mockResolvedValue(id ? ({ id } as never) : null);
+function mockCaptureDepartment(...ids: string[]) {
+  prismaMock.department.findMany.mockResolvedValue(ids.map((id) => ({ id })) as never);
 }
 
-describe("getCaptureDepartmentId / isCaptureTeamMember", () => {
+describe("getCaptureDepartmentIds / isCaptureTeamMember", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("null si le module n'est pas configuré pour cette église", async () => {
-    mockCaptureDepartment(null);
-    expect(await getCaptureDepartmentId(churchId)).toBeNull();
+  it("tableau vide si le module n'est pas configuré pour cette église", async () => {
+    mockCaptureDepartment();
+    expect(await getCaptureDepartmentIds(churchId)).toEqual([]);
     expect(await isCaptureTeamMember(churchId, ["dept-x"])).toBe(false);
   });
 
-  it("lit le département via la fonction CAPTATION_AUDIO, pas via AudioSettings", async () => {
+  it("lit les départements via la fonction CAPTATION_AUDIO, pas via AudioSettings", async () => {
     mockCaptureDepartment(captureDepartmentId);
-    expect(await getCaptureDepartmentId(churchId)).toBe(captureDepartmentId);
-    expect(prismaMock.department.findFirst).toHaveBeenCalledWith({
+    expect(await getCaptureDepartmentIds(churchId)).toEqual([captureDepartmentId]);
+    expect(prismaMock.department.findMany).toHaveBeenCalledWith({
       where: { function: "CAPTATION_AUDIO", ministry: { churchId } },
       select: { id: true },
+      orderBy: { id: "asc" },
     });
   });
 
@@ -53,7 +55,13 @@ describe("getCaptureDepartmentId / isCaptureTeamMember", () => {
 
   it("faux immédiatement si l'utilisateur n'a aucun département (pas de requête inutile)", async () => {
     expect(await isCaptureTeamMember(churchId, [])).toBe(false);
-    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.department.findMany).not.toHaveBeenCalled();
+  });
+
+  it("la fonction porte deux départements : membre du second reconnu (spec 046)", async () => {
+    mockCaptureDepartment(captureDepartmentId, captureDepartmentId2);
+    expect(await getCaptureDepartmentIds(churchId)).toEqual([captureDepartmentId, captureDepartmentId2]);
+    expect(await isCaptureTeamMember(churchId, [captureDepartmentId2])).toBe(true);
   });
 });
 
@@ -127,6 +135,23 @@ describe("isCaptureTeamLead", () => {
     });
     expect(await isCaptureTeamLead(session, churchId)).toBe(false);
   });
+
+  it("vrai pour un DEPARTMENT_HEAD du second département de captation (spec 046)", async () => {
+    mockCaptureDepartment(captureDepartmentId, captureDepartmentId2);
+    const session = createSession({
+      churchRoles: [
+        {
+          id: "role-1",
+          churchId,
+          role: "DEPARTMENT_HEAD",
+          ministryId: null,
+          church: { id: churchId, name: "Test Church", slug: "test-church" },
+          departments: [{ department: { id: captureDepartmentId2, name: "Son 2" } }],
+        },
+      ],
+    });
+    expect(await isCaptureTeamLead(session, churchId)).toBe(true);
+  });
 });
 
 describe("requireAudioAccess / requireAudioUnpublishAccess (modules/audio/auth.ts)", () => {
@@ -140,7 +165,7 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (modules/audio/auth.t
     const session = await requireAudioAccess("audio:view", churchId);
     expect(session.user.id).toBe("user-1");
     // ADMIN a la permission de rôle — pas besoin d'interroger le département de captation
-    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.department.findMany).not.toHaveBeenCalled();
   });
 
   it("passe pour un membre du département de captation sans permission de rôle (STAR)", async () => {
@@ -257,6 +282,6 @@ describe("requireAudioAccess / requireAudioUnpublishAccess (modules/audio/auth.t
 
     const session = await requireAudioUnpublishAccess(churchId);
     expect(session.user.id).toBe("user-1");
-    expect(prismaMock.department.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.department.findMany).not.toHaveBeenCalled();
   });
 });
