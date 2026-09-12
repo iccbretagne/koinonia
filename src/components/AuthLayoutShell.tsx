@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import MobileNavSheet from "@/components/MobileNavSheet";
 import Breadcrumb from "@/components/Breadcrumb";
 import GuidedTour from "@/components/GuidedTour";
+import { STAGING_BUILD_VERSION, STAGING_BANNER_HEADER_OFFSET_CLASS } from "@/lib/env-banner";
 
 // Type importe plutot que recopie : les copies locales avaient derive et
 // omettaient AGENDA_QUALIFIER, privant ce role des etapes de tour ciblees.
@@ -139,9 +140,11 @@ export default function AuthLayoutShell({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header — décalé sous le bandeau de recette (fixe, hors flux) plutôt que de passer
+          dessous, sinon le haut du header (icône menu, nom de l'église) serait recouvert dès
+          que ce sticky atteint le haut du viewport au scroll. */}
       <header
-        className="sticky top-0 z-50 border-b-2"
+        className={`sticky ${STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"} z-50 border-b-2`}
         style={{ backgroundColor: headerColor, borderColor: headerBorderColor, color: headerTextColor }}
       >
         <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 mx-auto max-w-7xl">
