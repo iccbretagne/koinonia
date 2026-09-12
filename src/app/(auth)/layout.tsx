@@ -98,9 +98,12 @@ export default async function AuthLayout({
   }
   const churches = Array.from(churchMap.values());
 
-  // Get departments the user has access to
+  // Get departments the user is responsible for (liens Planning). Le rôle STAR est exclu :
+  // son champ `departments` porte le département d'APPARTENANCE (fiche membre liée, pour
+  // "Mon planning"), pas la responsabilité — sinon on affiche un lien Planning vers un
+  // département que l'utilisateur ne gère pas (même fuite qu'ADR-0013 dans getUserDepartmentScope).
   const userDepartmentIds = churchRoles
-    .filter((r) => !currentChurchId || r.churchId === currentChurchId)
+    .filter((r) => (!currentChurchId || r.churchId === currentChurchId) && r.role !== "STAR")
     .flatMap((r) => r.departments.map((d) => d.department));
 
   const departments = Array.from(
