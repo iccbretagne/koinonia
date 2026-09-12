@@ -50,7 +50,8 @@ export async function GET(request: Request) {
     const groups: DuplicateGroup[] = [];
     const seen = new Set<string>();
 
-    const pairKey = (ids: string[]) => [...ids].sort().join("|");
+    // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
+    const pairKey = (ids: string[]) => [...ids].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join("|");
 
     for (const bucket of byName.values()) {
       if (bucket.length < 2) continue;

@@ -138,7 +138,7 @@ export default async function AccountingStatsPage() {
     if (key in monthReleased) monthReleased[key] += Number(p.releasedAmount ?? p.amount);
   }
   const byMonth = Object.keys(monthSubmitted)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .map((month) => ({ month, submitted: monthSubmitted[month], released: monthReleased[month] }));
 
   const overduePayments = overdueRaw.map((p) => ({

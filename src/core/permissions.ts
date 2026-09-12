@@ -1,6 +1,15 @@
 import type { ModuleRegistry } from "./module-registry";
 
 /**
+ * Ordre strictement point de code (Sonar S2871) — les permissions triées ici alimentent la
+ * matrice `rolePermissions` comparée telle quelle dans `permissions.test.ts` (matrice figée) ;
+ * comparateur explicite pour documenter cet ordre sans le changer.
+ */
+function compareCodePoint(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
  * Dérive la matrice rôles → permissions depuis les manifestes des modules enregistrés.
  *
  * Inverse la structure `permissions` des modules (permission → roles[])
@@ -26,7 +35,7 @@ export function buildRolePermissions(
   return Object.fromEntries(
     Array.from(rolePerms.entries()).map(([role, perms]) => [
       role,
-      Array.from(perms).sort(),
+      Array.from(perms).sort(compareCodePoint),
     ])
   );
 }

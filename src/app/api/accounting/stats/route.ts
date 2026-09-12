@@ -146,7 +146,7 @@ export async function GET(request: Request) {
       if (key in monthReleased) monthReleased[key] += Number(p.releasedAmount ?? p.amount);
     }
     const byMonth = Object.keys(monthSubmitted)
-      .sort()
+      .sort((a, b) => a.localeCompare(b))
       .map((month) => ({ month, submitted: monthSubmitted[month], released: monthReleased[month] }));
 
     // ── Paiements en retard ───────────────────────────────────────────────────

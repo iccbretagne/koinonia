@@ -1,5 +1,15 @@
 import { ModuleRegistry, type ModuleManifest } from "./module-registry";
 
+/**
+ * Ordre strictement point de code (Sonar S2871) — ces noms de modules servent de clé
+ * déterministe dans des messages d'erreur et un test figé (`boot.test.ts`) ; l'ordre par
+ * défaut de `Array.prototype.sort()` sur des chaînes ASCII est déjà celui des points de code,
+ * ce comparateur explicite le documente sans changer le résultat.
+ */
+function compareCodePoint(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 export interface BootOptions {
   modules: ModuleManifest[];
   /** Liste explicite de modules à activer. Si omise, lit process.env.ENABLED_MODULES. */
@@ -39,7 +49,7 @@ export function boot(options: BootOptions): ModuleRegistry {
     if (unknown.length > 0) {
       throw new Error(
         `Boot échoué : module(s) inconnu(s) dans ENABLED_MODULES : ${unknown.join(", ")}. ` +
-          `Modules disponibles : ${[...knownNames].sort().join(", ")}.`
+          `Modules disponibles : ${[...knownNames].sort(compareCodePoint).join(", ")}.`
       );
     }
     if (!enabled.includes(ROOT_MODULE)) {
@@ -73,7 +83,7 @@ export function boot(options: BootOptions): ModuleRegistry {
     // 1) : pas de point exposé côté application, un exploitant a déjà accès aux journaux.
     // src/core reste framework-agnostic, sans dépendance à src/lib/logger (pino) pour une
     // seule ligne au démarrage du process.
-    console.log(`[boot] modules actifs : ${registry.list().map((m) => m.name).sort().join(", ")}`);
+    console.log(`[boot] modules actifs : ${registry.list().map((m) => m.name).sort(compareCodePoint).join(", ")}`);
   }
 
   return registry;

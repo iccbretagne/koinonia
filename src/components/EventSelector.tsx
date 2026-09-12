@@ -47,7 +47,7 @@ export default function EventSelector({
   // Sorted unique months that have at least one event
   const months = useMemo(() => {
     const set = new Set(events.map((e) => toYearMonth(e.date)));
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [events]);
 
   // Lazy initializer — runs once on mount to pick the right starting month
@@ -56,7 +56,7 @@ export default function EventSelector({
       const ev = events.find((e) => e.id === selectedEventId);
       if (ev) return toYearMonth(ev.date);
     }
-    const sortedMonths = Array.from(new Set(events.map((e) => toYearMonth(e.date)))).sort();
+    const sortedMonths = Array.from(new Set(events.map((e) => toYearMonth(e.date)))).sort((a, b) => a.localeCompare(b));
     const d = new Date();
     const now = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     return sortedMonths.find((m) => m >= now) ?? sortedMonths[0] ?? "";

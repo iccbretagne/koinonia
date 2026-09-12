@@ -10,6 +10,10 @@ export interface RestoreResult {
   durationMs: number;
 }
 
+// PATH fixe pour la resolution de l'executable (Sonar S4036 : ne pas heriter
+// d'un PATH potentiellement altere par l'environnement d'execution)
+const FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+
 function parseDatabaseUrl() {
   const url = new URL(process.env.DATABASE_URL || "");
   return {
@@ -48,7 +52,7 @@ export async function restoreBackup(key: string): Promise<RestoreResult> {
       "-u", db.user,
       db.database,
     ], {
-      env: { ...process.env, MYSQL_PWD: db.password },
+      env: { ...process.env, PATH: FIXED_PATH, MYSQL_PWD: db.password },
       stdio: ["pipe", "pipe", "pipe"],
     });
 
