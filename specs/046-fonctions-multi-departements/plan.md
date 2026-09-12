@@ -55,7 +55,8 @@ Aucun endpoint ajouté. Modifications de comportement :
 |---|---|---|---|
 | `/api/departments/[departmentId]` | PATCH | `events:manage` (église résolue par `resolveChurchId`) | Ne désassigne plus les autres départements portant la même fonction. Schéma Zod `{ function: string \| null }` inchangé |
 | `/api/requests` | POST | inchangée | Ne cherche plus de département destinataire ; `assignedDeptId` non renseigné |
-| `/api/requests` | GET | inchangée | Le filtre `assignedDeptId` (inutilisé par le front, vérifié) est retiré |
+| `/api/requests` | GET | inchangée | Le filtre `assignedDeptId` (inutilisé par le front, vérifié) est retiré ; `assignedDept` remplacé par `assignedDepts` + `assignedFunction` |
+| `/api/requests/[id]` | GET | inchangée | Idem pour la demande et ses sous-demandes |
 | `/api/requests/[id]` | GET / PATCH | `members:view` + (manager \| membre de la fonction \| auteur) | « membre du département assigné » devient « membre d'un département de la fonction du type » |
 | `/api/announcements` | POST | inchangée | Vérifie qu'**au moins un** département porte Secrétariat/Communication (même message d'erreur) ; plus d'`assignedDeptId` |
 
@@ -66,11 +67,13 @@ Aucun endpoint ajouté. Modifications de comportement :
 - `getFunctionDepartmentIds(churchId, fn, db?)` → `string[]` — `findMany` des départements de
   l'église portant `fn`, trié par `id` (résultat déterministe).
 - `isMemberOfFunction(userDeptIds, churchId, fn, db?)` → `boolean` — intersection non vide.
+- `getFunctionDepartmentsMap(churchId, fns, db?)` → `Map<fn, { id, name }[]>` — une requête pour
+  plusieurs fonctions, noms triés ; alimente l'affichage du destinataire.
 
 ### Complément : `src/lib/department-functions.ts` (constantes, importable client)
 
 - `REQUEST_TYPE_FUNCTION: Record<RequestType, DeptFunction>` + `functionForRequestType(type)`.
-- `DEPT_FN_LABEL` (Secrétariat, Communication, Production Média…) pour l'affichage.
+- `DEPT_FN_LABEL` (Secrétariat, Communication, Production Média…) pour le cas « non configuré ».
 
 ### Consommateurs à migrer
 
@@ -98,9 +101,15 @@ détection de l'équipe Secrétariat dans `src/lib/auth.ts` (spec 045, `some`), 
   une fonction par département » de la spec, rendue visible au lieu du déplacement silencieux
   actuel). Résumé sous la carte : « ✓ Intégration Adultes, Intégration Jeunes » ou l'avertissement
   actuel si vide. Liste scrollable (`max-h` + `overflow-y-auto`) pour rester utilisable sur mobile.
-- **Mes demandes** (`RequestsList.tsx`) : « → {assignedDept.name} » devient « → {libellé de la
-  fonction du type} » (les anciennes demandes n'affichent donc plus un département devenu
-  potentiellement caduc).
+- **Mes demandes** (`RequestsList.tsx` : ligne, sous-demandes, export) : « → {assignedDept.name} »
+  devient « → {départements portant **actuellement** la fonction du type} », noms séparés par des
+  virgules et triés — ex. « → Pôle administratif » (un seul département : **affichage identique à
+  aujourd'hui**) ou « → Intégration Adultes, Intégration Jeunes ». Aucun département configuré :
+  « → {libellé de la fonction} (non configuré) ». Calcul côté serveur (`requests/page.tsx`, `GET
+  /api/requests`, `GET /api/requests/[id]`) : **une seule** requête par chargement récupère les
+  départements des fonctions de l'église, puis on associe chaque demande à sa fonction via
+  `functionForRequestType` — pas de requête par demande. Le champ exposé au client remplace
+  `assignedDept` par `assignedDepts: { id, name }[]` plus `assignedFunction`.
 - Pages de file : pas de changement visuel.
 
 ## Décisions & alternatives écartées
@@ -115,6 +124,11 @@ détection de l'équipe Secrétariat dans `src/lib/auth.ts` (spec 045, `some`), 
   département retiré.
 - **Écarté** : table de liaison N-N demande ↔ départements — *Raison* : sur-ingénierie pour une
   file partagée.
+- **Choix** : afficher au demandeur les départements **actuels** de la fonction (option B, validée
+  le 2026-09-12) — *Pourquoi* : affichage inchangé dans le cas courant d'un seul département, et
+  cohérent avec « la demande suit la fonction » : on montre qui peut la traiter maintenant.
+- **Écarté** : libellé de la fonction seul — *Raison* : perte du nom du département, même quand il
+  n'y en a qu'un. **Écarté** : fonction + départements — *Raison* : trop long sur mobile.
 - **Choix** : conserver la colonne `assignedDeptId` dans ce lot — *Pourquoi* : réversibilité
   (retour arrière du code possible), suppression différée à un `chore` avec migration.
 - **Choix** : un département ayant une autre fonction est désactivé dans la liste plutôt que
@@ -150,6 +164,8 @@ détection de l'équipe Secrétariat dans `src/lib/auth.ts` (spec 045, `some`), 
   département retiré → 403 ; auteur et manager inchangés.
 - Audio `access.test` : membre/responsable d'un 2ᵉ département de captation → accès.
 - Relances intégration/MSDP : deux départements, une personne dans les deux → une seule notification.
+- Affichage du destinataire : 1 département → son nom ; 2 → noms triés séparés par une virgule ;
+  0 → « Secrétariat (non configuré) » ; une seule requête de départements pour N demandes.
 - `/api/announcements` POST : fonction portée par 2 départements → création OK, sans `assignedDeptId`.
 - Non-régression : suites existantes des files et de la trame inchangées ; `npm run build` avant
   déploiement (frontière client/serveur : `department-functions.ts` doit rester sans import serveur).

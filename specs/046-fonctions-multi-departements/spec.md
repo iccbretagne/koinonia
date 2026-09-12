@@ -73,6 +73,10 @@ départements ; c'est la configuration et le routage qui bloquent.
 - **Quand une demande a déjà été reçue par un département** puis que ce département est retiré de
   la fonction, la demande reste visible et traitable par l'équipe de la fonction (les départements
   qui la portent désormais) : elle suit la fonction, pas le département qui l'a reçue.
+- **Quand un demandeur consulte ses demandes**, il voit comme destinataire les départements qui
+  portent **actuellement** la fonction : le nom du département s'il n'y en a qu'un (comme
+  aujourd'hui), la liste s'il y en a plusieurs, ou la fonction marquée « non configurée » s'il n'y
+  en a aucun.
 - **Quand une relance automatique** (demande d'intégration ou suivi MSDP sans suite) est envoyée,
   elle part aux membres de tous les départements de la fonction, sans doublon pour une personne
   membre de plusieurs d'entre eux.
@@ -100,6 +104,8 @@ départements ; c'est la configuration et le routage qui bloquent.
       membres de chacun de ses départements, sans choix d'équipe demandé au demandeur.
 - [ ] Une demande reçue avant le retrait d'un département de la fonction reste visible et
       traitable par les départements qui portent la fonction après ce retrait.
+- [ ] Dans ses demandes, le demandeur voit le ou les départements portant actuellement la fonction
+      destinataire ; avec un seul département, l'affichage est identique à aujourd'hui.
 - [ ] La liste des conseillers MSDP inclut les membres de tous les départements MSDP.
 - [ ] Aucun écran ni aucun traitement ne dépend d'un choix arbitraire entre plusieurs départements
       d'une même fonction (résultat identique quel que soit l'ordre des départements).
@@ -120,3 +126,4 @@ Tranchées le 2026-09-12 :
 - **Cas réel** : plusieurs départements se partagent le périmètre d'une même fonction.
 - **Routage** : file partagée entre tous les départements de la fonction, sans choix du demandeur.
 - **Retrait d'un département** : les demandes déjà reçues suivent la fonction.
+- **Destinataire affiché au demandeur** : départements portant actuellement la fonction.
