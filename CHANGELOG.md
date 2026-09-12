@@ -4,6 +4,58 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.23.0] - 2026-09-12
+
+### Ajouté
+
+- **Modules optionnels réellement appliqués au déploiement** (spec 038) : le réglage
+  `ENABLED_MODULES`, jusqu'ici sans effet, détermine désormais pour de vrai les modules actifs
+  d'une instance.
+- **Feuille d'annonces d'un culte** (spec 040) : dépôt d'un document (docx/PDF, 20 Mo max) par
+  événement, consultable par le Secrétariat, la Coordination générale, tout responsable de
+  département et les STAR de la Modération — remplace la circulation par WhatsApp/mail.
+- **Service d'ouverture et de fermeture de l'église** (spec 041) : désignation d'un ouvrant et
+  d'un fermant par événement, réservée à la Sécurité et à n'importe quel membre du Secrétariat ;
+  notification du désigné et de tout retrait.
+- **Pastille « nouvelles offres »** (spec 042) : l'entrée *Offres* du menu affiche le nombre
+  d'offres publiées depuis la dernière visite.
+- **Regroupement et ergonomie de la navigation** (spec 043) : fusion de « Communication » et
+  « Production Média » sous un espace unique **Communication & Production** ; centralisation du
+  RDV pastoral et de la demande comptable dans « Mes demandes » ; bandeau de préparation
+  repliable sur la page événement ; fusion du menu Événements du STAR ; renommage des « Feuilles
+  d'annonces » en « Trame des annonces ».
+- **Événements d'équipe** (spec 044, issue #522) : rendez-vous internes à un département
+  (répétition, réunion, formation), distincts des événements d'église, visibles en lecture seule
+  par les membres du département dans « Mon planning ».
+- **L'équipe Secrétariat porte les droits du Secrétariat** (spec 045, ADR-0014) : les membres
+  d'un département de fonction Secrétariat peuvent désormais créer/modifier/supprimer les
+  événements de l'église, au même titre que le rôle Secrétaire — plus seulement son porteur
+  nominal.
+- Raccourci « Gérer les événements » depuis l'agenda de l'église.
+- Renommage de « Gestion » en un libellé explicite dans le menu Événements ; déplacement de la
+  Comptabilité dans *Opérations* (spec 039).
+
+### Corrigé
+
+- **Fuite du périmètre d'appartenance d'un STAR dans sa responsabilité** : un compte STAR de son
+  département d'appartenance, promu Responsable d'un *autre* département, héritait à tort de la
+  responsabilité (droits d'écriture **et** lien de menu Planning) de son département
+  d'appartenance en plus de celui qui venait de lui être assigné — violation d'ADR-0013 corrigée
+  dans `getUserDepartmentScope` et dans le calcul des liens du menu Planning.
+- Préparation du culte : ordre d'affichage, boutons, navigation mensuelle et erreurs d'accès.
+- Lecture de la trame des annonces restreinte aux populations prévues par la spec 040.
+- Le bouton Supprimer d'un événement d'équipe récurrent n'ouvrait pas la modale de confirmation.
+- Débordement horizontal des onglets et du bouton WhatsApp sur la page Offres d'emploi.
+- Tiroir de navigation mobile tronqué sous la barre d'outils du navigateur ; débordement
+  horizontal correctement contenu par `<body>` plutôt que `<html>`.
+- `buttonClasses` de nouveau appelable depuis un composant serveur.
+
+### Modifié
+
+- Déplacement de la logique des routes `members/lookup` et `members/[id]/departments` vers un
+  service dédié (frontière module).
+- Cliquet CI sur les routes important Prisma directement relevé à 148.
+
 ## [v1.22.0] - 2026-09-08
 
 ### Ajouté
