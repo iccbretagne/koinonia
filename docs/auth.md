@@ -144,11 +144,12 @@ Ces trois gardes sont des règles du domaine audio, pas de l'infrastructure d'au
 elles vivent dans le module, comme celles d'`agenda` et d'`integration` (chantier 4 de
 `docs/roadmap-modularite.md`). Leur comportement est inchangé.
 
-- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** appartenance au département
-  de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`) : un STAR
-  de ce département passe le contrôle quelle que soit la permission demandée
-- `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre du
-  département de captation audio (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
+- `requireAudioAccess(permission, churchId)` — permission de rôle **ou** appartenance à l'un des
+  départements de captation audio (`isCaptureTeamMember`, `Department.function = "CAPTATION_AUDIO"`,
+  éventuellement plusieurs départements — spec 046) : un STAR de l'un de ces départements passe le
+  contrôle quelle que soit la permission demandée
+- `requireAudioUnpublishAccess(churchId)` — plus strict : `audio:manage` ou responsable/ministre
+  d'un département de captation audio (`isCaptureTeamLead`), sans passe-droit pour un simple STAR
 - `requireAudioListenAccess(churchId)` — autorise l'écoute d'un culte publié de `churchId` (spec
   036) : passe si un rôle portant `audio:listen` existe dans `churchId` (comportement historique),
   **ou** si une des propres églises de l'appelant, elle-même porteuse de `audio:listen`, figure

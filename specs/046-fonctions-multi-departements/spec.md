@@ -1,7 +1,7 @@
 # Spec — Plusieurs départements pour une même fonction
 
 - **Numéro** : 046
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-12
 - **Branche suggérée** : `feat/fonctions-multi-departements`
 - **Issue** : #551
@@ -91,25 +91,25 @@ départements ; c'est la configuration et le routage qui bloquent.
 
 ## Critères d'acceptation
 
-- [ ] La configuration permet d'associer 0, 1 ou plusieurs départements à chaque fonction, et
+- [x] La configuration permet d'associer 0, 1 ou plusieurs départements à chaque fonction, et
       d'en retirer un sans affecter les autres.
-- [ ] Sélectionner un second département pour une fonction ne retire pas le premier.
-- [ ] Un membre de n'importe lequel des départements d'une fonction accède aux écrans et au lien de
+- [x] Sélectionner un second département pour une fonction ne retire pas le premier.
+- [x] Un membre de n'importe lequel des départements d'une fonction accède aux écrans et au lien de
       menu de cette fonction (Traitement des demandes, Demandes visuels, Demandes réseaux sociaux,
       Intégration, Audio, Agenda pastoral, trame des annonces, ouverture/fermeture).
-- [ ] Un membre d'un département retiré de la fonction perd ces accès.
-- [ ] Les notifications et relances d'une fonction atteignent les membres de tous ses départements,
+- [x] Un membre d'un département retiré de la fonction perd ces accès.
+- [x] Les notifications et relances d'une fonction atteignent les membres de tous ses départements,
       une seule fois par personne.
-- [ ] Une demande destinée à une fonction multi-départements est visible et traitable par les
+- [x] Une demande destinée à une fonction multi-départements est visible et traitable par les
       membres de chacun de ses départements, sans choix d'équipe demandé au demandeur.
-- [ ] Une demande reçue avant le retrait d'un département de la fonction reste visible et
+- [x] Une demande reçue avant le retrait d'un département de la fonction reste visible et
       traitable par les départements qui portent la fonction après ce retrait.
-- [ ] Dans ses demandes, le demandeur voit le ou les départements portant actuellement la fonction
+- [x] Dans ses demandes, le demandeur voit le ou les départements portant actuellement la fonction
       destinataire ; avec un seul département, l'affichage est identique à aujourd'hui.
-- [ ] La liste des conseillers MSDP inclut les membres de tous les départements MSDP.
-- [ ] Aucun écran ni aucun traitement ne dépend d'un choix arbitraire entre plusieurs départements
+- [x] La liste des conseillers MSDP inclut les membres de tous les départements MSDP.
+- [x] Aucun écran ni aucun traitement ne dépend d'un choix arbitraire entre plusieurs départements
       d'une même fonction (résultat identique quel que soit l'ordre des départements).
-- [ ] Une église dont chaque fonction a au plus un département ne constate aucun changement.
+- [x] Une église dont chaque fonction a au plus un département ne constate aucun changement.
 
 ## Hors périmètre
 

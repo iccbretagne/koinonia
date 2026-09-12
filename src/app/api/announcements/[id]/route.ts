@@ -3,7 +3,10 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
+import { functionForRequestType } from "@/lib/department-functions";
+import { getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { z } from "zod";
+import type { RequestType } from "@/generated/prisma/client";
 
 const patchSchema = z.object({
   status: z
@@ -59,7 +62,6 @@ export async function GET(
         requests: {
           where: { parentRequestId: null },
           include: {
-            assignedDept: { select: { id: true, name: true } },
             reviewedBy: { select: { id: true, name: true, displayName: true } },
             childRequests: {
               select: {
@@ -67,15 +69,34 @@ export async function GET(
                 type: true,
                 status: true,
                 payload: true,
-                assignedDept: { select: { id: true, name: true } },
               },
             },
           },
         },
       },
     });
+    if (!announcement) throw new ApiError(404, "Annonce introuvable");
 
-    return successResponse(announcement);
+    const allTypes = new Set<RequestType>();
+    for (const r of announcement.requests) {
+      allTypes.add(r.type);
+      for (const child of r.childRequests) allTypes.add(child.type);
+    }
+    const fnsNeeded = Array.from(new Set(Array.from(allTypes).map(functionForRequestType)));
+    const deptsByFn = await getFunctionDepartmentsMap(minimal.churchId, fnsNeeded);
+
+    function decorate<U extends { type: RequestType }>(r: U) {
+      const fn = functionForRequestType(r.type);
+      return { ...r, assignedFunction: fn, assignedDepts: deptsByFn.get(fn) ?? [] };
+    }
+
+    return successResponse({
+      ...announcement,
+      requests: announcement.requests.map((r) => ({
+        ...decorate(r),
+        childRequests: r.childRequests.map(decorate),
+      })),
+    });
   } catch (error) {
     return errorResponse(error);
   }

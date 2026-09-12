@@ -9,7 +9,7 @@ export {
 } from "./services/service";
 export type { CreateAudioServiceInput, UpdateAudioServiceInput } from "./services/service";
 
-export { getCaptureDepartmentId, isCaptureTeamMember, isCaptureTeamLead } from "./services/access";
+export { getCaptureDepartmentIds, isCaptureTeamMember, isCaptureTeamLead } from "./services/access";
 
 export {
   AUDIO_UPLOAD_PART_SIZE,

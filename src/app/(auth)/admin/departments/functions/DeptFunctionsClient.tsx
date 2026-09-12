@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import CheckboxGroup from "@/components/ui/CheckboxGroup";
+import { DEPT_FN_LABEL, type DeptFunction } from "@/lib/department-functions";
 
 interface Department {
   id: string;
@@ -77,59 +79,46 @@ export default function DeptFunctionsClient({ departments }: Props) {
   const [saving, setSaving] = useState<string | null>(null);
 
   function getAssigned(fn: FnKey) {
-    return depts.find((d) => d.function === fn)?.id ?? "";
+    return depts.filter((d) => d.function === fn).map((d) => d.id);
   }
 
-  async function handleChange(fn: FnKey, newDeptId: string) {
+  async function patchDept(id: string, fn: string | null) {
+    const res = await fetch(`/api/departments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ function: fn }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Erreur");
+    }
+  }
+
+  async function handleChange(fn: FnKey, newSelection: string[]) {
     setSaving(fn);
-    const prevDeptId = getAssigned(fn);
+    const prevSelection = getAssigned(fn);
+    const toAssign = newSelection.filter((id) => !prevSelection.includes(id));
+    const toUnassign = prevSelection.filter((id) => !newSelection.includes(id));
 
     try {
-      // Unassign previous if different
-      if (prevDeptId && prevDeptId !== newDeptId) {
-        await fetch(`/api/departments/${prevDeptId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ function: null }),
-        });
-      }
-
-      // Assign new (or clear if empty)
-      if (newDeptId) {
-        const res = await fetch(`/api/departments/${newDeptId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ function: fn }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          alert(data.error || "Erreur");
-          return;
-        }
-      }
+      await Promise.all([
+        ...toAssign.map((id) => patchDept(id, fn)),
+        ...toUnassign.map((id) => patchDept(id, null)),
+      ]);
 
       setDepts((prev) =>
         prev.map((d) => {
-          if (d.id === prevDeptId) return { ...d, function: null };
-          if (d.id === newDeptId) return { ...d, function: fn };
+          if (toAssign.includes(d.id)) return { ...d, function: fn };
+          if (toUnassign.includes(d.id)) return { ...d, function: null };
           return d;
         })
       );
-    } catch {
-      alert("Erreur lors de la mise à jour");
+    } catch (e) {
+      alert((e as Error).message || "Erreur lors de la mise à jour");
     } finally {
       setSaving(null);
     }
   }
-
-  const grouped = depts.reduce(
-    (acc, d) => {
-      if (!acc[d.ministryName]) acc[d.ministryName] = [];
-      acc[d.ministryName].push(d);
-      return acc;
-    },
-    {} as Record<string, Department[]>
-  );
 
   return (
     <div className="space-y-10">
@@ -138,6 +127,10 @@ export default function DeptFunctionsClient({ departments }: Props) {
           {FUNCTIONS.map((fn) => {
             const assigned = getAssigned(fn.key);
             const isSaving = saving === fn.key;
+            const assignedNames = depts
+              .filter((d) => assigned.includes(d.id))
+              .map((d) => d.name)
+              .sort((a, b) => a.localeCompare(b));
 
             return (
               <div
@@ -150,33 +143,25 @@ export default function DeptFunctionsClient({ departments }: Props) {
                 </div>
                 <p className="text-xs text-gray-500 mb-4">{fn.description}</p>
 
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Département assigné
-                </label>
-                <select
-                  value={assigned}
-                  onChange={(e) => handleChange(fn.key, e.target.value)}
-                  disabled={isSaving}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet focus:ring-1 focus:ring-icc-violet disabled:opacity-50 bg-white"
-                >
-                  <option value="">— Non configuré —</option>
-                  {Object.entries(grouped).map(([ministry, deps]) => (
-                    <optgroup key={ministry} label={ministry}>
-                      {deps.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                          {d.function && d.function !== fn.key
-                            ? ` (${d.function})`
-                            : ""}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                <CheckboxGroup
+                  label="Départements assignés"
+                  selected={assigned}
+                  onChange={(selection) => handleChange(fn.key, selection)}
+                  options={depts.map((d) => {
+                    const carriesOtherFunction = d.function !== null && d.function !== fn.key;
+                    return {
+                      value: d.id,
+                      label: carriesOtherFunction
+                        ? `${d.name} (${d.ministryName}) — déjà ${DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}`
+                        : `${d.name} (${d.ministryName})`,
+                      disabled: isSaving || carriesOtherFunction,
+                    };
+                  })}
+                />
 
-                {assigned ? (
+                {assignedNames.length > 0 ? (
                   <p className="mt-2 text-xs text-icc-violet font-medium">
-                    ✓ {depts.find((d) => d.id === assigned)?.name}
+                    ✓ {assignedNames.join(", ")}
                   </p>
                 ) : (
                   <p className="mt-2 text-xs text-amber-600">

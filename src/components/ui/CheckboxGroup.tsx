@@ -2,7 +2,7 @@
 
 interface CheckboxGroupProps {
   label: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; disabled?: boolean }[];
   selected: string[];
   onChange: (selected: string[]) => void;
 }
@@ -33,11 +33,16 @@ export default function CheckboxGroup({
         {options.map((opt) => (
           <label
             key={opt.value}
-            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer text-sm"
+            className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${
+              opt.disabled
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-gray-50 cursor-pointer"
+            }`}
           >
             <input
               type="checkbox"
               checked={selected.includes(opt.value)}
+              disabled={opt.disabled}
               onChange={() => toggle(opt.value)}
               className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
             />

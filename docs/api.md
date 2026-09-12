@@ -1219,9 +1219,7 @@ Liste les demandes de service. Les gestionnaires (`events:manage`) voient tout ;
 **Query params** :
 - `churchId` (requis) — ID de l'église
 - `type` (optionnel) — filtre par type : `VISUEL`, `DIFFUSION_INTERNE`, `RESEAUX_SOCIAUX`
-- `assignedDeptId` (optionnel) — filtre par département assigne
-
-**Réponse** : tableau de demandes parentes (hors demandes enfants VISUEL), avec `submittedBy`, `department`, `ministry`, `assignedDept`, `announcement`, `childRequests`.
+**Réponse** : tableau de demandes parentes (hors demandes enfants VISUEL), avec `submittedBy`, `department`, `ministry`, `assignedFunction` (fonction destinataire déduite du type), `assignedDepts` (0..N départements portant actuellement cette fonction — spec 046), `announcement`, `childRequests`.
 
 ### `POST /api/service-requests`
 
@@ -1242,13 +1240,15 @@ Crée une demande de service `VISUEL` standalone (sans annonce liée).
 }
 ```
 
-La demande est automatiquement assignée au département ayant la fonction `PRODUCTION_MEDIA`.
+La demande est routée vers la fonction `PRODUCTION_MEDIA` (spec 046) : elle n'est plus assignée
+à un département résolu à la création, mais visible par tous les départements qui portent
+actuellement cette fonction.
 
 **Réponse** : `201` avec la demande créée.
 
 ### `GET /api/service-requests/[id]`
 
-Détail d'une demande avec `submittedBy`, `assignedDept`, `reviewedBy`, `announcement`, `parentRequest`, `childRequests`.
+Détail d'une demande avec `submittedBy`, `assignedFunction`, `assignedDepts`, `reviewedBy`, `announcement`, `parentRequest`, `childRequests`.
 
 **Erreur** : `404` si introuvable.
 
@@ -1256,7 +1256,7 @@ Détail d'une demande avec `submittedBy`, `assignedDept`, `reviewedBy`, `announc
 
 Met à jour une demande de service (statut, lien de livraison, notes de revue, format, brief, deadline).
 
-**Autorisation** : gestionnaires (`events:manage`), membre du département assigne ou propriétaire de la demande.
+**Autorisation** : gestionnaires (`events:manage`), membre de l'un des départements portant la fonction destinataire du type de la demande, ou propriétaire de la demande.
 
 **Body** (tous les champs sont optionnels) :
 ```json

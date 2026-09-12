@@ -41,7 +41,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
   it("media/requests : notFound() pour un events:manage valable uniquement dans une autre église", async () => {
     mockAuth(foreignSecretary);
     const { notFound } = await import("next/navigation");
-    prismaMock.department.findFirst.mockResolvedValue({ id: "dept-media", name: "Média" } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-media", name: "Média" }] as never);
 
     const MediaRequestsPage = (await import("../media/requests/page")).default;
     await MediaRequestsPage();
@@ -52,7 +52,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
   it("secretariat/requests : notFound() pour un events:manage valable uniquement dans une autre église", async () => {
     mockAuth(foreignSecretary);
     const { notFound } = await import("next/navigation");
-    prismaMock.department.findFirst.mockResolvedValue({ id: "dept-secr", name: "Secrétariat" } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-secr", name: "Secrétariat" }] as never);
 
     const SecretariatRequestsPage = (await import("../secretariat/requests/page")).default;
     await SecretariatRequestsPage();
@@ -63,7 +63,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
   it("communication/requests : notFound() pour un events:manage valable uniquement dans une autre église", async () => {
     mockAuth(foreignSecretary);
     const { notFound } = await import("next/navigation");
-    prismaMock.department.findFirst.mockResolvedValue({ id: "dept-comm", name: "Communication" } as never);
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-comm", name: "Communication" }] as never);
 
     const CommunicationRequestsPage = (await import("../communication/requests/page")).default;
     await CommunicationRequestsPage();

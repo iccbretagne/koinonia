@@ -403,15 +403,19 @@ périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requir
   - `/audio/parametres` — **Paramètres**, couverture par défaut et modèle de séquences,
     `requireAudioAccess("audio:manage", …)`
 - `requireAudioAccess(permission, churchId)` vérifie d'abord les permissions de rôle, puis
-  retombe sur `isCaptureTeamMember()` — un STAR du département de captation audio passe
+  retombe sur `isCaptureTeamMember()` — un STAR de l'un des départements de captation audio passe
   donc le contrôle **quelle que soit la permission demandée**, sans rôle dédié
 - `requireAudioUnpublishAccess(churchId)` est volontairement plus strict : `audio:manage` ou
-  `isCaptureTeamLead` (responsable/ministre du département de captation audio) uniquement — pas
+  `isCaptureTeamLead` (responsable/ministre d'un département de captation audio) uniquement — pas
   de passe-droit pour un simple STAR, dépublier engageant plus que publier
 - Le département de captation se configure comme une **fonction de département**
   (`Department.function = "CAPTATION_AUDIO"`) dans `/admin/departments/functions`
   (`events:manage`) — plus de colonne dédiée sur `AudioSettings`, et plus de page
-  `/admin/audio/settings` (jamais mise en production, supprimée sans redirection)
+  `/admin/audio/settings` (jamais mise en production, supprimée sans redirection). Depuis la
+  spec 046, **plusieurs départements** peuvent porter la même fonction : les demandes sont
+  routées par fonction (déduite du type de demande via `functionForRequestType`), pas par un
+  département résolu à la création — la file est partagée par tous les départements de la
+  fonction, et une demande suit la fonction même si un département en est retiré ensuite
 
 **Spécificités de l'espace « Communication & Production »** (spec 043, même pattern que
 l'espace Audio ci-dessus) :
