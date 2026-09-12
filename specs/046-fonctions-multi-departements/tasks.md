@@ -121,9 +121,9 @@
 - [x] **T25** [P] — `docs/api.md` (`assignedDepts`/`assignedFunction`, filtre retiré),
       `docs/database.md` (`assignedDeptId` obsolète, suppression à venir),
       `src/components/GuideContent.tsx` (page fonctions : plusieurs départements possibles).
-- [ ] **T26** — Préparer pour la PR : requête SQL de contrôle recette (demandes dont la fonction du
+- [x] **T26** — Préparer pour la PR : requête SQL de contrôle recette (demandes dont la fonction du
       département assigné ≠ fonction du type ; attendu : uniquement `assignedDeptId` null) et
-      script de backfill `assignedDeptId` en cas de retour arrière. *(corps de PR, pas de fichier)*
+      script de backfill `assignedDeptId` en cas de retour arrière. *(corps de PR #566)*
 
 ## Vérification finale
 
@@ -134,7 +134,7 @@
 - [x] `npm run build` (frontière client/serveur : `department-functions.ts` importé par des composants client)
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits (table ci-dessous)
 - [ ] Recette : configuration à 2 départements, file partagée, affichage destinataire, mobile
-- [ ] PR ouverte vers `main`
+- [x] PR ouverte vers `main` — [#566](https://github.com/iccbretagne/koinonia/pull/566)
 
 ## Couverture des critères d'acceptation
 
