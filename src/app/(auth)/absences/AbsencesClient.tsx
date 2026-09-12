@@ -8,6 +8,7 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import DataTable from "@/components/ui/DataTable";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
+import { isAbsencePast } from "@/lib/absence-lock";
 import AbsencesTimeline from "./AbsencesTimeline";
 
 type StatusFilter = "ACTIVE" | "ALL" | "CANCELLED";
@@ -91,10 +92,7 @@ function toDateInputValue(iso: string): string {
 }
 
 function isEditable(a: AbsenceRow): boolean {
-  if (a.status !== "ACTIVE") return false;
-  const endOfDay = new Date(a.endDate);
-  endOfDay.setHours(23, 59, 59, 999);
-  return endOfDay >= new Date();
+  return a.status === "ACTIVE" && !isAbsencePast(a.endDate);
 }
 
 function parseBackupSelection(selected: string[]): { type: "STAR" | "RESPONSIBLE"; memberId?: string; userChurchRoleId?: string }[] {
@@ -438,9 +436,11 @@ export default function AbsencesClient({
                       Modifier
                     </Button>
                   )}
-                  <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
-                    Annuler
-                  </Button>
+                  {isEditable(a) && (
+                    <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
+                      Annuler
+                    </Button>
+                  )}
                 </div>
               )}
             />
@@ -596,9 +596,11 @@ export default function AbsencesClient({
                               Modifier
                             </Button>
                           )}
-                          <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
-                            Annuler
-                          </Button>
+                          {isEditable(a) && (
+                            <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
+                              Annuler
+                            </Button>
+                          )}
                         </div>
                       ) : null
                   : undefined

@@ -1,5 +1,6 @@
 import type { Prisma, Absence, AbsenceBackupType } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
+import { isAbsencePast } from "@/lib/absence-lock";
 import { planningBus } from "../bus";
 
 type DbClient = Prisma.TransactionClient;
@@ -508,6 +509,7 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
     if (!absence) throw new ApiError(404, "Absence introuvable");
     if (absence.churchId !== churchId) throw new ApiError(403, "Absence hors périmètre");
     if (absence.status === "CANCELLED") throw new ApiError(409, "Absence déjà annulée");
+    if (isAbsencePast(absence.endDate)) throw new ApiError(409, "Absence déjà passée, non annulable");
 
     const conflictsBefore = await findAbsenceConflicts(
       absence.memberId,
@@ -596,7 +598,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
     if (absence.status === "CANCELLED") throw new ApiError(409, "Absence annulée, non modifiable");
 
     const now = new Date();
-    if (absence.endDate < now) throw new ApiError(409, "Absence déjà passée, non modifiable");
+    if (isAbsencePast(absence.endDate, now)) throw new ApiError(409, "Absence déjà passée, non modifiable");
 
     const newStartDate = startDate ?? absence.startDate;
     const newEndDate = endDate ?? absence.endDate;

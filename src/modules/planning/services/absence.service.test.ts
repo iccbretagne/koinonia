@@ -243,10 +243,20 @@ describe("cancelAbsence", () => {
   };
 
   beforeEach(() => {
+    // Absence du fixture en cours (verrou « absence passée », #523) : horloge fixe.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
     vi.clearAllMocks();
     planningBus.clear();
     prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
     prismaMock.absence.update.mockResolvedValue({ ...existingAbsence, status: "CANCELLED" } as never);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  beforeEach(() => {
     prismaMock.memberDepartment.findMany.mockResolvedValue([
       { department: { id: "dept-1", ministryId: "min-1" } },
     ] as never);
@@ -282,6 +292,24 @@ describe("cancelAbsence", () => {
     await expect(
       cancelAbsence({ absenceId: "abs-1", churchId: "church-1", cancelledById: "user-1" })
     ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("autorise l'annulation jusqu'à la fin du dernier jour de l'absence", async () => {
+    vi.setSystemTime(new Date("2026-08-10T23:30:00Z"));
+
+    await expect(
+      cancelAbsence({ absenceId: "abs-1", churchId: "church-1", cancelledById: "user-1" })
+    ).resolves.toBeDefined();
+  });
+
+  it("refuse (409) l'annulation d'une absence passée, sans écrire ni notifier", async () => {
+    vi.setSystemTime(new Date("2026-08-11T00:00:00Z"));
+
+    await expect(
+      cancelAbsence({ absenceId: "abs-1", churchId: "church-1", cancelledById: "user-1" })
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(prismaMock.absence.update).not.toHaveBeenCalled();
+    expect(prismaMock.notification.create).not.toHaveBeenCalled();
   });
 
   it("refuse (409) si l'absence est déjà annulée", async () => {
@@ -550,10 +578,20 @@ describe("cancelAbsence notifie les backups", () => {
   };
 
   beforeEach(() => {
+    // Absence du fixture en cours (verrou « absence passée », #523) : horloge fixe.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-05T12:00:00Z"));
     vi.clearAllMocks();
     planningBus.clear();
     prismaMock.absence.findUnique.mockResolvedValue(existingAbsence as never);
     prismaMock.absence.update.mockResolvedValue({ ...existingAbsence, status: "CANCELLED" } as never);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  beforeEach(() => {
     prismaMock.memberDepartment.findMany.mockResolvedValue([]);
     prismaMock.userDepartment.findMany.mockResolvedValue([]);
     prismaMock.userChurchRole.findMany.mockResolvedValue([]);
@@ -613,6 +651,23 @@ describe("updateAbsence", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("autorise la modification le dernier jour de l'absence (cohérent avec l'UI)", async () => {
+    vi.setSystemTime(new Date("2026-09-10T18:00:00Z"));
+
+    await expect(
+      updateAbsence({ absenceId: "abs-1", churchId: "church-1", updatedById: "user-1", reason: "Voyage" })
+    ).resolves.toBeDefined();
+  });
+
+  it("refuse (409) la modification d'une absence passée, sans écrire", async () => {
+    vi.setSystemTime(new Date("2026-09-11T00:00:00Z"));
+
+    await expect(
+      updateAbsence({ absenceId: "abs-1", churchId: "church-1", updatedById: "user-1", reason: "Voyage" })
+    ).rejects.toMatchObject({ statusCode: 409 });
+    expect(prismaMock.absence.update).not.toHaveBeenCalled();
   });
 
   it("modifie la période et notifie ABSENCE_UPDATED", async () => {
