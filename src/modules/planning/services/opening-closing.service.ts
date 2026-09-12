@@ -35,7 +35,7 @@ export async function canManageOpeningClosing(
   // module, ce qui casserait tout test important `@/modules/planning` sans mocker `@/lib/auth`.
   const { getUserDepartmentScope } = await import("@/lib/auth");
   const scope = getUserDepartmentScope(session, churchId);
-  if (!scope.scoped) return true; // events:manage — déjà unscoped pour SUPER_ADMIN/ADMIN/SECRETARY
+  if (!scope.scoped) return true; // events:manage — déjà unscoped pour SUPER_ADMIN/ADMIN/SECRETARY (rôle réel ou entrée synthétique de l'équipe Secrétariat, spec 045)
 
   if (scope.departmentIds.length > 0) {
     const securityDeptCount = await db.department.count({

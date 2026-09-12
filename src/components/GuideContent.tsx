@@ -25,7 +25,7 @@ const ROLE_LABELS: Record<RoleKey, string> = {
 const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   SUPER_ADMIN: "Accès complet à toutes les fonctionnalités et toutes les églises.",
   ADMIN: "Gestion complète d'une église : planning, membres, événements, discipolat et comptes rendus.",
-  SECRETARY: "Vision globale en lecture avec gestion des événements, discipolat et comptes rendus.",
+  SECRETARY: "Vision globale en lecture avec gestion des événements, discipolat et comptes rendus. Ces droits sont aussi accordés à toute personne membre d'un département portant la fonction Secrétariat, sans que le rôle lui soit attribué.",
   MINISTER: "Gestion du planning et des membres pour les départements de son ministère.",
   DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés. Accès au discipolat.",
   DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",

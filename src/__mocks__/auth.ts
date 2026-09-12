@@ -151,6 +151,26 @@ export function createSecretarySession(churchId = "church-1"): Session {
   });
 }
 
+/**
+ * Session d'un membre de l'équipe Secrétariat sans rôle SECRETARY réel (spec 045) :
+ * seule l'entrée synthétique `virtual: true` porte la parité de droits.
+ */
+export function createSecretariatTeamSession(churchId = "church-1"): Session {
+  return createSession({
+    churchRoles: [
+      {
+        id: `virtual-secretariat-${churchId}`,
+        churchId,
+        role: "SECRETARY",
+        ministryId: null,
+        church: { id: churchId, name: "Test Church", slug: "test-church" },
+        departments: [],
+        virtual: true,
+      },
+    ],
+  });
+}
+
 export function createAgendaQualifierSession(churchId = "church-1"): Session {
   return createSession({
     churchRoles: [

@@ -79,7 +79,7 @@ export async function canDepositAnnouncementSheet(
   }
 
   const ministryScope = getUserMinistryScope(session, churchId);
-  if (!ministryScope.scoped) return true; // events:manage — unscoped pour SUPER_ADMIN/ADMIN/SECRETARY
+  if (!ministryScope.scoped) return true; // events:manage — unscoped pour SUPER_ADMIN/ADMIN/SECRETARY (rôle réel ou entrée synthétique de l'équipe Secrétariat, spec 045)
 
   const coordinationMinistryId = await findCoordinationMinistryId(churchId, db);
   if (!coordinationMinistryId) return false;
