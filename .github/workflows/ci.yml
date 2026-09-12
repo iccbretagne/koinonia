@@ -39,6 +39,41 @@ jobs:
       # cette etape — le seuil est donc tenable et non un voeu pieux.
       - run: npm audit --omit=dev --audit-level=high
 
+  # Rejoue tout l'historique de migrations sur une base MariaDB vierge, comme `migrate deploy`
+  # en production, puis vérifie que le résultat correspond exactement à schema.prisma (#500).
+  # Le job lint-test tourne sur une DATABASE_URL factice et ne voit ni migration invalide, ni
+  # conflit d'historique, ni schéma modifié sans migration.
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: koinonia
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DATABASE_URL: "mysql://root:root@127.0.0.1:3306/koinonia"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Replay migrations on an empty database
+        run: npx prisma migrate deploy
+      # --exit-code : 2 si une différence subsiste (schéma modifié sans migration), 1 en erreur.
+      - name: Check schema.prisma matches migrations
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
   build:
     needs: lint-test
     runs-on: ubuntu-latest

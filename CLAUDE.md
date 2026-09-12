@@ -48,7 +48,7 @@ Conçue pour ICC Bretagne, adaptable à toute église structurée en ministères
 ```
 koinonia/
 ├── .github/
-│   ├── workflows/ci.yml         # CI : typecheck + lint + lint:boundaries + tests
+│   ├── workflows/ci.yml         # CI : typecheck + lint + lint:boundaries + tests + migrations
 │   └── dependabot.yml           # Mises a jour automatiques des dependances
 ├── prisma/
 │   ├── schema.prisma            # Schema BDD (domaine + NextAuth)
@@ -443,7 +443,7 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 
 ## CI/CD
 
-- **GitHub Actions** (`.github/workflows/ci.yml`) : typecheck + lint + lint:boundaries + tests sur chaque PR, validation version sur tags
+- **GitHub Actions** (`.github/workflows/ci.yml`) : typecheck + lint + lint:boundaries + tests sur chaque PR, rejeu des migrations Prisma sur MariaDB vierge (job `migrations`), validation version sur tags
 - **Dependabot** (`.github/dependabot.yml`) : mises à jour hebdomadaires npm + GitHub Actions (minor/patch uniquement, majeures ignorées)
 
 ## Documentation
