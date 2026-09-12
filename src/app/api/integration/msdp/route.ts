@@ -25,11 +25,9 @@ export async function POST(request: Request) {
 
     const req = await prisma.familyIntegrationRequest.findUnique({
       where: { id: body.requestId },
-      select: { id: true, churchId: true, salvationCall: true, msdpFollowUp: { select: { id: true } } },
+      select: { id: true, churchId: true, msdpFollowUp: { select: { id: true } } },
     });
     if (!req || req.churchId !== body.churchId) throw new ApiError(404, "Demande introuvable");
-    if (!req.salvationCall)
-      throw new ApiError(400, "Cette demande n'est pas liée à un appel au salut");
     if (req.msdpFollowUp) throw new ApiError(409, "Un suivi MSDP existe déjà pour cette demande");
 
     const followUp = await prisma.msdpFollowUp.create({

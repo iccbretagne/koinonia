@@ -1036,42 +1036,40 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
         )}
       </div>
 
-      {/* ── Card 2 : Appel au salut — MSDP ── */}
-      {req.salvationCall && (
-        <div className="bg-white rounded-xl border border-purple-100 p-4 md:p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-              <h2 className="text-sm font-semibold text-gray-700">Appel au salut — MSDP</h2>
-            </div>
-            {msdpFollowUp && (
-              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${MSDP_STATUS_COLORS[msdpFollowUp.status] ?? "bg-gray-100 text-gray-600"}`}>
-                {MSDP_STATUS_LABELS[msdpFollowUp.status] ?? msdpFollowUp.status}
-              </span>
-            )}
+      {/* ── Card 2 : Suivi MSDP — démarrable même sans appel au salut (#550) ── */}
+      <div className="bg-white rounded-xl border border-purple-100 p-4 md:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+            <h2 className="text-sm font-semibold text-gray-700">{req.salvationCall ? "Appel au salut — MSDP" : "Suivi MSDP"}</h2>
           </div>
-
-          {msdpSteps && (
-            msdpFollowUp?.status === "ABANDONED" ? (
-              <div className="flex items-center gap-2 text-sm text-red-500">
-                <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold">✕</span>
-                Abandonné{msdpFollowUp.abandonedAt ? ` le ${fmt(msdpFollowUp.abandonedAt)}` : ""}
-              </div>
-            ) : (
-              <TrackTimeline steps={msdpSteps} theme="purple" />
-            )
+          {msdpFollowUp && (
+            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${MSDP_STATUS_COLORS[msdpFollowUp.status] ?? "bg-gray-100 text-gray-600"}`}>
+              {MSDP_STATUS_LABELS[msdpFollowUp.status] ?? msdpFollowUp.status}
+            </span>
           )}
-
-          <MsdpActions
-            followUp={msdpFollowUp}
-            onFollowUpChange={setMsdpFollowUp}
-            requestId={req.id}
-            churchId={churchId}
-            canAct={isIntegrationMember || msdpFollowUp?.assignedConseillerMsdpId === currentUserId}
-            hideStatus
-          />
         </div>
-      )}
+
+        {msdpSteps && (
+          msdpFollowUp?.status === "ABANDONED" ? (
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold">✕</span>
+              Abandonné{msdpFollowUp.abandonedAt ? ` le ${fmt(msdpFollowUp.abandonedAt)}` : ""}
+            </div>
+          ) : (
+            <TrackTimeline steps={msdpSteps} theme="purple" />
+          )
+        )}
+
+        <MsdpActions
+          followUp={msdpFollowUp}
+          onFollowUpChange={setMsdpFollowUp}
+          requestId={req.id}
+          churchId={churchId}
+          canAct={isIntegrationMember || msdpFollowUp?.assignedConseillerMsdpId === currentUserId}
+          hideStatus
+        />
+      </div>
 
       {/* ── Card 3 : Étapes clés du parcours ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 space-y-3">
