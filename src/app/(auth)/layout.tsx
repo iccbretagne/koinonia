@@ -245,13 +245,16 @@ export default async function AuthLayout({
         .filter((r) => r.churchId === currentChurchId)
         .flatMap((r) => r.departments.map((d) => d.department.id))
     );
-    const integrationDept = await prisma.department.findFirst({
-      where: { function: "INTEGRATION", ministry: { churchId: currentChurchId } },
-      select: { id: true },
-    });
     const isIntegrationMember =
       isGlobalManager ||
-      (integrationDept ? userDeptIdsSet.has(integrationDept.id) : false);
+      (userDeptIdsSet.size > 0 &&
+        (await prisma.department.count({
+          where: {
+            function: { in: ["INTEGRATION", "MSDP"] },
+            ministry: { churchId: currentChurchId },
+            id: { in: [...userDeptIdsSet] },
+          },
+        })) > 0);
 
     const isBerger = await prisma.familyLeaderAssignment.count({
       where: { churchId: currentChurchId, userId: session.user.id! },

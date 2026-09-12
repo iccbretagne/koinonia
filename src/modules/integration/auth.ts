@@ -44,8 +44,8 @@ export async function requireIntegrationAccess(
   if (userPerms.has("members:manage") || userPerms.has("events:manage"))
     return { session, scope: { scoped: false } };
 
-  // Équipe Intégration → accès complet
-  if (await isIntegrationMember(session, churchId))
+  // Équipe Intégration ou MSDP → accès complet (les routes API MSDP/parcours l'ouvrent déjà)
+  if ((await isIntegrationMember(session, churchId)) || (await isMsdpMember(session, churchId)))
     return { session, scope: { scoped: false } };
 
   // Berger / co-berger → accès limité à leur(s) famille(s)
