@@ -123,6 +123,42 @@ describe("getUserDepartmentScope", () => {
     expect(scope).toEqual({ scoped: true, departmentIds: expect.arrayContaining(["dept-A", "dept-B"]) });
     if (scope.scoped) expect(scope.departmentIds).toHaveLength(2);
   });
+
+  // Bug de production (recette) : un compte STAR de son département d'appartenance
+  // (ex. MLA), promu Responsable d'un AUTRE département (ex. Secrétariat), obtenait
+  // à tort la responsabilité de SON PROPRE département d'appartenance en plus de
+  // celui qui vient de lui être assigné. Cause : `session.callback` peuple le champ
+  // `departments` de l'entrée STAR avec le département d'appartenance (fiche liée,
+  // pour l'affichage "Mon planning"), et cette fonction agrège `departments` sur
+  // TOUTES les entrées de rôle de l'église sans distinguer appartenance et
+  // responsabilité — violant ADR-0013 (les deux périmètres ne doivent jamais
+  // fusionner). Le rôle STAR ne doit jamais contribuer à la responsabilité.
+  it("STAR + DEPARTMENT_HEAD (départements différents) : le département d'appartenance du STAR ne fuite pas dans la responsabilité", () => {
+    const session = createSession({
+      churchRoles: [
+        {
+          id: "role-star",
+          churchId: "church-1",
+          role: "STAR",
+          ministryId: null,
+          church: { id: "church-1", name: "Test", slug: "test" },
+          // Peuplé par `starDeptMap` (appartenance, fiche membre liée) — pas par `user_departments`.
+          departments: [{ department: { id: "dept-MLA", name: "MLA" } }],
+        },
+        {
+          id: "role-head",
+          churchId: "church-1",
+          role: "DEPARTMENT_HEAD",
+          ministryId: null,
+          church: { id: "church-1", name: "Test", slug: "test" },
+          departments: [{ department: { id: "dept-secretariat", name: "Secrétariat" } }],
+        },
+      ],
+    });
+
+    const scope = getUserDepartmentScope(session, "church-1");
+    expect(scope).toEqual({ scoped: true, departmentIds: ["dept-secretariat"] });
+  });
 });
 
 describe("requireDepartmentAccess", () => {

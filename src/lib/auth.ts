@@ -302,10 +302,16 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
     return { scoped: false };
   }
 
+  // Le rôle STAR ne contribue jamais au périmètre de responsabilité : son champ
+  // `departments` est peuplé (callback `session`, `starDeptMap`) avec le département
+  // d'APPARTENANCE de la fiche liée — pour l'affichage (« Mon planning »), pas pour
+  // la responsabilité. Sans cette exclusion, un compte STAR de son propre département
+  // qui devient aussi Responsable d'un AUTRE département hériterait à tort de la
+  // responsabilité de son département d'appartenance (fusion interdite par ADR-0013).
   const departmentIds = Array.from(
     new Set(
       session.user.churchRoles
-        .filter((r) => r.churchId === churchId)
+        .filter((r) => r.churchId === churchId && r.role !== "STAR")
         .flatMap((r) => r.departments.map((d) => d.department.id))
     )
   );
