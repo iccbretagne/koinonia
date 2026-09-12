@@ -57,6 +57,7 @@ Aucun endpoint ajouté. Modifications de comportement :
 | `/api/requests` | POST | inchangée | Ne cherche plus de département destinataire ; `assignedDeptId` non renseigné |
 | `/api/requests` | GET | inchangée | Le filtre `assignedDeptId` (inutilisé par le front, vérifié) est retiré ; `assignedDept` remplacé par `assignedDepts` + `assignedFunction` |
 | `/api/requests/[id]` | GET | inchangée | Idem pour la demande et ses sous-demandes |
+| `/api/announcements` et `/api/announcements/[id]` | GET | inchangée | Idem pour les demandes rattachées à l'annonce (`assignedDept` inclus aujourd'hui) |
 | `/api/requests/[id]` | GET / PATCH | `members:view` + (manager \| membre de la fonction \| auteur) | « membre du département assigné » devient « membre d'un département de la fonction du type » |
 | `/api/announcements` | POST | inchangée | Vérifie qu'**au moins un** département porte Secrétariat/Communication (même message d'erreur) ; plus d'`assignedDeptId` |
 
