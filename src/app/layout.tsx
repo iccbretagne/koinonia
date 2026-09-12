@@ -23,6 +23,20 @@ export const viewport: Viewport = {
   themeColor: "#5E17EB",
 };
 
+// NEXT_PUBLIC_BUILD_VERSION n'est inliné que par deploy-staging.yml (voir footer de
+// (auth)/layout.tsx) : sa seule présence dans le bundle suffit à distinguer une recette
+// d'une production, sans variable dédiée supplémentaire.
+function StagingBanner() {
+  const buildVersion = process.env.NEXT_PUBLIC_BUILD_VERSION;
+  if (!buildVersion) return null;
+
+  return (
+    <div className="w-full bg-icc-jaune text-black text-center text-xs font-semibold py-1 px-2">
+      🧪 Environnement de recette (build {buildVersion}) — ceci n&apos;est pas la production
+    </div>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -35,6 +49,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
       </head>
       <body className={`${montserrat.variable} font-sans antialiased`}>
+        <StagingBanner />
         {children}
         <ServiceWorkerRegistration />
       </body>
