@@ -31,6 +31,10 @@ function getBucket(): string {
   return process.env.BACKUP_S3_BUCKET || "koinonia-backups";
 }
 
+// PATH fixe pour la resolution de l'executable (Sonar S4036 : ne pas heriter
+// d'un PATH potentiellement altere par l'environnement d'execution)
+const FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+
 export async function createBackup(): Promise<BackupResult> {
   const start = Date.now();
   const db = parseDatabaseUrl();
@@ -51,7 +55,7 @@ export async function createBackup(): Promise<BackupResult> {
 
     const child = execFile("mysqldump", args, {
       maxBuffer: 512 * 1024 * 1024,
-      env: { ...process.env, MYSQL_PWD: db.password },
+      env: { ...process.env, PATH: FIXED_PATH, MYSQL_PWD: db.password },
     });
 
     const chunks: Buffer[] = [];

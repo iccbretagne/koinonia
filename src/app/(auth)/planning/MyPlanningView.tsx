@@ -102,7 +102,7 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
     const keys = [
       ...plannings.map((p) => monthKeyOf(p.eventDepartment.event.date)),
       ...teamEvents.map((t) => monthKeyOf(t.startsAt)),
-    ].sort();
+    ].sort((a, b) => a.localeCompare(b));
     // Extend range to include current month
     const cur = currentMonthKey();
     return {

@@ -44,7 +44,8 @@ export default async function DuplicatesPage() {
     byEmail.set(key, b);
   }
 
-  const pairKey = (ids: string[]) => [...ids].sort().join("|");
+  // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
+  const pairKey = (ids: string[]) => [...ids].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join("|");
   const groups: DuplicateGroup[] = [];
   const seen = new Set<string>();
 

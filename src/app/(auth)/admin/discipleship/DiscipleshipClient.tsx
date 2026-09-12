@@ -834,7 +834,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { churchI
             const distBest = Math.abs(new Date(best.date).getTime() - now);
             const distEv = Math.abs(new Date(ev.date).getTime() - now);
             return distEv < distBest ? ev : best;
-          });
+          }, list[0]);
           setSelectedEventId(closest.id);
         }
       } catch (e) {
