@@ -72,7 +72,7 @@ export default function BottomNav({
       { href: "/admin/members", label: "Mes membres", matchPrefix: "/admin/members", icon: <IconMembers className="w-5 h-5" /> },
     ];
     return (
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 md:hidden print:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-200 md:hidden print:hidden">
         <div className="flex justify-around items-center h-14">
           {pastoralLinks.map((item) => {
             const isActive = pathname.startsWith(item.matchPrefix);
@@ -127,7 +127,7 @@ export default function BottomNav({
   return (
     <nav
       data-tour="bottom-nav"
-      className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 md:hidden print:hidden"
+      className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-200 md:hidden print:hidden"
     >
       <div className="flex justify-around items-center h-14">
         {links.map((item) => {
