@@ -123,7 +123,7 @@ export default function DeptFunctionsClient({ departments }: Props) {
   return (
     <div className="space-y-10">
       <div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {FUNCTIONS.map((fn) => {
             const assigned = getAssigned(fn.key);
             const isSaving = saving === fn.key;
@@ -151,9 +151,21 @@ export default function DeptFunctionsClient({ departments }: Props) {
                     const carriesOtherFunction = d.function !== null && d.function !== fn.key;
                     return {
                       value: d.id,
-                      label: carriesOtherFunction
-                        ? `${d.name} (${d.ministryName}) — déjà ${DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}`
-                        : `${d.name} (${d.ministryName})`,
+                      label: (
+                        <span className="block">
+                          <span className="block font-medium text-gray-800">
+                            {d.name}
+                          </span>
+                          <span className="block text-xs text-gray-400">
+                            {d.ministryName}
+                          </span>
+                          {carriesOtherFunction && (
+                            <span className="mt-0.5 inline-block text-xs text-amber-600">
+                              déjà {DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}
+                            </span>
+                          )}
+                        </span>
+                      ),
                       disabled: isSaving || carriesOtherFunction,
                     };
                   })}
