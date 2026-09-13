@@ -89,7 +89,10 @@ jamais — ou vient avec la mauvaise adresse.
 - [x] Le compte préparé dispose immédiatement de l'accès STAR de base, identique à ce qu'obtient
       aujourd'hui un rattachement classique.
 - [x] Tant qu'aucune connexion n'a eu lieu, le compte est visiblement distingué comme « jamais
-      connecté » dans les écrans de gestion des utilisateurs et des accès.
+      connecté » dans l'écran de gestion des utilisateurs (`/admin/users`). Décision prise en fin
+      d'implémentation (2026-09-13) : l'écran de gestion des accès (`/admin/access`), centré sur
+      les rôles plutôt que sur le statut du compte, reste hors périmètre — à étendre plus tard si
+      le besoin se confirme.
 - [x] Dès la première connexion réussie avec l'adresse exacte préparée, le marquage disparaît et
       la personne accède directement à ses écrans et données, sans étape supplémentaire.
 - [x] Une adresse déjà associée à un compte existant réutilise ce compte plutôt que d'en créer un
