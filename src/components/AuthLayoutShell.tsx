@@ -42,7 +42,6 @@ interface AuthLayoutShellProps {
   hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
-  hasJobsManage?: boolean;
   isPastoral?: boolean;
   headerColor?: string;
   userRole: RoleKey;
@@ -80,7 +79,6 @@ export default function AuthLayoutShell({
   hasRooms = false,
   hasAccounting = false,
   hasJobs = false,
-  hasJobsManage = false,
   isPastoral = false,
   headerColor = "#5E17EB",
   userRole,
@@ -184,7 +182,6 @@ export default function AuthLayoutShell({
             hasRooms={hasRooms}
             hasAccounting={hasAccounting}
             hasJobs={hasJobs}
-            hasJobsManage={hasJobsManage}
             jobsUnseenCount={jobsUnseenCount}
             isPastoral={isPastoral}
             onClose={closeSidebar}
@@ -212,7 +209,6 @@ export default function AuthLayoutShell({
           hasRooms={hasRooms}
           hasAccounting={hasAccounting}
           hasJobs={hasJobs}
-          hasJobsManage={hasJobsManage}
           jobsUnseenCount={jobsUnseenCount}
           isPastoral={isPastoral}
           open={sidebarOpen}

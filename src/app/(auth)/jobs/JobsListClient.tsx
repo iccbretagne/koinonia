@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { buildWhatsAppRecap } from "./whatsapp-recap";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
+type JobStatus = "PUBLISHED" | "ARCHIVED";
 
 interface Job {
   id: string;
@@ -24,6 +26,12 @@ interface Job {
   author: { id: string; name: string | null; displayName: string | null; image: string | null };
 }
 
+const STATUS_FILTER_LABELS: Record<"ALL" | JobStatus, string> = {
+  ALL:       "Tout",
+  PUBLISHED: "Publiées",
+  ARCHIVED:  "Retirées",
+};
+
 const TYPE_LABELS: Record<JobType, string> = {
   EMPLOI:     "Emploi",
   STAGE:      "Stage",
@@ -40,16 +48,23 @@ export default function JobsListClient({
   jobs,
   currentUserId,
   nowMs,
+  canManage = false,
 }: {
   jobs: Job[];
   currentUserId: string;
   nowMs: number;
+  canManage?: boolean;
 }) {
   const [filter, setFilter] = useState<JobType | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | JobStatus>("PUBLISHED");
   const [copied, setCopied] = useState(false);
   const [fallbackText, setFallbackText] = useState<string | null>(null);
 
-  const filtered = filter === "ALL" ? jobs : jobs.filter((j) => j.type === filter);
+  const filtered = jobs.filter(
+    (j) =>
+      (filter === "ALL" || j.type === filter) &&
+      (!canManage || statusFilter === "ALL" || j.status === statusFilter)
+  );
 
   async function copyRecap() {
     const text = buildWhatsAppRecap(filtered, filter, window.location.origin);
@@ -113,6 +128,24 @@ export default function JobsListClient({
         )}
       </div>
 
+      {canManage && (
+        <div className="flex gap-1 mb-4 -mt-2">
+          {(["ALL", "PUBLISHED", "ARCHIVED"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1 text-xs font-semibold rounded-full border-2 transition-colors ${
+                statusFilter === s
+                  ? "border-icc-violet text-icc-violet bg-icc-violet/5"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              {STATUS_FILTER_LABELS[s]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <Modal
         open={!!fallbackText}
         onClose={() => setFallbackText(null)}
@@ -148,7 +181,13 @@ export default function JobsListClient({
       ) : (
         <div className="space-y-4">
           {filtered.map((job) => (
-            <JobCard key={job.id} job={job} isOwn={job.author.id === currentUserId} nowMs={nowMs} />
+            <JobCard
+              key={job.id}
+              job={job}
+              isOwn={job.author.id === currentUserId}
+              nowMs={nowMs}
+              canManage={canManage}
+            />
           ))}
         </div>
       )}
@@ -156,17 +195,48 @@ export default function JobsListClient({
   );
 }
 
-function JobCard({ job, isOwn, nowMs }: { job: Job; isOwn: boolean; nowMs: number }) {
+function JobCard({
+  job,
+  isOwn,
+  nowMs,
+  canManage,
+}: {
+  job: Job;
+  isOwn: boolean;
+  nowMs: number;
+  canManage: boolean;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const deadlineDate = job.deadline ? new Date(job.deadline) : null;
   const createdDate  = new Date(job.createdAt);
+  const isArchived = job.status === "ARCHIVED";
   const isExpiringSoon = deadlineDate
     ? deadlineDate.getTime() - nowMs < 7 * 24 * 60 * 60 * 1000
     : false;
 
+  async function toggleStatus(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      const newStatus = isArchived ? "PUBLISHED" : "ARCHIVED";
+      const res = await fetch(`/api/jobs/${job.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="block bg-white rounded-lg border-2 border-gray-100 p-5 hover:border-icc-violet/30 hover:shadow-sm transition-all"
+      className={`block bg-white rounded-lg border-2 p-5 hover:border-icc-violet/30 hover:shadow-sm transition-all ${isArchived ? "border-gray-100 opacity-60" : "border-gray-100"}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -176,6 +246,9 @@ function JobCard({ job, isOwn, nowMs }: { job: Job; isOwn: boolean; nowMs: numbe
             </span>
             {isOwn && (
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Ma publication</span>
+            )}
+            {canManage && isArchived && (
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Retirée</span>
             )}
           </div>
           <h3 className="font-semibold text-gray-900 text-base leading-snug">{job.title}</h3>
@@ -196,6 +269,17 @@ function JobCard({ job, isOwn, nowMs }: { job: Job; isOwn: boolean; nowMs: numbe
         </div>
       </div>
       <p className="text-sm text-gray-500 mt-2 line-clamp-2">{job.description}</p>
+      {canManage && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={toggleStatus}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+          </button>
+        </div>
+      )}
     </Link>
   );
 }

@@ -28,7 +28,6 @@ interface MobileNavSheetProps {
   hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
-  hasJobsManage?: boolean;
   jobsUnseenCount?: number;
   isPastoral?: boolean;
   open: boolean;
@@ -270,7 +269,6 @@ export default function MobileNavSheet({
   showStarEvents = false,
   hasAccounting = false,
   hasJobs = false,
-  hasJobsManage = false,
   jobsUnseenCount = 0,
   isPastoral = false,
   open,
@@ -664,9 +662,6 @@ export default function MobileNavSheet({
             <>
               {hasRooms && <SubDivider />}
               <SubRow href="/jobs" label="Offres" isActive={pathname === "/jobs"} onClose={onClose} badge={<Badge count={jobsUnseenCount} />} />
-              {hasJobsManage && (
-                <SubRow href="/admin/jobs" label="Modération offres" isActive={pathname.startsWith("/admin/jobs")} onClose={onClose} />
-              )}
             </>
           )}
         </div>
