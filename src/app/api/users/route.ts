@@ -19,11 +19,16 @@ export async function GET(request: Request) {
             church: { select: { id: true, name: true } },
           },
         },
+        _count: { select: { accounts: true } },
       },
       orderBy: { name: "asc" },
     });
 
-    return successResponse(users);
+    // Un User sans aucune ligne Account n'a jamais terminé de connexion Google — l'adaptateur
+    // NextAuth ne la crée qu'au premier signIn réussi (spec 047).
+    return successResponse(
+      users.map(({ _count, ...u }) => ({ ...u, neverConnected: _count.accounts === 0 }))
+    );
   } catch (error) {
     return errorResponse(error);
   }

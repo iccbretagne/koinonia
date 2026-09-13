@@ -188,3 +188,105 @@ describe("POST /api/member-user-links", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("POST /api/member-user-links — newMember (spec 047, pré-provisionnement)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession("church-1"));
+    mockRequireRateLimit.mockReturnValue(undefined);
+  });
+
+  const newMember = {
+    firstName: "Alice",
+    lastName: "Martin",
+    departmentId: "dept-1",
+  };
+
+  it("crée une nouvelle fiche STAR et le compte associé dans le même appel", async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce(null); // email inconnu
+    prismaMock.user.create.mockResolvedValue({ id: "user-new", email: "alice@x.com" } as never);
+    prismaMock.department.findUnique.mockResolvedValue({
+      id: "dept-1",
+      ministry: { churchId: "church-1" },
+    } as never);
+    prismaMock.member.create.mockResolvedValue({
+      id: "member-new",
+      firstName: "Alice",
+      lastName: "Martin",
+    } as never);
+    prismaMock.memberUserLink.create.mockResolvedValue({} as never);
+    prismaMock.user.findUnique.mockResolvedValueOnce(null); // displayName lookup dans admitToChurch
+    prismaMock.user.update.mockResolvedValue({} as never);
+    prismaMock.userChurchRole.findFirst.mockResolvedValue(null);
+    prismaMock.userChurchRole.create.mockResolvedValue({} as never);
+    prismaMock.memberUserLink.findUniqueOrThrow.mockResolvedValue({
+      id: "link-1",
+      memberId: "member-new",
+    } as never);
+    setupTransaction();
+
+    const request = new Request("http://localhost/api/member-user-links", {
+      method: "POST",
+      body: JSON.stringify({
+        newMember,
+        email: "alice@x.com",
+        confirmCreate: true,
+        churchId: "church-1",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.member.create).toHaveBeenCalled();
+    expect(prismaMock.userChurchRole.create).toHaveBeenCalledWith({
+      data: { userId: "user-new", churchId: "church-1", role: "STAR" },
+    });
+  });
+
+  it("refuse si le département de la nouvelle fiche n'appartient pas à l'église", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue({ id: "user-new", email: "alice@x.com" } as never);
+    prismaMock.department.findUnique.mockResolvedValue({
+      id: "dept-1",
+      ministry: { churchId: "autre-eglise" },
+    } as never);
+    setupTransaction();
+
+    const request = new Request("http://localhost/api/member-user-links", {
+      method: "POST",
+      body: JSON.stringify({
+        newMember,
+        email: "alice@x.com",
+        confirmCreate: true,
+        churchId: "church-1",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("refuse si memberId et newMember sont fournis ensemble", async () => {
+    const request = new Request("http://localhost/api/member-user-links", {
+      method: "POST",
+      body: JSON.stringify({
+        memberId: "member-1",
+        newMember,
+        email: "alice@x.com",
+        confirmCreate: true,
+        churchId: "church-1",
+      }),
+    });
+    const res = await POST(request);
+    expect(res.status).toBe(400);
+  });
+
+  it("refuse si ni memberId ni newMember ne sont fournis", async () => {
+    const request = new Request("http://localhost/api/member-user-links", {
+      method: "POST",
+      body: JSON.stringify({ email: "alice@x.com", confirmCreate: true, churchId: "church-1" }),
+    });
+    const res = await POST(request);
+    expect(res.status).toBe(400);
+  });
+});

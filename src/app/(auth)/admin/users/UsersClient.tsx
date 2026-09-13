@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
 import Modal from "@/components/ui/Modal";
+import { buttonClasses } from "@/components/ui/button-classes";
 
 const ROLES = [
   { value: "SUPER_ADMIN", label: "Super Admin" },
@@ -38,10 +40,12 @@ interface UserItem {
   name: string | null;
   displayName: string | null;
   image: string | null;
+  neverConnected: boolean;
   churchRoles: UserRole[];
 }
 
 interface Props {
+  churchId: string;
   initialUsers: UserItem[];
   ministries: { id: string; name: string; churchId: string }[];
   departments: { id: string; name: string; churchId: string }[];
@@ -49,6 +53,7 @@ interface Props {
 }
 
 export default function UsersClient({
+  churchId,
   initialUsers,
   ministries,
   departments,
@@ -221,6 +226,28 @@ export default function UsersClient({
     }
   }
 
+  async function handleDeleteUser(userId: string, email: string) {
+    if (!confirm(`Supprimer le compte préparé pour ${email} ? Cette action est irréversible.`)) return;
+
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Erreur");
+        return;
+      }
+
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch {
+      alert("Erreur");
+    }
+  }
+
   function formatRoleBadge(r: UserRole) {
     const roleLabel = ROLE_LABELS[r.role] || r.role;
     let label = `${roleLabel} - ${r.church.name}`;
@@ -262,6 +289,13 @@ export default function UsersClient({
   return (
     <>
       <div className="mb-4 space-y-3">
+        {canManageRoles && (
+          <div className="flex justify-end">
+            <Link href="/admin/users/new" className={buttonClasses("primary", "sm")}>
+              + Créer un utilisateur
+            </Link>
+          </div>
+        )}
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -319,6 +353,11 @@ export default function UsersClient({
                     {user.displayName && user.name && user.displayName !== user.name && (
                       <span className="text-sm text-gray-400 ml-1">({user.name})</span>
                     )}
+                    {user.neverConnected && (
+                      <span className="ml-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700">
+                        Jamais connecté
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm text-gray-500 truncate">{user.email}</p>
                 </div>
@@ -327,6 +366,11 @@ export default function UsersClient({
                 {canManageRoles && (
                   <Button variant="secondary" onClick={() => openEditDisplayName(user)}>
                     Nom d&apos;affichage
+                  </Button>
+                )}
+                {canManageRoles && user.neverConnected && (
+                  <Button variant="danger" onClick={() => handleDeleteUser(user.id, user.email)}>
+                    Supprimer
                   </Button>
                 )}
               </div>
