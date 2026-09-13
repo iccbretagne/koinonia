@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { successResponse, errorResponse } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { deleteNeverConnectedUser } from "@/modules/core";
 import { z } from "zod";
 
 const deleteSchema = z.object({ churchId: z.string() });
@@ -20,28 +20,7 @@ export async function DELETE(
     const { churchId } = deleteSchema.parse(body);
     const session = await requireChurchPermission("members:manage", churchId);
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        accounts: { select: { id: true } },
-        churchRoles: { select: { churchId: true } },
-      },
-    });
-    if (!user) throw new ApiError(404, "Utilisateur introuvable");
-
-    if (user.accounts.length > 0) {
-      throw new ApiError(409, "Ce compte a déjà été activé, il ne peut pas être supprimé");
-    }
-    if (user.churchRoles.some((r) => r.churchId !== churchId)) {
-      throw new ApiError(409, "Cet utilisateur a des rôles dans une autre église");
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.userDepartment.deleteMany({ where: { userChurchRole: { userId } } });
-      await tx.userChurchRole.deleteMany({ where: { userId } });
-      await tx.memberUserLink.deleteMany({ where: { userId } });
-      await tx.user.delete({ where: { id: userId } });
-    });
+    const user = await deleteNeverConnectedUser(userId, churchId);
 
     await logAudit({
       userId: session.user.id,
