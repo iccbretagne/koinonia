@@ -3,7 +3,7 @@
  * Commentaires de révision sur un fichier média.
  */
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess } from "@/lib/auth";
+import { requireMediaAccess, type MediaDomain } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
 
@@ -14,16 +14,18 @@ const postSchema = z.object({
   parentId: z.string().optional(),
 });
 
-async function resolveFileChurchId(fileId: string) {
+async function resolveFileChurchId(fileId: string): Promise<{ churchId: string; domain: MediaDomain }> {
   const file = await prisma.mediaFile.findUnique({
     where: { id: fileId },
-    include: {
+    select: {
+      mediaEventId: true,
       mediaEvent: { select: { churchId: true } },
       mediaProject: { select: { churchId: true } },
     },
   });
   if (!file) throw new ApiError(404, "Fichier introuvable");
-  return file.mediaEvent?.churchId ?? file.mediaProject?.churchId ?? (() => { throw new ApiError(500, "Fichier sans conteneur"); })();
+  const churchId = file.mediaEvent?.churchId ?? file.mediaProject?.churchId ?? (() => { throw new ApiError(500, "Fichier sans conteneur"); })();
+  return { churchId, domain: file.mediaEventId ? "PHOTOS" : "VISUELS" };
 }
 
 export async function GET(
@@ -32,8 +34,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveFileChurchId(id);
-    await requireMediaAccess(churchId);
+    const { churchId, domain } = await resolveFileChurchId(id);
+    await requireMediaAccess(churchId, domain);
 
     const comments = await prisma.mediaComment.findMany({
       where: { mediaFileId: id, parentId: null },
@@ -61,8 +63,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const churchId = await resolveFileChurchId(id);
-    const session = await requireMediaAccess(churchId);
+    const { churchId, domain } = await resolveFileChurchId(id);
+    const session = await requireMediaAccess(churchId, domain);
 
     const body = await request.json();
     const data = postSchema.parse(body);

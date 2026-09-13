@@ -27,15 +27,25 @@ export default function CollectionBuilder({
   churchId,
   events,
   projects,
+  initialEventIds,
+  initialProjectIds,
+  lockedScope,
+  onCreated,
 }: {
   churchId: string;
   events: EventItem[];
   projects: ProjectItem[];
+  /** Présélection (spec 049) : depuis « Partager une sélection » sur Photos/Visuels. */
+  initialEventIds?: string[];
+  initialProjectIds?: string[];
+  /** Verrouille le contenu à un seul type — masque le sélecteur (partage depuis une seule activité). */
+  lockedScope?: Scope;
+  onCreated?: (result: { url: string; label: string | null }) => void;
 }) {
-  const [scope, setScope]           = useState<Scope>("both");
+  const [scope, setScope]           = useState<Scope>(lockedScope ?? "both");
   const [includeAllPhotos, setIncludeAllPhotos] = useState(false);
-  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
-  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
+  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set(initialEventIds));
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set(initialProjectIds));
   const [label, setLabel]           = useState("");
   const [expiresInDays, setExpiresInDays] = useState<number | "">(30);
   const [dateFrom, setDateFrom]     = useState("");
@@ -98,6 +108,7 @@ export default function CollectionBuilder({
 
   const canCreate =
     !creating &&
+    label.trim().length > 0 &&
     ((showEvents   && selectedEvents.size > 0)   ||
      (showProjects && selectedProjects.size > 0));
 
@@ -112,7 +123,7 @@ export default function CollectionBuilder({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           churchId,
-          label: label.trim() || undefined,
+          label: label.trim(),
           scope,
           eventIds:   showEvents   ? Array.from(selectedEvents)   : [],
           projectIds: showProjects ? Array.from(selectedProjects) : [],
@@ -125,7 +136,9 @@ export default function CollectionBuilder({
       if (!res.ok) {
         setError(json.error ?? "Erreur lors de la création");
       } else {
-        setResult({ url: json.url, label: json.label ?? null });
+        const created = { url: json.url, label: json.label ?? null };
+        setResult(created);
+        onCreated?.(created);
       }
     } finally {
       setCreating(false);
@@ -144,21 +157,23 @@ export default function CollectionBuilder({
       {/* ── Scope ─────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-3">
         <h2 className="text-sm font-semibold text-gray-900">Contenu à inclure</h2>
-        <div className="flex gap-2 flex-wrap">
-          {(["both", "photos", "files"] as Scope[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => setScope(s)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                scope === s
-                  ? "bg-icc-violet text-white border-icc-violet"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-icc-violet/40 hover:bg-icc-violet/5"
-              }`}
-            >
-              {s === "both" ? "Photos + Visuels" : s === "photos" ? "Photos uniquement" : "Visuels uniquement"}
-            </button>
-          ))}
-        </div>
+        {!lockedScope && (
+          <div className="flex gap-2 flex-wrap">
+            {(["both", "photos", "files"] as Scope[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => setScope(s)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  scope === s
+                    ? "bg-icc-violet text-white border-icc-violet"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-icc-violet/40 hover:bg-icc-violet/5"
+                }`}
+              >
+                {s === "both" ? "Photos + Visuels" : s === "photos" ? "Photos uniquement" : "Visuels uniquement"}
+              </button>
+            ))}
+          </div>
+        )}
 
         {showEvents && (
           <div className="pt-2 border-t border-gray-100 space-y-2">
@@ -321,9 +336,10 @@ export default function CollectionBuilder({
         <h2 className="text-sm font-semibold text-gray-900">Options du lien</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nom du lien (optionnel)</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nom du lien</label>
             <input
               type="text"
+              required
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Ex : Mariage Dupont - Jan 2026"

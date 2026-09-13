@@ -43,7 +43,7 @@ describe("Cross-tenant : événements 'requests' d'un autre secrétaire ne donne
     const { notFound } = await import("next/navigation");
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-media", name: "Média" }] as never);
 
-    const MediaRequestsPage = (await import("../media/requests/page")).default;
+    const MediaRequestsPage = (await import("../media/(visuels)/requests/page")).default;
     await MediaRequestsPage();
 
     expect(notFound).toHaveBeenCalled();

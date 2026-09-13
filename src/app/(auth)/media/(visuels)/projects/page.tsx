@@ -1,4 +1,4 @@
-import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaAccess, isMediaTeamMember, isCommunicationMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -9,7 +9,7 @@ export default async function MediaProjectsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireMediaAccess(churchId);
+  await requireMediaAccess(churchId, "VISUELS");
 
   const [projects, fileStatusRows] = await Promise.all([
     prisma.mediaProject.findMany({
@@ -49,21 +49,22 @@ export default async function MediaProjectsPage() {
       .filter((r) => r.churchId === churchId)
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
-  const isProductionMember = await isProductionMediaMember(session, churchId);
+  const isProductionMember = await isMediaTeamMember(session, churchId, "VISUELS");
   const isCommMember = await isCommunicationMember(session, churchId);
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
+  const canShare = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember || isCommMember;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Projets média</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Visuels</h1>
         {canUpload && (
           <Link href="/media/projects/new">
-            <Button>+ Nouveau projet</Button>
+            <Button>+ Nouveau projet visuel</Button>
           </Link>
         )}
       </div>
-      <MediaProjectsList projects={projectsWithCounts} canUpload={canUpload} />
+      <MediaProjectsList projects={projectsWithCounts} canUpload={canUpload} churchId={churchId} canShare={canShare} />
     </div>
   );
 }

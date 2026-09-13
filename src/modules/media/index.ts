@@ -26,4 +26,7 @@ export {
   downloadFile,
 } from "@/modules/storage";
 
+export { listActiveShares, countActiveShares, revokeShare } from "./services/shares";
+export type { ShareScope, ShareSource, ActiveShare } from "./services/shares";
+
 export { mediaModule } from "./manifest";

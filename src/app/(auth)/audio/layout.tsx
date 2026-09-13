@@ -1,12 +1,9 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import SpaceTabs from "@/components/SpaceTabs";
-import { getAccessibleAudioTabs } from "./tabs";
+import SpaceBreadcrumb from "@/components/SpaceBreadcrumb";
 
 /**
- * Espace « Audio » à onglets à droits distincts (spec 021) — un seul lien de navigation,
- * les onglets réellement affichés dépendent des permissions de l'utilisateur pour l'église
- * courante. Le calcul se fait ici une fois ; chaque page sous-jacente vérifie en plus ses
- * propres droits (l'onglet masqué ne dispense pas du contrôle serveur, cf. plan.md).
+ * Espace « Audio » (spec 049) : l'accueil (`/audio`) affiche les cartes d'activité, ce layout
+ * ne porte plus qu'un fil d'Ariane de retour — chaque page vérifie ses propres droits.
  */
 export default async function AudioLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAuth();
@@ -14,11 +11,9 @@ export default async function AudioLayout({ children }: { children: React.ReactN
 
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
 
-  const tabs = await getAccessibleAudioTabs(churchId);
-
   return (
     <div>
-      {tabs.length > 1 && <SpaceTabs tabs={tabs} ariaLabel="Onglets Audio" />}
+      <SpaceBreadcrumb homeHref="/audio" label="Audio" />
       {children}
     </div>
   );

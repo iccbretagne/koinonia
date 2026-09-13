@@ -14,7 +14,7 @@ const mockRequireChurchPermission = vi.fn();
 const mockRequireMediaAccess = vi.fn();
 const mockRequireMediaUploadAccess = vi.fn();
 const mockRequireMediaManageAccess = vi.fn();
-const mockIsProductionMediaMember = vi.fn().mockResolvedValue(false);
+const mockIsMediaTeamMember = vi.fn().mockResolvedValue(false);
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 
 vi.mock("@/lib/auth", () => ({
@@ -22,7 +22,7 @@ vi.mock("@/lib/auth", () => ({
   requireMediaAccess: (...args: unknown[]) => mockRequireMediaAccess(...args),
   requireMediaUploadAccess: (...args: unknown[]) => mockRequireMediaUploadAccess(...args),
   requireMediaManageAccess: (...args: unknown[]) => mockRequireMediaManageAccess(...args),
-  isProductionMediaMember: (...args: unknown[]) => mockIsProductionMediaMember(...args),
+  isMediaTeamMember: (...args: unknown[]) => mockIsMediaTeamMember(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
 
@@ -49,7 +49,7 @@ const makeParams = (id: string) => Promise.resolve({ id });
 describe("GET /api/media-events/[id]/share — P0-1 token visibility", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsProductionMediaMember.mockResolvedValue(false);
+    mockIsMediaTeamMember.mockResolvedValue(false);
     prismaMock.mediaShareToken.findMany.mockResolvedValue([
       {
         id: "tok-1",
@@ -117,7 +117,7 @@ describe("GET /api/media-events/[id]/share — P0-1 token visibility", () => {
 describe("POST /api/media-events/[id]/share — P0-1 token creation RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsProductionMediaMember.mockResolvedValue(false);
+    mockIsMediaTeamMember.mockResolvedValue(false);
   });
 
   it("refuse la création d'un token VALIDATOR sans media:manage ni PRODUCTION_MEDIA", async () => {
@@ -165,7 +165,7 @@ describe("POST /api/media-events/[id]/share — P0-1 token creation RBAC", () =>
 describe("DELETE /api/media-events/[id]/share — P0-1 token deletion RBAC", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsProductionMediaMember.mockResolvedValue(false);
+    mockIsMediaTeamMember.mockResolvedValue(false);
   });
 
   it("refuse la suppression d'un token VALIDATOR sans media:manage ni PRODUCTION_MEDIA", async () => {

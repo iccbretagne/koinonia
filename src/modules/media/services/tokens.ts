@@ -29,6 +29,7 @@ export function collectionPhotoWhere(config: CollectionConfig): Prisma.MediaPhot
 }
 
 interface CreateTokenOptions {
+  churchId: string;
   type: MediaTokenType;
   label?: string;
   expiresInDays?: number;
@@ -498,7 +499,7 @@ export async function resolveValidatorData(
 }
 
 export async function createMediaShareToken(options: CreateTokenWithTarget & { baseUrl?: string }) {
-  const { type, label, expiresInDays, onlyApproved, collectionConfig, mediaEventId, mediaProjectId, baseUrl: callerBaseUrl } = options;
+  const { churchId, type, label, expiresInDays, onlyApproved, collectionConfig, mediaEventId, mediaProjectId, baseUrl: callerBaseUrl } = options;
 
   const token = generateToken();
   const expiresAt = expiresInDays
@@ -514,7 +515,7 @@ export async function createMediaShareToken(options: CreateTokenWithTarget & { b
   // Prisma requires exactly one of mediaEventId / mediaProjectId / neither (for COLLECTION)
   // We must build the data object with a concrete shape to satisfy the union type.
   const configValue = config as unknown as Prisma.InputJsonValue;
-  const baseData = { token, type, label, expiresAt, ...(config ? { config: configValue } : {}) };
+  const baseData = { token, type, label, expiresAt, churchId, ...(config ? { config: configValue } : {}) };
   const shareToken = await prisma.mediaShareToken.create({
     data: mediaEventId
       ? { ...baseData, mediaEventId }

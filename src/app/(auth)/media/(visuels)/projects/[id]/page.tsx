@@ -1,4 +1,4 @@
-import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, resolveChurchId, auth } from "@/lib/auth";
+import { requireMediaAccess, isMediaTeamMember, isCommunicationMember, resolveChurchId, auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import { rolePermissions } from "@/lib/registry";
@@ -21,7 +21,7 @@ export default async function MediaProjectDetailPage({
     notFound();
   }
 
-  await requireMediaAccess(churchId!);
+  await requireMediaAccess(churchId!, "VISUELS");
 
   const project = await prisma.mediaProject.findUnique({
     where: { id },
@@ -65,7 +65,7 @@ export default async function MediaProjectDetailPage({
       .filter((r) => r.churchId === churchId!)
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
-  const isProductionMember = await isProductionMediaMember(session, churchId!);
+  const isProductionMember = await isMediaTeamMember(session, churchId!, "VISUELS");
   const isCommMember = await isCommunicationMember(session, churchId!);
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
   const canReview = session.user.isSuperAdmin || churchPerms.has("media:review") || isProductionMember;

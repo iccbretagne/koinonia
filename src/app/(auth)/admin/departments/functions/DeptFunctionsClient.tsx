@@ -31,8 +31,14 @@ const FUNCTIONS = [
   {
     key: "PRODUCTION_MEDIA" as const,
     label: "Production Média",
-    description: "Crée les visuels pour toutes les demandes.",
+    description: "Crée les visuels pour toutes les demandes et traite les demandes de visuels.",
     icon: "🎨",
+  },
+  {
+    key: "PHOTOS" as const,
+    label: "Photos",
+    description: "Dépose, valide et partage les photos d'événements. Si aucun département ne porte cette fonction, Production Média en garde la gestion (spec 049).",
+    icon: "📸",
   },
   {
     key: "PROTOCOLE" as const,

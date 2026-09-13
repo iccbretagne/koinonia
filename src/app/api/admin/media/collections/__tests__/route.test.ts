@@ -10,8 +10,10 @@ import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
 
 const mockRequireMediaCollectionAccess = vi.fn();
+const mockGetMediaShareScope = vi.fn();
 vi.mock("@/lib/auth", () => ({
   requireMediaCollectionAccess: (...args: unknown[]) => mockRequireMediaCollectionAccess(...args),
+  getMediaShareScope: (...args: unknown[]) => mockGetMediaShareScope(...args),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -39,7 +41,9 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireMediaCollectionAccess.mockResolvedValue(createAdminSession());
+    mockGetMediaShareScope.mockResolvedValue({ photos: true, visuels: true });
     prismaMock.mediaEvent.findMany.mockResolvedValue([{ id: "evt-1" }] as never);
+    prismaMock.mediaProject.findMany.mockResolvedValue([{ id: "proj-1" }] as never);
     mockCreateMediaShareToken.mockResolvedValue({
       id: "token-1",
       url: "http://localhost/media/c/abc",
@@ -51,6 +55,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -73,6 +78,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -98,6 +104,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -106,5 +113,54 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
 
     expect(res.status).toBe(201);
     expect(mockRequireMediaCollectionAccess).toHaveBeenCalledWith("church-1");
+  });
+});
+
+// Spec 049 : le partage est limité au périmètre de la personne — une équipe Photos ne peut pas
+// inclure des visuels dans son lien, et réciproquement.
+describe("POST /api/admin/media/collections — périmètre de partage (spec 049)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireMediaCollectionAccess.mockResolvedValue(createAdminSession());
+    prismaMock.mediaEvent.findMany.mockResolvedValue([{ id: "evt-1" }] as never);
+    prismaMock.mediaProject.findMany.mockResolvedValue([{ id: "proj-1" }] as never);
+    mockCreateMediaShareToken.mockResolvedValue({
+      id: "token-1",
+      url: "http://localhost/media/c/abc",
+      label: null,
+    });
+  });
+
+  it("403 si eventIds fourni sans périmètre photos", async () => {
+    mockGetMediaShareScope.mockResolvedValue({ photos: false, visuels: true });
+
+    const res = await POST(
+      makeRequest({ churchId: "church-1", label: "Mariage Dupont", scope: "photos", eventIds: ["evt-1"], projectIds: [] })
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockCreateMediaShareToken).not.toHaveBeenCalled();
+  });
+
+  it("403 si projectIds fourni sans périmètre visuels", async () => {
+    mockGetMediaShareScope.mockResolvedValue({ photos: true, visuels: false });
+
+    const res = await POST(
+      makeRequest({ churchId: "church-1", label: "Campagne Noël", scope: "files", eventIds: [], projectIds: ["proj-1"] })
+    );
+
+    expect(res.status).toBe(403);
+    expect(mockCreateMediaShareToken).not.toHaveBeenCalled();
+  });
+
+  it("201 si le périmètre couvre les sources demandées (both)", async () => {
+    mockGetMediaShareScope.mockResolvedValue({ photos: true, visuels: true });
+
+    const res = await POST(
+      makeRequest({ churchId: "church-1", label: "Bilan trimestre", scope: "both", eventIds: ["evt-1"], projectIds: ["proj-1"] })
+    );
+
+    expect(res.status).toBe(201);
+    expect(mockCreateMediaShareToken).toHaveBeenCalledOnce();
   });
 });

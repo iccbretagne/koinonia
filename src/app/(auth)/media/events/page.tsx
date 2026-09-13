@@ -1,4 +1,4 @@
-import { requireMediaAccess, isProductionMediaMember, isCommunicationMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { requireMediaAccess, isMediaTeamMember, isCommunicationMember, getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -9,7 +9,7 @@ export default async function MediaEventsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireMediaAccess(churchId);
+  await requireMediaAccess(churchId, "PHOTOS");
 
   const [events, photoStatusRows] = await Promise.all([
     prisma.mediaEvent.findMany({
@@ -51,21 +51,22 @@ export default async function MediaEventsPage() {
       .filter((r) => r.churchId === churchId)
       .flatMap((r) => rolePermissions[r.role] ?? [])
   );
-  const isProductionMember = await isProductionMediaMember(session, churchId);
+  const isProductionMember = await isMediaTeamMember(session, churchId, "PHOTOS");
   const isCommMember = await isCommunicationMember(session, churchId);
   const canUpload = session.user.isSuperAdmin || churchPerms.has("media:upload") || isProductionMember || isCommMember;
+  const canShare = session.user.isSuperAdmin || churchPerms.has("media:manage") || isProductionMember || isCommMember;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Événements médias</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Photos</h1>
         {canUpload && (
           <Link href="/media/events/new">
-            <Button>+ Nouvel événement</Button>
+            <Button>+ Nouvel événement photo</Button>
           </Link>
         )}
       </div>
-      <MediaEventsList events={eventsWithCounts} canUpload={canUpload} />
+      <MediaEventsList events={eventsWithCounts} canUpload={canUpload} churchId={churchId} canShare={canShare} />
     </div>
   );
 }

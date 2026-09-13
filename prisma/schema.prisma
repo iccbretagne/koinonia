@@ -77,6 +77,7 @@ model Church {
   mediaEvents               MediaEvent[]
   mediaProjects             MediaProject[]
   mediaSettings             MediaSettings?
+  mediaShareTokens          MediaShareToken[]
   // Module agenda
   pastoralProfiles          PastoralProfile[]          @relation("ChurchPastoralProfiles")
   appointmentRequests       AppointmentRequest[]
@@ -1012,6 +1013,12 @@ model MediaShareToken {
   lastUsedAt DateTime?
   usageCount Int       @default(0)
 
+  // Église propriétaire — permet de lister/compter les partages actifs d'une église (spec 049),
+  // notamment les collections multi-sources qui n'ont sinon aucune relation directe. Nullable :
+  // une collection dont toutes les sources ont été supprimées peut ne pas être rattachable.
+  churchId String?
+  church   Church? @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
   // Relations (mutuellement exclusives)
   mediaEventId   String?
   mediaEvent     MediaEvent?   @relation(fields: [mediaEventId], references: [id], onDelete: Cascade)
@@ -1021,6 +1028,7 @@ model MediaShareToken {
   createdAt DateTime @default(now())
 
   @@index([token])
+  @@index([churchId])
   @@index([mediaEventId])
   @@index([mediaProjectId])
   @@map("media_share_tokens")

@@ -25,7 +25,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaAccess(churchId);
+    await requireMediaAccess(churchId, "PHOTOS");
 
     const photos = await prisma.mediaPhoto.findMany({
       where: { mediaEventId: id },
@@ -53,7 +53,7 @@ export async function POST(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaUploadAccess(churchId);
+    await requireMediaUploadAccess(churchId, "PHOTOS");
 
     let formData: FormData;
     try {
@@ -126,7 +126,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaReviewAccess(churchId);
+    await requireMediaReviewAccess(churchId, "PHOTOS");
 
     const body = await request.json();
     const data = patchSchema.parse(body);
@@ -153,7 +153,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaUploadAccess(churchId);
+    await requireMediaUploadAccess(churchId, "PHOTOS");
 
     const url = new URL(request.url);
     const raw = url.searchParams.get("photoIds") ?? "";

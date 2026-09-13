@@ -22,7 +22,7 @@ export async function POST(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaUploadAccess(churchId);
+    await requireMediaUploadAccess(churchId, "PHOTOS");
 
     const body = signSchema.parse(await request.json());
     validatePhotoFile(body.filename, body.mimeType, body.size);
