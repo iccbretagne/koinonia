@@ -108,6 +108,7 @@ export default function CollectionBuilder({
 
   const canCreate =
     !creating &&
+    label.trim().length > 0 &&
     ((showEvents   && selectedEvents.size > 0)   ||
      (showProjects && selectedProjects.size > 0));
 
@@ -122,7 +123,7 @@ export default function CollectionBuilder({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           churchId,
-          label: label.trim() || undefined,
+          label: label.trim(),
           scope,
           eventIds:   showEvents   ? Array.from(selectedEvents)   : [],
           projectIds: showProjects ? Array.from(selectedProjects) : [],
@@ -335,9 +336,10 @@ export default function CollectionBuilder({
         <h2 className="text-sm font-semibold text-gray-900">Options du lien</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Nom du lien (optionnel)</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Nom du lien</label>
             <input
               type="text"
+              required
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Ex : Mariage Dupont - Jan 2026"

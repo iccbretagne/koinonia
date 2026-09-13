@@ -55,6 +55,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -77,6 +78,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -102,6 +104,7 @@ describe("POST /api/admin/media/collections — includeAllPhotos", () => {
     const res = await POST(
       makeRequest({
         churchId: "church-1",
+        label: "Mariage Dupont",
         scope: "photos",
         eventIds: ["evt-1"],
         projectIds: [],
@@ -132,7 +135,7 @@ describe("POST /api/admin/media/collections — périmètre de partage (spec 049
     mockGetMediaShareScope.mockResolvedValue({ photos: false, visuels: true });
 
     const res = await POST(
-      makeRequest({ churchId: "church-1", scope: "photos", eventIds: ["evt-1"], projectIds: [] })
+      makeRequest({ churchId: "church-1", label: "Mariage Dupont", scope: "photos", eventIds: ["evt-1"], projectIds: [] })
     );
 
     expect(res.status).toBe(403);
@@ -143,7 +146,7 @@ describe("POST /api/admin/media/collections — périmètre de partage (spec 049
     mockGetMediaShareScope.mockResolvedValue({ photos: true, visuels: false });
 
     const res = await POST(
-      makeRequest({ churchId: "church-1", scope: "files", eventIds: [], projectIds: ["proj-1"] })
+      makeRequest({ churchId: "church-1", label: "Campagne Noël", scope: "files", eventIds: [], projectIds: ["proj-1"] })
     );
 
     expect(res.status).toBe(403);
@@ -154,7 +157,7 @@ describe("POST /api/admin/media/collections — périmètre de partage (spec 049
     mockGetMediaShareScope.mockResolvedValue({ photos: true, visuels: true });
 
     const res = await POST(
-      makeRequest({ churchId: "church-1", scope: "both", eventIds: ["evt-1"], projectIds: ["proj-1"] })
+      makeRequest({ churchId: "church-1", label: "Bilan trimestre", scope: "both", eventIds: ["evt-1"], projectIds: ["proj-1"] })
     );
 
     expect(res.status).toBe(201);

@@ -7,7 +7,7 @@ import { z } from "zod";
 
 const createSchema = z.object({
   churchId: z.string().min(1),
-  label: z.string().optional(),
+  label: z.string().trim().min(1, "L'étiquette est obligatoire"),
   scope: z.enum(["photos", "files", "both"]),
   eventIds: z.array(z.string()).default([]),
   projectIds: z.array(z.string()).default([]),
