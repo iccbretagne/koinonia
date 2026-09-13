@@ -20,7 +20,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    const session = await requireMediaAccess(churchId);
+    const session = await requireMediaAccess(churchId, "VISUELS");
 
     const tokens = await prisma.mediaShareToken.findMany({
       where: { mediaProjectId: id },
@@ -63,7 +63,7 @@ export async function POST(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    await requireMediaUploadAccess(churchId);
+    await requireMediaUploadAccess(churchId, "VISUELS");
 
     const body = await request.json();
     const data = createSchema.parse(body);
@@ -71,10 +71,11 @@ export async function POST(
     // Les tokens VALIDATOR et PREVALIDATOR donnent accès à des actions d'approbation :
     // exiger media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(data.type)) {
-      await requireMediaManageAccess(churchId);
+      await requireMediaManageAccess(churchId, "VISUELS");
     }
 
     const token = await createMediaShareToken({
+      churchId,
       mediaProjectId: id,
       type: data.type,
       label: data.label,
@@ -96,7 +97,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    await requireMediaUploadAccess(churchId);
+    await requireMediaUploadAccess(churchId, "VISUELS");
 
     const tokenId = new URL(request.url).searchParams.get("tokenId");
     if (!tokenId) throw new ApiError(400, "tokenId requis");
@@ -110,7 +111,7 @@ export async function DELETE(
 
     // Les tokens sensibles (VALIDATOR/PREVALIDATOR) nécessitent media:manage
     if ((SENSITIVE_TOKEN_TYPES as readonly string[]).includes(existingToken.type)) {
-      await requireMediaManageAccess(churchId);
+      await requireMediaManageAccess(churchId, "VISUELS");
     }
 
     await prisma.mediaShareToken.delete({

@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { MediaEventStatus } from "@/generated/prisma/enums";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
+import CollectionBuilder from "../collections/CollectionBuilder";
 
 type PhotoCounts = { pending: number; prevalidated: number; approved: number; rejected: number };
 
@@ -44,14 +47,30 @@ function formatDate(d: Date) {
 export default function MediaEventsList({
   events,
   canUpload,
+  churchId,
+  canShare,
 }: {
   events: MediaEvent[];
   canUpload: boolean;
+  churchId: string;
+  canShare: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useState<MediaEventStatus | "">("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  function toggleSelected(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   const filtered = events.filter((e) => {
     if (statusFilter && e.status !== statusFilter) return false;
@@ -136,6 +155,13 @@ export default function MediaEventsList({
         </div>
       )}
 
+      {canShare && selected.size > 0 && (
+        <div className="sticky top-0 z-10 bg-icc-violet/5 border-2 border-icc-violet/30 rounded-lg px-4 py-2 flex items-center justify-between gap-3">
+          <span className="text-sm text-gray-700">{selected.size} événement{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}</span>
+          <Button size="sm" onClick={() => setShareModalOpen(true)}>Partager la sélection</Button>
+        </div>
+      )}
+
       <div className="grid gap-3">
         {filtered.map((event) => {
           const { pending, prevalidated, approved, rejected } = event.photoCounts;
@@ -153,6 +179,15 @@ export default function MediaEventsList({
               }`}
             >
               <div className="flex items-start justify-between gap-3">
+                {canShare && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(event.id)}
+                    onClick={(e) => toggleSelected(event.id, e)}
+                    onChange={() => {}}
+                    className="w-4 h-4 rounded border-gray-300 accent-icc-violet shrink-0 mt-1"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h2 className="font-semibold text-gray-900 truncate">{event.name}</h2>
@@ -222,6 +257,25 @@ export default function MediaEventsList({
           );
         })}
       </div>
+
+      {canShare && (
+        <Modal open={shareModalOpen} onClose={() => setShareModalOpen(false)} title="Partager la sélection">
+          <CollectionBuilder
+            churchId={churchId}
+            events={events.map((e) => ({
+              id: e.id,
+              name: e.name,
+              date: e.date.toISOString(),
+              approvedPhotoCount: e.photoCounts.approved,
+              totalPhotoCount: e._count.photos,
+            }))}
+            projects={[]}
+            initialEventIds={Array.from(selected)}
+            lockedScope="photos"
+            onCreated={() => setShareModalOpen(false)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

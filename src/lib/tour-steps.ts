@@ -54,7 +54,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-service"]',
     title: "Opérations",
     content:
-      "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les actions des équipes Communication et Production Média (demandes, projets, événements, collections de photos), sur le modèle de l'espace Audio. La Comptabilité (notes de frais, avances de budget) reste accessible séparément pour son équipe.",
+      "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les activités Photos, Visuels et Réseaux sociaux, avec un bouton « Partages » pour gérer vos liens actifs, sur le modèle de l'espace Audio. La Comptabilité (notes de frais, avances de budget) reste accessible séparément pour son équipe.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },

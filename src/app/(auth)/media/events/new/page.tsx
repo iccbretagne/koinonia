@@ -6,7 +6,7 @@ export default async function NewMediaEventPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireMediaUploadAccess(churchId);
+  await requireMediaUploadAccess(churchId, "PHOTOS");
 
   // Load upcoming planning events for linking
   const planningEvents = await prisma.event.findMany({

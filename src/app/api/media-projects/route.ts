@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    await requireMediaAccess(churchId);
+    await requireMediaAccess(churchId, "VISUELS");
 
     const projects = await prisma.mediaProject.findMany({
       where: { churchId },
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const session = await requireMediaUploadAccess(data.churchId);
+    const session = await requireMediaUploadAccess(data.churchId, "VISUELS");
 
     const project = await prisma.mediaProject.create({
       data: {

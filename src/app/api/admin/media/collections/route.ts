@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireMediaCollectionAccess } from "@/lib/auth";
+import { requireMediaCollectionAccess, getMediaShareScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken } from "@/modules/media";
 import { logAudit } from "@/lib/audit";
@@ -26,6 +26,16 @@ export async function POST(request: Request) {
       throw new ApiError(400, "Sélectionnez au moins un événement ou projet");
     }
 
+    // Le partage est limité au périmètre de la personne (spec 049) : une équipe Photos ne
+    // peut pas créer un lien couvrant des visuels, et réciproquement.
+    const scope = await getMediaShareScope(session, data.churchId);
+    if (data.eventIds.length > 0 && !scope.photos) {
+      throw new ApiError(403, "Vous n'avez pas accès aux photos de cette église");
+    }
+    if (data.projectIds.length > 0 && !scope.visuels) {
+      throw new ApiError(403, "Vous n'avez pas accès aux visuels de cette église");
+    }
+
     // Verify all eventIds belong to the church
     if (data.eventIds.length > 0) {
       const events = await prisma.mediaEvent.findMany({
@@ -49,6 +59,7 @@ export async function POST(request: Request) {
     }
 
     const token = await createMediaShareToken({
+      churchId: data.churchId,
       type: "COLLECTION",
       label: data.label,
       expiresInDays: data.expiresInDays,

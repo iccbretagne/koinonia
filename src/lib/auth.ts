@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import type { Role } from "@/generated/prisma/client";
 import { DEPT_FN } from "@/lib/department-functions";
+import { getFunctionDepartmentIds } from "@/lib/function-departments";
 
 /**
  * Le mode de connexion développement (choix d'un compte de test généré par
@@ -619,18 +620,40 @@ export async function resolveChurchId(
 // ── Media access helpers ──────────────────────────────────────────────────────
 
 /**
- * Vérifie si l'utilisateur est membre d'un département PRODUCTION_MEDIA dans l'église donnée.
- * Droits complets : vue, upload, gestion des tokens et suppression.
+ * Activité média séparable par équipe (spec 049) : gestion des photos d'événements, ou
+ * gestion des visuels (et de leurs demandes). Un même département peut porter les deux
+ * fonctions, ou une seule — voir `isMediaTeamMember`.
  */
-export async function isProductionMediaMember(session: Session, churchId: string): Promise<boolean> {
+export type MediaDomain = "PHOTOS" | "VISUELS";
+
+/**
+ * Vérifie si l'utilisateur est membre de l'équipe qui gère une activité média donnée dans
+ * l'église (spec 049). `VISUELS` reste porté par la fonction `PRODUCTION_MEDIA`. `PHOTOS` est
+ * porté par la fonction dédiée `PHOTOS` si au moins un département de l'église la porte ;
+ * sinon repli sur `PRODUCTION_MEDIA`, pour qu'aucune église n'perde la gestion de ses photos
+ * tant qu'elle n'a pas explicitement séparé les deux équipes.
+ */
+export async function isMediaTeamMember(
+  session: Session,
+  churchId: string,
+  domain: MediaDomain
+): Promise<boolean> {
   const userDeptIds = session.user.churchRoles
     .filter((r) => r.churchId === churchId)
     .flatMap((r) => r.departments.map((d) => d.department.id));
   if (userDeptIds.length === 0) return false;
-  const count = await prisma.department.count({
-    where: { function: "PRODUCTION_MEDIA", ministry: { churchId }, id: { in: userDeptIds } },
-  });
-  return count > 0;
+
+  if (domain === "VISUELS") {
+    const deptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.PRODUCTION_MEDIA);
+    return deptIds.some((id) => userDeptIds.includes(id));
+  }
+
+  const photoDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.PHOTOS);
+  if (photoDeptIds.length > 0) {
+    return photoDeptIds.some((id) => userDeptIds.includes(id));
+  }
+  const fallbackDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.PRODUCTION_MEDIA);
+  return fallbackDeptIds.some((id) => userDeptIds.includes(id));
 }
 
 /**
@@ -649,12 +672,12 @@ export async function isCommunicationMember(session: Session, churchId: string):
 }
 
 /**
- * Autorise l'accès en lecture aux ressources média.
+ * Autorise l'accès en lecture aux ressources média d'une activité (Photos ou Visuels, spec 049).
  * Passe si : permission `media:view` (ADMIN, SECRETARY…)
- *         OU membre PRODUCTION_MEDIA (droits complets)
- *         OU membre COMMUNICATION (vue uniquement).
+ *         OU membre de l'équipe de cette activité (droits complets)
+ *         OU membre COMMUNICATION (vue uniquement, les deux activités).
  */
-export async function requireMediaAccess(churchId: string) {
+export async function requireMediaAccess(churchId: string, domain: MediaDomain) {
   const session = await requireAuth();
   if (session.user.isSuperAdmin) return session;
 
@@ -664,19 +687,19 @@ export async function requireMediaAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:view") || await isProductionMediaMember(session, churchId) || await isCommunicationMember(session, churchId))
+  if (userPerms.has("media:view") || await isMediaTeamMember(session, churchId, domain) || await isCommunicationMember(session, churchId))
     return session;
 
   throw new Error("FORBIDDEN");
 }
 
 /**
- * Autorise l'upload et la création de ressources média.
+ * Autorise l'upload et la création de ressources média d'une activité (spec 049).
  * Passe si : permission `media:upload` (ADMIN, SECRETARY…)
- *         OU membre PRODUCTION_MEDIA
+ *         OU membre de l'équipe de cette activité
  *         OU membre COMMUNICATION.
  */
-export async function requireMediaUploadAccess(churchId: string) {
+export async function requireMediaUploadAccess(churchId: string, domain: MediaDomain) {
   const session = await requireAuth();
   if (session.user.isSuperAdmin) return session;
 
@@ -686,18 +709,18 @@ export async function requireMediaUploadAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:upload") || await isProductionMediaMember(session, churchId) || await isCommunicationMember(session, churchId))
+  if (userPerms.has("media:upload") || await isMediaTeamMember(session, churchId, domain) || await isCommunicationMember(session, churchId))
     return session;
 
   throw new Error("FORBIDDEN");
 }
 
 /**
- * Autorise la gestion des ressources média (liens de partage, tokens sensibles…).
- * Passe si : permission `media:manage` (ADMIN…) OU membre PRODUCTION_MEDIA.
+ * Autorise la gestion des ressources média d'une activité (liens de partage, tokens sensibles…).
+ * Passe si : permission `media:manage` (ADMIN…) OU membre de l'équipe de cette activité.
  * La team Communication n'a pas ce droit.
  */
-export async function requireMediaManageAccess(churchId: string) {
+export async function requireMediaManageAccess(churchId: string, domain: MediaDomain) {
   const session = await requireAuth();
   if (session.user.isSuperAdmin) return session;
 
@@ -707,17 +730,17 @@ export async function requireMediaManageAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:manage") || await isProductionMediaMember(session, churchId))
+  if (userPerms.has("media:manage") || await isMediaTeamMember(session, churchId, domain))
     return session;
 
   throw new Error("FORBIDDEN");
 }
 
 /**
- * Passe si : permission `media:review` (ADMIN…) OU membre PRODUCTION_MEDIA.
+ * Passe si : permission `media:review` (ADMIN…) OU membre de l'équipe de cette activité.
  * La team Communication n'a pas ce droit.
  */
-export async function requireMediaReviewAccess(churchId: string) {
+export async function requireMediaReviewAccess(churchId: string, domain: MediaDomain) {
   const session = await requireAuth();
   if (session.user.isSuperAdmin) return session;
 
@@ -727,7 +750,7 @@ export async function requireMediaReviewAccess(churchId: string) {
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:review") || await isProductionMediaMember(session, churchId))
+  if (userPerms.has("media:review") || await isMediaTeamMember(session, churchId, domain))
     return session;
 
   throw new Error("FORBIDDEN");
@@ -753,12 +776,39 @@ export async function requireMediaCollectionAccess(churchId: string) {
 
   if (
     userPerms.has("media:manage") ||
-    (await isProductionMediaMember(session, churchId)) ||
+    (await isMediaTeamMember(session, churchId, "PHOTOS")) ||
+    (await isMediaTeamMember(session, churchId, "VISUELS")) ||
     (await isCommunicationMember(session, churchId))
   )
     return session;
 
   throw new Error("FORBIDDEN");
+}
+
+/**
+ * Périmètre de partage d'un utilisateur (spec 049) : quelles activités (photos, visuels) il
+ * peut inclure dans un lien de partage multi-sources. `media:manage` et la Communication
+ * couvrent les deux ; une équipe spécialisée ne couvre que la sienne.
+ */
+export async function getMediaShareScope(
+  session: Session,
+  churchId: string
+): Promise<{ photos: boolean; visuels: boolean }> {
+  if (session.user.isSuperAdmin) return { photos: true, visuels: true };
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const { rolePermissions } = await import("./registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+
+  if (userPerms.has("media:manage") || (await isCommunicationMember(session, churchId))) {
+    return { photos: true, visuels: true };
+  }
+
+  const [photos, visuels] = await Promise.all([
+    isMediaTeamMember(session, churchId, "PHOTOS"),
+    isMediaTeamMember(session, churchId, "VISUELS"),
+  ]);
+  return { photos, visuels };
 }
 
 // Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie

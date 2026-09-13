@@ -19,6 +19,7 @@ export const DEPT_FN = {
   ENTRETIEN: "ENTRETIEN",
   MODERATION: "MODERATION",
   CAPTATION_AUDIO: "CAPTATION_AUDIO",
+  PHOTOS: "PHOTOS",
 } as const;
 
 export type DeptFunction = (typeof DEPT_FN)[keyof typeof DEPT_FN];
@@ -38,6 +39,7 @@ export const DEPT_FN_LABEL: Record<DeptFunction, string> = {
   ENTRETIEN: "Entretien",
   MODERATION: "Modération",
   CAPTATION_AUDIO: "Captation Audio",
+  PHOTOS: "Photos",
 };
 
 /**

@@ -417,22 +417,28 @@ périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requir
   département résolu à la création — la file est partagée par tous les départements de la
   fonction, et une demande suit la fonction même si un département en est retiré ensuite
 
-**Spécificités de l'espace « Communication & Production »** (spec 043, même pattern que
-l'espace Audio ci-dessus) :
-- `/media` est un espace à onglets à droits distincts, un seul lien de navigation
-  **« Communication & Production »** — chaque onglet vérifie en plus son propre droit
-  server-side. Onglets possibles (`buildMediaSpaceTabs`, `src/lib/media-space.ts`) :
-  Demandes visuels (`/media/requests`), Demandes réseaux sociaux (`/communication/requests`),
-  Projets (`/media/projects`), Événements médias (`/media/events`), Collections
-  (`/media/collections`) — calculés une fois par `resolveMediaSpaceAccess` (layouts
-  `/media` et `/communication`) ou reconstruits sans requête supplémentaire dans
-  `(auth)/layout.tsx` à partir des données déjà chargées pour le menu
-- `requireMediaCollectionAccess(churchId)` (`src/lib/auth.ts`) protège les Collections :
-  `media:manage` OU membre `PRODUCTION_MEDIA` OU membre `COMMUNICATION` — volontairement
-  distinct de `requireMediaManageAccess`, qui protège en plus la suppression/le partage des
-  projets, événements médias et fichiers, non ouverts à la Communication
+**Spécificités de l'espace « Communication & Production »** (spec 049, remplace la spec 043 —
+même pattern d'accueil à cartes que l'espace Audio ci-dessus) :
+- `/media` est un accueil à cartes filtrées (`SpaceHome`, `buildMediaSpaceCards` dans
+  `src/lib/media-space.ts`) — redirection directe si une seule carte accessible. Cartes
+  possibles : **Photos** (`/media/events`, ex-Événements médias), **Visuels** (`/media/projects`
+  + `/media/requests`, onglets internes via `buildVisualsTabs`), **Réseaux sociaux**
+  (`/communication/requests`) — calculées par `resolveMediaSpaceAccess` (layouts `/media` et
+  `/communication`) ou reconstruites sans requête supplémentaire dans `(auth)/layout.tsx`
+- Deux activités distinctes avec fonctions de département propres : `PHOTOS` (photos
+  d'événements) et `PRODUCTION_MEDIA` (visuels + demandes de visuels). `isMediaTeamMember(session,
+  churchId, domain)` (`src/lib/auth.ts`) résout l'équipe par activité, avec repli : si aucun
+  département de l'église ne porte la fonction `PHOTOS`, Production Média garde la gestion des
+  photos (aucune église ne perd cet accès au déploiement)
+- Le partage n'est plus un écran dédié (« Collections » a disparu) : c'est une action
+  (« Partager une sélection ») depuis Photos ou Visuels, et un bouton « Partages (N liens
+  actifs) » sur l'accueil ouvre le tiroir de gestion (`src/modules/media/services/shares.ts` :
+  `listActiveShares`/`countActiveShares`/`revokeShare`, filtrés au périmètre de l'appelant via
+  `getMediaShareScope`) — une collection mixte photos+visuels reste masquée à une équipe qui n'a
+  que l'un des deux périmètres
 - Le lien « Audio » reste séparé : équipe et permissions différentes (`audio:listen` ouvert à
-  tous les rôles, contrairement aux permissions média réservées aux 2 équipes)
+  tous les rôles, contrairement aux permissions média réservées aux équipes Photos/Production
+  Média/Communication)
 
 ## Multi-tenant
 

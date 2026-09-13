@@ -20,7 +20,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    await requireMediaAccess(churchId);
+    await requireMediaAccess(churchId, "PHOTOS");
 
     const event = await prisma.mediaEvent.findUnique({
       where: { id },
@@ -48,7 +48,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    const session = await requireMediaUploadAccess(churchId);
+    const session = await requireMediaUploadAccess(churchId, "PHOTOS");
 
     const body = await request.json();
     const data = patchSchema.parse(body);
@@ -101,7 +101,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaEvent", id);
-    const session = await requireMediaManageAccess(churchId);
+    const session = await requireMediaManageAccess(churchId, "PHOTOS");
 
     // Load all S3 keys before deletion
     const event = await prisma.mediaEvent.findUnique({

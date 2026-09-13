@@ -18,7 +18,7 @@ export async function GET(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    await requireMediaAccess(churchId);
+    await requireMediaAccess(churchId, "VISUELS");
 
     const project = await prisma.mediaProject.findUnique({
       where: { id },
@@ -67,7 +67,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    const session = await requireMediaUploadAccess(churchId);
+    const session = await requireMediaUploadAccess(churchId, "VISUELS");
 
     const body = await request.json();
     const data = patchSchema.parse(body);
@@ -105,7 +105,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("mediaProject", id);
-    const session = await requireMediaManageAccess(churchId);
+    const session = await requireMediaManageAccess(churchId, "VISUELS");
 
     const project = await prisma.mediaProject.findUnique({
       where: { id },

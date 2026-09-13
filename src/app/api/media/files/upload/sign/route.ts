@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       ? await resolveChurchId("mediaEvent", data.mediaEventId)
       : await resolveChurchId("mediaProject", data.mediaProjectId!);
 
-    const session = await requireMediaUploadAccess(churchId);
+    const session = await requireMediaUploadAccess(churchId, data.mediaEventId ? "PHOTOS" : "VISUELS");
     requireRateLimit(request, { prefix: `media:upload:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const ext = data.filename.split(".").pop()?.toLowerCase() ?? "bin";

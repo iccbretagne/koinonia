@@ -3,7 +3,7 @@
  * CRUD sur un fichier média (visual/vidéo).
  */
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, requireMediaReviewAccess } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, requireMediaReviewAccess, type MediaDomain } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles, getMediaObjectSize } from "@/lib/s3";
 import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
@@ -32,7 +32,9 @@ type MediaFileWithContainers = {
   mediaProject: { churchId: string; createdById: string } | null;
 };
 
-async function resolveMediaFileChurchId(fileId: string): Promise<{ churchId: string; file: MediaFileWithContainers }> {
+async function resolveMediaFileChurchId(
+  fileId: string
+): Promise<{ churchId: string; domain: MediaDomain; file: MediaFileWithContainers }> {
   const { ApiError } = await import("@/lib/api-utils");
   const file = await prisma.mediaFile.findUnique({
     where: { id: fileId },
@@ -47,7 +49,8 @@ async function resolveMediaFileChurchId(fileId: string): Promise<{ churchId: str
   });
   if (!file) throw new ApiError(404, "Fichier média introuvable");
   const churchId = file.mediaEvent?.churchId ?? file.mediaProject?.churchId ?? (() => { throw new ApiError(500, "Fichier sans conteneur"); })();
-  return { churchId, file };
+  const domain: MediaDomain = file.mediaEventId ? "PHOTOS" : "VISUELS";
+  return { churchId, domain, file };
 }
 
 export async function GET(
@@ -56,8 +59,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { churchId } = await resolveMediaFileChurchId(id);
-    await requireMediaAccess(churchId);
+    const { churchId, domain } = await resolveMediaFileChurchId(id);
+    await requireMediaAccess(churchId, domain);
 
     const file = await prisma.mediaFile.findUnique({
       where: { id },
@@ -80,15 +83,15 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { churchId, file: mediaFile } = await resolveMediaFileChurchId(id);
-    const session = await requireMediaUploadAccess(churchId);
+    const { churchId, domain, file: mediaFile } = await resolveMediaFileChurchId(id);
+    const session = await requireMediaUploadAccess(churchId, domain);
 
     const body = await request.json();
     const data = patchSchema.parse(body);
 
     // Status transitions to APPROVED/REJECTED require media:review
     if (data.status && ["APPROVED", "REJECTED", "FINAL_APPROVED"].includes(data.status)) {
-      await requireMediaReviewAccess(churchId);
+      await requireMediaReviewAccess(churchId, domain);
     }
 
     const file = await prisma.mediaFile.update({
@@ -173,8 +176,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { churchId } = await resolveMediaFileChurchId(id);
-    await requireMediaManageAccess(churchId);
+    const { churchId, domain } = await resolveMediaFileChurchId(id);
+    await requireMediaManageAccess(churchId, domain);
 
     const file = await prisma.mediaFile.findUnique({
       where: { id },

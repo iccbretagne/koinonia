@@ -9,7 +9,7 @@
  *   3. PATCH /api/media/files/[id] avec originalKey pour confirmer l'upload
  */
 import { prisma } from "@/lib/prisma";
-import { requireMediaAccess, requireMediaUploadAccess } from "@/lib/auth";
+import { requireMediaAccess, requireMediaUploadAccess, type MediaDomain } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getVersionOriginalKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -26,7 +26,7 @@ const postSchema = z.object({
   notes: z.string().optional(),
 });
 
-async function resolveFileChurchId(fileId: string) {
+async function resolveFileChurchId(fileId: string): Promise<{ churchId: string; domain: MediaDomain; file: { type: string } }> {
   const file = await prisma.mediaFile.findUnique({
     where: { id: fileId },
     include: {
@@ -37,7 +37,8 @@ async function resolveFileChurchId(fileId: string) {
   if (!file) throw new ApiError(404, "Fichier introuvable");
   const churchId = file.mediaEvent?.churchId ?? file.mediaProject?.churchId;
   if (!churchId) throw new ApiError(500, "Fichier sans conteneur");
-  return { churchId, file };
+  const domain: MediaDomain = file.mediaEventId ? "PHOTOS" : "VISUELS";
+  return { churchId, domain, file };
 }
 
 export async function GET(
@@ -46,8 +47,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { churchId } = await resolveFileChurchId(id);
-    await requireMediaAccess(churchId);
+    const { churchId, domain } = await resolveFileChurchId(id);
+    await requireMediaAccess(churchId, domain);
 
     const versions = await prisma.mediaFileVersion.findMany({
       where: { mediaFileId: id },
@@ -82,8 +83,8 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { churchId, file } = await resolveFileChurchId(id);
-    const session = await requireMediaUploadAccess(churchId);
+    const { churchId, domain, file } = await resolveFileChurchId(id);
+    const session = await requireMediaUploadAccess(churchId, domain);
 
     if (file.type === "PHOTO") throw new ApiError(400, "Les photos ne supportent pas le versionnage");
 

@@ -5,7 +5,7 @@ export default async function NewMediaProjectPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireMediaUploadAccess(churchId);
+  await requireMediaUploadAccess(churchId, "VISUELS");
 
   return (
     <div>

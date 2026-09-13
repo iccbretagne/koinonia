@@ -5,7 +5,7 @@ import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions } from "@/lib/registry";
-import { buildMediaSpaceTabs } from "@/lib/media-space";
+import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
@@ -179,7 +179,7 @@ export default async function AuthLayout({
     // One query for all department functions we need to check
     const serviceDepts = await prisma.department.findMany({
       where: {
-        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE"] },
+        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE", "PHOTOS"] },
         ministry: { churchId: currentChurchId },
       },
       select: { id: true, function: true },
@@ -198,19 +198,24 @@ export default async function AuthLayout({
     if (isMemberOf("SECRETARIAT"))
       requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
 
-    // Espace « Communication & Production » (spec 043, sur le modèle d'Audio — spec 021) :
-    // un seul lien de menu, les onglets réellement affichés dépendent de l'équipe/permissions —
-    // même logique que `resolveMediaSpaceAccess` (@/lib/media-space), construite ici à partir
-    // des données déjà chargées (`serviceDepts`/`isMemberOf`) sans requête supplémentaire.
-    const mediaSpaceTabs = buildMediaSpaceTabs({
-      visuals: isMemberOf("PRODUCTION_MEDIA"),
-      social: isMemberOf("COMMUNICATION"),
-      browse:
-        userPermissions.has("media:view") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION"),
-      collections:
-        userPermissions.has("media:manage") || isMemberOf("PRODUCTION_MEDIA") || isMemberOf("COMMUNICATION"),
-    });
-    if (mediaSpaceTabs.length > 0) {
+    // Espace « Communication & Production » (spec 049, sur le modèle d'Audio — spec 021) :
+    // un seul lien de menu, les cartes réellement affichées à l'accueil dépendent de
+    // l'équipe/permissions — même logique que `resolveMediaSpaceAccess` (@/lib/media-space),
+    // construite ici à partir des données déjà chargées (`serviceDepts`/`isMemberOf`) sans
+    // requête supplémentaire. Repli Photos → Production Média si la fonction "Photos" n'est
+    // configurée sur aucun département de l'église (voir `isMediaTeamMember`, spec 049).
+    const hasPhotoDepts = serviceDepts.some((d) => d.function === "PHOTOS");
+    const isPhotoMember = hasPhotoDepts ? isMemberOf("PHOTOS") : isMemberOf("PRODUCTION_MEDIA");
+    const isVisualMember = isMemberOf("PRODUCTION_MEDIA");
+    const isCommMember = isMemberOf("COMMUNICATION");
+    const mediaSpaceAccess: MediaSpaceAccess = {
+      photos: userPermissions.has("media:view") || isPhotoMember || isCommMember,
+      visuals: userPermissions.has("media:view") || isVisualMember || isCommMember,
+      visualRequests: isGlobalManager || isVisualMember,
+      social: isGlobalManager || isCommMember,
+      share: userPermissions.has("media:manage") || isPhotoMember || isVisualMember || isCommMember,
+    };
+    if (buildMediaSpaceCards(mediaSpaceAccess).length > 0) {
       mediaLinks.push({
         href: "/media",
         label: "Communication & Production",
