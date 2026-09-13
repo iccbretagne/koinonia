@@ -10,9 +10,20 @@ import { z } from "zod";
 // l'appelant, ex. sélectionné via /api/users/search) ou par `email` exact (spec 037 — le compte
 // n'a alors aucun rôle ni demande dans cette église, seule une correspondance exacte cross-église
 // peut le retrouver). L'un des deux est requis.
+//
+// Côté STAR : `memberId` (fiche existante) ou `newMember` (nouvelle fiche créée dans le même
+// geste, spec 047 — pré-provisionnement d'un utilisateur avant sa première connexion). Exclusifs.
 const createSchema = z
   .object({
-    memberId: z.string(),
+    memberId: z.string().optional(),
+    newMember: z
+      .object({
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
+        phone: z.string().optional(),
+        departmentId: z.string(),
+      })
+      .optional(),
     churchId: z.string(),
     userId: z.string().optional(),
     email: z.string().trim().email().optional(),
@@ -20,7 +31,9 @@ const createSchema = z
     // une erreur de frappe ne doit pas rattacher silencieusement un STAR à une adresse fantôme.
     confirmCreate: z.boolean().optional(),
   })
-  .refine((d) => d.userId ?? d.email, { message: "userId ou email requis" });
+  .refine((d) => d.userId ?? d.email, { message: "userId ou email requis" })
+  .refine((d) => !(d.memberId && d.newMember), { message: "memberId et newMember sont exclusifs" })
+  .refine((d) => d.memberId ?? d.newMember, { message: "memberId ou newMember requis" });
 
 const deleteSchema = z.object({
   memberId: z.string(),
@@ -30,15 +43,18 @@ const deleteSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { memberId, churchId, userId: inputUserId, email, confirmCreate } = createSchema.parse(body);
+    const { memberId, newMember, churchId, userId: inputUserId, email, confirmCreate } = createSchema.parse(body);
     const session = await requireChurchPermission("members:manage", churchId);
     requireRateLimit(request, { prefix: `link:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
-    // Vérifier que le member appartient bien à l'église concernée
-    const member = await prisma.member.findFirst({
-      where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
-    });
-    if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
+    // Une nouvelle fiche STAR n'a par définition aucun lien existant à vérifier : les contrôles
+    // ci-dessous (appartenance à l'église, doublon de lien) ne concernent que `memberId`.
+    if (memberId) {
+      const member = await prisma.member.findFirst({
+        where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
+      });
+      if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
+    }
 
     // Résoudre le compte cible. Aucune exigence de rattachement préalable à cette église : c'est
     // précisément la condition que ce rattachement crée (spec 037).
@@ -57,11 +73,14 @@ export async function POST(request: Request) {
       // targetUserId reste vide : le compte est créé dans la transaction ci-dessous.
     }
 
-    // Vérifier qu'il n'y a pas déjà un lien pour ce membre dans cette église
-    const existingByMember = await prisma.memberUserLink.findUnique({
-      where: { memberId_churchId: { memberId, churchId } },
-    });
-    if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
+    // Vérifier qu'il n'y a pas déjà un lien pour ce membre dans cette église (sans objet pour une
+    // nouvelle fiche, qui ne peut par définition avoir aucun lien).
+    if (memberId) {
+      const existingByMember = await prisma.memberUserLink.findUnique({
+        where: { memberId_churchId: { memberId, churchId } },
+      });
+      if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
+    }
 
     if (targetUserId) {
       const existingByUser = await prisma.memberUserLink.findFirst({
@@ -76,15 +95,16 @@ export async function POST(request: Request) {
         targetUserId = created.id;
       }
 
-      await admitToChurch(tx, {
+      const { memberId: admittedMemberId } = await admitToChurch(tx, {
         userId: targetUserId,
         churchId,
         validatedById: session.user.id,
         memberId,
+        newMember,
       });
 
       return tx.memberUserLink.findUniqueOrThrow({
-        where: { memberId_churchId: { memberId, churchId } },
+        where: { memberId_churchId: { memberId: admittedMemberId!, churchId } },
       });
     });
 
@@ -94,7 +114,7 @@ export async function POST(request: Request) {
       action: "CREATE",
       entityType: "MemberUserLink",
       entityId: link.id,
-      details: { memberId, userId: targetUserId },
+      details: { memberId: link.memberId, userId: targetUserId },
     });
 
     return successResponse(link, 201);

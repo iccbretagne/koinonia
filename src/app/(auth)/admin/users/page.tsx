@@ -32,6 +32,7 @@ export default async function UsersPage() {
           },
         },
       },
+      _count: { select: { accounts: true } },
     },
     orderBy: { name: "asc" },
   });
@@ -54,12 +55,14 @@ export default async function UsersPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Utilisateurs</h1>
       <UsersClient
+        churchId={churchId}
         initialUsers={users.map((u) => ({
           id: u.id,
           email: u.email,
           name: u.name,
           displayName: u.displayName,
           image: u.image,
+          neverConnected: u._count.accounts === 0,
           churchRoles: u.churchRoles.map((r) => ({
             id: r.id,
             role: r.role,
