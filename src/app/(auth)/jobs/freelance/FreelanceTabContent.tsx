@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { buttonClasses } from "@/components/ui/button-classes";
 type Author = { id: string; name: string | null; displayName: string | null; image: string | null };
+
+type MissionStatus = "ACTIVE" | "FILLED" | "ARCHIVED";
+type ProfileStatus = "ACTIVE" | "UNAVAILABLE" | "ARCHIVED";
 
 type Mission = {
   id: string;
@@ -16,6 +20,7 @@ type Mission = {
   modality: "REMOTE" | "ONSITE" | "HYBRID";
   location: string | null;
   description: string;
+  status: string;
   createdAt: string;
   author: Author;
 };
@@ -30,8 +35,23 @@ type FreelanceProfile = {
   location: string | null;
   availableFrom: string | null;
   description: string;
+  status: string;
   createdAt: string;
   author: Author;
+};
+
+const MISSION_STATUS_LABELS: Record<"ALL" | MissionStatus, string> = {
+  ALL:      "Tout",
+  ACTIVE:   "Actives",
+  FILLED:   "Pourvues",
+  ARCHIVED: "Archivées",
+};
+
+const PROFILE_STATUS_LABELS: Record<"ALL" | ProfileStatus, string> = {
+  ALL:         "Tout",
+  ACTIVE:      "Disponibles",
+  UNAVAILABLE: "Indisponibles",
+  ARCHIVED:    "Archivés",
 };
 
 const MODALITY_LABEL: Record<string, string> = {
@@ -80,9 +100,34 @@ function RateBadges({ dailyRate, hourlyRate }: { dailyRate: string | null; hourl
   );
 }
 
-function MissionCard({ mission }: { mission: Mission }) {
+function MissionCard({ mission, canManage }: { mission: Mission; canManage: boolean }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const isArchived = mission.status === "ARCHIVED";
+
+  async function toggleStatus(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
+      const res = await fetch(`/api/jobs/freelance/missions/${mission.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <Link href={`/jobs/freelance/missions/${mission.id}`} className="block border-2 border-gray-200 rounded-lg p-4 hover:border-icc-violet/40 transition-colors">
+    <Link
+      href={`/jobs/freelance/missions/${mission.id}`}
+      className={`block border-2 rounded-lg p-4 hover:border-icc-violet/40 transition-colors ${isArchived ? "border-gray-100 opacity-60" : "border-gray-200"}`}
+    >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="font-semibold text-gray-900 leading-tight">{mission.title}</h3>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${MODALITY_COLOR[mission.modality]}`}>
@@ -97,6 +142,12 @@ function MissionCard({ mission }: { mission: Mission }) {
         {mission.location && mission.modality !== "REMOTE" && (
           <span className="text-xs text-gray-500">· {mission.location}</span>
         )}
+        {mission.status === "FILLED" && (
+          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Pourvue</span>
+        )}
+        {isArchived && (
+          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Archivée</span>
+        )}
       </div>
       <RateBadges dailyRate={mission.dailyRate} hourlyRate={mission.hourlyRate} />
       <p className="text-sm text-gray-600 mt-2 line-clamp-2">{mission.description}</p>
@@ -104,17 +155,52 @@ function MissionCard({ mission }: { mission: Mission }) {
         <AuthorAvatar author={mission.author} />
         <span className="text-gray-400">{new Date(mission.createdAt).toLocaleDateString("fr-FR")}</span>
       </div>
+      {canManage && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={toggleStatus}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+          </button>
+        </div>
+      )}
     </Link>
   );
 }
 
-function FreelanceProfileCard({ profile }: { profile: FreelanceProfile }) {
+function FreelanceProfileCard({ profile, canManage }: { profile: FreelanceProfile; canManage: boolean }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const isArchived = profile.status === "ARCHIVED";
   const availableLabel = profile.availableFrom
     ? `Dispo le ${new Date(profile.availableFrom).toLocaleDateString("fr-FR")}`
     : "Disponible";
 
+  async function toggleStatus(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setLoading(true);
+    try {
+      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
+      const res = await fetch(`/api/jobs/freelance/profiles/${profile.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <Link href={`/jobs/freelance/profiles/${profile.id}`} className="block border-2 border-gray-200 rounded-lg p-4 hover:border-icc-violet/40 transition-colors">
+    <Link
+      href={`/jobs/freelance/profiles/${profile.id}`}
+      className={`block border-2 rounded-lg p-4 hover:border-icc-violet/40 transition-colors ${isArchived ? "border-gray-100 opacity-60" : "border-gray-200"}`}
+    >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="font-semibold text-gray-900 leading-tight">{profile.title}</h3>
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${MODALITY_COLOR[profile.modality]}`}>
@@ -127,6 +213,12 @@ function FreelanceProfileCard({ profile }: { profile: FreelanceProfile }) {
         {profile.location && profile.modality !== "REMOTE" && (
           <span className="text-xs text-gray-500">· {profile.location}</span>
         )}
+        {profile.status === "UNAVAILABLE" && (
+          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Indisponible</span>
+        )}
+        {isArchived && (
+          <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Archivé</span>
+        )}
       </div>
       <RateBadges dailyRate={profile.dailyRate} hourlyRate={profile.hourlyRate} />
       <p className="text-sm text-gray-600 mt-2 line-clamp-2">{profile.description}</p>
@@ -134,6 +226,17 @@ function FreelanceProfileCard({ profile }: { profile: FreelanceProfile }) {
         <AuthorAvatar author={profile.author} />
         <span className="text-gray-400">{new Date(profile.createdAt).toLocaleDateString("fr-FR")}</span>
       </div>
+      {canManage && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={toggleStatus}
+            disabled={loading}
+            className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+          </button>
+        </div>
+      )}
     </Link>
   );
 }
@@ -144,20 +247,31 @@ export default function FreelanceTabContent({
   missions,
   profiles,
   currentUserId: _currentUserId,
+  canManage = false,
 }: {
   missions: Mission[];
   profiles: FreelanceProfile[];
   currentUserId: string;
+  canManage?: boolean;
 }) {
   const [subFilter, setSubFilter] = useState<SubFilter>("all");
+  const [missionStatusFilter, setMissionStatusFilter] = useState<"ALL" | MissionStatus>("ACTIVE");
+  const [profileStatusFilter, setProfileStatusFilter] = useState<"ALL" | ProfileStatus>("ACTIVE");
 
   const showMissions  = subFilter === "all" || subFilter === "missions";
   const showProfiles  = subFilter === "all" || subFilter === "profiles";
 
+  const filteredMissions = missions.filter(
+    (m) => !canManage || missionStatusFilter === "ALL" || m.status === missionStatusFilter
+  );
+  const filteredProfiles = profiles.filter(
+    (p) => !canManage || profileStatusFilter === "ALL" || p.status === profileStatusFilter
+  );
+
   const filters: { id: SubFilter; label: string }[] = [
-    { id: "all",      label: `Tout (${missions.length + profiles.length})` },
-    { id: "missions", label: `Missions (${missions.length})` },
-    { id: "profiles", label: `Disponibles (${profiles.length})` },
+    { id: "all",      label: `Tout (${filteredMissions.length + filteredProfiles.length})` },
+    { id: "missions", label: `Missions (${filteredMissions.length})` },
+    { id: "profiles", label: `Disponibles (${filteredProfiles.length})` },
   ];
 
   return (
@@ -180,10 +294,29 @@ export default function FreelanceTabContent({
 
       {showMissions && (
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Missions à pourvoir
-          </h2>
-          {missions.length === 0 ? (
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+              Missions à pourvoir
+            </h2>
+            {canManage && (
+              <div className="flex gap-1">
+                {(["ALL", "ACTIVE", "FILLED", "ARCHIVED"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setMissionStatusFilter(s)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full border-2 transition-colors ${
+                      missionStatusFilter === s
+                        ? "border-icc-violet text-icc-violet bg-icc-violet/5"
+                        : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {MISSION_STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {filteredMissions.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg">
               <p className="text-gray-500 text-sm mb-3">Aucune mission pour le moment</p>
               <Link
@@ -195,7 +328,7 @@ export default function FreelanceTabContent({
             </div>
           ) : (
             <div className="space-y-3">
-              {missions.map((m) => <MissionCard key={m.id} mission={m} />)}
+              {filteredMissions.map((m) => <MissionCard key={m.id} mission={m} canManage={canManage} />)}
             </div>
           )}
         </div>
@@ -203,10 +336,29 @@ export default function FreelanceTabContent({
 
       {showProfiles && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Freelances disponibles
-          </h2>
-          {profiles.length === 0 ? (
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+              Freelances disponibles
+            </h2>
+            {canManage && (
+              <div className="flex gap-1">
+                {(["ALL", "ACTIVE", "UNAVAILABLE", "ARCHIVED"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setProfileStatusFilter(s)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full border-2 transition-colors ${
+                      profileStatusFilter === s
+                        ? "border-icc-violet text-icc-violet bg-icc-violet/5"
+                        : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {PROFILE_STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {filteredProfiles.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg">
               <p className="text-gray-500 text-sm mb-3">Aucun freelance disponible pour le moment</p>
               <Link
@@ -218,7 +370,7 @@ export default function FreelanceTabContent({
             </div>
           ) : (
             <div className="space-y-3">
-              {profiles.map((p) => <FreelanceProfileCard key={p.id} profile={p} />)}
+              {filteredProfiles.map((p) => <FreelanceProfileCard key={p.id} profile={p} canManage={canManage} />)}
             </div>
           )}
         </div>

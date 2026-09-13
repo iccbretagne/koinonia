@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
+import { rolePermissions } from "@/lib/registry";
 import JobsListClient from "./JobsListClient";
 import SeekersListClient from "./SeekersListClient";
 import JobsTabBar from "./JobsTabBar";
@@ -21,33 +22,38 @@ export default async function JobsPage({
 
   const now = new Date();
 
+  const userRoles   = session.user.churchRoles.map((r) => r.role);
+  const permissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
+  const canManage   = session.user.isSuperAdmin || permissions.has("jobs:manage");
+
+  // Une personne habilitée à modérer voit tous les statuts (spec 048, fusion de /admin/jobs) ;
+  // les autres rôles ne voient que le contenu actif, comme aujourd'hui.
   const [jobs, seekers, freelanceMissions, freelanceProfiles] = await Promise.all([
     prisma.jobOffer.findMany({
-      where: {
-        status: "PUBLISHED",
-        OR: [{ deadline: null }, { deadline: { gte: now } }],
-      },
+      where: canManage
+        ? {}
+        : { status: "PUBLISHED", OR: [{ deadline: null }, { deadline: { gte: now } }] },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.jobSeeker.findMany({
-      where: { status: "ACTIVE" },
+      where: canManage ? {} : { status: "ACTIVE" },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.freelanceMission.findMany({
-      where: { status: "ACTIVE" },
+      where: canManage ? {} : { status: "ACTIVE" },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.freelanceProfile.findMany({
-      where: { status: "ACTIVE" },
+      where: canManage ? {} : { status: "ACTIVE" },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },
       },
@@ -144,12 +150,14 @@ export default async function JobsPage({
           jobs={serializedJobs}
           currentUserId={session.user.id!}
           nowMs={now.getTime()}
+          canManage={canManage}
         />
       )}
       {activeTab === "seekers" && (
         <SeekersListClient
           seekers={serializedSeekers}
           currentUserId={session.user.id!}
+          canManage={canManage}
         />
       )}
       {activeTab === "freelance" && (
@@ -157,6 +165,7 @@ export default async function JobsPage({
           missions={serializedMissions}
           profiles={serializedFreelanceProfiles}
           currentUserId={session.user.id!}
+          canManage={canManage}
         />
       )}
     </div>

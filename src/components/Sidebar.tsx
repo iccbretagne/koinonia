@@ -26,7 +26,6 @@ interface SidebarProps {
   hasRooms?: boolean;
   hasAccounting?: boolean;
   hasJobs?: boolean;
-  hasJobsManage?: boolean;
   jobsUnseenCount?: number;
   isPastoral?: boolean;
   onClose?: () => void;
@@ -345,7 +344,6 @@ export default function Sidebar({
   hasRooms = false,
   hasAccounting = false,
   hasJobs = false,
-  hasJobsManage = false,
   jobsUnseenCount = 0,
   isPastoral = false,
   onClose,
@@ -810,11 +808,6 @@ export default function Sidebar({
               <>
                 {hasRooms && <hr className="my-1 border-gray-100" />}
                 <NavLink href="/jobs" active={pathname === "/jobs"} onClose={onClose} badge={<Badge count={jobsUnseenCount} />}>Offres</NavLink>
-                {hasJobsManage && (
-                  <NavLink href="/admin/jobs" active={pathname.startsWith("/admin/jobs")} onClose={onClose}>
-                    Modération offres
-                  </NavLink>
-                )}
               </>
             )}
           </nav>

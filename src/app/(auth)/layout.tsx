@@ -394,7 +394,6 @@ export default async function AuthLayout({
   const hasDiscipleship = userPermissions.has("discipleship:view");
   const hasAccounting = userPermissions.has("accounting:view");
   const hasJobs = userPermissions.has("jobs:view");
-  const hasJobsManage = userPermissions.has("jobs:manage");
   const hasEventsAccess = userPermissions.has("events:view");
   const hasEventsManage = userPermissions.has("events:manage");
   // Entrée de sidebar "Planning" (grille par département, /dashboard) — spec 031/#462 :
@@ -468,7 +467,6 @@ export default async function AuthLayout({
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}
       hasJobs={hasJobs}
-      hasJobsManage={hasJobsManage}
       isPastoral={isInPastoralMode}
       hasEventsAccess={hasEventsAccess}
       hasEventsManage={hasEventsManage}
