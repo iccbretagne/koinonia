@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -86,7 +86,7 @@ export default function UsersClient({
     setDisplayNameModalOpen(true);
   }
 
-  async function handleEditDisplayName(e: React.FormEvent) {
+  async function handleEditDisplayName(e: FormEvent) {
     e.preventDefault();
     setDisplayNameLoading(true);
     setDisplayNameError("");
@@ -130,7 +130,7 @@ export default function UsersClient({
     setEditModalOpen(true);
   }
 
-  async function handleEditAssignment(e: React.FormEvent) {
+  async function handleEditAssignment(e: FormEvent) {
     e.preventDefault();
     if (!editRole) return;
     setEditLoading(true);

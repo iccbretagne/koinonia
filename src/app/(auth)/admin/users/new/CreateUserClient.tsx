@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -44,7 +44,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
       ? memberId.length > 0
       : firstName.trim().length > 0 && lastName.trim().length > 0 && departmentId.length > 0);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
     setLoading(true);

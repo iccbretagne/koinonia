@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
@@ -30,7 +30,7 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (!form.recipientId || !form.title || !form.startsAt) {
       alert("Profil, titre et date de début sont requis.");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -197,7 +197,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setModalOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (removeFromSeries) { await doSubmit(false); return; }
     if (editing && (editing.seriesId || editing.isRecurrenceParent)) {
@@ -260,7 +260,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: React.FormEvent) {
+  async function handleBulkEdit(e: FormEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkTitle) data.title = bulkTitle;
@@ -290,7 +290,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setDuplicateModalOpen(true);
   }
 
-  async function handleDuplicate(e: React.FormEvent) {
+  async function handleDuplicate(e: FormEvent) {
     e.preventDefault();
     if (!duplicateTargetId) { setDuplicateError("Sélectionnez un événement cible"); return; }
     setDuplicateLoading(true); setDuplicateError("");

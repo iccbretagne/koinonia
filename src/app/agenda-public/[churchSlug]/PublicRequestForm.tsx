@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface Props {
   churchSlug: string;
@@ -101,7 +101,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     if (fieldErrors["motifs"]) setFieldErrors((e) => ({ ...e, motifs: undefined }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!turnstileToken) { setGlobalError("Veuillez compléter la vérification CAPTCHA."); return; }
     setSubmitting(true); setGlobalError(null); setFieldErrors({});

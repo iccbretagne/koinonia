@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
@@ -355,7 +355,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
   ]);
   const availableDisciples = members.filter((m) => !assignedDiscipleIds.has(m.id));
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!discipleSelection) { setCreateError("Sélectionnez ou créez un disciple"); return; }
     const makerId = isFD ? (linkedMemberId ?? newMakerId) : newMakerId;
@@ -390,7 +390,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setEditProfileError(null);
   }
 
-  async function handleEditProfile(e: React.FormEvent) {
+  async function handleEditProfile(e: FormEvent) {
     e.preventDefault();
     if (!editProfileRow) return;
     setEditProfileLoading(true);
@@ -443,7 +443,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setChangeFDError(null);
   }
 
-  async function handleChangeFD(e: React.FormEvent) {
+  async function handleChangeFD(e: FormEvent) {
     e.preventDefault();
     if (!changeFDRow) return;
     if (newFDId === changeFDRow.discipleId) {
@@ -476,7 +476,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setEditRelationError(null);
   }
 
-  async function handleEditRelation(e: React.FormEvent) {
+  async function handleEditRelation(e: FormEvent) {
     e.preventDefault();
     if (!editRelationRow) return;
     setEditRelationLoading(true);

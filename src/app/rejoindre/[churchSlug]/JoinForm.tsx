@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface AddressSuggestion {
   label: string;
@@ -175,7 +175,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
     if (fieldErrors[field]) setFieldErrors((e) => ({ ...e, [field]: undefined }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setGlobalError(null);

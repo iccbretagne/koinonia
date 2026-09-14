@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 interface TaskItem {
   id: string;
@@ -46,7 +46,7 @@ export default function DepartmentTasksView({
     fetchTasks();
   }, [fetchTasks]);
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
