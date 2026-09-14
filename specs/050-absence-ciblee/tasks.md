@@ -1,7 +1,7 @@
 # Tâches — Absence ciblée par département et par événement
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Fait
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -235,11 +235,11 @@
 - [x] `npm run lint:boundaries`
 - [x] `npm run test`
 - [x] `npm run build` (lot UI : frontière client/serveur)
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
-- [ ] Déploiement staging : les absences existantes s'affichent à l'identique après
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] Déploiement staging : les absences existantes s'affichent à l'identique après
       `migrate deploy`, et vérification manuelle mobile
-- [ ] Spec au statut `Implémentée`, plan au statut `Implémenté`
-- [ ] PR ouverte vers `main` (référence `specs/050-absence-ciblee/`, `Closes #557`)
+- [x] Spec au statut `Implémentée`, plan au statut `Implémenté`
+- [x] PR ouverte vers `main` (référence `specs/050-absence-ciblee/`, `Closes #557`) — [#571](https://github.com/iccbretagne/koinonia/pull/571), mergée
 
 ## Couverture des critères d'acceptation
 
