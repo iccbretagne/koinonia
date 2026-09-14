@@ -1,7 +1,7 @@
 # Plan technique — Absence ciblée par département et par événement
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-09-14
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.

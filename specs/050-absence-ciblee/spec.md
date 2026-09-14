@@ -1,7 +1,7 @@
 # Spec — Absence ciblée par département et par événement
 
 - **Numéro** : 050
-- **Statut** : En revue
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-14
 - **Branche suggérée** : `feat/absence-ciblee`
 - **Issue** : #557
@@ -157,36 +157,38 @@ ciblée sur un événement précis.
 
 ## Critères d'acceptation
 
-- [ ] Un STAR peut déclarer une absence sur une **période** pour **tous** ses
+- [x] Un STAR peut déclarer une absence sur une **période** pour **tous** ses
       départements, exactement comme aujourd'hui, sans étape supplémentaire.
-- [ ] Un STAR peut restreindre une déclaration à **un ou plusieurs de ses départements**.
-- [ ] Un STAR peut déclarer une absence sur **un ou plusieurs événements précis** au lieu
+- [x] Un STAR peut restreindre une déclaration à **un ou plusieurs de ses départements**.
+- [x] Un STAR peut déclarer une absence sur **un ou plusieurs événements précis** au lieu
       d'une période, choisis parmi les événements où au moins un de ses départements est attendu.
-- [ ] Les deux ciblages se combinent (départements précis × événements précis).
-- [ ] Le badge d'absence n'apparaît dans une grille de planning que pour les couples
+- [x] Les deux ciblages se combinent (départements précis × événements précis).
+- [x] Le badge d'absence n'apparaît dans une grille de planning que pour les couples
       département/événement couverts par la déclaration.
-- [ ] Un événement situé entre deux événements ciblés n'est pas affecté.
-- [ ] L'alerte de conflit ne se déclenche que si le STAR est planifié en service sur un couple
+- [x] Un événement situé entre deux événements ciblés n'est pas affecté.
+- [x] L'alerte de conflit ne se déclenche que si le STAR est planifié en service sur un couple
       département/événement couvert.
-- [ ] Seuls les responsables des départements couverts sont notifiés à la déclaration, à la
+- [x] Seuls les responsables des départements couverts sont notifiés à la déclaration, à la
       modification et à l'annulation.
-- [ ] Un Resp. département / Ministre ne voit pas une absence ciblée uniquement sur des
+- [x] Un Resp. département / Ministre ne voit pas une absence ciblée uniquement sur des
       départements hors de son périmètre.
-- [ ] Un Resp. département / Ministre qui déclare pour un STAR peut toujours déclarer « tous
+- [x] Un Resp. département / Ministre qui déclare pour un STAR peut toujours déclarer « tous
       départements » ; s'il cible, seuls les départements de son périmètre lui sont proposés.
-- [ ] Un Resp. département / Ministre voit tous les départements visés par une déclaration qui
+- [x] Un Resp. département / Ministre voit tous les départements visés par une déclaration qui
       touche au moins un des siens.
-- [ ] Une absence (globale ou ciblée) ne modifie jamais automatiquement un statut de
+- [x] Une absence (globale ou ciblée) ne modifie jamais automatiquement un statut de
       service.
-- [ ] Une déclaration dont le seul événement visé est supprimé reste dans l'historique, marquée
+- [x] Une déclaration dont le seul événement visé est supprimé reste dans l'historique, marquée
       « événement supprimé », sans effet.
-- [ ] Une absence ciblée sur un événement suit cet événement s'il change de date.
-- [ ] Les absences existantes se comportent strictement comme avant (tous départements, période).
-- [ ] Les filtres ministère/département de la liste des absences tiennent compte du ciblage.
-- [ ] L'export des absences indique le ciblage.
-- [ ] Motif, backups, modification et annulation fonctionnent pour les déclarations ciblées.
-- [ ] La déclaration ciblée est utilisable sur mobile.
-- [ ] Aucune fuite entre églises : les événements et départements proposés sont ceux de l'église
+- [x] Une absence ciblée sur un événement suit cet événement s'il change de date.
+- [x] Les absences existantes se comportent strictement comme avant (tous départements, période).
+- [x] Les filtres ministère/département de la liste des absences tiennent compte du ciblage.
+- [x] L'export des absences indique le ciblage.
+- [x] Motif, backups, modification et annulation fonctionnent pour les déclarations ciblées.
+- [ ] La déclaration ciblée est utilisable sur mobile. *(revue de code : cibles tactiles ≥44px,
+      listes à défilement interne, cohérent avec le reste de l'app ; non vérifié sur un appareil
+      réel — à confirmer manuellement en recette)*
+- [x] Aucune fuite entre églises : les événements et départements proposés sont ceux de l'église
       de la déclaration.
 
 ## Hors périmètre

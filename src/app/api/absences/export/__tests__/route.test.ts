@@ -11,6 +11,7 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/modules/planning", () => ({
   findAbsenceConflicts: vi.fn().mockResolvedValue([]),
+  absenceVisibilityWhere: (departmentIds: string[]) => ({ __visibilityFor: departmentIds }),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -21,8 +22,10 @@ const absenceRow = {
   id: "abs-1",
   churchId: "church-1",
   memberId: "member-1",
+  kind: "PERIOD",
   startDate: new Date("2026-09-01"),
   endDate: new Date("2026-09-05"),
+  allDepartments: true,
   reason: null,
   status: "ACTIVE",
   createdById: "user-1",
@@ -33,6 +36,8 @@ const absenceRow = {
   },
   createdBy: { name: "Jean Dupont", displayName: null },
   backups: [],
+  targetDepartments: [],
+  targetEvents: [],
 };
 
 describe("POST /api/absences/export", () => {
@@ -81,7 +86,6 @@ describe("POST /api/absences/export", () => {
 
   it("restricts the query to the caller's department scope", async () => {
     mockGetUserDepartmentScope.mockReturnValue({ scoped: true, departmentIds: ["dept-1"] });
-    prismaMock.memberDepartment.findMany.mockResolvedValue([{ memberId: "member-1" }] as never);
 
     const res = await POST(
       new Request("http://localhost/api/absences/export", {
@@ -93,7 +97,7 @@ describe("POST /api/absences/export", () => {
     expect(res.status).toBe(200);
     expect(prismaMock.absence.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ memberId: { in: ["member-1"] } }),
+        where: expect.objectContaining({ AND: [{ __visibilityFor: ["dept-1"] }] }),
       })
     );
   });
@@ -111,7 +115,26 @@ describe("POST /api/absences/export", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.absence.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ memberId: { in: [] } }) })
+      expect.objectContaining({ where: expect.objectContaining({ AND: [{ id: "" }] }) })
     );
+  });
+
+  it("indique le ciblage dans les colonnes exportées", async () => {
+    prismaMock.absence.findMany.mockResolvedValue([
+      {
+        ...absenceRow,
+        allDepartments: false,
+        targetDepartments: [{ departmentId: "dept-1", department: { name: "Louange" } }],
+      },
+    ] as never);
+
+    const res = await POST(
+      new Request("http://localhost/api/absences/export", {
+        method: "POST",
+        body: JSON.stringify({ churchId: "church-1", absenceIds: ["abs-1"] }),
+      })
+    );
+
+    expect(res.status).toBe(200);
   });
 });

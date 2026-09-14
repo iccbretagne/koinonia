@@ -6,6 +6,7 @@ import {
   ApiError,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { findActiveAbsencesForPlanning } from "@/modules/planning";
 import { z } from "zod";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -14,31 +15,6 @@ const STATUS_LABELS: Record<string, string> = {
   INDISPONIBLE: "Indisponible",
   REMPLACANT: "Remplaçant",
 };
-
-/**
- * Absences actives chevauchant la date de l'événement, par membre — permet
- * d'afficher un badge dans la grille de planning avant toute affectation.
- */
-async function findActiveAbsencesByMember(
-  churchId: string,
-  memberIds: string[],
-  eventDate: Date | undefined
-): Promise<Map<string, { id: string; startDate: Date; endDate: Date }>> {
-  if (!eventDate || memberIds.length === 0) return new Map();
-
-  const absences = await prisma.absence.findMany({
-    where: {
-      churchId,
-      status: "ACTIVE",
-      memberId: { in: memberIds },
-      startDate: { lte: eventDate },
-      endDate: { gte: eventDate },
-    },
-    select: { id: true, memberId: true, startDate: true, endDate: true },
-  });
-
-  return new Map(absences.map((a) => [a.memberId, { id: a.id, startDate: a.startDate, endDate: a.endDate }]));
-}
 
 export async function GET(
   _request: Request,
@@ -116,11 +92,14 @@ export async function GET(
         ? new Date() > new Date(event.planningDeadline)
         : false;
 
-      const absenceByMember = await findActiveAbsencesByMember(
-        churchId,
-        department.memberDepts.map(({ member }) => member.id),
-        event?.date
-      );
+      const absenceByMember = event
+        ? await findActiveAbsencesForPlanning(
+            prisma,
+            churchId,
+            department.memberDepts.map(({ member }) => member.id),
+            { eventId, eventDate: event.date, departmentId }
+          )
+        : new Map();
 
       return successResponse({
         eventDepartment: null,
@@ -136,10 +115,11 @@ export async function GET(
       });
     }
 
-    const absenceByMember = await findActiveAbsencesByMember(
+    const absenceByMember = await findActiveAbsencesForPlanning(
+      prisma,
       churchId,
       eventDept.department.memberDepts.map(({ member }) => member.id),
-      eventDept.event.date
+      { eventId, eventDate: eventDept.event.date, departmentId }
     );
 
     const members = eventDept.department.memberDepts.map(({ member }) => {

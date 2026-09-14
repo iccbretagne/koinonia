@@ -70,8 +70,13 @@ export type PlanningEvents = {
     absenceId: string;
     churchId: string;
     memberId: string;
-    startDate: string;
-    endDate: string;
+    /** `PERIOD` (startDate/endDate renseignés) ou `EVENTS` (eventIds renseigné) — spec 050. */
+    kind: "PERIOD" | "EVENTS";
+    startDate: string | null;
+    endDate: string | null;
+    allDepartments: boolean;
+    departmentIds: string[];
+    eventIds: string[];
     createdById: string;
     hasConflict: boolean;
   };
@@ -85,14 +90,18 @@ export type PlanningEvents = {
     hadConflict: boolean;
   };
 
-  /** Une absence non passée a été modifiée (période, motif et/ou backups). */
+  /** Une absence non passée a été modifiée (ciblage, motif et/ou backups). */
   "planning:absence:updated": {
     absenceId: string;
     churchId: string;
     memberId: string;
     updatedById: string;
-    startDate: string;
-    endDate: string;
+    kind: "PERIOD" | "EVENTS";
+    startDate: string | null;
+    endDate: string | null;
+    allDepartments: boolean;
+    departmentIds: string[];
+    eventIds: string[];
     hasConflict: boolean;
   };
 }

@@ -49,6 +49,18 @@ interface AbsenceBackupRow {
   role?: "DEPARTMENT_HEAD" | "MINISTER";
 }
 
+interface TargetEventRow {
+  eventId: string | null;
+  title: string;
+  date: string;
+  deleted: boolean;
+}
+
+interface TargetDepartmentRow {
+  id: string;
+  name: string;
+}
+
 interface AbsenceRow {
   id: string;
   member: {
@@ -57,10 +69,15 @@ interface AbsenceRow {
     lastName: string;
     departments: { id: string; name: string; ministry: { id: string; name: string } }[];
   };
-  startDate: string;
-  endDate: string;
+  kind: "PERIOD" | "EVENTS";
+  startDate: string | null;
+  endDate: string | null;
+  allDepartments: boolean;
+  targetDepartments: TargetDepartmentRow[];
+  targetEvents: TargetEventRow[];
   reason: string | null;
   status: "ACTIVE" | "CANCELLED";
+  createdAt: string;
   createdBy: { id: string; name: string | null };
   hasConflict: boolean;
   backups: AbsenceBackupRow[];
@@ -69,6 +86,103 @@ interface AbsenceRow {
 interface BackupOption {
   value: string;
   label: string;
+}
+
+interface TargetOptionEvent {
+  id: string;
+  title: string;
+  date: string;
+  departmentIds: string[];
+}
+
+interface TargetOptions {
+  departments: { id: string; name: string; selectable: boolean }[];
+  events: TargetOptionEvent[];
+}
+
+function RadioPills({
+  name,
+  options,
+  value,
+  onChange,
+}: {
+  name: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <label
+          key={opt.value}
+          className={`flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full border text-sm cursor-pointer transition-colors ${
+            value === opt.value
+              ? "bg-icc-violet text-white border-icc-violet"
+              : "border-gray-300 text-gray-700 hover:border-icc-violet"
+          }`}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={opt.value}
+            checked={value === opt.value}
+            onChange={() => onChange(opt.value)}
+            className="sr-only"
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function eventDateFmt(iso: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
+}
+
+function monthGroupLabel(iso: string): string {
+  const label = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(iso));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Fenêtre effective d'une absence pour le tri/filtrage : période déclarée, ou bornes des
+ * événements visés encore existants (fallback sur la date de création si tous supprimés). */
+function effectiveRange(a: AbsenceRow): { start: Date; end: Date } {
+  if (a.kind === "PERIOD" && a.startDate && a.endDate) {
+    return { start: new Date(a.startDate), end: new Date(a.endDate) };
+  }
+  const live = a.targetEvents.filter((e) => !e.deleted).map((e) => new Date(e.date).getTime());
+  if (live.length > 0) {
+    return { start: new Date(Math.min(...live)), end: new Date(Math.max(...live)) };
+  }
+  const created = new Date(a.createdAt);
+  return { start: created, end: created };
+}
+
+function WhenCell({ a }: { a: AbsenceRow }) {
+  if (a.kind === "PERIOD") {
+    return <>{a.startDate && a.endDate ? `${formatDate(a.startDate)} → ${formatDate(a.endDate)}` : "—"}</>;
+  }
+  const sorted = [...a.targetEvents].sort((x, y) => new Date(x.date).getTime() - new Date(y.date).getTime());
+  if (sorted.length === 0) return <>—</>;
+  const first = sorted[0];
+  return (
+    <span title={sorted.map((e) => `${e.title} (${eventDateFmt(e.date)})`).join(", ")}>
+      {first.deleted ? (
+        <>
+          <span className="line-through text-gray-400">{first.title}</span> (événement supprimé)
+        </>
+      ) : (
+        `${first.title} (${eventDateFmt(first.date)})`
+      )}
+      {sorted.length > 1 && ` +${sorted.length - 1}`}
+    </span>
+  );
+}
+
+function formatDepartments(a: AbsenceRow): string {
+  return a.allDepartments ? "Tous" : a.targetDepartments.map((d) => d.name).join(", ") || "—";
 }
 
 interface AbsencesClientProps {
@@ -92,7 +206,9 @@ function toDateInputValue(iso: string): string {
 }
 
 function isEditable(a: AbsenceRow): boolean {
-  return a.status === "ACTIVE" && !isAbsencePast(a.endDate);
+  if (a.status !== "ACTIVE") return false;
+  const { end } = effectiveRange(a);
+  return !isAbsencePast(end.toISOString());
 }
 
 function parseBackupSelection(selected: string[]): { type: "STAR" | "RESPONSIBLE"; memberId?: string; userChurchRoleId?: string }[] {
@@ -139,8 +255,12 @@ export default function AbsencesClient({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingIsSelf, setEditingIsSelf] = useState(false);
   const [formMemberId, setFormMemberId] = useState("");
+  const [formKind, setFormKind] = useState<"PERIOD" | "EVENTS">("PERIOD");
   const [formStartDate, setFormStartDate] = useState("");
   const [formEndDate, setFormEndDate] = useState("");
+  const [formEventIds, setFormEventIds] = useState<string[]>([]);
+  const [formAllDepartments, setFormAllDepartments] = useState(true);
+  const [formDepartmentIds, setFormDepartmentIds] = useState<string[]>([]);
   const [formReason, setFormReason] = useState("");
   const [formBackups, setFormBackups] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -148,6 +268,9 @@ export default function AbsencesClient({
   const [manageBackupEligible, setManageBackupEligible] = useState(false);
   const [manageBackupOptions, setManageBackupOptions] = useState<BackupOption[]>([]);
   const [loadingManageBackupOptions, setLoadingManageBackupOptions] = useState(false);
+  const [targetOptions, setTargetOptions] = useState<TargetOptions>({ departments: [], events: [] });
+  const [loadingTargetOptions, setLoadingTargetOptions] = useState(false);
+  const [deselectedEventsMessage, setDeselectedEventsMessage] = useState<string | null>(null);
 
   const fetchSelf = useCallback(async () => {
     setLoadingSelf(true);
@@ -219,6 +342,56 @@ export default function AbsencesClient({
     };
   }, [declareOpen, declareMode, formMemberId, churchId]);
 
+  useEffect(() => {
+    if (!declareOpen || !formMemberId) {
+      setTargetOptions({ departments: [], events: [] });
+      return;
+    }
+    let cancelled = false;
+    setLoadingTargetOptions(true);
+    fetch(`/api/absences/target-options?churchId=${churchId}&memberId=${formMemberId}`)
+      .then((res) => (res.ok ? res.json() : { departments: [], events: [] }))
+      .then((data) => {
+        if (!cancelled) setTargetOptions({ departments: data.departments ?? [], events: data.events ?? [] });
+      })
+      .catch(() => {
+        if (!cancelled) setTargetOptions({ departments: [], events: [] });
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTargetOptions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [declareOpen, formMemberId, churchId]);
+
+  const eligibleEvents = useMemo(() => {
+    if (formAllDepartments) return targetOptions.events;
+    return targetOptions.events.filter((e) => e.departmentIds.some((id) => formDepartmentIds.includes(id)));
+  }, [targetOptions.events, formAllDepartments, formDepartmentIds]);
+
+  useEffect(() => {
+    if (formKind !== "EVENTS") return;
+    const eligibleIds = new Set(eligibleEvents.map((e) => e.id));
+    const kept = formEventIds.filter((id) => eligibleIds.has(id));
+    if (kept.length !== formEventIds.length) {
+      setFormEventIds(kept);
+      setDeselectedEventsMessage(
+        `${formEventIds.length - kept.length} événement(s) décoché(s) : hors des départements sélectionnés.`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eligibleEvents]);
+
+  const eventsByMonth = useMemo(() => {
+    const groups = new Map<string, TargetOptionEvent[]>();
+    for (const e of [...eligibleEvents].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())) {
+      const key = monthGroupLabel(e.date);
+      groups.set(key, [...(groups.get(key) ?? []), e]);
+    }
+    return Array.from(groups.entries());
+  }, [eligibleEvents]);
+
   const displayedAbsences = useMemo(() => {
     let rows = allAbsences;
     if (statusFilter !== "ALL") {
@@ -230,17 +403,17 @@ export default function AbsencesClient({
     }
     if (dateFrom) {
       const from = new Date(dateFrom);
-      rows = rows.filter((a) => new Date(a.endDate) >= from);
+      rows = rows.filter((a) => effectiveRange(a).end >= from);
     }
     if (dateTo) {
       const to = new Date(dateTo);
-      rows = rows.filter((a) => new Date(a.startDate) <= to);
+      rows = rows.filter((a) => effectiveRange(a).start <= to);
     }
 
     const sorted = [...rows];
     sorted.sort((a, b) => {
       if (sortBy === "member") return memberName(a).localeCompare(memberName(b));
-      const diff = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      const diff = effectiveRange(a).start.getTime() - effectiveRange(b).start.getTime();
       return sortBy === "startDateAsc" ? diff : -diff;
     });
     return sorted;
@@ -256,11 +429,16 @@ export default function AbsencesClient({
   }, [highlightId, displayedAbsences]);
 
   function resetForm() {
+    setFormKind("PERIOD");
     setFormStartDate("");
     setFormEndDate("");
+    setFormEventIds([]);
+    setFormAllDepartments(true);
+    setFormDepartmentIds([]);
     setFormReason("");
     setFormBackups([]);
     setFormError(null);
+    setDeselectedEventsMessage(null);
   }
 
   function openDeclareForSelf() {
@@ -284,11 +462,16 @@ export default function AbsencesClient({
     setEditingIsSelf(isSelf);
     setDeclareMode(isSelf ? "self" : "manage");
     setFormMemberId(a.member.id);
-    setFormStartDate(toDateInputValue(a.startDate));
-    setFormEndDate(toDateInputValue(a.endDate));
+    setFormKind(a.kind);
+    setFormStartDate(a.startDate ? toDateInputValue(a.startDate) : "");
+    setFormEndDate(a.endDate ? toDateInputValue(a.endDate) : "");
+    setFormEventIds(a.targetEvents.filter((e) => !e.deleted && e.eventId).map((e) => e.eventId!));
+    setFormAllDepartments(a.allDepartments);
+    setFormDepartmentIds(a.targetDepartments.map((d) => d.id));
     setFormReason(a.reason ?? "");
     setFormBackups(a.backups.map((b) => `${b.type}:${b.targetId}`));
     setFormError(null);
+    setDeselectedEventsMessage(null);
     setDeclareOpen(true);
   }
 
@@ -298,8 +481,20 @@ export default function AbsencesClient({
   }
 
   async function submitForm() {
-    if (!formStartDate || !formEndDate || (!editingId && !formMemberId)) {
+    if (!editingId && !formMemberId) {
+      setFormError("Choisir une fiche STAR.");
+      return;
+    }
+    if (formKind === "PERIOD" && (!formStartDate || !formEndDate)) {
       setFormError("Date de début et date de fin sont requises.");
+      return;
+    }
+    if (formKind === "EVENTS" && formEventIds.length === 0) {
+      setFormError("Sélectionner au moins un événement.");
+      return;
+    }
+    if (!formAllDepartments && formDepartmentIds.length === 0) {
+      setFormError("Sélectionner au moins un département.");
       return;
     }
     setSubmitting(true);
@@ -311,14 +506,22 @@ export default function AbsencesClient({
           : manageBackupEligible;
       const backups = includeBackups ? parseBackupSelection(formBackups) : undefined;
 
+      const targeting = {
+        kind: formKind,
+        ...(formKind === "PERIOD"
+          ? { startDate: new Date(formStartDate).toISOString(), endDate: new Date(formEndDate).toISOString() }
+          : { eventIds: formEventIds }),
+        allDepartments: formAllDepartments,
+        ...(formAllDepartments ? {} : { departmentIds: formDepartmentIds }),
+      };
+
       const res = editingId
         ? await fetch(`/api/absences/${editingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               action: "update",
-              startDate: new Date(formStartDate).toISOString(),
-              endDate: new Date(formEndDate).toISOString(),
+              ...targeting,
               reason: formReason || null,
               ...(backups ? { backups } : {}),
             }),
@@ -329,8 +532,7 @@ export default function AbsencesClient({
             body: JSON.stringify({
               churchId,
               memberId: formMemberId,
-              startDate: new Date(formStartDate).toISOString(),
-              endDate: new Date(formEndDate).toISOString(),
+              ...targeting,
               reason: formReason || null,
               ...(backups ? { backups } : {}),
             }),
@@ -421,7 +623,8 @@ export default function AbsencesClient({
               data={activeAbsences}
               emptyMessage="Aucune absence déclarée."
               columns={[
-                { header: "Période", accessor: (a) => `${formatDate(a.startDate)} → ${formatDate(a.endDate)}` },
+                { header: "Quand", accessor: (a) => <WhenCell a={a} /> },
+                { header: "Départements", accessor: (a) => formatDepartments(a) },
                 { header: "Motif", accessor: (a) => a.reason ?? "—" },
                 { header: "Backup(s)", accessor: (a) => <BackupList backups={a.backups} /> },
                 {
@@ -577,7 +780,8 @@ export default function AbsencesClient({
                   accessor: (a) =>
                     Array.from(new Set(a.member.departments.map((d) => d.ministry.name))).join(", ") || "—",
                 },
-                { header: "Période", accessor: (a) => `${formatDate(a.startDate)} → ${formatDate(a.endDate)}` },
+                { header: "Quand", accessor: (a) => <WhenCell a={a} /> },
+                { header: "Départements visés", accessor: (a) => formatDepartments(a) },
                 { header: "Backup(s)", accessor: (a) => <BackupList backups={a.backups} /> },
                 { header: "Déclaré par", accessor: (a) => a.createdBy.name ?? "—" },
                 { header: "Statut", accessor: (a) => <StatusBadge status={a.status} /> },
@@ -637,19 +841,104 @@ export default function AbsencesClient({
             />
           )}
 
-          <Input
-            type="date"
-            label="Date de début"
-            value={formStartDate}
-            onChange={(e) => onStartDateChange(e.target.value)}
-          />
-          <Input
-            type="date"
-            label="Date de fin"
-            value={formEndDate}
-            min={formStartDate || undefined}
-            onChange={(e) => setFormEndDate(e.target.value)}
-          />
+          <div className="space-y-2">
+            <span className="block text-sm font-medium text-gray-700">Quand ?</span>
+            <RadioPills
+              name="formKind"
+              value={formKind}
+              onChange={(v) => setFormKind(v as "PERIOD" | "EVENTS")}
+              options={[
+                { value: "PERIOD", label: "Une période" },
+                { value: "EVENTS", label: "Des événements précis" },
+              ]}
+            />
+
+            {formKind === "PERIOD" ? (
+              <div className="space-y-3 pt-1">
+                <Input
+                  type="date"
+                  label="Date de début"
+                  value={formStartDate}
+                  onChange={(e) => onStartDateChange(e.target.value)}
+                />
+                <Input
+                  type="date"
+                  label="Date de fin"
+                  value={formEndDate}
+                  min={formStartDate || undefined}
+                  onChange={(e) => setFormEndDate(e.target.value)}
+                />
+              </div>
+            ) : (
+              <div className="pt-1 space-y-2">
+                {loadingTargetOptions ? (
+                  <p className="text-xs text-gray-400">Chargement des événements...</p>
+                ) : eventsByMonth.length === 0 ? (
+                  <p className="text-sm text-gray-400">Aucun événement disponible.</p>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto border-2 border-gray-300 rounded-lg p-2 space-y-3">
+                    {eventsByMonth.map(([month, events]) => (
+                      <div key={month}>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 mb-1">
+                          {month}
+                        </p>
+                        <div className="space-y-1">
+                          {events.map((ev) => (
+                            <label
+                              key={ev.id}
+                              className="flex items-start gap-2 px-2 py-2 min-h-[44px] rounded text-sm hover:bg-gray-50 cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formEventIds.includes(ev.id)}
+                                onChange={() =>
+                                  setFormEventIds((prev) =>
+                                    prev.includes(ev.id) ? prev.filter((id) => id !== ev.id) : [...prev, ev.id]
+                                  )
+                                }
+                                className="mt-0.5 shrink-0 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                              />
+                              <span className="min-w-0 break-words leading-snug">
+                                {ev.title} — {eventDateFmt(ev.date)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {deselectedEventsMessage && <p className="text-xs text-orange-600">{deselectedEventsMessage}</p>}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <span className="block text-sm font-medium text-gray-700">Pour quels départements ?</span>
+            <RadioPills
+              name="formAllDepartments"
+              value={formAllDepartments ? "ALL" : "SOME"}
+              onChange={(v) => {
+                setFormAllDepartments(v === "ALL");
+                setDeselectedEventsMessage(null);
+              }}
+              options={[
+                { value: "ALL", label: "Tous mes départements" },
+                { value: "SOME", label: "Certains départements" },
+              ]}
+            />
+            {!formAllDepartments && (
+              <CheckboxGroup
+                label="Départements visés"
+                options={targetOptions.departments
+                  .filter((d) => d.selectable)
+                  .map((d) => ({ value: d.id, label: d.name }))}
+                selected={formDepartmentIds}
+                onChange={setFormDepartmentIds}
+              />
+            )}
+          </div>
+
           <Input
             label="Motif (optionnel)"
             value={formReason}

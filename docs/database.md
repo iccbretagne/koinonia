@@ -435,6 +435,75 @@ Index : `[churchId]`, `[departmentId, startsAt]`, `[seriesId]`
 > agenda personnel via un périmètre d'**appartenance** distinct du périmètre de responsabilité
 > ci-dessus — voir [ADR-0013](adr/0013-perimetre-appartenance-lecture-seule.md).
 
+#### `absences`
+
+Indisponibilité déclarée par ou pour un STAR, sur deux axes de ciblage indépendants (spec 050,
+issue #557) : **quand** (`kind`) et **pour quels départements** (`allDepartments`). Les valeurs
+par défaut (`kind: PERIOD`, `allDepartments: true`) reproduisent le comportement d'avant la
+spec 050 — aucune migration de données n'a été nécessaire.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `memberId` | String | Ref vers `members` (STAR concerné) |
+| `churchId` | String | Ref vers `churches` |
+| `kind` | `AbsenceKind` | `PERIOD` (période) ou `EVENTS` (liste d'événements précis) |
+| `startDate` / `endDate` | DateTime? | Renseignés ssi `kind = PERIOD`, nuls ssi `kind = EVENTS` |
+| `allDepartments` | Boolean | `true` = tous les départements actuels du STAR (y compris ceux rejoints après coup, calculé à la lecture) ; `false` = ciblage explicite via `targetDepartments` |
+| `reason` | String? (Text) | Motif (optionnel) |
+| `status` | `AbsenceStatus` | `ACTIVE` \| `CANCELLED` |
+| `createdById` / `cancelledById` | String / String? | Ref vers `users` |
+| `createdAt` / `updatedAt` / `cancelledAt` | DateTime | Horodatages |
+
+Relations : `backups` (`AbsenceBackup[]`), `targetDepartments` (`AbsenceDepartment[]`),
+`targetEvents` (`AbsenceEvent[]`).
+
+La couverture effective (« cette absence s'applique-t-elle à ce département/cet événement ? »)
+n'est jamais dénormalisée : elle se calcule à la lecture via `absenceCovers`/`absenceCoverageWhere`
+(`src/modules/planning/services/absence-targeting.ts`), seule source de vérité utilisée par le
+badge de planning, la détection de conflits, l'avertissement d'ouverture/fermeture, la visibilité
+et l'export. Un événement déplacé ou un STAR qui change de département sont donc reflétés sans
+écriture supplémentaire.
+
+#### `absence_departments`
+
+Départements explicitement visés par une absence ciblée (`allDepartments = false`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `absenceId` | String | Ref vers `absences` (`onDelete: Cascade`) |
+| `departmentId` | String | Ref vers `departments` (`onDelete: Cascade`) |
+
+Contrainte unique : `[absenceId, departmentId]`.
+
+#### `absence_events`
+
+Événements précis visés par une absence ciblée (`kind = EVENTS`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `absenceId` | String | Ref vers `absences` (`onDelete: Cascade`) |
+| `eventId` | String? | Ref vers `events` (`onDelete: SetNull`) — `NULL` si l'événement a été supprimé |
+| `eventTitle` | String | Instantané du titre au moment du ciblage |
+| `eventDate` | DateTime | Instantané de la date au moment du ciblage |
+
+L'instantané (`eventTitle`/`eventDate`) sert uniquement à afficher « événement supprimé » dans
+l'historique quand `eventId` est `NULL` — jamais à calculer un effet sur le planning : tant que
+l'événement existe, sa date est relue en direct sur `events.date` (l'absence suit l'événement
+s'il est déplacé). Contrainte unique : `[absenceId, eventId]`.
+
+> **Visibilité** (spec 050) : un responsable de département/ministre ne voit une absence ciblée
+> que si l'un de ses départements est concerné (`absenceVisibilityWhere`) — une absence ciblée
+> uniquement sur des départements hors de son périmètre lui est invisible, y compris s'il gérait
+> le STAR par ailleurs.
+
+#### `absence_backups`
+
+Inchangé par la spec 050 — voir le modèle `AbsenceBackup` du schéma pour le détail des deux
+types (`STAR` / `RESPONSIBLE`).
+
 ### Enums
 
 #### `Role`
@@ -513,6 +582,13 @@ LIVRE        # Livree manuellement (annonces)
 REFUSEE      # Refusee (note obligatoire)
 ANNULE       # Annulee par le soumetteur ou en cascade
 ERREUR       # Echec de l'execution automatique
+```
+
+#### `AbsenceKind`
+
+```
+PERIOD  # Absence sur une plage de dates (defaut, retro-compatible)
+EVENTS  # Absence sur une liste d'evenements precis
 ```
 
 ### Module Média

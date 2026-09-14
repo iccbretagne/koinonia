@@ -16,7 +16,26 @@ export {
   resolveSubjectUserId,
   listBackupOptions,
 } from "./services/absence.service";
-export type { AbsenceConflict, BackupInput, BackupOption } from "./services/absence.service";
+export type { AbsenceConflict, AbsenceTargeting, BackupInput, BackupOption } from "./services/absence.service";
+export {
+  absenceCovers,
+  absenceCoverageWhere,
+  effectiveDepartmentIds,
+  lastEffectiveDate,
+  validateTargeting,
+  listTargetOptions,
+  absenceVisibilityWhere,
+  absenceDepartmentFilterWhere,
+  findActiveAbsencesForPlanning,
+} from "./services/absence-targeting";
+export type {
+  DeclarerScope,
+  AbsenceCoverageShape,
+  TargetEventSnapshot,
+  TargetOptionDepartment,
+  TargetOptionEvent,
+  ActivePlanningAbsence,
+} from "./services/absence-targeting";
 export {
   findCoordinationMinistryId,
   canDepositAnnouncementSheet,

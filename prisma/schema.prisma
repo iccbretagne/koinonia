@@ -199,7 +199,7 @@ model User {
   roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
   roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
   // Feuille d'annonces d'un culte (spec 040)
-  announcementSheetsUploaded        AnnouncementSheet[]           @relation("AnnouncementSheetUploadedBy")
+  announcementSheetsUploaded        AnnouncementSheet[]          @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignmentsCreated  OpeningClosingAssignment[]   @relation("OpeningClosingAssignmentCreatedBy")
   // Événements d'équipe (spec 044)
@@ -276,6 +276,8 @@ model Department {
   financialRequests FinancialRequest[]
   // Événements d'équipe (spec 044)
   teamEvents        TeamEvent[]
+  // Absence ciblée (spec 050) : départements visés quand allDepartments = false
+  absenceTargets    AbsenceDepartment[]
 
   @@map("departments")
 }
@@ -410,42 +412,44 @@ model DiscipleshipAttendance {
 }
 
 model Event {
-  id                      String                     @id @default(cuid())
-  title                   String
-  type                    String
-  date                    DateTime
-  churchId                String
-  church                  Church                     @relation(fields: [churchId], references: [id])
-  eventDepts              EventDepartment[]
-  taskAssignments         TaskAssignment[]
-  planningDeadline        DateTime?
-  recurrenceRule          String?
-  seriesId                String?
-  isRecurrenceParent      Boolean                    @default(false)
-  allowAnnouncements      Boolean                    @default(false)
-  createdAt               DateTime                   @default(now())
-  announcementTargets     AnnouncementEvent[]
-  trackedForDiscipleship  Boolean                    @default(false)
-  reportEnabled           Boolean                    @default(false)
-  statsEnabled            Boolean                    @default(false)
-  welcomeDutyEnabled      Boolean                    @default(false)
-  discipleshipAttendances DiscipleshipAttendance[]
-  report                  EventReport?
-  departmentNotices       DepartmentNotice[]
+  id                        String                     @id @default(cuid())
+  title                     String
+  type                      String
+  date                      DateTime
+  churchId                  String
+  church                    Church                     @relation(fields: [churchId], references: [id])
+  eventDepts                EventDepartment[]
+  taskAssignments           TaskAssignment[]
+  planningDeadline          DateTime?
+  recurrenceRule            String?
+  seriesId                  String?
+  isRecurrenceParent        Boolean                    @default(false)
+  allowAnnouncements        Boolean                    @default(false)
+  createdAt                 DateTime                   @default(now())
+  announcementTargets       AnnouncementEvent[]
+  trackedForDiscipleship    Boolean                    @default(false)
+  reportEnabled             Boolean                    @default(false)
+  statsEnabled              Boolean                    @default(false)
+  welcomeDutyEnabled        Boolean                    @default(false)
+  discipleshipAttendances   DiscipleshipAttendance[]
+  report                    EventReport?
+  departmentNotices         DepartmentNotice[]
   // Module media : galeries photos liées à cet événement planning
-  mediaEvents             MediaEvent[]
+  mediaEvents               MediaEvent[]
   // Module intégration : culte où l'appel au salut a été fait
-  integrationRequests     FamilyIntegrationRequest[]
+  integrationRequests       FamilyIntegrationRequest[]
   // Module service d'accueil
-  welcomeDutyAssignments  WelcomeDutyAssignment[]
+  welcomeDutyAssignments    WelcomeDutyAssignment[]
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignments OpeningClosingAssignment[]
   // Module rooms (réservation de salles)
-  roomReservations        RoomReservation[]
+  roomReservations          RoomReservation[]
   // Module audio
-  audioService            AudioService?
+  audioService              AudioService?
   // Feuille d'annonces d'un culte (spec 040)
-  announcementSheet       AnnouncementSheet?
+  announcementSheet         AnnouncementSheet?
+  // Absence ciblée (spec 050) : références depuis les déclarations ciblées sur cet événement
+  absenceTargets            AbsenceEvent[]
 
   @@map("events")
 }
@@ -542,29 +546,73 @@ enum AbsenceStatus {
   CANCELLED
 }
 
-model Absence {
-  id            String        @id @default(cuid())
-  memberId      String
-  churchId      String
-  startDate     DateTime
-  endDate       DateTime
-  reason        String?       @db.Text
-  status        AbsenceStatus @default(ACTIVE)
-  createdById   String
-  cancelledById String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  cancelledAt   DateTime?
+enum AbsenceKind {
+  PERIOD
+  EVENTS
+}
 
-  member      Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  church      Church          @relation(fields: [churchId], references: [id])
-  createdBy   User            @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
-  cancelledBy User?           @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
-  backups     AbsenceBackup[]
+model Absence {
+  id             String        @id @default(cuid())
+  memberId       String
+  churchId       String
+  kind           AbsenceKind   @default(PERIOD)
+  // Renseignés ssi kind = PERIOD ; nuls ssi kind = EVENTS (spec 050)
+  startDate      DateTime?
+  endDate        DateTime?
+  // true = tous les départements du STAR (y compris ceux rejoints après coup) ; false = ciblage
+  // via targetDepartments (spec 050)
+  allDepartments Boolean       @default(true)
+  reason         String?       @db.Text
+  status         AbsenceStatus @default(ACTIVE)
+  createdById    String
+  cancelledById  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  cancelledAt    DateTime?
+
+  member            Member              @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  church            Church              @relation(fields: [churchId], references: [id])
+  createdBy         User                @relation("AbsenceCreatedBy", fields: [createdById], references: [id])
+  cancelledBy       User?               @relation("AbsenceCancelledBy", fields: [cancelledById], references: [id])
+  backups           AbsenceBackup[]
+  targetDepartments AbsenceDepartment[]
+  targetEvents      AbsenceEvent[]
 
   @@index([churchId, startDate, endDate])
   @@index([memberId, status])
   @@map("absences")
+}
+
+/// Départements visés par une absence ciblée (allDepartments = false) — spec 050.
+model AbsenceDepartment {
+  id           String @id @default(cuid())
+  absenceId    String
+  departmentId String
+
+  absence    Absence    @relation(fields: [absenceId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([absenceId, departmentId])
+  @@index([departmentId])
+  @@map("absence_departments")
+}
+
+/// Événements visés par une absence ciblée (kind = EVENTS) — spec 050. La référence passe à NULL
+/// si l'événement est supprimé ; l'instantané (titre, date) permet d'afficher « événement
+/// supprimé » dans l'historique sans jamais servir à un effet sur le planning.
+model AbsenceEvent {
+  id         String   @id @default(cuid())
+  absenceId  String
+  eventId    String?
+  eventTitle String   @db.VarChar(255)
+  eventDate  DateTime
+
+  absence Absence @relation(fields: [absenceId], references: [id], onDelete: Cascade)
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@unique([absenceId, eventId])
+  @@index([eventId])
+  @@map("absence_events")
 }
 
 enum AbsenceBackupType {
@@ -1571,14 +1619,14 @@ enum DutySlot {
 /// Plusieurs personnes possibles par créneau : l'unicité porte sur (événement, créneau,
 /// membre), pas sur le créneau seul.
 model OpeningClosingAssignment {
-  id              String   @id @default(cuid())
-  churchId        String
-  eventId         String
-  slot            DutySlot
-  memberId        String
-  note            String?  @db.VarChar(500)
-  createdById     String
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  churchId    String
+  eventId     String
+  slot        DutySlot
+  memberId    String
+  note        String?  @db.VarChar(500)
+  createdById String
+  createdAt   DateTime @default(now())
 
   church    Church @relation(fields: [churchId], references: [id])
   event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -1986,7 +2034,7 @@ model AudioService {
   serviceDate     DateTime // saisie si pas de planningEventId
   title           String?
   speaker         String?
-  series          String?            // nom de la série / podcast d'origine (import Audiobookshelf, spec 022) — null hors série
+  series          String? // nom de la série / podcast d'origine (import Audiobookshelf, spec 022) — null hors série
   type            String             @default("AUTRE") // nomenclature @/lib/event-types (EVENT_TYPES) — recopiée depuis Event.type au dépôt/rattachement, saisie sinon
   coverKey        String?            @db.VarChar(512) // override, sinon AudioSettings.defaultCoverKey
   status          AudioServiceStatus @default(DRAFT)
@@ -2015,8 +2063,8 @@ model AudioSource {
   channelKey       String? // null pour MIX/SEQUENCE ; nom du canal pour ENVELOPES/SOURCE (P2)
   s3Key            String          @db.VarChar(512)
   originalFilename String?         @db.VarChar(255) // nom du fichier tel que déposé par l'utilisateur —
-                                                      // distinct de s3Key (nommé par sourceId), affiché
-                                                      // pendant le nommage/réordonnancement (spec §2)
+  // distinct de s3Key (nommé par sourceId), affiché
+  // pendant le nommage/réordonnancement (spec §2)
   uploadId         String?         @db.VarChar(255) // identifiant S3 de l'upload multipart en cours (reprise)
   etag             String?         @db.VarChar(255) // ETag S3 final — base du sourceHash (idempotence du rendu, D10)
   durationMs       Int?

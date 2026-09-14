@@ -85,6 +85,8 @@ describe("findActiveAbsenceForMember", () => {
         churchId: "church-1",
         memberId: "member-1",
         status: "ACTIVE",
+        allDepartments: true,
+        kind: "PERIOD",
         startDate: { lte: new Date("2026-09-10") },
         endDate: { gte: new Date("2026-09-10") },
       },
@@ -102,5 +104,17 @@ describe("findActiveAbsenceForMember", () => {
     prismaMock.absence.findFirst.mockResolvedValue(null);
     const result = await findActiveAbsenceForMember("church-1", "member-1", new Date("2026-09-10"));
     expect(result).toBeNull();
+  });
+
+  it("ignore une absence ciblée sur un seul département (allDepartments: false)", async () => {
+    // Le filtre `allDepartments: true` est passé côté Prisma : ce test documente l'intention
+    // (l'ouverture/fermeture n'appartient à aucun département) plutôt que le mock lui-même,
+    // qui ne simule pas le filtrage réel de la base.
+    prismaMock.absence.findFirst.mockResolvedValue(null);
+    const result = await findActiveAbsenceForMember("church-1", "member-1", new Date("2026-09-10"));
+    expect(result).toBeNull();
+    expect(prismaMock.absence.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ allDepartments: true }) })
+    );
   });
 });

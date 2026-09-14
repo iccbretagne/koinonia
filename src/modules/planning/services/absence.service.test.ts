@@ -30,15 +30,17 @@ describe("findAbsenceConflicts", () => {
     vi.clearAllMocks();
   });
 
+  const periodTargeting = {
+    kind: "PERIOD" as const,
+    startDate: new Date("2026-08-01"),
+    endDate: new Date("2026-08-10"),
+    allDepartments: true,
+  };
+
   it("ne détecte aucun conflit quand aucun service ne chevauche la période", async () => {
     prismaMock.planning.findMany.mockResolvedValue([]);
 
-    const conflicts = await findAbsenceConflicts(
-      "member-1",
-      "church-1",
-      new Date("2026-08-01"),
-      new Date("2026-08-10")
-    );
+    const conflicts = await findAbsenceConflicts("member-1", "church-1", periodTargeting);
 
     expect(conflicts).toEqual([]);
   });
@@ -46,7 +48,7 @@ describe("findAbsenceConflicts", () => {
   it("ne filtre que sur EN_SERVICE / EN_SERVICE_DEBRIEF", async () => {
     prismaMock.planning.findMany.mockResolvedValue([]);
 
-    await findAbsenceConflicts("member-1", "church-1", new Date("2026-08-01"), new Date("2026-08-10"));
+    await findAbsenceConflicts("member-1", "church-1", periodTargeting);
 
     expect(prismaMock.planning.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -63,14 +65,49 @@ describe("findAbsenceConflicts", () => {
       { eventDepartment: { departmentId: "dept-1", event: { id: "evt-1", title: "Culte", date: eventDate } } },
     ] as never);
 
-    const conflicts = await findAbsenceConflicts(
-      "member-1",
-      "church-1",
-      new Date("2026-08-01"),
-      new Date("2026-08-10")
-    );
+    const conflicts = await findAbsenceConflicts("member-1", "church-1", periodTargeting);
 
     expect(conflicts).toEqual([{ eventId: "evt-1", title: "Culte", date: eventDate, departmentId: "dept-1" }]);
+  });
+
+  it("restreint le conflit au département ciblé (absence non « tous départements »)", async () => {
+    prismaMock.planning.findMany.mockResolvedValue([]);
+
+    await findAbsenceConflicts("member-1", "church-1", {
+      kind: "PERIOD",
+      startDate: new Date("2026-08-01"),
+      endDate: new Date("2026-08-10"),
+      allDepartments: false,
+      departmentIds: ["dept-louange"],
+    });
+
+    expect(prismaMock.planning.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          eventDepartment: expect.objectContaining({ departmentId: { in: ["dept-louange"] } }),
+        }),
+      })
+    );
+  });
+
+  it("filtre par événements ciblés (kind EVENTS)", async () => {
+    prismaMock.planning.findMany.mockResolvedValue([]);
+
+    await findAbsenceConflicts("member-1", "church-1", {
+      kind: "EVENTS",
+      eventIds: ["evt-1", "evt-2"],
+      allDepartments: true,
+    });
+
+    expect(prismaMock.planning.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          eventDepartment: expect.objectContaining({
+            event: expect.objectContaining({ id: { in: ["evt-1", "evt-2"] } }),
+          }),
+        }),
+      })
+    );
   });
 });
 
@@ -238,6 +275,10 @@ describe("cancelAbsence", () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     cancelledAt: null,
+    kind: "PERIOD",
+    allDepartments: true,
+    targetDepartments: [],
+    targetEvents: [],
     member: { firstName: "Jean", lastName: "Dupont" },
     backups: [],
   };
@@ -570,6 +611,10 @@ describe("cancelAbsence notifie les backups", () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     cancelledAt: null,
+    kind: "PERIOD",
+    allDepartments: true,
+    targetDepartments: [],
+    targetEvents: [],
     member: { firstName: "Jean", lastName: "Dupont" },
     backups: [
       { type: "STAR", memberId: "member-backup", userChurchRoleId: null },
@@ -625,6 +670,10 @@ describe("updateAbsence", () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     cancelledAt: null,
+    kind: "PERIOD",
+    allDepartments: true,
+    targetDepartments: [],
+    targetEvents: [],
     member: { firstName: "Jean", lastName: "Dupont" },
     backups: [],
   };
@@ -681,7 +730,12 @@ describe("updateAbsence", () => {
 
     expect(prismaMock.absence.update).toHaveBeenCalledWith({
       where: { id: "abs-1" },
-      data: { startDate: new Date("2026-09-02"), endDate: new Date("2026-09-12") },
+      data: {
+        kind: "PERIOD",
+        startDate: new Date("2026-09-02"),
+        endDate: new Date("2026-09-12"),
+        allDepartments: true,
+      },
     });
   });
 

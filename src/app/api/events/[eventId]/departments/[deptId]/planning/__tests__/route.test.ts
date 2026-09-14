@@ -45,6 +45,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
+    prismaMock.absence.findMany.mockResolvedValue([]);
   });
 
   it("returns planning data with members and statuses", async () => {
@@ -112,8 +113,10 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
       {
         id: "abs-1",
         memberId: "m-1",
+        kind: "PERIOD",
         startDate: new Date("2026-07-30"),
         endDate: new Date("2026-08-05"),
+        targetEvents: [],
       },
     ] as never);
 
@@ -137,8 +140,10 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
       {
         id: "abs-2",
         memberId: "m-1",
+        kind: "PERIOD",
         startDate: new Date("2026-07-30"),
         endDate: new Date("2026-08-05"),
+        targetEvents: [],
       },
     ] as never);
 
@@ -322,6 +327,7 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
 describe("P0-2 : Department scope — DEPARTMENT_HEAD ne peut pas accéder à un autre département", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.absence.findMany.mockResolvedValue([]);
   });
 
   it("GET : retourne 403 si DEPARTMENT_HEAD scoped à dept-A tente d'accéder à dept-B", async () => {

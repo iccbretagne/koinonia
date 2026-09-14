@@ -8,6 +8,9 @@ import {
   isMemberLinkedToUser,
   validateBackupTargets,
   resolveSubjectUserId,
+  absenceVisibilityWhere,
+  absenceDepartmentFilterWhere,
+  type DeclarerScope,
 } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -17,18 +20,53 @@ export const backupSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("RESPONSIBLE"), userChurchRoleId: z.string().min(1) }),
 ]);
 
+/**
+ * Ciblage d'une absence (spec 050) : `kind` distingue une période (dates) d'une liste
+ * d'événements précis ; `allDepartments` distingue « tous les départements du STAR » d'une
+ * liste de départements ciblés. Les défauts reproduisent le comportement historique.
+ */
 const createSchema = z
   .object({
     churchId: z.string().min(1),
     memberId: z.string().min(1),
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
+    kind: z.enum(["PERIOD", "EVENTS"]).default("PERIOD"),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    eventIds: z.array(z.string().min(1)).max(52).default([]),
+    allDepartments: z.boolean().default(true),
+    departmentIds: z.array(z.string().min(1)).default([]),
     reason: z.string().max(500).nullable().optional(),
     backups: z.array(backupSchema).max(10).optional(),
   })
-  .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
-    message: "endDate doit être postérieure ou égale à startDate",
-    path: ["endDate"],
+  .superRefine((d, ctx) => {
+    if (d.kind === "PERIOD") {
+      if (!d.startDate || !d.endDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "startDate et endDate sont requis pour une absence sur une période",
+          path: ["startDate"],
+        });
+      } else if (new Date(d.endDate) < new Date(d.startDate)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "endDate doit être postérieure ou égale à startDate",
+          path: ["endDate"],
+        });
+      }
+    } else if (d.eventIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Au moins un événement doit être ciblé",
+        path: ["eventIds"],
+      });
+    }
+    if (!d.allDepartments && d.departmentIds.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Au moins un département doit être ciblé",
+        path: ["departmentIds"],
+      });
+    }
   });
 
 /**
@@ -73,6 +111,7 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
 
     let memberIdFilter: string[] | undefined;
+    let visibilityWhere: ReturnType<typeof absenceVisibilityWhere> | undefined;
 
     if (scope === "self") {
       const session = await requireAuth();
@@ -87,35 +126,21 @@ export async function GET(request: Request) {
       const deptScope = getUserDepartmentScope(session, churchId);
       if (deptScope.scoped) {
         if (deptScope.departmentIds.length === 0) return successResponse({ absences: [] });
-        const members = await prisma.memberDepartment.findMany({
-          where: { departmentId: { in: deptScope.departmentIds } },
-          select: { memberId: true },
-        });
-        memberIdFilter = Array.from(new Set(members.map((m) => m.memberId)));
-        if (memberIdFilter.length === 0) return successResponse({ absences: [] });
+        // Une absence « tous départements » d'un membre du périmètre, ou une absence ciblée
+        // touchant au moins un des départements du périmètre — jamais une absence ciblée
+        // uniquement hors périmètre (spec 050 : changement volontaire par rapport à avant).
+        visibilityWhere = absenceVisibilityWhere(deptScope.departmentIds);
       }
     }
 
-    if (ministryId || departmentId) {
-      const deptFilterIds = await prisma.memberDepartment.findMany({
-        where: {
-          department: {
-            ...(departmentId ? { id: departmentId } : {}),
-            ...(ministryId ? { ministryId } : {}),
-          },
-        },
-        select: { memberId: true },
-      });
-      const filteredMemberIds = new Set(deptFilterIds.map((m) => m.memberId));
-      memberIdFilter = memberIdFilter
-        ? memberIdFilter.filter((id) => filteredMemberIds.has(id))
-        : Array.from(filteredMemberIds);
-    }
+    const filterWhere = absenceDepartmentFilterWhere({ departmentId, ministryId });
+    const andClauses = [visibilityWhere, filterWhere].filter((c): c is NonNullable<typeof c> => !!c);
 
     const absences = await prisma.absence.findMany({
       where: {
         churchId,
         ...(memberIdFilter ? { memberId: { in: memberIdFilter } } : {}),
+        ...(andClauses.length > 0 ? { AND: andClauses } : {}),
       },
       include: {
         member: {
@@ -137,8 +162,10 @@ export async function GET(request: Request) {
             },
           },
         },
+        targetDepartments: { select: { department: { select: { id: true, name: true } } } },
+        targetEvents: { select: { eventId: true, eventTitle: true, eventDate: true } },
       },
-      orderBy: { startDate: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
     let result = absences;
@@ -157,7 +184,16 @@ export async function GET(request: Request) {
 
     const enriched = await Promise.all(
       result.map(async (a) => {
-        const conflicts = await findAbsenceConflicts(a.memberId, a.churchId, a.startDate, a.endDate);
+        const targetDepartmentIds = a.targetDepartments.map((d) => d.department.id);
+        const targetEventIds = a.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
+        const conflicts = await findAbsenceConflicts(a.memberId, a.churchId, {
+          kind: a.kind,
+          startDate: a.startDate,
+          endDate: a.endDate,
+          eventIds: targetEventIds,
+          allDepartments: a.allDepartments,
+          departmentIds: targetDepartmentIds,
+        });
         return {
           id: a.id,
           member: {
@@ -166,8 +202,17 @@ export async function GET(request: Request) {
             lastName: a.member.lastName,
             departments: a.member.departments.map((d) => d.department),
           },
+          kind: a.kind,
           startDate: a.startDate,
           endDate: a.endDate,
+          allDepartments: a.allDepartments,
+          targetDepartments: a.targetDepartments.map((d) => d.department),
+          targetEvents: a.targetEvents.map((e) => ({
+            eventId: e.eventId,
+            title: e.eventTitle,
+            date: e.eventDate,
+            deleted: e.eventId === null,
+          })),
           reason: a.reason,
           status: a.status,
           createdBy: { id: a.createdBy.id, name: a.createdBy.displayName ?? a.createdBy.name },
@@ -214,12 +259,18 @@ export async function POST(request: Request) {
 
     const isSelf = await isMemberLinkedToUser(memberId, session.user.id, churchId);
 
+    // Périmètre du déclarant appliqué au ciblage départemental (spec 050) : seul pertinent quand
+    // un tiers déclare pour un STAR — l'auto-déclaration reste bornée par les propres
+    // départements du STAR, déjà vérifiés par `validateTargeting`.
+    let declarerScope: DeclarerScope = { scoped: false, departmentIds: [] };
+
     if (!isSelf) {
       const managerSession = await requireChurchPermission("absences:manage", churchId);
       const deptScope = getUserDepartmentScope(managerSession, churchId);
       if (deptScope.scoped) {
         const withinScope = memberScope.departmentIds.some((id) => deptScope.departmentIds.includes(id));
         if (!withinScope) throw new ApiError(403, "Ce STAR n'appartient pas à votre périmètre");
+        declarerScope = deptScope;
       }
     }
 
@@ -228,11 +279,16 @@ export async function POST(request: Request) {
     const absence = await declareAbsence({
       churchId,
       memberId,
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      kind: data.kind,
+      startDate: data.startDate ? new Date(data.startDate) : undefined,
+      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      eventIds: data.eventIds,
+      allDepartments: data.allDepartments,
+      departmentIds: data.departmentIds,
       reason: data.reason,
       createdById: session.user.id,
       backups: data.backups,
+      declarerScope,
     });
 
     await logAudit({
@@ -241,7 +297,7 @@ export async function POST(request: Request) {
       action: "CREATE",
       entityType: "Absence",
       entityId: absence.id,
-      details: { memberId, startDate: data.startDate, endDate: data.endDate },
+      details: { memberId, kind: data.kind, startDate: data.startDate, endDate: data.endDate, allDepartments: data.allDepartments },
     });
 
     return successResponse(absence, 201);

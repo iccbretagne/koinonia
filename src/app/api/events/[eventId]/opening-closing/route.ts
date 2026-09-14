@@ -78,7 +78,7 @@ export async function POST(
       include: { member: { select: { id: true, firstName: true, lastName: true } } },
     });
 
-    const absence = await findActiveAbsenceForMember(churchId, body.memberId, event.date);
+    const absence = await findActiveAbsenceForMember(churchId, body.memberId, event.date, undefined, eventId);
     await notifyAssignment(churchId, body.memberId, event.title, SLOT_LABELS[body.slot]);
 
     return successResponse({ assignment, absenceWarning: absence !== null }, 201);

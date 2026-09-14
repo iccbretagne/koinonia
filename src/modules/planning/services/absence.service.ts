@@ -1,7 +1,13 @@
-import type { Prisma, Absence, AbsenceBackupType } from "@/generated/prisma/client";
+import type { Prisma, Absence, AbsenceBackupType, AbsenceKind } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
 import { isAbsencePast } from "@/lib/absence-lock";
 import { planningBus } from "../bus";
+import {
+  validateTargeting,
+  lastEffectiveDate,
+  type DeclarerScope,
+  type TargetEventSnapshot,
+} from "./absence-targeting";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -22,28 +28,59 @@ export interface AbsenceConflict {
   departmentId: string;
 }
 
+/** Ciblage effectif d'une absence, tel que persisté — utilisé par les conflits et les notifications. */
+export interface AbsenceTargeting {
+  kind: AbsenceKind;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  eventIds?: string[];
+  allDepartments: boolean;
+  departmentIds?: string[];
+}
+
 function formatPeriod(startDate: Date, endDate: Date): string {
   const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
   return `${fmt.format(startDate)} au ${fmt.format(endDate)}`;
 }
 
+/** Texte « quand » utilisé dans les notifications, pour une période ou une liste d'événements. */
+function formatWhen(targeting: AbsenceTargeting, events: TargetEventSnapshot[]): string {
+  if (targeting.kind === "PERIOD" && targeting.startDate && targeting.endDate) {
+    return `du ${formatPeriod(targeting.startDate, targeting.endDate)}`;
+  }
+  if (events.length === 1) {
+    const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return `sur « ${events[0].title} » (${fmt.format(events[0].date)})`;
+  }
+  return `sur ${events.length} événements`;
+}
+
 /**
- * Cherche les services déjà planifiés (EN_SERVICE / EN_SERVICE_DEBRIEF) du membre
- * dont la date chevauche la période donnée. Jamais persisté : recalculé à chaque appel.
+ * Cherche les services déjà planifiés (EN_SERVICE / EN_SERVICE_DEBRIEF) du membre couverts par
+ * le ciblage de l'absence (période ou événements précis, tous départements ou une liste). Jamais
+ * persisté : recalculé à chaque appel.
  */
 export async function findAbsenceConflicts(
   memberId: string,
   churchId: string,
-  startDate: Date,
-  endDate: Date,
+  targeting: AbsenceTargeting,
   db?: DbClient
 ): Promise<AbsenceConflict[]> {
   db ??= await defaultDb();
+
+  const eventWhere: Prisma.EventWhereInput =
+    targeting.kind === "EVENTS"
+      ? { id: { in: targeting.eventIds ?? [] } }
+      : { date: { gte: targeting.startDate!, lte: targeting.endDate! } };
+
   const plannings = await db.planning.findMany({
     where: {
       memberId,
       status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] },
-      eventDepartment: { event: { churchId, date: { gte: startDate, lte: endDate } } },
+      eventDepartment: {
+        event: { churchId, ...eventWhere },
+        ...(targeting.allDepartments ? {} : { departmentId: { in: targeting.departmentIds ?? [] } }),
+      },
     },
     select: {
       eventDepartment: {
@@ -63,25 +100,30 @@ export async function findAbsenceConflicts(
   }));
 }
 
-/** Union dédupliquée des Resp. département + Ministres couvrant tous les départements du membre. */
+/**
+ * Union dédupliquée des Resp. département + Ministres couvrant les départements du membre.
+ * `departmentIds` restreint la recherche à ce sous-ensemble (absence ciblée) ; par défaut, tous
+ * les départements du membre (absence « tous départements »).
+ */
 export async function resolveResponsibleUserIds(
   memberId: string,
   churchId: string,
-  db?: DbClient
+  db?: DbClient,
+  departmentIds?: string[]
 ): Promise<string[]> {
   db ??= await defaultDb();
   const memberDepts = await db.memberDepartment.findMany({
-    where: { memberId },
+    where: { memberId, ...(departmentIds ? { departmentId: { in: departmentIds } } : {}) },
     select: { department: { select: { id: true, ministryId: true } } },
   });
 
-  const departmentIds = memberDepts.map((d) => d.department.id);
-  if (departmentIds.length === 0) return [];
+  const scopedDepartmentIds = memberDepts.map((d) => d.department.id);
+  if (scopedDepartmentIds.length === 0) return [];
 
   const ministryIds = Array.from(new Set(memberDepts.map((d) => d.department.ministryId)));
 
   const deptHeads = await db.userDepartment.findMany({
-    where: { departmentId: { in: departmentIds }, userChurchRole: { churchId, role: "DEPARTMENT_HEAD" } },
+    where: { departmentId: { in: scopedDepartmentIds }, userChurchRole: { churchId, role: "DEPARTMENT_HEAD" } },
     select: { userChurchRole: { select: { userId: true } } },
   });
 
@@ -366,22 +408,42 @@ async function resolveBackupRecipients(
 interface DeclareAbsenceParams {
   churchId: string;
   memberId: string;
-  startDate: Date;
-  endDate: Date;
-  reason?: string | null;
   createdById: string;
+  kind?: AbsenceKind;
+  startDate?: Date;
+  endDate?: Date;
+  eventIds?: string[];
+  allDepartments?: boolean;
+  departmentIds?: string[];
+  reason?: string | null;
   backups?: BackupInput[];
+  /** Périmètre départemental du déclarant — restreint les départements ciblables (spec 050). */
+  declarerScope?: DeclarerScope;
 }
 
 /**
- * Déclare une absence, calcule les conflits avec le planning existant, notifie
- * les responsables (et le STAR en cas de conflit), puis émet l'événement bus.
+ * Déclare une absence (période ou événements précis, tous départements ou une liste), calcule
+ * les conflits avec le planning existant, notifie les responsables des départements effectivement
+ * couverts (et le STAR en cas de conflit), puis émet l'événement bus.
  *
  * L'autorisation (auto-déclaration ou périmètre resp./ministre) est vérifiée par
  * la route appelante avant d'invoquer ce service.
  */
 export async function declareAbsence(params: DeclareAbsenceParams): Promise<Absence> {
-  const { churchId, memberId, startDate, endDate, reason, createdById, backups = [] } = params;
+  const {
+    churchId,
+    memberId,
+    createdById,
+    kind = "PERIOD",
+    startDate,
+    endDate,
+    eventIds = [],
+    allDepartments = true,
+    departmentIds = [],
+    reason,
+    backups = [],
+    declarerScope = { scoped: false, departmentIds: [] },
+  } = params;
   const { prisma } = await import("@/lib/prisma");
 
   const member = await prisma.member.findUnique({
@@ -391,8 +453,37 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
   if (!member) throw new ApiError(404, "Fiche STAR introuvable");
 
   return prisma.$transaction(async (tx) => {
+    const { events } = await validateTargeting(tx, {
+      churchId,
+      memberId,
+      kind,
+      eventIds,
+      allDepartments,
+      departmentIds,
+      declarerScope,
+    });
+
     const absence = await tx.absence.create({
-      data: { churchId, memberId, startDate, endDate, reason: reason ?? null, createdById },
+      data: {
+        churchId,
+        memberId,
+        kind,
+        startDate: kind === "PERIOD" ? startDate! : null,
+        endDate: kind === "PERIOD" ? endDate! : null,
+        allDepartments,
+        reason: reason ?? null,
+        createdById,
+        ...(allDepartments
+          ? {}
+          : { targetDepartments: { createMany: { data: departmentIds.map((departmentId) => ({ departmentId })) } } }),
+        ...(kind === "EVENTS"
+          ? {
+              targetEvents: {
+                createMany: { data: events.map((e) => ({ eventId: e.eventId, eventTitle: e.title, eventDate: e.date })) },
+              },
+            }
+          : {}),
+      },
     });
 
     if (backups.length > 0) {
@@ -406,12 +497,26 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
       });
     }
 
-    const conflicts = await findAbsenceConflicts(memberId, churchId, startDate, endDate, tx);
+    const targeting: AbsenceTargeting = {
+      kind,
+      startDate: absence.startDate,
+      endDate: absence.endDate,
+      eventIds,
+      allDepartments,
+      departmentIds,
+    };
+
+    const conflicts = await findAbsenceConflicts(memberId, churchId, targeting, tx);
     const hasConflict = conflicts.length > 0;
-    const responsibleUserIds = await resolveResponsibleUserIds(memberId, churchId, tx);
+    const responsibleUserIds = await resolveResponsibleUserIds(
+      memberId,
+      churchId,
+      tx,
+      allDepartments ? undefined : departmentIds
+    );
 
     const memberName = `${member.firstName} ${member.lastName}`;
-    const period = formatPeriod(startDate, endDate);
+    const when = formatWhen(targeting, events);
 
     for (const userId of responsibleUserIds) {
       await tx.notification.create({
@@ -419,7 +524,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
           userId,
           type: "ABSENCE_DECLARED",
           title: "Absence déclarée",
-          message: `${memberName} a déclaré une absence du ${period}.`,
+          message: `${memberName} a déclaré une absence ${when}.`,
           link: "/absences",
         },
       });
@@ -437,7 +542,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
             userId,
             type: "ABSENCE_CONFLICT",
             title: "Conflit planning / absence",
-            message: `L'absence de ${memberName} (${period}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+            message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
             link: "/absences",
           },
         });
@@ -456,7 +561,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
             userId,
             type: "ABSENCE_BACKUP_ASSIGNED",
             title: "Désigné en backup",
-            message: `Vous avez été désigné en backup de ${memberName} pour son absence du ${period}.`,
+            message: `Vous avez été désigné en backup de ${memberName} pour son absence ${when}.`,
             link: "/absences",
           },
         });
@@ -470,8 +575,12 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
         absenceId: absence.id,
         churchId,
         memberId,
-        startDate: absence.startDate.toISOString(),
-        endDate: absence.endDate.toISOString(),
+        kind,
+        startDate: absence.startDate ? absence.startDate.toISOString() : null,
+        endDate: absence.endDate ? absence.endDate.toISOString() : null,
+        allDepartments,
+        departmentIds,
+        eventIds,
         createdById,
         hasConflict,
       }
@@ -504,20 +613,31 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
       include: {
         member: { select: { firstName: true, lastName: true } },
         backups: { select: { type: true, memberId: true, userChurchRoleId: true } },
+        targetDepartments: { select: { departmentId: true } },
+        targetEvents: { select: { eventId: true, eventTitle: true, eventDate: true } },
       },
     });
     if (!absence) throw new ApiError(404, "Absence introuvable");
     if (absence.churchId !== churchId) throw new ApiError(403, "Absence hors périmètre");
     if (absence.status === "CANCELLED") throw new ApiError(409, "Absence déjà annulée");
-    if (isAbsencePast(absence.endDate)) throw new ApiError(409, "Absence déjà passée, non annulable");
 
-    const conflictsBefore = await findAbsenceConflicts(
-      absence.memberId,
-      churchId,
-      absence.startDate,
-      absence.endDate,
-      tx
-    );
+    const lastDate = lastEffectiveDate(absence);
+    if (lastDate === null || isAbsencePast(lastDate)) {
+      throw new ApiError(409, "Absence déjà passée, non annulable");
+    }
+
+    const departmentIds = absence.targetDepartments.map((d) => d.departmentId);
+    const eventIds = absence.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
+    const targeting: AbsenceTargeting = {
+      kind: absence.kind,
+      startDate: absence.startDate,
+      endDate: absence.endDate,
+      eventIds,
+      allDepartments: absence.allDepartments,
+      departmentIds,
+    };
+
+    const conflictsBefore = await findAbsenceConflicts(absence.memberId, churchId, targeting, tx);
     const hadConflict = conflictsBefore.length > 0;
 
     const updated = await tx.absence.update({
@@ -525,7 +645,12 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
       data: { status: "CANCELLED", cancelledAt: new Date(), cancelledById },
     });
 
-    const responsibleUserIds = await resolveResponsibleUserIds(absence.memberId, churchId, tx);
+    const responsibleUserIds = await resolveResponsibleUserIds(
+      absence.memberId,
+      churchId,
+      tx,
+      absence.allDepartments ? undefined : departmentIds
+    );
     const recipients = new Set(responsibleUserIds);
     if (hadConflict) {
       const links = await tx.memberUserLink.findMany({
@@ -539,7 +664,10 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
     }
 
     const memberName = `${absence.member.firstName} ${absence.member.lastName}`;
-    const period = formatPeriod(absence.startDate, absence.endDate);
+    const when = formatWhen(
+      targeting,
+      absence.targetEvents.map((e) => ({ eventId: e.eventId ?? "", title: e.eventTitle, date: e.eventDate }))
+    );
 
     for (const userId of recipients) {
       await tx.notification.create({
@@ -547,7 +675,7 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
           userId,
           type: "ABSENCE_CANCELLED",
           title: "Absence annulée",
-          message: `L'absence de ${memberName} (${period}) a été annulée.`,
+          message: `L'absence de ${memberName} (${when}) a été annulée.`,
           link: "/absences",
         },
       });
@@ -567,22 +695,42 @@ interface UpdateAbsenceParams {
   absenceId: string;
   churchId: string;
   updatedById: string;
+  kind?: AbsenceKind;
   startDate?: Date;
   endDate?: Date;
+  eventIds?: string[];
+  allDepartments?: boolean;
+  departmentIds?: string[];
   reason?: string | null;
   /** Remplace intégralement les backups si fourni ; laisse inchangé si `undefined`. */
   backups?: BackupInput[];
+  /** Périmètre départemental du déclarant — restreint les départements ciblables (spec 050). */
+  declarerScope?: DeclarerScope;
 }
 
 /**
- * Modifie une absence active tant que sa date de fin n'est pas passée, recalcule les conflits
- * sur la nouvelle période et notifie l'union des destinataires (anciens + nouveaux backups).
+ * Modifie une absence active tant qu'elle n'est pas passée (dernier jour de la période, ou
+ * dernier événement ciblé encore existant), recalcule les conflits sur le nouveau ciblage et
+ * notifie l'union des destinataires — anciens et nouveaux responsables concernés, et backups.
  *
  * L'autorisation (créateur, membre lui-même, resp./ministre scopé, ou manager global) est
  * vérifiée par la route appelante avant d'invoquer ce service.
  */
 export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absence> {
-  const { absenceId, churchId, updatedById, startDate, endDate, reason, backups } = params;
+  const {
+    absenceId,
+    churchId,
+    updatedById,
+    kind,
+    startDate,
+    endDate,
+    eventIds,
+    allDepartments,
+    departmentIds,
+    reason,
+    backups,
+    declarerScope = { scoped: false, departmentIds: [] },
+  } = params;
   const { prisma } = await import("@/lib/prisma");
 
   return prisma.$transaction(async (tx) => {
@@ -591,6 +739,8 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
       include: {
         member: { select: { firstName: true, lastName: true } },
         backups: { select: { type: true, memberId: true, userChurchRoleId: true } },
+        targetDepartments: { select: { departmentId: true } },
+        targetEvents: { select: { eventId: true, eventTitle: true, eventDate: true } },
       },
     });
     if (!absence) throw new ApiError(404, "Absence introuvable");
@@ -598,37 +748,120 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
     if (absence.status === "CANCELLED") throw new ApiError(409, "Absence annulée, non modifiable");
 
     const now = new Date();
-    if (isAbsencePast(absence.endDate, now)) throw new ApiError(409, "Absence déjà passée, non modifiable");
+    const lastDateBefore = lastEffectiveDate(absence);
+    if (lastDateBefore === null || isAbsencePast(lastDateBefore, now)) {
+      throw new ApiError(409, "Absence déjà passée, non modifiable");
+    }
 
-    const newStartDate = startDate ?? absence.startDate;
-    const newEndDate = endDate ?? absence.endDate;
+    const targetingChanged =
+      kind !== undefined ||
+      startDate !== undefined ||
+      endDate !== undefined ||
+      eventIds !== undefined ||
+      allDepartments !== undefined ||
+      departmentIds !== undefined;
 
-    if (startDate && absence.startDate <= now && startDate < absence.startDate) {
+    const newKind = kind ?? absence.kind;
+    const newStartDate = startDate ?? absence.startDate ?? undefined;
+    const newEndDate = endDate ?? absence.endDate ?? undefined;
+    const newAllDepartments = allDepartments ?? absence.allDepartments;
+    const newDepartmentIds = departmentIds ?? absence.targetDepartments.map((d) => d.departmentId);
+    const newEventIds =
+      eventIds ?? absence.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
+
+    if (
+      newKind === "PERIOD" &&
+      startDate &&
+      absence.kind === "PERIOD" &&
+      absence.startDate &&
+      absence.startDate <= now &&
+      startDate < absence.startDate
+    ) {
       throw new ApiError(400, "La date de début d'une absence déjà commencée ne peut pas être reculée");
     }
 
-    const conflictsBefore = await findAbsenceConflicts(
-      absence.memberId,
-      churchId,
-      absence.startDate,
-      absence.endDate,
-      tx
-    );
+    const priorDepartmentIds = absence.targetDepartments.map((d) => d.departmentId);
+    const priorEventIds = absence.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
+    const targetingBefore: AbsenceTargeting = {
+      kind: absence.kind,
+      startDate: absence.startDate,
+      endDate: absence.endDate,
+      eventIds: priorEventIds,
+      allDepartments: absence.allDepartments,
+      departmentIds: priorDepartmentIds,
+    };
+    const conflictsBefore = await findAbsenceConflicts(absence.memberId, churchId, targetingBefore, tx);
     const hadConflictBefore = conflictsBefore.length > 0;
+
+    let newEventSnapshots: TargetEventSnapshot[] = absence.targetEvents.map((e) => ({
+      eventId: e.eventId ?? "",
+      title: e.eventTitle,
+      date: e.eventDate,
+    }));
+
+    if (targetingChanged) {
+      const validated = await validateTargeting(tx, {
+        churchId,
+        memberId: absence.memberId,
+        kind: newKind,
+        eventIds: newEventIds,
+        allDepartments: newAllDepartments,
+        departmentIds: newDepartmentIds,
+        declarerScope,
+      });
+      newEventSnapshots = validated.events;
+
+      await tx.absenceDepartment.deleteMany({ where: { absenceId } });
+      if (!newAllDepartments) {
+        await tx.absenceDepartment.createMany({
+          data: newDepartmentIds.map((departmentId) => ({ absenceId, departmentId })),
+        });
+      }
+
+      await tx.absenceEvent.deleteMany({ where: { absenceId } });
+      if (newKind === "EVENTS") {
+        await tx.absenceEvent.createMany({
+          data: newEventSnapshots.map((e) => ({ absenceId, eventId: e.eventId, eventTitle: e.title, eventDate: e.date })),
+        });
+      }
+    }
 
     const updated = await tx.absence.update({
       where: { id: absenceId },
       data: {
-        startDate: newStartDate,
-        endDate: newEndDate,
+        kind: newKind,
+        startDate: newKind === "PERIOD" ? (newStartDate ?? null) : null,
+        endDate: newKind === "PERIOD" ? (newEndDate ?? null) : null,
+        allDepartments: newAllDepartments,
         ...(reason !== undefined ? { reason: reason ?? null } : {}),
       },
     });
 
-    const conflictsAfter = await findAbsenceConflicts(absence.memberId, churchId, newStartDate, newEndDate, tx);
+    const targetingAfter: AbsenceTargeting = {
+      kind: newKind,
+      startDate: updated.startDate,
+      endDate: updated.endDate,
+      eventIds: newEventIds,
+      allDepartments: newAllDepartments,
+      departmentIds: newDepartmentIds,
+    };
+    const conflictsAfter = await findAbsenceConflicts(absence.memberId, churchId, targetingAfter, tx);
     const hasConflictAfter = conflictsAfter.length > 0;
 
-    const responsibleUserIds = await resolveResponsibleUserIds(absence.memberId, churchId, tx);
+    const responsibleUserIdsBefore = await resolveResponsibleUserIds(
+      absence.memberId,
+      churchId,
+      tx,
+      absence.allDepartments ? undefined : priorDepartmentIds
+    );
+    const responsibleUserIdsAfter = await resolveResponsibleUserIds(
+      absence.memberId,
+      churchId,
+      tx,
+      newAllDepartments ? undefined : newDepartmentIds
+    );
+    const responsibleUserIds = Array.from(new Set([...responsibleUserIdsBefore, ...responsibleUserIdsAfter]));
+
     const priorBackupRecipients = await resolveBackupRecipients(absence.backups, churchId, tx);
 
     let newBackupRecipients: string[] = [];
@@ -656,7 +889,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
     }
 
     const memberName = `${absence.member.firstName} ${absence.member.lastName}`;
-    const period = formatPeriod(newStartDate, newEndDate);
+    const when = formatWhen(targetingAfter, newEventSnapshots);
 
     const memberLinkedUserIds =
       hadConflictBefore || hasConflictAfter
@@ -681,7 +914,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
           userId,
           type: "ABSENCE_UPDATED",
           title: "Absence modifiée",
-          message: `L'absence de ${memberName} a été modifiée (période : ${period}).`,
+          message: `L'absence de ${memberName} a été modifiée (${when}).`,
           link: "/absences",
         },
       });
@@ -689,14 +922,14 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
 
     if (hasConflictAfter && !hadConflictBefore) {
       const plural = conflictsAfter.length > 1;
-      const conflictRecipients = new Set([...responsibleUserIds, ...memberLinkedUserIds]);
+      const conflictRecipients = new Set([...responsibleUserIdsAfter, ...memberLinkedUserIds]);
       for (const userId of conflictRecipients) {
         await tx.notification.create({
           data: {
             userId,
             type: "ABSENCE_CONFLICT",
             title: "Conflit planning / absence",
-            message: `L'absence de ${memberName} (${period}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+            message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
             link: "/absences",
           },
         });
@@ -711,8 +944,12 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         churchId,
         memberId: absence.memberId,
         updatedById,
-        startDate: newStartDate.toISOString(),
-        endDate: newEndDate.toISOString(),
+        kind: newKind,
+        startDate: updated.startDate ? updated.startDate.toISOString() : null,
+        endDate: updated.endDate ? updated.endDate.toISOString() : null,
+        allDepartments: newAllDepartments,
+        departmentIds: newDepartmentIds,
+        eventIds: newEventIds,
         hasConflict: hasConflictAfter,
       }
     );

@@ -763,6 +763,85 @@ Assigne des membres à une tâche pour un événement. Remplace les assignations
 - `400` si un membre n'est pas en service pour cet événement
 - `404` si la tâche ou le lien événement-département est introuvable
 
+## Absences
+
+Indisponibilité déclarée par ou pour un STAR. Depuis la spec 050 (issue #557), le ciblage se
+décompose en deux axes indépendants : **quand** (`kind: "PERIOD" | "EVENTS"`) et **pour quels
+départements** (`allDepartments: boolean` + `departmentIds`). Les valeurs par défaut (`kind:
+"PERIOD"`, `allDepartments: true`) reproduisent le comportement antérieur — une absence
+existante déclarée avant la spec s'affiche à l'identique.
+
+### `POST /api/absences`
+
+Permission : `absences:manage` pour déclarer au nom d'un autre STAR ; sans permission particulière
+pour soi-même (`memberId` doit correspondre à une fiche liée au compte de l'appelant).
+
+**Body** :
+```json
+{
+  "churchId": "clx...",
+  "memberId": "clx...",
+  "kind": "PERIOD",
+  "startDate": "2026-09-01T00:00:00.000Z",
+  "endDate": "2026-09-08T00:00:00.000Z",
+  "eventIds": [],
+  "allDepartments": true,
+  "departmentIds": [],
+  "reason": "Voyage",
+  "backups": [{ "type": "STAR", "memberId": "clx..." }]
+}
+```
+- `kind: "PERIOD"` exige `startDate`/`endDate` (`endDate >= startDate`) ; `eventIds` est ignoré.
+- `kind: "EVENTS"` exige au moins un `eventIds` (max 52) ; `startDate`/`endDate` sont ignorés.
+- `allDepartments: false` exige au moins un `departmentIds`, qui doit appartenir aux départements
+  actuels du STAR et, si le déclarant a un périmètre restreint, à son périmètre.
+- Un événement ciblé doit être de la même église, ne pas être un parent de série, ne pas être
+  déjà passé, et attendre au moins un des départements effectivement visés.
+
+**Erreurs** : `400` (ciblage invalide, événement passé/hors périmètre), `403` (département ou
+événement hors du périmètre du déclarant), `404` (fiche STAR introuvable).
+
+### `GET /api/absences?churchId=&scope=self|all&ministryId=&departmentId=&role=`
+
+`scope=all` (permission `absences:view`) renvoie les absences visibles par l'appelant : un
+responsable de département/ministre au périmètre restreint ne voit **pas** une absence ciblée
+uniquement sur des départements hors de son périmètre, même si elle porte sur un STAR qu'il gère
+par ailleurs (changement de visibilité introduit par la spec 050 — avant, la
+visibilité suivait l'appartenance du STAR, pas le ciblage de l'absence).
+
+Chaque absence renvoyée inclut `kind`, `allDepartments`, `targetDepartments` (noms compris) et
+`targetEvents` (`{ eventId, title, date, deleted }` — `deleted: true` si l'événement a été
+supprimé depuis, l'instantané `title`/`date` restant affiché dans l'historique).
+
+### `PATCH /api/absences/[id]`
+
+`{ "action": "update", ... }` accepte les mêmes champs de ciblage optionnels que la création
+(`kind`, `startDate`, `endDate`, `eventIds`, `allDepartments`, `departmentIds`) ; modifier le
+ciblage recalcule les responsables notifiés (union des responsables avant/après modification).
+`{ "action": "cancel" }` inchangé.
+
+### `GET /api/absences/target-options?churchId=&memberId=`
+
+Options de ciblage pour le formulaire de déclaration/modification d'une absence du STAR
+`memberId` — mêmes gardes que `backup-options` (soi-même, ou `absences:manage` + périmètre).
+
+**Réponse** :
+```json
+{
+  "departments": [{ "id": "clx...", "name": "Louange", "selectable": true }],
+  "events": [{ "id": "clx...", "title": "Culte du dimanche", "date": "2026-09-06T09:00:00.000Z", "departmentIds": ["clx..."] }]
+}
+```
+`selectable: false` marque un département du STAR hors du périmètre du déclarant restreint (affiché
+mais non cochable). `events` liste les événements à venir (6 mois par défaut), hors parents de
+série, où au moins un département attendu figure dans les départements du STAR.
+
+### `POST /api/absences/export`
+
+Inchangé dans sa forme, colonnes supplémentaires : « Ciblage » (« Tous » ou noms des départements
+visés) et « Événements visés » (titres, avec suffixe « (événement supprimé) » si applicable).
+`Début`/`Fin` restent vides pour une absence de type `EVENTS`.
+
 ## Événements d'équipe
 
 Rendez-vous internes à un département (répétition, réunion, formation), distincts des

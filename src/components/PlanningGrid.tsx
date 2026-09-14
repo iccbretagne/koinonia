@@ -10,17 +10,27 @@ interface MemberPlanning {
   lastName: string;
   status: string | null;
   planningId: string | null;
-  activeAbsence?: { id: string; startDate: string; endDate: string } | null;
+  activeAbsence?: {
+    id: string;
+    kind: "PERIOD" | "EVENTS";
+    startDate: string | null;
+    endDate: string | null;
+    eventCount: number;
+  } | null;
 }
 
-function formatAbsencePeriod(activeAbsence: { startDate: string; endDate: string }): string {
+type ActiveAbsence = NonNullable<MemberPlanning["activeAbsence"]>;
+
+function formatAbsencePeriod(activeAbsence: ActiveAbsence): string {
+  if (activeAbsence.kind === "EVENTS") return "Absence déclarée sur cet événement";
   const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-  return `Absence déclarée du ${fmt.format(new Date(activeAbsence.startDate))} au ${fmt.format(new Date(activeAbsence.endDate))}`;
+  return `Absence déclarée du ${fmt.format(new Date(activeAbsence.startDate!))} au ${fmt.format(new Date(activeAbsence.endDate!))}`;
 }
 
-function formatAbsencePeriodShort(activeAbsence: { startDate: string; endDate: string }): string {
+function formatAbsencePeriodShort(activeAbsence: ActiveAbsence): string {
+  if (activeAbsence.kind === "EVENTS") return "cet événement";
   const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-  return `${fmt.format(new Date(activeAbsence.startDate))}–${fmt.format(new Date(activeAbsence.endDate))}`;
+  return `${fmt.format(new Date(activeAbsence.startDate!))}–${fmt.format(new Date(activeAbsence.endDate!))}`;
 }
 
 // La période est affichée en texte (pas seulement via `title`) car les tooltips
@@ -29,17 +39,23 @@ function AbsenceBadge({
   activeAbsence,
   canViewAbsences,
 }: {
-  activeAbsence: { id: string; startDate: string; endDate: string };
+  activeAbsence: ActiveAbsence;
   canViewAbsences: boolean;
 }) {
   const className =
     "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap";
-  const content = (
-    <>
-      <span aria-hidden="true">⚠</span>
-      {formatAbsencePeriodShort(activeAbsence)}
-    </>
-  );
+  const content =
+    activeAbsence.kind === "PERIOD" ? (
+      <>
+        <span aria-hidden="true">⚠</span>
+        Absent · période {formatAbsencePeriodShort(activeAbsence)}
+      </>
+    ) : (
+      <>
+        <span aria-hidden="true">⚠</span>
+        Absent · cet événement
+      </>
+    );
 
   if (canViewAbsences) {
     return (
