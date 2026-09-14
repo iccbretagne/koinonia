@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -58,7 +58,7 @@ export default function MinistriesClient({
     setModalOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -143,7 +143,7 @@ export default function MinistriesClient({
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: React.FormEvent) {
+  async function handleBulkEdit(e: FormEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkName) data.name = bulkName;

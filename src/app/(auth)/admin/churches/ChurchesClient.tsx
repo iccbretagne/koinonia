@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -58,7 +58,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -132,7 +132,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: React.FormEvent) {
+  async function handleBulkEdit(e: FormEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkName) data.name = bulkName;

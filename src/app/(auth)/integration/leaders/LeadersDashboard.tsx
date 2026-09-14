@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 
 interface UserRef {
@@ -84,7 +84,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
   const selectedFamily = families.find((f) => String(f.id) === form.familyId);
 
-  async function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: FormEvent) {
     e.preventDefault();
     if (!form.userId || !form.familyId) return;
     setSaving(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -76,7 +76,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
     if (fieldErrors["motifs"]) setFieldErrors((e) => ({ ...e, motifs: undefined }));
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
     const errs: FieldErrors = {};
     if (!form.gender) errs.gender = "Veuillez sélectionner votre sexe";
