@@ -45,7 +45,7 @@ function milestoneCount(j: Journey): number {
   return [j.integratedInFamily, j.followsPcnc, j.isStar, j.inDiscipleship].filter(Boolean).length;
 }
 
-function JourneyMilestoneBadges({ journey }: { journey: Journey }) {
+function JourneyMilestoneBadges({ journey }: { readonly journey: Journey }) {
   return (
     <div className="flex gap-1 flex-wrap">
       {MILESTONES.map((m) => (
@@ -63,8 +63,8 @@ function JourneyMilestoneBadges({ journey }: { journey: Journey }) {
 }
 
 type Props = {
-  churchId: string;
-  initialJourneys: Journey[];
+  readonly churchId: string;
+  readonly initialJourneys: Journey[];
 };
 
 export default function ParcoursView({ churchId, initialJourneys }: Props) {

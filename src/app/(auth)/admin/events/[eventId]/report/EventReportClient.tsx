@@ -34,13 +34,13 @@ interface ExistingReport {
 }
 
 interface Props {
-  eventId: string;
-  eventTitle: string;
-  eventDate: string;
-  eventType: string;
-  statsEnabled: boolean;
-  existingReport: ExistingReport | null;
-  eventDepts: Dept[];
+  readonly eventId: string;
+  readonly eventTitle: string;
+  readonly eventDate: string;
+  readonly eventType: string;
+  readonly statsEnabled: boolean;
+  readonly existingReport: ExistingReport | null;
+  readonly eventDepts: Dept[];
 }
 
 // ─── Configuration des champs par type de département ───────────────────────
@@ -97,7 +97,7 @@ function statVal(stats: Record<string, number | null> | null, key: string): numb
 
 type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 
-function SaveIndicator({ status, error }: { status: SaveStatus; error: string | null }) {
+function SaveIndicator({ status, error }: { readonly status: SaveStatus; readonly error: string | null }) {
   if (status === "idle") return null;
   const configs: Record<SaveStatus, { cls: string; text: string }> = {
     idle:    { cls: "", text: "" },

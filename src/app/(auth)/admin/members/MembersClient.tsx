@@ -38,12 +38,12 @@ type LookupResult = {
 };
 
 interface Props {
-  initialMembers: Member[];
-  departments: { id: string; name: string; ministryName: string }[];
-  readOnly?: boolean;
+  readonly initialMembers: Member[];
+  readonly departments: { id: string; name: string; ministryName: string }[];
+  readonly readOnly?: boolean;
   /** L'appelant ne gère qu'une partie des départements : il lui faut retirer/rattacher un STAR. */
-  scoped?: boolean;
-  churchId: string;
+  readonly scoped?: boolean;
+  readonly churchId: string;
 }
 
 const LS_FILTER_DEPT = "members_filter_dept";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-export default function NewMediaProjectForm({ churchId }: { churchId: string }) {
+export default function NewMediaProjectForm({ churchId }: { readonly churchId: string }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

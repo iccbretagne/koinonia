@@ -8,7 +8,7 @@ import RequestDetail from "./RequestDetail";
 export default async function IntegrationRequestDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   const session = await requireAuth();

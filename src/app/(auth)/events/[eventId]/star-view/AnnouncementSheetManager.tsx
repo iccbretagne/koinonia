@@ -11,12 +11,12 @@ export interface AnnouncementSheetData {
 }
 
 interface Props {
-  eventId: string;
-  data: AnnouncementSheetData;
-  onChange: (data: AnnouncementSheetData) => void;
+  readonly eventId: string;
+  readonly data: AnnouncementSheetData;
+  readonly onChange: (data: AnnouncementSheetData) => void;
   /** Retire la carte propre (fond, ombre, marge) quand le composant est inséré dans un
    * conteneur qui gère déjà cette présentation (ex. PreparationBanner, spec 043). */
-  embedded?: boolean;
+  readonly embedded?: boolean;
 }
 
 function formatDate(iso: string) {

@@ -32,9 +32,9 @@ export default function FreelanceProfileDetailClient({
   canManage,
   isAuthor,
 }: {
-  profile: FreelanceProfile;
-  canManage: boolean;
-  isAuthor: boolean;
+  readonly profile: FreelanceProfile;
+  readonly canManage: boolean;
+  readonly isAuthor: boolean;
 }) {
   const router  = useRouter();
   const [loading, setLoading] = useState(false);

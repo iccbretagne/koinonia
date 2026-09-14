@@ -34,17 +34,17 @@ export interface EditData {
 }
 
 interface Props {
-  churchId: string;
-  canSubmitDemands: boolean;
-  showAgendaTile?: boolean;
-  showAccountingTile?: boolean;
-  announcementEvents: { id: string; title: string; type: string; date: string }[];
-  events: { id: string; title: string; type: string; date: string }[];
-  sourceOptions: { type: "department" | "ministry"; id: string; label: string }[];
-  departments: { id: string; name: string; ministryName: string }[];
-  users: { id: string; label: string }[];
-  ministries: { id: string; name: string }[];
-  editData?: EditData;
+  readonly churchId: string;
+  readonly canSubmitDemands: boolean;
+  readonly showAgendaTile?: boolean;
+  readonly showAccountingTile?: boolean;
+  readonly announcementEvents: { id: string; title: string; type: string; date: string }[];
+  readonly events: { id: string; title: string; type: string; date: string }[];
+  readonly sourceOptions: { type: "department" | "ministry"; id: string; label: string }[];
+  readonly departments: { id: string; name: string; ministryName: string }[];
+  readonly users: { id: string; label: string }[];
+  readonly ministries: { id: string; name: string }[];
+  readonly editData?: EditData;
 }
 
 const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [

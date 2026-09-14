@@ -4,11 +4,11 @@ import OpeningClosingManager, { type OpeningClosingData } from "./OpeningClosing
 import AnnouncementSheetManager, { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 
 interface Props {
-  eventId: string;
-  openingClosing: OpeningClosingData;
-  announcementSheet: AnnouncementSheetData;
-  onOpeningClosingChange: (data: OpeningClosingData) => void;
-  onAnnouncementSheetChange: (data: AnnouncementSheetData) => void;
+  readonly eventId: string;
+  readonly openingClosing: OpeningClosingData;
+  readonly announcementSheet: AnnouncementSheetData;
+  readonly onOpeningClosingChange: (data: OpeningClosingData) => void;
+  readonly onAnnouncementSheetChange: (data: AnnouncementSheetData) => void;
 }
 
 /**

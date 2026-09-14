@@ -49,11 +49,11 @@ interface Request {
 }
 
 interface Props {
-  requests: Request[];
-  isScoped: boolean;
-  canExport: boolean;
-  churchId: string;
-  currentUserId: string;
+  readonly requests: Request[];
+  readonly isScoped: boolean;
+  readonly canExport: boolean;
+  readonly churchId: string;
+  readonly currentUserId: string;
 }
 
 function daysSince(d: Date | string): number {

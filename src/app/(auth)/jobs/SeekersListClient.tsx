@@ -47,9 +47,9 @@ export default function SeekersListClient({
   currentUserId,
   canManage = false,
 }: {
-  seekers: Seeker[];
-  currentUserId: string;
-  canManage?: boolean;
+  readonly seekers: Seeker[];
+  readonly currentUserId: string;
+  readonly canManage?: boolean;
 }) {
   const [activeFilters, setActiveFilters] = useState<Set<ContractType>>(new Set());
   const [statusFilter, setStatusFilter] = useState<"ALL" | SeekerStatus>("ACTIVE");
@@ -154,9 +154,9 @@ function SeekerCard({
   isOwn,
   canManage,
 }: {
-  seeker: Seeker;
-  isOwn: boolean;
-  canManage: boolean;
+  readonly seeker: Seeker;
+  readonly isOwn: boolean;
+  readonly canManage: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

@@ -27,9 +27,9 @@ function BellIcon() {
 }
 
 function NotificationRow({ notif, formatTime, onClose }: {
-  notif: NotificationItem;
-  formatTime: (iso: string) => string;
-  onClose: () => void;
+  readonly notif: NotificationItem;
+  readonly formatTime: (iso: string) => string;
+  readonly onClose: () => void;
 }) {
   const inner = (
     <div

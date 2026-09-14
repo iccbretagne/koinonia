@@ -30,11 +30,11 @@ export default function PublishModal({
   segments,
   action,
 }: {
-  serviceId: string;
-  open: boolean;
-  onClose: () => void;
-  segments: PublishSegmentSummary[];
-  action: "publish" | "unpublish";
+  readonly serviceId: string;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly segments: PublishSegmentSummary[];
+  readonly action: "publish" | "unpublish";
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);

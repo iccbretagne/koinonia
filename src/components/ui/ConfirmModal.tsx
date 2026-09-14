@@ -5,15 +5,15 @@ import Modal from "./Modal";
 import Button from "./Button";
 
 interface ConfirmModalProps {
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  variant?: "danger" | "primary";
-  confirming?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-  children?: ReactNode;
+  readonly open: boolean;
+  readonly title: string;
+  readonly message: string;
+  readonly confirmLabel?: string;
+  readonly variant?: "danger" | "primary";
+  readonly confirming?: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+  readonly children?: ReactNode;
 }
 
 export default function ConfirmModal({

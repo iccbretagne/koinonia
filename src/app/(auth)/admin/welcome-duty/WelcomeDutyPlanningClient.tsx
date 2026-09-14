@@ -23,7 +23,7 @@ interface Suggestion {
 }
 
 interface Props {
-  churchId: string;
+  readonly churchId: string;
 }
 
 function monthRange(year: number, month: number) {

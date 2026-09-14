@@ -12,7 +12,7 @@ interface Profile {
   user: User | null;
 }
 
-interface Props { churchId: string; profiles: Profile[]; users: User[] }
+interface Props { readonly churchId: string; readonly profiles: Profile[]; readonly users: User[] }
 
 const ROLES = [
   { value: "PASTEUR", label: "Pasteur" },

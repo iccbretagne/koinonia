@@ -1,10 +1,10 @@
 "use client";
 
 interface Props {
-  churchId: string;
-  href: string;
-  className?: string;
-  children: React.ReactNode;
+  readonly churchId: string;
+  readonly href: string;
+  readonly className?: string;
+  readonly children: React.ReactNode;
 }
 
 export default function SwitchChurchLink({ churchId, href, className, children }: Props) {

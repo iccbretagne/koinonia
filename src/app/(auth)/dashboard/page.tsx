@@ -12,7 +12,7 @@ import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 import TeamEventsView from "@/components/TeamEventsView";
 
 interface DashboardProps {
-  searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
+  readonly searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
 }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {

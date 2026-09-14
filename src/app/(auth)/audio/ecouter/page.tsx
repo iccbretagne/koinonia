@@ -28,7 +28,7 @@ function formatDuration(ms: number): string {
 export default async function AudioLibraryPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  readonly searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

@@ -7,7 +7,7 @@ import MissionDetailClient from "./MissionDetailClient";
 export default async function MissionDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

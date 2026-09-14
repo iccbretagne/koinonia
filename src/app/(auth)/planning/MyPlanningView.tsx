@@ -43,9 +43,9 @@ type TeamEventEntry = {
 };
 
 interface Props {
-  plannings: PlanningEntry[];
-  tasksByEvent?: Record<string, string[]>;
-  teamEvents?: TeamEventEntry[];
+  readonly plannings: PlanningEntry[];
+  readonly tasksByEvent?: Record<string, string[]>;
+  readonly teamEvents?: TeamEventEntry[];
 }
 
 function formatTimeRange(start: Date | string, end: Date | string) {

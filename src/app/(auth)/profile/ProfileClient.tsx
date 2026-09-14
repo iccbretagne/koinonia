@@ -5,7 +5,7 @@ import NoAccessClient from "@/app/no-access/NoAccessClient";
 type Church = { id: string; name: string };
 type Ministry = { id: string; name: string; churchId: string; departments: { id: string; name: string }[] };
 
-export default function ProfileClient({ churches, ministries }: { churches: Church[]; ministries: Ministry[] }) {
+export default function ProfileClient({ churches, ministries }: { readonly churches: Church[]; readonly ministries: Ministry[] }) {
   return (
     <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">

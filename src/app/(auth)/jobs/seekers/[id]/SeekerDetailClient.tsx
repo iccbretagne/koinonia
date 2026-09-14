@@ -41,9 +41,9 @@ export default function SeekerDetailClient({
   canManage,
   isAuthor,
 }: {
-  seeker: Seeker;
-  canManage: boolean;
-  isAuthor: boolean;
+  readonly seeker: Seeker;
+  readonly canManage: boolean;
+  readonly isAuthor: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

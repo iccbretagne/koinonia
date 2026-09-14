@@ -43,18 +43,18 @@ function Lightbox({
   downloading,
   isMediaAll,
 }: {
-  photo: Photo;
-  token: string;
-  total: number;
-  index: number;
-  isSelected: boolean;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onToggleSelect: () => void;
-  onDownload: () => void;
-  downloading: boolean;
-  isMediaAll: boolean;
+  readonly photo: Photo;
+  readonly token: string;
+  readonly total: number;
+  readonly index: number;
+  readonly isSelected: boolean;
+  readonly onClose: () => void;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
+  readonly onToggleSelect: () => void;
+  readonly onDownload: () => void;
+  readonly downloading: boolean;
+  readonly isMediaAll: boolean;
 }) {
   const [currentPhotoId, setCurrentPhotoId] = useState(photo.id);
   const [hdUrl, setHdUrl] = useState<string | null>(null);
@@ -214,7 +214,7 @@ function Lightbox({
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function DownloadView({ token, data }: { token: string; data: DownloadData }) {
+export default function DownloadView({ token, data }: { readonly token: string; readonly data: DownloadData }) {
   const { event, photos } = data;
   const isMediaAll = data.token.type === "MEDIA_ALL";
 

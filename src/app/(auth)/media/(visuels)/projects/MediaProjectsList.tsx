@@ -32,10 +32,10 @@ export default function MediaProjectsList({
   churchId,
   canShare,
 }: {
-  projects: MediaProject[];
-  canUpload: boolean;
-  churchId: string;
-  canShare: boolean;
+  readonly projects: MediaProject[];
+  readonly canUpload: boolean;
+  readonly churchId: string;
+  readonly canShare: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());

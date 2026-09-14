@@ -7,7 +7,7 @@ import { rolePermissions } from "@/lib/registry";
 export default async function JobDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

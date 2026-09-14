@@ -2,7 +2,7 @@
  * Petite pastille numérique (ex. « nouvelles offres » du menu, spec 042). Plafonne
  * l'affichage à "9+" — même convention que le compteur de `NotificationBell`.
  */
-export function Badge({ count }: { count: number }) {
+export function Badge({ count }: { readonly count: number }) {
   if (count <= 0) return null;
 
   return (

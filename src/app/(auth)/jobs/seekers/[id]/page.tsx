@@ -7,7 +7,7 @@ import SeekerDetailClient from "./SeekerDetailClient";
 export default async function SeekerDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

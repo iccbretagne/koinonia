@@ -12,7 +12,7 @@ import FreelanceTabContent from "./freelance/FreelanceTabContent";
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  readonly searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

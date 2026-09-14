@@ -5,7 +5,7 @@ import JoinForm from "./JoinForm";
 export default async function RejoindrePublicPage({
   params,
 }: {
-  params: Promise<{ churchSlug: string }>;
+  readonly params: Promise<{ churchSlug: string }>;
 }) {
   const { churchSlug } = await params;
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function PublicUrlBanner({ slug }: { slug: string }) {
+export default function PublicUrlBanner({ slug }: { readonly slug: string }) {
   const [copied, setCopied] = useState(false);
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/agenda-public/${slug}`;
 

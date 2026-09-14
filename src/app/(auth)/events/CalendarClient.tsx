@@ -13,7 +13,7 @@ interface CalendarEvent {
 }
 
 interface Props {
-  events: CalendarEvent[];
+  readonly events: CalendarEvent[];
 }
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -64,10 +64,10 @@ function MonthGrid({
   eventsByDate,
   todayStr,
 }: {
-  year: number;
-  month: number;
-  eventsByDate: Map<string, CalendarEvent[]>;
-  todayStr: string;
+  readonly year: number;
+  readonly month: number;
+  readonly eventsByDate: Map<string, CalendarEvent[]>;
+  readonly todayStr: string;
 }) {
   const days = useMemo(() => buildMonthDays(year, month), [year, month]);
 

@@ -64,14 +64,14 @@ function HdLightbox({
   rejectStatus,
   labels,
 }: {
-  photo: Photo;
-  token: string;
-  onClose: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  approveStatus: string;
-  rejectStatus: string;
-  labels: { approved: string; rejected: string };
+  readonly photo: Photo;
+  readonly token: string;
+  readonly onClose: () => void;
+  readonly onApprove: () => void;
+  readonly onReject: () => void;
+  readonly approveStatus: string;
+  readonly rejectStatus: string;
+  readonly labels: { approved: string; rejected: string };
 }) {
   const [hdUrl, setHdUrl] = useState<string | null>(null);
   const [hdLoading, setHdLoading] = useState(true);
@@ -203,9 +203,9 @@ function ProgressBar({
   approved,
   rejected,
 }: {
-  total: number;
-  approved: number;
-  rejected: number;
+  readonly total: number;
+  readonly approved: number;
+  readonly rejected: number;
 }) {
   if (total === 0) return null;
   const approvedPct = (approved / total) * 100;
@@ -223,7 +223,7 @@ function ProgressBar({
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ValidatorView({ token, data }: { token: string; data: ValidationData }) {
+export default function ValidatorView({ token, data }: { readonly token: string; readonly data: ValidationData }) {
   const { event } = data;
   const isPrevalidator = data.token.type === "PREVALIDATOR";
   const approveStatus = isPrevalidator ? "PREVALIDATED" : "APPROVED";

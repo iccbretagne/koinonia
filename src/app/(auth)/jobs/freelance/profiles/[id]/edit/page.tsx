@@ -6,7 +6,7 @@ import FreelanceProfileFormClient from "@/app/(auth)/jobs/freelance/profiles/new
 export default async function EditFreelanceProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

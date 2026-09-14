@@ -21,8 +21,8 @@ export default function MissionFormClient({
   initial,
   defaultEmail,
 }: {
-  initial?: MissionInitial;
-  defaultEmail?: string | null;
+  readonly initial?: MissionInitial;
+  readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
   const isEdit = !!initial;

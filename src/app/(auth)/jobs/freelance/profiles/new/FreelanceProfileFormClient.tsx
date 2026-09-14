@@ -21,8 +21,8 @@ export default function FreelanceProfileFormClient({
   initial,
   defaultEmail,
 }: {
-  initial?: ProfileInitial;
-  defaultEmail?: string | null;
+  readonly initial?: ProfileInitial;
+  readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
   const isEdit = !!initial;

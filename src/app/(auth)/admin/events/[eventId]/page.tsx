@@ -9,7 +9,7 @@ import EventDetailClient from "./EventDetailClient";
 export default async function EventDetailPage({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  readonly params: Promise<{ eventId: string }>;
 }) {
   await requireAuth();
   const { eventId } = await params;

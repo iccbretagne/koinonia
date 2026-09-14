@@ -8,7 +8,7 @@ import NewRequestForm from "./NewRequestForm";
 export default async function NewAccountingRequestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ correctionOf?: string; from?: string }>;
+  readonly searchParams: Promise<{ correctionOf?: string; from?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

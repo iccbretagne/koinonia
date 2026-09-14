@@ -21,7 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default async function AgendaRequestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; new?: string }>;
+  readonly searchParams: Promise<{ from?: string; new?: string }>;
 }) {
   const session = await requireAuth();
   const { from, new: isNew } = await searchParams;

@@ -31,7 +31,7 @@ function yesNo(value: boolean | null): string {
   return value ? "Oui" : "Non";
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="flex justify-between gap-2">
       <dt className="text-gray-500">{label}</dt>
@@ -40,7 +40,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
     <div>
       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{title}</h3>
@@ -50,7 +50,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Affichage en lecture seule du détail complet d'une main courante — aucune action. */
-export default function ChecklistDetail({ checklist }: { checklist: Checklist | null }) {
+export default function ChecklistDetail({ checklist }: { readonly checklist: Checklist | null }) {
   return (
     <div className="space-y-3">
       <Section title="Ouverture">

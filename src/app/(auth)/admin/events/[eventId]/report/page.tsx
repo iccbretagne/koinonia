@@ -7,7 +7,7 @@ import EventReportClient from "./EventReportClient";
 export default async function EventReportPage({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  readonly params: Promise<{ eventId: string }>;
 }) {
   const session = await requireAuth();
   const { eventId } = await params;

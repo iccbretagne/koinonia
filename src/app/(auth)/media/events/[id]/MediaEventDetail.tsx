@@ -113,9 +113,9 @@ function formatSize(bytes: number) {
 // ─── Upload zone ──────────────────────────────────────────────────────────────
 
 function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
-  eventId: string;
-  onUploaded: () => void;
-  onProgressChange?: (p: { done: number; total: number } | null) => void;
+  readonly eventId: string;
+  readonly onUploaded: () => void;
+  readonly onProgressChange?: (p: { done: number; total: number } | null) => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -227,9 +227,9 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
 // ─── Liens de partage ─────────────────────────────────────────────────────────
 
 function ShareTokenSection({ eventId, tokens, onRefresh }: {
-  eventId: string;
-  tokens: ShareToken[];
-  onRefresh: () => void;
+  readonly eventId: string;
+  readonly tokens: ShareToken[];
+  readonly onRefresh: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -404,10 +404,10 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
 // ─── Confirmation de suppression ─────────────────────────────────────────────
 
 function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: {
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
+  readonly title: string;
+  readonly message: string;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -446,12 +446,12 @@ function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: {
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
 function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose, onRequestDelete }: {
-  photos: Photo[];
-  initialIndex: number;
-  thumbnailUrls: Record<string, string>;
-  canUpload: boolean;
-  onClose: () => void;
-  onRequestDelete: (photoId: string) => void;
+  readonly photos: Photo[];
+  readonly initialIndex: number;
+  readonly thumbnailUrls: Record<string, string>;
+  readonly canUpload: boolean;
+  readonly onClose: () => void;
+  readonly onRequestDelete: (photoId: string) => void;
 }) {
   const [index, setIndex] = useState(initialIndex);
 
@@ -577,11 +577,11 @@ export default function MediaEventDetail({
   canUpload,
   canManage,
 }: {
-  event: MediaEvent;
-  churchId: string;
-  thumbnailUrls: Record<string, string>;
-  canUpload: boolean;
-  canManage: boolean;
+  readonly event: MediaEvent;
+  readonly churchId: string;
+  readonly thumbnailUrls: Record<string, string>;
+  readonly canUpload: boolean;
+  readonly canManage: boolean;
 }) {
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);

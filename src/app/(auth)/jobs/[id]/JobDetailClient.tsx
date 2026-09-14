@@ -41,9 +41,9 @@ export default function JobDetailClient({
   canManage,
   isAuthor,
 }: {
-  job: Job;
-  canManage: boolean;
-  isAuthor: boolean;
+  readonly job: Job;
+  readonly canManage: boolean;
+  readonly isAuthor: boolean;
 }) {
   const router = useRouter();
   const [archiving, setArchiving] = useState(false);

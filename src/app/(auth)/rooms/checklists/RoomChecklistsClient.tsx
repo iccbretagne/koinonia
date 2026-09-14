@@ -46,7 +46,7 @@ function isUndeclaredAndPastDue(r: Reservation): boolean {
   return (status === "PENDING" || status === "OPENED") && new Date(r.endAt) < new Date();
 }
 
-export default function RoomChecklistsClient({ initialReservations }: { initialReservations: Reservation[] }) {
+export default function RoomChecklistsClient({ initialReservations }: { readonly initialReservations: Reservation[] }) {
   const [reservations, setReservations] = useState(initialReservations);
   const [target, setTarget] = useState<Reservation | null>(null);
   const [closedProperly, setClosedProperly] = useState(true);

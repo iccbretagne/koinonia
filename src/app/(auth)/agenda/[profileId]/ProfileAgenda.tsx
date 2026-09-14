@@ -17,7 +17,7 @@ interface Entry {
 }
 interface Profile { id: string; name: string; role: string }
 
-interface Props { profile: Profile; entries: Entry[]; weekStart: string }
+interface Props { readonly profile: Profile; readonly entries: Entry[]; readonly weekStart: string }
 
 
 function toLocalISO(d: Date): string {

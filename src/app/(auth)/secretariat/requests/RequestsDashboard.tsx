@@ -90,8 +90,8 @@ interface RequestItem {
 }
 
 interface Props {
-  requests: RequestItem[];
-  canManage?: boolean;
+  readonly requests: RequestItem[];
+  readonly canManage?: boolean;
 }
 
 export default function RequestsDashboard({ requests: initial, canManage = false }: Props) {

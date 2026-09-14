@@ -7,7 +7,7 @@ import ChurchEditClient from "./ChurchEditClient";
 export default async function ChurchDetailPage({
   params,
 }: {
-  params: Promise<{ churchId: string }>;
+  readonly params: Promise<{ churchId: string }>;
 }) {
   await requireSuperAdmin();
   const { churchId } = await params;

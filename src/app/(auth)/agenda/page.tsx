@@ -22,7 +22,7 @@ function getWeekBounds(date: Date): { from: Date; to: Date } {
 export default async function AgendaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string }>;
+  readonly searchParams: Promise<{ week?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

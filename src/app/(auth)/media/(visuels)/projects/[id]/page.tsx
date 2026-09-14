@@ -8,7 +8,7 @@ import MediaProjectDetail from "./MediaProjectDetail";
 export default async function MediaProjectDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   const session = await auth();

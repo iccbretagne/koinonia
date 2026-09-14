@@ -56,7 +56,7 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function NewServiceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly onClose: () => void }) {
   const router = useRouter();
   const [date, setDate] = useState(todayIso());
   const [dayEvents, setDayEvents] = useState<DayEvent[]>([]);
@@ -159,7 +159,7 @@ function NewServiceModal({ open, onClose }: { open: boolean; onClose: () => void
   );
 }
 
-export default function AudioQueueClient({ services }: { services: AudioServiceRow[] }) {
+export default function AudioQueueClient({ services }: { readonly services: AudioServiceRow[] }) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);

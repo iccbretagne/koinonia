@@ -87,19 +87,19 @@ interface MsdpStats {
 }
 
 interface Props {
-  total: number;
-  pending: number;
-  integrated: number;
-  abandoned: number;
-  conversionRate: number | null;
-  avgDaysToIntegration: number | null;
-  byStatus: { status: string; count: number }[];
-  byFamily: { familyId: number | null; familyName: string; count: number }[];
-  byAgeRange: { ageRange: string; count: number }[];
-  byChurchStatus: { churchStatus: string; count: number }[];
-  byMonth: { month: string; count: number }[];
-  pastoralCare: number;
-  msdp: MsdpStats;
+  readonly total: number;
+  readonly pending: number;
+  readonly integrated: number;
+  readonly abandoned: number;
+  readonly conversionRate: number | null;
+  readonly avgDaysToIntegration: number | null;
+  readonly byStatus: { status: string; count: number }[];
+  readonly byFamily: { familyId: number | null; familyName: string; count: number }[];
+  readonly byAgeRange: { ageRange: string; count: number }[];
+  readonly byChurchStatus: { churchStatus: string; count: number }[];
+  readonly byMonth: { month: string; count: number }[];
+  readonly pastoralCare: number;
+  readonly msdp: MsdpStats;
 }
 
 function KpiCard({
@@ -108,10 +108,10 @@ function KpiCard({
   sub,
   accent,
 }: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent?: boolean;
+  readonly label: string;
+  readonly value: string | number;
+  readonly sub?: string;
+  readonly accent?: boolean;
 }) {
   return (
     <div className={`bg-white rounded-xl border p-4 sm:p-5 ${accent ? "border-icc-violet/30 bg-icc-violet/5" : "border-gray-200"}`}>
@@ -122,7 +122,7 @@ function KpiCard({
   );
 }
 
-function BarChart({ data, total }: { data: { label: string; count: number }[]; total: number }) {
+function BarChart({ data, total }: { readonly data: { label: string; count: number }[]; readonly total: number }) {
   if (total === 0) return <p className="text-sm text-gray-400">Aucune donnée</p>;
   const max = Math.max(...data.map((d) => d.count), 1);
   return (

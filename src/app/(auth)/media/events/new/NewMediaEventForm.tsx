@@ -20,8 +20,8 @@ export default function NewMediaEventForm({
   churchId,
   planningEvents,
 }: {
-  churchId: string;
-  planningEvents: PlanningEvent[];
+  readonly churchId: string;
+  readonly planningEvents: PlanningEvent[];
 }) {
   const router = useRouter();
   const [name, setName] = useState("");

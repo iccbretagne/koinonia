@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { getTourSteps, type TourStep, type RoleKey } from "@/lib/tour-steps";
 
 interface GuidedTourProps {
-  userRole: RoleKey;
+  readonly userRole: RoleKey;
 }
 
 interface TooltipPosition {
@@ -51,8 +51,8 @@ function TourOverlay({
   steps,
   onFinish,
 }: {
-  steps: TourStep[];
-  onFinish: () => void;
+  readonly steps: TourStep[];
+  readonly onFinish: () => void;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -254,13 +254,13 @@ import { forwardRef } from "react";
 const TooltipCard = forwardRef<
   HTMLDivElement,
   {
-    step: TourStep;
-    stepIndex: number;
-    totalSteps: number;
-    isLast: boolean;
-    onNext: () => void;
-    onBack: () => void;
-    onSkip: () => void;
+    readonly step: TourStep;
+    readonly stepIndex: number;
+    readonly totalSteps: number;
+    readonly isLast: boolean;
+    readonly onNext: () => void;
+    readonly onBack: () => void;
+    readonly onSkip: () => void;
   }
 >(function TooltipCard({ step, stepIndex, totalSteps, isLast, onNext, onBack, onSkip }, ref) {
   return (

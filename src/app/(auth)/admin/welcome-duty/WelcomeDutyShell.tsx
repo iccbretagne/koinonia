@@ -7,7 +7,7 @@ import WelcomeDutyPlanningClient from "./WelcomeDutyPlanningClient";
 type Tab = "pool" | "planning";
 
 interface Props {
-  churchId: string;
+  readonly churchId: string;
 }
 
 export default function WelcomeDutyShell({ churchId }: Props) {

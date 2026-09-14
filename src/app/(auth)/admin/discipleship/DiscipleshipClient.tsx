@@ -43,14 +43,14 @@ interface StatRow {
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 interface Props {
-  churchId: string;
-  members: MemberOption[];
-  allAssignedDiscipleIds: string[];
-  canManage: boolean;
-  canExport: boolean;
-  canEditRelation?: boolean;
-  isFD?: boolean;
-  linkedMemberId?: string | null;
+  readonly churchId: string;
+  readonly members: MemberOption[];
+  readonly allAssignedDiscipleIds: string[];
+  readonly canManage: boolean;
+  readonly canExport: boolean;
+  readonly canEditRelation?: boolean;
+  readonly isFD?: boolean;
+  readonly linkedMemberId?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -153,9 +153,9 @@ function DiscipleCombobox({
   value,
   onChange,
 }: {
-  options: MemberOption[];
-  value: string | { firstName: string; lastName: string } | null;
-  onChange: (v: string | { firstName: string; lastName: string } | null) => void;
+  readonly options: MemberOption[];
+  readonly value: string | { firstName: string; lastName: string } | null;
+  readonly onChange: (v: string | { firstName: string; lastName: string } | null) => void;
 }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -296,7 +296,7 @@ function DiscipleCombobox({
 
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
-function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId, filterMine }: { churchId: string; members: MemberOption[]; allAssignedDiscipleIds: string[]; canManage: boolean; canEditRelation: boolean; isFD: boolean; linkedMemberId: string | null; filterMine: boolean }) {
+function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId, filterMine }: { readonly churchId: string; readonly members: MemberOption[]; readonly allAssignedDiscipleIds: string[]; readonly canManage: boolean; readonly canEditRelation: boolean; readonly isFD: boolean; readonly linkedMemberId: string | null; readonly filterMine: boolean }) {
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -801,7 +801,7 @@ interface TrackedEvent {
   date: string;
 }
 
-function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { churchId: string; canManage: boolean; filterMine: boolean; linkedMemberId: string | null }) {
+function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonly churchId: string; readonly canManage: boolean; readonly filterMine: boolean; readonly linkedMemberId: string | null }) {
   const [events, setEvents] = useState<TrackedEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [discipleships, setDiscipleships] = useState<DiscipleshipRow[]>([]);
@@ -1002,7 +1002,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { churchI
 
 // ─── Tab: Statistiques ────────────────────────────────────────────────────────
 
-function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { churchId: string; canExport: boolean; filterMine: boolean; linkedMemberId: string | null }) {
+function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonly churchId: string; readonly canExport: boolean; readonly filterMine: boolean; readonly linkedMemberId: string | null }) {
   const [from, setFrom] = useState(firstDayOfMonthISO());
   const [to, setTo] = useState(todayISO());
   const [data, setData] = useState<{ period: { from: string; to: string }; trackedEvents: { id: string; title: string; date: string }[]; stats: StatRow[] } | null>(null);

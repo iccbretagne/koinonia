@@ -25,7 +25,7 @@ export interface ServiceInfo {
   planningEventTitle: string | null;
 }
 
-export default function ServiceInfoEditor({ service }: { service: ServiceInfo }) {
+export default function ServiceInfoEditor({ service }: { readonly service: ServiceInfo }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(service.serviceDate.slice(0, 10));

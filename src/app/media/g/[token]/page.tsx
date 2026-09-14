@@ -19,7 +19,7 @@ async function fetchGalleryData(token: string) {
   }
 }
 
-export default async function GalleryPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function GalleryPage({ params }: { readonly params: Promise<{ token: string }> }) {
   const { token } = await params;
   const data = await fetchGalleryData(token);
   if (!data) notFound();

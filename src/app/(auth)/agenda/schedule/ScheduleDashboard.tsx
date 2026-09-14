@@ -17,7 +17,7 @@ interface ValidatedRequest {
   qualifiedBy: Qualifier | null;
 }
 
-interface Props { requests: ValidatedRequest[] }
+interface Props { readonly requests: ValidatedRequest[] }
 
 const ROLE_LABELS: Record<string, string> = {
   PASTEUR: "Pasteur",

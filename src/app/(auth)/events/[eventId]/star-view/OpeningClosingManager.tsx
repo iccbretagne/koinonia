@@ -21,12 +21,12 @@ export interface OpeningClosingData {
 }
 
 interface Props {
-  eventId: string;
-  data: OpeningClosingData;
-  onChange: (data: OpeningClosingData) => void;
+  readonly eventId: string;
+  readonly data: OpeningClosingData;
+  readonly onChange: (data: OpeningClosingData) => void;
   /** Retire la carte propre (fond, ombre, marge) quand le composant est inséré dans un
    * conteneur qui gère déjà cette présentation (ex. PreparationBanner, spec 043). */
-  embedded?: boolean;
+  readonly embedded?: boolean;
 }
 
 const SLOT_LABELS: Record<"OPENING" | "CLOSING", string> = {
@@ -34,7 +34,7 @@ const SLOT_LABELS: Record<"OPENING" | "CLOSING", string> = {
   CLOSING: "Fermeture",
 };
 
-function SlotList({ label, assignments }: { label: string; assignments: Assignment[] }) {
+function SlotList({ label, assignments }: { readonly label: string; readonly assignments: Assignment[] }) {
   return (
     <div>
       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</h4>

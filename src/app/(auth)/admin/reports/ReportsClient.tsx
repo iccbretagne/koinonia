@@ -27,8 +27,8 @@ interface EventItem {
 }
 
 interface Props {
-  events: EventItem[];
-  churchId: string;
+  readonly events: EventItem[];
+  readonly churchId: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

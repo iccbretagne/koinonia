@@ -10,12 +10,12 @@ export interface AttachmentItem {
 }
 
 interface Props {
-  attachments: AttachmentItem[];
-  requestId?: string;     // undefined → pré-upload avant création
-  canUpload?: boolean;
-  canDelete?: boolean;
-  onChange?: (attachments: AttachmentItem[]) => void; // called after upload/delete
-  className?: string;
+  readonly attachments: AttachmentItem[];
+  readonly requestId?: string;     // undefined → pré-upload avant création
+  readonly canUpload?: boolean;
+  readonly canDelete?: boolean;
+  readonly onChange?: (attachments: AttachmentItem[]) => void; // called after upload/delete
+  readonly className?: string;
 }
 
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -26,7 +26,7 @@ function fmtSize(b: number) {
   return b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} Ko` : `${(b / 1024 / 1024).toFixed(1)} Mo`;
 }
 
-function FileIcon({ mimeType }: { mimeType: string }) {
+function FileIcon({ mimeType }: { readonly mimeType: string }) {
   if (mimeType === "application/pdf") {
     return (
       <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">

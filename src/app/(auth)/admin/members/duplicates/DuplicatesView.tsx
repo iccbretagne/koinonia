@@ -22,9 +22,9 @@ type Group = {
 };
 
 interface Props {
-  groups: Group[];
-  allMembers: MemberSummary[];
-  churchId: string;
+  readonly groups: Group[];
+  readonly allMembers: MemberSummary[];
+  readonly churchId: string;
 }
 
 const REASON_LABEL: Record<Group["reason"], string> = {
@@ -39,7 +39,7 @@ const REASON_COLOR: Record<Group["reason"], string> = {
   both: "bg-red-100 text-red-800",
 };
 
-function MemberCard({ member, isSource, label }: { member: MemberSummary; isSource: boolean; label: string }) {
+function MemberCard({ member, isSource, label }: { readonly member: MemberSummary; readonly isSource: boolean; readonly label: string }) {
   return (
     <div className={`border-2 rounded-lg p-4 ${isSource ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
       <div className="flex items-center justify-between mb-2">
@@ -79,11 +79,11 @@ function FieldPicker<T extends string | null>({
   choice,
   onChange,
 }: {
-  label: string;
-  sourceValue: T;
-  targetValue: T;
-  choice: FieldChoice<T>;
-  onChange: (c: FieldChoice<T>) => void;
+  readonly label: string;
+  readonly sourceValue: T;
+  readonly targetValue: T;
+  readonly choice: FieldChoice<T>;
+  readonly onChange: (c: FieldChoice<T>) => void;
 }) {
   const same = sourceValue === targetValue;
   if (same) {
@@ -113,9 +113,9 @@ function MergeModal({
   onClose,
   onMerged,
 }: {
-  group: Group;
-  onClose: () => void;
-  onMerged: () => void;
+  readonly group: Group;
+  readonly onClose: () => void;
+  readonly onMerged: () => void;
 }) {
   const [sourceIndex, setSourceIndex] = useState(0);
   const source = group.members[sourceIndex];
@@ -294,11 +294,11 @@ function MemberPicker({
   excludeId,
   onSelect,
 }: {
-  label: string;
-  members: MemberSummary[];
-  selectedId: string;
-  excludeId: string;
-  onSelect: (id: string) => void;
+  readonly label: string;
+  readonly members: MemberSummary[];
+  readonly selectedId: string;
+  readonly excludeId: string;
+  readonly onSelect: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const filtered = members.filter((m) => {

@@ -5,7 +5,7 @@ import SpaceBreadcrumb from "@/components/SpaceBreadcrumb";
  * Sous-espace « Réseaux sociaux » de Communication & Production (spec 049) — même fil d'Ariane
  * de retour que `/media`, chaque page vérifie ses propres droits.
  */
-export default async function CommunicationLayout({ children }: { children: React.ReactNode }) {
+export default async function CommunicationLayout({ children }: { readonly children: React.ReactNode }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
 

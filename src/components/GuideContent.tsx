@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
 
 interface GuideContentProps {
-  defaultRole: RoleKey;
+  readonly defaultRole: RoleKey;
 }
 
 const ROLE_LABELS: Record<RoleKey, string> = {
@@ -467,7 +467,7 @@ const FEATURES: Feature[] = [
 
 const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"];
 
-function AccessBadge({ level }: { level: AccessLevel }) {
+function AccessBadge({ level }: { readonly level: AccessLevel }) {
   switch (level) {
     case "edit":
       return <span className="inline-flex items-center text-sm text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✓ Édition</span>;
@@ -491,9 +491,9 @@ function Screenshot({
   title,
   onZoom,
 }: {
-  file: string;
-  title: string;
-  onZoom: (image: { src: string; alt: string }) => void;
+  readonly file: string;
+  readonly title: string;
+  readonly onZoom: (image: { src: string; alt: string }) => void;
 }) {
   const [failed, setFailed] = useState(false);
   const src = `${GUIDE_ASSETS_BASE}/${file}`;

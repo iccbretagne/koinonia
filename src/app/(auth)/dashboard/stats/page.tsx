@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import StatsClient from "./StatsClient";
 
 interface StatsPageProps {
-  searchParams: Promise<{ dept?: string }>;
+  readonly searchParams: Promise<{ dept?: string }>;
 }
 
 export default async function StatsPage({ searchParams }: StatsPageProps) {

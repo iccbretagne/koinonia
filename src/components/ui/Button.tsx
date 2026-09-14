@@ -4,8 +4,8 @@ import { ButtonHTMLAttributes } from "react";
 import { sizeClasses, variantClasses, type Size, type Variant } from "./button-classes";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
+  readonly variant?: Variant;
+  readonly size?: Size;
 }
 
 export default function Button({

@@ -3,9 +3,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 interface Props {
-  churchSlug: string;
-  churchName: string;
-  turnstileSiteKey: string;
+  readonly churchSlug: string;
+  readonly churchName: string;
+  readonly turnstileSiteKey: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -15,7 +15,7 @@ const DURATIONS = ["Moins de 1 an", "1 à 2 ans", "2 à 3 ans", "3 à 5 ans", "+
 const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale", "Croissance spirituelle", "Oppressions", "Maladie", "Service", "Études"];
 const DAYS = ["Mardi", "Dimanche"];
 
-function FieldError({ errors, field }: { errors: FieldErrors; field: string }) {
+function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly field: string }) {
   if (!errors[field]) return null;
   return <p className="text-xs text-red-600 mt-1">{errors[field]}</p>;
 }
@@ -27,8 +27,8 @@ function inputClass(errors: FieldErrors, field: string, extra = "") {
 }
 
 function RadioGroup({ name, options, value, onChange, errors }: {
-  name: string; options: string[]; value: string;
-  onChange: (v: string) => void; errors: FieldErrors;
+  readonly name: string; readonly options: string[]; readonly value: string;
+  readonly onChange: (v: string) => void; readonly errors: FieldErrors;
 }) {
   return (
     <div className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-lg border border-red-300 bg-red-50" : ""}`}>

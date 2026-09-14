@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 
 interface CheckboxGroupProps {
-  label: string;
-  options: { value: string; label: ReactNode; disabled?: boolean }[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
+  readonly label: string;
+  readonly options: { value: string; label: ReactNode; disabled?: boolean }[];
+  readonly selected: string[];
+  readonly onChange: (selected: string[]) => void;
 }
 
 export default function CheckboxGroup({

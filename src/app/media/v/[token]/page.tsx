@@ -7,7 +7,7 @@ import { validateMediaShareToken, resolveValidatorData } from "@/modules/media";
 import ValidatorView from "./ValidatorView";
 import ProjectValidatorView from "./ProjectValidatorView";
 
-export default async function ValidatorPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function ValidatorPage({ params }: { readonly params: Promise<{ token: string }> }) {
   const { token } = await params;
 
   const data = await (async () => {

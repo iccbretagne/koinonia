@@ -4,9 +4,9 @@ import AudioPlayer, { type AudioPlayerService } from "@/components/audio/AudioPl
 import { buildStreamUrl } from "./stream-url";
 
 interface Props {
-  token: string;
-  backHref: string | null;
-  service: AudioPlayerService;
+  readonly token: string;
+  readonly backHref: string | null;
+  readonly service: AudioPlayerService;
 }
 
 /**

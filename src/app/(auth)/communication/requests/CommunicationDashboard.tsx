@@ -31,7 +31,7 @@ interface CommRequest {
 }
 
 interface Props {
-  requests: CommRequest[];
+  readonly requests: CommRequest[];
 }
 
 const STATUS_COLOR: Record<string, string> = {

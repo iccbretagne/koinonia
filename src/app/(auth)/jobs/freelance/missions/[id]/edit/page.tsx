@@ -6,7 +6,7 @@ import MissionFormClient from "@/app/(auth)/jobs/freelance/missions/new/MissionF
 export default async function EditMissionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

@@ -50,10 +50,10 @@ export default function MediaEventsList({
   churchId,
   canShare,
 }: {
-  events: MediaEvent[];
-  canUpload: boolean;
-  churchId: string;
-  canShare: boolean;
+  readonly events: MediaEvent[];
+  readonly canUpload: boolean;
+  readonly churchId: string;
+  readonly canShare: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useState<MediaEventStatus | "">("");
   const [search, setSearch] = useState("");

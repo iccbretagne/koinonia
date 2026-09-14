@@ -57,8 +57,8 @@ interface StatsData {
 }
 
 interface Props {
-  departments: Department[];
-  initialDeptId?: string;
+  readonly departments: Department[];
+  readonly initialDeptId?: string;
 }
 
 function toLocalDateInputValue(d: Date): string {

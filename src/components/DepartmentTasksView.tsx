@@ -10,9 +10,9 @@ interface TaskItem {
 }
 
 interface DepartmentTasksViewProps {
-  departmentId: string;
-  departmentName?: string;
-  readOnly?: boolean;
+  readonly departmentId: string;
+  readonly departmentName?: string;
+  readonly readOnly?: boolean;
 }
 
 export default function DepartmentTasksView({

@@ -7,7 +7,7 @@ import FreelanceProfileDetailClient from "./FreelanceProfileDetailClient";
 export default async function FreelanceProfileDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");

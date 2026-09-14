@@ -86,10 +86,10 @@ interface RequestItem {
 }
 
 interface Props {
-  requests: RequestItem[];
+  readonly requests: RequestItem[];
 }
 
-function RequestCard({ req, onUpdated }: { req: RequestItem; onUpdated: (updated: Partial<RequestItem>) => void }) {
+function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly onUpdated: (updated: Partial<RequestItem>) => void }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);

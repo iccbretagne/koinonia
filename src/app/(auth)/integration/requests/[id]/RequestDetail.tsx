@@ -139,10 +139,10 @@ interface Leader {
 }
 
 interface Props {
-  request: Request;
-  churchId: string;
-  isScoped: boolean;
-  currentUserId: string;
+  readonly request: Request;
+  readonly churchId: string;
+  readonly isScoped: boolean;
+  readonly currentUserId: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -190,7 +190,7 @@ const TRACK_THEME = {
   },
 } as const;
 
-function TrackTimeline({ steps, theme = "violet" }: { steps: StepData[]; theme?: keyof typeof TRACK_THEME }) {
+function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]; readonly theme?: keyof typeof TRACK_THEME }) {
   const t = TRACK_THEME[theme];
   return (
     <>
@@ -258,9 +258,9 @@ function MilestoneChips({
   canToggle,
   onToggle,
 }: {
-  journey: PersonJourneyData | null;
-  canToggle: boolean;
-  onToggle: (key: MilestoneKey, currentValue: boolean) => void;
+  readonly journey: PersonJourneyData | null;
+  readonly canToggle: boolean;
+  readonly onToggle: (key: MilestoneKey, currentValue: boolean) => void;
 }) {
   if (!journey) {
     return (
@@ -323,12 +323,12 @@ function MilestoneChips({
 // ── MSDP actions (tab content) ────────────────────────────────────────────────
 
 interface MsdpActionsProps {
-  followUp: MsdpFollowUpType | null;
-  onFollowUpChange: (f: MsdpFollowUpType) => void;
-  requestId: string;
-  churchId: string;
-  canAct: boolean;
-  hideStatus?: boolean;
+  readonly followUp: MsdpFollowUpType | null;
+  readonly onFollowUpChange: (f: MsdpFollowUpType) => void;
+  readonly requestId: string;
+  readonly churchId: string;
+  readonly canAct: boolean;
+  readonly hideStatus?: boolean;
 }
 
 function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, hideStatus = false }: MsdpActionsProps) {

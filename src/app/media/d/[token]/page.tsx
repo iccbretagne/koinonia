@@ -19,7 +19,7 @@ async function fetchDownloadData(token: string) {
   }
 }
 
-export default async function DownloadPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function DownloadPage({ params }: { readonly params: Promise<{ token: string }> }) {
   const { token } = await params;
   const data = await fetchDownloadData(token);
   if (!data) notFound();

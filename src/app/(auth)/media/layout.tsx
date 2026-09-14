@@ -6,7 +6,7 @@ import SpaceBreadcrumb from "@/components/SpaceBreadcrumb";
  * d'activité, ce layout ne porte plus qu'un fil d'Ariane de retour — chaque page vérifie ses
  * propres droits (T4/T10).
  */
-export default async function MediaLayout({ children }: { children: React.ReactNode }) {
+export default async function MediaLayout({ children }: { readonly children: React.ReactNode }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
 

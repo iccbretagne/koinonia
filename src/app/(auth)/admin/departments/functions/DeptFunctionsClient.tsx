@@ -12,7 +12,7 @@ interface Department {
 }
 
 interface Props {
-  departments: Department[];
+  readonly departments: Department[];
 }
 
 const FUNCTIONS = [

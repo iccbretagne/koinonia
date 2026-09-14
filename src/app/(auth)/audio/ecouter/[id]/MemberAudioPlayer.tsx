@@ -5,8 +5,8 @@ import AudioPlayer, { type AudioPlayerService } from "@/components/audio/AudioPl
 import { buildStreamUrl } from "./stream-url";
 
 interface Props {
-  serviceId: string;
-  service: AudioPlayerService;
+  readonly serviceId: string;
+  readonly service: AudioPlayerService;
 }
 
 /**

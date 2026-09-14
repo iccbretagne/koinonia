@@ -59,10 +59,10 @@ interface Request {
 }
 
 interface Props {
-  request: Request;
-  canManage: boolean;
-  isOwn: boolean;
-  currentUserId: string;
+  readonly request: Request;
+  readonly canManage: boolean;
+  readonly isOwn: boolean;
+  readonly currentUserId: string;
 }
 
 function fmt(d: Date | string | null) {
@@ -74,7 +74,7 @@ function fmtAmount(n: number | string) {
 }
 // ── Workflow steps ───────────────────────────────────────────────────────────
 const STEPS = ["SUBMITTED", "PROCESSING", "APPROVED"];
-function WorkflowBar({ status }: { status: string }) {
+function WorkflowBar({ status }: { readonly status: string }) {
   const isRejected = status === "REJECTED" || status === "CANCELLED";
   return (
     <div className="flex items-center gap-0">
