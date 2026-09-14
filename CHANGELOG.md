@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [v1.24.0] - 2026-09-14
 
 ### Ajouté
 
@@ -19,6 +19,13 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - **Visibilité des absences pour un responsable au périmètre restreint** (spec 050) : un
   responsable de département/ministre ne voit plus une absence ciblée uniquement sur des
   départements hors de son périmètre, même si elle porte sur un STAR qu'il gère par ailleurs.
+
+### Corrigé
+
+- **Liens de partage média redemandant une authentification** : les pages de partage par jeton
+  (galerie, validation, téléchargement, collection) ne sont désormais plus soumises au contrôle
+  de session — seules leurs routes API l'étaient déjà déclarées publiques dans le manifeste du
+  module, pas les pages elles-mêmes.
 
 ## [v1.23.0] - 2026-09-12
 
