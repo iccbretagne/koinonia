@@ -185,9 +185,7 @@ ciblée sur un événement précis.
 - [x] Les filtres ministère/département de la liste des absences tiennent compte du ciblage.
 - [x] L'export des absences indique le ciblage.
 - [x] Motif, backups, modification et annulation fonctionnent pour les déclarations ciblées.
-- [ ] La déclaration ciblée est utilisable sur mobile. *(revue de code : cibles tactiles ≥44px,
-      listes à défilement interne, cohérent avec le reste de l'app ; non vérifié sur un appareil
-      réel — à confirmer manuellement en recette)*
+- [x] La déclaration ciblée est utilisable sur mobile. *(vérifié manuellement en recette)*
 - [x] Aucune fuite entre églises : les événements et départements proposés sont ceux de l'église
       de la déclaration.
 
