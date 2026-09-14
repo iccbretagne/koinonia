@@ -28,6 +28,9 @@ vi.mock("@/modules/planning", () => ({
   isMemberLinkedToUser: (...args: unknown[]) => mockIsMemberLinkedToUser(...args),
   validateBackupTargets: (...args: unknown[]) => mockValidateBackupTargets(...args),
   resolveSubjectUserId: (...args: unknown[]) => mockResolveSubjectUserId(...args),
+  absenceVisibilityWhere: (departmentIds: string[]) => ({ __visibilityFor: departmentIds }),
+  absenceDepartmentFilterWhere: (filter: { departmentId?: string; ministryId?: string }) =>
+    filter.departmentId || filter.ministryId ? { __filterFor: filter } : null,
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -71,14 +74,18 @@ describe("GET /api/absences", () => {
         id: "abs-1",
         churchId: "church-1",
         memberId: "member-1",
+        kind: "PERIOD",
         startDate: new Date("2026-08-01"),
         endDate: new Date("2026-08-10"),
+        allDepartments: true,
         reason: null,
         status: "ACTIVE",
         createdById: "user-1",
         createdAt: new Date(),
         member: { id: "member-1", firstName: "Jean", lastName: "Dupont", departments: [] },
         createdBy: { id: "user-1", name: "Jean Dupont", displayName: null },
+        targetDepartments: [],
+        targetEvents: [],
         backups: [
           {
             id: "backup-1",

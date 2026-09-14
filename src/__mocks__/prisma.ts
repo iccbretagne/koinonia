@@ -38,6 +38,8 @@ export const prismaMock = {
   memberUserLink: createModelMock(),
   absence: createModelMock(),
   absenceBackup: createModelMock(),
+  absenceDepartment: createModelMock(),
+  absenceEvent: createModelMock(),
   announcement: createModelMock(),
   task: createModelMock(),
   taskAssignment: createModelMock(),

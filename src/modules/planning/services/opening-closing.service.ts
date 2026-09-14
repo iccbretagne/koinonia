@@ -56,22 +56,30 @@ export async function canManageOpeningClosing(
   return secretariatMembership > 0;
 }
 
-/** Absence active du membre chevauchant la date de l'événement, ou `null` si aucune. */
+/**
+ * Absence active du membre couvrant la date de l'événement, ou `null` si aucune.
+ *
+ * L'ouverture/fermeture n'appartient à aucun département (spec 050) : seule une absence
+ * « tous départements » déclenche l'avertissement — une absence ciblée sur un département précis
+ * (ex. Louange seul) signifie que le membre reste disponible pour le reste, dont cette tâche.
+ */
 export async function findActiveAbsenceForMember(
   churchId: string,
   memberId: string,
   eventDate: Date,
-  db?: DbClient
-): Promise<{ id: string; startDate: Date; endDate: Date } | null> {
+  db?: DbClient,
+  eventId?: string
+): Promise<{ id: string; startDate: Date | null; endDate: Date | null } | null> {
   db ??= await defaultDb();
 
+  const { absenceCoverageWhere } = await import("./absence-targeting");
   const absence = await db.absence.findFirst({
     where: {
       churchId,
       memberId,
       status: "ACTIVE",
-      startDate: { lte: eventDate },
-      endDate: { gte: eventDate },
+      allDepartments: true,
+      ...absenceCoverageWhere({ eventDate, eventId }),
     },
     select: { id: true, startDate: true, endDate: true },
   });

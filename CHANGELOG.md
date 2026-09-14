@@ -4,6 +4,22 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Ajouté
+
+- **Absence ciblée par département et par événement** (spec 050, issue #557) : un STAR servant
+  dans plusieurs départements peut désormais déclarer une indisponibilité restreinte à certains
+  départements et/ou à des événements précis, plutôt qu'obligatoirement une période sur tous ses
+  départements. Une absence déjà déclarée reste affichée à l'identique (valeurs par défaut
+  rétrocompatibles).
+
+### Modifié
+
+- **Visibilité des absences pour un responsable au périmètre restreint** (spec 050) : un
+  responsable de département/ministre ne voit plus une absence ciblée uniquement sur des
+  départements hors de son périmètre, même si elle porte sur un STAR qu'il gère par ailleurs.
+
 ## [v1.23.0] - 2026-09-12
 
 ### Ajouté
