@@ -79,10 +79,10 @@ export default function SequenceListEditor({
   segments,
   templateNames,
 }: {
-  serviceId: string;
-  sources: SourceSummary[];
-  segments: SegmentSummary[];
-  templateNames: string[];
+  readonly serviceId: string;
+  readonly sources: SourceSummary[];
+  readonly segments: SegmentSummary[];
+  readonly templateNames: string[];
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);

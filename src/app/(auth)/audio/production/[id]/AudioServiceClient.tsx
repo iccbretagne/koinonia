@@ -69,8 +69,8 @@ export default function AudioServiceClient({
   service,
   templateNames,
 }: {
-  service: ServiceData;
-  templateNames: string[];
+  readonly service: ServiceData;
+  readonly templateNames: string[];
 }) {
   const router = useRouter();
   const [uploads, setUploads] = useState<FileUploadState[]>([]);

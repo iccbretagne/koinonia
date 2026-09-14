@@ -32,11 +32,11 @@ export default function LibraryFiltersClient({
   churchOptions,
   current,
 }: {
-  speakers: string[];
-  seriesOptions: string[];
-  typeOptions: { value: string; label: string }[];
-  churchOptions: { value: string; label: string }[];
-  current: Filters;
+  readonly speakers: string[];
+  readonly seriesOptions: string[];
+  readonly typeOptions: { value: string; label: string }[];
+  readonly churchOptions: { value: string; label: string }[];
+  readonly current: Filters;
 }) {
   const router = useRouter();
   const pathname = usePathname();

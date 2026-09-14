@@ -6,8 +6,8 @@ interface Church {
 }
 
 interface ChurchSwitcherProps {
-  churches: Church[];
-  currentChurchId: string;
+  readonly churches: Church[];
+  readonly currentChurchId: string;
 }
 
 export default function ChurchSwitcher({

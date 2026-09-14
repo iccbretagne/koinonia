@@ -52,9 +52,9 @@ export default function LinkRequestsClient({
   departments,
   rejectedRequests = [],
 }: {
-  initialRequests: LinkRequest[];
-  departments: Department[];
-  rejectedRequests?: RejectedRequest[];
+  readonly initialRequests: LinkRequest[];
+  readonly departments: Department[];
+  readonly rejectedRequests?: RejectedRequest[];
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [rejected, setRejected] = useState(rejectedRequests);

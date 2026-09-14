@@ -55,16 +55,16 @@ interface RejectedRequest {
 }
 
 interface Props {
-  users: UserItem[];
-  ministries: Ministry[];
-  churchId: string;
-  isSuperAdmin: boolean;
-  pendingRequests: PendingRequest[];
-  rejectedRequests?: RejectedRequest[];
+  readonly users: UserItem[];
+  readonly ministries: Ministry[];
+  readonly churchId: string;
+  readonly isSuperAdmin: boolean;
+  readonly pendingRequests: PendingRequest[];
+  readonly rejectedRequests?: RejectedRequest[];
   // Un appelant au périmètre de ministère restreint (Ministre) ne peut attribuer
   // aucun rôle transverse — l'onglet est donc masqué plutôt que proposé pour rien
   // rejeté ensuite par l'API (spec 031/#467)
-  hideTransverseRoles?: boolean;
+  readonly hideTransverseRoles?: boolean;
 }
 
 type Tab = "requests" | "roles" | "transverse" | "stars";
@@ -93,7 +93,7 @@ const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function Avatar({ user, size = 32 }: { user: Pick<UserItem, "name" | "image">; size?: number }) {
+function Avatar({ user, size = 32 }: { readonly user: Pick<UserItem, "name" | "image">; readonly size?: number }) {
   if (user.image) {
     return (
       <Image src={user.image} alt={user.name} width={size} height={size}

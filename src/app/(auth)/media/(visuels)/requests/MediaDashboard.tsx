@@ -36,9 +36,9 @@ interface MediaProject {
 }
 
 interface Props {
-  requests: MediaRequest[];
-  churchId: string;
-  mediaProjects: MediaProject[];
+  readonly requests: MediaRequest[];
+  readonly churchId: string;
+  readonly mediaProjects: MediaProject[];
 }
 
 const STATUS_LABEL: Record<string, string> = {

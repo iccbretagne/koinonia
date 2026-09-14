@@ -33,7 +33,7 @@ const configLinksDef = [
 export default async function AuthLayout({
   children,
 }: {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }) {
   const session = await auth();
 

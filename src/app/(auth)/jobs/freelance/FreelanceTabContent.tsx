@@ -66,7 +66,7 @@ const MODALITY_COLOR: Record<string, string> = {
   HYBRID: "bg-purple-100 text-purple-700",
 };
 
-function AuthorAvatar({ author }: { author: Author }) {
+function AuthorAvatar({ author }: { readonly author: Author }) {
   const name = author.displayName ?? author.name ?? "?";
   return (
     <div className="flex items-center gap-1.5">
@@ -82,7 +82,7 @@ function AuthorAvatar({ author }: { author: Author }) {
   );
 }
 
-function RateBadges({ dailyRate, hourlyRate }: { dailyRate: string | null; hourlyRate: string | null }) {
+function RateBadges({ dailyRate, hourlyRate }: { readonly dailyRate: string | null; readonly hourlyRate: string | null }) {
   if (!dailyRate && !hourlyRate) return null;
   return (
     <div className="flex gap-1.5 flex-wrap">
@@ -100,7 +100,7 @@ function RateBadges({ dailyRate, hourlyRate }: { dailyRate: string | null; hourl
   );
 }
 
-function MissionCard({ mission, canManage }: { mission: Mission; canManage: boolean }) {
+function MissionCard({ mission, canManage }: { readonly mission: Mission; readonly canManage: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isArchived = mission.status === "ARCHIVED";
@@ -170,7 +170,7 @@ function MissionCard({ mission, canManage }: { mission: Mission; canManage: bool
   );
 }
 
-function FreelanceProfileCard({ profile, canManage }: { profile: FreelanceProfile; canManage: boolean }) {
+function FreelanceProfileCard({ profile, canManage }: { readonly profile: FreelanceProfile; readonly canManage: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isArchived = profile.status === "ARCHIVED";
@@ -249,10 +249,10 @@ export default function FreelanceTabContent({
   currentUserId: _currentUserId,
   canManage = false,
 }: {
-  missions: Mission[];
-  profiles: FreelanceProfile[];
-  currentUserId: string;
-  canManage?: boolean;
+  readonly missions: Mission[];
+  readonly profiles: FreelanceProfile[];
+  readonly currentUserId: string;
+  readonly canManage?: boolean;
 }) {
   const [subFilter, setSubFilter] = useState<SubFilter>("all");
   const [missionStatusFilter, setMissionStatusFilter] = useState<"ALL" | MissionStatus>("ACTIVE");

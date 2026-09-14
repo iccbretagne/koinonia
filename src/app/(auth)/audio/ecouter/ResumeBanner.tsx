@@ -22,7 +22,7 @@ function formatPosition(seconds: number): string {
  * culte effectivement présent dans la liste affichée (jamais de reprise fantôme après filtrage).
  * `localStorage` n'existant que côté client, ce composant se résout après montage.
  */
-export default function ResumeBanner({ services }: { services: ServiceRef[] }) {
+export default function ResumeBanner({ services }: { readonly services: ServiceRef[] }) {
   const [resume, setResume] = useState<{ service: ServiceRef; position: number } | null>(null);
 
   useEffect(() => {

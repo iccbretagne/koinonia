@@ -28,11 +28,11 @@ interface WeekEvent {
 }
 
 interface WeeklyPlanningViewProps {
-  churchId: string;
-  departmentId: string;
-  departmentName?: string;
-  churchName?: string;
-  canEdit: boolean;
+  readonly churchId: string;
+  readonly departmentId: string;
+  readonly departmentName?: string;
+  readonly churchName?: string;
+  readonly canEdit: boolean;
 }
 
 

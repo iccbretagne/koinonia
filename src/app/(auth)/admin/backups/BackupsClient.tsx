@@ -36,10 +36,10 @@ function RestoreModal({
   onConfirm,
   loading,
 }: {
-  backup: BackupEntry;
-  onCancel: () => void;
-  onConfirm: () => void;
-  loading: boolean;
+  readonly backup: BackupEntry;
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+  readonly loading: boolean;
 }) {
   const [step, setStep] = useState<1 | 2>(1);
 

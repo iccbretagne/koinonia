@@ -3,10 +3,10 @@
 import Button from "@/components/ui/Button";
 
 interface BulkActionBarProps {
-  count: number;
-  onEdit: () => void;
-  onDelete: () => void;
-  onClear: () => void;
+  readonly count: number;
+  readonly onEdit: () => void;
+  readonly onDelete: () => void;
+  readonly onClear: () => void;
 }
 
 export default function BulkActionBar({

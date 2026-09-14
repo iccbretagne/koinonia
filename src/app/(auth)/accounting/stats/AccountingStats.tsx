@@ -64,11 +64,11 @@ function KpiCard({
   accent,
   warning,
 }: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent?: boolean;
-  warning?: boolean;
+  readonly label: string;
+  readonly value: string | number;
+  readonly sub?: string;
+  readonly accent?: boolean;
+  readonly warning?: boolean;
 }) {
   return (
     <div
@@ -93,7 +93,7 @@ function KpiCard({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <h2 className="text-sm font-semibold text-gray-700 mb-4">{title}</h2>
@@ -102,7 +102,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function HBar({ label, value, max, sub }: { label: string; value: number; max: number; sub?: string }) {
+function HBar({ label, value, max, sub }: { readonly label: string; readonly value: number; readonly max: number; readonly sub?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
@@ -119,8 +119,8 @@ export default function AccountingStats({
   initialData,
   churchId,
 }: {
-  initialData: StatsData;
-  churchId: string;
+  readonly initialData: StatsData;
+  readonly churchId: string;
 }) {
   const [data, setData] = useState<StatsData>(initialData);
   const [period, setPeriod] = useState<Period>(initialData.period);

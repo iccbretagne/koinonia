@@ -22,8 +22,8 @@ export default function SeekerFormClient({
   initial,
   defaultEmail,
 }: {
-  initial?: SeekerInitial;
-  defaultEmail?: string | null;
+  readonly initial?: SeekerInitial;
+  readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
   const isEdit = !!initial;

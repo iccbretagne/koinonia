@@ -33,9 +33,9 @@ interface Option {
 }
 
 interface Props {
-  church: Church;
-  profiles: Option[];
-  supervisors: Option[];
+  readonly church: Church;
+  readonly profiles: Option[];
+  readonly supervisors: Option[];
 }
 
 export default function ChurchEditClient({ church, profiles, supervisors }: Props) {

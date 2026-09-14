@@ -16,8 +16,8 @@ export default function AudioSettingsClient({
   settings,
   coverPreviewUrl,
 }: {
-  settings: Settings;
-  coverPreviewUrl: string | null;
+  readonly settings: Settings;
+  readonly coverPreviewUrl: string | null;
 }) {
   const [defaultCoverKey, setDefaultCoverKey] = useState(settings.defaultCoverKey ?? "");
   const [coverPreview, setCoverPreview] = useState(coverPreviewUrl);

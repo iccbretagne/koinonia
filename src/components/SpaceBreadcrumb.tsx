@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
  * Fil d'Ariane de retour à l'accueil d'un espace à cartes (Communication & Production, Audio —
  * spec 049) — masqué sur l'accueil lui-même.
  */
-export default function SpaceBreadcrumb({ homeHref, label }: { homeHref: string; label: string }) {
+export default function SpaceBreadcrumb({ homeHref, label }: { readonly homeHref: string; readonly label: string }) {
   const pathname = usePathname();
   if (pathname === homeHref) return null;
 

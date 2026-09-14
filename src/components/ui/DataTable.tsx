@@ -17,21 +17,21 @@ export interface DataTableSort {
 }
 
 interface DataTableProps<T> {
-  columns: Column<T>[];
-  data: T[];
-  actions?: (row: T) => ReactNode;
-  emptyMessage?: string;
-  selectable?: boolean;
-  selectedIds?: Set<string>;
-  onSelectionChange?: (ids: Set<string>) => void;
+  readonly columns: Column<T>[];
+  readonly data: T[];
+  readonly actions?: (row: T) => ReactNode;
+  readonly emptyMessage?: string;
+  readonly selectable?: boolean;
+  readonly selectedIds?: Set<string>;
+  readonly onSelectionChange?: (ids: Set<string>) => void;
   /** Id de ligne à mettre en évidence visuellement (ex. arrivée depuis un lien externe). */
-  highlightedId?: string;
+  readonly highlightedId?: string;
   /**
    * Tri actif. `DataTable` ne trie pas les données lui-même : il affiche l'état
    * et remonte les changements via `onSortChange` — le parent trie ses données.
    */
-  sort?: DataTableSort;
-  onSortChange?: (sort: DataTableSort) => void;
+  readonly sort?: DataTableSort;
+  readonly onSortChange?: (sort: DataTableSort) => void;
 }
 
 function getCellValue<T>(row: T, accessor: Column<T>["accessor"]): ReactNode {

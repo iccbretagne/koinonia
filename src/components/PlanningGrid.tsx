@@ -39,8 +39,8 @@ function AbsenceBadge({
   activeAbsence,
   canViewAbsences,
 }: {
-  activeAbsence: ActiveAbsence;
-  canViewAbsences: boolean;
+  readonly activeAbsence: ActiveAbsence;
+  readonly canViewAbsences: boolean;
 }) {
   const className =
     "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap";
@@ -78,10 +78,10 @@ function AbsenceBadge({
 }
 
 interface PlanningGridProps {
-  eventId: string;
-  departmentId: string;
-  readOnly?: boolean;
-  canViewAbsences?: boolean;
+  readonly eventId: string;
+  readonly departmentId: string;
+  readonly readOnly?: boolean;
+  readonly canViewAbsences?: boolean;
 }
 
 const STATUS_OPTIONS = [

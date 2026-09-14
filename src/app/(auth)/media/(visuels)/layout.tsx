@@ -7,7 +7,7 @@ import { resolveMediaSpaceAccess, buildVisualsTabs } from "@/lib/media-space";
  * groupe de routes qui n'apparaît pas dans l'URL (`/media/projects`, `/media/requests`
  * inchangées). Chaque page vérifie en plus ses propres droits.
  */
-export default async function VisuelsLayout({ children }: { children: React.ReactNode }) {
+export default async function VisuelsLayout({ children }: { readonly children: React.ReactNode }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
 

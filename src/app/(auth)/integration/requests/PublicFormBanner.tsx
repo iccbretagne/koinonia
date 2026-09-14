@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export default function PublicFormBanner({ slug }: { slug: string }) {
+export default function PublicFormBanner({ slug }: { readonly slug: string }) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
   // `window` n'existe pas au rendu serveur : l'origine ne peut etre connue qu'apres montage,

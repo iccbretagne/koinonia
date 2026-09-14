@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
 interface Profile { id: string; name: string; role: string }
-interface Props { churchId: string; profiles: Profile[] }
+interface Props { readonly churchId: string; readonly profiles: Profile[] }
 
 const ROLE_LABELS: Record<string, string> = {
   PASTEUR: "Pasteur",

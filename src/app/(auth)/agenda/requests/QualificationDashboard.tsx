@@ -19,9 +19,9 @@ interface AppointmentRequest {
 }
 
 interface Props {
-  churchId: string;
-  requests: AppointmentRequest[];
-  profiles: Profile[];
+  readonly churchId: string;
+  readonly requests: AppointmentRequest[];
+  readonly profiles: Profile[];
 }
 
 const ROLE_LABELS: Record<string, string> = {

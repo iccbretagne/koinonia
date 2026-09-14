@@ -5,7 +5,7 @@ import PublicRequestForm from "./PublicRequestForm";
 export default async function PublicAgendaRequestPage({
   params,
 }: {
-  params: Promise<{ churchSlug: string }>;
+  readonly params: Promise<{ churchSlug: string }>;
 }) {
   const { churchSlug } = await params;
 

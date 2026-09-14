@@ -22,11 +22,11 @@ export interface CorrectionSource {
 }
 
 interface Props {
-  departments: Department[];
+  readonly departments: Department[];
   /** Demande rejetée à corriger : pré-remplit le formulaire et lie la nouvelle demande. */
-  correction?: CorrectionSource | null;
+  readonly correction?: CorrectionSource | null;
   /** Page de retour après soumission (spec 043 : "/requests" si on vient de Mes demandes). */
-  redirectTo?: string;
+  readonly redirectTo?: string;
 }
 
 type RequestMode = "one_shot" | "recurring";

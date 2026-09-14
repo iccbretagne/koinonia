@@ -27,7 +27,7 @@ function formatWeekLabel(start: Date, end: Date) {
 export default async function StarWeeklyEventsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ week?: string }>;
+  readonly searchParams: Promise<{ week?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

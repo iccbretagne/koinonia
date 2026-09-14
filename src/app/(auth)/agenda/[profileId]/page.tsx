@@ -22,8 +22,8 @@ export default async function ProfileAgendaPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ profileId: string }>;
-  searchParams: Promise<{ week?: string }>;
+  readonly params: Promise<{ profileId: string }>;
+  readonly searchParams: Promise<{ week?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

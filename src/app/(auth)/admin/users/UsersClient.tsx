@@ -45,11 +45,11 @@ interface UserItem {
 }
 
 interface Props {
-  churchId: string;
-  initialUsers: UserItem[];
-  ministries: { id: string; name: string; churchId: string }[];
-  departments: { id: string; name: string; churchId: string }[];
-  canManageRoles: boolean;
+  readonly churchId: string;
+  readonly initialUsers: UserItem[];
+  readonly ministries: { id: string; name: string; churchId: string }[];
+  readonly departments: { id: string; name: string; churchId: string }[];
+  readonly canManageRoles: boolean;
 }
 
 export default function UsersClient({

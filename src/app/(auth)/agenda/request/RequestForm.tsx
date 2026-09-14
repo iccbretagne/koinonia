@@ -5,16 +5,16 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
 interface Props {
-  churchId: string;
-  churchName: string;
-  defaultFirstName: string;
-  defaultLastName: string;
-  defaultEmail: string;
-  defaultIsStar?: string;
-  defaultDepartment?: string;
+  readonly churchId: string;
+  readonly churchName: string;
+  readonly defaultFirstName: string;
+  readonly defaultLastName: string;
+  readonly defaultEmail: string;
+  readonly defaultIsStar?: string;
+  readonly defaultDepartment?: string;
   /** Écran de retour proposé après soumission. */
-  redirectTo?: string;
-  redirectLabel?: string;
+  readonly redirectTo?: string;
+  readonly redirectLabel?: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -27,7 +27,7 @@ const DAYS = ["Mardi", "Dimanche"];
 const inputCls = "w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet";
 
 function RadioGroup({ name, options, value, onChange }: {
-  name: string; options: string[]; value: string; onChange: (v: string) => void;
+  readonly name: string; readonly options: string[]; readonly value: string; readonly onChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">

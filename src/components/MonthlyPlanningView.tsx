@@ -20,9 +20,9 @@ interface EventItem {
 }
 
 interface Props {
-  departmentId: string;
-  departmentName?: string;
-  churchName?: string;
+  readonly departmentId: string;
+  readonly departmentName?: string;
+  readonly churchName?: string;
 }
 
 export default function MonthlyPlanningView({ departmentId, departmentName, churchName }: Props) {

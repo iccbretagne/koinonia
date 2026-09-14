@@ -8,7 +8,7 @@ import MediaEventDetail from "./MediaEventDetail";
 export default async function MediaEventDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   const session = await requireAuth();

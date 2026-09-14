@@ -170,12 +170,12 @@ function formatTimecode(s: number) {
 // ─── Modale de confirmation ───────────────────────────────────────────────────
 
 function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = false, onConfirm, onCancel }: {
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  danger?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
+  readonly title: string;
+  readonly message: string;
+  readonly confirmLabel?: string;
+  readonly danger?: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
@@ -222,9 +222,9 @@ function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = fal
 // ─── Liens de partage ─────────────────────────────────────────────────────────
 
 function ShareTokenSection({ projectId, tokens, onRefresh }: {
-  projectId: string;
-  tokens: ShareToken[];
-  onRefresh: () => void;
+  readonly projectId: string;
+  readonly tokens: ShareToken[];
+  readonly onRefresh: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -403,9 +403,9 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
 // ─── Video player avec gestion expiration ────────────────────────────────────
 
 function VideoPlayer({ src, thumbnail, onExpired }: {
-  src: string;
-  thumbnail?: string;
-  onExpired: () => void;
+  readonly src: string;
+  readonly thumbnail?: string;
+  readonly onExpired: () => void;
 }) {
   const [error, setError] = useState(false);
 
@@ -464,9 +464,9 @@ async function uploadToS3(uploadUrl: string, file: File, onProgress?: (p: number
 // ─── Zone d'upload nouveaux fichiers ─────────────────────────────────────────
 
 function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
-  projectId: string;
-  onUploaded: () => void;
-  onActivityChange?: (active: boolean, label?: string) => void;
+  readonly projectId: string;
+  readonly onUploaded: () => void;
+  readonly onActivityChange?: (active: boolean, label?: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -568,7 +568,7 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
 
 // ─── Upload nouvelle version ──────────────────────────────────────────────────
 
-function NewVersionUpload({ fileId, onDone }: { fileId: string; onDone: () => void }) {
+function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonly onDone: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pct, setPct] = useState(0);
@@ -654,17 +654,17 @@ function NewVersionUpload({ fileId, onDone }: { fileId: string; onDone: () => vo
 // ─── Panneau détail fichier ───────────────────────────────────────────────────
 
 function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, canReview, canManage, onClose, onReviewFile, onDelete, onRefresh }: {
-  file: MediaFile;
-  allFiles: MediaFile[];
-  fileIndex: number;
-  onNavigate: (file: MediaFile) => void;
-  canUpload: boolean;
-  canReview: boolean;
-  canManage: boolean;
-  onClose: () => void;
-  onReviewFile: (id: string, status: "FINAL_APPROVED" | "REVISION_REQUESTED" | "REJECTED") => void;
-  onDelete: (id: string) => void;
-  onRefresh: () => void;
+  readonly file: MediaFile;
+  readonly allFiles: MediaFile[];
+  readonly fileIndex: number;
+  readonly onNavigate: (file: MediaFile) => void;
+  readonly canUpload: boolean;
+  readonly canReview: boolean;
+  readonly canManage: boolean;
+  readonly onClose: () => void;
+  readonly onReviewFile: (id: string, status: "FINAL_APPROVED" | "REVISION_REQUESTED" | "REJECTED") => void;
+  readonly onDelete: (id: string) => void;
+  readonly onRefresh: () => void;
 }) {
   const [versions, setVersions] = useState<(FileVersion & { createdBy?: { name: string | null; displayName: string | null } })[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -974,11 +974,11 @@ export default function MediaProjectDetail({
   canReview,
   canManage,
 }: {
-  project: MediaProject;
-  thumbnailUrls: Record<string, string>;
-  canUpload: boolean;
-  canReview: boolean;
-  canManage: boolean;
+  readonly project: MediaProject;
+  readonly thumbnailUrls: Record<string, string>;
+  readonly canUpload: boolean;
+  readonly canReview: boolean;
+  readonly canManage: boolean;
 }) {
   const router = useRouter();
   // Merge server-side thumbnail URLs into the initial files so we have them from the start

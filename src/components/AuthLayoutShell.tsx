@@ -23,34 +23,34 @@ function hexToLuminance(hex: string): number {
 }
 
 interface AuthLayoutShellProps {
-  departments: { id: string; name: string; ministryName?: string }[];
-  configLinks: { href: string; label: string }[];
-  requestLinks: { href: string; label: string }[];
-  mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
-  agendaLinks?: { href: string; label: string }[];
-  integrationLinks?: { href: string; label: string }[];
-  famillesUrl?: string | null;
-  hasDiscipleship: boolean;
-  hasEventsAccess: boolean;
-  hasEventsManage: boolean;
-  hasPlanningAccess: boolean;
-  hasMembersAccess: boolean;
-  hasReports: boolean;
-  hasMyPlanning?: boolean;
-  showStarEvents?: boolean;
-  hasAbsences?: boolean;
-  hasRooms?: boolean;
-  hasAccounting?: boolean;
-  hasJobs?: boolean;
-  isPastoral?: boolean;
-  headerColor?: string;
-  userRole: RoleKey;
-  header: React.ReactNode;
-  children: React.ReactNode;
-  footer: React.ReactNode;
+  readonly departments: { id: string; name: string; ministryName?: string }[];
+  readonly configLinks: { href: string; label: string }[];
+  readonly requestLinks: { href: string; label: string }[];
+  readonly mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
+  readonly agendaLinks?: { href: string; label: string }[];
+  readonly integrationLinks?: { href: string; label: string }[];
+  readonly famillesUrl?: string | null;
+  readonly hasDiscipleship: boolean;
+  readonly hasEventsAccess: boolean;
+  readonly hasEventsManage: boolean;
+  readonly hasPlanningAccess: boolean;
+  readonly hasMembersAccess: boolean;
+  readonly hasReports: boolean;
+  readonly hasMyPlanning?: boolean;
+  readonly showStarEvents?: boolean;
+  readonly hasAbsences?: boolean;
+  readonly hasRooms?: boolean;
+  readonly hasAccounting?: boolean;
+  readonly hasJobs?: boolean;
+  readonly isPastoral?: boolean;
+  readonly headerColor?: string;
+  readonly userRole: RoleKey;
+  readonly header: React.ReactNode;
+  readonly children: React.ReactNode;
+  readonly footer: React.ReactNode;
 }
 
-function IconMenu({ className }: { className?: string }) {
+function IconMenu({ className }: { readonly className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

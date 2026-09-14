@@ -19,9 +19,9 @@ interface TeamEventItem {
 }
 
 interface TeamEventsViewProps {
-  departmentId: string;
-  departmentName?: string;
-  canEdit: boolean;
+  readonly departmentId: string;
+  readonly departmentName?: string;
+  readonly canEdit: boolean;
 }
 
 const RECURRENCE_OPTIONS = [

@@ -23,7 +23,7 @@ function monthKey(date: Date): string {
 export default async function AnnouncementSheetsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  readonly searchParams: Promise<{ month?: string }>;
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);

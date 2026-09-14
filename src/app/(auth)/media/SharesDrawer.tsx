@@ -32,7 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 /** Tiroir listant les liens de partage actifs (spec 049) — remplace l'écran « Collections ». */
-export default function SharesDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function SharesDrawer({ open, onClose }: { readonly open: boolean; readonly onClose: () => void }) {
   const [shares, setShares] = useState<ActiveShare[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);

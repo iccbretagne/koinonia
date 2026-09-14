@@ -11,9 +11,9 @@ export default function MediaHomeClient({
   showShareButton,
   shareCount,
 }: {
-  cards: SpaceCard[];
-  showShareButton: boolean;
-  shareCount: number;
+  readonly cards: SpaceCard[];
+  readonly showShareButton: boolean;
+  readonly shareCount: number;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 

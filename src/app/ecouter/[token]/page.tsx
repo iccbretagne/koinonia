@@ -4,7 +4,7 @@ import { resolvePublicAudioService, recordAudioServiceOpen } from "@/modules/aud
 import PublicAudioPlayer from "./PublicAudioPlayer";
 
 interface Props {
-  params: Promise<{ token: string }>;
+  readonly params: Promise<{ token: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

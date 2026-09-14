@@ -32,15 +32,15 @@ export default function CollectionBuilder({
   lockedScope,
   onCreated,
 }: {
-  churchId: string;
-  events: EventItem[];
-  projects: ProjectItem[];
+  readonly churchId: string;
+  readonly events: EventItem[];
+  readonly projects: ProjectItem[];
   /** Présélection (spec 049) : depuis « Partager une sélection » sur Photos/Visuels. */
-  initialEventIds?: string[];
-  initialProjectIds?: string[];
+  readonly initialEventIds?: string[];
+  readonly initialProjectIds?: string[];
   /** Verrouille le contenu à un seul type — masque le sélecteur (partage depuis une seule activité). */
-  lockedScope?: Scope;
-  onCreated?: (result: { url: string; label: string | null }) => void;
+  readonly lockedScope?: Scope;
+  readonly onCreated?: (result: { url: string; label: string | null }) => void;
 }) {
   const [scope, setScope]           = useState<Scope>(lockedScope ?? "both");
   const [includeAllPhotos, setIncludeAllPhotos] = useState(false);

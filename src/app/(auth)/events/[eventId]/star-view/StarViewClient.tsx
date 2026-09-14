@@ -38,7 +38,7 @@ interface StarViewData {
 }
 
 interface Props {
-  eventId: string;
+  readonly eventId: string;
 }
 
 export default function StarViewClient({ eventId }: Props) {

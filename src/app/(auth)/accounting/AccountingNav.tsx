@@ -6,8 +6,8 @@ export default function AccountingNav({
   canViewStats,
   active,
 }: {
-  canViewStats: boolean;
-  active: "requests" | "stats";
+  readonly canViewStats: boolean;
+  readonly active: "requests" | "stats";
 }) {
   if (!canViewStats) return null;
 

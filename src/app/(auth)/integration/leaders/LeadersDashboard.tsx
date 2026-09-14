@@ -25,9 +25,9 @@ interface FamilyOption {
 }
 
 interface Props {
-  churchId: string;
-  initialAssignments: Assignment[];
-  users: UserRef[];
+  readonly churchId: string;
+  readonly initialAssignments: Assignment[];
+  readonly users: UserRef[];
 }
 
 const ROLE_LABELS: Record<"BERGER" | "CO_BERGER", string> = {
@@ -40,7 +40,7 @@ const ROLE_COLORS: Record<"BERGER" | "CO_BERGER", string> = {
   CO_BERGER: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
-function Avatar({ user, size = 8 }: { user: UserRef; size?: number }) {
+function Avatar({ user, size = 8 }: { readonly user: UserRef; readonly size?: number }) {
   const initials = (user.name ?? user.email ?? "?")
     .split(" ")
     .map((w) => w[0])

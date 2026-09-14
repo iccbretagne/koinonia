@@ -17,8 +17,8 @@ export default function PastoralMembersClient({
   members,
   churchName,
 }: {
-  members: Member[];
-  churchName: string;
+  readonly members: Member[];
+  readonly churchName: string;
 }) {
   const [query, setQuery] = useState("");
 

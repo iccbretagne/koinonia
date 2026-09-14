@@ -15,7 +15,7 @@ async function fetchCollectionData(token: string) {
   }
 }
 
-export default async function CollectionPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function CollectionPage({ params }: { readonly params: Promise<{ token: string }> }) {
   const { token } = await params;
   const data = await fetchCollectionData(token);
   if (!data) notFound();

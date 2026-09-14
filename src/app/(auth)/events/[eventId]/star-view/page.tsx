@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import StarViewClient from "./StarViewClient";
 
 interface Props {
-  params: Promise<{ eventId: string }>;
+  readonly params: Promise<{ eventId: string }>;
 }
 
 export default async function StarViewPage({ params }: Props) {

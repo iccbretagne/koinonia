@@ -16,10 +16,10 @@ interface TaskItem {
 }
 
 interface TaskPanelProps {
-  eventId: string;
-  departmentId: string;
-  eligibleMembers: MemberRef[];
-  readOnly?: boolean;
+  readonly eventId: string;
+  readonly departmentId: string;
+  readonly eligibleMembers: MemberRef[];
+  readonly readOnly?: boolean;
 }
 
 export default function TaskPanel({

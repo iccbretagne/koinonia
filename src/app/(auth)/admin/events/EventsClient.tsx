@@ -23,8 +23,8 @@ interface EventItem {
 }
 
 interface Props {
-  initialEvents: EventItem[];
-  churches: { id: string; name: string }[];
+  readonly initialEvents: EventItem[];
+  readonly churches: { id: string; name: string }[];
 }
 
 const DEADLINE_OFFSETS = [

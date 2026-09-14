@@ -16,10 +16,10 @@ interface Ministry {
 }
 
 interface Props {
-  initialMinistries: Ministry[];
-  churches: { id: string; name: string }[];
-  readOnly?: boolean;
-  isSuperAdmin?: boolean;
+  readonly initialMinistries: Ministry[];
+  readonly churches: { id: string; name: string }[];
+  readonly readOnly?: boolean;
+  readonly isSuperAdmin?: boolean;
 }
 
 export default function MinistriesClient({

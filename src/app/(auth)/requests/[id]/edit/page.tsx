@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import RequestForm, { type EditData } from "../../new/RequestForm";
 
 interface Props {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }
 
 export default async function EditRequestPage({ params }: Props) {

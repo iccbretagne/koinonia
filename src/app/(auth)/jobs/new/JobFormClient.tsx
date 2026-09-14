@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
 
-export default function JobFormClient({ initial }: { initial?: {
+export default function JobFormClient({ initial }: { readonly initial?: {
   id: string;
   title: string;
   type: JobType;

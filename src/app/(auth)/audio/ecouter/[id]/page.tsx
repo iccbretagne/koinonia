@@ -8,7 +8,7 @@ import MemberAudioPlayer from "./MemberAudioPlayer";
 export default async function AudioListenPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
   const session = await requireAuth();

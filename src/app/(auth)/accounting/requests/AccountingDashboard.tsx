@@ -48,10 +48,10 @@ interface Stats {
 }
 
 interface Props {
-  requests: Request[];
-  stats: Stats;
-  canManage: boolean;
-  currentUserId: string;
+  readonly requests: Request[];
+  readonly stats: Stats;
+  readonly canManage: boolean;
+  readonly currentUserId: string;
 }
 
 function daysSince(d: Date | string) {

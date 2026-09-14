@@ -28,9 +28,9 @@ export default function RoomsAdminClient({
   initialRooms,
   otherChurches,
 }: {
-  churchId: string;
-  initialRooms: Room[];
-  otherChurches: Church[];
+  readonly churchId: string;
+  readonly initialRooms: Room[];
+  readonly otherChurches: Church[];
 }) {
   const router = useRouter();
   const [rooms, setRooms] = useState(initialRooms);

@@ -16,7 +16,7 @@ interface Church {
 }
 
 interface Props {
-  initialChurches: Church[];
+  readonly initialChurches: Church[];
 }
 
 export default function ChurchesClient({ initialChurches }: Props) {

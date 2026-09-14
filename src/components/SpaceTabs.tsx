@@ -14,7 +14,7 @@ interface Tab {
  * affichés dépendent des permissions de l'utilisateur, calculées une fois par le layout.
  * `overflow-x-auto` : jusqu'à 5 onglets doivent rester utilisables sur ~400 px.
  */
-export default function SpaceTabs({ tabs, ariaLabel }: { tabs: Tab[]; ariaLabel: string }) {
+export default function SpaceTabs({ tabs, ariaLabel }: { readonly tabs: Tab[]; readonly ariaLabel: string }) {
   const pathname = usePathname();
 
   return (

@@ -66,7 +66,7 @@ function isActionable(status: string, isPrevalidator: boolean, hasPrevalidator: 
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
-function ProgressBar({ total, approved, rejected }: { total: number; approved: number; rejected: number }) {
+function ProgressBar({ total, approved, rejected }: { readonly total: number; readonly approved: number; readonly rejected: number }) {
   if (total === 0) return null;
   const approvedPct = (approved / total) * 100;
   const rejectedPct = (rejected / total) * 100;
@@ -82,7 +82,7 @@ function ProgressBar({ total, approved, rejected }: { total: number; approved: n
 
 // ── File type icon ────────────────────────────────────────────────────────────
 
-function FileTypeIcon({ mimeType, className = "w-16 h-16" }: { mimeType: string; className?: string }) {
+function FileTypeIcon({ mimeType, className = "w-16 h-16" }: { readonly mimeType: string; readonly className?: string }) {
   if (mimeType.startsWith("video/")) return (
     <svg className={`${className} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
@@ -102,7 +102,7 @@ function FileTypeIcon({ mimeType, className = "w-16 h-16" }: { mimeType: string;
 
 // ── Image lightbox ────────────────────────────────────────────────────────────
 
-function ImageLightbox({ file, token, onClose }: { file: ProjectFile; token: string; onClose: () => void }) {
+function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; readonly token: string; readonly onClose: () => void }) {
   const [hdUrl, setHdUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -168,13 +168,13 @@ function ActionDrawer({
   saving,
   isPrevalidator,
 }: {
-  type: "reject" | "revision";
-  comment: string;
-  onCommentChange: (v: string) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  saving: boolean;
-  isPrevalidator: boolean;
+  readonly type: "reject" | "revision";
+  readonly comment: string;
+  readonly onCommentChange: (v: string) => void;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+  readonly saving: boolean;
+  readonly isPrevalidator: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isRevision = type === "revision";
@@ -254,12 +254,12 @@ function SummaryView({
   onBack,
   onGoTo,
 }: {
-  files: ProjectFile[];
-  isPrevalidator: boolean;
-  hasPrevalidator: boolean;
-  projectName: string;
-  onBack: () => void;
-  onGoTo: (index: number) => void;
+  readonly files: ProjectFile[];
+  readonly isPrevalidator: boolean;
+  readonly hasPrevalidator: boolean;
+  readonly projectName: string;
+  readonly onBack: () => void;
+  readonly onGoTo: (index: number) => void;
 }) {
   const [filter, setFilter] = useState<SummaryFilter>("ALL");
 
@@ -376,7 +376,7 @@ function SummaryView({
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ProjectValidatorView({ token, data }: { token: string; data: ProjectValidationData }) {
+export default function ProjectValidatorView({ token, data }: { readonly token: string; readonly data: ProjectValidationData }) {
   const { project } = data;
   const isPrevalidator = data.token.type === "PREVALIDATOR";
   const hasPrevalidator = project.hasPrevalidator;

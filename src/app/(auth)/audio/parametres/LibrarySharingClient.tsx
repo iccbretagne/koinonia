@@ -21,8 +21,8 @@ export default function LibrarySharingClient({
   ownSlug,
   initialShares,
 }: {
-  ownSlug: string;
-  initialShares: Share[];
+  readonly ownSlug: string;
+  readonly initialShares: Share[];
 }) {
   const [shares, setShares] = useState<Share[]>(initialShares);
   const [slug, setSlug] = useState("");

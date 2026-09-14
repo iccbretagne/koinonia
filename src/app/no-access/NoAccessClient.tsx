@@ -54,8 +54,8 @@ export default function NoAccessClient({
   churches,
   ministries,
 }: {
-  churches: Church[];
-  ministries: Ministry[];
+  readonly churches: Church[];
+  readonly ministries: Ministry[];
 }) {
   const [step, setStep] = useState<Step>("identity");
   const [churchId, setChurchId] = useState(churches[0]?.id ?? "");

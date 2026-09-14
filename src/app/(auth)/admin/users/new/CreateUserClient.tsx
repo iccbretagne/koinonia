@@ -19,9 +19,9 @@ interface Department {
 }
 
 interface Props {
-  churchId: string;
-  availableMembers: Member[];
-  departments: Department[];
+  readonly churchId: string;
+  readonly availableMembers: Member[];
+  readonly departments: Department[];
 }
 
 type Mode = "existing" | "new";

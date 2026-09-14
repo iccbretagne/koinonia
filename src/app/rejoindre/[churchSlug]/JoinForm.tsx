@@ -73,8 +73,8 @@ function useAddressSuggestions(query: string) {
 }
 
 interface Props {
-  churchId: string;
-  churchName: string;
+  readonly churchId: string;
+  readonly churchName: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -93,7 +93,7 @@ const CHURCH_STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 
 
-function FieldError({ errors, field }: { errors: FieldErrors; field: string }) {
+function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly field: string }) {
   if (!errors[field]) return null;
   return <p className="text-xs text-red-600 mt-1">{errors[field]}</p>;
 }
@@ -111,11 +111,11 @@ function RadioGroup({
   onChange,
   errors,
 }: {
-  name: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (v: string) => void;
-  errors: FieldErrors;
+  readonly name: string;
+  readonly options: { value: string; label: string }[];
+  readonly value: string;
+  readonly onChange: (v: string) => void;
+  readonly errors: FieldErrors;
 }) {
   return (
     <div

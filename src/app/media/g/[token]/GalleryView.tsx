@@ -21,7 +21,7 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-export default function GalleryView({ data }: { data: GalleryData }) {
+export default function GalleryView({ data }: { readonly data: GalleryData }) {
   const [lightbox, setLightbox] = useState<Photo | null>(null);
 
   const { event, photos } = data;

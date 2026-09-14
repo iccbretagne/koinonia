@@ -20,14 +20,14 @@ type PendingAction =
   | { type: "department"; dept: Department };
 
 interface Props {
-  eventId: string;
-  isRecurring?: boolean;
-  allowAnnouncements: boolean;
-  trackedForDiscipleship: boolean;
-  reportEnabled: boolean;
-  statsEnabled: boolean;
-  welcomeDutyEnabled: boolean;
-  departments: Department[];
+  readonly eventId: string;
+  readonly isRecurring?: boolean;
+  readonly allowAnnouncements: boolean;
+  readonly trackedForDiscipleship: boolean;
+  readonly reportEnabled: boolean;
+  readonly statsEnabled: boolean;
+  readonly welcomeDutyEnabled: boolean;
+  readonly departments: Department[];
 }
 
 export default function EventDetailClient({ eventId, isRecurring, allowAnnouncements: initialAllowAnnouncements, trackedForDiscipleship: initialTrackedForDiscipleship, reportEnabled: initialReportEnabled, statsEnabled: initialStatsEnabled, welcomeDutyEnabled: initialWelcomeDutyEnabled, departments }: Props) {

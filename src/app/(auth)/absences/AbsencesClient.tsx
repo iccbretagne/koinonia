@@ -19,11 +19,11 @@ function memberName(a: { member: { firstName: string; lastName: string } }): str
   return `${a.member.firstName} ${a.member.lastName}`;
 }
 
-function ConflictBadge({ hasConflict }: { hasConflict: boolean }) {
+function ConflictBadge({ hasConflict }: { readonly hasConflict: boolean }) {
   return hasConflict ? <span className="text-orange-700 font-medium">⚠ Conflit planning</span> : <>—</>;
 }
 
-function StatusBadge({ status }: { status: "ACTIVE" | "CANCELLED" }) {
+function StatusBadge({ status }: { readonly status: "ACTIVE" | "CANCELLED" }) {
   return status === "ACTIVE" ? (
     <span className="text-green-700 font-medium">Active</span>
   ) : (
@@ -31,7 +31,7 @@ function StatusBadge({ status }: { status: "ACTIVE" | "CANCELLED" }) {
   );
 }
 
-function BackupList({ backups }: { backups: { name: string }[] }) {
+function BackupList({ backups }: { readonly backups: { name: string }[] }) {
   return backups.length > 0 ? <>{backups.map((b) => b.name).join(", ")}</> : <>—</>;
 }
 
@@ -106,10 +106,10 @@ function RadioPills({
   value,
   onChange,
 }: {
-  name: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (v: string) => void;
+  readonly name: string;
+  readonly options: { value: string; label: string }[];
+  readonly value: string;
+  readonly onChange: (v: string) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -160,7 +160,7 @@ function effectiveRange(a: AbsenceRow): { start: Date; end: Date } {
   return { start: created, end: created };
 }
 
-function WhenCell({ a }: { a: AbsenceRow }) {
+function WhenCell({ a }: { readonly a: AbsenceRow }) {
   if (a.kind === "PERIOD") {
     return <>{a.startDate && a.endDate ? `${formatDate(a.startDate)} → ${formatDate(a.endDate)}` : "—"}</>;
   }
@@ -186,15 +186,15 @@ function formatDepartments(a: AbsenceRow): string {
 }
 
 interface AbsencesClientProps {
-  churchId: string;
-  canView: boolean;
-  canManage: boolean;
-  selfMembers: MemberRef[];
-  manageableMembers: MemberRef[];
-  ministries: { id: string; name: string }[];
-  departments: { id: string; name: string; ministryId: string }[];
-  canDesignateBackup: boolean;
-  backupOptions: BackupOption[];
+  readonly churchId: string;
+  readonly canView: boolean;
+  readonly canManage: boolean;
+  readonly selfMembers: MemberRef[];
+  readonly manageableMembers: MemberRef[];
+  readonly ministries: { id: string; name: string }[];
+  readonly departments: { id: string; name: string; ministryId: string }[];
+  readonly canDesignateBackup: boolean;
+  readonly backupOptions: BackupOption[];
 }
 
 function formatDate(iso: string): string {

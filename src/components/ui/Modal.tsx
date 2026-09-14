@@ -3,10 +3,10 @@
 import { ReactNode, useEffect, useRef } from "react";
 
 interface ModalProps {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: ReactNode;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly title: string;
+  readonly children: ReactNode;
 }
 
 export default function Modal({ open, onClose, title, children }: ModalProps) {

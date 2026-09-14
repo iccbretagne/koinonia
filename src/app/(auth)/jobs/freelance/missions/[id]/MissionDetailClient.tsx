@@ -32,9 +32,9 @@ export default function MissionDetailClient({
   canManage,
   isAuthor,
 }: {
-  mission: Mission;
-  canManage: boolean;
-  isAuthor: boolean;
+  readonly mission: Mission;
+  readonly canManage: boolean;
+  readonly isAuthor: boolean;
 }) {
   const router  = useRouter();
   const [loading, setLoading] = useState(false);

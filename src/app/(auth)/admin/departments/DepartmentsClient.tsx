@@ -17,9 +17,9 @@ interface Department {
 }
 
 interface Props {
-  initialDepartments: Department[];
-  ministries: { id: string; name: string; churchName: string }[];
-  isSuperAdmin?: boolean;
+  readonly initialDepartments: Department[];
+  readonly ministries: { id: string; name: string; churchName: string }[];
+  readonly isSuperAdmin?: boolean;
 }
 
 export default function DepartmentsClient({

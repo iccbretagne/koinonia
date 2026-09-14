@@ -11,9 +11,9 @@ interface Event {
 }
 
 interface EventSelectorProps {
-  events: Event[];
-  selectedEventId: string | null;
-  selectedDeptId: string | null;
+  readonly events: Event[];
+  readonly selectedEventId: string | null;
+  readonly selectedDeptId: string | null;
 }
 
 function toYearMonth(isoDate: string): string {

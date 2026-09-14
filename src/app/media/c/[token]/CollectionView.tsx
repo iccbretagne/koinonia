@@ -62,12 +62,12 @@ function Lightbox({
   onPrev,
   onNext,
 }: {
-  items: LightboxItem[];
-  index: number;
-  token: string;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
+  readonly items: LightboxItem[];
+  readonly index: number;
+  readonly token: string;
+  readonly onClose: () => void;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
 }) {
   const current = items[index];
   const [downloading, setDownloading] = useState(false);
@@ -154,7 +154,7 @@ function Lightbox({
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function CollectionView({ token, data }: { token: string; data: CollectionData }) {
+export default function CollectionView({ token, data }: { readonly token: string; readonly data: CollectionData }) {
   const { photoGroups, fileGroups } = data;
 
   // Flat list for lightbox navigation

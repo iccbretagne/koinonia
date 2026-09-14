@@ -50,10 +50,10 @@ export default function JobsListClient({
   nowMs,
   canManage = false,
 }: {
-  jobs: Job[];
-  currentUserId: string;
-  nowMs: number;
-  canManage?: boolean;
+  readonly jobs: Job[];
+  readonly currentUserId: string;
+  readonly nowMs: number;
+  readonly canManage?: boolean;
 }) {
   const [filter, setFilter] = useState<JobType | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | JobStatus>("PUBLISHED");
@@ -201,10 +201,10 @@ function JobCard({
   nowMs,
   canManage,
 }: {
-  job: Job;
-  isOwn: boolean;
-  nowMs: number;
-  canManage: boolean;
+  readonly job: Job;
+  readonly isOwn: boolean;
+  readonly nowMs: number;
+  readonly canManage: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

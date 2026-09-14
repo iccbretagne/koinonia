@@ -14,7 +14,7 @@ const MESSAGES: Record<string, { title: string; body: string }> = {
   },
 };
 
-export default function AuthError({ error }: { error: Error & { digest?: string } }) {
+export default function AuthError({ error }: { readonly error: Error & { digest?: string } }) {
   const router = useRouter();
 
   useEffect(() => {

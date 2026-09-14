@@ -8,10 +8,10 @@ export default function JobsTabBar({
   freelanceMissionsCount,
   freelanceProfilesCount,
 }: {
-  offersCount: number;
-  seekersCount: number;
-  freelanceMissionsCount: number;
-  freelanceProfilesCount: number;
+  readonly offersCount: number;
+  readonly seekersCount: number;
+  readonly freelanceMissionsCount: number;
+  readonly freelanceProfilesCount: number;
 }) {
   const router       = useRouter();
   const searchParams = useSearchParams();

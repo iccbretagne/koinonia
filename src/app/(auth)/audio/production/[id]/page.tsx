@@ -8,7 +8,7 @@ import ServiceInfoEditor from "./ServiceInfoEditor";
 export default async function AudioServicePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
 

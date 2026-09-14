@@ -11,9 +11,9 @@ export default function SpaceHome({
   headerAction,
   cards,
 }: {
-  title: string;
-  headerAction?: React.ReactNode;
-  cards: SpaceCard[];
+  readonly title: string;
+  readonly headerAction?: React.ReactNode;
+  readonly cards: SpaceCard[];
 }) {
   return (
     <div>

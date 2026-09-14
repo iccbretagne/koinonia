@@ -32,12 +32,12 @@ export interface AudioPlayerService {
 }
 
 interface Props {
-  service: AudioPlayerService;
-  streamUrl: (segment: AudioPlayerSegment) => string;
-  onPlay?: (segmentId: string) => void;
-  onShare?: (segmentId: string | null) => void;
-  backHref?: string | null;
-  backLabel?: string;
+  readonly service: AudioPlayerService;
+  readonly streamUrl: (segment: AudioPlayerSegment) => string;
+  readonly onPlay?: (segmentId: string) => void;
+  readonly onShare?: (segmentId: string | null) => void;
+  readonly backHref?: string | null;
+  readonly backLabel?: string;
 }
 
 function formatDuration(ms: number): string {

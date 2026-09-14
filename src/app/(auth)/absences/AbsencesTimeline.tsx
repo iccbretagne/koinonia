@@ -12,8 +12,8 @@ interface TimelineAbsence {
 }
 
 interface AbsencesTimelineProps {
-  absences: TimelineAbsence[];
-  onSelect?: (id: string) => void;
+  readonly absences: TimelineAbsence[];
+  readonly onSelect?: (id: string) => void;
 }
 
 const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });

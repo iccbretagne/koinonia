@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 interface BreadcrumbProps {
-  departments?: { id: string; name: string }[];
+  readonly departments?: { id: string; name: string }[];
 }
 
 interface BreadcrumbSegment {

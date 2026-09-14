@@ -104,10 +104,10 @@ function KeyPersonField({
   value,
   onChange,
 }: {
-  churchId: string;
-  label: string;
-  value: { id?: string; name: string };
-  onChange: (v: { id?: string; name: string }) => void;
+  readonly churchId: string;
+  readonly label: string;
+  readonly value: { id?: string; name: string };
+  readonly onChange: (v: { id?: string; name: string }) => void;
 }) {
   const [fetched, setFetched] = useState<KeyHolder[]>([]);
   const [open, setOpen] = useState(false);
@@ -192,10 +192,10 @@ function ReservationChip({
   showRoom,
   onSelect,
 }: {
-  reservation: Reservation;
-  mine: boolean;
-  showRoom?: boolean;
-  onSelect: (r: Reservation) => void;
+  readonly reservation: Reservation;
+  readonly mine: boolean;
+  readonly showRoom?: boolean;
+  readonly onSelect: (r: Reservation) => void;
 }) {
   return (
     <button
@@ -230,15 +230,15 @@ function RoomCalendarView({
   currentUserId,
   onSelect,
 }: {
-  view: "week" | "month";
-  anchor: Date;
-  onNavigate: (delta: number) => void;
-  rooms: Room[];
-  reservations: Reservation[];
-  filterRoomId: string;
-  onFilterRoomId: (id: string) => void;
-  currentUserId: string;
-  onSelect: (reservation: Reservation) => void;
+  readonly view: "week" | "month";
+  readonly anchor: Date;
+  readonly onNavigate: (delta: number) => void;
+  readonly rooms: Room[];
+  readonly reservations: Reservation[];
+  readonly filterRoomId: string;
+  readonly onFilterRoomId: (id: string) => void;
+  readonly currentUserId: string;
+  readonly onSelect: (reservation: Reservation) => void;
 }) {
   const days = useMemo(
     () =>
@@ -440,14 +440,14 @@ function ReservationDetailModal({
   onDeclareOpen,
   onDeclareClose,
 }: {
-  reservation: Reservation | null;
-  currentUserId: string;
-  canManage: boolean;
-  onClose: () => void;
-  onCancelOccurrence: (r: Reservation) => void;
-  onCancelSeries: (r: Reservation) => void;
-  onDeclareOpen: (r: Reservation) => void;
-  onDeclareClose: (r: Reservation) => void;
+  readonly reservation: Reservation | null;
+  readonly currentUserId: string;
+  readonly canManage: boolean;
+  readonly onClose: () => void;
+  readonly onCancelOccurrence: (r: Reservation) => void;
+  readonly onCancelSeries: (r: Reservation) => void;
+  readonly onDeclareOpen: (r: Reservation) => void;
+  readonly onDeclareClose: (r: Reservation) => void;
 }) {
   const actions = reservation ? getAvailableActions(reservation, { currentUserId, canManage }) : null;
 
@@ -528,10 +528,10 @@ export default function RoomsBookingClient({
   canManage,
   currentUserId,
 }: {
-  churchId: string;
-  canReserve: boolean;
-  canManage: boolean;
-  currentUserId: string;
+  readonly churchId: string;
+  readonly canReserve: boolean;
+  readonly canManage: boolean;
+  readonly currentUserId: string;
 }) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);

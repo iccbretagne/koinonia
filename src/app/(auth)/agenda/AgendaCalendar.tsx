@@ -16,9 +16,9 @@ interface Entry {
 }
 
 interface Props {
-  profiles: Profile[];
-  entries: Entry[];
-  weekStart: string;
+  readonly profiles: Profile[];
+  readonly entries: Entry[];
+  readonly weekStart: string;
 }
 
 const DAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
