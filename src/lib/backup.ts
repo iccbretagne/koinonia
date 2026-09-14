@@ -1,4 +1,6 @@
 import { execFile } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
 import { createGzip } from "zlib";
 import { PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
@@ -35,6 +37,17 @@ function getBucket(): string {
 // d'un PATH potentiellement altere par l'environnement d'execution)
 const FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
 
+// Chemin absolu (pas de recherche PATH a l'execution, cf. regle Sonar S4036 : le fait de
+// figer PATH ci-dessus restreint deja la recherche a des repertoires systeme, mais ne
+// satisfait pas la regle qui exige un chemin absolu explicite).
+function resolveExecutable(name: string): string {
+  for (const dir of FIXED_PATH.split(":")) {
+    const candidate = join(dir, name);
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(`${name} introuvable dans ${FIXED_PATH}`);
+}
+
 export async function createBackup(): Promise<BackupResult> {
   const start = Date.now();
   const db = parseDatabaseUrl();
@@ -53,7 +66,7 @@ export async function createBackup(): Promise<BackupResult> {
       db.database,
     ];
 
-    const child = execFile("mysqldump", args, {
+    const child = execFile(resolveExecutable("mysqldump"), args, {
       maxBuffer: 512 * 1024 * 1024,
       env: { ...process.env, PATH: FIXED_PATH, MYSQL_PWD: db.password },
     });

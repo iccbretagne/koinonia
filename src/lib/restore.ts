@@ -1,4 +1,6 @@
 import { spawn } from "child_process";
+import { existsSync } from "fs";
+import { join } from "path";
 import { createGunzip } from "zlib";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
@@ -13,6 +15,17 @@ export interface RestoreResult {
 // PATH fixe pour la resolution de l'executable (Sonar S4036 : ne pas heriter
 // d'un PATH potentiellement altere par l'environnement d'execution)
 const FIXED_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+
+// Chemin absolu (pas de recherche PATH a l'execution, cf. regle Sonar S4036 : le fait de
+// figer PATH ci-dessus restreint deja la recherche a des repertoires systeme, mais ne
+// satisfait pas la regle qui exige un chemin absolu explicite).
+function resolveExecutable(name: string): string {
+  for (const dir of FIXED_PATH.split(":")) {
+    const candidate = join(dir, name);
+    if (existsSync(candidate)) return candidate;
+  }
+  throw new Error(`${name} introuvable dans ${FIXED_PATH}`);
+}
 
 function parseDatabaseUrl() {
   const url = new URL(process.env.DATABASE_URL || "");
@@ -46,7 +59,7 @@ export async function restoreBackup(key: string): Promise<RestoreResult> {
 
   await new Promise<void>((resolve, reject) => {
     const gunzip = createGunzip();
-    const mysql = spawn("mysql", [
+    const mysql = spawn(resolveExecutable("mysql"), [
       "-h", db.host,
       "-P", db.port,
       "-u", db.user,

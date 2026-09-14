@@ -74,13 +74,15 @@ describe("exhaustivité des routes — spec 038", () => {
         ...(m.routes?.api ?? []).map((r) => ({ prefix: r.path, owner: m.name })),
       ]),
     ];
+    const duplicates: string[] = [];
     for (const { prefix, owner } of allEntries) {
       const existing = seen.get(prefix);
       if (existing && existing !== owner) {
-        throw new Error(`Préfixe "${prefix}" déclaré par "${existing}" et "${owner}"`);
+        duplicates.push(`"${prefix}" déclaré par "${existing}" et "${owner}"`);
       }
       seen.set(prefix, owner);
     }
+    expect(duplicates, duplicates.join("; ")).toEqual([]);
   });
 
   it("chaque préfixe déclaré par un manifeste correspond à au moins une route réelle", () => {
