@@ -72,6 +72,15 @@ describe("proxy — contrôle de module (spec 038)", () => {
     expect(res.status).toBe(200);
   });
 
+  it.each(["/media/v/some-token", "/media/g/some-token", "/media/c/some-token", "/media/d/some-token"])(
+    "laisse passer la page frontend %s d'un lien de partage média, sans session",
+    async (path) => {
+      const { proxy } = await loadProxy(undefined);
+      const res = proxy(req(path));
+      expect(res.status).toBe(200);
+    }
+  );
+
   it("un GET non authentifié sur une route intégration publique en écriture (POST) reste protégé", async () => {
     const { proxy } = await loadProxy(undefined);
     // /api/integration/requests n'est public qu'en POST — un GET doit rester 401.

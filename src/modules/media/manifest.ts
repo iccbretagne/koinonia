@@ -34,6 +34,11 @@ export const mediaModule = defineModule({
       { path: "/api/media/gallery" },
       { path: "/api/media/download" },
       { path: "/api/media/collection" },
+      // Pages frontend correspondantes (le token authentifie, pas la session).
+      { path: "/media/v" },
+      { path: "/media/g" },
+      { path: "/media/d" },
+      { path: "/media/c" },
     ],
   },
 
