@@ -29,6 +29,9 @@ Thumbs.db
 coverage/
 .codex
 
+# Analyse Sonar locale (docker-compose.sonar.yml)
+.scannerwork/
+
 # Local file uploads (stockage S3 en production)
 uploads/
 
