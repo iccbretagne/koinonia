@@ -1,6 +1,5 @@
 import { requireAuth, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { prisma } from "@/lib/prisma";
 import { getMemberScope, isMemberLinkedToUser, listTargetOptions, type DeclarerScope } from "@/modules/planning";
 
 /**
@@ -38,7 +37,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const result = await listTargetOptions(prisma, churchId, memberId, declarerScope);
+    const result = await listTargetOptions(undefined, churchId, memberId, declarerScope);
     return successResponse(result);
   } catch (error) {
     return errorResponse(error);

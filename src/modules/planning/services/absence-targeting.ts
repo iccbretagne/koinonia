@@ -4,6 +4,16 @@ import { ApiError } from "@/lib/api-utils";
 type DbClient = Prisma.TransactionClient;
 
 /**
+ * Import différé du singleton Prisma — évite d'instancier un vrai client (driver adapter
+ * MariaDB) au simple chargement du module `planning`, ce qui casserait les tests import ant
+ * `@/modules/planning` sans mocker `@/lib/prisma` (même pattern que `absence.service.ts`).
+ */
+async function defaultDb(): Promise<DbClient> {
+  const { prisma } = await import("@/lib/prisma");
+  return prisma;
+}
+
+/**
  * Périmètre départemental d'un déclarant pour l'absence ciblée (spec 050) : reflète
  * `getUserDepartmentScope` — `{ scoped: false }` pour un rôle non restreint (Admin, Secrétaire…),
  * `{ scoped: true, departmentIds }` pour un Resp. département/Ministre.
@@ -202,12 +212,13 @@ export interface TargetOptionEvent {
  * périmètre du déclarant), et événements à venir où au moins un de ces départements est attendu.
  */
 export async function listTargetOptions(
-  db: DbClient,
+  db: DbClient | undefined,
   churchId: string,
   memberId: string,
   declarerScope: DeclarerScope,
   range: { from?: Date; to?: Date } = {}
 ): Promise<{ departments: TargetOptionDepartment[]; events: TargetOptionEvent[] }> {
+  db ??= await defaultDb();
   const memberDepts = await db.memberDepartment.findMany({
     where: { memberId },
     select: { department: { select: { id: true, name: true } } },
