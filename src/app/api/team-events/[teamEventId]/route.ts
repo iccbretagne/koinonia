@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { deleteTeamEvent, getTeamEventScopeInfo, updateTeamEvent } from "@/modules/planning";
 
 function isValidDate(val: string) {
-  return !isNaN(new Date(val).getTime());
+  return !Number.isNaN(new Date(val).getTime());
 }
 
 const updateSchema = z

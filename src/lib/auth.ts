@@ -311,7 +311,7 @@ type DepartmentScope =
   | { scoped: false }
   | { scoped: true; departmentIds: string[] };
 
-const GLOBAL_ROLES: Role[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
+const GLOBAL_ROLES: ReadonlySet<Role> = new Set<Role>(["SUPER_ADMIN", "ADMIN", "SECRETARY"]);
 
 export type DiscipleshipScope =
   | { scoped: false }
@@ -329,7 +329,7 @@ export async function getDiscipleshipScope(
   if (session.user.isSuperAdmin) return { scoped: false };
 
   const hasGlobalRole = session.user.churchRoles.some(
-    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role as Role)
+    (r) => r.churchId === churchId && GLOBAL_ROLES.has(r.role as Role)
   );
   if (hasGlobalRole) return { scoped: false };
 
@@ -348,7 +348,7 @@ export function getUserDepartmentScope(session: Session, churchId: string): Depa
   if (session.user.isSuperAdmin) return { scoped: false };
 
   const hasGlobalRole = session.user.churchRoles.some(
-    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role)
+    (r) => r.churchId === churchId && GLOBAL_ROLES.has(r.role)
   );
 
   if (hasGlobalRole) {
@@ -405,7 +405,7 @@ export function getUserMinistryScope(session: Session, churchId: string): Minist
   if (session.user.isSuperAdmin) return { scoped: false };
 
   const hasGlobalRole = session.user.churchRoles.some(
-    (r) => r.churchId === churchId && GLOBAL_ROLES.includes(r.role)
+    (r) => r.churchId === churchId && GLOBAL_ROLES.has(r.role)
   );
   if (hasGlobalRole) return { scoped: false };
 

@@ -10,7 +10,7 @@ export function generateRecurrenceDates(
   rule: string,
   endDate: Date
 ): { dates: Date[]; truncated: boolean } {
-  if (isNaN(endDate.getTime())) return { dates: [], truncated: false };
+  if (Number.isNaN(endDate.getTime())) return { dates: [], truncated: false };
   const dates: Date[] = [];
   const current = new Date(startDate);
   while (dates.length < MAX_RECURRENCE_OCCURRENCES) {

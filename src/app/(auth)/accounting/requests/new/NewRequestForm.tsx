@@ -65,7 +65,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
     setLoading(true);
     try {
       const amount = parseFloat(form.amount);
-      if (isNaN(amount) || amount <= 0) { setError("Montant invalide"); setLoading(false); return; }
+      if (Number.isNaN(amount) || amount <= 0) { setError("Montant invalide"); setLoading(false); return; }
 
       let res: Response;
       if (mode === "recurring") {
