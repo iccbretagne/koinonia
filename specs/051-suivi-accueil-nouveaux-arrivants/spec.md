@@ -141,6 +141,10 @@ l'équipe voie combien de fois et à quelles dates une personne a déjà été s
 Tant qu'une relance due n'a pas été consignée, l'alerte reste visible : elle ne disparaît pas
 d'elle-même avec le temps.
 
+Il n'existe **aucun nombre maximal de relances**. Tant que l'état de la demande ne change pas, le
+cycle se répète à chaque échéance du délai, indéfiniment. Une demande n'est jamais abandonnée
+automatiquement : seule une décision humaine la fait sortir de l'attente.
+
 ### Correction des états incohérents
 
 Deux situations du parcours existant produisent aujourd'hui des demandes dont l'état affiché
@@ -190,6 +194,8 @@ famille ou un berger affecté.
 - [ ] Consigner une relance remet le décompte à zéro : la demande n'apparaît plus comme à
       relancer, et la relance figure dans son historique.
 - [ ] Une demande sortie d'un état d'attente n'apparaît plus jamais comme à relancer.
+- [ ] Une demande en attente n'est jamais abandonnée automatiquement, quel que soit le nombre de
+      relances déjà consignées ou le temps écoulé.
 - [ ] Une demande rouverte après abandon retrouve l'état qui précédait son abandon ; si elle est
       reprise de zéro, elle ne porte plus ni famille ni berger.
 - [ ] Aucune demande à l'état « demande reçue » ne porte de famille ou de berger affecté.
@@ -225,6 +231,13 @@ Décisions prises lors de la revue de cette spec, consignées pour éviter de le
 - **Sortie d'attente** : reprise à l'étape suivante du parcours, ou abandon — pas d'autre issue.
 - **Correction des états incohérents** : incluse dans cette feature, bien qu'elle dépasse le
   périmètre initial de l'issue #579.
+- **Rétention de l'historique** : aucune purge alignée sur l'archivage à 12 mois de la demande.
+  L'historique des changements d'état survit donc à l'archivage de la fiche et continue de porter
+  des noms de personnes. Ce risque est **accepté** au vu du volume concerné, plutôt que
+  d'introduire un mécanisme de purge dédié.
+- **Pas de plafond de relances** : tant que l'état de la demande ne change pas, le cycle de
+  relance se répète indéfiniment. Aucune demande n'est abandonnée automatiquement — seule une
+  décision humaine la fait sortir de l'attente.
 
 ## Questions ouvertes
 
@@ -237,8 +250,3 @@ Décisions prises lors de la revue de cette spec, consignées pour éviter de le
   responsable ? La réponse peut différer selon la cible de la relance : relancer une personne
   peut revenir à n'importe quel membre, relancer un département tiers relève plutôt du
   responsable.]
-- [À CLARIFIER: l'historique des changements d'état doit-il suivre la même rétention que la
-  demande elle-même, qui est archivée à 12 mois ? Un historique conservé au-delà continuerait de
-  porter des noms de personnes après l'archivage de leur fiche.]
-- [À CLARIFIER: un nombre maximal de relances avant abandon automatique est-il souhaité, ou une
-  demande peut-elle rester en attente indéfiniment tant que personne ne l'abandonne ?]
