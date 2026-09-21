@@ -239,8 +239,6 @@ Admin, à qui détient `members:manage`/`events:manage` (Admin, Secrétaire), ou
 
 ## Risques & points d'attention
 
-- **Ambiguïté résiduelle de la spec** sur l'automatisme du basculement en `WAITING_MISSION` (voir
-  Décisions). À trancher avant implémentation — c'est le seul point qui peut changer le périmètre.
 - **Migration corrective** : le volume de demandes rouvertes incohérentes est inconnu. Compter
   avant d'appliquer, et journaliser les identifiants corrigés.
 - **Droits calculés sur `waitingFrom`** : une attente posée depuis `CONTACTED` reste levable par
