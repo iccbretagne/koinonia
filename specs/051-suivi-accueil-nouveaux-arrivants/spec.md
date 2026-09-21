@@ -1,7 +1,7 @@
 # Spec — Suivi de l'accueil des nouveaux arrivants (consentement, états d'attente, relances)
 
 - **Numéro** : 051
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-09-21
 - **Mise à jour le** : 2026-09-21
 - **Branche suggérée** : `feat/suivi-accueil-nouveaux-arrivants`
@@ -52,13 +52,13 @@ et les cas qui sortent du parcours standard sont gérés hors de l'outil.
   fait avancer les demandes qui lui sont confiées et peut les mettre en attente une fois le
   premier contact établi. Il ne peut ni affecter une famille, ni rouvrir une demande abandonnée.
 - **Resp. département** (responsable de l'équipe intégration) : même périmètre qu'un membre de
-  l'équipe, plus la supervision de l'ensemble des demandes en attente.
+  l'équipe, plus la supervision de l'ensemble des demandes en attente et le réglage des deux
+  délais avant relance.
 - **Ministre** (du ministère dont dépend l'intégration) : vue d'ensemble sur le parcours des
   nouveaux arrivants de son ministère.
 - **Secrétaire** : dispose déjà d'un accès au suivi de l'intégration et reste concerné à ce titre.
-- **Admin / Super Admin** : accès complet, et configuration du délai avant relance (voir
-  Questions ouvertes — le partage exact de cette responsabilité avec le responsable de
-  l'intégration reste à trancher).
+- **Admin / Super Admin** : accès complet, et réglage des deux délais avant relance — cette
+  responsabilité est partagée avec le responsable de l'équipe intégration.
 
 ## Comportement attendu
 
@@ -129,9 +129,14 @@ puis reprise puis remise en attente garde trace des trois événements.
 
 ### Relances
 
-Une demande qui reste dans un état d'attente au-delà du délai configuré déclenche une alerte
-auprès de l'équipe intégration. L'alerte précise la cible de la relance (la personne, ou le
-département mission).
+Chacun des deux états d'attente a **son propre délai**, réglé indépendamment de l'autre :
+l'attente de recontact et l'attente d'une décision du département mission n'ont ni la même
+urgence, ni le même interlocuteur. Ces deux délais sont réglables aussi bien par un
+administrateur que par le responsable de l'équipe intégration, au niveau de l'église.
+
+Une demande qui reste dans un état d'attente au-delà du délai correspondant déclenche une alerte
+auprès de **tous les membres de l'équipe intégration**. L'alerte précise la cible de la relance
+(la personne, ou le département mission).
 
 Une fois la relance effectuée, le membre de l'équipe la consigne sur la demande. La demande reste
 en attente, mais le décompte repart de zéro : une nouvelle alerte ne se déclenchera qu'après un
@@ -189,8 +194,13 @@ famille ou un berger affecté.
 - [ ] Une demande en attente peut être abandonnée directement, sans repasser par le parcours.
 - [ ] La fiche d'une demande affiche, pour chaque changement d'état : état de départ, état
       d'arrivée, date et auteur — y compris pour des changements répétés du même type.
-- [ ] Une demande en attente depuis plus que le délai configuré apparaît comme à relancer, en
-      indiquant la cible de la relance (la personne ou le département mission).
+- [ ] Les deux délais avant relance — attente de recontact et attente du département mission —
+      se règlent indépendamment l'un de l'autre, et le réglage est accessible aussi bien à un
+      administrateur qu'au responsable de l'équipe intégration.
+- [ ] Une demande en attente depuis plus que le délai **correspondant à son état** apparaît comme
+      à relancer, en indiquant la cible de la relance (la personne ou le département mission).
+- [ ] L'alerte de relance est visible par tous les membres de l'équipe intégration, et non par le
+      seul responsable.
 - [ ] Consigner une relance remet le décompte à zéro : la demande n'apparaît plus comme à
       relancer, et la relance figure dans son historique.
 - [ ] Une demande sortie d'un état d'attente n'apparaît plus jamais comme à relancer.
@@ -238,15 +248,14 @@ Décisions prises lors de la revue de cette spec, consignées pour éviter de le
 - **Pas de plafond de relances** : tant que l'état de la demande ne change pas, le cycle de
   relance se répète indéfiniment. Aucune demande n'est abandonnée automatiquement — seule une
   décision humaine la fait sortir de l'attente.
+- **Deux délais distincts** : l'attente de recontact et l'attente du département mission ont
+  chacune leur propre délai, réglable indépendamment.
+- **Réglage partagé** : administrateur **et** responsable de l'équipe intégration peuvent régler
+  ces deux délais.
+- **Alerte à toute l'équipe** : la relance est signalée à l'ensemble des membres de l'équipe
+  intégration, quelle que soit la cible de la relance, et non au seul responsable.
 
 ## Questions ouvertes
 
-- [À CLARIFIER: le délai avant relance est-il unique pour les deux états d'attente, ou distinct
-  entre « attente de recontact » et « attente du département mission » ? L'issue source évoque un
-  ordre de grandeur de 1 à 3 mois sans trancher.]
-- [À CLARIFIER: qui règle ce délai — un administrateur uniquement, ou également le responsable de
-  l'équipe intégration ? L'issue source penche pour le second sans que ce soit acté.]
-- [À CLARIFIER: l'alerte de relance s'adresse-t-elle à toute l'équipe intégration ou au seul
-  responsable ? La réponse peut différer selon la cible de la relance : relancer une personne
-  peut revenir à n'importe quel membre, relancer un département tiers relève plutôt du
-  responsable.]
+Aucune. Tous les points en suspens ont été tranchés lors de la revue et figurent dans
+« Décisions actées » ci-dessus. La spec est prête pour `/plan`.
