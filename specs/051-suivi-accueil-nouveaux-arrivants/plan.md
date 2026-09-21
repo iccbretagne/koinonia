@@ -1,7 +1,7 @@
 # Plan technique — Suivi de l'accueil des nouveaux arrivants
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-09-21
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -181,8 +181,11 @@ Admin, à qui détient `members:manage`/`events:manage` (Admin, Secrétaire), ou
   `CheckboxGroup`-like radio. Aucun texte n'évoque le troisième cas : une personne qui refuse tout
   contact ne voit pas ce formulaire.
 - **Dashboard** (`IntegrationDashboard.tsx`) — deux entrées de filtre de statut supplémentaires,
-  et un `Badge` « à relancer » sur les demandes dont l'échéance est dépassée. La liste des
-  demandes à relancer est une **requête**, donc toujours à jour, indépendamment des notifications.
+  un `Badge` « à relancer » sur les demandes dont l'échéance est dépassée (liste toujours à jour
+  par requête, indépendante des notifications), et un `Badge` « adresse non rattachée » sur toute
+  demande `SUBMITTED` sans `suggestedFamilyId` : c'est ce badge, absent aujourd'hui, qui rend le
+  choix manuel du cas « hors zone » praticable — sans lui, rien ne distingue une demande en
+  attente normale d'une adresse que le géocodage n'a pas su rattacher.
 - **Fiche** (`RequestDetail.tsx`) — trois boutons contextuels (`Mettre en attente`, `Reprendre`,
   `Consigner une relance`) via `Modal` + `ConfirmModal` existants, et une **frise d'historique**
   en bas de fiche : seul composant réellement nouveau, aucun équivalent dans `components/ui/`.
@@ -203,9 +206,10 @@ Admin, à qui détient `members:manage`/`events:manage` (Admin, Secrétaire), ou
   trouve aucune famille — *Raison* : « le géocodage n'a rien trouvé » ≠ « l'adresse est hors
   zone ». Une adresse mal saisie ou un géocodeur indisponible produiraient de fausses attentes,
   et la spec décrit l'entrée en attente comme une **action** avec des droits explicites. Le POST
-  continue donc de renseigner `suggestedFamilyId` ; son absence est un **signal** affiché à
-  l'équipe, qui décide. **À confirmer avec le métier** : la spec (§Scénario principal, étape 5) se
-  lit aussi comme un basculement automatique.
+  continue donc de renseigner `suggestedFamilyId` ; son absence doit être **rendue visible** dans
+  le dashboard (voir UI / composants — rien n'existe aujourd'hui pour ce cas : `suggestedFamilyName`
+  ne s'affiche que sur la fiche, et seulement quand une suggestion existe). L'équipe décide
+  elle-même de poser l'attente via l'action `wait`. **Confirmé** : choix manuel, pas d'automatisme.
 - **Choix** : historique adossé au journal d'audit existant, avec `details` enrichi de
   `{ from, to }` — *Pourquoi* : la table est déjà écrite à chaque `PATCH`, déjà indexée sur
   `[entityType, entityId]`, et la décision de rétention actée dans la spec (pas de purge alignée
