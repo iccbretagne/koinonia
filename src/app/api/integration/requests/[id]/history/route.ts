@@ -1,6 +1,5 @@
-import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess, getRequestHistory } from "@/modules/integration";
+import { requireIntegrationAccess, getRequestHistory, getRequestAccessInfo } from "@/modules/integration";
 
 /** Historique des changements d'état d'une demande, affiché sur sa fiche (spec 051). */
 export async function GET(
@@ -9,10 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const req = await prisma.familyIntegrationRequest.findUnique({
-      where: { id },
-      select: { churchId: true, assignedFamilyId: true },
-    });
+    const req = await getRequestAccessInfo(id);
     if (!req) throw new ApiError(404, "Demande introuvable");
 
     const { scope } = await requireIntegrationAccess(req.churchId);

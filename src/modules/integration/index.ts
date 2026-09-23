@@ -42,7 +42,7 @@ export {
   initialRequestStatusData,
 } from "./services/family-state";
 export type { FamilyPatchBody, FamilyRequestState, FamilyActor } from "./services/family-state";
-export { recordStatusChange, getRequestHistory } from "./services/family-history";
+export { recordStatusChange, getRequestHistory, getRequestAccessInfo } from "./services/family-history";
 export type { RequestHistoryEntry } from "./services/family-history";
 export {
   msdpPatchSchema,

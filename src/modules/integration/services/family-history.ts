@@ -84,6 +84,16 @@ export function toRequestHistory(
   return entries.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
+/** Église et famille d'une demande : ce qu'il faut pour en contrôler l'accès avant d'en lire l'historique. */
+export async function getRequestAccessInfo(
+  requestId: string
+): Promise<{ churchId: string; assignedFamilyId: number | null } | null> {
+  return prisma.familyIntegrationRequest.findUnique({
+    where: { id: requestId },
+    select: { churchId: true, assignedFamilyId: true },
+  });
+}
+
 export async function getRequestHistory(requestId: string): Promise<RequestHistoryEntry[]> {
   const logs = await prisma.auditLog.findMany({
     where: { entityType: ENTITY_TYPE, entityId: requestId },
