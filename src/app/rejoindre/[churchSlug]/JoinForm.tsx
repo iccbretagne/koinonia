@@ -148,7 +148,15 @@ function RadioGroup({
 interface SuccessData {
   suggestedFamilyName?: string | null;
   pastoralCare: boolean;
+  contactLater: boolean;
 }
+
+// Pas d'option « aucun contact » : une personne qui ne souhaite pas être contactée ne
+// remplit simplement pas le formulaire (spec 051).
+const CONTACT_CONSENT_OPTIONS = [
+  { value: "NOW", label: "Être contacté·e maintenant" },
+  { value: "LATER", label: "Être recontacté·e plus tard" },
+];
 
 export default function JoinForm({ churchId, churchName }: Props) {
   const [form, setForm] = useState({
@@ -159,6 +167,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
     address: "",
     ageRange: "",
     churchStatus: "VISITOR",
+    contactConsent: "NOW",
     pastoralCareRequested: false,
     pastoralMessage: "",
     salvationCall: false,
@@ -211,6 +220,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
         setSuccess({
           suggestedFamilyName: json.suggestedFamilyName ?? null,
           pastoralCare: form.pastoralCareRequested,
+          contactLater: form.contactConsent === "LATER",
         });
       }
     } catch {
@@ -228,8 +238,10 @@ export default function JoinForm({ churchId, churchName }: Props) {
         </div>
         <h2 className="text-lg font-semibold text-gray-900">Demande envoyée !</h2>
         <p className="text-sm text-gray-600">
-          Ta demande pour rejoindre une famille à <strong>{churchName}</strong> a bien été reçue. Notre équipe
-          va prendre contact avec toi très prochainement.
+          Ta demande pour rejoindre une famille à <strong>{churchName}</strong> a bien été reçue.{" "}
+          {success.contactLater
+            ? "Comme tu l'as souhaité, notre équipe conserve tes coordonnées et te recontactera plus tard."
+            : "Notre équipe va prendre contact avec toi très prochainement."}
         </p>
         {success.suggestedFamilyName && (
           <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-3 text-sm text-left">
@@ -456,6 +468,20 @@ export default function JoinForm({ churchId, churchName }: Props) {
             errors={fieldErrors}
           />
           <FieldError errors={fieldErrors} field="churchStatus" />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Quand souhaites-tu être contacté·e ? <span className="text-red-500">*</span>
+          </label>
+          <RadioGroup
+            name="contactConsent"
+            options={CONTACT_CONSENT_OPTIONS}
+            value={form.contactConsent}
+            onChange={(v) => set("contactConsent", v)}
+            errors={fieldErrors}
+          />
+          <FieldError errors={fieldErrors} field="contactConsent" />
         </div>
       </div>
 

@@ -74,3 +74,37 @@ export async function requireIntegrationExportAccess(
   if (scope.scoped) throw new Error("FORBIDDEN");
   return { session };
 }
+
+/**
+ * Garde du réglage des délais de relance (spec 051) : plus stricte que la consultation.
+ *
+ * Réservée au Super Admin, à l'Admin/Secrétaire (`events:manage`) et au responsable d'un
+ * département de fonction `INTEGRATION` (rôle `DEPARTMENT_HEAD` rattaché à ce département).
+ * Un simple membre de l'équipe ou un berger est refusé. `members:manage` n'est volontairement
+ * pas retenu : tout Ministre et tout Resp. département le détient, quel que soit son département.
+ */
+export async function requireIntegrationSettingsAccess(
+  churchId: string
+): Promise<{ session: Session }> {
+  const session = await requireAuth();
+  if (session.user.isSuperAdmin) return { session };
+
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  if (roles.length === 0) throw new Error("FORBIDDEN");
+
+  const { rolePermissions } = await import("@/lib/registry");
+  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
+  if (userPerms.has("events:manage")) return { session };
+
+  const headDeptIds = roles
+    .filter((r) => r.role === "DEPARTMENT_HEAD")
+    .flatMap((r) => r.departments.map((d) => d.department.id));
+  if (headDeptIds.length > 0) {
+    const count = await prisma.department.count({
+      where: { function: "INTEGRATION", ministry: { churchId }, id: { in: headDeptIds } },
+    });
+    if (count > 0) return { session };
+  }
+
+  throw new Error("FORBIDDEN");
+}

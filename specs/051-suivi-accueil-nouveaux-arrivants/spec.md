@@ -1,9 +1,9 @@
 # Spec — Suivi de l'accueil des nouveaux arrivants (consentement, états d'attente, relances)
 
 - **Numéro** : 051
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-21
-- **Mise à jour le** : 2026-09-21
+- **Mise à jour le** : 2026-09-23
 - **Branche suggérée** : `feat/suivi-accueil-nouveaux-arrivants`
 - **Issue source** : [#579](https://github.com/iccbretagne/koinonia/issues/579)
 
@@ -178,38 +178,38 @@ famille ou un berger affecté.
 
 ## Critères d'acceptation
 
-- [ ] Le formulaire d'accueil permet de choisir entre « être contacté maintenant » et « être
+- [x] Le formulaire d'accueil permet de choisir entre « être contacté maintenant » et « être
       recontacté plus tard » ; une personne qui ne remplit pas le formulaire ne crée aucune
       demande ni aucune trace.
-- [ ] Une demande peut être mise en attente depuis l'état « demande reçue » et depuis l'état
+- [x] Une demande peut être mise en attente depuis l'état « demande reçue » et depuis l'état
       « premier contact établi ». Toute tentative depuis un autre état est refusée.
-- [ ] Une mise en attente depuis « demande reçue » est refusée à un berger assigné ; une mise en
+- [x] Une mise en attente depuis « demande reçue » est refusée à un berger assigné ; une mise en
       attente depuis « premier contact établi » est acceptée du berger assigné comme d'un membre
       de l'équipe intégration.
-- [ ] Une demande en attente n'apparaît plus dans la file des demandes à traiter, et apparaît
+- [x] Une demande en attente n'apparaît plus dans la file des demandes à traiter, et apparaît
       dans la liste des demandes en attente.
-- [ ] La levée d'une attente posée depuis « demande reçue » place la demande à l'étape
+- [x] La levée d'une attente posée depuis « demande reçue » place la demande à l'étape
       d'affectation d'une famille ; celle posée depuis « premier contact établi » la place à
       l'étape d'ajout au groupe de la famille.
-- [ ] Une demande en attente peut être abandonnée directement, sans repasser par le parcours.
-- [ ] La fiche d'une demande affiche, pour chaque changement d'état : état de départ, état
+- [x] Une demande en attente peut être abandonnée directement, sans repasser par le parcours.
+- [x] La fiche d'une demande affiche, pour chaque changement d'état : état de départ, état
       d'arrivée, date et auteur — y compris pour des changements répétés du même type.
-- [ ] Les deux délais avant relance — attente de recontact et attente du département mission —
+- [x] Les deux délais avant relance — attente de recontact et attente du département mission —
       se règlent indépendamment l'un de l'autre, et le réglage est accessible aussi bien à un
       administrateur qu'au responsable de l'équipe intégration.
-- [ ] Une demande en attente depuis plus que le délai **correspondant à son état** apparaît comme
+- [x] Une demande en attente depuis plus que le délai **correspondant à son état** apparaît comme
       à relancer, en indiquant la cible de la relance (la personne ou le département mission).
-- [ ] L'alerte de relance est visible par tous les membres de l'équipe intégration, et non par le
+- [x] L'alerte de relance est visible par tous les membres de l'équipe intégration, et non par le
       seul responsable.
-- [ ] Consigner une relance remet le décompte à zéro : la demande n'apparaît plus comme à
+- [x] Consigner une relance remet le décompte à zéro : la demande n'apparaît plus comme à
       relancer, et la relance figure dans son historique.
-- [ ] Une demande sortie d'un état d'attente n'apparaît plus jamais comme à relancer.
-- [ ] Une demande en attente n'est jamais abandonnée automatiquement, quel que soit le nombre de
+- [x] Une demande sortie d'un état d'attente n'apparaît plus jamais comme à relancer.
+- [x] Une demande en attente n'est jamais abandonnée automatiquement, quel que soit le nombre de
       relances déjà consignées ou le temps écoulé.
-- [ ] Une demande rouverte après abandon retrouve l'état qui précédait son abandon ; si elle est
+- [x] Une demande rouverte après abandon retrouve l'état qui précédait son abandon ; si elle est
       reprise de zéro, elle ne porte plus ni famille ni berger.
-- [ ] Aucune demande à l'état « demande reçue » ne porte de famille ou de berger affecté.
-- [ ] Un berger dessaisi d'une demande — par réaffectation à une autre famille ou par reprise de
+- [x] Aucune demande à l'état « demande reçue » ne porte de famille ou de berger affecté.
+- [x] Un berger dessaisi d'une demande — par réaffectation à une autre famille ou par reprise de
       zéro après réouverture — en est informé.
 
 ## Hors périmètre

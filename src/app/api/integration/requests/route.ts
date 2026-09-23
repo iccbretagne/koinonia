@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess, buildConfirmationEmail } from "@/modules/integration";
+import {
+  requireIntegrationAccess,
+  buildConfirmationEmail,
+  contactConsentSchema,
+  initialRequestStatusData,
+} from "@/modules/integration";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
 import { requireRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -66,6 +71,8 @@ const createSchema = z.object({
   pastoralMessage:       z.string().max(2000).optional().or(z.literal("")),
   // Appel au salut
   salvationCall: z.boolean().default(false),
+  // Consentement au contact : maintenant ou plus tard (spec 051)
+  contactConsent: contactConsentSchema,
   // Lien membre optionnel (si connecté)
   memberId:    z.string().optional(),
   churchId:    z.string().min(1),
@@ -153,7 +160,8 @@ export async function POST(request: Request) {
         appointmentRequestId,
         suggestedFamilyId,
         suggestedFamilyName,
-        status: "SUBMITTED",
+        contactConsent: data.contactConsent,
+        ...initialRequestStatusData(data.contactConsent, new Date()),
       },
     });
 
@@ -183,6 +191,7 @@ export async function POST(request: Request) {
           churchName: church.name,
           suggestedFamilyName,
           pastoralCare: data.pastoralCareRequested,
+          contactLater: data.contactConsent === "LATER",
         }),
       }).catch(() => {
         // Email non bloquant

@@ -273,6 +273,19 @@ export default async function AuthLayout({
       integrationLinks.push({ href: "/integration/parcours", label: "Parcours d'intégration" });
       integrationLinks.push({ href: "/integration/stats", label: "Statistiques intégration" });
     }
+    // Réglage des délais de relance (spec 051) : même règle que requireIntegrationSettingsAccess
+    // — Super Admin / events:manage, ou responsable d'un département de fonction INTEGRATION.
+    const headDeptIds = churchRoles
+      .filter((r) => r.churchId === currentChurchId && r.role === "DEPARTMENT_HEAD")
+      .flatMap((r) => r.departments.map((d) => d.department.id));
+    const isIntegrationHead =
+      headDeptIds.length > 0 &&
+      (await prisma.department.count({
+        where: { function: "INTEGRATION", ministry: { churchId: currentChurchId }, id: { in: headDeptIds } },
+      })) > 0;
+    if (isGlobalManager || isIntegrationHead) {
+      integrationLinks.push({ href: "/integration/parametres", label: "Paramètres intégration" });
+    }
   }
 
   // ── Section "Agenda pastoral" ────────────────────────────────────────────────

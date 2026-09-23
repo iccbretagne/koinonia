@@ -42,7 +42,7 @@ describe("buildIntegrationExportRows", () => {
     ]);
     expect(row["Tranche d'âge"]).toBe("Adulte (30–60 ans)");
     expect(row["Statut dans l'église"]).toBe("Visiteur");
-    expect(row["Statut de la demande"]).toBe("En attente");
+    expect(row["Statut de la demande"]).toBe("Demande reçue");
   });
 
   it("rend Oui / Non pour les marqueurs pastoraux", () => {

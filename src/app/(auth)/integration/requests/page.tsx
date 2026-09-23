@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
 import IntegrationDashboard from "./IntegrationDashboard";
 import PublicFormBanner from "./PublicFormBanner";
@@ -11,7 +11,7 @@ export default async function IntegrationRequestsPage() {
 
   const { scope } = await requireIntegrationAccess(churchId);
 
-  const [church, requests] = await Promise.all([
+  const [church, rawRequests, delays] = await Promise.all([
     prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
     prisma.familyIntegrationRequest.findMany({
       where: {
@@ -24,7 +24,11 @@ export default async function IntegrationRequestsPage() {
       },
       orderBy: { submittedAt: "desc" },
     }),
+    getIntegrationSettings(churchId),
   ]);
+
+  const now = new Date();
+  const requests = rawRequests.map((r) => ({ ...r, relanceDue: isRelanceDue(r, delays, now) }));
 
   const pending = requests.filter((r) => r.status === "SUBMITTED").length;
 

@@ -2,6 +2,8 @@
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Soumise",
+  WAITING_RECONTACT: "Attente recontact",
+  WAITING_MISSION: "Attente mission",
   ASSIGNED: "Affectée",
   CONTACTED: "Contactée",
   WHATSAPP_ADDED: "WhatsApp famille",
@@ -11,6 +13,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED: "bg-gray-400",
+  WAITING_RECONTACT: "bg-orange-300",
+  WAITING_MISSION: "bg-orange-500",
   ASSIGNED: "bg-blue-400",
   CONTACTED: "bg-yellow-400",
   WHATSAPP_ADDED: "bg-green-400",
@@ -20,6 +24,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, string> = {
   SUBMITTED: "bg-gray-100 text-gray-700 border-gray-200",
+  WAITING_RECONTACT: "bg-orange-50 text-orange-700 border-orange-200",
+  WAITING_MISSION: "bg-orange-50 text-orange-800 border-orange-300",
   ASSIGNED: "bg-blue-50 text-blue-700 border-blue-200",
   CONTACTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
   WHATSAPP_ADDED: "bg-green-50 text-green-700 border-green-200",

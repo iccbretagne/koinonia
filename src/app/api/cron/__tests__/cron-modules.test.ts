@@ -49,6 +49,9 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
       runMsdpInactivityNotifications: vi.fn(() => {
         throw new Error("ne devrait pas être appelé — module integration désactivé");
       }),
+      runWaitingRelanceNotifications: vi.fn(() => {
+        throw new Error("ne devrait pas être appelé — module integration désactivé");
+      }),
     }));
     vi.doMock("@/modules/jobs", () => ({
       runJobOffersLifecycle: vi.fn(() => {
@@ -62,6 +65,7 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     const body = await res.json();
     expect(body.integrationInactivity).toBeNull();
     expect(body.msdpInactivity).toBeNull();
+    expect(body.integrationRelance).toBeNull();
     expect(body.jobOffersLifecycle).toBeNull();
   });
 
@@ -69,10 +73,12 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     delete process.env.ENABLED_MODULES;
     const runInactivityNotifications = vi.fn().mockResolvedValue({ sent: 0 });
     const runMsdpInactivityNotifications = vi.fn().mockResolvedValue({ sent: 0 });
+    const runWaitingRelanceNotifications = vi.fn().mockResolvedValue({ notified: 0 });
     const runJobOffersLifecycle = vi.fn().mockResolvedValue({ processed: 0 });
     vi.doMock("@/modules/integration", () => ({
       runInactivityNotifications,
       runMsdpInactivityNotifications,
+      runWaitingRelanceNotifications,
     }));
     vi.doMock("@/modules/jobs", () => ({ runJobOffersLifecycle }));
 
@@ -81,6 +87,7 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(res.status).toBe(200);
     expect(runInactivityNotifications).toHaveBeenCalledOnce();
     expect(runMsdpInactivityNotifications).toHaveBeenCalledOnce();
+    expect(runWaitingRelanceNotifications).toHaveBeenCalledOnce();
     expect(runJobOffersLifecycle).toHaveBeenCalledOnce();
   });
 });
