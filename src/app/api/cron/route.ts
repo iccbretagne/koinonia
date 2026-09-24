@@ -23,11 +23,19 @@ async function runIntegrationInactivityTasks(appUrl: string) {
   return { integrationInactivityResult, integrationRelanceResult };
 }
 
-/** Rappels d'inactivité des suivis MSDP — repris par `care` (spec 052, ex-`integration`). */
-async function runCareInactivityTasks(appUrl: string) {
+/**
+ * Rappels d'inactivité des suivis MSDP (repris par `care`, ex-`integration`) et relances des
+ * demandes de rendez-vous pastoral non confiées/confiées sans date (spec 052, T60). Un seul
+ * import dynamique pour les deux, comme `runIntegrationInactivityTasks` ci-dessus.
+ */
+async function runCareTasks(appUrl: string) {
   if (!registry.has("care")) return null;
-  const { runMsdpInactivityNotifications } = await import("@/modules/care");
-  return runMsdpInactivityNotifications(appUrl);
+  const { runMsdpInactivityNotifications, runCareRelances } = await import("@/modules/care");
+  const [msdpInactivityResult, careRelanceResult] = await Promise.all([
+    runMsdpInactivityNotifications(appUrl),
+    runCareRelances(),
+  ]);
+  return { msdpInactivityResult, careRelanceResult };
 }
 
 async function runJobsLifecycleTask(appUrl: string) {
@@ -250,7 +258,7 @@ export async function POST(request: Request) {
         runReminders(),
         runPlanningDigest(),
         runIntegrationInactivityTasks(appUrl),
-        runCareInactivityTasks(appUrl),
+        runCareTasks(appUrl),
         runJobsLifecycleTask(appUrl),
       ]);
 
@@ -259,7 +267,8 @@ export async function POST(request: Request) {
       planningDigest: digestResult,
       integrationInactivity: integrationResult?.integrationInactivityResult ?? null,
       integrationRelance: integrationResult?.integrationRelanceResult ?? null,
-      msdpInactivity: careResult ?? null,
+      msdpInactivity: careResult?.msdpInactivityResult ?? null,
+      careRelance: careResult?.careRelanceResult ?? null,
       jobOffersLifecycle: jobOffersLifecycleResult,
     });
   } catch (error) {

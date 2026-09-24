@@ -1,7 +1,7 @@
 # Tâches — Suivi des nouveaux convertis et des demandes de rendez-vous pastoral
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0015-module-suivi-rendez-vous-pastoraux.md`
-- **Statut** : Lot 1 livré · Lot 2 et 3 à faire
+- **Statut** : Lots 1, 2 et 3 livrés
 
 > Tâches **ordonnées** et **vérifiables**, en trois lots livrés par PR successives vers la base
 > `feat/suivi-rendez-vous-pastoraux` (stratégie multi-PR, constitution §V). Dans chaque lot :
@@ -233,16 +233,16 @@
 
 ## Lot 3 — Pilotage et finitions
 
-- [ ] **T59** — `services/settings.ts` (`getCareSettings` avec défauts 7/14, mise à jour) et
+- [x] **T59** — `services/settings.ts` (`getCareSettings` avec défauts 7/14, mise à jour) et
       `GET/PUT /api/care/settings` (`care:qualify`, entiers 1–365) ; page `/care/parametres`.
-- [ ] **T60** — `services/relances.ts` : échéances pures `unassignedDueAt`/`unscheduledDueAt`,
+- [x] **T60** — `services/relances.ts` : échéances pures `unassignedDueAt`/`unscheduledDueAt`,
       `runCareRelances` (référents / accompagnant, dédoublonnage par échéance) branché au cron ;
       bandeau « À relancer » dans `/care`.
-- [ ] **T61** — `GET /api/care/stats` et page `/care/stats` : volumes par état, par accompagnant,
+- [x] **T61** — `GET /api/care/stats` et page `/care/stats` : volumes par état, par accompagnant,
       répartition des motifs de rejet, reprise de la section MSDP retirée au lot 1.
-- [ ] **T62** [P] — `relances.test.ts` : échéances par état, dédoublonnage, sortie de relance après
+- [x] **T62** [P] — `relances.test.ts` : échéances par état, dédoublonnage, sortie de relance après
       affectation ou date fixée.
-- [ ] **T63** [P] — Documentation : guide intégré (`GuideContent.tsx` : espace suivi pastoral,
+- [x] **T63** [P] — Documentation : guide intégré (`GuideContent.tsx` : espace suivi pastoral,
       rôle renommé), `docs/auth.md`, `docs/guide-screenshots.md`, `CLAUDE.md` (module `care`,
       permissions), ADR-0015 passé à **Accepté** et index des ADR.
 - [ ] **T64** — Vérification complète, puis PR finale `feat/suivi-rendez-vous-pastoraux` → `main`.

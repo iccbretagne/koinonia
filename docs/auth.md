@@ -308,6 +308,15 @@ La confidentialité du contenu (`message`, `subject`) est appliquée une seule f
 Admin, Super Admin, ou l'accompagnant en charge ; libellé neutre « Rendez-vous pastoral » pour
 tous les autres lecteurs (Secrétaire, Protocole, équipe intégration, accompagnant dessaisi).
 
+Depuis la spec 052 lot 2, l'affectation choisit entre deux populations d'accompagnants — un
+profil pastoral ou un membre d'un département de fonction `MSDP` (`AssigneeSelection`,
+`src/modules/care/services/assignee.ts`) — réservée à `care:qualify` (validation, réaffectation).
+Les étapes de suivi (fixer la date, saisir l'issue, rendre au référent) sont réservées à
+l'accompagnant **en charge**, pas à toute l'équipe. `GET/PUT /api/care/settings`
+(`/care/parametres`) et `GET /api/care/stats` (`/care/stats`), ajoutés au lot 3, réutilisent ces
+deux mêmes permissions sans en introduire de nouvelle : réglages des délais de relance réservés à
+`care:qualify`, statistiques ouvertes à `care:view`.
+
 #### Module `rooms` (salles)
 
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |

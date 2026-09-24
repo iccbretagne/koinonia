@@ -9,6 +9,7 @@ vi.mock("@/modules/integration", () => ({
 }));
 vi.mock("@/modules/care", () => ({
   runMsdpInactivityNotifications: vi.fn().mockResolvedValue({}),
+  runCareRelances: vi.fn().mockResolvedValue({}),
 }));
 const mockRunJobOffersLifecycle = vi.fn().mockResolvedValue({ archived: 0, renewalsSent: 0, emailFailures: 0 });
 vi.mock("@/modules/jobs", () => ({

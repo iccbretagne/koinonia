@@ -1,6 +1,6 @@
 # ADR-0015 — Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda`
 
-- **Statut** : Accepté (lot 1 livré)
+- **Statut** : Accepté
 - **Date** : 2026-09-24
 
 ## Contexte
