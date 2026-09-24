@@ -20,7 +20,7 @@ spirituel, et ils ne se parlent pas :
   est rangé dans l'espace intégration, et rien ne garantit qu'il soit démarré.
 - **Les demandes de rendez-vous pastoral** : une personne (depuis le formulaire public, depuis son
   compte, ou en cochant « soin pastoral » sur le formulaire d'accueil) demande un rendez-vous. Un
-  qualificateur la valide en la confiant à un profil pastoral (pasteur, assistant pasteur,
+  qualificateur agenda la valide en la confiant à un profil pastoral (pasteur, assistant pasteur,
   berger), ou la rejette ; l'équipe protocole planifie ensuite le rendez-vous dans l'agenda
   pastoral. Le flux s'arrête là : on ne sait jamais si le rendez-vous a eu lieu.
 
@@ -48,15 +48,16 @@ l'agenda pastoral (planification des créneaux), qui restent chacun centrés sur
 
 ## Utilisateurs concernés
 
-- **Qualificateur agenda** (et Admin, Super Admin, qui détiennent le même droit) : seul à
+- **Référent soins pastoraux** — nouveau nom du rôle « Qualificateur agenda », dont le périmètre
+  ne se limite plus à l'agenda (et Admin, Super Admin, qui détiennent le même droit) : seul à
   confier, réaffecter ou rejeter une demande — de rendez-vous comme de suivi de nouveau
   converti. Reçoit les demandes rendues par un accompagnant et les alertes sur les demandes non
   qualifiées.
 - **Membre du département MSDP** : peut se voir confier une demande — de rendez-vous ou de suivi
   de nouveau converti. Il la fait progresser, fixe lui-même la date des rendez-vous qui lui sont
-  confiés, en consigne l'issue, et peut rendre une demande au qualificateur.
+  confiés, en consigne l'issue, et peut rendre une demande au référent.
 - **Profil pastoral** (pasteur, assistant pasteur, berger) : peut se voir confier une demande, en
-  est prévenu, la retrouve, en consigne l'issue, et peut la rendre au qualificateur.
+  est prévenu, la retrouve, en consigne l'issue, et peut la rendre au référent.
 - **Membre de l'équipe intégration** : n'a plus à démarrer le suivi d'un nouveau converti, qui
   naît automatiquement ; voit depuis la demande d'accueil qu'un suivi existe et où il en est. Ne
   lit pas le contenu des demandes de rendez-vous.
@@ -95,7 +96,7 @@ déjà indiqués sur des demandes antérieures sont conservés mais ne sont plus
 ### Scénario principal — demande de rendez-vous
 
 1. Une personne dépose une demande de rendez-vous. Elle est **reçue**.
-2. Un qualificateur l'examine, puis en une seule action :
+2. Un référent l'examine, puis en une seule action :
    - soit il la **valide** en la confiant à un profil pastoral ou à un membre du département
      MSDP, au choix, à partir d'une liste qui distingue clairement les deux ;
    - soit il la **rejette**, en choisissant un motif dans une liste fixe (voir « Motifs de
@@ -122,7 +123,7 @@ son issue.
 1. Dès qu'une personne répond à l'appel au salut sur le formulaire d'accueil, son suivi de
    nouveau converti **naît automatiquement**, à l'état **reçu**, sans action de l'équipe
    intégration.
-2. Un qualificateur le **confie** à un membre du département MSDP ou à un profil pastoral, au
+2. Un référent le **confie** à un membre du département MSDP ou à un profil pastoral, au
    choix.
 3. L'accompagnant est prévenu, dans l'application et par email.
 4. Le suivi progresse par les étapes existantes (premier contact, formation des nouveaux
@@ -134,27 +135,27 @@ Une fois la date du rendez-vous passée, l'accompagnant indique ce qu'il en est,
 
 - **a eu lieu, clôturé** : la demande est terminée ;
 - **a eu lieu, orienté vers un suivi de nouveau converti** : la demande est terminée, et un suivi
-  de nouveau converti naît pour la même personne, à l'état reçu, à confier par un qualificateur ;
+  de nouveau converti naît pour la même personne, à l'état reçu, à confier par un référent ;
 - **a eu lieu, un nouveau rendez-vous est nécessaire** : la demande redevient « à planifier »,
   par le protocole ou par le membre du MSDP selon l'accompagnant ;
 - **la personne n'est pas venue** : l'accompagnant choisit entre replanifier et clôturer sans
   suite.
 
 Seule l'issue est consignée, jamais le contenu de l'entretien. Si l'accompagnant est un profil
-pastoral sans compte, le qualificateur consigne l'issue à sa place.
+pastoral sans compte, le référent consigne l'issue à sa place.
 
-### Rendre une demande au qualificateur
+### Rendre une demande au référent
 
 Un accompagnant qui ne peut pas assurer une demande qui lui est confiée (indisponibilité, profil
-inadapté, conflit personnel…) la **rend au qualificateur**, avec une raison obligatoire, tant que
+inadapté, conflit personnel…) la **rend au référent**, avec une raison obligatoire, tant que
 le rendez-vous n'a pas eu lieu (ou, pour un suivi, tant qu'il n'est ni terminé ni abandonné). La
-demande redevient « reçue » sans accompagnant ; les qualificateurs sont prévenus, raison
+demande redevient « reçue » sans accompagnant ; les référents sont prévenus, raison
 comprise, et la confient de nouveau. Si le protocole devait planifier le rendez-vous, il n'a plus
 à le faire. Le retour figure dans l'historique.
 
 ### Réaffectation
 
-Un qualificateur peut confier à quelqu'un d'autre une demande déjà confiée, dans les mêmes
+Un référent peut confier à quelqu'un d'autre une demande déjà confiée, dans les mêmes
 limites. Le nouvel accompagnant est prévenu ; l'ancien est informé qu'il n'en a plus la charge.
 L'historique garde les deux affectations. Si le rendez-vous avait été transmis au protocole et que
 le nouvel accompagnant est un membre du MSDP, le protocole n'a plus à le planifier.
@@ -171,7 +172,7 @@ confidentialité ci-dessous, même à travers ce rapprochement.
 
 Deux situations déclenchent une alerte une fois un délai dépassé :
 
-- une demande **reçue et non encore confiée** : alerte aux qualificateurs ;
+- une demande **reçue et non encore confiée** : alerte aux référents ;
 - une demande **confiée mais non planifiée** (rendez-vous sans date, ou suivi resté à l'état
   confié sans premier contact) : alerte à l'accompagnant.
 
@@ -190,7 +191,7 @@ les statistiques de l'espace. Les rejets antérieurs, sans motif, restent tels q
 
 Le message qu'une personne écrit dans sa demande de rendez-vous n'est lisible que par :
 
-- les détenteurs du droit de qualification (Qualificateur agenda, Admin, Super Admin) ;
+- les détenteurs du droit de qualification (Référent soins pastoraux, Admin, Super Admin) ;
 - l'accompagnant à qui la demande est confiée, tant qu'il en a la charge.
 
 Les autres personnes ayant accès à la demande — équipe protocole, Secrétaire, équipe
@@ -202,7 +203,7 @@ l'accompagnant et la date, mais pas le message.
 - **Si** l'accompagnant choisi n'a pas d'adresse email, il est prévenu dans l'application
   seulement ; l'affectation n'échoue pas pour autant.
 - **Si** un profil pastoral n'est rattaché à aucun compte, il ne peut recevoir de notification
-  dans l'application ni se connecter : l'email est alors le seul canal, le qualificateur en est
+  dans l'application ni se connecter : l'email est alors le seul canal, le référent en est
   averti au moment de choisir, et c'est lui qui consigne l'issue du rendez-vous.
 - **Si** l'accompagnant membre du MSDP n'a pas encore indiqué de date, la demande reste
   « validée, à planifier », figure dans sa liste de demandes à traiter, et déclenche la relance
@@ -228,11 +229,11 @@ l'accompagnant et la date, mais pas le message.
       sans suivi reçoit un suivi à l'état reçu.
 - [ ] La fiche d'une demande d'accueil indique l'existence et l'état d'un suivi de nouveau
       converti, avec un accès direct vers lui.
-- [ ] Un qualificateur valide une demande de rendez-vous en la confiant, en une seule action, à
+- [ ] Un référent valide une demande de rendez-vous en la confiant, en une seule action, à
       un profil pastoral ou à un membre du département MSDP, au choix.
 - [ ] Rejeter une demande de rendez-vous impose un motif choisi dans la liste ; le motif est
       visible sur la fiche et dans les statistiques.
-- [ ] Un suivi de nouveau converti peut être confié par un qualificateur à un membre du
+- [ ] Un suivi de nouveau converti peut être confié par un référent à un membre du
       département MSDP ou à un profil pastoral, au choix.
 - [ ] Seuls les détenteurs du droit de qualification peuvent confier, réaffecter ou rejeter ;
       l'équipe intégration, l'équipe MSDP et les accompagnants ne le peuvent pas.
@@ -240,8 +241,8 @@ l'accompagnant et la date, mais pas le message.
 - [ ] L'accompagnant désigné est notifié dans l'application et par email dès l'affectation ;
       l'absence d'email ne bloque pas l'affectation.
 - [ ] Un accompagnant dessaisi par réaffectation en est informé.
-- [ ] Un accompagnant peut rendre une demande au qualificateur avec une raison obligatoire ; la
-      demande redevient reçue sans accompagnant, les qualificateurs sont prévenus, et le retour
+- [ ] Un accompagnant peut rendre une demande au référent avec une raison obligatoire ; la
+      demande redevient reçue sans accompagnant, les référents sont prévenus, et le retour
       figure dans l'historique.
 - [ ] Une demande de rendez-vous confiée à un profil pastoral est transmise à l'équipe protocole
       pour planification ; une demande confiée à un membre du MSDP ne l'est pas, et c'est ce
@@ -253,16 +254,18 @@ l'accompagnant et la date, mais pas le message.
       demande à planifier ; aucun contenu d'entretien n'est demandé.
 - [ ] La fiche d'une demande signale les autres demandes rattachées au même dossier de parcours
       de la personne, avec un accès direct.
-- [ ] Une demande reçue non confiée au-delà du délai alerte les qualificateurs ; une demande
+- [ ] Une demande reçue non confiée au-delà du délai alerte les référents ; une demande
       confiée non planifiée au-delà du délai alerte l'accompagnant ; les deux délais (7 et 14
       jours par défaut) sont réglables par église par les détenteurs du droit de qualification.
-- [ ] Le message d'une demande de rendez-vous n'est lisible que par les qualificateurs, les Admin
+- [ ] Le message d'une demande de rendez-vous n'est lisible que par les référents, les Admin
       et Super Admin, et l'accompagnant en charge ; l'équipe protocole, la Secrétaire, l'équipe
       intégration et un accompagnant dessaisi ne le voient pas.
 - [ ] La fiche de chaque demande montre son cycle de vie : réception, validation ou rejet (par
       qui, quand, motif), affectations et retours successifs (à qui, par qui, quand), date du
       rendez-vous et issue, ou issue du suivi.
 - [ ] Un STAR ou une personne extérieure peut toujours déposer une demande de rendez-vous.
+- [ ] Le rôle « Qualificateur agenda » s'appelle désormais « Référent soins pastoraux » partout
+      où il est affiché ; les personnes qui le détenaient le conservent sous son nouveau nom.
 
 ## Hors périmètre
 
@@ -271,11 +274,11 @@ l'accompagnant et la date, mais pas le message.
 - Le formulaire d'accueil des nouveaux arrivants et le rattachement aux familles (spec 051).
 - La suppression définitive des jours préférés déjà saisis.
 - Tout changement des étapes du suivi d'un nouveau converti (premier contact, formation,
-  terminé), hors affectation et retour au qualificateur.
+  terminé), hors affectation et retour au référent.
 - Un agenda pour les membres du MSDP : leurs rendez-vous sont convenus hors agenda pastoral.
 - D'autres départements que le MSDP comme viviers d'accompagnants.
 - Une confirmation de prise en charge par l'accompagnant : la validation reste l'acte du
-  qualificateur.
+  référent.
 - L'affichage de la charge de chaque accompagnant au moment de confier une demande.
 - La consignation du contenu des entretiens pastoraux.
 
@@ -286,16 +289,18 @@ l'accompagnant et la date, mais pas le message.
   l'agenda pastoral.
 - **Jours préférés** : plus proposés ni affichés ; les valeurs existantes sont conservées.
 - **Validation** : comme aujourd'hui, valider c'est accepter et confier en une seule action,
-  par le qualificateur.
+  par le référent.
 - **Rendez-vous confié à un membre du MSDP** : l'accompagnant fixe lui-même le rendez-vous et en
   indique la date ; le protocole n'intervient que pour les profils pastoraux. Le demandeur est
   prévenu de la date dans les deux cas.
-- **Affectation réservée au qualificateur** : seuls les détenteurs du droit de qualification
-  (Qualificateur agenda, Admin, Super Admin) confient et réaffectent, y compris les suivis de
+- **Affectation réservée au référent** : seuls les détenteurs du droit de qualification
+  (Référent soins pastoraux, Admin, Super Admin) confient et réaffectent, y compris les suivis de
   nouveaux convertis — que l'équipe intégration et l'équipe MSDP confiaient jusqu'ici.
 - **Viviers d'accompagnants** : profils pastoraux et membres des départements MSDP uniquement.
+- **Nom du rôle** : « Qualificateur agenda » devient « Référent soins pastoraux », pour tous les
+  utilisateurs qui le détiennent déjà ; leurs droits sont conservés.
 - **Évolutions retenues lors de la revue** : suivi de nouveau converti créé automatiquement ;
-  retour d'une demande au qualificateur par l'accompagnant ; issue du rendez-vous ;
+  retour d'une demande au référent par l'accompagnant ; issue du rendez-vous ;
   rapprochement des demandes d'une même personne ; relances ; motifs de rejet ; demandeur
   prévenu quel que soit l'accompagnant ; confidentialité du message de la demande.
 - **Écarté** : affichage de la charge des accompagnants au moment de confier.

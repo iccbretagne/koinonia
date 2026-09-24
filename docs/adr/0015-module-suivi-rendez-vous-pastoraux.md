@@ -38,7 +38,9 @@ dans son manifeste (ADR-0011, ADR-0012) ; un module peut être absent d'une inst
 
 ## Décision
 
-On crée un module **`care`** (« Suivi et rendez-vous pastoraux ») dans `src/modules/care`, qui
+On crée un module **`care`** (« Suivi et rendez-vous pastoraux ») dans `src/modules/care` — nom
+interne en anglais comme tous les modules (`discipleship`, `rooms`, `jobs`…), libellés affichés
+en français —, qui
 **possède le cycle de vie des demandes d'accompagnement** :
 
 - les demandes de rendez-vous pastoral (dépôt, qualification, affectation, rejet, issue) ;
@@ -67,7 +69,8 @@ Principes de collaboration :
    un autre.
 4. **`care` déclare ses propres permissions.** Le droit de qualifier et d'affecter est une
    permission de `care`, accordée aux mêmes rôles qu'`agenda:qualify` aujourd'hui (Super Admin,
-   Admin, Qualificateur agenda) ; `agenda:qualify` disparaît avec la fonction qu'il gardait.
+   Admin, et le rôle aujourd'hui nommé Qualificateur agenda, renommé « Référent soins
+   pastoraux ») ; `agenda:qualify` disparaît avec la fonction qu'il gardait.
    L'accès des accompagnants et la confidentialité du message se vérifient par des gardes propres
    au module (ADR-0009, ADR-0010), comme `requireIntegrationAccess` pour `integration`.
 5. **Les données changent de propriétaire, pas forcément de table.** Les demandes de rendez-vous
@@ -104,10 +107,12 @@ Principes de collaboration :
   public — en particulier le formulaire public de demande de rendez-vous, dont le lien a pu être
   diffusé (QR codes, messages) — doivent **continuer de fonctionner** (même adresse ou
   redirection permanente).
-- **Négatif / contrainte** : **les droits changent de nom** (`agenda:qualify` → permission de
-  `care`) : matrice figée de `permissions.test.ts`, tableau de `CLAUDE.md` et `docs/auth.md` à
-  mettre à jour dans le même commit. Le rôle « Qualificateur agenda » garde son nom malgré un
-  périmètre qui n'est plus l'agenda — à renommer éventuellement, hors de cette décision.
+- **Négatif / contrainte** : **les droits et le rôle changent de nom**. `agenda:qualify` devient
+  une permission de `care` ; le rôle « Qualificateur agenda » (`AGENDA_QUALIFIER`), dont le
+  périmètre n'a plus rien d'un agenda, devient **« Référent soins pastoraux »**
+  (`PASTORAL_CARE_REFERENT`), dans la même feature — libellé affiché et nom interne, ce dernier
+  par migration du rôle stocké en base. Matrice figée de `permissions.test.ts`, tableau de
+  `CLAUDE.md`, `docs/auth.md` et guide intégré à mettre à jour dans le même commit.
 - **Négatif / contrainte** : **une instance sans `care`** n'a plus de demandes de rendez-vous
   pastoral ni de suivis de nouveaux convertis. Le formulaire d'accueil ne doit alors plus proposer
   « soin pastoral » ; l'appel au salut reste enregistré sur la demande d'accueil, sans suivi.
