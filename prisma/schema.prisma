@@ -1237,6 +1237,18 @@ enum FamilyIntegrationStatus {
   ABANDONED // Abandonné
 }
 
+/// Motif d'abandon d'une demande d'intégration (spec 051, amendement de recette).
+/// Liste fixe : distingue les abandons subis (injoignable…) des abandons choisis.
+enum IntegrationAbandonReason {
+  UNKNOWN_NUMBER // Numéro inconnu ou erroné
+  UNREACHABLE // Injoignable après relances
+  NO_LONGER_INTERESTED // Ne souhaite plus être contacté·e
+  OTHER_CHURCH // A rejoint une autre église
+  MOVED // A déménagé
+  DUPLICATE // Doublon
+  OTHER // Autre (précisé en commentaire)
+}
+
 /// Consentement au contact exprimé sur le formulaire d'accueil (spec 051).
 /// Pas de valeur « jamais » : une personne qui refuse ne remplit pas le formulaire,
 /// donc aucune demande n'existe.
@@ -1307,14 +1319,16 @@ model FamilyIntegrationRequest {
   assignedBerger   User?   @relation("IntegrationAssignedBerger", fields: [assignedBergerId], references: [id], onDelete: SetNull)
 
   // Statut et timestamps de workflow
-  status          FamilyIntegrationStatus @default(SUBMITTED)
-  submittedAt     DateTime                @default(now())
-  assignedAt      DateTime?
-  contactedAt     DateTime?
-  whatsappAddedAt DateTime?
-  integratedAt    DateTime?
-  abandonedAt     DateTime?
-  abandonReason   String?                 @db.VarChar(500)
+  status            FamilyIntegrationStatus   @default(SUBMITTED)
+  submittedAt       DateTime                  @default(now())
+  assignedAt        DateTime?
+  contactedAt       DateTime?
+  whatsappAddedAt   DateTime?
+  integratedAt      DateTime?
+  abandonedAt       DateTime?
+  abandonReason     String?                   @db.VarChar(500) // commentaire libre
+  // Motif qualifié (obligatoire à l'abandon depuis la spec 051 ; null pour les abandons antérieurs)
+  abandonReasonCode IntegrationAbandonReason?
 
   // Consentement au contact et mémoire de l'état d'attente (spec 051).
   // `waitingFrom` ne vaut que SUBMITTED ou CONTACTED (seuls points d'entrée autorisés) ;

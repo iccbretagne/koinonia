@@ -177,6 +177,30 @@
       *(fichier : `prisma/migrations/__tests__/fix_reopened_requests_status.test.ts` ou
       équivalent selon la convention de test de migration déjà en place dans le repo)*
 
+### 6. Amendement de recette (2026-09-24)
+
+- [x] **T31** — Schéma : enum `IntegrationAbandonReason`, colonne `abandonReasonCode` ; migration
+      additive `add_integration_abandon_reason`. *(fichiers : `prisma/schema.prisma`, migration)*
+- [x] **T32** — `family-state.ts` : entrée en attente depuis `ASSIGNED`, `MISSION` réservé à
+      l'équipe, action `handback`, `abandonReasonCode` obligatoire sur `abandon`, réouverture qui
+      efface le motif. *(fichier : `src/modules/integration/services/family-state.ts`)*
+- [x] **T33** — `notifyIntegrationTeamHandback` (notification à toute l'équipe, raison incluse).
+      *(fichier : `src/modules/integration/services/family-service.ts`)*
+- [x] **T34** — Route PATCH : notification de renvoi, raison de renvoi et motif d'abandon
+      journalisés dans l'historique. *(fichier : `src/app/api/integration/requests/[id]/route.ts`)*
+- [x] **T35** — Statistiques : répartition des abandons par motif (API + vue).
+      *(fichiers : `src/app/api/integration/stats/route.ts`, `StatsView.tsx`)*
+- [x] **T36** — Fiche : deux actions explicites, « Renvoyer à l'intégration » (raison
+      obligatoire), motif d'abandon obligatoire, libellés « Reprendre le suivi » / « J'ai
+      relancé », motif affiché sur une demande abandonnée. *(fichier : `RequestDetail.tsx`)*
+- [x] **T37** — Libellés de motif dans l'historique et le tableau de bord.
+      *(fichiers : `RequestHistoryTimeline.tsx`, `IntegrationDashboard.tsx`)*
+- [x] **T38** — Tests : entrée depuis `ASSIGNED` (berger), `MISSION` refusé au berger, reprise vers
+      `ASSIGNED`, `handback` (droits, états, détachement, invariant), motif d'abandon obligatoire.
+      *(fichier : `src/modules/integration/__tests__/family-state.test.ts`)*
+- [x] **T39** — Documentation : guide intégré (`GuideContent.tsx`), `docs/auth.md`,
+      `docs/database.md` si le modèle y est décrit.
+
 ## Écarts d'implémentation
 
 Constatés pendant `/implement`, sans entorse à la spec :
@@ -213,15 +237,15 @@ Constatés pendant `/implement`, sans entorse à la spec :
 - [x] `npm run test`
 - [x] `prisma migrate deploy` rejoué sur base vierge (MariaDB 10.11 locale) sans erreur, `migrate diff --exit-code` sans écart
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits (voir couverture ci-dessous)
-- [ ] PR ouverte vers `main`
+- [x] PR ouverte vers `main` (#582)
 
 ## Couverture des critères d'acceptation
 
 | Critère (spec.md) | Couvert par |
 |---|---|
 | Formulaire : choix maintenant/plus tard, aucune trace si non rempli | T15, T17, T29 |
-| Mise en attente uniquement depuis `SUBMITTED`/`CONTACTED` | T3, T12, T23 |
-| Droit refusé au berger depuis `SUBMITTED`, accepté depuis `CONTACTED` | T3, T23 |
+| Mise en attente uniquement depuis `SUBMITTED`/`ASSIGNED`/`CONTACTED` | T3, T12, T23 |
+| Droit refusé au berger depuis `SUBMITTED`, accepté depuis `ASSIGNED`/`CONTACTED` | T3, T23 |
 | Demande en attente sort de la file, apparaît dans la liste d'attente | T12, T18 |
 | Reprise place à l'étape suivante selon le point d'entrée | T3, T4, T23, T24 |
 | Abandon direct depuis un état d'attente | T3, T12, T23 |
@@ -235,5 +259,8 @@ Constatés pendant `/implement`, sans entorse à la spec :
 | Réouverture retrouve l'état pré-abandon, ou détache si reprise de zéro | T4, T12, T24 |
 | Invariant : aucune demande `SUBMITTED` avec famille/berger | T2, T25, T30 |
 | Berger dessaisi informé (réaffectation ou reprise de zéro) | T4, T12 |
+| Transmission au département mission réservée à l'équipe | T32, T36, T38 |
+| Renvoi à l'équipe par le berger (raison, détachement, équipe prévenue, historique) | T32, T33, T34, T36, T37, T38 |
+| Motif d'abandon obligatoire, visible sur la demande et dans les statistiques | T31, T32, T35, T36, T37, T38 |
 
-Les 16 critères d'acceptation de la spec sont couverts.
+Les 19 critères d'acceptation de la spec (dont 3 issus de l'amendement de recette) sont couverts.

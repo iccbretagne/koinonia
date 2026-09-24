@@ -73,6 +73,13 @@ export async function GET(request: Request) {
       _count: true,
     });
 
+    // ── Abandons par motif (spec 051) ─────────────────────────────────────────
+    const byAbandonReason = await prisma.familyIntegrationRequest.groupBy({
+      by: ["abandonReasonCode"],
+      where: { ...baseWhere, status: "ABANDONED" },
+      _count: true,
+    });
+
     // ── Tendance mensuelle (12 derniers mois) ────────────────────────────────
     const since = new Date();
     since.setMonth(since.getMonth() - 11);
@@ -115,6 +122,7 @@ export async function GET(request: Request) {
       byFamily,
       byAgeRange: byAgeRange.map((r) => ({ ageRange: r.ageRange, count: r._count })),
       byChurchStatus: byChurchStatus.map((r) => ({ churchStatus: r.churchStatus, count: r._count })),
+      byAbandonReason: byAbandonReason.map((r) => ({ reason: r.abandonReasonCode, count: r._count })),
       byMonth,
       pastoralCare,
     });

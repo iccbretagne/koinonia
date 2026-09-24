@@ -68,6 +68,13 @@ export default async function IntegrationStatsPage() {
   });
 
   // ── Par statut église ────────────────────────────────────────────────────
+  // ── Abandons par motif (spec 051) ─────────────────────────────────────────
+  const byAbandonReason = await prisma.familyIntegrationRequest.groupBy({
+    by: ["abandonReasonCode"],
+    where: { ...baseWhere, status: "ABANDONED" },
+    _count: true,
+  });
+
   const byChurchStatus = await prisma.familyIntegrationRequest.groupBy({
     by: ["churchStatus"],
     where: baseWhere,
@@ -213,6 +220,7 @@ export default async function IntegrationStatsPage() {
         byFamily={byFamily}
         byAgeRange={byAgeRange.map((r) => ({ ageRange: r.ageRange, count: r._count }))}
         byChurchStatus={byChurchStatus.map((r) => ({ churchStatus: r.churchStatus, count: r._count }))}
+        byAbandonReason={byAbandonReason.map((r) => ({ reason: r.abandonReasonCode, count: r._count }))}
         byMonth={byMonth}
         pastoralCare={pastoralCare}
         msdp={msdpStats}

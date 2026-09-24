@@ -3,7 +3,7 @@
 - **Numéro** : 051
 - **Statut** : Implémentée
 - **Créée le** : 2026-09-21
-- **Mise à jour le** : 2026-09-23
+- **Mise à jour le** : 2026-09-24 (amendement de recette)
 - **Branche suggérée** : `feat/suivi-accueil-nouveaux-arrivants`
 - **Issue source** : [#579](https://github.com/iccbretagne/koinonia/issues/579)
 
@@ -49,8 +49,10 @@ et les cas qui sortent du parcours standard sont gérés hors de l'outil.
 - **STAR** (membre de l'équipe intégration) : recueille le formulaire, traite les demandes, pose
   et lève les états d'attente, reçoit les relances, consulte l'historique d'une demande.
 - **Berger assigné** (responsable de la famille d'impact à laquelle une demande a été affectée) :
-  fait avancer les demandes qui lui sont confiées et peut les mettre en attente une fois le
-  premier contact établi. Il ne peut ni affecter une famille, ni rouvrir une demande abandonnée.
+  fait avancer les demandes qui lui sont confiées, peut les mettre en attente de recontact dès
+  leur affectation, et peut les renvoyer à l'équipe intégration lorsqu'il ne peut pas les
+  suivre. Il ne peut ni affecter une famille, ni rouvrir une demande abandonnée, ni transmettre
+  une demande au département mission.
 - **Resp. département** (responsable de l'équipe intégration) : même périmètre qu'un membre de
   l'équipe, plus la supervision de l'ensemble des demandes en attente et le réglage des deux
   délais avant relance.
@@ -97,25 +99,52 @@ l'adresse est hors zone doit, une fois le recontact effectué, basculer sur le t
 
 Les deux états d'attente s'insèrent dans le parcours existant selon des règles explicites.
 
-**Entrée** — une demande peut être mise en attente depuis deux points du parcours seulement :
+**Entrée** — une demande peut être mise en attente depuis trois points du parcours seulement :
 
 - depuis l'état **« demande reçue »** — action réservée à l'équipe intégration, puisqu'aucun
   berger n'est encore désigné ;
-- depuis l'état **« premier contact établi »** — action ouverte au berger assigné comme à
-  l'équipe intégration, le berger étant alors la personne en charge.
+- depuis l'état **« famille affectée »** et depuis l'état **« premier contact établi »** — action
+  ouverte au berger assigné comme à l'équipe intégration, le berger étant alors la personne en
+  charge.
+
+Le berger ne peut mettre une demande qu'en **attente de recontact**. La transmission au
+département mission (adresse hors zone) reste une décision de l'équipe intégration, quel que soit
+le point d'entrée.
 
 **Sortie** — deux issues possibles, et deux seulement :
 
 - **Reprise du parcours** : la demande repart à l'étape qui suit immédiatement celle où elle
   s'était arrêtée. Une demande mise en attente depuis « demande reçue » reprend à l'affectation
-  d'une famille ; une demande mise en attente depuis « premier contact établi » reprend à l'ajout
-  au groupe de la famille. L'état d'attente doit donc mémoriser son point de départ.
+  d'une famille ; depuis « famille affectée », au premier contact ; depuis « premier contact
+  établi », à l'ajout au groupe de la famille. L'état d'attente doit donc mémoriser son point de
+  départ.
 - **Abandon** : une demande peut être abandonnée directement depuis un état d'attente, sans
   repasser par le parcours.
 
 Le droit de lever une attente suit la même règle que celui de la poser : équipe intégration seule
 si l'attente a été posée depuis « demande reçue », berger assigné ou équipe si elle a été posée
-depuis « premier contact établi ».
+depuis « famille affectée » ou « premier contact établi ».
+
+Les actions sont nommées par ce qu'elles font, pas par l'état technique : « À recontacter plus
+tard » et « Transmettre au département mission » plutôt qu'une action générique de mise en
+attente dont le sens se découvre ensuite.
+
+### Renvoi à l'équipe intégration
+
+Un berger qui ne peut pas suivre une demande qui lui est confiée (personne hors de son secteur,
+demande manifestement destinée à une autre famille, indisponibilité) la **renvoie à l'équipe
+intégration**, depuis « famille affectée » ou « premier contact établi ». Il en indique
+obligatoirement la raison. La demande perd sa famille et son berger, redevient une « demande
+reçue » à traiter, et l'équipe intégration est prévenue, raison comprise. Le renvoi figure dans
+l'historique de la demande.
+
+### Motifs d'abandon
+
+Abandonner une demande impose de choisir un **motif** dans une liste fixe, complété au besoin d'un
+commentaire libre : numéro inconnu ou erroné · injoignable après relances · ne souhaite plus être
+contacté·e · a rejoint une autre église · a déménagé · doublon · autre. Le motif est visible sur
+la demande et dans les statistiques, afin de distinguer les abandons subis des abandons choisis.
+Les abandons antérieurs, sans motif, restent tels quels.
 
 ### Historique des statuts
 
@@ -181,16 +210,17 @@ famille ou un berger affecté.
 - [x] Le formulaire d'accueil permet de choisir entre « être contacté maintenant » et « être
       recontacté plus tard » ; une personne qui ne remplit pas le formulaire ne crée aucune
       demande ni aucune trace.
-- [x] Une demande peut être mise en attente depuis l'état « demande reçue » et depuis l'état
-      « premier contact établi ». Toute tentative depuis un autre état est refusée.
+- [x] Une demande peut être mise en attente depuis les états « demande reçue », « famille
+      affectée » et « premier contact établi ». Toute tentative depuis un autre état est refusée.
 - [x] Une mise en attente depuis « demande reçue » est refusée à un berger assigné ; une mise en
-      attente depuis « premier contact établi » est acceptée du berger assigné comme d'un membre
-      de l'équipe intégration.
+      attente de recontact depuis « famille affectée » ou « premier contact établi » est acceptée
+      du berger assigné comme d'un membre de l'équipe intégration.
+- [x] Seule l'équipe intégration peut transmettre une demande au département mission.
 - [x] Une demande en attente n'apparaît plus dans la file des demandes à traiter, et apparaît
       dans la liste des demandes en attente.
-- [x] La levée d'une attente posée depuis « demande reçue » place la demande à l'étape
-      d'affectation d'une famille ; celle posée depuis « premier contact établi » la place à
-      l'étape d'ajout au groupe de la famille.
+- [x] La levée d'une attente la ramène à l'étape d'où elle était partie : affectation d'une
+      famille depuis « demande reçue », premier contact depuis « famille affectée », ajout au
+      groupe depuis « premier contact établi ».
 - [x] Une demande en attente peut être abandonnée directement, sans repasser par le parcours.
 - [x] La fiche d'une demande affiche, pour chaque changement d'état : état de départ, état
       d'arrivée, date et auteur — y compris pour des changements répétés du même type.
@@ -211,6 +241,11 @@ famille ou un berger affecté.
 - [x] Aucune demande à l'état « demande reçue » ne porte de famille ou de berger affecté.
 - [x] Un berger dessaisi d'une demande — par réaffectation à une autre famille ou par reprise de
       zéro après réouverture — en est informé.
+- [x] Un berger peut renvoyer une demande qui lui est confiée à l'équipe intégration, avec une
+      raison obligatoire : la demande redevient « demande reçue » sans famille ni berger,
+      l'équipe est prévenue, et le renvoi figure dans l'historique.
+- [x] Abandonner une demande impose un motif choisi dans la liste ; ce motif est visible sur la
+      demande et dans les statistiques.
 
 ## Hors périmètre
 
@@ -252,6 +287,10 @@ Décisions prises lors de la revue de cette spec, consignées pour éviter de le
   chacune leur propre délai, réglable indépendamment.
 - **Réglage partagé** : administrateur **et** responsable de l'équipe intégration peuvent régler
   ces deux délais.
+- **Amendement de recette (2026-09-24)** : le berger peut mettre en attente de recontact dès
+  l'affectation et renvoyer une demande à l'équipe intégration ; la transmission au département
+  mission reste réservée à l'équipe ; les abandons sont qualifiés par un motif obligatoire ; les
+  actions d'attente portent des libellés explicites.
 - **Alerte à toute l'équipe** : la relance est signalée à l'ensemble des membres de l'équipe
   intégration, quelle que soit la cible de la relance, et non au seul responsable.
 

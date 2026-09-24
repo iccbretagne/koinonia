@@ -19,6 +19,7 @@ export {
   buildInactivityEmail,
   notifyBergerAssigned,
   notifyBergerUnassigned,
+  notifyIntegrationTeamHandback,
   runInactivityNotifications,
   DEFAULT_INTEGRATION_SETTINGS,
   getIntegrationSettings,
@@ -32,6 +33,8 @@ export {
 export type { IntegrationDelays } from "./services/family-service";
 export {
   familyPatchSchema,
+  ABANDON_REASON_CODES,
+  ABANDON_REASON_LABELS,
   WAITING_STATUSES,
   isWaitingStatus,
   computeFamilyTransitionData,

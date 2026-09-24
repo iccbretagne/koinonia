@@ -501,3 +501,30 @@ export async function runWaitingRelanceNotifications(
 
   return { notified, skipped, total: due.length };
 }
+
+// ─── Renvoi à l'équipe intégration (spec 051, amendement de recette) ──────────
+
+/** Prévient toute l'équipe intégration qu'un berger lui renvoie une demande, raison comprise. */
+export async function notifyIntegrationTeamHandback(params: {
+  churchId: string;
+  requestId: string;
+  firstName: string;
+  lastName: string;
+  bergerName: string | null;
+  reason: string;
+}): Promise<void> {
+  const { churchId, requestId, firstName, lastName, bergerName, reason } = params;
+  const managers = await createIntegrationManagersResolver()(churchId);
+  const message = `${bergerName ?? "Le berger"} renvoie la demande de ${firstName} ${lastName} à l'équipe intégration : ${reason}`;
+  for (const manager of managers) {
+    await prisma.notification.create({
+      data: {
+        userId: manager.id,
+        type: "INTEGRATION_HANDBACK",
+        title: "Demande renvoyée à l'intégration",
+        message,
+        link: `/integration/requests/${requestId}`,
+      },
+    }).catch(() => {});
+  }
+}

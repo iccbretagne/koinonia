@@ -6,6 +6,9 @@ import {
   statusBeforeAbandon,
   contactConsentSchema,
   initialRequestStatusData,
+  familyPatchSchema,
+  ABANDON_REASON_CODES,
+  ABANDON_REASON_LABELS,
   type FamilyRequestState,
   type FamilyActor,
 } from "../services/family-state";
@@ -96,7 +99,9 @@ describe("computeFamilyTransitionData — parcours existant (non-régression)", 
   });
 
   it("abandon refusé sur une demande intégrée", () => {
-    expect(() => computeFamilyTransitionData(state("INTEGRATED"), { action: "abandon" }, TEAM, now)).toThrow(
+    expect(() =>
+      computeFamilyTransitionData(state("INTEGRATED"), { action: "abandon", abandonReasonCode: "OTHER" }, TEAM, now)
+    ).toThrow(
       /déjà intégrée/
     );
   });
@@ -135,7 +140,29 @@ describe("computeFamilyTransitionData — mise en attente", () => {
     ).toThrow(/réservée aux membres de l'équipe intégration/);
   });
 
-  it.each(ALL_STATUSES.filter((s) => s !== "SUBMITTED" && s !== "CONTACTED"))(
+  it("wait RECONTACT depuis ASSIGNED est accepté du berger assigné (amendement de recette)", () => {
+    const { data } = computeFamilyTransitionData(
+      state("ASSIGNED"),
+      { action: "wait", waitingKind: "RECONTACT" },
+      BERGER,
+      now
+    );
+    expect(data).toMatchObject({ status: "WAITING_RECONTACT", waitingFrom: "ASSIGNED" });
+  });
+
+  it.each(["ASSIGNED", "CONTACTED"] as const)(
+    "la transmission au département mission depuis %s est refusée au berger, acceptée de l'équipe",
+    (from) => {
+      expect(() =>
+        computeFamilyTransitionData(state(from), { action: "wait", waitingKind: "MISSION" }, BERGER, now)
+      ).toThrow(/réservée aux membres de l'équipe intégration/);
+      expect(
+        computeFamilyTransitionData(state(from), { action: "wait", waitingKind: "MISSION" }, TEAM, now).data
+      ).toMatchObject({ status: "WAITING_MISSION", waitingFrom: from });
+    }
+  );
+
+  it.each(ALL_STATUSES.filter((s) => s !== "SUBMITTED" && s !== "ASSIGNED" && s !== "CONTACTED"))(
     "wait refusé depuis %s",
     (from) => {
       expect(() =>
@@ -166,6 +193,16 @@ describe("computeFamilyTransitionData — sortie d'attente", () => {
     expect(data).toMatchObject({ status: "CONTACTED", waitingFrom: null });
   });
 
+  it("resume d'une attente posée depuis ASSIGNED ramène au premier contact, par le berger", () => {
+    const { data } = computeFamilyTransitionData(
+      state("WAITING_RECONTACT", { waitingFrom: "ASSIGNED", assignedFamilyId: 12, assignedBergerId: "berger-1" }),
+      { action: "resume" },
+      BERGER,
+      now
+    );
+    expect(data).toMatchObject({ status: "ASSIGNED", waitingFrom: null });
+  });
+
   it("le droit de lever suit le point d'entrée : berger refusé si l'attente vient de SUBMITTED", () => {
     expect(() =>
       computeFamilyTransitionData(state("WAITING_RECONTACT", { waitingFrom: "SUBMITTED" }), { action: "resume" }, BERGER, now)
@@ -181,11 +218,16 @@ describe("computeFamilyTransitionData — sortie d'attente", () => {
   it.each(["WAITING_RECONTACT", "WAITING_MISSION"] as const)("abandon direct depuis %s", (from) => {
     const { data } = computeFamilyTransitionData(
       state(from, { waitingFrom: "SUBMITTED" }),
-      { action: "abandon", abandonReason: "sans nouvelles" },
+      { action: "abandon", abandonReasonCode: "UNREACHABLE", abandonReason: "sans nouvelles" },
       TEAM,
       now
     );
-    expect(data).toEqual({ status: "ABANDONED", abandonedAt: now, abandonReason: "sans nouvelles" });
+    expect(data).toEqual({
+      status: "ABANDONED",
+      abandonedAt: now,
+      abandonReasonCode: "UNREACHABLE",
+      abandonReason: "sans nouvelles",
+    });
   });
 
   it("relance : ne change pas le statut, remet le décompte à zéro", () => {
@@ -205,6 +247,45 @@ describe("computeFamilyTransitionData — sortie d'attente", () => {
   });
 });
 
+describe("computeFamilyTransitionData — renvoi à l'équipe intégration", () => {
+  it.each(["ASSIGNED", "CONTACTED"] as const)(
+    "handback depuis %s : repart en demande reçue, sans famille, berger, jalons ni attente",
+    (from) => {
+      const current = state(from, { assignedAt: now, contactedAt: from === "CONTACTED" ? now : null });
+      const { data } = computeFamilyTransitionData(current, { action: "handback", reason: "hors secteur" }, BERGER, now);
+      expect(data).toMatchObject({
+        status: "SUBMITTED",
+        assignedFamilyId: null,
+        assignedFamilyName: null,
+        assignedBergerId: null,
+        assignedAt: null,
+        contactedAt: null,
+        waitingFrom: null,
+      });
+      expect(() => assertNoStaleAssignment({ ...current, ...data } as never)).not.toThrow();
+    }
+  );
+
+  it.each(ALL_STATUSES.filter((s) => s !== "ASSIGNED" && s !== "CONTACTED"))("handback refusé depuis %s", (from) => {
+    expect(() =>
+      computeFamilyTransitionData(state(from, { waitingFrom: "CONTACTED" }), { action: "handback", reason: "x" }, TEAM, now)
+    ).toThrow(/Transition invalide/);
+  });
+
+  it("handback par le berger : personne d'autre à informer ; par l'équipe : le berger est informé", () => {
+    const byBerger = computeFamilyTransitionData(state("ASSIGNED"), { action: "handback", reason: "x" }, BERGER, now);
+    expect(byBerger.notifyUnassignedBergerId).toBeNull();
+    const byTeam = computeFamilyTransitionData(state("ASSIGNED"), { action: "handback", reason: "x" }, TEAM, now);
+    expect(byTeam.notifyUnassignedBergerId).toBe("berger-1");
+  });
+
+  it("handback refusé à un tiers", () => {
+    expect(() =>
+      computeFamilyTransitionData(state("ASSIGNED"), { action: "handback", reason: "x" }, STRANGER, now)
+    ).toThrow(/berger assigné ou à l'équipe/);
+  });
+});
+
 describe("computeReopenData", () => {
   const abandoned = state("ABANDONED", { contactedAt: now, assignedAt: now });
 
@@ -216,7 +297,12 @@ describe("computeReopenData", () => {
       { from: "WAITING_RECONTACT", to: "ABANDONED" },
     ];
     const r = computeReopenData(abandoned, "resume", history, TEAM);
-    expect(r.data).toEqual({ status: "WAITING_RECONTACT", abandonedAt: null, abandonReason: null });
+    expect(r.data).toEqual({
+      status: "WAITING_RECONTACT",
+      abandonedAt: null,
+      abandonReason: null,
+      abandonReasonCode: null,
+    });
     expect(r.notifyUnassignedBergerId).toBeNull();
   });
 
@@ -298,5 +384,23 @@ describe("consentement au contact (formulaire public)", () => {
       waitingFrom: "SUBMITTED",
       waitingSince: now,
     });
+  });
+});
+
+describe("schéma PATCH — amendement de recette", () => {
+  it("abandon sans motif est refusé", () => {
+    expect(familyPatchSchema.safeParse({ action: "abandon" }).success).toBe(false);
+    expect(familyPatchSchema.safeParse({ action: "abandon", abandonReasonCode: "PAS_UN_MOTIF" }).success).toBe(false);
+    expect(familyPatchSchema.safeParse({ action: "abandon", abandonReasonCode: "MOVED" }).success).toBe(true);
+  });
+
+  it("handback exige une raison non vide", () => {
+    expect(familyPatchSchema.safeParse({ action: "handback" }).success).toBe(false);
+    expect(familyPatchSchema.safeParse({ action: "handback", reason: "   " }).success).toBe(false);
+    expect(familyPatchSchema.safeParse({ action: "handback", reason: "hors secteur" }).success).toBe(true);
+  });
+
+  it("chaque motif d'abandon a un libellé", () => {
+    for (const code of ABANDON_REASON_CODES) expect(ABANDON_REASON_LABELS[code]).toBeTruthy();
   });
 });

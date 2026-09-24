@@ -308,6 +308,19 @@ département fonction `INTEGRATION`/`MSDP`, et un accès restreint (à ses famil
 ou conseiller MSDP assigné via `FamilyLeaderAssignment`. `requireIntegrationExportAccess()` est
 strictement réservé aux accès non restreints (pas de berger/conseiller au périmètre limité).
 
+`requireIntegrationSettingsAccess()` garde le réglage des délais de relance (spec 051,
+`/integration/parametres` et `GET/PUT /api/integration/settings`) : Super Admin, rôles détenant
+`events:manage` (Admin, Secrétaire), ou `DEPARTMENT_HEAD` rattaché à un département de fonction
+`INTEGRATION`. `members:manage` est volontairement écarté — tout Ministre et tout Resp.
+département le détient, quel que soit son département — de même qu'un simple membre de l'équipe
+ou un berger.
+
+Au sein d'une demande, les droits par action sont calculés par la machine à états
+(`computeFamilyTransitionData`, `src/modules/integration/services/family-state.ts`) :
+affectation et réouverture réservées à l'équipe ; mise en attente de recontact et renvoi à
+l'équipe ouverts au berger assigné dès « famille affectée » ; transmission au département
+mission réservée à l'équipe ; levée d'une attente soumise au même droit que sa pose.
+
 #### Module `storage`
 
 Infrastructure pure (client S3, jetons opaques), aucune permission propre — consommé par

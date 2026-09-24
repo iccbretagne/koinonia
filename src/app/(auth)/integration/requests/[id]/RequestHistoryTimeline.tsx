@@ -71,6 +71,11 @@ export default function RequestHistoryTimeline({ requestId, statusLabels, refres
               <p className="text-sm text-gray-800">
                 {e.action === "relance" ? (
                   <>Relance consignée <span className="text-gray-400">({label(e.to)})</span></>
+                ) : e.action === "handback" ? (
+                  <>
+                    Renvoyée à l&apos;intégration{" "}
+                    <span className="text-gray-400">({label(e.from)} → {label(e.to)})</span>
+                  </>
                 ) : (
                   <>
                     {e.from && <span className="text-gray-500">{label(e.from)} → </span>}

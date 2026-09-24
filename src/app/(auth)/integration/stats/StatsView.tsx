@@ -33,6 +33,18 @@ const STATUS_BADGE: Record<string, string> = {
   ABANDONED: "bg-red-50 text-red-700 border-red-200",
 };
 
+// Miroir client de ABANDON_REASON_LABELS (module intégration) : un composant client ne peut
+// pas importer l'index du module, qui tire des dépendances serveur.
+const ABANDON_REASON_LABELS: Record<string, string> = {
+  UNKNOWN_NUMBER: "Numéro inconnu",
+  UNREACHABLE: "Injoignable",
+  NO_LONGER_INTERESTED: "Ne souhaite plus",
+  OTHER_CHURCH: "Autre église",
+  MOVED: "A déménagé",
+  DUPLICATE: "Doublon",
+  OTHER: "Autre",
+};
+
 const AGE_LABELS: Record<string, string> = {
   YOUTH: "−18 ans",
   YOUNG_ADULT: "18–30 ans",
@@ -103,6 +115,8 @@ interface Props {
   readonly byFamily: { familyId: number | null; familyName: string; count: number }[];
   readonly byAgeRange: { ageRange: string; count: number }[];
   readonly byChurchStatus: { churchStatus: string; count: number }[];
+  /** `reason: null` = abandon antérieur à la spec 051, sans motif. */
+  readonly byAbandonReason: { reason: string | null; count: number }[];
   readonly byMonth: { month: string; count: number }[];
   readonly pastoralCare: number;
   readonly msdp: MsdpStats;
@@ -163,6 +177,7 @@ export default function StatsView({
   byFamily,
   byAgeRange,
   byChurchStatus,
+  byAbandonReason,
   byMonth,
   pastoralCare,
   msdp,
@@ -307,8 +322,23 @@ export default function StatsView({
           </div>
           <p className="text-sm text-red-700">
             <span className="font-semibold">{abandoned} demande{abandoned > 1 ? "s" : ""} abandonnée{abandoned > 1 ? "s" : ""}</span>
-            {" "}— consultez la liste des demandes pour analyser les raisons d&apos;abandon.
+            {" "}— répartition par motif ci-dessous.
           </p>
+        </div>
+      )}
+
+      {abandoned > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 mb-4">Motifs d&apos;abandon</h2>
+          <BarChart
+            data={[...byAbandonReason]
+              .sort((a, b) => b.count - a.count)
+              .map((r) => ({
+                label: r.reason ? (ABANDON_REASON_LABELS[r.reason] ?? r.reason) : "Sans motif (antérieur)",
+                count: r.count,
+              }))}
+            total={abandoned}
+          />
         </div>
       )}
 

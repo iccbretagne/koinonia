@@ -53,9 +53,21 @@ interface Request {
   pastoralCareRequested: boolean;
   salvationCall: boolean;
   suggestedFamilyId: number | null;
+  abandonReasonCode: string | null;
   /** Échéance de relance dépassée (calculée côté serveur, spec 051). */
   relanceDue: boolean;
 }
+
+// Motifs d'abandon (spec 051) — miroir client des libellés du module intégration.
+const ABANDON_REASON_LABELS: Record<string, string> = {
+  UNKNOWN_NUMBER: "Numéro inconnu",
+  UNREACHABLE: "Injoignable",
+  NO_LONGER_INTERESTED: "Ne souhaite plus",
+  OTHER_CHURCH: "Autre église",
+  MOVED: "A déménagé",
+  DUPLICATE: "Doublon",
+  OTHER: "Autre motif",
+};
 
 /** Cible de la relance d'une demande en attente (spec 051). */
 function relanceTarget(status: string): string {
@@ -350,6 +362,11 @@ export default function IntegrationDashboard({
                           {isIntegration && isUnmatchedAddress(r) && (
                             <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
                               Adresse non rattachée
+                            </span>
+                          )}
+                          {r.status === "ABANDONED" && r.abandonReasonCode && (
+                            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                              {ABANDON_REASON_LABELS[r.abandonReasonCode] ?? r.abandonReasonCode}
                             </span>
                           )}
                         </div>

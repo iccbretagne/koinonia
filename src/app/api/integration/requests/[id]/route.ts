@@ -4,13 +4,16 @@ import {
   requireIntegrationAccess,
   notifyBergerAssigned,
   notifyBergerUnassigned,
+  notifyIntegrationTeamHandback,
   familyPatchSchema,
   computeFamilyTransitionData,
   computeReopenData,
   assertNoStaleAssignment,
   recordStatusChange,
   getRequestHistory,
+  ABANDON_REASON_LABELS,
 } from "@/modules/integration";
+import type { FamilyPatchBody } from "@/modules/integration";
 
 export async function GET(
   _request: Request,
@@ -41,6 +44,23 @@ export async function GET(
     return successResponse(req);
   } catch (error) {
     return errorResponse(error);
+  }
+}
+
+/** Précision portée par l'historique : note d'attente/relance, raison de renvoi, motif d'abandon. */
+function historyNote(body: FamilyPatchBody): string | null {
+  switch (body.action) {
+    case "wait":
+    case "relance":
+      return body.note ?? null;
+    case "handback":
+      return body.reason;
+    case "abandon":
+      return body.abandonReason
+        ? `${ABANDON_REASON_LABELS[body.abandonReasonCode]} — ${body.abandonReason}`
+        : ABANDON_REASON_LABELS[body.abandonReasonCode];
+    default:
+      return null;
   }
 }
 
@@ -114,8 +134,19 @@ export async function PATCH(
       action: body.action,
       from: req.status,
       to: updated.status,
-      note: body.action === "wait" || body.action === "relance" ? body.note : null,
+      note: historyNote(body),
     });
+
+    if (body.action === "handback") {
+      await notifyIntegrationTeamHandback({
+        churchId: req.churchId,
+        requestId: id,
+        firstName: req.firstName,
+        lastName: req.lastName,
+        bergerName: session.user.name ?? null,
+        reason: body.reason,
+      });
+    }
 
     if (transition.notifyUnassignedBergerId) {
       await notifyBergerUnassigned({

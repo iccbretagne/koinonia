@@ -2,7 +2,7 @@
 
 - **Spec associée** : `./spec.md`
 - **Statut** : Validé
-- **Mis à jour le** : 2026-09-21
+- **Mis à jour le** : 2026-09-24 (amendement de recette)
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
 
@@ -236,6 +236,31 @@ Admin, à qui détient `members:manage`/`events:manage` (Admin, Secrétaire), ou
 - **Choix** : migration corrective qui promeut les demandes incohérentes en `ASSIGNED` —
   *Pourquoi* : effacer la famille et le berger détruirait une information vraie pour préserver un
   statut faux. Le berger concerné existe et se croit en charge : c'est le statut qu'il faut aligner.
+
+## Amendement de recette (2026-09-24)
+
+Retours de la recette, intégrés à la même PR :
+
+- **Berger dès l'affectation** — `WAITING_ENTRY_STATUSES` gagne `ASSIGNED`. Le droit se calcule
+  toujours sur le point d'entrée : `ASSIGNED`/`CONTACTED` → berger assigné ou équipe,
+  `SUBMITTED` → équipe seule. `waitingKind: "MISSION"` exige l'équipe, quel que soit le point
+  d'entrée. Une attente posée depuis `ASSIGNED` garde famille et berger (l'invariant ne porte que
+  sur `SUBMITTED`) et reprend à `ASSIGNED`.
+- **Renvoi à l'équipe** — nouvelle action `handback { reason }` (raison obligatoire, 1–500
+  caractères), depuis `ASSIGNED`/`CONTACTED`, berger assigné ou équipe. Même détachement que
+  `reopen mode: "restart"` (famille, berger, jalons, champs d'attente), statut `SUBMITTED`.
+  L'équipe est notifiée via le résolveur `getManagers` déjà partagé (`notifyIntegrationTeamHandback`),
+  la raison est journalisée comme `note` dans l'historique.
+- **Motifs d'abandon** — enum `IntegrationAbandonReason` (`UNKNOWN_NUMBER`, `UNREACHABLE`,
+  `NO_LONGER_INTERESTED`, `OTHER_CHURCH`, `MOVED`, `DUPLICATE`, `OTHER`) et colonne nullable
+  `abandonReasonCode` (migration `add_integration_abandon_reason`, purement additive : les
+  abandons existants restent sans motif). `abandon` exige `abandonReasonCode` ;
+  `abandonReason` devient le commentaire libre facultatif. La réouverture efface les deux.
+  Statistiques : répartition des abandons par motif. Liste fixe, pas de réglage par église.
+- **Libellés** — la fiche remplace « Mettre en attente » + choix dans la fenêtre par deux actions
+  directes, « À recontacter plus tard » et « Transmettre au département mission » (équipe
+  seule) ; « Reprendre le parcours » devient « Reprendre le suivi », « Consigner une relance »
+  devient « J'ai relancé ».
 
 ## Risques & points d'attention
 

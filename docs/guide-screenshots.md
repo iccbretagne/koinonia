@@ -138,7 +138,7 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 | 32 | `guide-emplois-liste.png` | `/jobs` | Onglet Offres avec plusieurs annonces |
 | 33 | `guide-emplois-moderation.png` | `/admin/jobs` | Liste des annonces avec actions de modération |
 
-### Intégration (4)
+### Intégration (6)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
@@ -146,6 +146,8 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 | 35 | `guide-integration-msdp.png` | `/integration/requests/[id]` | Onglet suivi MSDP avec conseiller assigné |
 | 36 | `guide-integration-bergers.png` | `/integration/leaders` | Liste des bergers de famille et affectations |
 | 37 | `guide-integration-stats.png` | `/integration/stats` | Statistiques d'intégration (délais, taux) |
+| 37b | `guide-integration-attente.png` | `/integration/requests/[id]` | Fiche d'une demande en attente de recontact : bandeau d'attente, boutons « J'ai relancé » / « Reprendre le suivi », historique des statuts |
+| 37c | `guide-integration-parametres.png` | `/integration/parametres` | Réglage des deux délais de relance |
 
 ### Profil (1)
 
