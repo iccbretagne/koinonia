@@ -195,8 +195,26 @@ Le message qu'une personne écrit dans sa demande de rendez-vous n'est lisible q
 - l'accompagnant à qui la demande est confiée, tant qu'il en a la charge.
 
 Les autres personnes ayant accès à la demande — équipe protocole, Secrétaire, équipe
-intégration, accompagnant dessaisi — en voient l'identité du demandeur, l'objet général, l'état,
-l'accompagnant et la date, mais pas le message.
+intégration, accompagnant dessaisi — en voient l'identité du demandeur, l'état, l'accompagnant et
+la date, mais ni le message ni l'objet : sur le formulaire public, l'objet reprend les motifs
+cochés par la personne (maladie, oppressions…), aussi sensibles que le message. Ils voient à la
+place la mention « Rendez-vous pastoral ». Pour la même raison, le rendez-vous planifié dans
+l'agenda pastoral s'intitule « Rendez-vous pastoral » suivi du nom de la personne, et non de
+l'objet de la demande.
+
+### Deux façons de déposer une demande, un seul circuit
+
+Une demande de rendez-vous peut être déposée :
+
+- par une personne extérieure, depuis le **formulaire public** de l'église, dont l'adresse déjà
+  diffusée (liens, QR codes) continue de fonctionner ;
+- par une personne connectée, depuis le **formulaire de son compte**, accessible par le menu et
+  par la tuile « Rendez-vous pastoral » de « Mes demandes ».
+
+(S'y ajoute la case « soin pastoral » du formulaire d'accueil.) Quelle que soit la porte
+d'entrée, la demande suit le même circuit. La personne connectée **retrouve ses propres demandes
+dans « Mes demandes »**, avec leur état : reçue, validée, planifiée (avec la date), rejetée (avec
+le motif) ou terminée. Le nom de l'accompagnant ne lui est pas montré.
 
 ### Scénarios alternatifs / cas limites
 
@@ -263,7 +281,15 @@ l'accompagnant et la date, mais pas le message.
 - [ ] La fiche de chaque demande montre son cycle de vie : réception, validation ou rejet (par
       qui, quand, motif), affectations et retours successifs (à qui, par qui, quand), date du
       rendez-vous et issue, ou issue du suivi.
-- [ ] Un STAR ou une personne extérieure peut toujours déposer une demande de rendez-vous.
+- [ ] Un STAR ou une personne extérieure peut toujours déposer une demande de rendez-vous, depuis
+      le formulaire public (même adresse qu'aujourd'hui) ou depuis son compte (menu et tuile de
+      « Mes demandes ») ; les deux suivent le même circuit.
+- [ ] Une personne connectée retrouve ses demandes de rendez-vous dans « Mes demandes », avec
+      leur état, la date une fois planifiée et le motif en cas de rejet, sans le nom de
+      l'accompagnant.
+- [ ] Ni le message ni l'objet d'une demande de rendez-vous ne sont visibles du protocole, de la
+      Secrétaire ou de l'équipe intégration ; le rendez-vous planifié dans l'agenda ne reprend pas
+      l'objet de la demande.
 - [ ] Le rôle « Qualificateur agenda » s'appelle désormais « Référent soins pastoraux » partout
       où il est affiché ; les personnes qui le détenaient le conservent sous son nouveau nom.
 
@@ -304,6 +330,9 @@ l'accompagnant et la date, mais pas le message.
   rapprochement des demandes d'une même personne ; relances ; motifs de rejet ; demandeur
   prévenu quel que soit l'accompagnant ; confidentialité du message de la demande.
 - **Écarté** : affichage de la charge des accompagnants au moment de confier.
+- **Objet confidentiel** (arbitrage du plan) : l'objet d'une demande est traité comme le message,
+  parce que le formulaire public y range les motifs cochés.
+- **Suivi par le demandeur** : la personne connectée retrouve ses demandes dans « Mes demandes ».
 - **Rattrapage** : à la mise en service, chaque demande d'accueil non archivée ayant coché
   l'appel au salut sans suivi reçoit un suivi de nouveau converti « reçu ».
 - **Relances** : 7 jours par défaut pour une demande non confiée, 14 jours pour une demande

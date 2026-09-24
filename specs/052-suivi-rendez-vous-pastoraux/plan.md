@@ -3,7 +3,7 @@
 - **Spec associée** : `./spec.md`
 - **ADR** : [ADR-0015](../../docs/adr/0015-module-suivi-rendez-vous-pastoraux.md) — module `care`
   (Proposé ; passe à Accepté à la livraison du lot 1)
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-09-24
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -189,6 +189,17 @@ une transaction, création de l'entrée d'agenda (service `agenda`) et passage �
 projection de `care` qui ne contient ni `subject` ni `message`. Les autres routes
 `/api/agenda/requests*` sont supprimées.
 
+`PATCH /api/agenda/entries/[id]` (changement de date) et `DELETE /api/agenda/entries/[id]`
+écrivent aujourd'hui directement dans `appointment_requests`. Elles deviennent elles aussi des
+orchestrateurs : la date d'une entrée liée à une demande met à jour `scheduledFor` (service
+`care`), et sa suppression remet la demande à `VALIDATED` (service `care`), dans la même
+transaction que l'écriture de l'agenda.
+
+**Demandes du demandeur connecté** : `GET /api/care/requests/mine` (garde : session, église
+courante) renvoie ses propres demandes — état, date, motif de rejet — sans l'accompagnant. Elles
+s'affichent dans « Mes demandes » (`/requests`), qui devient la cible cohérente des notifications
+de rejet et de planification.
+
 ## Services / logique métier
 
 `src/modules/care/` : `manifest.ts`, `index.ts`, `bus.ts`/`events.ts`, `auth.ts`, `services/`.
@@ -264,7 +275,12 @@ Il garde les profils, le calendrier et la planification (orchestrée, voir API).
 - **Sélecteur d'accompagnant** — `Select` à deux `optgroup` : « Profils pastoraux » /
   « Membres du MSDP » ; mention « pas de compte : prévenu par email seulement » sur un profil non
   rattaché.
-- **`/care/request`** — dépôt depuis son compte (ex-`/agenda/request`), sans jours.
+- **`/care/request`** — dépôt depuis son compte (ex-`/agenda/request`), sans jours ; conserve le
+  paramètre `?from=requests` pour revenir à « Mes demandes ». La tuile « Rendez-vous pastoral »
+  de `/requests/new` (spec 043) pointe vers `/care/request?from=requests`, conditionnée par
+  `registry.has("care")`.
+- **« Mes demandes » (`/requests`)** — nouvelle section « Rendez-vous pastoraux » listant les
+  demandes du demandeur connecté (état, date, motif de rejet).
 - **`/care/parametres`** (lot 3) et **`/care/stats`** (lot 3).
 - **Public** — `/agenda-public/[churchSlug]` conservé, déplacé dans `care`, sans le choix du jour.
 - **`agenda`** — `/agenda/schedule` inchangé en apparence, alimenté par la projection de `care`.
@@ -292,8 +308,7 @@ Il garde les profils, le calendrier et la planification (orchestrée, voir API).
   formulaire public y range les motifs cochés (« Maladie », « Oppressions »…). La spec prévoyait
   que le protocole voie « l'objet général » ; la projection affiche à la place un libellé neutre.
   Même raison pour le titre par défaut de l'entrée d'agenda créée par le protocole, qui reprenait
-  `subject` : il devient « Rendez-vous pastoral — Prénom Nom ». **À valider** (écart de
-  formulation avec la spec).
+  `subject` : il devient « Rendez-vous pastoral — Prénom Nom ». **Validé**, spec mise à jour.
 - **Choix** : événement émis **dans la transaction** de la soumission — *Pourquoi* : l'ADR-0015
   demandait que la création côté `care` ne fasse pas échouer la soumission. Mais une création
   différée qui échoue perd silencieusement un appel au salut, exactement ce que la spec veut
@@ -350,6 +365,7 @@ Unitaires Vitest, sans base, sur les fonctions pures ; migrations rejouées sur 
 - **Intake** : un appel au salut crée un suivi, un soin pastoral une demande ; double émission →
   une seule création ; `care` absent → rien n'est créé.
 - **Routes** : exhaustivité (`routes-exhaustivite.test.ts`), sécurité et captcha du formulaire
-  public repris de `agenda`.
+  public repris de `agenda` ; les deux sources (public, compte) créent une demande identique à
+  l'état reçu ; `mine` ne renvoie que les demandes de l'appelant, sans accompagnant.
 - **Migrations** : jeu de données local — rôle renommé, lien d'accueil repris, identité des suivis
   recopiée, rattrapage limité aux demandes non archivées sans suivi.
