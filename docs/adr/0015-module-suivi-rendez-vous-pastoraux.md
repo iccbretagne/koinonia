@@ -117,9 +117,10 @@ Principes de collaboration :
   pastoral ni de suivis de nouveaux convertis. Le formulaire d'accueil ne doit alors plus proposer
   « soin pastoral » ; l'appel au salut reste enregistré sur la demande d'accueil, sans suivi.
   L'agenda pastoral reste utilisable pour la saisie directe.
-- **Contrainte** : la création d'une demande en réaction à un événement ne doit pas faire échouer
-  la soumission du formulaire d'accueil ; la stratégie (même transaction ou non, reprise en cas
-  d'échec) est à trancher dans le plan de la spec 052.
+- **Contrainte** : la création d'une demande en réaction à l'événement d'`integration` se fait
+  **dans la transaction** de la soumission du formulaire d'accueil (plan 052). Un échec fait
+  échouer la soumission, visiblement, plutôt que de perdre en silence un appel au salut ou une
+  demande de soin pastoral. Les index uniques côté `care` rendent la création idempotente.
 
 ## Références
 
