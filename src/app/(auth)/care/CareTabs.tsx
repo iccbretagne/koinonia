@@ -3,8 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import AssigneeSelect, { type AssigneeValue } from "./AssigneeSelect";
 
-interface Profile { id: string; name: string; role: string }
+const REJECT_REASON_OPTIONS: [string, string][] = [
+  ["OUT_OF_SCOPE", "Hors du champ pastoral"],
+  ["DUPLICATE", "Doublon"],
+  ["WITHDRAWN", "Demande retirée par la personne"],
+  ["UNREACHABLE", "Injoignable"],
+  ["REDIRECTED", "Orientée vers un autre service"],
+  ["OTHER", "Autre"],
+];
+
 interface Requester { id: string; name: string | null; displayName: string | null }
 interface AppointmentRequestItem {
   id: string;
@@ -34,14 +43,7 @@ interface Props {
   readonly canQualify: boolean;
   readonly requests: AppointmentRequestItem[];
   readonly followUps: FollowUpItem[];
-  readonly profiles: Profile[];
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  PASTEUR: "Pasteur",
-  ASSISTANT_PASTEUR: "Assistante Pasteur",
-  BERGER: "Berger",
-};
 
 const REQUEST_STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
@@ -77,32 +79,29 @@ const MSDP_STATUS_COLORS: Record<string, string> = {
   ABANDONED: "bg-red-100 text-red-600",
 };
 
-function QualifyForm({ req, profiles, onDone }: {
+function QualifyForm({ req, churchId, onDone }: {
   readonly req: AppointmentRequestItem;
-  readonly profiles: Profile[];
+  readonly churchId: string;
   readonly onDone: (id: string) => void;
 }) {
-  const [assignedToId, setAssignedToId] = useState("");
-  const [qualificationNote, setQualificationNote] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
+  const [assignee, setAssignee] = useState<AssigneeValue | null>(null);
+  const [note, setNote] = useState("");
+  const [rejectMode, setRejectMode] = useState(false);
+  const [reasonCode, setReasonCode] = useState("");
+  const [comment, setComment] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  async function act(action: "validate" | "reject") {
-    if (action === "validate" && !assignedToId) {
-      alert("Veuillez sélectionner un profil pastoral.");
+  async function validate() {
+    if (!assignee) {
+      alert("Veuillez sélectionner un accompagnant.");
       return;
     }
-    if (action === "reject" && !confirm("Rejeter définitivement cette demande ?")) return;
     setProcessing(true);
     try {
       const res = await fetch(`/api/care/requests/${req.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          action === "validate"
-            ? { action: "validate", assignedToId, qualificationNote: qualificationNote || null }
-            : { action: "reject", rejectReason: rejectReason || null }
-        ),
+        body: JSON.stringify({ action: "validate", assignee, note: note || undefined }),
       });
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
       onDone(req.id);
@@ -110,52 +109,85 @@ function QualifyForm({ req, profiles, onDone }: {
     finally { setProcessing(false); }
   }
 
+  async function reject() {
+    if (!reasonCode) { alert("Veuillez sélectionner un motif."); return; }
+    if (!confirm("Rejeter définitivement cette demande ?")) return;
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/care/requests/${req.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", reasonCode, comment: comment || undefined }),
+      });
+      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      onDone(req.id);
+    } catch { alert("Erreur réseau"); }
+    finally { setProcessing(false); }
+  }
+
+  if (rejectMode) {
+    return (
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Motif de refus <span className="text-red-500">*</span>
+          </label>
+          <select
+            value={reasonCode}
+            onChange={(e) => setReasonCode(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+          >
+            <option value="">— Sélectionner —</option>
+            {REJECT_REASON_OPTIONS.map(([code, label]) => (
+              <option key={code} value={code}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Commentaire (optionnel)</label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={2}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="danger" onClick={reject} disabled={processing}>Confirmer le refus</Button>
+          <Button size="sm" variant="secondary" onClick={() => setRejectMode(false)}>Annuler</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">
-          Profil pastoral <span className="text-red-500">*</span>
+          Accompagnant <span className="text-red-500">*</span>
         </label>
-        <select
-          value={assignedToId}
-          onChange={(e) => setAssignedToId(e.target.value)}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
-        >
-          <option value="">— Sélectionner —</option>
-          {profiles.map((p) => (
-            <option key={p.id} value={p.id}>{p.name} ({ROLE_LABELS[p.role] ?? p.role})</option>
-          ))}
-        </select>
+        <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">
           Note transmise à l&apos;accompagnant (optionnel)
         </label>
         <textarea
-          value={qualificationNote}
-          onChange={(e) => setQualificationNote(e.target.value)}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
           rows={2}
           className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
         />
       </div>
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">Motif de refus (si applicable)</label>
-        <input
-          type="text"
-          value={rejectReason}
-          onChange={(e) => setRejectReason(e.target.value)}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
-        />
-      </div>
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => act("validate")} disabled={processing}>✓ Confier</Button>
-        <Button size="sm" variant="danger" onClick={() => act("reject")} disabled={processing}>Rejeter</Button>
+        <Button size="sm" onClick={validate} disabled={processing}>✓ Confier</Button>
+        <Button size="sm" variant="danger" onClick={() => setRejectMode(true)} disabled={processing}>Rejeter</Button>
       </div>
     </div>
   );
 }
 
-function RequestsTab({ requests: initial, profiles }: { readonly requests: AppointmentRequestItem[]; readonly profiles: Profile[] }) {
+function RequestsTab({ requests: initial, churchId }: { readonly requests: AppointmentRequestItem[]; readonly churchId: string }) {
   const [requests, setRequests] = useState(initial);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -185,7 +217,7 @@ function RequestsTab({ requests: initial, profiles }: { readonly requests: Appoi
                 {expanded === req.id ? (
                   <QualifyForm
                     req={req}
-                    profiles={profiles}
+                    churchId={churchId}
                     onDone={(id) => { setRequests((prev) => prev.filter((r) => r.id !== id)); setExpanded(null); }}
                   />
                 ) : (
@@ -253,7 +285,7 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
   );
 }
 
-export default function CareTabs({ canQualify, requests, followUps, profiles }: Props) {
+export default function CareTabs({ canQualify, requests, followUps, churchId }: Props) {
   const [tab, setTab] = useState<"requests" | "followups">("requests");
 
   return (
@@ -281,7 +313,7 @@ export default function CareTabs({ canQualify, requests, followUps, profiles }: 
         </button>
       </div>
       {tab === "requests" ? (
-        <RequestsTab requests={requests} profiles={profiles} />
+        <RequestsTab requests={requests} churchId={churchId} />
       ) : (
         <FollowupsTab followUps={followUps} />
       )}

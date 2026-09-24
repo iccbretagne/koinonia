@@ -5,18 +5,24 @@ export type { CareAccess } from "./auth";
 
 export {
   appointmentSubmitSchema,
-  appointmentPatchSchema,
   submitAppointmentRequest,
   listAppointmentRequests,
   getAppointmentRequestById,
   getAppointmentSummaryBySourceRequestId,
-  validateAppointmentRequest,
-  rejectAppointmentRequest,
+  listMyRequests,
+  applyAppointmentTransition,
   markAppointmentScheduled,
   revertAppointmentToValidated,
   updateAppointmentScheduledFor,
 } from "./services/appointments";
-export type { AppointmentSubmitInput, AppointmentPatchBody } from "./services/appointments";
+export type { AppointmentSubmitInput } from "./services/appointments";
+
+export {
+  appointmentPatchSchema,
+  REJECT_REASON_CODES,
+  REJECT_REASON_LABELS,
+} from "./services/appointment-state";
+export type { AppointmentPatchBody } from "./services/appointment-state";
 
 export {
   msdpPatchSchema,
@@ -24,16 +30,24 @@ export {
   isIntegrationTeamMember,
   hasFollowupManagementAccess,
   canStartFollowUp,
-  computeMsdpTransitionData,
   listMsdpFollowUps,
   getMsdpFollowUpById,
   getMsdpFollowUpByIntegrationRequestId,
-  applyMsdpTransition,
+  applyFollowupTransition,
+  createFollowUpFromAppointmentOrientation,
   startMsdpFollowUpFromIntegrationRequest,
   listMsdpCounselors,
   runMsdpInactivityNotifications,
 } from "./services/followups";
 export type { MsdpPatchBody } from "./services/followups";
+
+export {
+  resolveAssignee,
+  assertExclusiveAssignment,
+  isCurrentAssignee,
+  listAssignableProfiles,
+} from "./services/assignee";
+export type { AssigneeSelection, ResolvedAssignee } from "./services/assignee";
 
 export {
   NEUTRAL_REQUEST_LABEL,
@@ -42,6 +56,12 @@ export {
   projectForScheduling,
 } from "./services/projection";
 export type { RequestReaderAccess, ProjectedRequest } from "./services/projection";
+
+export { getCareHistory, getItemChurchId, recordCareHistory } from "./services/history";
+export type { CareHistoryEntry } from "./services/history";
+
+export { listRelatedItems } from "./services/related";
+export type { RelatedItem } from "./services/related";
 
 export { handleIntegrationSubmitted } from "./services/intake";
 export type { IntegrationRequestSubmittedPayload } from "./services/intake";

@@ -14,16 +14,20 @@ export interface RequestReaderAccess {
 }
 
 /**
- * `canQualify` (référent, Admin, Super Admin) ou accompagnant en charge (le profil pastoral
- * assigné est rattaché au compte du lecteur) donnent accès au contenu.
+ * `canQualify` (référent, Admin, Super Admin) ou accompagnant en charge — le profil pastoral
+ * assigné est rattaché au compte du lecteur, ou le lecteur est le membre du MSDP directement
+ * affecté (spec 052, lot 2 : les deux populations d'accompagnants) — donnent accès au contenu.
  */
 export function resolveRequestReaderAccess(params: {
   canQualify: boolean;
   currentUserId: string;
   assignedToUserId: string | null | undefined;
+  assignedMemberId?: string | null | undefined;
 }): RequestReaderAccess {
-  const { canQualify, currentUserId, assignedToUserId } = params;
-  const isCurrentAssignee = !!assignedToUserId && assignedToUserId === currentUserId;
+  const { canQualify, currentUserId, assignedToUserId, assignedMemberId } = params;
+  const isCurrentAssignee =
+    (!!assignedToUserId && assignedToUserId === currentUserId) ||
+    (!!assignedMemberId && assignedMemberId === currentUserId);
   return { canReadContent: canQualify || isCurrentAssignee };
 }
 

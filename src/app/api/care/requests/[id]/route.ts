@@ -1,13 +1,10 @@
 import { requireAuth, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { logAudit } from "@/lib/audit";
 import {
-  requireCareQualify,
   getCareAccess,
   appointmentPatchSchema,
   getAppointmentRequestById,
-  validateAppointmentRequest,
-  rejectAppointmentRequest,
+  applyAppointmentTransition,
   resolveRequestReaderAccess,
   projectRequest,
 } from "@/modules/care";
@@ -29,9 +26,12 @@ export async function GET(
       canQualify: access.canQualify,
       currentUserId: access.userId,
       assignedToUserId: item.assignedTo?.userId ?? null,
+      assignedMemberId: item.assignedMemberId,
     });
 
-    if (!access.canOverview && !readerAccess.canReadContent) throw new Error("FORBIDDEN");
+    const isCurrentAssignee =
+      item.assignedMemberId === access.userId || item.assignedTo?.userId === access.userId;
+    if (!access.canOverview && !isCurrentAssignee) throw new Error("FORBIDDEN");
 
     return successResponse(projectRequest(item, readerAccess));
   } catch (error) {
@@ -39,6 +39,11 @@ export async function GET(
   }
 }
 
+/**
+ * Actions validate/reject/reassign/set_date/outcome/handback (spec 052, lot 2) — le droit par
+ * action est entièrement porté par la machine à états pure (`appointment-state.ts`) : pas de
+ * garde supplémentaire ici au-delà de l'authentification.
+ */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -46,46 +51,17 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("appointmentRequest", id);
-    const session = await requireCareQualify(churchId);
+    const session = await requireAuth();
+    const access = await getCareAccess(session, churchId);
 
     const body = appointmentPatchSchema.parse(await request.json());
 
-    if (body.action === "validate") {
-      const updated = await validateAppointmentRequest({
-        id,
-        churchId,
-        assignedToId: body.assignedToId,
-        qualificationNote: body.qualificationNote ?? null,
-        actorId: session.user.id!,
-      });
-
-      await logAudit({
-        userId: session.user.id,
-        churchId,
-        action: "UPDATE",
-        entityType: "AppointmentRequest",
-        entityId: id,
-        details: { transition: "PENDING→VALIDATED", assignedToId: body.assignedToId },
-      });
-
-      return successResponse(updated);
-    }
-
-    // reject
-    const updated = await rejectAppointmentRequest({
+    const updated = await applyAppointmentTransition({
       id,
       churchId,
-      rejectReason: body.rejectReason ?? null,
+      body,
       actorId: session.user.id!,
-    });
-
-    await logAudit({
-      userId: session.user.id,
-      churchId,
-      action: "UPDATE",
-      entityType: "AppointmentRequest",
-      entityId: id,
-      details: { transition: "PENDING→REJECTED", rejectReason: body.rejectReason ?? null },
+      isReferent: access.canQualify,
     });
 
     return successResponse(updated);

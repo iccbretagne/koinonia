@@ -1,5 +1,4 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
   getCareAccess,
   listAppointmentRequests,
@@ -28,19 +27,18 @@ export default async function CarePage() {
     );
   }
 
-  const [allRequests, allFollowUps, profiles] = await Promise.all([
+  const [allRequests, allFollowUps] = await Promise.all([
     listAppointmentRequests(churchId, ["PENDING", "VALIDATED", "SCHEDULED", "CLOSED", "REJECTED"]),
     listMsdpFollowUps(churchId),
-    prisma.pastoralProfile.findMany({
-      where: { churchId },
-      select: { id: true, name: true, role: true },
-      orderBy: [{ role: "asc" }, { name: "asc" }],
-    }),
   ]);
 
   const requests = access.canOverview
     ? allRequests
-    : allRequests.filter((r) => r.assignedTo && access.ownProfileIds.includes(r.assignedTo.id));
+    : allRequests.filter(
+        (r) =>
+          (r.assignedTo && access.ownProfileIds.includes(r.assignedTo.id)) ||
+          r.assignedMemberId === access.userId
+      );
 
   const projectedRequests = requests.map((r) =>
     projectRequest(
@@ -49,13 +47,18 @@ export default async function CarePage() {
         canQualify: access.canQualify,
         currentUserId: access.userId,
         assignedToUserId: r.assignedTo?.userId ?? null,
+        assignedMemberId: r.assignedMemberId,
       })
     )
   );
 
   const followUps = access.canOverview
     ? allFollowUps
-    : allFollowUps.filter((f) => f.assignedConseillerMsdpId === access.userId);
+    : allFollowUps.filter(
+        (f) =>
+          f.assignedConseillerMsdpId === access.userId ||
+          (f.assignedProfile && access.ownProfileIds.includes(f.assignedProfile.id))
+      );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -68,7 +71,6 @@ export default async function CarePage() {
         canQualify={access.canQualify}
         requests={projectedRequests}
         followUps={followUps}
-        profiles={profiles}
       />
     </div>
   );

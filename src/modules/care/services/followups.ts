@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
@@ -6,33 +5,21 @@ import { sendEmail } from "@/lib/email";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { getCareAccess } from "../auth";
+import { resolveAssignee, type ResolvedAssignee } from "./assignee";
+import { computeFollowupTransitionData, type FollowupActor, type FollowupPatchBody } from "./followup-state";
+import { recordCareHistory } from "./history";
+import { notifyAssigneeAssigned, notifyAssigneeUnassigned, notifyReferentsHandback } from "./notifications";
 
 /**
- * Reprise à l'identique du suivi des nouveaux convertis MSDP (ex-`integration`, spec 052/lot 1) :
- * même schéma de transitions, mêmes notifications, mêmes rappels d'inactivité. Seul l'accès
- * change de garde (`getCareAccess`, T7) — sans reprendre l'approximation de rôle
- * `members:manage`/`events:manage` de l'ancien `hasMsdpManagementAccess` (décision #583).
- * L'affectation à un profil pastoral, l'identité propre et le rapprochement de parcours
- * arrivent au lot 2 ; le suivi garde ici son affectation à un membre du MSDP uniquement.
+ * Suivi des nouveaux convertis MSDP (ex-`integration`, spec 052). L'accès passe par
+ * `getCareAccess` (T7), sans reprendre l'approximation de rôle `members:manage`/`events:manage`
+ * de l'ancien `hasMsdpManagementAccess` (décision #583). Depuis le lot 2, l'affectation choisit
+ * entre profil pastoral et membre du MSDP (`followup-state.ts`), réservée au référent ; les
+ * étapes de suivi sont réservées à l'accompagnant en charge.
  */
 
-export const msdpPatchSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("assign_counselor"),
-    counselorId: z.string().min(1),
-  }),
-  z.object({ action: z.literal("contact") }),
-  z.object({ action: z.literal("in_formation") }),
-  z.object({ action: z.literal("complete") }),
-  z.object({ action: z.literal("abandon") }),
-  z.object({ action: z.literal("reopen") }),
-  z.object({
-    action: z.literal("note"),
-    notes: z.string().max(10000),
-  }),
-]);
-
-export type MsdpPatchBody = z.infer<typeof msdpPatchSchema>;
+export type { FollowupPatchBody as MsdpPatchBody } from "./followup-state";
+export { followupPatchSchema as msdpPatchSchema } from "./followup-state";
 
 // ─── Access control ──────────────────────────────────────────────────────────
 
@@ -82,51 +69,11 @@ export async function canStartFollowUp(session: Session, churchId: string): Prom
   return isIntegrationTeamMember(session, churchId);
 }
 
-// ─── Transition logic ────────────────────────────────────────────────────────
-
-export function computeMsdpTransitionData(
-  followUp: { status: string },
-  body: MsdpPatchBody,
-  now: Date
-): Record<string, unknown> {
-  switch (body.action) {
-    case "assign_counselor":
-      return { status: "ASSIGNED", assignedConseillerMsdpId: body.counselorId, assignedAt: now };
-
-    case "contact":
-      if (followUp.status !== "ASSIGNED")
-        throw new ApiError(400, "Transition invalide : le suivi doit être ASSIGNED");
-      return { status: "CONTACTED", contactedAt: now };
-
-    case "in_formation":
-      if (followUp.status !== "CONTACTED")
-        throw new ApiError(400, "Transition invalide : le suivi doit être CONTACTED");
-      return { status: "IN_FORMATION", inFormationAt: now };
-
-    case "complete":
-      if (followUp.status !== "IN_FORMATION")
-        throw new ApiError(400, "Transition invalide : le suivi doit être IN_FORMATION");
-      return { status: "COMPLETED", completedAt: now };
-
-    case "abandon":
-      if (followUp.status === "COMPLETED")
-        throw new ApiError(400, "Impossible d'abandonner un suivi terminé");
-      return { status: "ABANDONED", abandonedAt: now };
-
-    case "reopen":
-      if (followUp.status !== "ABANDONED")
-        throw new ApiError(400, "Seul un suivi abandonné peut être rouvert");
-      return { status: "SUBMITTED", abandonedAt: null };
-
-    case "note":
-      return { notes: body.notes };
-  }
-}
-
 // ─── Services ─────────────────────────────────────────────────────────────────
 
 const FOLLOWUP_INCLUDE = {
   assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
+  assignedProfile: { select: { id: true, name: true, role: true, userId: true } },
   request: { select: { id: true, firstName: true, lastName: true } },
 } as const;
 
@@ -189,33 +136,113 @@ export async function startMsdpFollowUpFromIntegrationRequest(params: {
   });
 }
 
-export async function applyMsdpTransition(params: {
+/**
+ * Issue « orienté vers un suivi de nouveau converti » (T41) : un rendez-vous clôturé avec
+ * l'issue `REFERRED_TO_FOLLOWUP` fait naître un suivi, avec l'identité et le dossier de
+ * parcours du rendez-vous. Idempotent (`sourceAppointmentId` unique) : une réémission ne crée
+ * rien de plus.
+ */
+export async function createFollowUpFromAppointmentOrientation(params: {
+  appointmentId: string;
+  churchId: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string | null;
+  personJourneyId: string | null;
+}) {
+  return prisma.msdpFollowUp.upsert({
+    where: { sourceAppointmentId: params.appointmentId },
+    update: {},
+    create: {
+      churchId: params.churchId,
+      sourceAppointmentId: params.appointmentId,
+      firstName: params.firstName,
+      lastName: params.lastName,
+      phone: params.phone,
+      email: params.email,
+      personJourneyId: params.personJourneyId,
+      status: "SUBMITTED",
+    },
+  });
+}
+
+/**
+ * Applique une transition (assign/reassign/contact/in_formation/complete/abandon/reopen/
+ * handback/note), calcule les notifications et journalise l'historique (T40, T42, T43).
+ */
+export async function applyFollowupTransition(params: {
   id: string;
   churchId: string;
-  body: MsdpPatchBody;
+  body: FollowupPatchBody;
   actorId: string;
+  isReferent: boolean;
 }) {
-  const { id, churchId, body, actorId } = params;
+  const { id, churchId, body, actorId, isReferent } = params;
 
   const existing = await prisma.msdpFollowUp.findFirst({
     where: { id, churchId },
-    select: { status: true },
+    include: FOLLOWUP_INCLUDE,
   });
   if (!existing) throw new ApiError(404, "Suivi introuvable");
 
-  const data = computeMsdpTransitionData(existing, body, new Date());
+  const currentAssigneeUserId = existing.assignedConseillerMsdpId ?? existing.assignedProfile?.userId ?? null;
+  const isCurrentAssignee = !!currentAssigneeUserId && currentAssigneeUserId === actorId;
+
+  const actor: FollowupActor = { isReferent, isCurrentAssignee };
+
+  let assignee: ResolvedAssignee | null = null;
+  if (body.action === "assign" || body.action === "reassign") {
+    assignee = await resolveAssignee(churchId, body.assignee);
+  }
+
+  const now = new Date();
+  const result = computeFollowupTransitionData(
+    {
+      status: existing.status,
+      assignedProfileId: existing.assignedProfileId,
+      assignedConseillerMsdpId: existing.assignedConseillerMsdpId,
+    },
+    body,
+    actor,
+    now,
+    actorId,
+    assignee
+  );
+
   const updated = await prisma.msdpFollowUp.update({
     where: { id },
-    data: { ...data, assignedById: body.action === "assign_counselor" ? actorId : undefined },
+    data: result.data,
     include: FOLLOWUP_INCLUDE,
   });
 
-  if (body.action === "assign_counselor") {
-    await notifyMsdpCounselorAssigned({
-      counselorId: body.counselorId,
-      followUpId: id,
-      personName: `${updated.firstName} ${updated.lastName}`,
-      appUrl: process.env.NEXTAUTH_URL ?? "",
+  const personName = `${existing.firstName} ${existing.lastName}`;
+
+  await recordCareHistory({
+    userId: actorId,
+    churchId,
+    kind: "followups",
+    itemId: id,
+    action: body.action,
+    from: existing.status,
+    to: typeof result.data.status === "string" ? result.data.status : existing.status,
+    assignee: assignee?.name ?? null,
+    note: body.action === "handback" ? body.reason : body.action === "note" ? body.notes : null,
+  });
+
+  if (result.notifyAssigned) {
+    await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "followups", itemId: id, personName });
+  }
+  if (result.notifyPreviousAssignee && currentAssigneeUserId) {
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, personName });
+  }
+  if (result.notifyReferents) {
+    await notifyReferentsHandback({
+      churchId,
+      kind: "followups",
+      itemId: id,
+      personName,
+      reason: body.action === "handback" ? body.reason : "",
     });
   }
 

@@ -1,10 +1,9 @@
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { logAudit } from "@/lib/audit";
 import {
-  hasFollowupManagementAccess,
+  getCareAccess,
   getMsdpFollowUpById,
-  applyMsdpTransition,
+  applyFollowupTransition,
   msdpPatchSchema,
 } from "@/modules/care";
 
@@ -18,9 +17,11 @@ export async function GET(
     if (!followUp) throw new ApiError(404, "Suivi MSDP introuvable");
 
     const session = await requireAuth();
-    const isManager = await hasFollowupManagementAccess(session, followUp.churchId);
-    const isCounselor = session.user.id === followUp.assignedConseillerMsdpId;
-    if (!isManager && !isCounselor) throw new ApiError(403, "Accès refusé");
+    const access = await getCareAccess(session, followUp.churchId);
+    const isCurrentAssignee =
+      session.user.id === followUp.assignedConseillerMsdpId ||
+      session.user.id === followUp.assignedProfile?.userId;
+    if (!access.canOverview && !isCurrentAssignee) throw new ApiError(403, "Accès refusé");
 
     return successResponse(followUp);
   } catch (error) {
@@ -28,8 +29,11 @@ export async function GET(
   }
 }
 
-const MANAGER_ONLY_ACTIONS = ["assign_counselor", "reopen"];
-
+/**
+ * Actions assign/reassign/contact/in_formation/complete/abandon/reopen/handback/note (spec
+ * 052, lot 2) — le droit par action est porté par la machine à états pure
+ * (`followup-state.ts`) : pas de garde supplémentaire ici au-delà de l'authentification.
+ */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -40,28 +44,16 @@ export async function PATCH(
     if (!followUp) throw new ApiError(404, "Suivi MSDP introuvable");
 
     const session = await requireAuth();
-    const isManager = await hasFollowupManagementAccess(session, followUp.churchId);
-    const isCounselor = session.user.id === followUp.assignedConseillerMsdpId;
-    if (!isManager && !isCounselor) throw new ApiError(403, "Accès refusé");
+    const access = await getCareAccess(session, followUp.churchId);
 
     const body = msdpPatchSchema.parse(await request.json());
-    if (MANAGER_ONLY_ACTIONS.includes(body.action) && !isManager)
-      throw new ApiError(403, "Cette action est réservée aux membres de l'équipe intégration");
 
-    const updated = await applyMsdpTransition({
+    const updated = await applyFollowupTransition({
       id,
       churchId: followUp.churchId,
       body,
       actorId: session.user.id!,
-    });
-
-    await logAudit({
-      userId: session.user.id,
-      churchId: followUp.churchId,
-      action: "UPDATE",
-      entityType: "MsdpFollowUp",
-      entityId: id,
-      details: { action: body.action },
+      isReferent: access.canQualify,
     });
 
     return successResponse(updated);

@@ -192,41 +192,41 @@
       des entrées antérieures (agenda `details.transition`, MSDP `{ action }`).
 - [ ] **T44** — `services/related.ts` : autres demandes et suivis du même dossier de parcours
       (sorte, date, état), projetés selon le lecteur.
-- [ ] **T45** — `listMyRequests(userId, churchId)` : demandes du demandeur, sans accompagnant.
+- [x] **T45** — `listMyRequests(userId, churchId)` : demandes du demandeur, sans accompagnant.
 
 ### 2.3 API
 
-- [ ] **T46** — `PATCH /api/care/requests/[id]` : actions `validate` (profil ou membre),
+- [x] **T46** — `PATCH /api/care/requests/[id]` : actions `validate` (profil ou membre),
       `reject` (motif), `reassign`, `set_date`, `outcome`, `handback`.
-- [ ] **T47** — `PATCH /api/care/followups/[id]` : `assign`/`reassign` (membre ou profil),
+- [x] **T47** — `PATCH /api/care/followups/[id]` : `assign`/`reassign` (membre ou profil),
       `handback`.
-- [ ] **T48** [P] — `GET /api/care/companions` : deux groupes, profils pastoraux (avec indicateur
+- [x] **T48** [P] — `GET /api/care/companions` : deux groupes, profils pastoraux (avec indicateur
       « sans compte ») et membres du MSDP.
-- [ ] **T49** [P] — `GET /api/care/items/[kind]/[id]/history` et `GET /api/care/requests/mine`.
+- [x] **T49** [P] — `GET /api/care/items/[kind]/[id]/history` et `GET /api/care/requests/mine`.
 
 ### 2.4 UI
 
-- [ ] **T50** — Sélecteur d'accompagnant (`Select` à deux groupes, mention « prévenu par email
+- [x] **T50** — Sélecteur d'accompagnant (`Select` à deux groupes, mention « prévenu par email
       seulement »), modales « Rejeter » (liste de motifs + commentaire), « Rendre au référent »
       (raison obligatoire), « Fixer la date » (membre du MSDP), « Issue du rendez-vous ».
-- [ ] **T51** — Fiches : message masqué hors `canReadContent`, frise d'historique (composant 051
+- [x] **T51** — Fiches : message masqué hors `canReadContent`, frise d'historique (composant 051
       déplacé dans `src/components/`), encart « Autres demandes de la personne », badge
       « Rendu par l'accompagnant ».
-- [ ] **T52** [P] — Vue « Mes demandes » de l'accompagnant dans `/care` (sans permission : ses
+- [x] **T52** [P] — Vue « Mes demandes » de l'accompagnant dans `/care` (sans permission : ses
       seules demandes).
-- [ ] **T53** [P] — « Mes demandes » du demandeur (`/requests`) : section « Rendez-vous
+- [x] **T53** [P] — « Mes demandes » du demandeur (`/requests`) : section « Rendez-vous
       pastoraux » (état, date, motif de rejet).
 
 ### 2.5 Tests du lot 2
 
-- [ ] **T54** [P] — `appointment-state.test.ts` : table complète des transitions et des droits
+- [x] **T54** [P] — `appointment-state.test.ts` : table complète des transitions et des droits
       (référent, accompagnant en charge, accompagnant dessaisi, tiers), motif de rejet
       obligatoire, cinq issues, retour au référent, invariant d'affectation.
-- [ ] **T55** [P] — `followup-state.test.ts` : affectation aux deux populations, retour, droits.
-- [ ] **T56** [P] — `notifications.test.ts` : affectation sans email réussie ; profil sans compte
+- [x] **T55** [P] — `followup-state.test.ts` : affectation aux deux populations, retour, droits.
+- [x] **T56** [P] — `notifications.test.ts` : affectation sans email réussie ; profil sans compte
       → email seul ; dessaisissement notifié ; protocole prévenu pour un profil, pas pour un
       membre ; demandeur prévenu de la date dans les deux cas.
-- [ ] **T57** [P] — `history.test.ts` et `related.test.ts` ; `mine` limité à l'appelant.
+- [x] **T57** [P] — `history.test.ts` et `related.test.ts` ; `mine` limité à l'appelant.
 - [ ] **T58** — Vérification complète du lot, migration T37 rejouée. PR lot 2 → base.
 
 ---

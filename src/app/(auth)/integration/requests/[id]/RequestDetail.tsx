@@ -3,7 +3,12 @@
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
-import RequestHistoryTimeline from "./RequestHistoryTimeline";
+import HistoryTimeline from "@/components/HistoryTimeline";
+
+const HISTORY_ACTION_LABELS: Record<string, string> = {
+  relance: "Relance consignée",
+  handback: "Renvoyée à l'intégration",
+};
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
@@ -104,6 +109,7 @@ interface MsdpFollowUpType {
   status: string;
   assignedConseillerMsdpId: string | null;
   assignedConseillerMsdp: { id: string; name: string | null; email: string | null } | null;
+  assignedProfile: { id: string; name: string } | null;
   assignedAt: Date | string | null;
   contactedAt: Date | string | null;
   inFormationAt: Date | string | null;
@@ -345,7 +351,11 @@ function MilestoneChips({
   );
 }
 
-// ── MSDP actions (tab content) ────────────────────────────────────────────────
+// ── MSDP summary (tab content) ──────────────────────────────────────────────
+// Résumé + lien vers /care/followups/[id] (spec 052, lot 2) : les actions de suivi (assigner,
+// contacter, clôturer…) vivent désormais uniquement sur la fiche care, seule à connaître la
+// machine à états à jour (deux populations d'accompagnants, motifs qualifiés) — pas de
+// duplication de logique ici.
 
 interface MsdpActionsProps {
   readonly followUp: MsdpFollowUpType | null;
@@ -359,79 +369,6 @@ interface MsdpActionsProps {
 function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, hideStatus = false }: MsdpActionsProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [msdpNotes, setMsdpNotes] = useState(followUp?.notes ?? "");
-  const [notesLoading, setNotesLoading] = useState(false);
-  const [pendingTransition, setPendingTransition] = useState<{
-    action: string;
-    label: string;
-    description: string;
-    variant?: "danger";
-  } | null>(null);
-  const [transitionLoading, setTransitionLoading] = useState(false);
-
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [counselors, setCounselors] = useState<{ id: string; name: string | null; email: string | null }[]>([]);
-  const [selectedCounselorId, setSelectedCounselorId] = useState("");
-  const [assignLoading, setAssignLoading] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [completeOpen, setCompleteOpen] = useState(false);
-  const [completeLoading, setCompleteLoading] = useState(false);
-
-  async function patch(body: Record<string, unknown>) {
-    if (!followUp) return false;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/care/followups/${followUp.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error ?? "Erreur"); return false; }
-      onFollowUpChange(json);
-      return true;
-    } catch { setError("Erreur réseau"); return false; }
-    finally { setLoading(false); }
-  }
-
-  async function openAssignModal() {
-    setAssignOpen(true);
-    setSelectedCounselorId(followUp?.assignedConseillerMsdpId ?? "");
-    setModalLoading(true);
-    try {
-      const res = await fetch(`/api/care/companions?churchId=${churchId}`);
-      const json = await res.json();
-      setCounselors(json?.msdpMembers ?? []);
-    } catch { /* ignore */ }
-    finally { setModalLoading(false); }
-  }
-
-  async function submitAssign() {
-    if (!selectedCounselorId) return;
-    setAssignLoading(true);
-    const ok = await patch({ action: "assign_counselor", counselorId: selectedCounselorId });
-    setAssignLoading(false);
-    if (ok) setAssignOpen(false);
-  }
-
-  async function submitComplete() {
-    setCompleteLoading(true);
-    const ok = await patch({ action: "complete" });
-    setCompleteLoading(false);
-    if (ok) setCompleteOpen(false);
-  }
-
-  async function saveMsdpNotes() {
-    if (!followUp) return;
-    setNotesLoading(true);
-    await patch({ action: "note", notes: msdpNotes });
-    setNotesLoading(false);
-  }
-
-  const isCounselor = followUp?.assignedConseillerMsdpId !== undefined;
-  const isAbandoned = followUp?.status === "ABANDONED";
-  const isCompleted = followUp?.status === "COMPLETED";
 
   if (!followUp) {
     return (
@@ -464,202 +401,35 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
     );
   }
 
+  const assigneeName = followUp.assignedConseillerMsdp?.name ?? followUp.assignedConseillerMsdp?.email
+    ?? followUp.assignedProfile?.name ?? null;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {!hideStatus && (
         <div className="flex flex-wrap items-center gap-3">
           <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${MSDP_STATUS_COLORS[followUp.status] ?? "bg-gray-100 text-gray-600"}`}>
             {MSDP_STATUS_LABELS[followUp.status] ?? followUp.status}
           </span>
-          {followUp.assignedConseillerMsdp && (
-            <span className="text-sm text-gray-600">
-              Conseiller : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>
-            </span>
+          {assigneeName && (
+            <span className="text-sm text-gray-600">Accompagnant : <strong>{assigneeName}</strong></span>
           )}
         </div>
       )}
-      {hideStatus && followUp.assignedConseillerMsdp && (
+      {hideStatus && assigneeName && (
         <p className="text-xs text-gray-500">
-          Conseiller : <strong className="text-gray-700">{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>
+          Accompagnant : <strong className="text-gray-700">{assigneeName}</strong>
         </p>
       )}
-
-      {/* Actions */}
-      {canAct && (
-        <div className="flex flex-wrap gap-2">
-          {(followUp.status === "SUBMITTED" || followUp.status === "ASSIGNED") && (
-            <button onClick={openAssignModal} disabled={loading}
-              className="px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {followUp.status === "ASSIGNED" ? "Réaffecter conseiller" : "Assigner conseiller"}
-            </button>
-          )}
-          {(followUp.status === "ASSIGNED" || isCounselor) && followUp.status === "ASSIGNED" && (
-            <button
-              onClick={() => setPendingTransition({
-                action: "contact",
-                label: "Marquer contacté",
-                description: "Confirmer que le premier contact a été établi avec la personne ?",
-              })}
-              disabled={loading}
-              className="px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Marquer contacté
-            </button>
-          )}
-          {followUp.status === "CONTACTED" && (
-            <button
-              onClick={() => setPendingTransition({
-                action: "in_formation",
-                label: "Passer en formation",
-                description: "Confirmer que la personne est maintenant en formation MSDP ?",
-              })}
-              disabled={loading}
-              className="px-3 py-1.5 bg-purple-700 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              En formation
-            </button>
-          )}
-          {followUp.status === "IN_FORMATION" && (
-            <button onClick={() => setCompleteOpen(true)} disabled={loading}
-              className="px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              Marquer terminé ✓
-            </button>
-          )}
-          {isAbandoned && (
-            <button
-              onClick={() => setPendingTransition({
-                action: "reopen",
-                label: "Rouvrir le suivi MSDP",
-                description: "Rouvrir ce suivi MSDP et le repasser en cours ?",
-              })}
-              disabled={loading}
-              className="px-3 py-1.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              Rouvrir
-            </button>
-          )}
-          {!isCompleted && !isAbandoned && (
-            <button
-              onClick={() => setPendingTransition({
-                action: "abandon",
-                label: "Abandonner le suivi MSDP",
-                description: "Marquer ce suivi MSDP comme abandonné ? Il pourra être rouvert si nécessaire.",
-                variant: "danger",
-              })}
-              disabled={loading}
-              className="px-3 py-1.5 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              Abandonner
-            </button>
-          )}
-        </div>
+      {followUp.notes && (
+        <p className="text-sm text-gray-600 whitespace-pre-line">{followUp.notes}</p>
       )}
-
-      {/* Notes MSDP */}
-      <div className="space-y-2">
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Notes MSDP</label>
-        {canAct ? (
-          <>
-            <textarea
-              value={msdpNotes}
-              onChange={(e) => setMsdpNotes(e.target.value)}
-              rows={4}
-              placeholder="Notes du conseiller MSDP…"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500 resize-none"
-            />
-            <div className="flex justify-end">
-              <button onClick={saveMsdpNotes} disabled={notesLoading}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
-                {notesLoading ? "Sauvegarde…" : "Enregistrer"}
-              </button>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-gray-600">{followUp.notes || <span className="text-gray-300 italic">Aucune note</span>}</p>
-        )}
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Assigner un conseiller MSDP">
-        {modalLoading ? (
-          <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Conseiller MSDP</label>
-              <select
-                value={selectedCounselorId}
-                onChange={(e) => setSelectedCounselorId(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
-              >
-                <option value="">Choisir un conseiller…</option>
-                {counselors.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name ?? c.email}</option>
-                ))}
-              </select>
-              {counselors.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">
-                  Aucun conseiller MSDP trouvé. Assurez-vous que des membres sont rattachés au département MSDP.
-                </p>
-              )}
-            </div>
-            <div className="flex gap-2 justify-end pt-1">
-              <button onClick={() => setAssignOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-              <button onClick={submitAssign} disabled={assignLoading || !selectedCounselorId}
-                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-                {assignLoading ? "Enregistrement…" : "Assigner"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal open={completeOpen} onClose={() => setCompleteOpen(false)} title="Clôturer le suivi MSDP">
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Le suivi MSDP sera marqué comme terminé. Les jalons du parcours peuvent être mis à jour
-            directement sur cette fiche ou depuis la section <strong>Parcours</strong>.
-          </p>
-          <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setCompleteOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-            <button onClick={submitComplete} disabled={completeLoading}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-              {completeLoading ? "Enregistrement…" : "Clôturer"}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        open={pendingTransition !== null}
-        onClose={() => setPendingTransition(null)}
-        title={pendingTransition?.label ?? ""}
+      <a
+        href={`/care/followups/${followUp.id}`}
+        className="inline-block text-sm font-medium text-icc-violet hover:underline"
       >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">{pendingTransition?.description}</p>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setPendingTransition(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
-              Annuler
-            </button>
-            <button
-              onClick={async () => {
-                if (!pendingTransition) return;
-                setTransitionLoading(true);
-                await patch({ action: pendingTransition.action });
-                setTransitionLoading(false);
-                setPendingTransition(null);
-              }}
-              disabled={transitionLoading}
-              className={`px-4 py-2 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-                pendingTransition?.variant === "danger" ? "bg-red-600" : "bg-purple-600"
-              }`}
-            >
-              {transitionLoading ? "Enregistrement…" : "Confirmer"}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        Voir et gérer le suivi →
+      </a>
     </div>
   );
 }
@@ -1191,7 +961,13 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         )}
       </div>
 
-      <RequestHistoryTimeline requestId={req.id} statusLabels={STATUS_LABELS} refreshKey={historyKey} />
+      <HistoryTimeline
+        fetchUrl={`/api/integration/requests/${req.id}/history`}
+        statusLabels={STATUS_LABELS}
+        actionLabels={HISTORY_ACTION_LABELS}
+        refreshKey={historyKey}
+        title="Historique des statuts"
+      />
 
       {/* ── Card 2 : Suivi MSDP — démarrable même sans appel au salut (#550) ── */}
       <div className="bg-white rounded-xl border border-purple-100 p-4 md:p-5 space-y-4">
