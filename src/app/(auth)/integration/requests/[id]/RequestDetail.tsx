@@ -3,11 +3,14 @@
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
+import RequestHistoryTimeline from "./RequestHistoryTimeline";
 
 // ── Labels ────────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
-  SUBMITTED:      "En attente",
+  SUBMITTED:      "Demande reçue",
+  WAITING_RECONTACT: "Attente de recontact",
+  WAITING_MISSION:   "Attente département mission",
   ASSIGNED:       "Assigné",
   CONTACTED:      "Contacté",
   WHATSAPP_ADDED: "Ajouté dans le groupe WhatsApp famille",
@@ -17,12 +20,26 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED:      "bg-amber-100 text-amber-800",
+  WAITING_RECONTACT: "bg-orange-100 text-orange-800",
+  WAITING_MISSION:   "bg-orange-100 text-orange-800",
   ASSIGNED:       "bg-blue-100 text-blue-800",
   CONTACTED:      "bg-indigo-100 text-indigo-800",
   WHATSAPP_ADDED: "bg-green-100 text-green-700",
   INTEGRATED:     "bg-emerald-100 text-emerald-800",
   ABANDONED:      "bg-red-100 text-red-600",
 };
+
+// Motifs d'abandon (spec 051) — miroir client de ABANDON_REASON_LABELS du module intégration.
+const ABANDON_REASON_OPTIONS = [
+  ["UNKNOWN_NUMBER", "Numéro inconnu ou erroné"],
+  ["UNREACHABLE", "Injoignable après relances"],
+  ["NO_LONGER_INTERESTED", "Ne souhaite plus être contacté·e"],
+  ["OTHER_CHURCH", "A rejoint une autre église"],
+  ["MOVED", "A déménagé"],
+  ["DUPLICATE", "Doublon"],
+  ["OTHER", "Autre"],
+] as const;
+const ABANDON_REASON_LABELS: Record<string, string> = Object.fromEntries(ABANDON_REASON_OPTIONS);
 
 const AGE_LABELS: Record<string, string> = {
   YOUTH:        "Jeune (−18 ans)",
@@ -114,6 +131,10 @@ interface Request {
   integratedAt: Date | string | null;
   abandonedAt: Date | string | null;
   abandonReason: string | null;
+  abandonReasonCode: string | null;
+  waitingFrom: string | null;
+  waitingSince: Date | string | null;
+  lastRelanceAt: Date | string | null;
   suggestedFamilyName: string | null;
   assignedFamilyId: number | null;
   assignedFamilyName: string | null;
@@ -143,6 +164,8 @@ interface Props {
   readonly churchId: string;
   readonly isScoped: boolean;
   readonly currentUserId: string;
+  /** Échéance de relance dépassée à l'ouverture de la fiche (spec 051). */
+  readonly relanceDue: boolean;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -643,7 +666,7 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
 
 type TabId = "contact" | "profil" | "famille" | "notes";
 
-export default function RequestDetail({ request: initial, churchId, isScoped, currentUserId }: Props) {
+export default function RequestDetail({ request: initial, churchId, isScoped, currentUserId, relanceDue: initialRelanceDue }: Props) {
   const router = useRouter();
   const [req, setReq] = useState(initial);
   const [loading, setLoading] = useState(false);
@@ -661,6 +684,20 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
     variant?: "danger";
   } | null>(null);
   const [transitionLoading, setTransitionLoading] = useState(false);
+
+  // États d'attente, relances, réouverture et historique (spec 051)
+  const [historyKey, setHistoryKey] = useState(0);
+  const [relanceDue, setRelanceDue] = useState(initialRelanceDue);
+  const [waitOpen, setWaitOpen] = useState(false);
+  const [waitKind, setWaitKind] = useState<"RECONTACT" | "MISSION">("RECONTACT");
+  const [waitNote, setWaitNote] = useState("");
+  const [relanceOpen, setRelanceOpen] = useState(false);
+  const [relanceNote, setRelanceNote] = useState("");
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [handbackOpen, setHandbackOpen] = useState(false);
+  const [handbackReason, setHandbackReason] = useState("");
+  const [abandonReasonCode, setAbandonReasonCode] = useState<string>("");
+  const [dialogLoading, setDialogLoading] = useState(false);
 
   // PersonJourney state
   const [journey, setJourney] = useState<PersonJourneyData | null>(initial.personJourney ?? null);
@@ -716,6 +753,8 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Erreur"); return false; }
       setReq((prev) => ({ ...prev, ...json }));
+      if (json.status !== "WAITING_RECONTACT" && json.status !== "WAITING_MISSION") setRelanceDue(false);
+      setHistoryKey((k) => k + 1);
       router.refresh();
       return true;
     } catch { setError("Erreur réseau"); return false; }
@@ -805,9 +844,40 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
 
   async function submitAbandon() {
     setAbandonLoading(true);
-    const ok = await patch({ action: "abandon", abandonReason: abandonReason || undefined });
+    if (!abandonReasonCode) return;
+    const ok = await patch({ action: "abandon", abandonReasonCode, abandonReason: abandonReason || undefined });
     setAbandonLoading(false);
-    if (ok) { setAbandonOpen(false); setAbandonReason(""); }
+    if (ok) { setAbandonOpen(false); setAbandonReason(""); setAbandonReasonCode(""); }
+  }
+
+  async function submitWait() {
+    setDialogLoading(true);
+    const ok = await patch({ action: "wait", waitingKind: waitKind, note: waitNote || undefined });
+    setDialogLoading(false);
+    if (ok) { setWaitOpen(false); setWaitNote(""); setRelanceDue(false); }
+  }
+
+  async function submitHandback() {
+    if (!handbackReason.trim()) return;
+    setDialogLoading(true);
+    const ok = await patch({ action: "handback", reason: handbackReason.trim() });
+    setDialogLoading(false);
+    // Le berger n'est plus en charge : retour à sa liste plutôt qu'une fiche qui ne le concerne plus.
+    if (ok) { setHandbackOpen(false); setHandbackReason(""); router.push("/integration/requests"); }
+  }
+
+  async function submitRelance() {
+    setDialogLoading(true);
+    const ok = await patch({ action: "relance", note: relanceNote || undefined });
+    setDialogLoading(false);
+    if (ok) { setRelanceOpen(false); setRelanceNote(""); setRelanceDue(false); }
+  }
+
+  async function submitReopen(mode: "resume" | "restart") {
+    setDialogLoading(true);
+    const ok = await patch({ action: "reopen", mode });
+    setDialogLoading(false);
+    if (ok) setReopenOpen(false);
   }
 
   async function submitEdit() {
@@ -833,15 +903,32 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
   const isAssignedBerger = req.assignedBerger?.id === currentUserId;
   const canActAsBerger = isIntegrationMember || isAssignedBerger;
   const isAbandoned = req.status === "ABANDONED";
+  const isWaiting = req.status === "WAITING_RECONTACT" || req.status === "WAITING_MISSION";
+  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
+  // « premier contact établi ». Lever/relancer : même règle, calculée sur le point d'entrée.
+  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
+  // « famille affectée » / « premier contact établi ». Lever/relancer : même règle, calculée sur
+  // le point d'entrée. Le département mission reste une décision de l'équipe (spec 051).
+  const isBergerStage = req.status === "ASSIGNED" || req.status === "CONTACTED";
+  const canWaitRecontact =
+    (req.status === "SUBMITTED" && isIntegrationMember) || (isBergerStage && canActAsBerger);
+  const canSendToMission = isIntegrationMember && (req.status === "SUBMITTED" || isBergerStage);
+  const canLiftWait =
+    isWaiting &&
+    (req.waitingFrom === "ASSIGNED" || req.waitingFrom === "CONTACTED" ? canActAsBerger : isIntegrationMember);
+  // Renvoi à l'équipe : action du berger en charge ; l'équipe, elle, réaffecte directement.
+  const canHandback = isBergerStage && isAssignedBerger;
+  // Pendant une attente, la frise reste positionnée sur l'étape d'où l'on vient.
+  const trackStatus = isWaiting && req.waitingFrom ? req.waitingFrom : req.status;
 
   // ── Timeline steps ───────────────────────────────────────────────────────────
 
   const integrationSteps: StepData[] = [
-    { label: "Soumise",     done: true,                                                                    current: req.status === "SUBMITTED",      ts: req.submittedAt },
-    { label: "Assignée",    done: ["ASSIGNED","CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(req.status), current: req.status === "ASSIGNED",   ts: req.assignedAt },
-    { label: "Contacté·e",  done: ["CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(req.status),        current: req.status === "CONTACTED",      ts: req.contactedAt },
-    { label: "WhatsApp",    done: ["WHATSAPP_ADDED","INTEGRATED"].includes(req.status),                    current: req.status === "WHATSAPP_ADDED", ts: req.whatsappAddedAt },
-    { label: "Intégré·e",   done: req.status === "INTEGRATED",                                            current: req.status === "INTEGRATED",     ts: req.integratedAt },
+    { label: "Soumise",     done: true,                                                                    current: trackStatus === "SUBMITTED",      ts: req.submittedAt },
+    { label: "Assignée",    done: ["ASSIGNED","CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus), current: trackStatus === "ASSIGNED",   ts: req.assignedAt },
+    { label: "Contacté·e",  done: ["CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),        current: trackStatus === "CONTACTED",      ts: req.contactedAt },
+    { label: "WhatsApp",    done: ["WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),                    current: trackStatus === "WHATSAPP_ADDED", ts: req.whatsappAddedAt },
+    { label: "Intégré·e",   done: trackStatus === "INTEGRATED",                                            current: trackStatus === "INTEGRATED",     ts: req.integratedAt },
   ];
 
   const msdpSteps: StepData[] | null = msdpFollowUp ? [
@@ -937,12 +1024,36 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
               <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold">✕</span>
               Abandonné{req.abandonedAt ? ` le ${fmt(req.abandonedAt)}` : ""}
             </div>
+            {req.abandonReasonCode && (
+              <p className="text-xs text-gray-600 pl-7">
+                Motif&nbsp;: {ABANDON_REASON_LABELS[req.abandonReasonCode] ?? req.abandonReasonCode}
+              </p>
+            )}
             {req.abandonReason && (
               <p className="text-xs text-gray-400 pl-7">{req.abandonReason}</p>
             )}
           </div>
         ) : (
           <TrackTimeline steps={integrationSteps} theme="violet" />
+        )}
+
+        {isWaiting && (
+          <div className="text-xs bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 space-y-0.5">
+            <p className="text-orange-800 font-medium">
+              {req.status === "WAITING_MISSION"
+                ? "En attente de la décision du département mission"
+                : "En attente de recontact"}
+              {req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}
+            </p>
+            {req.lastRelanceAt && (
+              <p className="text-orange-700">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
+            )}
+            {relanceDue && (
+              <p className="text-orange-900 font-semibold">
+                À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}
+              </p>
+            )}
+          </div>
         )}
 
         {(req.assignedFamilyName || req.assignedBerger?.name) && (
@@ -975,11 +1086,7 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
               )}
               {isIntegrationMember && req.status === "ABANDONED" && (
                 <button
-                  onClick={() => setPendingTransition({
-                    action: "reopen",
-                    label: "Rouvrir la demande",
-                    description: `Rouvrir la demande de ${req.firstName} ${req.lastName} ? Elle repassera en statut "En attente".`,
-                  })}
+                  onClick={() => setReopenOpen(true)}
                   disabled={loading}
                   className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
@@ -1025,6 +1132,52 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
                   Marquer intégré ✓
                 </button>
               )}
+              {canLiftWait && (
+                <button
+                  onClick={() => setRelanceOpen(true)}
+                  disabled={loading}
+                  className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  J&apos;ai relancé
+                </button>
+              )}
+              {canLiftWait && (
+                <button
+                  onClick={() => setPendingTransition({
+                    action: "resume",
+                    label: "Reprendre le suivi",
+                    description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${
+                      req.waitingFrom === "CONTACTED"
+                        ? "La demande reprendra à l'ajout au groupe de la famille."
+                        : req.waitingFrom === "ASSIGNED"
+                          ? "La demande reprendra au premier contact."
+                          : "La demande reprendra à l'affectation d'une famille."
+                    }`,
+                  })}
+                  disabled={loading}
+                  className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  Reprendre le suivi
+                </button>
+              )}
+              {canWaitRecontact && (
+                <button onClick={() => { setWaitKind("RECONTACT"); setWaitOpen(true); }} disabled={loading}
+                  className="px-4 py-2 bg-white text-orange-700 border border-orange-200 text-sm font-medium rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors">
+                  À recontacter plus tard
+                </button>
+              )}
+              {canSendToMission && (
+                <button onClick={() => { setWaitKind("MISSION"); setWaitOpen(true); }} disabled={loading}
+                  className="px-4 py-2 bg-white text-orange-700 border border-orange-200 text-sm font-medium rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors">
+                  Transmettre au département mission
+                </button>
+              )}
+              {canHandback && (
+                <button onClick={() => setHandbackOpen(true)} disabled={loading}
+                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                  Renvoyer à l&apos;intégration
+                </button>
+              )}
               {canActAsBerger && req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
                 <button onClick={() => setAbandonOpen(true)} disabled={loading}
                   className="px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
@@ -1035,6 +1188,8 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
           </div>
         )}
       </div>
+
+      <RequestHistoryTimeline requestId={req.id} statusLabels={STATUS_LABELS} refreshKey={historyKey} />
 
       {/* ── Card 2 : Suivi MSDP — démarrable même sans appel au salut (#550) ── */}
       <div className="bg-white rounded-xl border border-purple-100 p-4 md:p-5 space-y-4">
@@ -1455,8 +1610,26 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
           <p className="text-sm text-gray-600">
             Cette demande sera marquée comme abandonnée. Elle pourra être rouverte si nécessaire.
           </p>
+          <fieldset className="space-y-1.5">
+            <legend className="block text-sm font-medium text-gray-700 mb-1">
+              Motif <span className="text-red-500">*</span>
+            </legend>
+            {ABANDON_REASON_OPTIONS.map(([value, label]) => (
+              <label key={value} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="abandonReasonCode"
+                  value={value}
+                  checked={abandonReasonCode === value}
+                  onChange={() => setAbandonReasonCode(value)}
+                  className="accent-icc-violet"
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Raison (facultatif)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
             <textarea
               value={abandonReason}
               onChange={(e) => setAbandonReason(e.target.value)}
@@ -1467,10 +1640,135 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setAbandonOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-            <button onClick={submitAbandon} disabled={abandonLoading}
+            <button onClick={submitAbandon} disabled={abandonLoading || !abandonReasonCode}
               className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {abandonLoading ? "Abandon…" : "Confirmer l'abandon"}
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* À recontacter plus tard / Transmettre au département mission (spec 051) */}
+      <Modal
+        open={waitOpen}
+        onClose={() => setWaitOpen(false)}
+        title={waitKind === "MISSION" ? "Transmettre au département mission" : "À recontacter plus tard"}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            {waitKind === "MISSION"
+              ? "L'adresse ne correspond à aucune famille d'impact : la décision revient au département mission."
+              : `${req.firstName} ${req.lastName} souhaite être recontacté·e plus tard, ou n'a pas pu être joint·e pour l'instant.`}{" "}
+            La demande sort de la file à traiter ; une alerte de relance sera émise à l&apos;équipe
+            intégration une fois le délai écoulé.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
+            <textarea
+              value={waitNote}
+              onChange={(e) => setWaitNote(e.target.value)}
+              rows={2}
+              maxLength={1000}
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setWaitOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={submitWait} disabled={dialogLoading}
+              className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {dialogLoading ? "Enregistrement…" : "Confirmer"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Renvoyer à l'intégration (spec 051, amendement de recette) */}
+      <Modal open={handbackOpen} onClose={() => setHandbackOpen(false)} title="Renvoyer à l'équipe intégration">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Vous ne pouvez pas suivre {req.firstName} {req.lastName} ? La demande vous sera retirée,
+            ainsi qu&apos;à votre famille, et redeviendra une demande reçue à traiter par l&apos;équipe
+            intégration, qui sera prévenue.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Raison <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={handbackReason}
+              onChange={(e) => setHandbackReason(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="Ex : habite hors de notre secteur, plus proche d'une autre famille…"
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setHandbackOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={submitHandback} disabled={dialogLoading || !handbackReason.trim()}
+              className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {dialogLoading ? "Envoi…" : "Renvoyer à l'intégration"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* J'ai relancé (spec 051) */}
+      <Modal open={relanceOpen} onClose={() => setRelanceOpen(false)} title="J'ai relancé">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            {req.status === "WAITING_MISSION"
+              ? "Vous avez relancé le département mission."
+              : `Vous avez recontacté ${req.firstName} ${req.lastName}.`}{" "}
+            La demande reste en attente et le délai avant la prochaine alerte repart de zéro.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
+            <textarea
+              value={relanceNote}
+              onChange={(e) => setRelanceNote(e.target.value)}
+              rows={3}
+              maxLength={1000}
+              placeholder="Ex : message laissé sur répondeur…"
+              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setRelanceOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={submitRelance} disabled={dialogLoading}
+              className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              {dialogLoading ? "Enregistrement…" : "Consigner la relance"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Rouvrir (spec 051) */}
+      <Modal open={reopenOpen} onClose={() => setReopenOpen(false)} title="Rouvrir la demande">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Comment reprendre la demande de {req.firstName} {req.lastName} ?</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => submitReopen("resume")}
+              disabled={dialogLoading}
+              className="w-full text-left border-2 border-gray-200 hover:border-icc-violet rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+            >
+              <span className="block text-sm font-medium text-gray-800">Reprendre où elle en était</span>
+              <span className="block text-xs text-gray-500">La demande retrouve l&apos;état qui précédait son abandon.</span>
+            </button>
+            <button
+              onClick={() => submitReopen("restart")}
+              disabled={dialogLoading}
+              className="w-full text-left border-2 border-gray-200 hover:border-icc-violet rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+            >
+              <span className="block text-sm font-medium text-gray-800">Reprendre de zéro</span>
+              <span className="block text-xs text-gray-500">
+                La famille et le berger affectés sont retirés{req.assignedBerger?.name ? ` (${req.assignedBerger.name} en sera informé)` : ""}.
+              </span>
+            </button>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={() => setReopenOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
           </div>
         </div>
       </Modal>

@@ -1,8 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-import { requireIntegrationAccess, notifyBergerAssigned } from "@/modules/integration";
+import {
+  requireIntegrationAccess,
+  notifyBergerAssigned,
+  notifyBergerUnassigned,
+  notifyIntegrationTeamHandback,
+  familyPatchSchema,
+  computeFamilyTransitionData,
+  computeReopenData,
+  assertNoStaleAssignment,
+  recordStatusChange,
+  getRequestHistory,
+  ABANDON_REASON_LABELS,
+} from "@/modules/integration";
+import type { FamilyPatchBody } from "@/modules/integration";
 
 export async function GET(
   _request: Request,
@@ -36,36 +47,22 @@ export async function GET(
   }
 }
 
-const patchSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("assign"),
-    assignedFamilyId: z.number().int(),
-    assignedFamilyName: z.string().min(1),
-    assignedBergerId: z.string().min(1),
-  }),
-  z.object({ action: z.literal("contact") }),
-  z.object({ action: z.literal("whatsapp") }),
-  z.object({ action: z.literal("integrate") }),
-  z.object({
-    action: z.literal("abandon"),
-    abandonReason: z.string().max(500).optional(),
-  }),
-  z.object({
-    action: z.literal("note"),
-    notes: z.string().max(10000),
-  }),
-  z.object({ action: z.literal("reopen") }),
-  z.object({
-    action: z.literal("edit"),
-    firstName:    z.string().min(1).max(100).optional(),
-    lastName:     z.string().min(1).max(100).optional(),
-    phone:        z.string().min(1).max(30).optional(),
-    email:        z.string().email().optional().or(z.literal("")).optional(),
-    address:      z.string().max(500).optional().or(z.literal("")).optional(),
-    ageRange:     z.enum(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"]).optional(),
-    churchStatus: z.enum(["VISITOR", "REGULAR", "ENGAGED"]).optional(),
-  }),
-]);
+/** Précision portée par l'historique : note d'attente/relance, raison de renvoi, motif d'abandon. */
+function historyNote(body: FamilyPatchBody): string | null {
+  switch (body.action) {
+    case "wait":
+    case "relance":
+      return body.note ?? null;
+    case "handback":
+      return body.reason;
+    case "abandon":
+      return body.abandonReason
+        ? `${ABANDON_REASON_LABELS[body.abandonReasonCode]} — ${body.abandonReason}`
+        : ABANDON_REASON_LABELS[body.abandonReasonCode];
+    default:
+      return null;
+  }
+}
 
 export async function PATCH(
   request: Request,
@@ -84,6 +81,10 @@ export async function PATCH(
         assignedFamilyId: true,
         assignedFamilyName: true,
         assignedBergerId: true,
+        assignedAt: true,
+        contactedAt: true,
+        whatsappAddedAt: true,
+        waitingFrom: true,
       },
     });
     if (!req) throw new ApiError(404, "Demande introuvable");
@@ -93,115 +94,73 @@ export async function PATCH(
     if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
       throw new ApiError(403, "Accès refusé");
 
-    const isIntegrationMember = !scope.scoped;
-    const isAssignedBerger = req.assignedBergerId === session.user.id;
+    const actor = {
+      isIntegrationMember: !scope.scoped,
+      isAssignedBerger: req.assignedBergerId === session.user.id,
+    };
 
-    const body = patchSchema.parse(await request.json());
+    const body = familyPatchSchema.parse(await request.json());
     const now = new Date();
 
-    // Vérifications de rôle par action
-    const integrationMemberOnly = ["assign", "reopen"];
-    const bergerOrIntegrationMember = ["contact", "whatsapp", "integrate", "abandon", "note", "edit"];
-    if (integrationMemberOnly.includes(body.action) && !isIntegrationMember)
-      throw new ApiError(403, "Cette action est réservée aux membres de l'équipe intégration");
-    if (bergerOrIntegrationMember.includes(body.action) && !isIntegrationMember && !isAssignedBerger)
-      throw new ApiError(403, "Cette action est réservée au berger assigné ou à l'équipe intégration");
+    const transition =
+      body.action === "reopen"
+        ? computeReopenData(req, body.mode, await getRequestHistory(id), actor)
+        : computeFamilyTransitionData(req, body, actor, now);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let updateData: Record<string, any> = {};
-    let notifyBergerId: string | null = null;
-
-    switch (body.action) {
-      case "assign":
-        if (req.status !== "SUBMITTED" && req.status !== "ASSIGNED")
-          throw new ApiError(400, "Transition invalide : la demande doit être SUBMITTED ou ASSIGNED");
-        updateData = {
-          status: "ASSIGNED",
-          assignedFamilyId: body.assignedFamilyId,
-          assignedFamilyName: body.assignedFamilyName,
-          assignedBergerId: body.assignedBergerId,
-          assignedAt: now,
-        };
-        notifyBergerId = body.assignedBergerId;
-        break;
-
-      case "contact":
-        if (req.status !== "ASSIGNED")
-          throw new ApiError(400, "Transition invalide : la demande doit être ASSIGNED");
-        updateData = { status: "CONTACTED", contactedAt: now };
-        break;
-
-      case "whatsapp":
-        if (req.status !== "CONTACTED")
-          throw new ApiError(400, "Transition invalide : la demande doit être CONTACTED");
-        updateData = { status: "WHATSAPP_ADDED", whatsappAddedAt: now };
-        break;
-
-      case "integrate":
-        if (req.status !== "WHATSAPP_ADDED")
-          throw new ApiError(400, "Transition invalide : la demande doit être WHATSAPP_ADDED");
-        updateData = { status: "INTEGRATED", integratedAt: now };
-        break;
-
-      case "abandon":
-        if (req.status === "INTEGRATED")
-          throw new ApiError(400, "Impossible d'abandonner une demande déjà intégrée");
-        updateData = {
-          status: "ABANDONED",
-          abandonedAt: now,
-          abandonReason: body.abandonReason ?? null,
-        };
-        break;
-
-      case "note":
-        updateData = { notes: body.notes };
-        break;
-
-      case "reopen":
-        if (req.status !== "ABANDONED")
-          throw new ApiError(400, "Seule une demande abandonnée peut être rouverte");
-        updateData = {
-          status: "SUBMITTED",
-          abandonedAt: null,
-          abandonReason: null,
-        };
-        break;
-
-      case "edit":
-        updateData = {
-          ...(body.firstName    !== undefined && { firstName:    body.firstName }),
-          ...(body.lastName     !== undefined && { lastName:     body.lastName }),
-          ...(body.phone        !== undefined && { phone:        body.phone || null }),
-          ...(body.email        !== undefined && { email:        body.email || null }),
-          ...(body.address      !== undefined && { address:      body.address || null }),
-          ...(body.ageRange     !== undefined && { ageRange:     body.ageRange }),
-          ...(body.churchStatus !== undefined && { churchStatus: body.churchStatus }),
-        };
-        break;
-    }
+    assertNoStaleAssignment({
+      status: (transition.data.status as string | undefined) ?? req.status,
+      assignedFamilyId:
+        "assignedFamilyId" in transition.data
+          ? (transition.data.assignedFamilyId as number | null)
+          : req.assignedFamilyId,
+      assignedBergerId:
+        "assignedBergerId" in transition.data
+          ? (transition.data.assignedBergerId as string | null)
+          : req.assignedBergerId,
+    });
 
     const updated = await prisma.familyIntegrationRequest.update({
       where: { id },
-      data: updateData,
+      data: transition.data,
       include: {
         assignedBerger: { select: { id: true, name: true, email: true } },
       },
     });
 
-    await logAudit({
+    await recordStatusChange({
       userId: session.user.id,
       churchId: req.churchId,
-      action: "UPDATE",
-      entityType: "FamilyIntegrationRequest",
-      entityId: id,
-      details: { action: body.action },
+      requestId: id,
+      action: body.action,
+      from: req.status,
+      to: updated.status,
+      note: historyNote(body),
     });
 
+    if (body.action === "handback") {
+      await notifyIntegrationTeamHandback({
+        churchId: req.churchId,
+        requestId: id,
+        firstName: req.firstName,
+        lastName: req.lastName,
+        bergerName: session.user.name ?? null,
+        reason: body.reason,
+      });
+    }
+
+    if (transition.notifyUnassignedBergerId) {
+      await notifyBergerUnassigned({
+        bergerId: transition.notifyUnassignedBergerId,
+        firstName: req.firstName,
+        lastName: req.lastName,
+      });
+    }
+
     // Notifier le berger à l'affectation
-    if (notifyBergerId) {
+    if (transition.notifyAssignedBergerId) {
       const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
       await notifyBergerAssigned({
-        bergerId: notifyBergerId,
+        bergerId: transition.notifyAssignedBergerId,
         firstName: req.firstName,
         lastName: req.lastName,
         requestId: id,

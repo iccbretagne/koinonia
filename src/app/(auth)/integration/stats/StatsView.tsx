@@ -2,6 +2,8 @@
 
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Soumise",
+  WAITING_RECONTACT: "Attente recontact",
+  WAITING_MISSION: "Attente mission",
   ASSIGNED: "Affectée",
   CONTACTED: "Contactée",
   WHATSAPP_ADDED: "WhatsApp famille",
@@ -11,6 +13,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED: "bg-gray-400",
+  WAITING_RECONTACT: "bg-orange-300",
+  WAITING_MISSION: "bg-orange-500",
   ASSIGNED: "bg-blue-400",
   CONTACTED: "bg-yellow-400",
   WHATSAPP_ADDED: "bg-green-400",
@@ -20,11 +24,25 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_BADGE: Record<string, string> = {
   SUBMITTED: "bg-gray-100 text-gray-700 border-gray-200",
+  WAITING_RECONTACT: "bg-orange-50 text-orange-700 border-orange-200",
+  WAITING_MISSION: "bg-orange-50 text-orange-800 border-orange-300",
   ASSIGNED: "bg-blue-50 text-blue-700 border-blue-200",
   CONTACTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
   WHATSAPP_ADDED: "bg-green-50 text-green-700 border-green-200",
   INTEGRATED: "bg-icc-violet/10 text-icc-violet border-icc-violet/20",
   ABANDONED: "bg-red-50 text-red-700 border-red-200",
+};
+
+// Miroir client de ABANDON_REASON_LABELS (module intégration) : un composant client ne peut
+// pas importer l'index du module, qui tire des dépendances serveur.
+const ABANDON_REASON_LABELS: Record<string, string> = {
+  UNKNOWN_NUMBER: "Numéro inconnu",
+  UNREACHABLE: "Injoignable",
+  NO_LONGER_INTERESTED: "Ne souhaite plus",
+  OTHER_CHURCH: "Autre église",
+  MOVED: "A déménagé",
+  DUPLICATE: "Doublon",
+  OTHER: "Autre",
 };
 
 const AGE_LABELS: Record<string, string> = {
@@ -97,6 +115,8 @@ interface Props {
   readonly byFamily: { familyId: number | null; familyName: string; count: number }[];
   readonly byAgeRange: { ageRange: string; count: number }[];
   readonly byChurchStatus: { churchStatus: string; count: number }[];
+  /** `reason: null` = abandon antérieur à la spec 051, sans motif. */
+  readonly byAbandonReason: { reason: string | null; count: number }[];
   readonly byMonth: { month: string; count: number }[];
   readonly pastoralCare: number;
   readonly msdp: MsdpStats;
@@ -157,6 +177,7 @@ export default function StatsView({
   byFamily,
   byAgeRange,
   byChurchStatus,
+  byAbandonReason,
   byMonth,
   pastoralCare,
   msdp,
@@ -301,8 +322,23 @@ export default function StatsView({
           </div>
           <p className="text-sm text-red-700">
             <span className="font-semibold">{abandoned} demande{abandoned > 1 ? "s" : ""} abandonnée{abandoned > 1 ? "s" : ""}</span>
-            {" "}— consultez la liste des demandes pour analyser les raisons d&apos;abandon.
+            {" "}— répartition par motif ci-dessous.
           </p>
+        </div>
+      )}
+
+      {abandoned > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="font-semibold text-gray-900 mb-4">Motifs d&apos;abandon</h2>
+          <BarChart
+            data={[...byAbandonReason]
+              .sort((a, b) => b.count - a.count)
+              .map((r) => ({
+                label: r.reason ? (ABANDON_REASON_LABELS[r.reason] ?? r.reason) : "Sans motif (antérieur)",
+                count: r.count,
+              }))}
+            total={abandoned}
+          />
         </div>
       )}
 

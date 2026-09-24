@@ -367,11 +367,27 @@ const FEATURES: Feature[] = [
   // ── Intégration ──────────────────────────────────────────────────────────
   {
     name: "Demandes d'intégration (familles)",
-    description: "Suivez les demandes d'intégration de nouvelles familles depuis /integration/requests : assignez un berger, changez le statut. Accessible aussi, par appartenance de département (fonction Intégration) ou en tant que berger assigné, indépendamment du rôle global.",
+    description: "Suivez les demandes d'intégration de nouvelles familles depuis /integration/requests : assignez un berger, faites avancer le statut, filtrez les demandes en attente. L'étiquette « Adresse non rattachée » signale une adresse qu'aucune famille ne couvre. Accessible aussi, par appartenance de département (fonction Intégration) ou en tant que berger assigné, indépendamment du rôle global.",
     category: "Intégration",
     screenshotTitle: "Demandes d'intégration",
     screenshotFile: "guide-integration-demandes.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Attente, relances et renvoi d'une demande",
+    description: "Sur la fiche d'une demande, « À recontacter plus tard » (la personne souhaite être recontactée ultérieurement, ou reste injoignable pour l'instant) et « Transmettre au département mission » (adresse hors zone, réservé à l'équipe intégration) sortent la demande de la file « À traiter » sans la perdre. Une fois le délai réglé écoulé, la demande apparaît dans le bandeau « À relancer » et toute l'équipe intégration est notifiée ; après avoir relancé, cliquez « J'ai relancé » pour remettre le décompte à zéro, puis « Reprendre le suivi » quand la personne ou le département mission a répondu. Un berger peut mettre en attente les demandes qui lui sont confiées, ou les « Renvoyer à l'intégration » avec une raison s'il ne peut pas les suivre. Un abandon exige un motif (numéro inconnu, injoignable, ne souhaite plus être contacté·e…). Chaque changement est conservé dans l'historique en bas de fiche. Les nouveaux arrivants peuvent aussi choisir, dès le formulaire d'accueil, d'être recontactés plus tard.",
+    category: "Intégration",
+    screenshotTitle: "Attente et relances",
+    screenshotFile: "guide-integration-attente.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Paramètres intégration (délais de relance)",
+    description: "Depuis /integration/parametres, réglez les deux délais au-delà desquels une demande en attente est signalée comme à relancer : l'attente de recontact (60 jours par défaut) et l'attente du département mission (30 jours par défaut). Accessible à l'Admin, au Secrétaire et au responsable du département intégration.",
+    category: "Intégration",
+    screenshotTitle: "Paramètres intégration",
+    screenshotFile: "guide-integration-parametres.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Suivi MSDP (appel au salut)",
@@ -391,7 +407,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Parcours & statistiques d'intégration",
-    description: "Consultez le parcours d'intégration type et les statistiques (délais, taux de complétion) depuis /integration/parcours et /integration/stats.",
+    description: "Consultez le parcours d'intégration type et les statistiques (délais, taux de complétion, répartition des abandons par motif) depuis /integration/parcours et /integration/stats.",
     category: "Intégration",
     screenshotTitle: "Parcours et statistiques d'intégration",
     screenshotFile: "guide-integration-stats.png",

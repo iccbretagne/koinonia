@@ -1,5 +1,5 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -49,6 +49,8 @@ export default async function IntegrationRequestDetailPage({
   if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
     return notFound();
 
+  const relanceDue = isRelanceDue(req, await getIntegrationSettings(churchId), new Date());
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
@@ -63,6 +65,7 @@ export default async function IntegrationRequestDetailPage({
         churchId={churchId}
         isScoped={scope.scoped}
         currentUserId={session.user.id!}
+        relanceDue={relanceDue}
       />
     </div>
   );

@@ -5,7 +5,9 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 
 const STATUS_LABELS: Record<string, string> = {
-  SUBMITTED:      "En attente",
+  SUBMITTED:      "Reçue",
+  WAITING_RECONTACT: "Attente de recontact",
+  WAITING_MISSION:   "Attente département mission",
   ASSIGNED:       "Assigné",
   CONTACTED:      "Contacté",
   WHATSAPP_ADDED: "WhatsApp ajouté",
@@ -15,6 +17,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED:      "bg-amber-100 text-amber-800",
+  WAITING_RECONTACT: "bg-orange-100 text-orange-800",
+  WAITING_MISSION:   "bg-orange-100 text-orange-800",
   ASSIGNED:       "bg-blue-100 text-blue-800",
   CONTACTED:      "bg-indigo-100 text-indigo-800",
   WHATSAPP_ADDED: "bg-green-100 text-green-700",
@@ -24,7 +28,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_FILTERS = [
   { value: "", label: "Tous" },
-  { value: "SUBMITTED", label: "En attente" },
+  { value: "SUBMITTED", label: "Reçues" },
+  { value: "WAITING_RECONTACT", label: "Attente recontact" },
+  { value: "WAITING_MISSION", label: "Attente mission" },
   { value: "ASSIGNED", label: "Assignés" },
   { value: "CONTACTED", label: "Contactés" },
   { value: "WHATSAPP_ADDED", label: "WhatsApp" },
@@ -46,6 +52,31 @@ interface Request {
   assignedBerger: { id: string; name: string | null } | null;
   pastoralCareRequested: boolean;
   salvationCall: boolean;
+  suggestedFamilyId: number | null;
+  abandonReasonCode: string | null;
+  /** Échéance de relance dépassée (calculée côté serveur, spec 051). */
+  relanceDue: boolean;
+}
+
+// Motifs d'abandon (spec 051) — miroir client des libellés du module intégration.
+const ABANDON_REASON_LABELS: Record<string, string> = {
+  UNKNOWN_NUMBER: "Numéro inconnu",
+  UNREACHABLE: "Injoignable",
+  NO_LONGER_INTERESTED: "Ne souhaite plus",
+  OTHER_CHURCH: "Autre église",
+  MOVED: "A déménagé",
+  DUPLICATE: "Doublon",
+  OTHER: "Autre motif",
+};
+
+/** Cible de la relance d'une demande en attente (spec 051). */
+function relanceTarget(status: string): string {
+  return status === "WAITING_MISSION" ? "Relancer le département mission" : "Recontacter la personne";
+}
+
+/** Adresse que le géocodage n'a rattachée à aucune famille : candidate à l'attente mission. */
+function isUnmatchedAddress(r: Request): boolean {
+  return r.status === "SUBMITTED" && r.suggestedFamilyId === null;
 }
 
 interface Props {
@@ -93,6 +124,8 @@ export default function IntegrationDashboard({
     () => requests.filter((r) => getNextAction(r, isIntegration, currentUserId) !== null),
     [requests, isIntegration, currentUserId]
   );
+
+  const toRelance = useMemo(() => requests.filter((r) => r.relanceDue), [requests]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -182,6 +215,36 @@ export default function IntegrationDashboard({
                 + {actionable.length - 6} autres demandes à traiter
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bandeau "À relancer" : visible tant que la relance n'est pas consignée (spec 051) */}
+      {toRelance.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-500" />
+            À relancer
+            <span className="text-orange-700/60 font-normal">({toRelance.length})</span>
+          </h2>
+          <div className="space-y-1.5">
+            {toRelance.map((r) => (
+              <Link
+                key={r.id}
+                href={`/integration/requests/${r.id}`}
+                className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-gray-100 hover:border-orange-300 hover:shadow-sm transition-all"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 text-sm">
+                    {r.firstName} {r.lastName}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">{STATUS_LABELS[r.status]}</p>
+                </div>
+                <span className="shrink-0 text-xs font-medium text-orange-800 bg-orange-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                  {relanceTarget(r.status)} →
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       )}
@@ -291,6 +354,21 @@ export default function IntegrationDashboard({
                               Appel au salut
                             </span>
                           )}
+                          {r.relanceDue && (
+                            <span className="text-xs text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded font-medium">
+                              À relancer
+                            </span>
+                          )}
+                          {isIntegration && isUnmatchedAddress(r) && (
+                            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                              Adresse non rattachée
+                            </span>
+                          )}
+                          {r.status === "ABANDONED" && r.abandonReasonCode && (
+                            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                              {ABANDON_REASON_LABELS[r.abandonReasonCode] ?? r.abandonReasonCode}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -382,6 +460,16 @@ export default function IntegrationDashboard({
                         {nextAction && (
                           <span className="text-xs font-medium text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full">
                             {nextAction} →
+                          </span>
+                        )}
+                        {r.relanceDue && (
+                          <span className="text-xs font-medium text-orange-800 bg-orange-100 px-2 py-0.5 rounded-full">
+                            À relancer
+                          </span>
+                        )}
+                        {isIntegration && isUnmatchedAddress(r) && (
+                          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                            Adresse non rattachée
                           </span>
                         )}
                       </div>

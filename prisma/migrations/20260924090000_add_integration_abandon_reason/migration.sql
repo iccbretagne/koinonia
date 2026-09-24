@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `family_integration_requests` ADD COLUMN `abandonReasonCode` ENUM('UNKNOWN_NUMBER', 'UNREACHABLE', 'NO_LONGER_INTERESTED', 'OTHER_CHURCH', 'MOVED', 'DUPLICATE', 'OTHER') NULL;
+

@@ -319,7 +319,10 @@ Compt = Comptable.
 
 Le module `integration` ne déclare aucune permission (accès géré par
 `requireIntegrationAccess()` — Super Admin, `members:manage`/`events:manage`, appartenance au
-département fonction `INTEGRATION`/`MSDP`, ou berger/conseiller assigné). Le module `storage`
+département fonction `INTEGRATION`/`MSDP`, ou berger/conseiller assigné). Le réglage des délais de
+relance (spec 051, `/integration/parametres`) passe par `requireIntegrationSettingsAccess()`, plus
+strict : Super Admin, `events:manage`, ou `DEPARTMENT_HEAD` d'un département `INTEGRATION`
+(`members:manage` volontairement écarté — tout Ministre/Resp. département le détient). Le module `storage`
 est une infrastructure pure sans permission propre.
 
 **Visibilité des départements** :

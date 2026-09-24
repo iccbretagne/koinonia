@@ -5,6 +5,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/modules/integration", () => ({
   runInactivityNotifications: vi.fn().mockResolvedValue({}),
   runMsdpInactivityNotifications: vi.fn().mockResolvedValue({}),
+  runWaitingRelanceNotifications: vi.fn().mockResolvedValue({}),
 }));
 const mockRunJobOffersLifecycle = vi.fn().mockResolvedValue({ archived: 0, renewalsSent: 0, emailFailures: 0 });
 vi.mock("@/modules/jobs", () => ({

@@ -44,7 +44,9 @@ const CHURCH_STATUS_LABELS: Record<string, string> = {
 };
 
 const REQUEST_STATUS_LABELS: Record<string, string> = {
-  SUBMITTED: "En attente",
+  SUBMITTED: "Demande reçue",
+  WAITING_RECONTACT: "Attente de recontact",
+  WAITING_MISSION: "Attente département mission",
   ASSIGNED: "Assigné",
   CONTACTED: "Contacté",
   WHATSAPP_ADDED: "WhatsApp ajouté",

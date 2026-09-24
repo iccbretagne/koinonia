@@ -106,6 +106,7 @@ model Church {
   announcementSheets        AnnouncementSheet[]
   // Module audio
   audioSettings             AudioSettings?
+  integrationSettings       IntegrationSettings?
   audioServices             AudioService[]
   audioServiceTemplates     AudioServiceTemplate[]
   audioSharesGranted        AudioLibraryShare[]        @relation("AudioSharesGranted")
@@ -1227,11 +1228,33 @@ model AgendaEntry {
 
 enum FamilyIntegrationStatus {
   SUBMITTED // Demande soumise
+  WAITING_RECONTACT // En attente : la personne souhaite être recontactée plus tard (spec 051)
+  WAITING_MISSION // En attente : adresse hors zone, décision du département mission (spec 051)
   ASSIGNED // Famille affectée (auto ou manuelle)
   CONTACTED // Berger a pris contact
   WHATSAPP_ADDED // Ajouté au groupe WhatsApp
   INTEGRATED // Intégration terminée (clôturé)
   ABANDONED // Abandonné
+}
+
+/// Motif d'abandon d'une demande d'intégration (spec 051, amendement de recette).
+/// Liste fixe : distingue les abandons subis (injoignable…) des abandons choisis.
+enum IntegrationAbandonReason {
+  UNKNOWN_NUMBER // Numéro inconnu ou erroné
+  UNREACHABLE // Injoignable après relances
+  NO_LONGER_INTERESTED // Ne souhaite plus être contacté·e
+  OTHER_CHURCH // A rejoint une autre église
+  MOVED // A déménagé
+  DUPLICATE // Doublon
+  OTHER // Autre (précisé en commentaire)
+}
+
+/// Consentement au contact exprimé sur le formulaire d'accueil (spec 051).
+/// Pas de valeur « jamais » : une personne qui refuse ne remplit pas le formulaire,
+/// donc aucune demande n'existe.
+enum IntegrationContactConsent {
+  NOW
+  LATER
 }
 
 enum FamilyAgeRange {
@@ -1296,14 +1319,25 @@ model FamilyIntegrationRequest {
   assignedBerger   User?   @relation("IntegrationAssignedBerger", fields: [assignedBergerId], references: [id], onDelete: SetNull)
 
   // Statut et timestamps de workflow
-  status          FamilyIntegrationStatus @default(SUBMITTED)
-  submittedAt     DateTime                @default(now())
-  assignedAt      DateTime?
-  contactedAt     DateTime?
-  whatsappAddedAt DateTime?
-  integratedAt    DateTime?
-  abandonedAt     DateTime?
-  abandonReason   String?                 @db.VarChar(500)
+  status            FamilyIntegrationStatus   @default(SUBMITTED)
+  submittedAt       DateTime                  @default(now())
+  assignedAt        DateTime?
+  contactedAt       DateTime?
+  whatsappAddedAt   DateTime?
+  integratedAt      DateTime?
+  abandonedAt       DateTime?
+  abandonReason     String?                   @db.VarChar(500) // commentaire libre
+  // Motif qualifié (obligatoire à l'abandon depuis la spec 051 ; null pour les abandons antérieurs)
+  abandonReasonCode IntegrationAbandonReason?
+
+  // Consentement au contact et mémoire de l'état d'attente (spec 051).
+  // `waitingFrom` ne vaut que SUBMITTED ou CONTACTED (seuls points d'entrée autorisés) ;
+  // `waitingSince`/`lastRelanceAt` fondent l'échéance de relance (pas `updatedAt`, qui bouge
+  // à chaque note).
+  contactConsent IntegrationContactConsent @default(NOW)
+  waitingFrom    FamilyIntegrationStatus?
+  waitingSince   DateTime?
+  lastRelanceAt  DateTime?
 
   // Notes internes (équipe intégration)
   notes String? @db.Text
@@ -2009,6 +2043,22 @@ enum AudioJobStatus {
   RUNNING
   DONE
   FAILED
+}
+
+/// Réglages du module intégration, par église (spec 051) — même forme que AudioSettings.
+model IntegrationSettings {
+  id       String @id @default(cuid())
+  churchId String @unique
+
+  recontactDelayDays Int @default(60) // attente de recontact
+  missionDelayDays   Int @default(30) // attente de décision du département mission
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("integration_settings")
 }
 
 model AudioSettings {

@@ -13,14 +13,18 @@ import { registry } from "@/lib/registry";
  */
 async function runIntegrationInactivityTasks(appUrl: string) {
   if (!registry.has("integration")) return null;
-  const { runInactivityNotifications, runMsdpInactivityNotifications } = await import(
-    "@/modules/integration"
-  );
-  const [integrationInactivityResult, msdpInactivityResult] = await Promise.all([
-    runInactivityNotifications(appUrl),
-    runMsdpInactivityNotifications(appUrl),
-  ]);
-  return { integrationInactivityResult, msdpInactivityResult };
+  const {
+    runInactivityNotifications,
+    runMsdpInactivityNotifications,
+    runWaitingRelanceNotifications,
+  } = await import("@/modules/integration");
+  const [integrationInactivityResult, msdpInactivityResult, integrationRelanceResult] =
+    await Promise.all([
+      runInactivityNotifications(appUrl),
+      runMsdpInactivityNotifications(appUrl),
+      runWaitingRelanceNotifications(appUrl),
+    ]);
+  return { integrationInactivityResult, msdpInactivityResult, integrationRelanceResult };
 }
 
 async function runJobsLifecycleTask(appUrl: string) {
@@ -251,6 +255,7 @@ export async function POST(request: Request) {
       planningDigest: digestResult,
       integrationInactivity: integrationResult?.integrationInactivityResult ?? null,
       msdpInactivity: integrationResult?.msdpInactivityResult ?? null,
+      integrationRelance: integrationResult?.integrationRelanceResult ?? null,
       jobOffersLifecycle: jobOffersLifecycleResult,
     });
   } catch (error) {

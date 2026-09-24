@@ -3,6 +3,7 @@ export type { IntegrationEvents } from "./events";
 export {
   requireIntegrationAccess,
   requireIntegrationExportAccess,
+  requireIntegrationSettingsAccess,
   isIntegrationMember,
   isMsdpMember,
 } from "./auth";
@@ -17,8 +18,35 @@ export {
   buildBergerNotifEmail,
   buildInactivityEmail,
   notifyBergerAssigned,
+  notifyBergerUnassigned,
+  notifyIntegrationTeamHandback,
   runInactivityNotifications,
+  DEFAULT_INTEGRATION_SETTINGS,
+  getIntegrationSettings,
+  updateIntegrationSettings,
+  relanceDueAt,
+  isRelanceDue,
+  relanceTargetLabel,
+  buildRelanceEmail,
+  runWaitingRelanceNotifications,
 } from "./services/family-service";
+export type { IntegrationDelays } from "./services/family-service";
+export {
+  familyPatchSchema,
+  ABANDON_REASON_CODES,
+  ABANDON_REASON_LABELS,
+  WAITING_STATUSES,
+  isWaitingStatus,
+  computeFamilyTransitionData,
+  computeReopenData,
+  statusBeforeAbandon,
+  assertNoStaleAssignment,
+  contactConsentSchema,
+  initialRequestStatusData,
+} from "./services/family-state";
+export type { FamilyPatchBody, FamilyRequestState, FamilyActor } from "./services/family-state";
+export { recordStatusChange, getRequestHistory, getRequestAccessInfo } from "./services/family-history";
+export type { RequestHistoryEntry } from "./services/family-history";
 export {
   msdpPatchSchema,
   hasMsdpManagementAccess,
