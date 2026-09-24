@@ -87,6 +87,18 @@ module.exports = {
       },
     },
     {
+      name: "no-care-imports-other-modules",
+      severity: "error",
+      comment: "Le module care ne peut pas importer directement depuis un autre module.",
+      from: {
+        path: "^src/modules/care/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!care/)",
+      },
+    },
+    {
       name: "no-jobs-imports-other-modules",
       severity: "error",
       comment: "Le module jobs ne peut pas importer directement depuis un autre module.",

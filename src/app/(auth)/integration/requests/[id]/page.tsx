@@ -1,5 +1,6 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
+import { registry } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -20,12 +21,6 @@ export default async function IntegrationRequestDetailPage({
     include: {
       assignedBerger: { select: { id: true, name: true, email: true } },
       member: { select: { id: true, firstName: true, lastName: true } },
-      appointmentRequest: { select: { id: true, status: true } },
-      msdpFollowUp: {
-        include: {
-          assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
-        },
-      },
       personJourney: {
         select: {
           id: true,
@@ -43,6 +38,15 @@ export default async function IntegrationRequestDetailPage({
   });
 
   if (!req || req.churchId !== churchId) return notFound();
+
+  // Rendez-vous pastoral et suivi MSDP nés de cette demande : propriété de `care` (spec 052,
+  // ADR-0015) — orchestré ici plutôt qu'importé dans `integration` (aucun import entre modules).
+  const [appointmentRequest, msdpFollowUp] = registry.has("care")
+    ? await Promise.all([
+        (await import("@/modules/care")).getAppointmentSummaryBySourceRequestId(id),
+        (await import("@/modules/care")).getMsdpFollowUpByIntegrationRequestId(id),
+      ])
+    : [null, null];
 
   const { scope } = await requireIntegrationAccess(churchId);
 
@@ -62,6 +66,8 @@ export default async function IntegrationRequestDetailPage({
       </div>
       <RequestDetail
         request={req}
+        appointmentRequest={appointmentRequest}
+        msdpFollowUp={msdpFollowUp}
         churchId={churchId}
         isScoped={scope.scoped}
         currentUserId={session.user.id!}

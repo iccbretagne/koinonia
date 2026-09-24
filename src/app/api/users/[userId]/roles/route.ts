@@ -23,7 +23,7 @@ const roleSchema = z.object({
     "DISCIPLE_MAKER",
     "REPORTER",
     "STAR",
-    "AGENDA_QUALIFIER",
+    "PASTORAL_CARE_REFERENT",
     "ACCOUNTANT",
   ]),
   ministryId: z.string().optional(),
@@ -51,7 +51,7 @@ const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
 
 // Rôles rattachables à un ministère ou un département — les seuls qu'un Ministre au
 // périmètre restreint peut attribuer/retirer (spec 031, issue #467). Tout le reste
-// (REPORTER, ACCOUNTANT, DISCIPLE_MAKER, AGENDA_QUALIFIER) est transverse à l'église.
+// (REPORTER, ACCOUNTANT, DISCIPLE_MAKER, PASTORAL_CARE_REFERENT) est transverse à l'église.
 const MINISTRY_SCOPED_ROLES = ["MINISTER", "DEPARTMENT_HEAD", "STAR"] as const;
 
 type MinistryScope = ReturnType<typeof getUserMinistryScope>;

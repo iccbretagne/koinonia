@@ -171,7 +171,7 @@ elles vivent dans le module, comme celles d'`agenda` et d'`integration` (chantie
 | Accompagnateur discipolat | `DISCIPLE_MAKER` | Suivi des relations de discipolat et gestion des présences |
 | Rapporteur | `REPORTER` | Accès en lecture/écriture aux comptes rendus d'événements |
 | Membre actif | `STAR` | Consultation du planning personnel uniquement |
-| Qualificateur agenda | `AGENDA_QUALIFIER` | Qualification des demandes de RDV pastoral en attente |
+| Référent soins pastoraux | `PASTORAL_CARE_REFERENT` | Qualification et affectation des demandes de RDV pastoral et des suivis de nouveaux convertis (module `care`, spec 052) |
 | Comptable | `ACCOUNTANT` | Traitement des demandes financières et statistiques comptables |
 
 Un utilisateur peut avoir **plusieurs rôles** dans **plusieurs églises** via la table `user_church_roles`.
@@ -205,11 +205,11 @@ n'a pas la permission.
 
 Légende des colonnes : SA = Super Admin, Ad = Admin, Sec = Secrétaire, Min = Ministre,
 RD = Resp. département, FD = Faiseur de Disciples, Rep = Reporter, STAR = STAR,
-QA = Qualificateur agenda, Compt = Comptable.
+RSP = Référent soins pastoraux, Compt = Comptable.
 
 #### Module `core`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `church:manage` | x | | | | | | | | | |
 | `users:manage` | x | | | | | | | | | |
@@ -217,7 +217,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `planning`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `planning:view` | x | x | x | x | x | | | x | | |
 | `planning:edit` | x | x | | x | x | | | | | |
@@ -235,7 +235,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `discipleship`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `discipleship:view` | x | x | x | | x | x | | | | |
 | `discipleship:manage` | x | x | x | | | x | | | | |
@@ -243,7 +243,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `audio`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `audio:listen` | x | x | x | x | x | x | x | x | x | x |
 | `audio:view` | x | x | x | | | | | | | |
@@ -253,7 +253,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `media`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `media:view` | x | x | x | | | | | | | |
 | `media:upload` | x | x | x | | | | | | | |
@@ -262,7 +262,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `accounting`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `accounting:submit` | x | x | | x | x | | | | | |
 | `accounting:view` | x | x | | x | x | | | | | x |
@@ -271,15 +271,46 @@ QA = Qualificateur agenda, Compt = Comptable.
 
 #### Module `agenda`
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
-| `agenda:qualify` | x | x | | | | | | | x | |
+
+Depuis la spec 052 (ADR-0015), `agenda` ne porte plus la qualification des demandes de RDV : le
+module ne garde que les profils pastoraux, le calendrier et la planification (par Admin/Secrétaire
+ou le Protocole, membre d'un département de fonction `PROTOCOLE`, via `isProtocoleMember`).
+`PATCH /api/agenda/requests/[id]/schedule` et `PATCH`/`DELETE /api/agenda/entries/[id]` restent des
+routes `agenda` mais orchestrent, dans la même transaction, le service `care` qui possède la
+demande.
+
+#### Module `care`
+
+Suivi et rendez-vous pastoraux (spec 052, [ADR-0015](adr/0015-module-suivi-rendez-vous-pastoraux.md)) —
+absorbe la qualification des demandes de RDV (ex-`agenda`) et le suivi des nouveaux convertis MSDP
+(ex-`integration`).
+
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `care:qualify` | x | x | | | | | | | x | |
+| `care:view` | x | x | x | | | | | | x | |
+
+`requireCareQualify()`/`getCareAccess()` (`src/modules/care/auth.ts`) résolvent ces deux
+permissions **uniquement** via `rolePermissions` — à la différence de `requireIntegrationAccess()`
+ci-dessous, aucune approximation par `members:manage`/`events:manage` (décision #583, un Ministre
+ou un Resp. département n'a donc aucun accès à `care`, même avec `members:manage`). Un
+accompagnant (profil pastoral, ou membre d'un département de fonction `MSDP`) sans
+`care:qualify`/`care:view` n'accède qu'aux demandes/suivis dont il est l'accompagnant en charge —
+vérifié objet par objet (`isCurrentAssignee`, `src/modules/care/services/assignee.ts`), pas par la
+garde d'entrée.
+
+La confidentialité du contenu (`message`, `subject`) est appliquée une seule fois, par
+`projectRequest()` (`src/modules/care/services/projection.ts`) : fiche complète pour le référent,
+Admin, Super Admin, ou l'accompagnant en charge ; libellé neutre « Rendez-vous pastoral » pour
+tous les autres lecteurs (Secrétaire, Protocole, équipe intégration, accompagnant dessaisi).
 
 #### Module `rooms` (salles)
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `rooms:view` | x | x | x | x | x | | | | | |
 | `rooms:reserve` | x | x | | x | x | | | | | |
@@ -290,7 +321,7 @@ QA = Qualificateur agenda, Compt = Comptable.
 Transversal — ouvert à tous les rôles authentifiés pour la consultation/candidature, modération
 réservée à Admin/Secrétaire :
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `jobs:view` | x | x | x | x | x | x | x | x | x | x |
 | `jobs:post` | x | x | x | x | x | x | x | x | x | x |
@@ -333,8 +364,9 @@ Infrastructure pure (client S3, jetons opaques), aucune permission propre — co
 - Peut gérer les événements (`events:manage`)
 - Peut exporter les données discipolat (`discipleship:export`)
 - Accès en lecture/écriture aux comptes rendus (`reports:view` + `reports:edit`)
-- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`), mais pas à la
-  qualification des demandes (`agenda:qualify`, réservée au Qualificateur agenda)
+- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`)
+- Voit les demandes de RDV pastoral et les suivis de nouveaux convertis (`care:view`), mais ne
+  les qualifie ni ne les affecte (`care:qualify`, réservée au Référent soins pastoraux)
 - Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes
   (`accounting:manage`)
 
@@ -366,9 +398,10 @@ via `listTeamEventsForMember` (`src/modules/planning/services/team-event.service
 périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requireDepartmentAccess`
 (ADR-0009).
 
-**Spécificités du Qualificateur agenda** (`AGENDA_QUALIFIER`) :
-- Seule permission propre : `agenda:qualify` — qualifie les demandes de RDV pastoral à l'état
-  `PENDING`
+**Spécificités du Référent soins pastoraux** (`PASTORAL_CARE_REFERENT`, ex-`AGENDA_QUALIFIER`
+renommé spec 052) :
+- Permissions propres : `care:qualify` (qualifie, affecte, rejette les demandes de RDV pastoral
+  et les suivis de nouveaux convertis) et `care:view`
 - N'a **pas** `agenda:view` ni `agenda:manage` : aucun accès à la vue agenda hebdomadaire ni à
   la planification des demandes validées (réservées à Admin/Secrétaire, ou au Protocole via la
   fonction de département)

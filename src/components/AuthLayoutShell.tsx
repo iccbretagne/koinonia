@@ -10,7 +10,7 @@ import GuidedTour from "@/components/GuidedTour";
 import { STAGING_BUILD_VERSION, STAGING_BANNER_HEADER_OFFSET_CLASS } from "@/lib/env-banner";
 
 // Type importe plutot que recopie : les copies locales avaient derive et
-// omettaient AGENDA_QUALIFIER, privant ce role des etapes de tour ciblees.
+// omettaient PASTORAL_CARE_REFERENT, privant ce role des etapes de tour ciblees.
 import type { RoleKey } from "@/lib/tour-steps";
 
 function hexToLuminance(hex: string): number {

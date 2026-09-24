@@ -26,12 +26,6 @@ export async function GET(
       include: {
         assignedBerger: { select: { id: true, name: true, email: true } },
         member: { select: { id: true, firstName: true, lastName: true } },
-        appointmentRequest: { select: { id: true, status: true } },
-        msdpFollowUp: {
-          include: {
-            assignedConseillerMsdp: { select: { id: true, name: true, email: true } },
-          },
-        },
       },
     });
     if (!req) throw new ApiError(404, "Demande introuvable");

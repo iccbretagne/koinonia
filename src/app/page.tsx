@@ -10,7 +10,7 @@ import Button from "@/components/ui/Button";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 
 // /dashboard exige planning:department (spec 031/#462) : un STAR, Reporter, Faiseur de
-// disciples, Comptable ou Qualificateur agenda ne l'a pas et y crasherait en FORBIDDEN
+// disciples, Comptable ou Référent soins pastoraux ne l'a pas et y crasherait en FORBIDDEN
 // (pas d'error.tsx dans l'app). La redirection post-connexion doit donc tenir compte du
 // rôle plutôt que de pointer vers /dashboard en dur.
 async function defaultLandingPage(session: Session) {

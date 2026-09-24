@@ -140,13 +140,11 @@ interface Request {
   assignedFamilyName: string | null;
   assignedBerger: { id: string; name: string | null; email: string | null } | null;
   member: { id: string; firstName: string; lastName: string } | null;
-  appointmentRequest: { id: string; status: string } | null;
   pastoralCareRequested: boolean;
   salvationCall: boolean;
   notes: string | null;
   lat: number | null;
   lng: number | null;
-  msdpFollowUp: MsdpFollowUpType | null;
   personJourney: PersonJourneyData | null;
 }
 
@@ -161,6 +159,10 @@ interface Leader {
 
 interface Props {
   readonly request: Request;
+  /** Rendez-vous pastoral et suivi MSDP nés de cette demande — propriété de `care` (spec 052),
+   *  orchestrés côté page plutôt qu'inclus dans `request` (aucun import entre modules). */
+  readonly appointmentRequest: { id: string; status: string } | null;
+  readonly msdpFollowUp: MsdpFollowUpType | null;
   readonly churchId: string;
   readonly isScoped: boolean;
   readonly currentUserId: string;
@@ -380,7 +382,7 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/integration/msdp/${followUp.id}`, {
+      const res = await fetch(`/api/care/followups/${followUp.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -398,9 +400,9 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
     setSelectedCounselorId(followUp?.assignedConseillerMsdpId ?? "");
     setModalLoading(true);
     try {
-      const res = await fetch(`/api/integration/msdp/counselors?churchId=${churchId}`);
+      const res = await fetch(`/api/care/companions?churchId=${churchId}`);
       const json = await res.json();
-      setCounselors(json ?? []);
+      setCounselors(json?.msdpMembers ?? []);
     } catch { /* ignore */ }
     finally { setModalLoading(false); }
   }
@@ -440,10 +442,10 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
             onClick={async () => {
               setLoading(true);
               try {
-                const res = await fetch("/api/integration/msdp", {
+                const res = await fetch("/api/care/followups", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ requestId, churchId }),
+                  body: JSON.stringify({ integrationRequestId: requestId, churchId }),
                 });
                 const json = await res.json();
                 if (!res.ok) { setError(json.error ?? "Erreur"); return; }
@@ -666,14 +668,14 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
 
 type TabId = "contact" | "profil" | "famille" | "notes";
 
-export default function RequestDetail({ request: initial, churchId, isScoped, currentUserId, relanceDue: initialRelanceDue }: Props) {
+export default function RequestDetail({ request: initial, appointmentRequest, msdpFollowUp: initialMsdpFollowUp, churchId, isScoped, currentUserId, relanceDue: initialRelanceDue }: Props) {
   const router = useRouter();
   const [req, setReq] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState(initial.notes ?? "");
   const [notesLoading, setNotesLoading] = useState(false);
-  const [msdpFollowUp, setMsdpFollowUp] = useState(initial.msdpFollowUp);
+  const [msdpFollowUp, setMsdpFollowUp] = useState(initialMsdpFollowUp);
   const [activeTab, setActiveTab] = useState<TabId>("contact");
 
   // Confirmation modale transitions workflow
@@ -1341,8 +1343,8 @@ export default function RequestDetail({ request: initial, churchId, isScoped, cu
                     <span className="inline-flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
                       Demandé
-                      {req.appointmentRequest && (
-                        <span className="text-xs text-gray-400 ml-1">({req.appointmentRequest.status})</span>
+                      {appointmentRequest && (
+                        <span className="text-xs text-gray-400 ml-1">({appointmentRequest.status})</span>
                       )}
                     </span>
                   ) : "Non"}

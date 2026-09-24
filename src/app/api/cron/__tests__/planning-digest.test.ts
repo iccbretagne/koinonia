@@ -3,9 +3,12 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/modules/integration", () => ({
+  integrationBus: { on: vi.fn() },
   runInactivityNotifications: vi.fn().mockResolvedValue({}),
-  runMsdpInactivityNotifications: vi.fn().mockResolvedValue({}),
   runWaitingRelanceNotifications: vi.fn().mockResolvedValue({}),
+}));
+vi.mock("@/modules/care", () => ({
+  runMsdpInactivityNotifications: vi.fn().mockResolvedValue({}),
 }));
 const mockRunJobOffersLifecycle = vi.fn().mockResolvedValue({ archived: 0, renewalsSent: 0, emailFailures: 0 });
 vi.mock("@/modules/jobs", () => ({

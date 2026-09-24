@@ -18,7 +18,8 @@ export default async function NewRequestPage() {
 
   // « Autres demandes » (spec 043) : liens vers des formulaires dédiés, conditionnés par
   // l'activation du module et — pour la compta — le même droit de soumission que sa page dédiée.
-  const showAgendaTile = registry.has("agenda");
+  // Le RDV pastoral dépend de `care` (spec 052, ADR-0015), pas d'`agenda`.
+  const showCareTile = registry.has("care");
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
   const showAccountingTile =
     registry.has("accounting") &&
@@ -97,7 +98,7 @@ export default async function NewRequestPage() {
       <RequestForm
         churchId={churchId}
         canSubmitDemands={canSubmitDemands}
-        showAgendaTile={showAgendaTile}
+        showCareTile={showCareTile}
         showAccountingTile={showAccountingTile}
         announcementEvents={announcementEvents.map((e) => ({
           id: e.id,

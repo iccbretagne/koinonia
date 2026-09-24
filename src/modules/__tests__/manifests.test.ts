@@ -9,11 +9,12 @@ import { audioModule } from "../audio/manifest";
 import { agendaModule } from "../agenda/manifest";
 import { roomsModule } from "../rooms/manifest";
 import { integrationModule } from "../integration/manifest";
+import { careModule } from "../care/manifest";
 import { accountingModule } from "../accounting/manifest";
 import { jobsModule } from "../jobs/manifest";
 
 /**
- * Les 11 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
+ * Les 12 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
  * index : un index re-exporte les services du module, donc Prisma, NextAuth et le client S3 —
  * indisponibles dans l'environnement de test `node`. C'est la raison pour laquelle ce fichier ne
  * couvrait que 3 modules avant l'extraction des manifestes.
@@ -28,6 +29,7 @@ const ALL_MODULES: ModuleManifest[] = [
   agendaModule,
   roomsModule,
   integrationModule,
+  careModule,
   accountingModule,
   jobsModule,
 ];
@@ -43,6 +45,7 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
   agenda: ["core"],
   rooms: ["core"],
   integration: ["core"],
+  care: ["core"],
   accounting: ["core", "planning"],
   jobs: ["core"],
 };
@@ -81,8 +84,9 @@ const PERMISSION_OWNER: Record<string, string> = {
   "audio:upload": "audio",
   "audio:view": "audio",
   "agenda:manage": "agenda",
-  "agenda:qualify": "agenda",
   "agenda:view": "agenda",
+  "care:qualify": "care",
+  "care:view": "care",
   "rooms:manage": "rooms",
   "rooms:reserve": "rooms",
   "rooms:view": "rooms",
@@ -104,12 +108,13 @@ function buildRegistry(mods: ModuleManifest[] = ALL_MODULES) {
 }
 
 describe("Manifestes des modules", () => {
-  it("couvre les 11 modules composés par le registry", () => {
-    expect(ALL_MODULES).toHaveLength(11);
+  it("couvre les 12 modules composés par le registry", () => {
+    expect(ALL_MODULES).toHaveLength(12);
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
       "audio",
+      "care",
       "core",
       "discipleship",
       "integration",
@@ -155,7 +160,7 @@ describe("Manifestes des modules", () => {
 
   it("l'ordre de chargement est résolvable et place chaque dépendance avant son dépendant", () => {
     const order = buildRegistry().resolveLoadOrder().map((m) => m.name);
-    expect(order).toHaveLength(11);
+    expect(order).toHaveLength(12);
 
     for (const mod of ALL_MODULES) {
       for (const dep of mod.dependsOn ?? []) {
@@ -182,7 +187,7 @@ describe("Manifestes des modules", () => {
     expect([...declared].sort()).toEqual(Object.keys(PERMISSION_OWNER).sort());
   });
 
-  it("la somme des permissions correspond à la matrice RBAC des 11 modules", () => {
+  it("la somme des permissions correspond à la matrice RBAC des 12 modules", () => {
     const permNames = Object.keys(buildRegistry().collectPermissions()).sort();
     expect(permNames).toEqual(Object.keys(PERMISSION_OWNER).sort());
   });

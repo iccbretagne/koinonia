@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { rolePermissions } from "@/lib/registry";
+import { rolePermissions, registry } from "@/lib/registry";
 import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
@@ -292,7 +292,6 @@ export default async function AuthLayout({
   const agendaLinks: { href: string; label: string }[] = [];
   const hasAgendaView = userPermissions.has("agenda:view") || isProtocoleMember;
   const hasAgendaManage = userPermissions.has("agenda:manage") || isProtocoleMember;
-  const hasAgendaQualify = userPermissions.has("agenda:qualify");
 
   // Profil pastoral lié au compte → lien "Mon agenda" en tête de section
   if (currentChurchId) {
@@ -304,9 +303,25 @@ export default async function AuthLayout({
   }
 
   if (hasAgendaView) agendaLinks.push({ href: "/agenda", label: "Vue agenda" });
-  if (hasAgendaQualify) agendaLinks.push({ href: "/agenda/requests", label: "Qualification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/new", label: "Nouvelle entrée" });
+
+  // Suivi pastoral (spec 052, ADR-0015) : qualification des RDV et suivi des nouveaux
+  // convertis, module `care` — remplace l'ancien lien « Qualification » de l'agenda.
+  // Accès : care:qualify, care:view, ou accompagnant d'au moins une demande/suivi en charge.
+  if (currentChurchId && registry.has("care")) {
+    const hasCareOverview =
+      userPermissions.has("care:qualify") || userPermissions.has("care:view");
+    let isCareAssignee = false;
+    if (!hasCareOverview) {
+      const { getCareAccess } = await import("@/modules/care");
+      const access = await getCareAccess(session, currentChurchId);
+      isCareAssignee = access.ownProfileIds.length > 0;
+    }
+    if (hasCareOverview || isCareAssignee) {
+      agendaLinks.push({ href: "/care", label: "Suivi pastoral" });
+    }
+  }
 
   const headerContent = (
     <div className="flex items-center w-full min-w-0">

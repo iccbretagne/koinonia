@@ -10,7 +10,7 @@ import type { Role } from "../../src/generated/prisma/client";
  * (scoping) sur les données visibles.
  *
  * Les rôles additionnels de modules hors périmètre de cette feature (agenda pastoral,
- * comptabilité — AGENDA_QUALIFIER, ACCOUNTANT) n'ont pas de compte dédié ici.
+ * comptabilité — PASTORAL_CARE_REFERENT, ACCOUNTANT) n'ont pas de compte dédié ici.
  *
  * Consommé à la fois par `prisma/seed-dev.ts` (création des comptes) et par
  * `src/lib/auth.ts` (liste affichée par le provider de connexion développement) —
