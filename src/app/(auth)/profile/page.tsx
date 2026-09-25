@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { excludeChurchesAlreadyReached } from "@/lib/onboarding";
+import Link from "next/link";
 import ProfileClient from "./ProfileClient";
-import JobSubscriptionClient from "./JobSubscriptionClient";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -93,6 +93,12 @@ export default async function ProfilePage() {
             <p className="text-sm text-gray-500">{session.user.email}</p>
           </div>
         </div>
+        <Link
+          href="/profile/notifications"
+          className="inline-block mt-4 text-sm font-medium text-icc-violet hover:underline"
+        >
+          Mes notifications →
+        </Link>
       </div>
 
       {/* Liens STAR */}
@@ -152,9 +158,6 @@ export default async function ProfilePage() {
           </div>
         </div>
       )}
-
-      {/* Abonnements Emploi */}
-      <JobSubscriptionClient />
 
       {/* Nouvelle demande */}
       {unlinkableChurches.length > 0 && (

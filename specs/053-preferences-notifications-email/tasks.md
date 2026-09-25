@@ -86,12 +86,13 @@ continue de partir, mais passe désormais par le nouveau mécanisme et peut êtr
 - [x] **T17** — `getPreferencesView(userId)` dans le même fichier : rôles de l'utilisateur toutes
       églises confondues (`userChurchRole.findMany({ where: { userId } })` + `rolePermissions`) →
       domaines visibles (permission détenue **ou** notification déjà reçue sur ce domaine,
-      index `[userId, domain]`) ; lit `NotificationEmailPreference` et
-      `JobNotificationSubscription.email` pour `jobs` ; retourne `{ emailEnabled, hasEmail,
+      index `[userId, domain]`) ; lit `NotificationEmailPreference` — `jobs` compris, sans lire
+      `JobNotificationSubscription.email` (décision actée en cours d'implémentation : les deux
+      réglages restent indépendants, voir T30/T31) ; retourne `{ emailEnabled, hasEmail,
       domains: [{ key, label, description, enabled }] }`.
 - [x] **T18** — `updatePreferences(userId, { emailEnabled?, domains? })` dans le même fichier :
-      upsert `(userId, "*")` et `(userId, domain)` pour chaque clé fournie ; `domains.jobs` écrit
-      aussi `JobNotificationSubscription.email` (upsert si la ligne n'existe pas encore).
+      upsert `(userId, "*")` et `(userId, domain)` pour chaque clé fournie, `jobs` compris — sans
+      toucher à `JobNotificationSubscription.email` (voir T17).
 - [x] **T19** — `src/lib/email.ts` : `appendPreferenceFooter(html, domainLabel)` — ajoute la
       phrase « Vous recevez cet email parce que… » et le lien `${APP_URL}/profile/notifications`.
 - [x] **T20** — `src/lib/notifications.ts` : `dispatchUserEmails(userIds, domain, content)` —
@@ -161,25 +162,25 @@ existant, et ajoute le pied de page (T19).
 
 ### 1.5 API et page
 
-- [ ] **T32** — `GET`/`PUT /api/notifications/preferences` : `GET` retourne `getPreferencesView`
+- [x] **T32** — `GET`/`PUT /api/notifications/preferences` : `GET` retourne `getPreferencesView`
       (T17) ; `PUT` valide avec Zod (`emailEnabled?: boolean`, `domains?: Record<string,
       boolean>`, clés limitées à celles visibles pour l'appelant — une clé inconnue ou non visible
       → 400) puis appelle `updatePreferences` (T18). `requireAuth()` uniquement, `userId` toujours
       pris de la session, jamais du corps. Déjà couvert par le préfixe `/api/notifications` du
       manifeste `core` (ADR-0012) — vérifier que `routes-exhaustivite.test.ts` passe sans
       modification. *(fichier : `src/app/api/notifications/preferences/route.ts`)*
-- [ ] **T33** — Page `/profile/notifications` (Server Component) : charge `getPreferencesView`
+- [x] **T33** — Page `/profile/notifications` (Server Component) : charge `getPreferencesView`
       pour l'utilisateur connecté, rend le client. Déjà couvert par le préfixe `/profile` du
       manifeste `core`. *(fichier : `src/app/(auth)/profile/notifications/page.tsx`)*
-- [ ] **T34** — Composant client : interrupteur général, une ligne par domaine (libellé,
+- [x] **T34** — Composant client : interrupteur général, une ligne par domaine (libellé,
       description, case — grisée si le général est coupé, valeur conservée), bouton Enregistrer
       (`Button`, `disabled` pendant l'envoi), message de confirmation, bandeau « Aucune adresse
       email sur votre compte » si `hasEmail` est faux.
       *(fichier : `src/app/(auth)/profile/notifications/NotificationPreferencesClient.tsx`)*
-- [ ] **T35** — Déplacer les réglages détaillés de l'emploi (`JobSubscriptionClient`) de
+- [x] **T35** — Déplacer les réglages détaillés de l'emploi (`JobSubscriptionClient`) de
       `/profile` vers la nouvelle page, sous le domaine « Emploi ».
       *(fichiers : `src/app/(auth)/profile/page.tsx`, `src/app/(auth)/profile/JobSubscriptionClient.tsx`)*
-- [ ] **T36** — Lien « Mes notifications » dans la section Compte de `/profile`, vers
+- [x] **T36** — Lien « Mes notifications » dans la section Compte de `/profile`, vers
       `/profile/notifications`. *(fichier : `src/app/(auth)/profile/page.tsx`)*
 
 ### 1.6 Documentation
@@ -195,8 +196,8 @@ existant, et ajoute le pied de page (T19).
 
 - [ ] **T40** [P] — `resolveEmailPreference` (global coupé, préférence explicite vraie/fausse,
       défaut du domaine) ; `getPreferencesView` (domaines visibles par permission, par historique,
-      `hasEmail`, cas `jobs`) ; `updatePreferences` (upsert, écriture
-      `JobNotificationSubscription.email`, rejet d'une clé non visible).
+      `hasEmail`, cas `jobs` sans lien avec `JobNotificationSubscription`) ; `updatePreferences`
+      (upsert, `jobs` compris, rejet d'une clé non visible).
       *(fichier : `src/lib/__tests__/notification-preferences.test.ts`)*
 - [ ] **T41** [P] — `dispatchUserEmails` (email envoyé/non envoyé selon préférence et présence
       d'une adresse, pied de page présent, erreur SMTP avalée et journalisée) ; `tx` optionnel

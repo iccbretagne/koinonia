@@ -74,38 +74,52 @@ function isDomainVisible(
   return historyDomains.has(domain.key);
 }
 
-/** Vue complète des préférences d'un utilisateur, pour `GET /api/notifications/preferences` et la page `/profile/notifications`. */
-export async function getPreferencesView(userId: string): Promise<NotificationPreferencesView> {
-  const [user, heldPermissions, historyRows, preferenceRows] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { email: true } }),
+async function getVisibleDomains(userId: string): Promise<NotificationDomainDescriptor[]> {
+  const [heldPermissions, historyRows] = await Promise.all([
     getHeldPermissions(userId),
     prisma.notification.findMany({
       where: { userId, domain: { not: null } },
       distinct: ["domain"],
       select: { domain: true },
     }),
-    prisma.notificationEmailPreference.findMany({ where: { userId } }),
   ]);
-
   const historyDomains = new Set(
     historyRows.map((row) => row.domain).filter((domain): domain is string => domain !== null)
   );
+  return notificationDomains.filter((domain) => isDomainVisible(domain, heldPermissions, historyDomains));
+}
+
+/**
+ * Clés de domaine visibles pour cet utilisateur — utilisé par `PUT /api/notifications/preferences`
+ * pour rejeter une clé inconnue ou hors de son périmètre (spec 053, T32).
+ */
+export async function getVisibleDomainKeys(userId: string): Promise<Set<string>> {
+  const domains = await getVisibleDomains(userId);
+  return new Set(domains.map((domain) => domain.key));
+}
+
+/** Vue complète des préférences d'un utilisateur, pour `GET /api/notifications/preferences` et la page `/profile/notifications`. */
+export async function getPreferencesView(userId: string): Promise<NotificationPreferencesView> {
+  const [user, visibleDomains, preferenceRows] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true } }),
+    getVisibleDomains(userId),
+    prisma.notificationEmailPreference.findMany({ where: { userId } }),
+  ]);
+
   const preferenceByDomain = new Map(preferenceRows.map((row) => [row.domain, row.enabled]));
   // Défaut activé : absence de ligne "*" ne doit retirer aucun email (mise en service, spec 053).
   const globalEnabled = preferenceByDomain.get(GLOBAL_DOMAIN) ?? true;
 
-  const domains = notificationDomains
-    .filter((domain) => isDomainVisible(domain, heldPermissions, historyDomains))
-    .map((domain) => ({
-      key: domain.key,
-      label: domain.label,
-      description: domain.description,
-      enabled: resolveEmailPreference({
-        globalEnabled,
-        domainPreference: preferenceByDomain.get(domain.key),
-        defaultEmail: domain.defaultEmail,
-      }),
-    }));
+  const domains = visibleDomains.map((domain) => ({
+    key: domain.key,
+    label: domain.label,
+    description: domain.description,
+    enabled: resolveEmailPreference({
+      globalEnabled,
+      domainPreference: preferenceByDomain.get(domain.key),
+      defaultEmail: domain.defaultEmail,
+    }),
+  }));
 
   return { emailEnabled: globalEnabled, hasEmail: !!user?.email, domains };
 }
