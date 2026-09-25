@@ -15,8 +15,8 @@ Deux flux voisins servent aujourd'hui à accompagner une personne qui a besoin d
 spirituel, et ils ne se parlent pas :
 
 - **Le suivi des nouveaux convertis** : quand une personne répond à l'appel au salut, l'équipe
-  intégration peut démarrer un suivi et le confier à un membre du département MSDP (Soins, Santé
-  Divine et Prière), qui le fait progresser jusqu'à la formation des nouveaux convertis. Ce suivi
+  intégration peut démarrer un suivi et le confier à un membre du département MSDP (Ministère de la Santé
+  Divine et de la Prière), qui le fait progresser jusqu'à la formation des nouveaux convertis. Ce suivi
   est rangé dans l'espace intégration, et rien ne garantit qu'il soit démarré.
 - **Les demandes de rendez-vous pastoral** : une personne (depuis le formulaire public, depuis son
   compte, ou en cochant « soin pastoral » sur le formulaire d'accueil) demande un rendez-vous. Un

@@ -335,7 +335,7 @@ export async function notifyMsdpCounselorAssigned(params: {
         userId: counselorId,
         type: "CARE_MSDP_ASSIGNED",
         title: "Nouveau suivi MSDP assigné",
-        message: `Vous êtes désigné comme référent MSDP pour ${personName}.`,
+        message: `Vous êtes désigné comme référent pour le suivi de ${personName}.`,
         link: `/care/followups/${followUpId}`,
       },
     })
@@ -375,8 +375,8 @@ export function buildMsdpInactivityEmail(params: {
 }): string {
   const { churchName, personName, status, daysSince, link, appUrl } = params;
   const contextMap: Record<string, string> = {
-    SUBMITTED: "Aucun référent MSDP n'a encore été désigné pour ce suivi.",
-    ASSIGNED: "Un référent MSDP a été désigné mais le contact n'a pas encore été établi.",
+    SUBMITTED: "Aucun référent n'a encore été désigné pour ce suivi.",
+    ASSIGNED: "Un référent a été désigné mais le contact n'a pas encore été établi.",
     CONTACTED: "Le contact a été établi mais la formation n'a pas encore démarré.",
     IN_FORMATION: "La personne est en formation mais aucune progression récente n'a été enregistrée.",
   };
@@ -467,7 +467,7 @@ export async function runMsdpInactivityNotifications(
   }
 
   const titleMap: Record<string, string> = {
-    SUBMITTED: "Suivi sans référent MSDP depuis 7 jours",
+    SUBMITTED: "Suivi sans référent depuis 7 jours",
     ASSIGNED: "Contact non établi depuis 7 jours",
     CONTACTED: "Formation non démarrée depuis 7 jours",
     IN_FORMATION: "Suivi en formation sans progression depuis 7 jours",
