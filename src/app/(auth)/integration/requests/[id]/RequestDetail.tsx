@@ -412,13 +412,13 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
             {MSDP_STATUS_LABELS[followUp.status] ?? followUp.status}
           </span>
           {assigneeName && (
-            <span className="text-sm text-gray-600">Accompagnant : <strong>{assigneeName}</strong></span>
+            <span className="text-sm text-gray-600">Référent : <strong>{assigneeName}</strong></span>
           )}
         </div>
       )}
       {hideStatus && assigneeName && (
         <p className="text-xs text-gray-500">
-          Accompagnant : <strong className="text-gray-700">{assigneeName}</strong>
+          Référent : <strong className="text-gray-700">{assigneeName}</strong>
         </p>
       )}
       {followUp.notes && (
