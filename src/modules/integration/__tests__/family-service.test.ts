@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
-const mockSendEmail = vi.fn();
+const mockCreateNotification = vi.fn();
+const mockNotifyUsers = vi.fn();
+const mockDispatchUserEmails = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
-vi.mock("@/lib/email", () => ({
-  sendEmail: (...args: unknown[]) => mockSendEmail(...args),
+vi.mock("@/lib/notifications", () => ({
+  createNotification: (...args: unknown[]) => mockCreateNotification(...args),
+  notifyUsers: (...args: unknown[]) => mockNotifyUsers(...args),
+  dispatchUserEmails: (...args: unknown[]) => mockDispatchUserEmails(...args),
 }));
 
 const {
@@ -33,9 +37,8 @@ function makeRequest(overrides: Record<string, unknown> = {}) {
 describe("runInactivityNotifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSendEmail.mockResolvedValue(undefined);
+    mockDispatchUserEmails.mockResolvedValue({ sent: 0, failed: 0 });
     prismaMock.notification.findMany.mockResolvedValue([]);
-    prismaMock.notification.create.mockResolvedValue({} as never);
   });
 
   it("Intégration portée par deux départements : une personne membre des deux n'est notifiée qu'une fois (spec 046)", async () => {
@@ -54,7 +57,9 @@ describe("runInactivityNotifications", () => {
     expect(prismaMock.userDepartment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { departmentId: { in: ["dept-int-1", "dept-int-2"] } } })
     );
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers.mock.calls[0][0]).toEqual(["manager-1"]);
+    expect(mockNotifyUsers.mock.calls[0][1]).toEqual(expect.objectContaining({ domain: "integration" }));
     expect(result.notified).toBe(1);
   });
 
@@ -116,8 +121,7 @@ describe("getIntegrationSettings", () => {
 describe("runWaitingRelanceNotifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSendEmail.mockResolvedValue(undefined);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    mockDispatchUserEmails.mockResolvedValue({ sent: 0, failed: 0 });
     prismaMock.notification.count.mockResolvedValue(0 as never);
     prismaMock.integrationSettings.findUnique.mockResolvedValue(null as never);
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-int" }] as never);
@@ -146,10 +150,11 @@ describe("runWaitingRelanceNotifications", () => {
 
     const result = await runWaitingRelanceNotifications("https://koinonia.example");
 
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(2);
-    const messages = prismaMock.notification.create.mock.calls.map((c) => (c[0] as { data: { userId: string; message: string } }).data);
-    expect(messages.map((m) => m.userId)).toEqual(["m1", "m2"]);
-    expect(messages[0].message).toContain("le département mission");
+    expect(mockNotifyUsers).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers.mock.calls[0][0]).toEqual(["m1", "m2"]);
+    const notification = mockNotifyUsers.mock.calls[0][1] as { domain: string; message: string };
+    expect(notification.domain).toBe("integration");
+    expect(notification.message).toContain("le département mission");
     expect(result).toEqual({ notified: 2, skipped: 0, total: 1 });
   });
 
@@ -170,7 +175,7 @@ describe("runWaitingRelanceNotifications", () => {
 
     const result = await runWaitingRelanceNotifications("https://koinonia.example");
 
-    expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
     expect(result.skipped).toBe(1);
   });
 
@@ -181,7 +186,7 @@ describe("runWaitingRelanceNotifications", () => {
 
     const result = await runWaitingRelanceNotifications("https://koinonia.example");
 
-    expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
     expect(result.total).toBe(0);
   });
 });

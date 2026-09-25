@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
-const mockSendEmail = vi.fn();
+const mockCreateNotification = vi.fn();
+const mockNotifyUsers = vi.fn();
 const mockAuth = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
-vi.mock("@/lib/email", () => ({
-  sendEmail: (...args: unknown[]) => mockSendEmail(...args),
+vi.mock("@/lib/notifications", () => ({
+  createNotification: (...args: unknown[]) => mockCreateNotification(...args),
+  notifyUsers: (...args: unknown[]) => mockNotifyUsers(...args),
 }));
 vi.mock("next-auth", () => ({
   default: () => ({
@@ -46,11 +48,10 @@ describe("buildMsdpCounselorNotifEmail", () => {
 describe("notifyMsdpCounselorAssigned", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSendEmail.mockResolvedValue(undefined);
+    mockCreateNotification.mockResolvedValue(undefined);
   });
 
-  it("envoie un email quand le conseiller a une adresse email", async () => {
-    prismaMock.notification.create.mockResolvedValue({} as never);
+  it("transmet le contenu email quand le conseiller a une adresse email", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       name: "Jean Dupont",
       email: "jean@example.com",
@@ -63,15 +64,13 @@ describe("notifyMsdpCounselorAssigned", () => {
       appUrl: "https://koinonia.example",
     });
 
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "jean@example.com" })
-    );
+    expect(mockCreateNotification).toHaveBeenCalledTimes(1);
+    const [params, options] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(expect.objectContaining({ userId: "u1", domain: "care", type: "CARE_MSDP_ASSIGNED" }));
+    expect(options?.email).toBeDefined();
   });
 
-  it("n'envoie pas d'email si le conseiller n'a pas d'adresse email, mais crée la notification in-app", async () => {
-    prismaMock.notification.create.mockResolvedValue({} as never);
+  it("n'envoie pas de contenu email si le conseiller n'a pas d'adresse email, mais crée la notification in-app", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       name: "Jean Dupont",
       email: null,
@@ -84,17 +83,16 @@ describe("notifyMsdpCounselorAssigned", () => {
       appUrl: "https://koinonia.example",
     });
 
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).not.toHaveBeenCalled();
+    const [, options] = mockCreateNotification.mock.calls[0];
+    expect(options).toBeUndefined();
   });
 
-  it("ne lève pas d'exception si l'envoi de l'email échoue", async () => {
-    prismaMock.notification.create.mockResolvedValue({} as never);
+  it("ne lève pas d'exception si l'écriture de la notification échoue", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       name: "Jean Dupont",
       email: "jean@example.com",
     } as never);
-    mockSendEmail.mockRejectedValue(new Error("SMTP down"));
+    mockCreateNotification.mockRejectedValue(new Error("DB down"));
 
     await expect(
       notifyMsdpCounselorAssigned({
@@ -130,9 +128,9 @@ describe("runMsdpInactivityNotifications", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSendEmail.mockResolvedValue(undefined);
+    mockCreateNotification.mockResolvedValue(undefined);
+    mockNotifyUsers.mockResolvedValue(undefined);
     process.env.SMTP_HOST = "smtp.example.com";
-    prismaMock.notification.create.mockResolvedValue({} as never);
     prismaMock.notification.findMany.mockResolvedValue([]);
   });
 
@@ -154,18 +152,15 @@ describe("runMsdpInactivityNotifications", () => {
     };
   }
 
-  it("notifie et envoie un email au conseiller assigné pour un suivi inactif", async () => {
+  it("notifie et transmet le contenu email au conseiller assigné pour un suivi inactif", async () => {
     prismaMock.msdpFollowUp.findMany.mockResolvedValue([makeFollowUp()] as never);
 
     const result = await runMsdpInactivityNotifications("https://koinonia.example");
 
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ userId: "counselor-1", type: "CARE_MSDP_INACTIVITY", link: "/care/followups/f1" }),
-      })
-    );
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "jean@example.com" }));
+    expect(mockCreateNotification).toHaveBeenCalledTimes(1);
+    const [params, options] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(expect.objectContaining({ userId: "counselor-1", domain: "care", type: "CARE_MSDP_INACTIVITY", link: "/care/followups/f1" }));
+    expect(options?.email).toBeDefined();
     expect(result).toEqual({ notified: 1, skipped: 0, total: 1 });
   });
 
@@ -183,9 +178,8 @@ describe("runMsdpInactivityNotifications", () => {
     expect(prismaMock.department.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ function: "MSDP" }) })
     );
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: "manager-1" }) })
-    );
+    expect(mockNotifyUsers).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers.mock.calls[0][0]).toEqual(["manager-1"]);
     expect(result.notified).toBe(1);
   });
 
@@ -204,7 +198,8 @@ describe("runMsdpInactivityNotifications", () => {
     expect(prismaMock.userDepartment.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { departmentId: { in: ["dept-msdp-1", "dept-msdp-2"] } } })
     );
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers).toHaveBeenCalledTimes(1);
+    expect(mockNotifyUsers.mock.calls[0][0]).toEqual(["manager-1"]);
     expect(result.notified).toBe(1);
   });
 
@@ -230,11 +225,11 @@ describe("runMsdpInactivityNotifications", () => {
 
     const result = await runMsdpInactivityNotifications("https://koinonia.example");
 
-    expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(mockCreateNotification).not.toHaveBeenCalled();
     expect(result).toEqual({ notified: 0, skipped: 1, total: 1 });
   });
 
-  it("continue de traiter les autres suivis si l'envoi d'email échoue pour l'un d'eux", async () => {
+  it("continue de traiter les autres suivis si l'écriture de l'un d'eux échoue", async () => {
     prismaMock.msdpFollowUp.findMany.mockResolvedValue([
       makeFollowUp({ id: "f1" }),
       makeFollowUp({
@@ -242,13 +237,13 @@ describe("runMsdpInactivityNotifications", () => {
         assignedConseillerMsdp: { id: "counselor-2", name: "Paul", email: "paul@example.com" },
       }),
     ] as never);
-    mockSendEmail.mockRejectedValueOnce(new Error("SMTP down")).mockResolvedValueOnce(undefined);
+    mockCreateNotification.mockRejectedValueOnce(new Error("DB down")).mockResolvedValueOnce(undefined);
 
     const result = await expect(
       runMsdpInactivityNotifications("https://koinonia.example")
     ).resolves.toEqual({ notified: 2, skipped: 0, total: 2 });
 
-    expect(mockSendEmail).toHaveBeenCalledTimes(2);
+    expect(mockCreateNotification).toHaveBeenCalledTimes(2);
     return result;
   });
 });

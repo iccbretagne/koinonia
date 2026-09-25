@@ -194,25 +194,26 @@ existant, et ajoute le pied de page (T19).
 
 ### 1.7 Tests
 
-- [ ] **T40** [P] — `resolveEmailPreference` (global coupé, préférence explicite vraie/fausse,
+- [x] **T40** [P] — `resolveEmailPreference` (global coupé, préférence explicite vraie/fausse,
       défaut du domaine) ; `getPreferencesView` (domaines visibles par permission, par historique,
       `hasEmail`, cas `jobs` sans lien avec `JobNotificationSubscription`) ; `updatePreferences`
       (upsert, `jobs` compris, rejet d'une clé non visible).
       *(fichier : `src/lib/__tests__/notification-preferences.test.ts`)*
-- [ ] **T41** [P] — `dispatchUserEmails` (email envoyé/non envoyé selon préférence et présence
+- [x] **T41** [P] — `dispatchUserEmails` (email envoyé/non envoyé selon préférence et présence
       d'une adresse, pied de page présent, erreur SMTP avalée et journalisée) ; `tx` optionnel
       respecté par `createNotification`/`notifyUsersWithRole`/`notifyDeptMembers`/`notifyUsers`.
       *(fichier : `src/lib/__tests__/notifications.test.ts`, nouveau)*
-- [ ] **T42** [P] — `collectNotificationDomains`/`buildNotificationDomains` : clés uniques,
+- [x] **T42** [P] — `collectNotificationDomains`/`buildNotificationDomains` : clés uniques,
       conflit entre deux modules détecté, domaines des modules inactifs absents.
       *(fichiers : `src/core/__tests__/module-registry.test.ts`, `src/core/__tests__/notification-domains.test.ts`)*
-- [ ] **T43** — `GET`/`PUT /api/notifications/preferences` : 401 sans session, domaines filtrés
-      par visibilité, clé inconnue rejetée, écriture correcte, `jobs` écrit l'abonnement.
+- [x] **T43** — `GET`/`PUT /api/notifications/preferences` : 401 sans session, domaines filtrés
+      par visibilité, clé inconnue ou non visible rejetée (400), écriture correcte (`jobs`
+      compris, sans toucher à l'abonnement emploi).
       *(fichier : `src/app/api/notifications/__tests__/preferences.test.ts`)*
-- [ ] **T44** — Mettre à jour les tests existants des sites migrés en 1.4 (comptabilité, care,
+- [x] **T44** — Mettre à jour les tests existants des sites migrés en 1.4 (comptabilité, care,
       intégration, emploi, rappels de service) pour les nouvelles signatures (`domain`, `tx`
       optionnel) sans changer les assertions de contenu des emails/notifications.
-- [ ] **T45** — Test-gardien : `sendEmail` (de `@/lib/email`) n'est importé, dans `src/`, que par
+- [x] **T45** — Test-gardien : `sendEmail` (de `@/lib/email`) n'est importé, dans `src/`, que par
       `src/lib/notifications.ts` et la liste blanche des sites « sans compte » ou « adresse
       institutionnelle » identifiés en 1.4 (`care/services/appointments.ts`,
       `agenda/requests/[id]/schedule`, branche sans-compte de

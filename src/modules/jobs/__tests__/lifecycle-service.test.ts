@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
-const mockSendEmail = vi.fn();
+const mockDispatchUserEmails = vi.fn();
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email", () => ({
-  sendEmail: (...args: unknown[]) => mockSendEmail(...args),
   buildJobOfferRenewalEmail: vi.fn().mockReturnValue({ subject: "s", html: "h" }),
+}));
+vi.mock("@/lib/notifications", () => ({
+  dispatchUserEmails: (...args: unknown[]) => mockDispatchUserEmails(...args),
 }));
 
 const { runJobOffersLifecycle } = await import("../services/lifecycle-service");
@@ -30,7 +32,7 @@ function offer(overrides: Record<string, unknown> = {}) {
 describe("runJobOffersLifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.SMTP_HOST = "smtp.example.com";
+    mockDispatchUserEmails.mockResolvedValue({ sent: 1, failed: 0 });
     prismaMock.jobOffer.updateMany.mockResolvedValue({ count: 0 } as never);
     prismaMock.jobOffer.findMany.mockResolvedValue([] as never);
     prismaMock.jobOffer.update.mockResolvedValue({} as never);
@@ -59,7 +61,7 @@ describe("runJobOffersLifecycle", () => {
     expect(where.updatedAt).toEqual(expect.objectContaining({ lt: expect.any(Date) }));
   });
 
-  it("relance une offre inactive >60j : pose renewalRequestedAt, crée la notif, tente l'email", async () => {
+  it("relance une offre inactive >60j : pose renewalRequestedAt, crée la notif, tente l'email via le domaine jobs", async () => {
     prismaMock.jobOffer.findMany.mockResolvedValue([offer()] as never);
 
     const res = await runJobOffersLifecycle("http://app");
@@ -68,9 +70,10 @@ describe("runJobOffersLifecycle", () => {
       expect.objectContaining({ where: { id: "o1" }, data: { renewalRequestedAt: expect.any(Date) } })
     );
     expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: "u1", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" }) })
+      expect.objectContaining({ data: expect.objectContaining({ userId: "u1", domain: "jobs", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" }) })
     );
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockDispatchUserEmails).toHaveBeenCalledTimes(1);
+    expect(mockDispatchUserEmails).toHaveBeenCalledWith(["u1"], "jobs", { subject: "s", html: "h" });
     expect(res).toEqual({ archived: 0, renewalsSent: 1, emailFailures: 0 });
   });
 
@@ -79,12 +82,14 @@ describe("runJobOffersLifecycle", () => {
       offer({ id: "o1", authorId: "u1" }),
       offer({ id: "o2", authorId: "u2", author: { id: "u2", name: "Bob", displayName: null, email: "bob@example.com" } }),
     ] as never);
-    mockSendEmail.mockRejectedValueOnce(new Error("SMTP down"));
+    mockDispatchUserEmails
+      .mockResolvedValueOnce({ sent: 0, failed: 1 })
+      .mockResolvedValueOnce({ sent: 1, failed: 0 });
 
     const res = await runJobOffersLifecycle("http://app");
 
     expect(prismaMock.jobOffer.update).toHaveBeenCalledTimes(2); // les 2 offres marquées
-    expect(mockSendEmail).toHaveBeenCalledTimes(2); // la 2e est bien tentée malgré l'échec de la 1re
+    expect(mockDispatchUserEmails).toHaveBeenCalledTimes(2); // la 2e est bien tentée malgré l'échec de la 1re
     expect(res).toEqual({ archived: 0, renewalsSent: 2, emailFailures: 1 });
   });
 
@@ -96,7 +101,7 @@ describe("runJobOffersLifecycle", () => {
     const res = await runJobOffersLifecycle("http://app");
 
     expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).not.toHaveBeenCalled();
+    expect(mockDispatchUserEmails).not.toHaveBeenCalled();
     expect(res.renewalsSent).toBe(1);
   });
 
