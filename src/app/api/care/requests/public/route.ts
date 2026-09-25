@@ -22,6 +22,7 @@ const submitSchema = z.object({
   isStar: z.enum(["Oui", "Non"], { errorMap: () => ({ message: "Veuillez répondre à cette question" }) }),
   department: z.string().nullable().optional(),
   motifs: z.array(z.enum(MOTIFS)).min(1, "Veuillez sélectionner au moins un motif"),
+  details: z.string().trim().max(2000, "2000 caractères maximum").optional(),
   turnstileToken: z.string().min(1, "Vérification CAPTCHA manquante"),
 });
 
@@ -42,14 +43,19 @@ export async function POST(request: Request) {
     });
     if (!church) throw new ApiError(404, "Église introuvable");
 
-    // Motifs → subject ; contexte démographique → message structuré
+    // Motifs → subject ; message libre (facultatif) + contexte démographique → message structuré
     const subject = data.motifs.join(", ");
     const message = [
-      `Sexe : ${data.gender}`,
-      `Tranche d'âge : ${data.ageRange}`,
-      `À l'église depuis : ${data.membershipDuration}`,
-      `STAR : ${data.isStar}${data.isStar === "Oui" && data.department ? ` — Département : ${data.department}` : ""}`,
-    ].join("\n");
+      data.details,
+      [
+        `Sexe : ${data.gender}`,
+        `Tranche d'âge : ${data.ageRange}`,
+        `À l'église depuis : ${data.membershipDuration}`,
+        `STAR : ${data.isStar}${data.isStar === "Oui" && data.department ? ` — Département : ${data.department}` : ""}`,
+      ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n\n---\n\n");
 
     const created = await submitAppointmentRequest(
       {

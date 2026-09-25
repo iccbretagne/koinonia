@@ -56,6 +56,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     isStar: "",
     department: "",
     motifs: [] as string[],
+    details: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -111,6 +112,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
         body: JSON.stringify({
           churchSlug, ...form,
           department: form.department || null,
+          details: form.details.trim() || undefined,
           turnstileToken,
         }),
       });
@@ -252,6 +254,24 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
             ))}
           </div>
           <FieldError errors={fieldErrors} field="motifs" />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Votre message <span className="font-normal text-gray-400">(facultatif)</span>
+          </label>
+          <textarea
+            value={form.details}
+            onChange={(e) => set("details", e.target.value)}
+            rows={4}
+            maxLength={2000}
+            placeholder="Décrivez votre situation ou ce que vous souhaitez aborder…"
+            className={inputClass(fieldErrors, "details", "resize-none")}
+          />
+          <FieldError errors={fieldErrors} field="details" />
+          <p className="text-xs text-gray-400 mt-1">
+            Ce message n&apos;est lu que par le référent qui confie votre demande et par la personne qui vous accompagnera.
+          </p>
         </div>
       </div>
 
