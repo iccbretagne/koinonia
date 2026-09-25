@@ -59,6 +59,26 @@ describe("resolveRequestReaderAccess", () => {
     });
     expect(access.canReadContent).toBe(false);
   });
+
+  it("un membre du MSDP directement affecté (assignedMemberId) lit le contenu (spec 052, lot 2)", () => {
+    const access = resolveRequestReaderAccess({
+      canQualify: false,
+      currentUserId: "user-msdp-member",
+      assignedToUserId: null,
+      assignedMemberId: "user-msdp-member",
+    });
+    expect(access.canReadContent).toBe(true);
+  });
+
+  it("un autre membre du MSDP (assignedMemberId différent) ne lit pas le contenu", () => {
+    const access = resolveRequestReaderAccess({
+      canQualify: false,
+      currentUserId: "user-other-member",
+      assignedToUserId: null,
+      assignedMemberId: "user-msdp-member",
+    });
+    expect(access.canReadContent).toBe(false);
+  });
 });
 
 describe("projectRequest", () => {

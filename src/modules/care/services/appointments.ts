@@ -1,17 +1,31 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { notifyUsersWithRole, notifyDeptMembers, createNotification } from "@/lib/notifications";
-import { sendEmail, buildAppointmentConfirmationEmail, buildAppointmentRejectedEmail } from "@/lib/email";
-import { DEPT_FN } from "@/lib/department-functions";
+import { notifyUsersWithRole } from "@/lib/notifications";
+import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
 import type { Prisma, AppointmentRequestStatus } from "@/generated/prisma/client";
+import { resolveAssignee, type ResolvedAssignee } from "./assignee";
+import {
+  computeAppointmentTransitionData,
+  type AppointmentActor,
+  type AppointmentPatchBody,
+} from "./appointment-state";
+import { recordCareHistory } from "./history";
+import {
+  notifyAssigneeAssigned,
+  notifyAssigneeUnassigned,
+  notifyReferentsHandback,
+  notifyProtocoleToSchedule,
+  notifyRequesterScheduled,
+  notifyRequesterRejected,
+} from "./notifications";
+import { createFollowUpFromAppointmentOrientation } from "./followups";
 
 /**
- * Reprise à l'identique des demandes de rendez-vous pastoral (ex-`agenda`, spec 052/lot 1) :
- * mêmes transitions, mêmes notifications, simplement propriété de `care` et sans le jour
- * préféré (retiré du dépôt, spec 052 — la colonne `preferredDays` reste en base sans être
- * lue ni écrite). L'affectation à un membre du MSDP et les autres nouveautés (issue, retour
- * au référent, motifs de rejet qualifiés) arrivent au lot 2.
+ * Demandes de rendez-vous pastoral (spec 052). Le dépôt (lot 1) reste à comportement
+ * constant : commun au formulaire public et au formulaire connecté, sans jour préféré. Les
+ * transitions (lot 2) passent par la machine à états pure `appointment-state.ts` — affectation
+ * au choix profil pastoral/membre du MSDP, issue, retour au référent, motifs de rejet qualifiés.
  */
 
 export const appointmentSubmitSchema = z.object({
@@ -26,23 +40,10 @@ export const appointmentSubmitSchema = z.object({
 
 export type AppointmentSubmitInput = z.infer<typeof appointmentSubmitSchema>;
 
-export const appointmentPatchSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("validate"),
-    assignedToId: z.string().min(1, "Le profil pastoral est requis"),
-    qualificationNote: z.string().nullable().optional(),
-  }),
-  z.object({
-    action: z.literal("reject"),
-    rejectReason: z.string().nullable().optional(),
-  }),
-]);
-
-export type AppointmentPatchBody = z.infer<typeof appointmentPatchSchema>;
-
 const LIST_INCLUDE = {
   user: { select: { id: true, name: true, displayName: true } },
   assignedTo: { select: { id: true, name: true, role: true, userId: true } },
+  assignedMember: { select: { id: true, name: true, email: true } },
   qualifiedBy: { select: { id: true, name: true, displayName: true } },
 } satisfies Prisma.AppointmentRequestInclude;
 
@@ -115,113 +116,145 @@ export async function getAppointmentSummaryBySourceRequestId(sourceIntegrationRe
   });
 }
 
-/** PENDING → VALIDATED : confiée à un profil pastoral (comportement actuel, spec 052 lot 1). */
-export async function validateAppointmentRequest(params: {
+/** Demandes du demandeur connecté, sans l'accompagnant (T45, « Mes demandes »). */
+export async function listMyRequests(userId: string, churchId: string) {
+  return prisma.appointmentRequest.findMany({
+    where: { churchId, userId },
+    select: {
+      id: true,
+      subject: true,
+      status: true,
+      createdAt: true,
+      scheduledFor: true,
+      rejectReasonCode: true,
+      rejectReason: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Applique une transition (validate/reject/reassign/set_date/outcome/handback), calcule les
+ * notifications et journalise l'historique (T39, T42, T43). Le suivi de nouveau converti né
+ * d'une orientation (T41) est créé ici : c'est le seul endroit qui a déjà l'identité et le
+ * dossier de parcours de la demande sous la main.
+ */
+export async function applyAppointmentTransition(params: {
   id: string;
   churchId: string;
-  assignedToId: string;
-  qualificationNote: string | null;
+  body: AppointmentPatchBody;
   actorId: string;
+  isReferent: boolean;
 }) {
-  const { id, churchId, assignedToId, qualificationNote, actorId } = params;
+  const { id, churchId, body, actorId, isReferent } = params;
 
-  const existing = await prisma.appointmentRequest.findUnique({
-    where: { id },
-    select: { status: true, firstName: true, lastName: true, subject: true },
+  const existing = await prisma.appointmentRequest.findFirst({
+    where: { id, churchId },
+    include: LIST_INCLUDE,
   });
   if (!existing) throw new ApiError(404, "Demande introuvable");
-  if (existing.status !== "PENDING")
-    throw new ApiError(400, "Seules les demandes EN ATTENTE peuvent être qualifiées");
 
-  const profile = await prisma.pastoralProfile.findFirst({
-    where: { id: assignedToId, churchId },
-    select: { id: true },
-  });
-  if (!profile) throw new ApiError(400, "Profil pastoral invalide ou hors périmètre");
+  const currentAssigneeUserId = existing.assignedMemberId ?? existing.assignedTo?.userId ?? null;
+  const isCurrentAssignee = !!currentAssigneeUserId && currentAssigneeUserId === actorId;
+  const currentAssigneeHasAccount = existing.assignedMemberId
+    ? true
+    : existing.assignedToId
+      ? !!existing.assignedTo?.userId
+      : true;
+
+  const actor: AppointmentActor = { isReferent, isCurrentAssignee, currentAssigneeHasAccount };
+
+  let assignee: ResolvedAssignee | null = null;
+  if (body.action === "validate" || body.action === "reassign") {
+    assignee = await resolveAssignee(churchId, body.assignee);
+  }
+
+  const now = new Date();
+  const result = computeAppointmentTransitionData(
+    {
+      status: existing.status,
+      assignedToId: existing.assignedToId,
+      assignedMemberId: existing.assignedMemberId,
+      scheduledFor: existing.scheduledFor,
+    },
+    body,
+    actor,
+    now,
+    actorId,
+    assignee
+  );
 
   const updated = await prisma.appointmentRequest.update({
     where: { id },
-    data: {
-      status: "VALIDATED",
-      assignedToId,
-      assignedAt: new Date(),
-      assignedById: actorId,
-      qualifiedById: actorId,
-      qualifiedAt: new Date(),
-      qualificationNote: qualificationNote ?? null,
-      updatedById: actorId,
-    },
+    data: { ...result.data, updatedById: actorId },
     include: LIST_INCLUDE,
   });
 
-  notifyDeptMembers(churchId, DEPT_FN.PROTOCOLE, {
-    type: "CARE_APPOINTMENT_VALIDATED",
-    title: "Demande RDV à planifier",
-    message: `La demande de ${existing.firstName} ${existing.lastName} est prête à être planifiée.`,
-    link: "/agenda/schedule",
-  }).catch(() => {});
+  const personName = `${existing.firstName} ${existing.lastName}`;
 
-  return updated;
-}
-
-/** PENDING → REJECTED. */
-export async function rejectAppointmentRequest(params: {
-  id: string;
-  churchId: string;
-  rejectReason: string | null;
-  actorId: string;
-}) {
-  const { id, churchId, rejectReason, actorId } = params;
-
-  const existing = await prisma.appointmentRequest.findUnique({
-    where: { id },
-    select: {
-      status: true,
-      userId: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      subject: true,
-    },
-  });
-  if (!existing) throw new ApiError(404, "Demande introuvable");
-  if (existing.status !== "PENDING")
-    throw new ApiError(400, "Seules les demandes EN ATTENTE peuvent être qualifiées");
-
-  const updated = await prisma.appointmentRequest.update({
-    where: { id },
-    data: {
-      status: "REJECTED",
-      qualifiedById: actorId,
-      qualifiedAt: new Date(),
-      rejectReason: rejectReason ?? null,
-      updatedById: actorId,
-    },
+  await recordCareHistory({
+    userId: actorId,
+    churchId,
+    kind: "requests",
+    itemId: id,
+    action: body.action,
+    from: existing.status,
+    to: typeof result.data.status === "string" ? result.data.status : existing.status,
+    assignee: assignee?.name ?? null,
+    note: body.action === "handback" ? body.reason : body.action === "validate" ? body.note ?? null : null,
   });
 
-  if (existing.userId) {
-    createNotification({
-      userId: existing.userId,
-      type: "CARE_APPOINTMENT_REJECTED",
-      title: "Demande de RDV non retenue",
-      message: `Votre demande de rendez-vous pastoral n'a pas pu être retenue.${rejectReason ? ` Motif : ${rejectReason}` : ""}`,
-      link: "/requests",
-    }).catch(() => {});
+  if (result.notifyAssigned) {
+    await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "requests", itemId: id, personName });
   }
-  if (existing.email) {
-    const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
-    if (church) {
-      const { subject: emailSubject, html } = buildAppointmentRejectedEmail({
-        firstName: existing.firstName,
-        lastName: existing.lastName,
-        subject: existing.subject,
-        churchName: church.name,
-        rejectReason: rejectReason ?? null,
-      });
-      sendEmail({ to: existing.email, subject: emailSubject, html }).catch((err) => {
-        console.error("[care/appointments] sendEmail rejected failed:", err?.message ?? err);
-      });
-    }
+  if (result.notifyPreviousAssignee && currentAssigneeUserId) {
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, personName });
+  }
+  if (result.notifyReferents) {
+    await notifyReferentsHandback({
+      churchId,
+      kind: "requests",
+      itemId: id,
+      personName,
+      reason: body.action === "handback" ? body.reason : "",
+    });
+  }
+  if (result.notifyProtocole) {
+    await notifyProtocoleToSchedule({ churchId, personName });
+  }
+  if (body.action === "set_date") {
+    await notifyRequesterScheduled({
+      userId: existing.userId,
+      email: existing.email,
+      firstName: existing.firstName,
+      lastName: existing.lastName,
+      subject: existing.subject,
+      churchId,
+      scheduledFor: new Date(body.scheduledFor),
+    });
+  }
+  if (body.action === "reject") {
+    await notifyRequesterRejected({
+      userId: existing.userId,
+      email: existing.email,
+      firstName: existing.firstName,
+      lastName: existing.lastName,
+      subject: existing.subject,
+      churchId,
+      reasonCode: body.reasonCode,
+      comment: body.comment ?? null,
+    });
+  }
+  if (result.createFollowUpFromOrientation) {
+    await createFollowUpFromAppointmentOrientation({
+      appointmentId: id,
+      churchId,
+      firstName: existing.firstName,
+      lastName: existing.lastName,
+      phone: existing.phone,
+      email: existing.email,
+      personJourneyId: existing.personJourneyId,
+    });
   }
 
   return updated;
@@ -229,8 +262,9 @@ export async function rejectAppointmentRequest(params: {
 
 /**
  * VALIDATED → SCHEDULED, appelé par l'orchestrateur `agenda` (T19) dans la transaction qui
- * crée l'entrée d'agenda. `scheduledFor` (spec 052) est renseigné en plus de `scheduledAt`
- * (horodatage de l'action) pour porter la date du rendez-vous indépendamment de l'accompagnant.
+ * crée l'entrée d'agenda — réservé à une demande confiée à un **profil pastoral** : un membre
+ * du MSDP fixe sa propre date via l'action `set_date` (lot 2), sans entrée d'agenda.
+ * `scheduledFor` (spec 052) est renseigné en plus de `scheduledAt` (horodatage de l'action).
  */
 export async function markAppointmentScheduled(
   tx: Prisma.TransactionClient,

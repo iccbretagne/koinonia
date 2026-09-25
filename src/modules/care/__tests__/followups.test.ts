@@ -18,73 +18,15 @@ vi.mock("next-auth", () => ({
 }));
 
 const {
-  computeMsdpTransitionData,
   buildMsdpCounselorNotifEmail,
   notifyMsdpCounselorAssigned,
   buildMsdpInactivityEmail,
   runMsdpInactivityNotifications,
 } = await import("../services/followups");
 
-// ─── Machine à états — reprise à l'identique (ex-msdp-service) ────────────────
-
-describe("computeMsdpTransitionData", () => {
-  const now = new Date("2026-01-01T10:00:00Z");
-
-  it("assign_counselor passe en ASSIGNED", () => {
-    const data = computeMsdpTransitionData({ status: "SUBMITTED" }, { action: "assign_counselor", counselorId: "u1" }, now);
-    expect(data).toEqual({ status: "ASSIGNED", assignedConseillerMsdpId: "u1", assignedAt: now });
-  });
-
-  it("contact exige ASSIGNED", () => {
-    expect(() => computeMsdpTransitionData({ status: "SUBMITTED" }, { action: "contact" }, now)).toThrow(
-      "Transition invalide"
-    );
-    expect(computeMsdpTransitionData({ status: "ASSIGNED" }, { action: "contact" }, now)).toEqual({
-      status: "CONTACTED",
-      contactedAt: now,
-    });
-  });
-
-  it("in_formation exige CONTACTED", () => {
-    expect(() => computeMsdpTransitionData({ status: "ASSIGNED" }, { action: "in_formation" }, now)).toThrow();
-    expect(computeMsdpTransitionData({ status: "CONTACTED" }, { action: "in_formation" }, now)).toEqual({
-      status: "IN_FORMATION",
-      inFormationAt: now,
-    });
-  });
-
-  it("complete exige IN_FORMATION", () => {
-    expect(() => computeMsdpTransitionData({ status: "CONTACTED" }, { action: "complete" }, now)).toThrow();
-    expect(computeMsdpTransitionData({ status: "IN_FORMATION" }, { action: "complete" }, now)).toEqual({
-      status: "COMPLETED",
-      completedAt: now,
-    });
-  });
-
-  it("abandon refuse un suivi déjà terminé", () => {
-    expect(() => computeMsdpTransitionData({ status: "COMPLETED" }, { action: "abandon" }, now)).toThrow(
-      "suivi terminé"
-    );
-    expect(computeMsdpTransitionData({ status: "CONTACTED" }, { action: "abandon" }, now)).toEqual({
-      status: "ABANDONED",
-      abandonedAt: now,
-    });
-  });
-
-  it("reopen exige ABANDONED", () => {
-    expect(() => computeMsdpTransitionData({ status: "CONTACTED" }, { action: "reopen" }, now)).toThrow();
-    expect(computeMsdpTransitionData({ status: "ABANDONED" }, { action: "reopen" }, now)).toEqual({
-      status: "SUBMITTED",
-      abandonedAt: null,
-    });
-  });
-
-  it("note met à jour les notes quel que soit le statut", () => {
-    expect(computeMsdpTransitionData({ status: "SUBMITTED" }, { action: "note", notes: "Contexte" }, now)).toEqual({
-      notes: "Contexte",
-    });
-  });
-});
+// La machine à états (assign/reassign/contact/…) est désormais testée dans
+// `followup-state.test.ts` (T40, spec 052 lot 2) — signature et droits ont changé (accompagnant
+// en charge, deux populations d'affectation).
 
 describe("buildMsdpCounselorNotifEmail", () => {
   it("inclut le nom du conseiller, le nom de la personne suivie et le lien vers /care/followups", () => {

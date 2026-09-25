@@ -7,6 +7,23 @@ import { functionForRequestType } from "@/lib/department-functions";
 import { getFunctionDepartmentsMap } from "@/lib/function-departments";
 import RequestsList from "./RequestsList";
 import type { RequestType } from "@/generated/prisma/client";
+import { listMyRequests, REJECT_REASON_LABELS } from "@/modules/care";
+
+const APPOINTMENT_STATUS_LABEL: Record<string, string> = {
+  PENDING: "En attente",
+  VALIDATED: "Confiée",
+  SCHEDULED: "Planifiée",
+  CLOSED: "Terminée",
+  REJECTED: "Refusée",
+};
+
+const APPOINTMENT_STATUS_COLOR: Record<string, string> = {
+  PENDING: "bg-amber-100 text-amber-800",
+  VALIDATED: "bg-blue-100 text-blue-800",
+  SCHEDULED: "bg-green-100 text-green-800",
+  CLOSED: "bg-gray-100 text-gray-600",
+  REJECTED: "bg-red-100 text-red-700",
+};
 
 export default async function MyRequestsPage() {
   const session = await requireAuth();
@@ -77,6 +94,10 @@ export default async function MyRequestsPage() {
     childRequests: r.childRequests.map(decorate),
   }));
 
+  const appointmentRequests = registry.has("care")
+    ? await listMyRequests(session.user.id!, churchId)
+    : [];
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -92,6 +113,33 @@ export default async function MyRequestsPage() {
           </Link>
         </div>
       </div>
+      {appointmentRequests.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Rendez-vous pastoraux</h2>
+          <div className="space-y-2">
+            {appointmentRequests.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">{r.subject}</p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(r.scheduledFor ?? r.createdAt).toLocaleDateString("fr-FR")}
+                    {r.status === "REJECTED" && r.rejectReasonCode && (
+                      <> · {REJECT_REASON_LABELS[r.rejectReasonCode] ?? r.rejectReasonCode}</>
+                    )}
+                  </p>
+                </div>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${APPOINTMENT_STATUS_COLOR[r.status] ?? "bg-gray-100 text-gray-500"}`}>
+                  {APPOINTMENT_STATUS_LABEL[r.status] ?? r.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <RequestsList requests={decoratedRequests} />
     </div>
   );

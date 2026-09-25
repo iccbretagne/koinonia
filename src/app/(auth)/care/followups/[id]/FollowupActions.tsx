@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
-
-interface Counselor { id: string; name: string | null; email: string | null }
+import AssigneeSelect, { type AssigneeValue } from "../../AssigneeSelect";
 
 const NEXT_ACTION: Record<string, { action: string; label: string } | null> = {
   ASSIGNED: { action: "contact", label: "Marquer contacté" },
@@ -15,20 +14,30 @@ const NEXT_ACTION: Record<string, { action: string; label: string } | null> = {
   ABANDONED: null,
 };
 
-export default function FollowupActions({ followUpId, churchId, status, isManager, notes: initialNotes }: {
+interface Props {
   readonly followUpId: string;
   readonly churchId: string;
   readonly status: string;
-  readonly isManager: boolean;
+  readonly isReferent: boolean;
+  readonly isCurrentAssignee: boolean;
   readonly notes: string;
-}) {
+}
+
+export default function FollowupActions({
+  followUpId,
+  churchId,
+  status,
+  isReferent,
+  isCurrentAssignee,
+  notes: initialNotes,
+}: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState(initialNotes);
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [counselors, setCounselors] = useState<Counselor[]>([]);
-  const [selectedCounselorId, setSelectedCounselorId] = useState("");
+  const [mode, setMode] = useState<"none" | "assign" | "reassign" | "handback">("none");
+  const [assignee, setAssignee] = useState<AssigneeValue | null>(null);
+  const [handbackReason, setHandbackReason] = useState("");
 
   async function patch(body: Record<string, unknown>) {
     setLoading(true);
@@ -40,85 +49,109 @@ export default function FollowupActions({ followUpId, churchId, status, isManage
         body: JSON.stringify(body),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "Erreur"); return; }
+      setMode("none");
       router.refresh();
     } catch { setError("Erreur réseau"); }
     finally { setLoading(false); }
   }
 
-  async function openAssign() {
-    setAssignOpen(true);
-    try {
-      const res = await fetch(`/api/care/companions?churchId=${churchId}`);
-      const json = await res.json();
-      setCounselors(json?.msdpMembers ?? []);
-    } catch { /* ignore */ }
+  async function assignOrReassign(action: "assign" | "reassign") {
+    if (!assignee) { setError("Veuillez sélectionner un accompagnant."); return; }
+    await patch({ action, assignee });
+  }
+
+  async function handback() {
+    if (!handbackReason.trim()) { setError("Veuillez indiquer un motif."); return; }
+    await patch({ action: "handback", reason: handbackReason.trim() });
   }
 
   const nextAction = NEXT_ACTION[status];
+  const canAssign = isReferent && status === "SUBMITTED";
+  const canReassign = isReferent && (status === "ASSIGNED" || status === "CONTACTED" || status === "IN_FORMATION");
+  const canWorkflow = isCurrentAssignee && !!nextAction;
+  const canAbandon = (isCurrentAssignee || isReferent) && status !== "COMPLETED" && status !== "ABANDONED";
+  const canReopen = isReferent && status === "ABANDONED";
+  const canHandback = isCurrentAssignee && (status === "ASSIGNED" || status === "CONTACTED" || status === "IN_FORMATION");
+  const canNote = isCurrentAssignee || isReferent;
 
   return (
     <div className="space-y-4">
-      {isManager && (status === "SUBMITTED" || status === "ASSIGNED") && (
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {(canAssign || canReassign) && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          {assignOpen ? (
+          {mode === "assign" || mode === "reassign" ? (
             <div className="space-y-3">
-              <select
-                value={selectedCounselorId}
-                onChange={(e) => setSelectedCounselorId(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
-              >
-                <option value="">— Sélectionner un conseiller —</option>
-                {counselors.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name ?? c.email}</option>
-                ))}
-              </select>
+              <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
               <div className="flex gap-2">
-                <Button size="sm" disabled={!selectedCounselorId || loading}
-                  onClick={() => patch({ action: "assign_counselor", counselorId: selectedCounselorId })}>
-                  Confirmer
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setAssignOpen(false)}>Annuler</Button>
+                <Button size="sm" disabled={loading} onClick={() => assignOrReassign(mode)}>Confirmer</Button>
+                <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
               </div>
             </div>
           ) : (
-            <Button size="sm" onClick={openAssign}>Assigner un conseiller</Button>
+            <Button size="sm" onClick={() => setMode(canAssign ? "assign" : "reassign")}>
+              {canAssign ? "Assigner un accompagnant" : "Réaffecter"}
+            </Button>
           )}
         </div>
       )}
 
-      {nextAction && (
+      {canWorkflow && nextAction && (
         <Button size="sm" disabled={loading} onClick={() => patch({ action: nextAction.action })}>
           {nextAction.label}
         </Button>
       )}
 
-      {status !== "COMPLETED" && status !== "ABANDONED" && (
+      {canHandback && mode !== "handback" && (
+        <Button size="sm" variant="secondary" disabled={loading} onClick={() => setMode("handback")}>
+          Rendre au référent
+        </Button>
+      )}
+      {mode === "handback" && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Motif du retour au référent <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            value={handbackReason}
+            onChange={(e) => setHandbackReason(e.target.value)}
+            rows={2}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" variant="danger" disabled={loading} onClick={handback}>Confirmer</Button>
+            <Button size="sm" variant="secondary" onClick={() => setMode("none")}>Annuler</Button>
+          </div>
+        </div>
+      )}
+
+      {canAbandon && (
         <Button size="sm" variant="danger" disabled={loading}
           onClick={() => { if (confirm("Abandonner ce suivi ?")) patch({ action: "abandon" }); }}>
           Abandonner
         </Button>
       )}
 
-      {status === "ABANDONED" && isManager && (
+      {canReopen && (
         <Button size="sm" disabled={loading} onClick={() => patch({ action: "reopen" })}>
           Rouvrir
         </Button>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
-        />
-        <Button size="sm" className="mt-2" disabled={loading} onClick={() => patch({ action: "note", notes })}>
-          Enregistrer
-        </Button>
-      </div>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {canNote && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+          />
+          <Button size="sm" className="mt-2" disabled={loading} onClick={() => patch({ action: "note", notes })}>
+            Enregistrer
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

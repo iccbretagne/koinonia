@@ -12,8 +12,14 @@ vi.mock("@/lib/notifications", () => ({
   notifyDeptMembers: vi.fn().mockResolvedValue(undefined),
   createNotification: vi.fn().mockResolvedValue(undefined),
 }));
+// `submitAppointmentRequest` (services/appointments.ts) importe `./followups`, qui importe
+// `../auth` → `@/lib/auth` (NextAuth) au niveau module — mocké ici même si ce test n'exerce
+// aucune garde de session (même besoin que pour tout module qui traverse cette chaîne).
+vi.mock("next-auth", () => ({
+  default: () => ({ auth: vi.fn(), handlers: {}, signIn: vi.fn(), signOut: vi.fn() }),
+}));
 
-const { submitAppointmentRequest } = await import("../services/appointments");
+const { submitAppointmentRequest, listMyRequests } = await import("../services/appointments");
 
 /**
  * T35 — le formulaire public et le formulaire connecté partagent le même service de dépôt :
@@ -66,5 +72,28 @@ describe("submitAppointmentRequest — parité des deux points d'entrée (T35)",
     const call = prismaMock.appointmentRequest.create.mock.calls.at(-1)?.[0];
     expect(call.data.status).toBeUndefined(); // valeur par défaut du schéma (PENDING)
     expect(call.data.assignedToId).toBeUndefined();
+  });
+});
+
+/**
+ * T45, T57 — le demandeur connecté ne retrouve que ses propres demandes, sans accompagnant
+ * (« Mes demandes », spec 052).
+ */
+describe("listMyRequests — limité à l'appelant (T45, T57)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("filtre par churchId et userId, sans exposer l'accompagnant", async () => {
+    prismaMock.appointmentRequest.findMany.mockResolvedValue([
+      { id: "req-1", subject: "Besoin d'accompagnement", status: "PENDING", createdAt: new Date(), scheduledFor: null, rejectReasonCode: null, rejectReason: null },
+    ] as never);
+
+    const result = await listMyRequests("user-1", "church-1");
+
+    expect(prismaMock.appointmentRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { churchId: "church-1", userId: "user-1" } })
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]).not.toHaveProperty("assignedToId");
+    expect(result[0]).not.toHaveProperty("assignedMemberId");
   });
 });
