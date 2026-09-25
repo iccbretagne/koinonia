@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from "react";
 
-export default function PublicFormBanner({ slug }: { readonly slug: string }) {
+/**
+ * Bandeau du lien public `/rejoindre/[slug]` — formulaire unique couvrant à la fois la demande
+ * d'intégration à une famille et l'appel au salut (suivi MSDP). Affiché sur `/integration/requests`
+ * et sur `/care` (spec 052) : deux libellés différents pour le même lien, selon le point d'entrée.
+ */
+export default function PublicFormBanner({
+  slug,
+  label = "Lien public — formulaire de rejoindre une famille",
+}: {
+  readonly slug: string;
+  readonly label?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
   // `window` n'existe pas au rendu serveur : l'origine ne peut etre connue qu'apres montage,
@@ -26,7 +37,7 @@ export default function PublicFormBanner({ slug }: { readonly slug: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
       </svg>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-icc-violet mb-0.5">Lien public — formulaire de rejoindre une famille</p>
+        <p className="text-xs font-medium text-icc-violet mb-0.5">{label}</p>
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-icc-violet hover:underline truncate block">{url}</a>
       </div>
       <button

@@ -2,7 +2,7 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
 import IntegrationDashboard from "./IntegrationDashboard";
-import PublicFormBanner from "./PublicFormBanner";
+import PublicFormBanner from "@/components/PublicFormBanner";
 
 export default async function IntegrationRequestsPage() {
   const session = await requireAuth();

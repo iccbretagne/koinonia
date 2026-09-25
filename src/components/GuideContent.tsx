@@ -313,7 +313,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Suivi par l'accompagnant : date et issue",
-    description: "Sur la fiche d'une demande confiée (/care/requests/[id]), l'accompagnant en charge peut fixer lui-même la date du rendez-vous s'il est membre du MSDP (un profil pastoral est planifié par le protocole, voir « Vue et planification agenda » ci-dessous), rendre la demande au référent avec une raison s'il ne peut pas la suivre, puis saisir l'issue une fois le rendez-vous passé : tenu, orienté vers un suivi de nouveau converti, absent (clôturer ou replanifier), ou nouveau rendez-vous à reprendre.",
+    description: "Sur la fiche d'une demande confiée (/care/requests/[id]), l'accompagnant en charge peut fixer lui-même la date du rendez-vous s'il est membre du MSDP (un profil pastoral est planifié par le protocole, voir « Vue et planification agenda » ci-dessous), rendre la demande au référent avec une raison s'il ne peut pas la suivre, puis renseigner le compte rendu du rendez-vous une fois celui-ci passé : tenu, orienté vers un suivi de nouveau converti, absent (clôturer ou replanifier), ou nouveau rendez-vous à reprendre.",
     category: "Suivi pastoral",
     screenshotTitle: "Suivi par l'accompagnant",
     screenshotFile: "guide-care-suivi-accompagnant.png",

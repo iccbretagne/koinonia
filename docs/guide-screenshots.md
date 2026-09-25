@@ -121,7 +121,7 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 |---|---|---|---|
 | 26 | `guide-care-demande.png` | `/requests/new` | Tuile « Rendez-vous pastoral » et formulaire de demande rempli |
 | 27 | `guide-care-qualification.png` | `/care` | Demande en attente avec le sélecteur d'accompagnant (deux groupes) ouvert |
-| 28 | `guide-care-suivi-accompagnant.png` | `/care/requests/[id]` | Fiche d'une demande confiée à un membre du MSDP, action « Fixer la date » ou « Issue du rendez-vous » ouverte |
+| 28 | `guide-care-suivi-accompagnant.png` | `/care/requests/[id]` | Fiche d'une demande confiée à un membre du MSDP, action « Fixer la date » ou « Compte rendu du rendez-vous » ouverte |
 | 29 | `guide-care-msdp.png` | `/care` | Onglet « Nouveaux convertis » avec un suivi en cours et son accompagnant |
 | 30 | `guide-agenda-planification.png` | `/agenda/schedule` | Demandes confiées à un profil pastoral, à planifier |
 | 31 | `guide-care-parametres.png` | `/care/parametres` | Réglage des deux délais de relance (non confiée / confiée sans date) |
