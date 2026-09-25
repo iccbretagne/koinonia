@@ -338,7 +338,7 @@ qu'aux demandes dont il est l'accompagnant en charge, vérifié objet par objet.
 Depuis le lot 2, l'affectation (validation, réaffectation) choisit entre deux populations
 d'accompagnants — un profil pastoral ou un membre d'un département de fonction `MSDP`
 (`AssigneeSelection`/`resolveAssignee`, `src/modules/care/services/assignee.ts`) — réservée à
-`care:qualify`. Les étapes de suivi (fixer la date, saisir l'issue, rendre au référent) sont
+`care:qualify`. Les étapes de suivi (fixer la date, renseigner le compte rendu, rendre au référent) sont
 réservées à l'accompagnant **en charge**, et non plus à toute l'équipe MSDP comme au lot 1. Le
 lot 3 ajoute `/care/parametres` (délais de relance, `CareSettings`, `care:qualify`), les relances
 elles-mêmes (`runCareRelances`, branchées au cron, bandeau « À relancer » dans `/care`) et

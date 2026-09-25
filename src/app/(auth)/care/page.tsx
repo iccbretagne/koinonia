@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import {
   getCareAccess,
   listAppointmentRequests,
@@ -11,6 +12,7 @@ import {
   isUnscheduledDue,
 } from "@/modules/care";
 import CareTabs from "./CareTabs";
+import PublicFormBanner from "@/components/PublicFormBanner";
 
 /**
  * Espace « Suivi pastoral » (spec 052) — deux onglets : Rendez-vous (ex-`/agenda/requests`,
@@ -31,9 +33,10 @@ export default async function CarePage() {
     );
   }
 
-  const [allRequests, allFollowUps] = await Promise.all([
+  const [allRequests, allFollowUps, church] = await Promise.all([
     listAppointmentRequests(churchId, ["PENDING", "VALIDATED", "SCHEDULED", "CLOSED", "REJECTED"]),
     listMsdpFollowUps(churchId),
+    prisma.church.findUnique({ where: { id: churchId }, select: { slug: true } }),
   ]);
 
   const requests = access.canOverview
@@ -94,6 +97,14 @@ export default async function CarePage() {
       <p className="text-sm text-gray-500 mb-4">
         Demandes de rendez-vous pastoral et suivi des nouveaux convertis.
       </p>
+      {church?.slug && (
+        <div className="mb-4">
+          <PublicFormBanner
+            slug={church.slug}
+            label="Lien public — formulaire d'accueil (dont appel au salut)"
+          />
+        </div>
+      )}
       {(unassignedCount > 0 || unscheduledCount > 0) && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4 text-sm text-orange-800">
           À relancer :

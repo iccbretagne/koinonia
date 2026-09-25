@@ -29,7 +29,7 @@ interface Props {
   readonly isReferent: boolean;
   readonly isCurrentAssignee: boolean;
   readonly isMemberAssignee: boolean;
-  /** Le référent peut saisir l'issue à la place d'un profil pastoral sans compte. */
+  /** Le référent peut renseigner le compte rendu à la place d'un profil pastoral sans compte. */
   readonly canActAsAssigneeProxy: boolean;
 }
 
@@ -102,7 +102,7 @@ export default function RequestActions({
   }
 
   async function outcome() {
-    if (!outcomeKind) { setError("Veuillez sélectionner une issue."); return; }
+    if (!outcomeKind) { setError("Veuillez sélectionner un résultat."); return; }
     await run({ action: "outcome", kind: outcomeKind });
   }
 
@@ -135,7 +135,7 @@ export default function RequestActions({
           )}
           {canReassign && <Button size="sm" variant="info" onClick={() => setMode("reassign")}>Réaffecter</Button>}
           {canSetDate && <Button size="sm" variant="info" onClick={() => setMode("set_date")}>Fixer la date</Button>}
-          {canOutcome && <Button size="sm" variant="info" onClick={() => setMode("outcome")}>Saisir l&apos;issue</Button>}
+          {canOutcome && <Button size="sm" variant="info" onClick={() => setMode("outcome")}>Compte rendu du rendez-vous</Button>}
           {canHandback && <Button size="sm" variant="secondary" onClick={() => setMode("handback")}>Rendre au référent</Button>}
         </div>
       )}
@@ -238,7 +238,7 @@ export default function RequestActions({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Issue du rendez-vous <span className="text-red-500">*</span>
+              Compte rendu du rendez-vous <span className="text-red-500">*</span>
             </label>
             <select
               value={outcomeKind}

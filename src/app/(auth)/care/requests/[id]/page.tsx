@@ -25,7 +25,7 @@ const HISTORY_ACTION_LABELS: Record<string, string> = {
   reject: "Refusée",
   reassign: "Réaffectée",
   set_date: "Date fixée",
-  outcome: "Issue saisie",
+  outcome: "Compte rendu renseigné",
   handback: "Rendue au référent",
 };
 
