@@ -120,7 +120,7 @@ describe("buildMsdpInactivityEmail", () => {
 
     expect(html).toContain("Marie Curie");
     expect(html).toContain("9 jours");
-    expect(html).toContain("Un conseiller a été assigné mais le contact n'a pas encore été établi.");
+    expect(html).toContain("Un référent MSDP a été désigné mais le contact n'a pas encore été établi.");
     expect(html).toContain("https://koinonia.example/care/followups/f1");
   });
 });

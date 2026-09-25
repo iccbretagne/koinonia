@@ -62,7 +62,7 @@ const CHURCH_STATUS_LABELS: Record<string, string> = {
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
   SUBMITTED:    "Appel reçu",
-  ASSIGNED:     "Conseiller assigné",
+  ASSIGNED:     "Référent MSDP assigné",
   CONTACTED:    "Premier contact établi",
   IN_FORMATION: "En formation",
   COMPLETED:    "Terminé",
@@ -705,7 +705,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
 
   const msdpSteps: StepData[] | null = msdpFollowUp ? [
     { label: "Reçu",       done: true,                                                                             current: msdpFollowUp.status === "SUBMITTED",    ts: msdpFollowUp.createdAt },
-    { label: "Conseiller", done: ["ASSIGNED","CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status), current: msdpFollowUp.status === "ASSIGNED",    ts: msdpFollowUp.assignedAt },
+    { label: "Référent",   done: ["ASSIGNED","CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status), current: msdpFollowUp.status === "ASSIGNED",    ts: msdpFollowUp.assignedAt },
     { label: "Contact",    done: ["CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),           current: msdpFollowUp.status === "CONTACTED",    ts: msdpFollowUp.contactedAt },
     { label: "Formation",  done: ["IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),                       current: msdpFollowUp.status === "IN_FORMATION", ts: msdpFollowUp.inFormationAt },
     { label: "Terminé",    done: msdpFollowUp.status === "COMPLETED",                                              current: msdpFollowUp.status === "COMPLETED",    ts: msdpFollowUp.completedAt },

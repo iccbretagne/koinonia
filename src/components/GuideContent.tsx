@@ -321,7 +321,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Suivi des nouveaux convertis (MSDP)",
-    description: "Depuis l'onglet « Nouveaux convertis » de /care, créé automatiquement à la réponse à l'appel au salut : confiez le suivi à un profil pastoral ou à un membre du MSDP, puis, en tant que conseiller en charge, faites progresser le statut (contacté, en formation, terminé), ajoutez des notes, ou rendez le suivi au référent. Un Référent soins pastoraux peut aussi réaffecter ou rouvrir un suivi abandonné.",
+    description: "Depuis l'onglet « Nouveaux convertis » de /care, créé automatiquement à la réponse à l'appel au salut : confiez le suivi à un profil pastoral ou à un membre du MSDP, puis, en tant que référent MSDP en charge, faites progresser le statut (contacté, en formation, terminé), ajoutez des notes, ou rendez le suivi au référent. Un Référent soins pastoraux peut aussi réaffecter ou rouvrir un suivi abandonné.",
     category: "Suivi pastoral",
     screenshotTitle: "Suivi des nouveaux convertis",
     screenshotFile: "guide-care-msdp.png",
@@ -337,7 +337,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Paramètres du suivi pastoral (délais de relance)",
-    description: "Depuis /care/parametres, réglez les deux délais au-delà desquels une demande est signalée à relancer dans le bandeau « À relancer » de /care : non confiée (alerte aux Référents soins pastoraux, 7 jours par défaut), et confiée sans suite — RDV sans date fixée ou suivi de nouveau converti sans premier contact (alerte au référent ou au conseiller en charge, 14 jours par défaut).",
+    description: "Depuis /care/parametres, réglez les deux délais au-delà desquels une demande est signalée à relancer dans le bandeau « À relancer » de /care : non confiée (alerte aux Référents soins pastoraux, 7 jours par défaut), et confiée sans suite — RDV sans date fixée ou suivi de nouveau converti sans premier contact (alerte au référent ou au référent MSDP en charge, 14 jours par défaut).",
     category: "Suivi pastoral",
     screenshotTitle: "Paramètres du suivi pastoral",
     screenshotFile: "guide-care-parametres.png",

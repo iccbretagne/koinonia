@@ -283,7 +283,7 @@ describe("runCareRelances", () => {
     expect(result.unassignedNotified).toBe(1);
   });
 
-  it("suivi confié à un conseiller MSDP, sans premier contact, en retard : notifie ce conseiller", async () => {
+  it("suivi confié à un référent MSDP, sans premier contact, en retard : notifie ce référent", async () => {
     prismaMock.appointmentRequest.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
     prismaMock.msdpFollowUp.findMany
       .mockResolvedValueOnce([])
