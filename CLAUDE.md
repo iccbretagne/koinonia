@@ -257,6 +257,50 @@ const data = schema.parse(await request.json());
 
 Style cohérent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composants existants dans `src/components/ui/` avant d'en créer de nouveaux.
 
+### Notifications et préférences email (spec 053, ADR-0016)
+
+Chaque notification appartient à un **domaine**, déclaré dans le manifeste du module qui l'émet
+(`notificationDomains`, même mécanisme que `permissions`/`routes` — ADR-0011/0012) :
+
+```ts
+notificationDomains: [
+  { key: "care", label: "Suivi pastoral", description: "...", defaultEmail: true, visibleWith: ["care:qualify", "care:view"] },
+],
+```
+
+`notificationDomains` (`@/lib/registry`) agrège les domaines des modules actifs. `visibleWith`
+absent = domaine toujours visible sur `/profile/notifications` ; sinon visible si l'utilisateur
+détient une des permissions listées, ou a déjà reçu une notification de ce domaine (rattachage
+historique).
+
+**Ne jamais appeler `sendEmail` directement pour notifier un utilisateur ayant un compte** —
+passer par les helpers de `src/lib/notifications.ts` :
+
+```typescript
+await createNotification(
+  { userId, domain: "accounting", type: "ACCOUNTING_APPROVED", title, message, link },
+  emailContent ? { email: emailContent } : undefined  // { subject, html }
+);
+// ou notifyUsers/notifyUsersWithRole/notifyDeptMembers pour plusieurs destinataires déjà identifiés
+```
+
+`domain` est **obligatoire** (ne compile pas sans lui). Ces helpers écrivent la notification
+in-app puis, hors transaction (`tx` fourni ⇒ email jamais envoyé ici, à l'appelant d'invoquer
+`dispatchUserEmails` lui-même une fois la transaction validée), délèguent l'envoi à
+`dispatchUserEmails(userIds, domain, content)` : il applique la préférence utilisateur
+(`resolveEmailPreference` — interrupteur général, puis préférence explicite du domaine, puis
+`defaultEmail`), ajoute le pied de page « Vous recevez cet email parce que… » et avale/journalise
+toute erreur SMTP.
+
+**Liste blanche** : un `sendEmail` direct reste légitime pour un destinataire **sans compte**
+utilisateur (formulaire public, adresse institutionnelle configurée par l'église, profil
+pastoral non lié) — jamais pour contourner la préférence d'un compte existant. Le domaine `jobs`
+est indépendant du réglage détaillé existant (`JobNotificationSubscription.email`, alertes de
+nouvelles offres) : les deux s'appliquent en cumul, sans fusion.
+
+Page utilisateur : `/profile/notifications` (interrupteur général + une ligne par domaine
+visible) ; API : `GET`/`PUT /api/notifications/preferences`.
+
 ## Design tokens
 
 | Token | Valeur | Usage |

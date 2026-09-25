@@ -185,12 +185,12 @@ existant, et ajoute le pied de page (T19).
 
 ### 1.6 Documentation
 
-- [ ] **T37** — `docs/adr/0016-preferences-notifications-email.md` : règle « un domaine par
+- [x] **T37** — `docs/adr/0016-preferences-notifications-email.md` : règle « un domaine par
       notification, email décidé centralement par préférence utilisateur, jamais figé au niveau
       du code appelant » — statut Accepté, référence spec 053. Mettre à jour `docs/adr/README.md`.
-- [ ] **T38** — `CLAUDE.md` : section notifications (domaines déclarés par les manifestes,
+- [x] **T38** — `CLAUDE.md` : section notifications (domaines déclarés par les manifestes,
       `notifyUsers`/`dispatchUserEmails`, page `/profile/notifications`).
-- [ ] **T39** — `docs/api.md` : documenter `GET`/`PUT /api/notifications/preferences`.
+- [x] **T39** — `docs/api.md` : documenter `GET`/`PUT /api/notifications/preferences`.
 
 ### 1.7 Tests
 
