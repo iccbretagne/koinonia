@@ -44,6 +44,8 @@ function RadioGroup({ name, options, value, onChange }: {
 }
 
 export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "", redirectTo, redirectLabel = "mes demandes" }: Props) {
+  // Statut STAR déjà connu du compte (lien membre validé) : pas besoin de le redemander.
+  const isStarKnown = defaultIsStar === "Oui";
   const [form, setForm] = useState({
     firstName: defaultFirstName,
     lastName: defaultLastName,
@@ -55,6 +57,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
     isStar: defaultIsStar,
     department: defaultDepartment,
     motifs: [] as string[],
+    details: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -80,7 +83,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
     if (!form.gender) errs.gender = "Veuillez sélectionner votre sexe";
     if (!form.ageRange) errs.ageRange = "Veuillez sélectionner votre tranche d'âge";
     if (!form.membershipDuration) errs.membershipDuration = "Veuillez sélectionner votre ancienneté";
-    if (!form.isStar) errs.isStar = "Veuillez répondre à cette question";
+    if (!isStarKnown && !form.isStar) errs.isStar = "Veuillez répondre à cette question";
     if (form.motifs.length === 0) errs.motifs = "Veuillez sélectionner au moins un motif";
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
@@ -93,11 +96,16 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
 
     const subject = form.motifs.join(", ");
     const message = [
-      `Sexe : ${form.gender}`,
-      `Tranche d'âge : ${form.ageRange}`,
-      `À l'église depuis : ${form.membershipDuration}`,
-      `STAR : ${form.isStar}${form.isStar === "Oui" && form.department ? ` — Département : ${form.department}` : ""}`,
-    ].join("\n");
+      form.details.trim() || null,
+      [
+        `Sexe : ${form.gender}`,
+        `Tranche d'âge : ${form.ageRange}`,
+        `À l'église depuis : ${form.membershipDuration}`,
+        `STAR : ${form.isStar}${form.isStar === "Oui" && form.department ? ` — Département : ${form.department}` : ""}`,
+      ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n\n---\n\n");
 
     try {
       const res = await fetch("/api/care/requests", {
@@ -196,18 +204,26 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
           {fieldErrors.membershipDuration && <p className="text-xs text-red-600 mt-1">{fieldErrors.membershipDuration}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Êtes-vous STAR ? *</label>
-          <RadioGroup name="isStar" options={["Oui", "Non"]} value={form.isStar} onChange={(v) => set("isStar", v)} />
-          {fieldErrors.isStar && <p className="text-xs text-red-600 mt-1">{fieldErrors.isStar}</p>}
-        </div>
-
-        {form.isStar === "Oui" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dans quel département servez-vous ?</label>
-            <input type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
-              placeholder="Ex : Choristes, Accueil, Son…" className={inputCls} />
+        {isStarKnown ? (
+          <div className="bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-600">
+            Vous êtes STAR{defaultDepartment ? ` — département : ${defaultDepartment}` : ""}.
           </div>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Êtes-vous STAR ? *</label>
+              <RadioGroup name="isStar" options={["Oui", "Non"]} value={form.isStar} onChange={(v) => set("isStar", v)} />
+              {fieldErrors.isStar && <p className="text-xs text-red-600 mt-1">{fieldErrors.isStar}</p>}
+            </div>
+
+            {form.isStar === "Oui" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dans quel département servez-vous ?</label>
+                <input type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
+                  placeholder="Ex : Choristes, Accueil, Son…" className={inputCls} />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -232,6 +248,23 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
             ))}
           </div>
           {fieldErrors.motifs && <p className="text-xs text-red-600 mt-1">{fieldErrors.motifs}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Votre message <span className="font-normal text-gray-400">(facultatif)</span>
+          </label>
+          <textarea
+            value={form.details}
+            onChange={(e) => set("details", e.target.value)}
+            rows={4}
+            maxLength={2000}
+            placeholder="Décrivez votre situation ou ce que vous souhaitez aborder…"
+            className={`${inputCls} resize-none`}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Ce message n&apos;est lu que par le référent qui confie votre demande et par la personne qui vous accompagnera.
+          </p>
         </div>
       </div>
 
