@@ -62,7 +62,7 @@ const CHURCH_STATUS_LABELS: Record<string, string> = {
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
   SUBMITTED:    "Appel reçu",
-  ASSIGNED:     "Référent MSDP assigné",
+  ASSIGNED:     "Référent assigné",
   CONTACTED:    "Premier contact établi",
   IN_FORMATION: "En formation",
   COMPLETED:    "Terminé",

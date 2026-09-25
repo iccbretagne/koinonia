@@ -56,7 +56,7 @@ export default function FollowupActions({
   }
 
   async function assignOrReassign(action: "assign" | "reassign") {
-    if (!assignee) { setError("Veuillez sélectionner un référent MSDP."); return; }
+    if (!assignee) { setError("Veuillez sélectionner un référent."); return; }
     await patch({ action, assignee });
   }
 
@@ -90,7 +90,7 @@ export default function FollowupActions({
             </div>
           ) : (
             <Button size="sm" onClick={() => setMode(canAssign ? "assign" : "reassign")}>
-              {canAssign ? "Assigner un référent MSDP" : "Réaffecter"}
+              {canAssign ? "Assigner un référent" : "Réaffecter"}
             </Button>
           )}
         </div>

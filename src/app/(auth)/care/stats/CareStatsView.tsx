@@ -39,7 +39,7 @@ const REJECT_REASON_LABELS: Record<string, string> = {
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Appel reçu",
-  ASSIGNED: "Référent MSDP assigné",
+  ASSIGNED: "Référent assigné",
   CONTACTED: "Contacté",
   IN_FORMATION: "En formation",
   COMPLETED: "Terminé",
