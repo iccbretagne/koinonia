@@ -26,7 +26,7 @@ const HISTORY_ACTION_LABELS: Record<string, string> = {
   reassign: "Réaffectée",
   set_date: "Date fixée",
   outcome: "Compte rendu renseigné",
-  handback: "Rendue au référent",
+  handback: "Rendue pour réaffectation",
 };
 
 const RELATED_STATUS_LABEL: Record<string, string> = {
@@ -85,7 +85,7 @@ export default async function CareRequestDetailPage({
         {STATUS_LABEL[item.status] ?? item.status}
         {wasHandedBack && (
           <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-            Rendu par l&apos;accompagnant
+            Rendue par le référent
           </span>
         )}
       </p>
@@ -100,14 +100,14 @@ export default async function CareRequestDetailPage({
             <p className="text-sm text-gray-600 whitespace-pre-line">{projected.message}</p>
           </>
         ) : (
-          <p className="text-sm text-gray-400 italic">Contenu confidentiel — réservé au référent et à l&apos;accompagnant en charge.</p>
+          <p className="text-sm text-gray-400 italic">Contenu confidentiel — réservé aux Référents soins pastoraux et au référent en charge.</p>
         )}
         {item.assignedTo && (
-          <p className="text-sm text-gray-600">Accompagnant : <strong>{item.assignedTo.name}</strong></p>
+          <p className="text-sm text-gray-600">Référent : <strong>{item.assignedTo.name}</strong></p>
         )}
         {item.assignedMember && (
           <p className="text-sm text-gray-600">
-            Accompagnant : <strong>{item.assignedMember.name ?? item.assignedMember.email}</strong>
+            Référent : <strong>{item.assignedMember.name ?? item.assignedMember.email}</strong>
           </p>
         )}
         {item.scheduledFor && (
@@ -153,6 +153,7 @@ export default async function CareRequestDetailPage({
           fetchUrl={`/api/care/items/requests/${id}/history`}
           statusLabels={STATUS_LABEL}
           actionLabels={HISTORY_ACTION_LABELS}
+          assigneeLabel="Référent"
         />
       </div>
     </div>

@@ -26,9 +26,9 @@ const {
 } = await import("../services/notifications");
 
 /**
- * T56 — nouveau flux (spec 052, lot 2) : affectation sans email réussie ; profil sans compte →
- * email seul ; dessaisissement notifié ; protocole prévenu pour un profil, pas pour un membre ;
- * demandeur prévenu de la date dans les deux cas.
+ * T56 — nouveau flux (spec 052, lot 2) : accompagnant prévenu in-app et par email ; affectation
+ * sans email réussie ; profil sans compte → email seul ; dessaisissement notifié ; protocole
+ * prévenu pour un profil, pas pour un membre ; demandeur prévenu de la date dans les deux cas.
  */
 describe("notifyAssigneeAssigned", () => {
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe("notifyAssigneeAssigned", () => {
     mockSendEmail.mockResolvedValue(undefined);
   });
 
-  it("accompagnant avec compte : notification in-app, pas d'email", async () => {
+  it("accompagnant avec compte et email : notification in-app et email", async () => {
     await notifyAssigneeAssigned({
       assignee: { kind: "MEMBER", id: "u1", userId: "u1", name: "Jean", email: "jean@example.com" },
       kind: "requests",
@@ -47,7 +47,27 @@ describe("notifyAssigneeAssigned", () => {
 
     expect(mockCreateNotification).toHaveBeenCalledTimes(1);
     expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "u1", type: "CARE_ASSIGNED", link: "/care/requests/req-1" })
+      expect.objectContaining({
+        userId: "u1",
+        type: "CARE_ASSIGNED",
+        link: "/care/requests/req-1",
+        message: "On vous a confié la demande de rendez-vous pastoral de Marie Curie.",
+      })
+    );
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "jean@example.com" }));
+  });
+
+  it("accompagnant avec compte sans email : notification in-app seule, l'affectation n'échoue pas", async () => {
+    await notifyAssigneeAssigned({
+      assignee: { kind: "MEMBER", id: "u1", userId: "u1", name: "Jean", email: null },
+      kind: "followups",
+      itemId: "f1",
+      personName: "Marie Curie",
+    });
+
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "On vous a confié le suivi de Marie Curie." })
     );
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
@@ -85,15 +105,19 @@ describe("notifyAssigneeUnassigned", () => {
   });
 
   it("notifie l'ancien accompagnant s'il a un compte", async () => {
-    await notifyAssigneeUnassigned({ userId: "u1", personName: "Marie Curie" });
+    await notifyAssigneeUnassigned({ userId: "u1", kind: "requests", personName: "Marie Curie" });
 
     expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "u1", type: "CARE_UNASSIGNED" })
+      expect.objectContaining({
+        userId: "u1",
+        type: "CARE_UNASSIGNED",
+        message: "Vous n'êtes plus en charge de la demande de rendez-vous pastoral de Marie Curie.",
+      })
     );
   });
 
   it("ne fait rien si l'ancien accompagnant n'a pas de compte", async () => {
-    await notifyAssigneeUnassigned({ userId: null, personName: "Marie Curie" });
+    await notifyAssigneeUnassigned({ userId: null, kind: "followups", personName: "Marie Curie" });
 
     expect(mockCreateNotification).not.toHaveBeenCalled();
   });

@@ -234,7 +234,7 @@ export async function applyFollowupTransition(params: {
     await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "followups", itemId: id, personName });
   }
   if (result.notifyPreviousAssignee && currentAssigneeUserId) {
-    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, personName });
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "followups", personName });
   }
   if (result.notifyReferents) {
     await notifyReferentsHandback({

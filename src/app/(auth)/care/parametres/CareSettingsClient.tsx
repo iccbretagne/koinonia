@@ -57,7 +57,7 @@ export default function CareSettingsClient({
         onChange={(e) => setUnassigned(e.target.value)}
       />
       <Input
-        label="Demande confiée sans date fixée (jours)"
+        label="Demande confiée sans date ni premier contact (jours)"
         type="number"
         min={1}
         max={365}

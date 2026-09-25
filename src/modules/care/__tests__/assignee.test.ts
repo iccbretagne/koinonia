@@ -52,6 +52,19 @@ describe("resolveAssignee", () => {
     expect(assignee.userId).toBeNull();
   });
 
+  it("PROFILE : à défaut d'adresse sur le profil, reprend celle du compte rattaché", async () => {
+    prismaMock.pastoralProfile.findFirst.mockResolvedValue({
+      id: "profile-3",
+      name: "Pasteur Marc",
+      email: null,
+      userId: "user-3",
+      user: { email: "marc@example.org" },
+    } as never);
+
+    const assignee = await resolveAssignee("church-1", { kind: "PROFILE", id: "profile-3" });
+    expect(assignee.email).toBe("marc@example.org");
+  });
+
   it("MEMBER : renvoie le membre du MSDP", async () => {
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
     prismaMock.userChurchRole.findFirst.mockResolvedValue({

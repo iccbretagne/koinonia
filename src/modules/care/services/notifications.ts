@@ -19,7 +19,15 @@ function itemLink(kind: CareItemKind, id: string): string {
   return `/care/${kind}/${id}`;
 }
 
-/** Affectation à un accompagnant : notification in-app si compte, email sinon (si adresse). */
+/** « la demande de rendez-vous pastoral de » / « le suivi de », suivi du nom de la personne. */
+function itemLabel(kind: CareItemKind): string {
+  return kind === "requests" ? "la demande de rendez-vous pastoral de" : "le suivi de";
+}
+
+/**
+ * Affectation à un accompagnant : notification in-app s'il a un compte, et email s'il a une
+ * adresse (spec 052 — les deux canaux ; l'absence d'email ne bloque pas l'affectation).
+ */
 export async function notifyAssigneeAssigned(params: {
   assignee: ResolvedAssignee;
   kind: CareItemKind;
@@ -35,10 +43,9 @@ export async function notifyAssigneeAssigned(params: {
       userId: assignee.userId,
       type: "CARE_ASSIGNED",
       title: "Nouvel accompagnement confié",
-      message: `Vous avez été confié le suivi de ${personName}.`,
+      message: `On vous a confié ${itemLabel(kind)} ${personName}.`,
       link,
     }).catch(() => {});
-    return;
   }
 
   if (assignee.email) {
@@ -54,6 +61,7 @@ export async function notifyAssigneeAssigned(params: {
 /** Dessaisissement : notifie l'ancien accompagnant s'il a un compte (email seul non prévu ici — le dessaisissement n'appelle pas à agir). */
 export async function notifyAssigneeUnassigned(params: {
   userId: string | null;
+  kind: CareItemKind;
   personName: string;
 }): Promise<void> {
   if (!params.userId) return;
@@ -61,7 +69,7 @@ export async function notifyAssigneeUnassigned(params: {
     userId: params.userId,
     type: "CARE_UNASSIGNED",
     title: "Accompagnement réaffecté",
-    message: `Vous n'êtes plus en charge du suivi de ${params.personName}.`,
+    message: `Vous n'êtes plus en charge de ${itemLabel(params.kind)} ${params.personName}.`,
     link: "/care",
   }).catch(() => {});
 }
@@ -88,7 +96,7 @@ export async function notifyReferentsHandback(params: {
     data: userIds.map((userId) => ({
       userId,
       type: "CARE_HANDBACK",
-      title: "Accompagnement rendu au référent",
+      title: "Demande rendue pour réaffectation",
       message: `${personName} — motif : ${reason}`,
       link: itemLink(kind, itemId),
     })),

@@ -14,8 +14,9 @@ export default async function CareSettingsPage() {
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Suivi pastoral — Paramètres</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Délais au-delà desquels une demande de rendez-vous pastoral est signalée à relancer :
-        non confiée (aux référents), ou confiée sans date fixée (à l&apos;accompagnant).
+        Délais au-delà desquels une demande est signalée à relancer : non confiée (aux Référents
+        soins pastoraux), ou confiée sans suite — rendez-vous sans date fixée, suivi de nouveau
+        converti sans premier contact (au référent ou au conseiller en charge).
       </p>
       <CareSettingsClient churchId={churchId} settings={settings} />
     </div>
