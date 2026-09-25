@@ -1,7 +1,7 @@
 # Spec — Préférences de notifications par email
 
 - **Numéro** : 053
-- **Statut** : En revue
+- **Statut** : Validée
 - **Créée le** : 2026-09-25
 - **Branche suggérée** : `feat/preferences-notifications-email`
 - **Issue source** : [#581](https://github.com/iccbretagne/koinonia/issues/581)
