@@ -32,7 +32,7 @@ const HISTORY_ACTION_LABELS: Record<string, string> = {
 const RELATED_STATUS_LABEL: Record<string, string> = {
   ...STATUS_LABEL,
   SUBMITTED: "Reçu",
-  ASSIGNED: "Conseiller assigné",
+  ASSIGNED: "Référent MSDP assigné",
   CONTACTED: "Contacté",
   IN_FORMATION: "En formation",
   COMPLETED: "Terminé",

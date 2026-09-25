@@ -64,7 +64,7 @@ const REQUEST_STATUS_COLORS: Record<string, string> = {
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Reçu",
-  ASSIGNED: "Conseiller assigné",
+  ASSIGNED: "Référent MSDP assigné",
   CONTACTED: "Contacté",
   IN_FORMATION: "En formation",
   COMPLETED: "Terminé",
@@ -264,8 +264,8 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
     <div className="space-y-2">
       {followUps.map((f) => {
         const name = f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : `${f.request?.firstName ?? ""} ${f.request?.lastName ?? ""}`.trim();
-        // Conseiller membre du MSDP ou profil pastoral : l'un ou l'autre, jamais les deux.
-        const conseiller = f.assignedConseillerMsdp
+        // Référent MSDP : membre du MSDP ou profil pastoral, l'un ou l'autre, jamais les deux.
+        const referent = f.assignedConseillerMsdp
           ? f.assignedConseillerMsdp.name ?? f.assignedConseillerMsdp.email
           : f.assignedProfile?.name ?? null;
         return (
@@ -277,7 +277,7 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
             <div>
               <p className="font-medium text-gray-900">{name || "—"}</p>
               <p className="text-xs text-gray-400">
-                {conseiller ? `Conseiller : ${conseiller}` : "Sans conseiller"}
+                {referent ? `Référent MSDP : ${referent}` : "Sans référent MSDP"}
               </p>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${MSDP_STATUS_COLORS[f.status] ?? "bg-gray-100 text-gray-500"}`}>

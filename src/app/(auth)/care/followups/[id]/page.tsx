@@ -7,7 +7,7 @@ import HistoryTimeline from "@/components/HistoryTimeline";
 
 const STATUS_LABEL: Record<string, string> = {
   SUBMITTED: "Reçu",
-  ASSIGNED: "Conseiller assigné",
+  ASSIGNED: "Référent MSDP assigné",
   CONTACTED: "Contacté",
   IN_FORMATION: "En formation",
   COMPLETED: "Terminé",
@@ -73,7 +73,7 @@ export default async function CareFollowupDetailPage({
         {STATUS_LABEL[followUp.status] ?? followUp.status}
         {wasHandedBack && (
           <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-            Rendu par le conseiller
+            Rendu par le référent MSDP
           </span>
         )}
       </p>
@@ -81,12 +81,12 @@ export default async function CareFollowupDetailPage({
       <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3 mb-4">
         {followUp.assignedConseillerMsdp && (
           <p className="text-sm text-gray-600">
-            Conseiller : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>
+            Référent MSDP : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>
           </p>
         )}
         {followUp.assignedProfile && (
           <p className="text-sm text-gray-600">
-            Conseiller : <strong>{followUp.assignedProfile.name}</strong>
+            Référent MSDP : <strong>{followUp.assignedProfile.name}</strong>
           </p>
         )}
         {followUp.notes && <p className="text-sm text-gray-600 whitespace-pre-line">{followUp.notes}</p>}
@@ -125,7 +125,7 @@ export default async function CareFollowupDetailPage({
           fetchUrl={`/api/care/items/followups/${id}/history`}
           statusLabels={STATUS_LABEL}
           actionLabels={HISTORY_ACTION_LABELS}
-          assigneeLabel="Conseiller"
+          assigneeLabel="Référent MSDP"
         />
       </div>
     </div>

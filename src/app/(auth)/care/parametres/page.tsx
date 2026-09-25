@@ -16,7 +16,7 @@ export default async function CareSettingsPage() {
       <p className="text-sm text-gray-500 mb-6">
         Délais au-delà desquels une demande est signalée à relancer : non confiée (aux Référents
         soins pastoraux), ou confiée sans suite — rendez-vous sans date fixée, suivi de nouveau
-        converti sans premier contact (au référent ou au conseiller en charge).
+        converti sans premier contact (au référent ou au référent MSDP en charge).
       </p>
       <CareSettingsClient churchId={churchId} settings={settings} />
     </div>
