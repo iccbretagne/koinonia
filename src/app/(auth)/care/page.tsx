@@ -100,8 +100,8 @@ export default async function CarePage() {
       {church?.slug && (
         <div className="mb-4">
           <PublicFormBanner
-            slug={church.slug}
-            label="Lien public — formulaire d'accueil (dont appel au salut)"
+            path={`/agenda-public/${church.slug}`}
+            label="Lien public — demande de rendez-vous pastoral"
           />
         </div>
       )}

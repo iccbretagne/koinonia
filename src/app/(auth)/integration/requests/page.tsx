@@ -44,7 +44,10 @@ export default async function IntegrationRequestsPage() {
       </div>
       {church?.slug && !scope.scoped && (
         <div className="mb-6">
-          <PublicFormBanner slug={church.slug} />
+          <PublicFormBanner
+            path={`/rejoindre/${church.slug}`}
+            label="Lien public — formulaire de rejoindre une famille"
+          />
         </div>
       )}
       <IntegrationDashboard

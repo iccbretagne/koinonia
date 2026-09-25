@@ -3,16 +3,17 @@
 import { useState, useEffect } from "react";
 
 /**
- * Bandeau du lien public `/rejoindre/[slug]` — formulaire unique couvrant à la fois la demande
- * d'intégration à une famille et l'appel au salut (suivi MSDP). Affiché sur `/integration/requests`
- * et sur `/care` (spec 052) : deux libellés différents pour le même lien, selon le point d'entrée.
+ * Bandeau de lien public à copier — partagé entre plusieurs formulaires publics sans session
+ * (ex. `/rejoindre/[slug]` sur `/integration/requests`, `/agenda-public/[slug]` sur `/care`) :
+ * même composant, `path` et `label` propres à chaque appelant.
  */
 export default function PublicFormBanner({
-  slug,
-  label = "Lien public — formulaire de rejoindre une famille",
+  path,
+  label,
 }: {
-  readonly slug: string;
-  readonly label?: string;
+  /** Chemin absolu du formulaire public, sans origine (ex. `/rejoindre/icc-rennes`). */
+  readonly path: string;
+  readonly label: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -22,7 +23,7 @@ export default function PublicFormBanner({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrigin(window.location.origin);
   }, []);
-  const url = `${origin}/rejoindre/${slug}`;
+  const url = `${origin}${path}`;
 
   function copy() {
     navigator.clipboard.writeText(url).then(() => {
