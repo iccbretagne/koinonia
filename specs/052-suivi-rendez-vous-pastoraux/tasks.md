@@ -1,7 +1,7 @@
 # Tâches — Suivi des nouveaux convertis et des demandes de rendez-vous pastoral
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0015-module-suivi-rendez-vous-pastoraux.md`
-- **Statut** : À faire
+- **Statut** : Lot 1 livré · Lot 2 et 3 à faire
 
 > Tâches **ordonnées** et **vérifiables**, en trois lots livrés par PR successives vers la base
 > `feat/suivi-rendez-vous-pastoraux` (stratégie multi-PR, constitution §V). Dans chaque lot :
@@ -10,9 +10,9 @@
 ## Prérequis
 
 - [x] Branche de base créée : `feat/suivi-rendez-vous-pastoraux`
-- [ ] Branche de lot créée depuis la base avant chaque lot : `feat/care-lot1-module`,
-      `feat/care-lot2-flux`, `feat/care-lot3-pilotage`
-- [ ] MariaDB 10.11 locale disponible pour rejouer les migrations
+- [x] Branche de lot créée depuis la base avant chaque lot : `feat/care-lot1-module` (livrée),
+      `feat/care-lot2-flux`, `feat/care-lot3-pilotage` (à créer)
+- [x] MariaDB 10.11 locale disponible pour rejouer les migrations
 
 ---
 
@@ -20,12 +20,12 @@
 
 ### 1.1 Données & migrations
 
-- [ ] **T1** — Migration **écrite à la main** `rename_agenda_qualifier_role` : ajout de
+- [x] **T1** — Migration **écrite à la main** `rename_agenda_qualifier_role` : ajout de
       `PASTORAL_CARE_REFERENT` à l'enum `Role`, `UPDATE user_church_roles SET role =
       'PASTORAL_CARE_REFERENT' WHERE role = 'AGENDA_QUALIFIER'`, retrait de `AGENDA_QUALIFIER`.
       Enum `Role` mis à jour dans le schéma.
       *(fichiers : `prisma/schema.prisma`, `prisma/migrations/…_rename_agenda_qualifier_role/`)*
-- [ ] **T2** — Migration `care_module_schema` (additive) : sur `AppointmentRequest`,
+- [x] **T2** — Migration `care_module_schema` (additive) : sur `AppointmentRequest`,
       `assignedMemberId` (FK `User`, `SetNull`), `assignedAt`, `assignedById`, `scheduledFor`,
       `outcome`, `outcomeAt`, `rejectReasonCode`, `sourceIntegrationRequestId @unique`,
       `personJourneyId` ; statut `CLOSED` ; enums `AppointmentOutcome` et
@@ -33,7 +33,7 @@
       `firstName`, `lastName`, `phone`, `email`, `assignedProfileId` (FK `PastoralProfile`),
       `assignedById`, `sourceAppointmentId @unique`, `personJourneyId`. Modèle `CareSettings`.
       *(fichiers : `prisma/schema.prisma`, migration)*
-- [ ] **T3** — Migration `care_data_takeover` : recopie de
+- [x] **T3** — Migration `care_data_takeover` : recopie de
       `family_integration_requests.appointmentRequestId` vers
       `appointment_requests.sourceIntegrationRequestId` puis suppression de la colonne ; identité
       des suivis recopiée depuis leur demande d'accueil ; `personJourneyId` depuis
@@ -41,26 +41,26 @@
       `scheduledFor` depuis l'entrée d'agenda liée pour les demandes planifiées. Relation
       `FamilyIntegrationRequest.appointmentRequest` retirée du schéma.
       *(fichiers : `prisma/schema.prisma`, migration)*
-- [ ] **T4** — Rejouer T1–T3 sur MariaDB locale avec un jeu de données : rôle renommé, lien
+- [x] **T4** — Rejouer T1–T3 sur MariaDB locale avec un jeu de données : rôle renommé, lien
       d'accueil repris, identité recopiée, demandes planifiées datées ; puis
       `prisma migrate diff --exit-code` sans écart. Journaliser le résultat dans la PR.
 
 ### 1.2 Module `care` — squelette et gardes
 
-- [ ] **T5** — Créer `src/modules/care/manifest.ts` : `dependsOn: ["core"]`, permissions
+- [x] **T5** — Créer `src/modules/care/manifest.ts` : `dependsOn: ["core"]`, permissions
       `care:qualify` (Super Admin, Admin, Référent soins pastoraux) et `care:view` (+ Secrétaire),
       routes `authenticated: /care`, `api: /api/care`, `public: /agenda-public` et
       `/api/care/requests/public` (méthode POST). Ajouter le manifeste à `src/lib/manifests.ts`.
       *(fichiers : `src/modules/care/manifest.ts`, `src/lib/manifests.ts`)*
-- [ ] **T6** — Retirer `agenda:qualify` du manifeste `agenda` et ses routes de demandes ;
+- [x] **T6** — Retirer `agenda:qualify` du manifeste `agenda` et ses routes de demandes ;
       `requireAgendaQualify` supprimé. *(fichiers : `src/modules/agenda/manifest.ts`,
       `src/modules/agenda/auth.ts`)*
-- [ ] **T7** — `src/modules/care/auth.ts` : `requireCareQualify(churchId)` et
+- [x] **T7** — `src/modules/care/auth.ts` : `requireCareQualify(churchId)` et
       `getCareAccess(session, churchId)` → `{ canQualify, canOverview, userId, ownProfileIds }`,
       par `rolePermissions` (import dynamique, ADR-0004) **sans approximation par
       `members:manage`/`events:manage`**. *(fichier : `src/modules/care/auth.ts`)*
-- [ ] **T8** — Règle `no-care-imports-other-modules` dans `.dependency-cruiser.cjs`.
-- [ ] **T9** — Remplacer `AGENDA_QUALIFIER` par `PASTORAL_CARE_REFERENT` et le libellé par
+- [x] **T8** — Règle `no-care-imports-other-modules` dans `.dependency-cruiser.cjs`.
+- [x] **T9** — Remplacer `AGENDA_QUALIFIER` par `PASTORAL_CARE_REFERENT` et le libellé par
       « Référent soins pastoraux » dans : manifestes `audio` et `jobs`, `AccessClient.tsx`,
       `UsersClient.tsx`, `src/app/api/users/[userId]/roles/route.ts`, `GuideContent.tsx`,
       `tour-steps.ts`, `AuthLayoutShell.tsx`, `src/__mocks__/auth.ts`,
@@ -68,96 +68,96 @@
 
 ### 1.3 Services — reprise à l'identique
 
-- [ ] **T10** — `services/appointments.ts` : dépôt (`submitRequest`, commun au formulaire public et
+- [x] **T10** — `services/appointments.ts` : dépôt (`submitRequest`, commun au formulaire public et
       au compte, sans jours), liste des demandes par état, validation vers un **profil pastoral**
       (comportement actuel), rejet, passage à `SCHEDULED` avec `scheduledFor`, retour à
       `VALIDATED` à la suppression de l'entrée d'agenda, mise à jour de `scheduledFor`.
       Reprend la logique des routes `agenda/requests*`.
       *(fichier : `src/modules/care/services/appointments.ts`)*
-- [ ] **T11** — `services/followups.ts` : reprise de `msdp-service.ts` (schéma, transitions,
+- [x] **T11** — `services/followups.ts` : reprise de `msdp-service.ts` (schéma, transitions,
       affectation d'un **membre du MSDP**, notifications, rappels d'inactivité), accès réécrit
       sur `getCareAccess` (T7). *(fichiers : `src/modules/care/services/followups.ts`,
       suppression de `src/modules/integration/services/msdp-service.ts`)*
-- [ ] **T12** — `services/projection.ts` : `projectRequest(item, access)` — fiche complète si
+- [x] **T12** — `services/projection.ts` : `projectRequest(item, access)` — fiche complète si
       `canReadContent` (référent, Admin, Super Admin, accompagnant en charge), sinon ni `message`
       ni `subject`, libellé « Rendez-vous pastoral ». `projectForScheduling` pour le protocole.
       *(fichier : `src/modules/care/services/projection.ts`)*
-- [ ] **T13** — `services/intake.ts` : `handleIntegrationSubmitted(tx, payload)` — crée une fois la
+- [x] **T13** — `services/intake.ts` : `handleIntegrationSubmitted(tx, payload)` — crée une fois la
       demande de rendez-vous (soin pastoral) et le suivi (appel au salut), rattachés au dossier
       de parcours ; idempotent par les index uniques.
       *(fichier : `src/modules/care/services/intake.ts`)*
-- [ ] **T14** — `integration` : déclarer l'événement `integration:request:submitted` ; dans
+- [x] **T14** — `integration` : déclarer l'événement `integration:request:submitted` ; dans
       `POST /api/integration/requests`, envelopper la création dans `prisma.$transaction` et
       émettre l'événement ; supprimer la création directe d'`AppointmentRequest`.
       *(fichiers : `src/modules/integration/events.ts`, `src/app/api/integration/requests/route.ts`)*
-- [ ] **T15** — Abonnement dans `src/lib/registry.ts`, conditionné par `registry.has("care")`,
+- [x] **T15** — Abonnement dans `src/lib/registry.ts`, conditionné par `registry.has("care")`,
       délégant à `handleIntegrationSubmitted`.
-- [ ] **T16** — `src/modules/care/index.ts` : exports publics (gardes, services, projections,
+- [x] **T16** — `src/modules/care/index.ts` : exports publics (gardes, services, projections,
       manifeste). *(dépend de T7, T10–T13)*
 
 ### 1.4 API
 
-- [ ] **T17** — `GET/POST /api/care/requests`, `POST /api/care/requests/public` (Turnstile, débit,
+- [x] **T17** — `GET/POST /api/care/requests`, `POST /api/care/requests/public` (Turnstile, débit,
       **sans jour**), `GET/PATCH /api/care/requests/[id]` (actions `validate` vers un profil,
       `reject`), toutes via services et projection. Suppression des routes `api/agenda/requests*`
       sauf `schedule`. *(fichiers : `src/app/api/care/requests/**`)*
-- [ ] **T18** — `GET/POST /api/care/followups`, `GET/PATCH /api/care/followups/[id]`,
+- [x] **T18** — `GET/POST /api/care/followups`, `GET/PATCH /api/care/followups/[id]`,
       `GET /api/care/companions` (membres du MSDP à ce stade). Suppression des routes
       `api/integration/msdp*`. *(fichiers : `src/app/api/care/followups/**`,
       `src/app/api/care/companions/route.ts`)*
-- [ ] **T19** — Orchestrer `PATCH /api/agenda/requests/[id]/schedule`, `PATCH` et `DELETE
+- [x] **T19** — Orchestrer `PATCH /api/agenda/requests/[id]/schedule`, `PATCH` et `DELETE
       /api/agenda/entries/[id]` : écriture d'agenda + service `care` dans la même transaction ;
       titre par défaut de l'entrée « Rendez-vous pastoral — Prénom Nom ».
       *(fichiers : `src/app/api/agenda/requests/[id]/schedule/route.ts`,
       `src/app/api/agenda/entries/[id]/route.ts`)*
-- [ ] **T20** — Cron : rappels d'inactivité des suivis repris par `care`, conditionnés par
+- [x] **T20** — Cron : rappels d'inactivité des suivis repris par `care`, conditionnés par
       `registry.has("care")` ; retrait de `runMsdpInactivityNotifications` côté `integration`.
       *(fichier : `src/app/api/cron/route.ts`)*
-- [ ] **T21** — Abaisser le seuil de `scripts/prisma-boundary-baseline.txt` au nouveau compte
+- [x] **T21** — Abaisser le seuil de `scripts/prisma-boundary-baseline.txt` au nouveau compte
       (routes supprimées) ; `npm run lint:prisma-boundary` vert.
 
 ### 1.5 UI
 
-- [ ] **T22** — Espace `/care` (onglets Rendez-vous / Nouveaux convertis) et fiches
+- [x] **T22** — Espace `/care` (onglets Rendez-vous / Nouveaux convertis) et fiches
       `/care/requests/[id]`, `/care/followups/[id]`, reprenant le tableau de qualification et la
       carte MSDP à comportement constant. *(fichiers : `src/app/(auth)/care/**`)*
-- [ ] **T23** [P] — Formulaire public déplacé sous `care`, **sans le choix du jour**, même adresse
+- [x] **T23** [P] — Formulaire public déplacé sous `care`, **sans le choix du jour**, même adresse
       `/agenda-public/[churchSlug]`, appel à `/api/care/requests/public`.
       *(fichiers : `src/app/agenda-public/[churchSlug]/**`)*
-- [ ] **T24** [P] — Formulaire connecté `/care/request` (ex-`/agenda/request`), sans jours,
+- [x] **T24** [P] — Formulaire connecté `/care/request` (ex-`/agenda/request`), sans jours,
       `?from=requests` conservé ; tuile de `/requests/new` vers `/care/request?from=requests`,
       conditionnée par `registry.has("care")`.
       *(fichiers : `src/app/(auth)/care/request/**`, `src/app/(auth)/requests/new/page.tsx`,
       `RequestForm.tsx`)*
-- [ ] **T25** [P] — Redirections permanentes `/agenda/requests` → `/care`, `/agenda/request` →
+- [x] **T25** [P] — Redirections permanentes `/agenda/requests` → `/care`, `/agenda/request` →
       `/care/request`. *(fichier : `next.config.ts`)*
-- [ ] **T26** — Fiche d'accueil : carte MSDP remplacée par un résumé (état, accompagnant, lien,
+- [x] **T26** — Fiche d'accueil : carte MSDP remplacée par un résumé (état, accompagnant, lien,
       « Démarrer un suivi ») et résumé du rendez-vous pastoral lié, lus via les services `care`
       (orchestration dans la page). *(fichiers : `src/app/(auth)/integration/requests/[id]/**`)*
-- [ ] **T27** [P] — Formulaire d'accueil : case « soin pastoral » affichée seulement si `care`
+- [x] **T27** [P] — Formulaire d'accueil : case « soin pastoral » affichée seulement si `care`
       est actif. *(fichiers : `src/app/rejoindre/[churchSlug]/**`)*
-- [ ] **T28** [P] — Navigation : section « Suivi pastoral », lien « Demande RDV pastoral » →
+- [x] **T28** [P] — Navigation : section « Suivi pastoral », lien « Demande RDV pastoral » →
       `/care/request`, retrait des liens « Qualification » de l'agenda.
       *(fichier : `src/app/(auth)/layout.tsx`)*
-- [ ] **T29** — Statistiques : section MSDP retirée de `/integration/stats` (reprise au lot 3).
+- [x] **T29** — Statistiques : section MSDP retirée de `/integration/stats` (reprise au lot 3).
 
 ### 1.6 Tests du lot 1
 
-- [ ] **T30** — Matrice figée : `src/core/__tests__/permissions.test.ts` (rôle renommé,
+- [x] **T30** — Matrice figée : `src/core/__tests__/permissions.test.ts` (rôle renommé,
       `care:qualify`, `care:view`, sans `agenda:qualify`), tableau de `CLAUDE.md`, `docs/auth.md`
       — dans le même commit que T5–T6.
-- [ ] **T31** [P] — `care/__tests__/auth.test.ts` : Super Admin, Admin, Référent → `care:qualify` ;
+- [x] **T31** [P] — `care/__tests__/auth.test.ts` : Super Admin, Admin, Référent → `care:qualify` ;
       Secrétaire → `care:view` seul ; **Ministre et Resp. département → aucun accès** (#583).
-- [ ] **T32** [P] — `care/__tests__/projection.test.ts` : message et objet visibles au référent et
+- [x] **T32** [P] — `care/__tests__/projection.test.ts` : message et objet visibles au référent et
       à l'accompagnant en charge, invisibles à la Secrétaire, au protocole et à un tiers.
-- [ ] **T33** [P] — `care/__tests__/intake.test.ts` : appel au salut → un suivi ; soin pastoral →
+- [x] **T33** [P] — `care/__tests__/intake.test.ts` : appel au salut → un suivi ; soin pastoral →
       une demande ; double émission → une seule création ; `care` absent → aucune création.
-- [ ] **T34** [P] — Reprise des tests existants contre `care` : sécurité et captcha du formulaire
+- [x] **T34** [P] — Reprise des tests existants contre `care` : sécurité et captcha du formulaire
       public (ex-`agenda/requests/__tests__`), `msdp-service.test.ts`, `msdp/counselors`,
       `cron-modules.test.ts`, `planning-digest.test.ts` (mocks).
-- [ ] **T35** [P] — Dépôt : formulaire public et formulaire connecté créent une demande identique à
+- [x] **T35** [P] — Dépôt : formulaire public et formulaire connecté créent une demande identique à
       l'état reçu, sans jour préféré.
-- [ ] **T36** — Exhaustivité des routes (`routes-exhaustivite.test.ts`) et vérification complète
+- [x] **T36** — Exhaustivité des routes (`routes-exhaustivite.test.ts`) et vérification complète
       du lot : typecheck, lint, lint:boundaries, lint:prisma-boundary, test. PR lot 1 → base.
 
 ---

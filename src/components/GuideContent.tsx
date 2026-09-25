@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
+type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "PASTORAL_CARE_REFERENT" | "ACCOUNTANT";
 
 interface GuideContentProps {
   readonly defaultRole: RoleKey;
@@ -18,7 +18,7 @@ const ROLE_LABELS: Record<RoleKey, string> = {
   DISCIPLE_MAKER: "Faiseur de Disciples",
   REPORTER: "Reporter (Comptes rendus)",
   STAR: "STAR (Membre)",
-  AGENDA_QUALIFIER: "Qualificateur agenda",
+  PASTORAL_CARE_REFERENT: "Référent soins pastoraux",
   ACCOUNTANT: "Comptable",
 };
 
@@ -31,7 +31,7 @@ const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",
   REPORTER: "Accès en lecture et écriture aux comptes rendus d'événements et statistiques.",
   STAR: "Membre actif (STAR) : consulte son planning personnel et celui de ses départements en lecture seule.",
-  AGENDA_QUALIFIER: "Qualification des demandes de RDV pastoral : valide ou rejette, assigne au bon profil.",
+  PASTORAL_CARE_REFERENT: "Qualification des demandes de RDV pastoral : valide ou rejette, assigne au bon profil.",
   ACCOUNTANT: "Comptable : gestion des demandes financières (notes de frais, avances de budget), confirmation des paiements.",
 };
 
@@ -57,7 +57,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Vue planning",
     screenshotFile: "guide-planning-view.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Modifier le planning",
@@ -65,7 +65,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Édition du planning",
     screenshotFile: "guide-planning-edit.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Statistiques du planning",
@@ -73,7 +73,7 @@ const FEATURES: Feature[] = [
     category: "Planning",
     screenshotTitle: "Statistiques du planning",
     screenshotFile: "guide-planning-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Événements ───────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Liste et calendrier des événements",
     screenshotFile: "guide-events-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gérer les événements",
@@ -91,7 +91,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Gestion des événements",
     screenshotFile: "guide-events-manage.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Comptes rendus",
@@ -99,7 +99,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Comptes rendus d'événements",
     screenshotFile: "guide-reports.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "edit", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "edit", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Membres ──────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ const FEATURES: Feature[] = [
     category: "Membres",
     screenshotTitle: "Liste des STAR",
     screenshotFile: "guide-members-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gérer les membres (STAR)",
@@ -117,7 +117,7 @@ const FEATURES: Feature[] = [
     category: "Membres",
     screenshotTitle: "Gestion des STAR",
     screenshotFile: "guide-members-manage.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Discipolat ───────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Relations de discipolat",
     screenshotFile: "guide-discipleship-relations.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Appel de présence",
@@ -135,7 +135,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Appel de présence discipolat",
     screenshotFile: "guide-discipleship-appel.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Statistiques & Export",
@@ -143,7 +143,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Statistiques discipolat",
     screenshotFile: "guide-discipleship-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Annonces ─────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Nouvelle demande",
     screenshotFile: "guide-requests-new.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Mes demandes",
@@ -161,7 +161,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Mes demandes",
     screenshotFile: "guide-requests-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Traitement des demandes (Secrétariat)",
@@ -169,7 +169,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Traitement des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Demandes visuels (Prod. Média)",
@@ -177,7 +177,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Production Média",
     screenshotFile: "guide-media-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Demandes réseaux sociaux (Communication)",
@@ -185,7 +185,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Communication",
     screenshotFile: "guide-communication-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Absences ─────────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ const FEATURES: Feature[] = [
     category: "Absences",
     screenshotTitle: "Déclaration d'une absence",
     screenshotFile: "guide-absences-declarer.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
     name: "Vue d'ensemble et frise",
@@ -203,7 +203,7 @@ const FEATURES: Feature[] = [
     category: "Absences",
     screenshotTitle: "Vue d'ensemble des absences",
     screenshotFile: "guide-absences-vue-ensemble.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Modifier ou annuler une absence",
@@ -211,7 +211,7 @@ const FEATURES: Feature[] = [
     category: "Absences",
     screenshotTitle: "Modification d'une absence",
     screenshotFile: "guide-absences-modifier.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Tâches ───────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@ const FEATURES: Feature[] = [
     category: "Tâches",
     screenshotTitle: "Tâches du département",
     screenshotFile: "guide-taches.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Administration ────────────────────────────────────────────────────────
@@ -231,7 +231,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Ministères & départements",
@@ -239,7 +239,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Gestion des ministères et départements",
     screenshotFile: "guide-admin-departments.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Paramètres de l'église",
@@ -247,7 +247,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Paramètres de l'église",
     screenshotFile: "guide-admin-church.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gestion des utilisateurs",
@@ -255,7 +255,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Gestion des utilisateurs",
     screenshotFile: "guide-admin-users.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Journaux d'audit",
@@ -263,7 +263,7 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Journaux d'audit",
     screenshotFile: "guide-admin-audit-logs.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Profil ────────────────────────────────────────────────────────────────
@@ -273,7 +273,7 @@ const FEATURES: Feature[] = [
     category: "Profil",
     screenshotTitle: "Profil et liaison STAR",
     screenshotFile: "guide-profile.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Salles ───────────────────────────────────────────────────────────────
@@ -283,7 +283,7 @@ const FEATURES: Feature[] = [
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Contrôle des mains courantes",
@@ -291,7 +291,7 @@ const FEATURES: Feature[] = [
     category: "Salles",
     screenshotTitle: "Contrôle des mains courantes",
     screenshotFile: "guide-salles-mains-courantes.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Agenda pastoral ──────────────────────────────────────────────────────
@@ -301,7 +301,7 @@ const FEATURES: Feature[] = [
     category: "Agenda pastoral",
     screenshotTitle: "Demande de RDV pastoral",
     screenshotFile: "guide-agenda-demande.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Qualification des demandes",
@@ -309,7 +309,7 @@ const FEATURES: Feature[] = [
     category: "Agenda pastoral",
     screenshotTitle: "Qualification des demandes de RDV",
     screenshotFile: "guide-agenda-qualification.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "none" },
   },
   {
     name: "Vue et planification agenda",
@@ -317,7 +317,7 @@ const FEATURES: Feature[] = [
     category: "Agenda pastoral",
     screenshotTitle: "Vue et planification de l'agenda",
     screenshotFile: "guide-agenda-planification.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Comptabilité ─────────────────────────────────────────────────────────
@@ -327,7 +327,7 @@ const FEATURES: Feature[] = [
     category: "Comptabilité",
     screenshotTitle: "Nouvelle demande financière",
     screenshotFile: "guide-comptabilite-demande.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Traiter les demandes financières",
@@ -335,7 +335,7 @@ const FEATURES: Feature[] = [
     category: "Comptabilité",
     screenshotTitle: "Gestion des demandes financières",
     screenshotFile: "guide-comptabilite-gestion.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
   {
     name: "Statistiques comptables",
@@ -343,7 +343,7 @@ const FEATURES: Feature[] = [
     category: "Comptabilité",
     screenshotTitle: "Statistiques comptables",
     screenshotFile: "guide-comptabilite-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
 
   // ── Emplois ──────────────────────────────────────────────────────────────
@@ -353,7 +353,7 @@ const FEATURES: Feature[] = [
     category: "Emplois",
     screenshotTitle: "Offres et recherches d'emploi",
     screenshotFile: "guide-emplois-liste.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
     name: "Modération des annonces",
@@ -361,7 +361,7 @@ const FEATURES: Feature[] = [
     category: "Emplois",
     screenshotTitle: "Modération des annonces",
     screenshotFile: "guide-emplois-moderation.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Intégration ──────────────────────────────────────────────────────────
@@ -371,7 +371,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Demandes d'intégration",
     screenshotFile: "guide-integration-demandes.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Attente, relances et renvoi d'une demande",
@@ -379,7 +379,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Attente et relances",
     screenshotFile: "guide-integration-attente.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Paramètres intégration (délais de relance)",
@@ -387,7 +387,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Paramètres intégration",
     screenshotFile: "guide-integration-parametres.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Suivi MSDP (appel au salut)",
@@ -395,7 +395,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Suivi MSDP",
     screenshotFile: "guide-integration-msdp.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Bergers de famille",
@@ -403,7 +403,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Bergers de famille",
     screenshotFile: "guide-integration-bergers.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Parcours & statistiques d'intégration",
@@ -411,7 +411,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Parcours et statistiques d'intégration",
     screenshotFile: "guide-integration-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Audio ────────────────────────────────────────────────────────────────
@@ -421,7 +421,7 @@ const FEATURES: Feature[] = [
     category: "Audio",
     screenshotTitle: "Bibliothèque d'écoute",
     screenshotFile: "guide-audio-library.png",
-    access: { SUPER_ADMIN: "read", ADMIN: "read", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "read", AGENDA_QUALIFIER: "read", ACCOUNTANT: "read" },
+    access: { SUPER_ADMIN: "read", ADMIN: "read", SECRETARY: "read", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "read", PASTORAL_CARE_REFERENT: "read", ACCOUNTANT: "read" },
   },
   {
     name: "Production audio (dépôt, découpage, publication)",
@@ -429,7 +429,7 @@ const FEATURES: Feature[] = [
     category: "Audio",
     screenshotTitle: "File d'attente Production audio",
     screenshotFile: "guide-audio-production.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Paramètres audio",
@@ -437,7 +437,7 @@ const FEATURES: Feature[] = [
     category: "Audio",
     screenshotTitle: "Paramètres audio",
     screenshotFile: "guide-audio-parametres.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Dépublier un culte",
@@ -445,7 +445,7 @@ const FEATURES: Feature[] = [
     category: "Audio",
     screenshotTitle: "Dépublication d'un culte",
     screenshotFile: "guide-audio-depublier.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Cycle de vie des offres",
@@ -453,7 +453,7 @@ const FEATURES: Feature[] = [
     category: "Emplois",
     screenshotTitle: "Relance d'une offre d'emploi",
     screenshotFile: "guide-emplois-relance.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
     name: "Récapitulatif WhatsApp",
@@ -461,7 +461,7 @@ const FEATURES: Feature[] = [
     category: "Emplois",
     screenshotTitle: "Récapitulatif WhatsApp des offres",
     screenshotFile: "guide-emplois-whatsapp.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", AGENDA_QUALIFIER: "edit", ACCOUNTANT: "edit" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
   {
     name: "Export Excel des demandes",
@@ -469,7 +469,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Export des demandes d'intégration",
     screenshotFile: "guide-integration-export.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Sauvegardes et export de configuration",
@@ -477,11 +477,11 @@ const FEATURES: Feature[] = [
     category: "Administration",
     screenshotTitle: "Sauvegardes et export de configuration",
     screenshotFile: "guide-admin-backups.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", AGENDA_QUALIFIER: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 ];
 
-const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"];
+const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "PASTORAL_CARE_REFERENT", "ACCOUNTANT"];
 
 function AccessBadge({ level }: { readonly level: AccessLevel }) {
   switch (level) {

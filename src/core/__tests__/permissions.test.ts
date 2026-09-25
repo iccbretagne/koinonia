@@ -10,12 +10,13 @@ import { audioModule } from "@/modules/audio/manifest";
 import { agendaModule } from "@/modules/agenda/manifest";
 import { roomsModule } from "@/modules/rooms/manifest";
 import { integrationModule } from "@/modules/integration/manifest";
+import { careModule } from "@/modules/care/manifest";
 import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
 import type { Role } from "@/generated/prisma/client";
 
 /**
- * Les 11 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
+ * Les 12 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
  * leur index : un index re-exporte les services du module, donc Prisma, NextAuth et le client
  * S3 — indisponibles dans l'environnement de test `node`. Le manifeste, lui, ne dépend que de
  * `defineModule`.
@@ -30,6 +31,7 @@ const ALL_MODULES = [
   agendaModule,
   roomsModule,
   integrationModule,
+  careModule,
   accountingModule,
   jobsModule,
 ];
@@ -44,7 +46,7 @@ const ALL_ROLES: Role[] = [
   "DISCIPLE_MAKER",
   "REPORTER",
   "STAR",
-  "AGENDA_QUALIFIER",
+  "PASTORAL_CARE_REFERENT",
   "ACCOUNTANT",
 ];
 
@@ -70,13 +72,14 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "accounting:submit",
     "accounting:view",
     "agenda:manage",
-    "agenda:qualify",
     "agenda:view",
     "audio:listen",
     "audio:manage",
     "audio:review",
     "audio:upload",
     "audio:view",
+    "care:qualify",
+    "care:view",
     "church:manage",
     "departments:manage",
     "departments:view",
@@ -115,13 +118,14 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "accounting:submit",
     "accounting:view",
     "agenda:manage",
-    "agenda:qualify",
     "agenda:view",
     "audio:listen",
     "audio:manage",
     "audio:review",
     "audio:upload",
     "audio:view",
+    "care:qualify",
+    "care:view",
     "departments:manage",
     "departments:view",
     "discipleship:manage",
@@ -158,6 +162,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "audio:listen",
     "audio:upload",
     "audio:view",
+    "care:view",
     "departments:view",
     "discipleship:export",
     "discipleship:manage",
@@ -249,9 +254,10 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "jobs:view",
     "planning:view",
   ],
-  AGENDA_QUALIFIER: [
-    "agenda:qualify",
+  PASTORAL_CARE_REFERENT: [
     "audio:listen",
+    "care:qualify",
+    "care:view",
     "jobs:freelance",
     "jobs:post",
     "jobs:seek",
@@ -276,11 +282,12 @@ function buildFullRegistry() {
 }
 
 describe("buildRolePermissions", () => {
-  it("couvre les 11 modules du registry", () => {
+  it("couvre les 12 modules du registry", () => {
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
       "audio",
+      "care",
       "core",
       "discipleship",
       "integration",
@@ -359,11 +366,20 @@ describe("roleHasPermission", () => {
     expect(roleHasPermission(registry, "STAR", "rooms:reserve")).toBe(false);
   });
 
-  it("AGENDA_QUALIFIER qualifie sans voir ni planifier l'agenda", () => {
+  it("PASTORAL_CARE_REFERENT qualifie les demandes care sans accès à l'agenda", () => {
     const registry = buildFullRegistry();
-    expect(roleHasPermission(registry, "AGENDA_QUALIFIER", "agenda:qualify")).toBe(true);
-    expect(roleHasPermission(registry, "AGENDA_QUALIFIER", "agenda:view")).toBe(false);
-    expect(roleHasPermission(registry, "AGENDA_QUALIFIER", "agenda:manage")).toBe(false);
+    expect(roleHasPermission(registry, "PASTORAL_CARE_REFERENT", "care:qualify")).toBe(true);
+    expect(roleHasPermission(registry, "PASTORAL_CARE_REFERENT", "care:view")).toBe(true);
+    expect(roleHasPermission(registry, "PASTORAL_CARE_REFERENT", "agenda:view")).toBe(false);
+    expect(roleHasPermission(registry, "PASTORAL_CARE_REFERENT", "agenda:manage")).toBe(false);
+  });
+
+  it("un Ministre et un Resp. département n'ont aucun accès à care (#583)", () => {
+    const registry = buildFullRegistry();
+    for (const role of ["MINISTER", "DEPARTMENT_HEAD"] as Role[]) {
+      expect(roleHasPermission(registry, role, "care:qualify"), `Rôle ${role}`).toBe(false);
+      expect(roleHasPermission(registry, role, "care:view"), `Rôle ${role}`).toBe(false);
+    }
   });
 
   it("ACCOUNTANT traite la compta sans accès au planning ni aux membres", () => {

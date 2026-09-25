@@ -7,11 +7,12 @@ import { audioModule } from "@/modules/audio/manifest";
 import { agendaModule } from "@/modules/agenda/manifest";
 import { roomsModule } from "@/modules/rooms/manifest";
 import { integrationModule } from "@/modules/integration/manifest";
+import { careModule } from "@/modules/care/manifest";
 import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
 
 /**
- * Les 11 manifestes, importés depuis `manifest.ts` (ADR-0011) et non depuis l'index du
+ * Les 12 manifestes, importés depuis `manifest.ts` (ADR-0011) et non depuis l'index du
  * module — un manifeste ne doit tirer ni Prisma, ni NextAuth, ni S3, pour rester
  * consommable par des outils qui n'ont besoin que de la déclaration (composition du
  * registry, résolution de routes, tests).
@@ -30,6 +31,7 @@ export const allManifests = [
   agendaModule,
   roomsModule,
   integrationModule,
+  careModule,
   accountingModule,
   jobsModule,
 ] as const;

@@ -229,7 +229,8 @@ export async function GET(
 
 Les gardes propres à un module vivent **dans le module**, pas ici : `@/modules/audio/auth`
 (`requireAudioAccess`, `requireAudioListenAccess`, `requireAudioUnpublishAccess`),
-`@/modules/agenda/auth`, `@/modules/integration/auth`.
+`@/modules/agenda/auth`, `@/modules/integration/auth`, `@/modules/care/auth`
+(`requireCareQualify`, `getCareAccess`).
 
 ### Réponses API (`src/lib/api-utils.ts`)
 
@@ -271,10 +272,10 @@ Style cohérent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composan
 Matrice complète (source : `buildRolePermissions` sur les manifestes `src/modules/*/index.ts`)
 — voir [docs/auth.md](docs/auth.md#permissions) pour le détail intégral par module. Légende :
 SA = Super Admin, Ad = Admin, Sec = Secrétaire, Min = Ministre, RD = Resp. département,
-FD = Faiseur de Disciples, Rep = Reporter, STAR = STAR, QA = Qualificateur agenda,
+FD = Faiseur de Disciples, Rep = Reporter, STAR = STAR, RSP = Référent soins pastoraux,
 Compt = Comptable.
 
-| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | QA | Compt |
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `planning:view` | x | x | x | x | x | | | x | | |
 | `planning:edit` | x | x | | x | x | | | | | |
@@ -310,7 +311,8 @@ Compt = Comptable.
 | `accounting:stats` | x | x | x | | | | | | | x |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
-| `agenda:qualify` | x | x | | | | | | | x | |
+| `care:qualify` | x | x | | | | | | | x | |
+| `care:view` | x | x | x | | | | | | x | |
 | `rooms:view` | x | x | x | x | x | | | | | |
 | `rooms:reserve` | x | x | | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |
@@ -325,6 +327,14 @@ strict : Super Admin, `events:manage`, ou `DEPARTMENT_HEAD` d'un département `I
 (`members:manage` volontairement écarté — tout Ministre/Resp. département le détient). Le module `storage`
 est une infrastructure pure sans permission propre.
 
+Le module `care` (spec 052, ADR-0015) porte les demandes de rendez-vous pastoral (ex-`agenda`) et
+les suivis de nouveaux convertis MSDP (ex-`integration`). `requireCareQualify()`/`getCareAccess()`
+(`src/modules/care/auth.ts`) résolvent `care:qualify`/`care:view` **uniquement** via
+`rolePermissions` — contrairement à `requireIntegrationAccess()` ci-dessus, ils n'approximent
+jamais un rôle par `members:manage`/`events:manage` (décision #583). Un accompagnant (profil
+pastoral ou membre d'un département de fonction `MSDP`) sans `care:qualify`/`care:view` n'accède
+qu'aux demandes dont il est l'accompagnant en charge, vérifié objet par objet.
+
 **Visibilité des départements** :
 - Super Admin / Admin / Secrétaire : tous les départements de l'église (lecture globale)
 - Ministre : départements du ministère assigné
@@ -337,8 +347,9 @@ est une infrastructure pure sans permission propre.
 - Peut gérer les événements (`events:manage`)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
 - Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
-- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`), mais pas à la
-  qualification des demandes brutes (`agenda:qualify`, réservée au Qualificateur agenda)
+- Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`)
+- Voit les demandes de rendez-vous pastoral et les suivis de nouveaux convertis (`care:view`),
+  mais ne les qualifie ni ne les affecte (`care:qualify`, réservée au Référent soins pastoraux)
 - Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes de
   compta (`accounting:manage`, réservé au Comptable)
 
@@ -365,9 +376,11 @@ d'appartenance** volontairement distinct du périmètre de responsabilité ci-de
 périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requireDepartmentAccess`
 (ADR-0009).
 
-**Spécificités du Qualificateur agenda** (`AGENDA_QUALIFIER`) :
-- Seule permission propre : `agenda:qualify` — qualifie les demandes de RDV pastoral à l'état
-  `PENDING`, sans accès à `agenda:view`/`agenda:manage` (vue hebdomadaire et planification)
+**Spécificités du Référent soins pastoraux** (`PASTORAL_CARE_REFERENT`, ex-`AGENDA_QUALIFIER`
+renommé spec 052) :
+- Permissions propres : `care:qualify` (qualifie, affecte, rejette les demandes de rendez-vous
+  pastoral et les suivis de nouveaux convertis) et `care:view`, sans accès à
+  `agenda:view`/`agenda:manage` (vue hebdomadaire et planification, réservées au protocole)
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)
 
@@ -386,7 +399,7 @@ périmètre ne doit jamais être fusionné avec `getUserDepartmentScope`/`requir
 - Un Ministre au périmètre restreint (`getUserMinistryScope`) ne peut attribuer/modifier/retirer
   que des rôles rattachables (`MINISTER`, `DEPARTMENT_HEAD`, `STAR`), et seulement dans **ses**
   ministères — jamais un rôle transverse à l'église (`ADMIN`, `SECRETARY`, `REPORTER`,
-  `ACCOUNTANT`, `DISCIPLE_MAKER`, `AGENDA_QUALIFIER`)
+  `ACCOUNTANT`, `DISCIPLE_MAKER`, `PASTORAL_CARE_REFERENT`)
 - L'anti-escalade `PRIVILEGED_ROLES` → `isSuperAdmin` (SUPER_ADMIN/ADMIN/SECRETARY) reste
   inchangée et s'applique en plus de ce périmètre
 

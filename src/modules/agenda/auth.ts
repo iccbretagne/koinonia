@@ -1,4 +1,4 @@
-import { requireAuth, requireChurchPermission } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { Session } from "next-auth";
 
@@ -61,13 +61,4 @@ export async function requireAgendaManage(churchId: string) {
     return session;
 
   throw new Error("FORBIDDEN");
-}
-
-/**
- * Autorise la qualification des demandes de RDV (PENDING).
- * Passe si : permission `agenda:qualify` (SUPER_ADMIN, ADMIN, AGENDA_QUALIFIER).
- * Le Protocole n'a PAS ce droit — il ne voit que les demandes VALIDATED.
- */
-export async function requireAgendaQualify(churchId: string) {
-  return requireChurchPermission("agenda:qualify", churchId);
 }

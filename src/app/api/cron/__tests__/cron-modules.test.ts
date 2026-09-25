@@ -40,17 +40,20 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     return POST(request);
   }
 
-  it("répond 200 et n'appelle ni integration ni jobs quand les deux sont désactivés", async () => {
+  it("répond 200 et n'appelle ni integration ni care ni jobs quand ils sont désactivés", async () => {
     process.env.ENABLED_MODULES = "core,planning";
     vi.doMock("@/modules/integration", () => ({
+      integrationBus: { on: vi.fn() },
       runInactivityNotifications: vi.fn(() => {
-        throw new Error("ne devrait pas être appelé — module integration désactivé");
-      }),
-      runMsdpInactivityNotifications: vi.fn(() => {
         throw new Error("ne devrait pas être appelé — module integration désactivé");
       }),
       runWaitingRelanceNotifications: vi.fn(() => {
         throw new Error("ne devrait pas être appelé — module integration désactivé");
+      }),
+    }));
+    vi.doMock("@/modules/care", () => ({
+      runMsdpInactivityNotifications: vi.fn(() => {
+        throw new Error("ne devrait pas être appelé — module care désactivé");
       }),
     }));
     vi.doMock("@/modules/jobs", () => ({
@@ -69,17 +72,18 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(body.jobOffersLifecycle).toBeNull();
   });
 
-  it("appelle integration et jobs quand ils sont actifs (comportement par défaut préservé)", async () => {
+  it("appelle integration, care et jobs quand ils sont actifs (comportement par défaut préservé)", async () => {
     delete process.env.ENABLED_MODULES;
     const runInactivityNotifications = vi.fn().mockResolvedValue({ sent: 0 });
     const runMsdpInactivityNotifications = vi.fn().mockResolvedValue({ sent: 0 });
     const runWaitingRelanceNotifications = vi.fn().mockResolvedValue({ notified: 0 });
     const runJobOffersLifecycle = vi.fn().mockResolvedValue({ processed: 0 });
     vi.doMock("@/modules/integration", () => ({
+      integrationBus: { on: vi.fn() },
       runInactivityNotifications,
-      runMsdpInactivityNotifications,
       runWaitingRelanceNotifications,
     }));
+    vi.doMock("@/modules/care", () => ({ runMsdpInactivityNotifications }));
     vi.doMock("@/modules/jobs", () => ({ runJobOffersLifecycle }));
 
     const res = await postCron();

@@ -18,7 +18,7 @@ const ROLES = [
   { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
   { value: "DISCIPLE_MAKER", label: "Faiseur de Disciples" },
   { value: "REPORTER", label: "Reporter (Comptes rendus)" },
-  { value: "AGENDA_QUALIFIER", label: "Qualificateur Agenda" },
+  { value: "PASTORAL_CARE_REFERENT", label: "Référent soins pastoraux" },
   { value: "ACCOUNTANT", label: "Comptable" },
 ];
 

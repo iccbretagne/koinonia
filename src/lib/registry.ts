@@ -1,6 +1,10 @@
 import { boot } from "@/core/boot";
 import { buildRolePermissions } from "@/core/permissions";
 import { planningBus } from "@/modules/planning";
+// Import ciblé sur `bus.ts` plutôt que l'index du module : l'index d'`integration`
+// réexporte `auth.ts`, qui importe `@/lib/auth` (NextAuth) au niveau module — un import
+// statique ici créerait le même cycle/TDZ documenté pour les gardes de module (issue #446).
+import { integrationBus } from "@/modules/integration/bus";
 import { allManifests } from "./manifests";
 
 /**
@@ -88,3 +92,22 @@ planningBus.on(
     });
   }
 );
+
+/**
+ * Integration → Care : quand une personne répond à l'appel au salut et/ou demande un soin
+ * pastoral via le formulaire d'accueil, créer la demande de rendez-vous pastoral et/ou le
+ * suivi de nouveau converti correspondants (spec 052, ADR-0015).
+ *
+ * S'exécute dans la même transaction que la soumission du formulaire d'accueil.
+ *
+ * **Conditionné par `registry.has("care")`** (spec 038) : celui-ci **crée** des données
+ * appartenant à `care` — sur une instance sans `care`, l'appel au salut reste enregistré sur la
+ * demande d'accueil, sans suivi ni demande de rendez-vous. « nettoyer oui, créer non ».
+ */
+integrationBus.on("request.submitted", async ({ tx }, payload) => {
+  if (!registry.has("care")) return;
+  // Import dynamique : voir le commentaire sur `integrationBus` ci-dessus — l'index de
+  // `care` réexporte `auth.ts`, qui importe `@/lib/auth` au niveau module.
+  const { handleIntegrationSubmitted } = await import("@/modules/care");
+  await handleIntegrationSubmitted(tx, payload);
+});

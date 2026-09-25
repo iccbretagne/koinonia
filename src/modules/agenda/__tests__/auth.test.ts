@@ -4,7 +4,7 @@ import {
   createAdminSession,
   createSuperAdminSession,
   createSecretarySession,
-  createAgendaQualifierSession,
+  createPastoralCareReferentSession,
   createDepartmentHeadSession,
   createProtocoleMemberSession,
 } from "@/__mocks__/auth";
@@ -24,7 +24,7 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return { ...original, auth: () => mockAuth() };
 });
 
-const { isProtocoleMember, requireAgendaView, requireAgendaManage, requireAgendaQualify } =
+const { isProtocoleMember, requireAgendaView, requireAgendaManage } =
   await import("@/modules/agenda/auth");
 
 describe("isProtocoleMember", () => {
@@ -76,8 +76,8 @@ describe("requireAgendaView", () => {
     expect(session.user.id).toBe("user-1");
   });
 
-  it("denies AGENDA_QUALIFIER (removed from agenda:view — T03)", async () => {
-    mockAuth.mockResolvedValue(createAgendaQualifierSession("church-1"));
+  it("denies PASTORAL_CARE_REFERENT (agenda:view appartient à care désormais)", async () => {
+    mockAuth.mockResolvedValue(createPastoralCareReferentSession("church-1"));
     await expect(requireAgendaView("church-1")).rejects.toThrow("FORBIDDEN");
   });
 
@@ -117,8 +117,8 @@ describe("requireAgendaManage", () => {
     expect(result.user.id).toBe("user-1");
   });
 
-  it("denies AGENDA_QUALIFIER (has no agenda:manage)", async () => {
-    mockAuth.mockResolvedValue(createAgendaQualifierSession("church-1"));
+  it("denies PASTORAL_CARE_REFERENT (has no agenda:manage)", async () => {
+    mockAuth.mockResolvedValue(createPastoralCareReferentSession("church-1"));
     prismaMock.department.count.mockResolvedValue(0);
     await expect(requireAgendaManage("church-1")).rejects.toThrow("FORBIDDEN");
   });
@@ -129,32 +129,5 @@ describe("requireAgendaManage", () => {
     );
     prismaMock.department.count.mockResolvedValue(0);
     await expect(requireAgendaManage("church-1")).rejects.toThrow("FORBIDDEN");
-  });
-});
-
-describe("requireAgendaQualify", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("allows AGENDA_QUALIFIER", async () => {
-    mockAuth.mockResolvedValue(createAgendaQualifierSession("church-1"));
-    const session = await requireAgendaQualify("church-1");
-    expect(session.user.id).toBe("user-1");
-  });
-
-  it("allows admin (has agenda:qualify)", async () => {
-    mockAuth.mockResolvedValue(createAdminSession("church-1"));
-    const session = await requireAgendaQualify("church-1");
-    expect(session.user.id).toBe("user-1");
-  });
-
-  it("denies PROTOCOLE member (no agenda:qualify)", async () => {
-    const session = createProtocoleMemberSession("dept-protocole", "church-1");
-    mockAuth.mockResolvedValue(session);
-    await expect(requireAgendaQualify("church-1")).rejects.toThrow("FORBIDDEN");
-  });
-
-  it("denies secretary (no agenda:qualify)", async () => {
-    mockAuth.mockResolvedValue(createSecretarySession("church-1"));
-    await expect(requireAgendaQualify("church-1")).rejects.toThrow("FORBIDDEN");
   });
 });

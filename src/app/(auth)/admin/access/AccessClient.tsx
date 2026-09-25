@@ -69,15 +69,15 @@ interface Props {
 
 type Tab = "requests" | "roles" | "transverse" | "stars";
 
-type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER" | "AGENDA_QUALIFIER" | "ACCOUNTANT" | "REPORTER";
+type TransverseRole = "ADMIN" | "SECRETARY" | "DISCIPLE_MAKER" | "PASTORAL_CARE_REFERENT" | "ACCOUNTANT" | "REPORTER";
 
-const TRANSVERSE_ROLES: TransverseRole[] = ["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "AGENDA_QUALIFIER", "ACCOUNTANT", "REPORTER"];
+const TRANSVERSE_ROLES: TransverseRole[] = ["ADMIN", "SECRETARY", "DISCIPLE_MAKER", "PASTORAL_CARE_REFERENT", "ACCOUNTANT", "REPORTER"];
 
 const TRANSVERSE_ROLE_LABELS: Record<TransverseRole, string> = {
   ADMIN: "Admin",
   SECRETARY: "Secrétaire",
   DISCIPLE_MAKER: "Faiseur de Disciples",
-  AGENDA_QUALIFIER: "Qualificateur Agenda",
+  PASTORAL_CARE_REFERENT: "Référent soins pastoraux",
   ACCOUNTANT: "Comptable",
   REPORTER: "Reporter",
 };
@@ -86,7 +86,7 @@ const TRANSVERSE_ROLE_COLORS: Record<TransverseRole, string> = {
   ADMIN: "bg-red-100 text-red-700 border-red-200",
   SECRETARY: "bg-blue-100 text-blue-700 border-blue-200",
   DISCIPLE_MAKER: "bg-green-100 text-green-700 border-green-200",
-  AGENDA_QUALIFIER: "bg-purple-100 text-purple-700 border-purple-200",
+  PASTORAL_CARE_REFERENT: "bg-purple-100 text-purple-700 border-purple-200",
   ACCOUNTANT: "bg-yellow-100 text-yellow-700 border-yellow-200",
   REPORTER: "bg-icc-violet/10 text-icc-violet border-icc-violet/20",
 };

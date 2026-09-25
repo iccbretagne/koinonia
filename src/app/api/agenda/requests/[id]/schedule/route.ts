@@ -5,6 +5,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { sendEmail, buildAppointmentScheduledEmail } from "@/lib/email";
+import { markAppointmentScheduled, NEUTRAL_REQUEST_LABEL } from "@/modules/care";
 import { z } from "zod";
 
 const scheduleSchema = z.object({
@@ -18,6 +19,13 @@ const scheduleSchema = z.object({
   { message: "L'heure de fin doit être après l'heure de début", path: ["endsAt"] }
 );
 
+/**
+ * Orchestrateur (spec 052, ADR-0015) : le Protocole planifie toujours dans l'agenda, mais la
+ * demande de rendez-vous appartient à `care`. Écriture de l'entrée d'agenda (service `agenda`)
+ * et passage à SCHEDULED (service `care`) dans la même transaction. Le titre par défaut ne
+ * reprend plus `subject` (traité comme confidentiel, spec 052) : « Rendez-vous pastoral —
+ * Prénom Nom ».
+ */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -29,7 +37,7 @@ export async function PATCH(
 
     const existing = await prisma.appointmentRequest.findUnique({
       where: { id },
-      select: { status: true, subject: true, assignedToId: true, userId: true, email: true, firstName: true, lastName: true },
+      select: { status: true, assignedToId: true, userId: true, email: true, firstName: true, lastName: true, subject: true },
     });
     if (!existing) throw new ApiError(404, "Demande introuvable");
     if (existing.status !== "VALIDATED") {
@@ -41,36 +49,34 @@ export async function PATCH(
 
     const body = await request.json();
     const data = scheduleSchema.parse(body);
+    const startsAt = new Date(data.startsAt);
+    const defaultTitle = `${NEUTRAL_REQUEST_LABEL} — ${existing.firstName} ${existing.lastName}`;
 
-    const [, entry] = await prisma.$transaction([
-      prisma.appointmentRequest.update({
-        where: { id },
-        data: {
-          status: "SCHEDULED",
-          scheduledById: session.user.id,
-          scheduledAt: new Date(),
-          updatedById: session.user.id,
-        },
-      }),
-      prisma.agendaEntry.create({
+    const entry = await prisma.$transaction(async (tx) => {
+      await markAppointmentScheduled(tx, {
+        id,
+        scheduledById: session.user.id!,
+        scheduledFor: startsAt,
+      });
+
+      return tx.agendaEntry.create({
         data: {
           churchId,
-          recipientId: existing.assignedToId,
+          recipientId: existing.assignedToId!,
           type: "APPOINTMENT",
-          title: data.title ?? existing.subject,
+          title: data.title ?? defaultTitle,
           description: data.description ?? null,
-          startsAt: new Date(data.startsAt),
+          startsAt,
           endsAt: data.endsAt ? new Date(data.endsAt) : null,
           location: data.location ?? null,
           requestId: id,
-          createdById: session.user.id,
+          createdById: session.user.id!,
         },
         include: {
           recipient: { select: { id: true, name: true, role: true } },
-          request: { select: { id: true, firstName: true, lastName: true, subject: true } },
         },
-      }),
-    ]);
+      });
+    });
 
     await logAudit({
       userId: session.user.id,
@@ -81,14 +87,13 @@ export async function PATCH(
       details: { transition: "VALIDATED→SCHEDULED", entryId: entry.id, startsAt: data.startsAt },
     });
 
-    // Notify demandeur
-    const startsAt = new Date(data.startsAt);
+    // Notify demandeur — contenu complet réservé à son propre email/notification.
     const dateStr = startsAt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
     const timeStr = startsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     if (existing.userId) {
       createNotification({
         userId: existing.userId,
-        type: "AGENDA_REQUEST_SCHEDULED",
+        type: "CARE_APPOINTMENT_SCHEDULED",
         title: "Rendez-vous pastoral confirmé",
         message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
         link: "/requests",
@@ -97,6 +102,9 @@ export async function PATCH(
     if (existing.email) {
       const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
       if (church) {
+        // Contenu complet dans l'email au demandeur : c'est sa propre demande, pas une fuite
+        // vers un tiers (protocole, secrétariat) — seul le titre d'agenda et la réponse API
+        // masquent `subject`.
         const { subject: emailSubject, html } = buildAppointmentScheduledEmail({
           firstName: existing.firstName,
           lastName: existing.lastName,

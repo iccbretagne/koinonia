@@ -75,6 +75,8 @@ function useAddressSuggestions(query: string) {
 interface Props {
   readonly churchId: string;
   readonly churchName: string;
+  /** Case « soin pastoral » — affichée seulement si `care` est actif (spec 052). */
+  readonly showPastoralCare: boolean;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -158,7 +160,7 @@ const CONTACT_CONSENT_OPTIONS = [
   { value: "LATER", label: "Être recontacté·e plus tard" },
 ];
 
-export default function JoinForm({ churchId, churchName }: Props) {
+export default function JoinForm({ churchId, churchName, showPastoralCare }: Props) {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -516,7 +518,8 @@ export default function JoinForm({ churchId, churchName }: Props) {
         </label>
       </div>
 
-      {/* Soin pastoral */}
+      {/* Soin pastoral — case affichée seulement si `care` est actif (spec 052) */}
+      {showPastoralCare && (
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-3">
         <div>
           <h2 className="text-base font-semibold text-gray-900">Soins pastoraux</h2>
@@ -569,6 +572,7 @@ export default function JoinForm({ churchId, churchName }: Props) {
           </div>
         )}
       </div>
+      )}
 
       {globalError && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">

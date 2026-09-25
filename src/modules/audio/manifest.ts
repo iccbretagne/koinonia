@@ -25,7 +25,7 @@ export const audioModule = defineModule({
     // Écoute des cultes publiés (bibliothèque + fiche d'événement) — tout membre authentifié
     // (spec 021 : « restreindre la liste plus que le lien de partage n'aurait pas de sens »)
     "audio:listen":  ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD",
-                       "DISCIPLE_MAKER", "REPORTER", "STAR", "AGENDA_QUALIFIER", "ACCOUNTANT"],
+                       "DISCIPLE_MAKER", "REPORTER", "STAR", "PASTORAL_CARE_REFERENT", "ACCOUNTANT"],
     // Accès en lecture à la file d'attente et aux cultes publiés (espace de production)
     "audio:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
     // Dépôt de séquences (en plus de l'équipe de captation via isCaptureTeamMember)

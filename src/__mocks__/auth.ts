@@ -171,13 +171,13 @@ export function createSecretariatTeamSession(churchId = "church-1"): Session {
   });
 }
 
-export function createAgendaQualifierSession(churchId = "church-1"): Session {
+export function createPastoralCareReferentSession(churchId = "church-1"): Session {
   return createSession({
     churchRoles: [
       {
         id: "role-1",
         churchId,
-        role: "AGENDA_QUALIFIER",
+        role: "PASTORAL_CARE_REFERENT",
         ministryId: null,
         church: { id: churchId, name: "Test Church", slug: "test-church" },
         departments: [],

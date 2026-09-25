@@ -36,7 +36,7 @@ export interface EditData {
 interface Props {
   readonly churchId: string;
   readonly canSubmitDemands: boolean;
-  readonly showAgendaTile?: boolean;
+  readonly showCareTile?: boolean;
   readonly showAccountingTile?: boolean;
   readonly announcementEvents: { id: string; title: string; type: string; date: string }[];
   readonly events: { id: string; title: string; type: string; date: string }[];
@@ -177,7 +177,7 @@ function initFromEditData(editData: EditData): {
 export default function RequestForm({
   churchId,
   canSubmitDemands,
-  showAgendaTile = false,
+  showCareTile = false,
   showAccountingTile = false,
   announcementEvents,
   events,
@@ -512,15 +512,15 @@ export default function RequestForm({
           </>
         )}
 
-        {(showAgendaTile || showAccountingTile) && (
+        {(showCareTile || showAccountingTile) && (
           <>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
               Accompagnement &amp; finances
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {showAgendaTile && (
+              {showCareTile && (
                 <Link
-                  href="/agenda/request?from=requests"
+                  href="/care/request?from=requests"
                   className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors flex items-center gap-3"
                 >
                   <span className="text-xl">🗓️</span>
