@@ -22,6 +22,8 @@ interface Props {
   /** Incrémenté par la fiche après chaque action, pour recharger la frise. */
   readonly refreshKey?: number;
   readonly title?: string;
+  /** Libellé de la personne en charge (« Référent » pour un RDV, « Conseiller » pour un suivi). */
+  readonly assigneeLabel?: string;
 }
 
 function fmtDateTime(d: string) {
@@ -39,7 +41,7 @@ function fmtDateTime(d: string) {
  * pour spec 052 T51 : partagée entre les demandes d'intégration et les items `care`
  * (rendez-vous pastoraux, suivis MSDP) — seuls l'URL et les libellés diffèrent par appelant.
  */
-export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, refreshKey = 0, title = "Historique" }: Props) {
+export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, refreshKey = 0, title = "Historique", assigneeLabel = "Accompagnant" }: Props) {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -94,7 +96,7 @@ export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, 
                   {fmtDateTime(e.at)}
                   {e.author ? ` · ${e.author}` : ""}
                 </p>
-                {e.assignee && <p className="text-xs text-gray-600 mt-0.5">Accompagnant : {e.assignee}</p>}
+                {e.assignee && <p className="text-xs text-gray-600 mt-0.5">{assigneeLabel} : {e.assignee}</p>}
                 {e.note && <p className="text-xs text-gray-600 mt-0.5 italic">« {e.note} »</p>}
               </li>
             );

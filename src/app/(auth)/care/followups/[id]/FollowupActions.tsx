@@ -56,7 +56,7 @@ export default function FollowupActions({
   }
 
   async function assignOrReassign(action: "assign" | "reassign") {
-    if (!assignee) { setError("Veuillez sélectionner un accompagnant."); return; }
+    if (!assignee) { setError("Veuillez sélectionner un conseiller."); return; }
     await patch({ action, assignee });
   }
 
@@ -90,7 +90,7 @@ export default function FollowupActions({
             </div>
           ) : (
             <Button size="sm" onClick={() => setMode(canAssign ? "assign" : "reassign")}>
-              {canAssign ? "Assigner un accompagnant" : "Réaffecter"}
+              {canAssign ? "Assigner un conseiller" : "Réaffecter"}
             </Button>
           )}
         </div>

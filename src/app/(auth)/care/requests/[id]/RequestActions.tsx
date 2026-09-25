@@ -81,7 +81,7 @@ export default function RequestActions({
   }
 
   async function validate() {
-    if (!assignee) { setError("Veuillez sélectionner un accompagnant."); return; }
+    if (!assignee) { setError("Veuillez sélectionner un référent."); return; }
     await run({ action: "validate", assignee, note: note || undefined });
   }
 
@@ -92,7 +92,7 @@ export default function RequestActions({
   }
 
   async function reassign() {
-    if (!assignee) { setError("Veuillez sélectionner un accompagnant."); return; }
+    if (!assignee) { setError("Veuillez sélectionner un référent."); return; }
     await run({ action: "reassign", assignee });
   }
 
@@ -136,7 +136,7 @@ export default function RequestActions({
           {canReassign && <Button size="sm" variant="info" onClick={() => setMode("reassign")}>Réaffecter</Button>}
           {canSetDate && <Button size="sm" variant="info" onClick={() => setMode("set_date")}>Fixer la date</Button>}
           {canOutcome && <Button size="sm" variant="info" onClick={() => setMode("outcome")}>Compte rendu du rendez-vous</Button>}
-          {canHandback && <Button size="sm" variant="secondary" onClick={() => setMode("handback")}>Rendre au référent</Button>}
+          {canHandback && <Button size="sm" variant="secondary" onClick={() => setMode("handback")}>Rendre la demande</Button>}
         </div>
       )}
 
@@ -144,13 +144,13 @@ export default function RequestActions({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Accompagnant <span className="text-red-500">*</span>
+              Référent <span className="text-red-500">*</span>
             </label>
             <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Note transmise à l&apos;accompagnant (optionnel)
+              Note transmise au référent (optionnel)
             </label>
             <textarea
               value={note}
@@ -203,7 +203,7 @@ export default function RequestActions({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Nouvel accompagnant <span className="text-red-500">*</span>
+              Nouveau référent <span className="text-red-500">*</span>
             </label>
             <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
@@ -262,7 +262,7 @@ export default function RequestActions({
         <div className="space-y-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Motif du retour au référent <span className="text-red-500">*</span>
+              Motif du retour <span className="text-red-500">*</span>
             </label>
             <textarea
               value={handbackReason}

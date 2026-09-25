@@ -4,18 +4,25 @@ import { DEPT_FN } from "@/lib/department-functions";
 import { DEFAULT_CARE_SETTINGS, type CareDelays } from "./settings";
 
 /**
- * Relances des demandes de rendez-vous pastoral (spec 052, T60) : non confiée (`PENDING`) →
- * référents ; confiée sans date fixée (`VALIDATED`, sans `scheduledFor`) → l'accompagnant
- * (le membre du MSDP qui fixe lui-même la date, ou le protocole qui planifie pour un profil
- * pastoral — T19). Délais réglables par église (`CareSettings`, T59). Les fonctions
- * d'échéance sont pures, sur le modèle de `relanceDueAt`/`isRelanceDue` (spec 051).
+ * Relances de l'espace suivi pastoral (spec 052, T60), pour les deux sortes de demandes :
+ * - non confiée (RDV `PENDING`, suivi `SUBMITTED`) → référents ;
+ * - confiée sans suite (RDV `VALIDATED` sans date fixée, suivi `ASSIGNED` sans premier contact)
+ *   → l'accompagnant : le membre du MSDP, ou pour un RDV confié à un profil pastoral le protocole
+ *   qui le planifie (T19) ; pour un suivi confié à un profil pastoral, son compte s'il en a un.
+ * Délais réglables par église (`CareSettings`, T59). Les fonctions d'échéance sont pures, sur le
+ * modèle de `relanceDueAt`/`isRelanceDue` (spec 051).
  */
+
+/** États « reçue, non confiée » : RDV et suivi de nouveau converti. */
+const UNASSIGNED_STATUSES = new Set(["PENDING", "SUBMITTED"]);
+/** États « confiée, sans suite » : RDV sans date, suivi sans premier contact. */
+const UNSCHEDULED_STATUSES = new Set(["VALIDATED", "ASSIGNED"]);
 
 export function unassignedDueAt(
   request: { status: string; createdAt: Date },
   delays: CareDelays
 ): Date | null {
-  if (request.status !== "PENDING") return null;
+  if (!UNASSIGNED_STATUSES.has(request.status)) return null;
   return new Date(request.createdAt.getTime() + delays.unassignedDelayDays * 86_400_000);
 }
 
@@ -32,7 +39,7 @@ export function unscheduledDueAt(
   request: { status: string; assignedAt: Date | null },
   delays: CareDelays
 ): Date | null {
-  if (request.status !== "VALIDATED" || !request.assignedAt) return null;
+  if (!UNSCHEDULED_STATUSES.has(request.status) || !request.assignedAt) return null;
   return new Date(request.assignedAt.getTime() + delays.unscheduledDelayDays * 86_400_000);
 }
 
@@ -48,13 +55,32 @@ export function isUnscheduledDue(
 const RELANCE_TYPE_UNASSIGNED = "CARE_RELANCE_UNASSIGNED";
 const RELANCE_TYPE_UNSCHEDULED = "CARE_RELANCE_UNSCHEDULED";
 
+/** Demande de RDV ou suivi, ramené à ce dont la relance a besoin. */
+interface RelanceItem {
+  kind: "requests" | "followups";
+  id: string;
+  churchId: string;
+  status: string;
+  personName: string;
+  createdAt: Date;
+  assignedAt: Date | null;
+  /** Membre du MSDP en charge (compte). */
+  memberUserId: string | null;
+  /** Profil pastoral en charge : `userId` = son compte éventuel. */
+  profile: { userId: string | null } | null;
+}
+
+function linkOf(item: RelanceItem): string {
+  return `/care/${item.kind}/${item.id}`;
+}
+
 export async function runCareRelances(): Promise<{
   unassignedNotified: number;
   unscheduledNotified: number;
 }> {
   const now = new Date();
 
-  const [pendingRequests, validatedRequests] = await Promise.all([
+  const [pendingRequests, validatedRequests, submittedFollowUps, assignedFollowUps] = await Promise.all([
     prisma.appointmentRequest.findMany({
       where: { status: "PENDING" },
       select: { id: true, churchId: true, status: true, firstName: true, lastName: true, createdAt: true },
@@ -67,20 +93,101 @@ export async function runCareRelances(): Promise<{
         status: true,
         firstName: true,
         lastName: true,
+        createdAt: true,
         assignedAt: true,
         assignedMemberId: true,
         assignedTo: { select: { userId: true } },
       },
     }),
+    prisma.msdpFollowUp.findMany({
+      where: { status: "SUBMITTED" },
+      select: {
+        id: true,
+        churchId: true,
+        status: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        request: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    prisma.msdpFollowUp.findMany({
+      where: { status: "ASSIGNED", assignedAt: { not: null } },
+      select: {
+        id: true,
+        churchId: true,
+        status: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        assignedAt: true,
+        assignedConseillerMsdpId: true,
+        assignedProfile: { select: { userId: true } },
+        request: { select: { firstName: true, lastName: true } },
+      },
+    }),
   ]);
 
-  if (pendingRequests.length === 0 && validatedRequests.length === 0) {
+  const followUpName = (f: {
+    firstName: string | null;
+    lastName: string | null;
+    request: { firstName: string; lastName: string } | null;
+  }) => `${f.firstName ?? f.request?.firstName ?? ""} ${f.lastName ?? f.request?.lastName ?? ""}`.trim();
+
+  const unassignedItems: RelanceItem[] = [
+    ...pendingRequests.map((r) => ({
+      kind: "requests" as const,
+      id: r.id,
+      churchId: r.churchId,
+      status: r.status,
+      personName: `${r.firstName} ${r.lastName}`,
+      createdAt: r.createdAt,
+      assignedAt: null,
+      memberUserId: null,
+      profile: null,
+    })),
+    ...submittedFollowUps.map((f) => ({
+      kind: "followups" as const,
+      id: f.id,
+      churchId: f.churchId,
+      status: f.status,
+      personName: followUpName(f),
+      createdAt: f.createdAt,
+      assignedAt: null,
+      memberUserId: null,
+      profile: null,
+    })),
+  ];
+  const unscheduledItems: RelanceItem[] = [
+    ...validatedRequests.map((r) => ({
+      kind: "requests" as const,
+      id: r.id,
+      churchId: r.churchId,
+      status: r.status,
+      personName: `${r.firstName} ${r.lastName}`,
+      createdAt: r.createdAt,
+      assignedAt: r.assignedAt,
+      memberUserId: r.assignedMemberId,
+      profile: r.assignedTo,
+    })),
+    ...assignedFollowUps.map((f) => ({
+      kind: "followups" as const,
+      id: f.id,
+      churchId: f.churchId,
+      status: f.status,
+      personName: followUpName(f),
+      createdAt: f.createdAt,
+      assignedAt: f.assignedAt,
+      memberUserId: f.assignedConseillerMsdpId,
+      profile: f.assignedProfile,
+    })),
+  ];
+
+  if (unassignedItems.length === 0 && unscheduledItems.length === 0) {
     return { unassignedNotified: 0, unscheduledNotified: 0 };
   }
 
-  const churchIds = Array.from(
-    new Set([...pendingRequests, ...validatedRequests].map((r) => r.churchId))
-  );
+  const churchIds = Array.from(new Set([...unassignedItems, ...unscheduledItems].map((r) => r.churchId)));
   const settingsRows = await prisma.careSettings.findMany({
     where: { churchId: { in: churchIds } },
     select: { churchId: true, unassignedDelayDays: true, unscheduledDelayDays: true },
@@ -89,13 +196,10 @@ export async function runCareRelances(): Promise<{
   const delaysFor = (churchId: string): CareDelays =>
     settingsByChurch.get(churchId) ?? DEFAULT_CARE_SETTINGS;
 
-  const dueUnassigned = pendingRequests.filter((r) => isUnassignedDue(r, delaysFor(r.churchId), now));
-  const dueUnscheduled = validatedRequests.filter((r) => isUnscheduledDue(r, delaysFor(r.churchId), now));
+  const dueUnassigned = unassignedItems.filter((r) => isUnassignedDue(r, delaysFor(r.churchId), now));
+  const dueUnscheduled = unscheduledItems.filter((r) => isUnscheduledDue(r, delaysFor(r.churchId), now));
 
-  const relevantLinks = [
-    ...dueUnassigned.map((r) => `/care/requests/${r.id}`),
-    ...dueUnscheduled.map((r) => `/care/requests/${r.id}`),
-  ];
+  const relevantLinks = [...dueUnassigned, ...dueUnscheduled].map(linkOf);
   const existingNotifs = relevantLinks.length
     ? await prisma.notification.findMany({
         where: {
@@ -117,28 +221,28 @@ export async function runCareRelances(): Promise<{
   }
 
   let unassignedNotified = 0;
-  const byChurch = new Map<string, typeof dueUnassigned>();
+  const byChurch = new Map<string, RelanceItem[]>();
   for (const r of dueUnassigned) {
-    const link = `/care/requests/${r.id}`;
-    if (!shouldNotify(RELANCE_TYPE_UNASSIGNED, link, delaysFor(r.churchId).unassignedDelayDays)) continue;
+    if (!shouldNotify(RELANCE_TYPE_UNASSIGNED, linkOf(r), delaysFor(r.churchId).unassignedDelayDays)) continue;
     if (!byChurch.has(r.churchId)) byChurch.set(r.churchId, []);
     byChurch.get(r.churchId)!.push(r);
   }
-  for (const [churchId, requests] of byChurch) {
+  for (const [churchId, items] of byChurch) {
     const referents = await prisma.userChurchRole.findMany({
       where: { churchId, role: { in: ["SUPER_ADMIN", "ADMIN", "PASTORAL_CARE_REFERENT"] } },
       select: { userId: true },
     });
     const userIds = Array.from(new Set(referents.map((r) => r.userId)));
     if (userIds.length === 0) continue;
-    for (const r of requests) {
+    for (const r of items) {
+      const isRequest = r.kind === "requests";
       await prisma.notification.createMany({
         data: userIds.map((userId) => ({
           userId,
           type: RELANCE_TYPE_UNASSIGNED,
-          title: "Demande de RDV pastoral à confier",
-          message: `${r.firstName} ${r.lastName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
-          link: `/care/requests/${r.id}`,
+          title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
+          message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
+          link: linkOf(r),
         })),
         skipDuplicates: true,
       });
@@ -148,27 +252,27 @@ export async function runCareRelances(): Promise<{
 
   let unscheduledNotified = 0;
   for (const r of dueUnscheduled) {
-    const link = `/care/requests/${r.id}`;
+    const link = linkOf(r);
     if (!shouldNotify(RELANCE_TYPE_UNSCHEDULED, link, delaysFor(r.churchId).unscheduledDelayDays)) continue;
-    const personName = `${r.firstName} ${r.lastName}`;
-    if (r.assignedMemberId) {
-      await prisma.notification.create({
-        data: {
-          userId: r.assignedMemberId,
-          type: RELANCE_TYPE_UNSCHEDULED,
-          title: "Rendez-vous pastoral à planifier",
-          message: `${personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, toujours sans date.`,
-          link,
-        },
-      }).catch(() => {});
+    const isRequest = r.kind === "requests";
+    const notification = {
+      type: RELANCE_TYPE_UNSCHEDULED,
+      title: isRequest ? "Rendez-vous pastoral à planifier" : "Suivi de nouveau converti sans premier contact",
+      message: `${r.personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, ${
+        isRequest ? "toujours sans date" : "toujours sans premier contact"
+      }.`,
+      link,
+    };
+    // Qui relancer : le membre du MSDP en charge ; pour un RDV confié à un profil pastoral, le
+    // protocole qui le planifie ; pour un suivi confié à un profil pastoral, son compte s'il en a un.
+    const recipientUserId = r.memberUserId ?? (!isRequest ? r.profile?.userId ?? null : null);
+    if (recipientUserId) {
+      await prisma.notification
+        .create({ data: { userId: recipientUserId, ...notification } })
+        .catch(() => {});
       unscheduledNotified++;
-    } else if (r.assignedTo) {
-      await notifyDeptMembers(r.churchId, DEPT_FN.PROTOCOLE, {
-        type: RELANCE_TYPE_UNSCHEDULED,
-        title: "Rendez-vous pastoral à planifier",
-        message: `${personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, toujours sans date.`,
-        link,
-      }).catch(() => {});
+    } else if (isRequest && r.profile) {
+      await notifyDeptMembers(r.churchId, DEPT_FN.PROTOCOLE, notification).catch(() => {});
       unscheduledNotified++;
     }
   }

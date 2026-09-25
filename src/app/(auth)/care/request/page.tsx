@@ -6,7 +6,7 @@ import RequestForm from "./RequestForm";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
-  VALIDATED: "Validée",
+  VALIDATED: "Confiée",
   SCHEDULED: "Planifiée",
   CLOSED: "Terminée",
   REJECTED: "Refusée",
@@ -127,7 +127,7 @@ export default async function CareRequestPage({
       </Link>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Demande de RDV pastoral</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Soumettez votre demande. Un référent la traitera et vous sera assigné un accompagnant.
+        Soumettez votre demande. Elle sera étudiée puis confiée à un référent qui vous accompagnera.
       </p>
       <RequestForm
         churchId={churchId}

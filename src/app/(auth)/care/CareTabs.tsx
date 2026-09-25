@@ -35,6 +35,7 @@ interface FollowUpItem {
   lastName: string | null;
   createdAt: Date | string;
   assignedConseillerMsdp: { id: string; name: string | null; email: string | null } | null;
+  assignedProfile: { id: string; name: string } | null;
   request: { id: string; firstName: string; lastName: string } | null;
 }
 
@@ -47,7 +48,7 @@ interface Props {
 
 const REQUEST_STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
-  VALIDATED: "Validée",
+  VALIDATED: "Confiée",
   SCHEDULED: "Planifiée",
   CLOSED: "Terminée",
   REJECTED: "Refusée",
@@ -93,7 +94,7 @@ function QualifyForm({ req, churchId, onDone }: {
 
   async function validate() {
     if (!assignee) {
-      alert("Veuillez sélectionner un accompagnant.");
+      alert("Veuillez sélectionner un référent.");
       return;
     }
     setProcessing(true);
@@ -164,13 +165,13 @@ function QualifyForm({ req, churchId, onDone }: {
     <div className="space-y-3">
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">
-          Accompagnant <span className="text-red-500">*</span>
+          Référent <span className="text-red-500">*</span>
         </label>
         <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">
-          Note transmise à l&apos;accompagnant (optionnel)
+          Note transmise au référent (optionnel)
         </label>
         <textarea
           value={note}
@@ -263,6 +264,10 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
     <div className="space-y-2">
       {followUps.map((f) => {
         const name = f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : `${f.request?.firstName ?? ""} ${f.request?.lastName ?? ""}`.trim();
+        // Conseiller membre du MSDP ou profil pastoral : l'un ou l'autre, jamais les deux.
+        const conseiller = f.assignedConseillerMsdp
+          ? f.assignedConseillerMsdp.name ?? f.assignedConseillerMsdp.email
+          : f.assignedProfile?.name ?? null;
         return (
           <Link
             key={f.id}
@@ -272,7 +277,7 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
             <div>
               <p className="font-medium text-gray-900">{name || "—"}</p>
               <p className="text-xs text-gray-400">
-                {f.assignedConseillerMsdp ? `Conseiller : ${f.assignedConseillerMsdp.name ?? f.assignedConseillerMsdp.email}` : "Sans conseiller"}
+                {conseiller ? `Conseiller : ${conseiller}` : "Sans conseiller"}
               </p>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${MSDP_STATUS_COLORS[f.status] ?? "bg-gray-100 text-gray-500"}`}>

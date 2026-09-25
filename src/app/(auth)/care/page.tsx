@@ -76,6 +76,22 @@ export default async function CarePage() {
     const isOwn = (r.assignedTo && access.ownProfileIds.includes(r.assignedTo.id)) || r.assignedMemberId === access.userId;
     return (access.canQualify || isOwn) && isUnscheduledDue(r, delays, now);
   }).length;
+  // Suivis de nouveaux convertis : non confiés (référents) et confiés sans premier contact.
+  const unassignedFollowUpCount = followUps.filter(
+    (f) => access.canQualify && isUnassignedDue(f, delays, now)
+  ).length;
+  const uncontactedCount = followUps.filter((f) => {
+    const isOwn =
+      f.assignedConseillerMsdpId === access.userId ||
+      (f.assignedProfile && access.ownProfileIds.includes(f.assignedProfile.id));
+    return (access.canQualify || isOwn) && isUnscheduledDue(f, delays, now);
+  }).length;
+  const relances = [
+    unassignedCount > 0 && `${unassignedCount} demande${unassignedCount > 1 ? "s" : ""} de RDV non confiée${unassignedCount > 1 ? "s" : ""}`,
+    unscheduledCount > 0 && `${unscheduledCount} RDV sans date fixée`,
+    unassignedFollowUpCount > 0 && `${unassignedFollowUpCount} suivi${unassignedFollowUpCount > 1 ? "s" : ""} non confié${unassignedFollowUpCount > 1 ? "s" : ""}`,
+    uncontactedCount > 0 && `${uncontactedCount} suivi${uncontactedCount > 1 ? "s" : ""} sans premier contact`,
+  ].filter(Boolean);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -105,12 +121,9 @@ export default async function CarePage() {
           />
         </div>
       )}
-      {(unassignedCount > 0 || unscheduledCount > 0) && (
+      {relances.length > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4 text-sm text-orange-800">
-          À relancer :
-          {unassignedCount > 0 && <> {unassignedCount} demande{unassignedCount > 1 ? "s" : ""} non confiée{unassignedCount > 1 ? "s" : ""}</>}
-          {unassignedCount > 0 && unscheduledCount > 0 && " · "}
-          {unscheduledCount > 0 && <> {unscheduledCount} demande{unscheduledCount > 1 ? "s" : ""} sans date fixée</>}
+          À relancer : {relances.join(" · ")}
         </div>
       )}
       <CareTabs

@@ -208,7 +208,7 @@ export async function applyAppointmentTransition(params: {
     await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "requests", itemId: id, personName });
   }
   if (result.notifyPreviousAssignee && currentAssigneeUserId) {
-    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, personName });
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "requests", personName });
   }
   if (result.notifyReferents) {
     await notifyReferentsHandback({

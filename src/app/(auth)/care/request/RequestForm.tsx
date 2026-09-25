@@ -140,7 +140,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
         <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto text-2xl">✓</div>
         <h2 className="text-lg font-semibold text-gray-900">Demande envoyée !</h2>
         <p className="text-sm text-gray-600">
-          Votre demande a bien été reçue. Un référent la traitera prochainement et vous sera assigné un accompagnant.
+          Votre demande a bien été reçue. Elle sera étudiée prochainement puis confiée à un référent qui vous accompagnera.
         </p>
         {redirectTo && (
           <Link href={redirectTo} className={buttonClasses("secondary")}>
@@ -263,7 +263,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
             className={`${inputCls} resize-none`}
           />
           <p className="text-xs text-gray-400 mt-1">
-            Ce message n&apos;est lu que par le référent qui confie votre demande et par la personne qui vous accompagnera.
+            Ce message n&apos;est lu que par l&apos;équipe qui confie votre demande et par le référent qui vous accompagnera.
           </p>
         </div>
       </div>

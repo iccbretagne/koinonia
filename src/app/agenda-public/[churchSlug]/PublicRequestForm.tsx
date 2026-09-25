@@ -270,7 +270,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
           />
           <FieldError errors={fieldErrors} field="details" />
           <p className="text-xs text-gray-400 mt-1">
-            Ce message n&apos;est lu que par le référent qui confie votre demande et par la personne qui vous accompagnera.
+            Ce message n&apos;est lu que par l&apos;équipe qui confie votre demande et par le référent qui vous accompagnera.
           </p>
         </div>
       </div>

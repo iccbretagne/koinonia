@@ -31,10 +31,17 @@ export async function resolveAssignee(
   if (selection.kind === "PROFILE") {
     const profile = await prisma.pastoralProfile.findFirst({
       where: { id: selection.id, churchId },
-      select: { id: true, name: true, email: true, userId: true },
+      select: { id: true, name: true, email: true, userId: true, user: { select: { email: true } } },
     });
     if (!profile) throw new ApiError(400, "Profil pastoral invalide ou hors périmètre");
-    return { kind: "PROFILE", id: profile.id, userId: profile.userId, name: profile.name, email: profile.email };
+    return {
+      kind: "PROFILE",
+      id: profile.id,
+      userId: profile.userId,
+      name: profile.name,
+      // Adresse du profil, à défaut celle du compte rattaché.
+      email: profile.email ?? profile.user?.email ?? null,
+    };
   }
 
   const msdpDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.MSDP);
