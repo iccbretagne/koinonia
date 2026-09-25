@@ -13,18 +13,29 @@ import { registry } from "@/lib/registry";
  */
 async function runIntegrationInactivityTasks(appUrl: string) {
   if (!registry.has("integration")) return null;
-  const {
-    runInactivityNotifications,
-    runMsdpInactivityNotifications,
-    runWaitingRelanceNotifications,
-  } = await import("@/modules/integration");
-  const [integrationInactivityResult, msdpInactivityResult, integrationRelanceResult] =
-    await Promise.all([
-      runInactivityNotifications(appUrl),
-      runMsdpInactivityNotifications(appUrl),
-      runWaitingRelanceNotifications(appUrl),
-    ]);
-  return { integrationInactivityResult, msdpInactivityResult, integrationRelanceResult };
+  const { runInactivityNotifications, runWaitingRelanceNotifications } = await import(
+    "@/modules/integration"
+  );
+  const [integrationInactivityResult, integrationRelanceResult] = await Promise.all([
+    runInactivityNotifications(appUrl),
+    runWaitingRelanceNotifications(appUrl),
+  ]);
+  return { integrationInactivityResult, integrationRelanceResult };
+}
+
+/**
+ * Rappels d'inactivité des suivis MSDP (repris par `care`, ex-`integration`) et relances des
+ * demandes de rendez-vous pastoral non confiées/confiées sans date (spec 052, T60). Un seul
+ * import dynamique pour les deux, comme `runIntegrationInactivityTasks` ci-dessus.
+ */
+async function runCareTasks(appUrl: string) {
+  if (!registry.has("care")) return null;
+  const { runMsdpInactivityNotifications, runCareRelances } = await import("@/modules/care");
+  const [msdpInactivityResult, careRelanceResult] = await Promise.all([
+    runMsdpInactivityNotifications(appUrl),
+    runCareRelances(),
+  ]);
+  return { msdpInactivityResult, careRelanceResult };
 }
 
 async function runJobsLifecycleTask(appUrl: string) {
@@ -242,11 +253,12 @@ export async function POST(request: Request) {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [remindersResult, digestResult, integrationResult, jobOffersLifecycleResult] =
+    const [remindersResult, digestResult, integrationResult, careResult, jobOffersLifecycleResult] =
       await Promise.all([
         runReminders(),
         runPlanningDigest(),
         runIntegrationInactivityTasks(appUrl),
+        runCareTasks(appUrl),
         runJobsLifecycleTask(appUrl),
       ]);
 
@@ -254,8 +266,9 @@ export async function POST(request: Request) {
       reminders: remindersResult,
       planningDigest: digestResult,
       integrationInactivity: integrationResult?.integrationInactivityResult ?? null,
-      msdpInactivity: integrationResult?.msdpInactivityResult ?? null,
       integrationRelance: integrationResult?.integrationRelanceResult ?? null,
+      msdpInactivity: careResult?.msdpInactivityResult ?? null,
+      careRelance: careResult?.careRelanceResult ?? null,
       jobOffersLifecycle: jobOffersLifecycleResult,
     });
   } catch (error) {

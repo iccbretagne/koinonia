@@ -82,6 +82,7 @@ model Church {
   pastoralProfiles          PastoralProfile[]          @relation("ChurchPastoralProfiles")
   appointmentRequests       AppointmentRequest[]
   agendaEntries             AgendaEntry[]
+  careSettings              CareSettings?
   // Module intégration familles
   familyIntegrationRequests FamilyIntegrationRequest[]
   familyLeaderAssignments   FamilyLeaderAssignment[]
@@ -129,7 +130,7 @@ enum Role {
   DISCIPLE_MAKER
   REPORTER
   STAR
-  AGENDA_QUALIFIER
+  PASTORAL_CARE_REFERENT // Référent soins pastoraux (spec 052) — anciennement AGENDA_QUALIFIER
   ACCOUNTANT
 }
 
@@ -171,6 +172,9 @@ model User {
   qualifiedRequests                 AppointmentRequest[]         @relation("AppointmentQualifier")
   scheduledRequests                 AppointmentRequest[]         @relation("AppointmentScheduler")
   updatedRequests                   AppointmentRequest[]         @relation("AppointmentUpdater")
+  appointmentsAssigned              AppointmentRequest[]         @relation("AppointmentAssignedMember")
+  appointmentsAssignedBy            AppointmentRequest[]         @relation("AppointmentAssignedBy")
+  msdpFollowUpsAssignedBy           MsdpFollowUp[]               @relation("MsdpAssignedBy")
   agendaEntriesCreated              AgendaEntry[]                @relation("AgendaEntryCreator")
   agendaEntriesUpdated              AgendaEntry[]                @relation("AgendaEntryUpdater")
   // Module intégration familles
@@ -1134,7 +1138,27 @@ enum AppointmentRequestStatus {
   PENDING
   VALIDATED
   SCHEDULED
+  CLOSED // + terminée, issue consignée (spec 052)
   REJECTED
+}
+
+/// Issue consignée par l'accompagnant une fois la date du rendez-vous passée (spec 052).
+/// « nouveau rendez-vous nécessaire » et « absent, à replanifier » ne clôturent pas la
+/// demande : elle repasse à VALIDATED, sans valeur d'issue posée ici.
+enum AppointmentOutcome {
+  HELD // a eu lieu, clôturé
+  REFERRED_TO_FOLLOWUP // a eu lieu, orienté vers un suivi de nouveau converti
+  NO_SHOW // la personne n'est pas venue, clôturé sans suite
+}
+
+/// Motif de rejet d'une demande de rendez-vous (liste fixe, spec 052).
+enum AppointmentRejectReason {
+  OUT_OF_SCOPE // hors du champ pastoral
+  DUPLICATE
+  WITHDRAWN // demande retirée par la personne
+  UNREACHABLE
+  REDIRECTED // orientée vers un autre service
+  OTHER
 }
 
 enum AgendaEntryType {
@@ -1155,6 +1179,7 @@ model PastoralProfile {
   user                  User?                @relation("UserPastoralProfile", fields: [userId], references: [id])
   entries               AgendaEntry[]
   requests              AppointmentRequest[]
+  msdpFollowUpsAssigned MsdpFollowUp[]       @relation("MsdpAssignedProfile")
   responsibleForChurch  Church?              @relation("ChurchResponsibleProfile")
   supervisorForChurches Church[]             @relation("ChurchSupervisorProfile")
 
@@ -1184,16 +1209,40 @@ model AppointmentRequest {
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
 
-  church                   Church                    @relation(fields: [churchId], references: [id])
-  user                     User?                     @relation("AppointmentRequester", fields: [userId], references: [id])
-  assignedTo               PastoralProfile?          @relation(fields: [assignedToId], references: [id])
-  qualifiedBy              User?                     @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
-  scheduledBy              User?                     @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
-  updatedBy                User?                     @relation("AppointmentUpdater", fields: [updatedById], references: [id])
-  agendaEntry              AgendaEntry?
-  familyIntegrationRequest FamilyIntegrationRequest? @relation("IntegrationAppointment")
+  // Affectation à un accompagnant (spec 052) : profil pastoral (assignedToId, existant) ou
+  // membre du département MSDP (assignedMemberId) — exclusif, vérifié par le service.
+  assignedMemberId           String?
+  assignedAt                 DateTime? // base de la relance « confiée non planifiée »
+  assignedById               String?
+  // Date du rendez-vous, quel que soit l'accompagnant (profil pastoral planifié par le
+  // protocole dans l'agenda, ou membre du MSDP qui la fixe lui-même).
+  scheduledFor               DateTime?
+  outcome                    AppointmentOutcome?
+  outcomeAt                  DateTime?
+  // Motif qualifié du rejet (liste fixe) ; `rejectReason` (existant) reste le commentaire libre.
+  rejectReasonCode           AppointmentRejectReason?
+  // Demande d'accueil source (soin pastoral coché) — reprend, en sens inverse,
+  // FamilyIntegrationRequest.appointmentRequestId (spec 052 ; colonne d'origine retirée par
+  // la migration de reprise une fois les données recopiées).
+  sourceIntegrationRequestId String?                  @unique
+  // Rapprochement avec les autres demandes de la même personne (spec 052).
+  personJourneyId            String?
+
+  church         Church           @relation(fields: [churchId], references: [id])
+  user           User?            @relation("AppointmentRequester", fields: [userId], references: [id])
+  assignedTo     PastoralProfile? @relation(fields: [assignedToId], references: [id])
+  assignedMember User?            @relation("AppointmentAssignedMember", fields: [assignedMemberId], references: [id], onDelete: SetNull)
+  assignedBy     User?            @relation("AppointmentAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  qualifiedBy    User?            @relation("AppointmentQualifier", fields: [qualifiedById], references: [id])
+  scheduledBy    User?            @relation("AppointmentScheduler", fields: [scheduledById], references: [id])
+  updatedBy      User?            @relation("AppointmentUpdater", fields: [updatedById], references: [id])
+  personJourney  PersonJourney?   @relation(fields: [personJourneyId], references: [id], onDelete: SetNull)
+  agendaEntry    AgendaEntry?
+  msdpFollowUp   MsdpFollowUp?    @relation("MsdpSourceAppointment")
 
   @@index([churchId, status, createdAt])
+  @@index([assignedMemberId])
+  @@index([personJourneyId])
   @@map("appointment_requests")
 }
 
@@ -1303,10 +1352,9 @@ model FamilyIntegrationRequest {
   eventId String?
   event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
-  // Demande de soin pastoral
-  pastoralCareRequested Boolean             @default(false)
-  appointmentRequestId  String?             @unique
-  appointmentRequest    AppointmentRequest? @relation("IntegrationAppointment", fields: [appointmentRequestId], references: [id], onDelete: SetNull)
+  // Demande de soin pastoral (la demande de rendez-vous elle-même vit désormais dans le
+  // module care, propriétaire de AppointmentRequest.sourceIntegrationRequestId — spec 052).
+  pastoralCareRequested Boolean @default(false)
 
   // Affectation famille (référentiel externe familles.iccrennes.fr)
   suggestedFamilyId   Int? // Suggestion auto via point-in-polygon
@@ -1380,16 +1428,39 @@ model MsdpFollowUp {
   id       String @id @default(cuid())
   churchId String
 
-  // Lien 1:1 avec la demande d'intégration source
-  requestId String                   @unique
-  request   FamilyIntegrationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  // Lien optionnel vers la demande d'intégration source (spec 052 : un suivi peut aussi
+  // naître d'un rendez-vous orienté, sans passer par une demande d'accueil — voir
+  // sourceAppointmentId). SetNull (et non plus Cascade) : la demande d'accueil archivée ou
+  // supprimée ne doit pas emporter le suivi.
+  requestId String?                   @unique
+  request   FamilyIntegrationRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  // Identité propre (spec 052) : recopiée depuis la demande d'accueil source quand il y en a
+  // une ; portée directement quand le suivi naît d'un rendez-vous orienté.
+  firstName String  @db.VarChar(100)
+  lastName  String  @db.VarChar(100)
+  phone     String? @db.VarChar(30)
+  email     String? @db.VarChar(255)
 
   // Workflow
   status MsdpStatus @default(SUBMITTED)
 
-  // Conseiller MSDP assigné (membre du département MSDP)
+  // Accompagnant (spec 052) : membre du département MSDP (existant) ou profil pastoral
+  // (assignedProfileId) — exclusif, vérifié par le service.
   assignedConseillerMsdpId String?
-  assignedConseillerMsdp   User?   @relation("MsdpAssignedConseiller", fields: [assignedConseillerMsdpId], references: [id], onDelete: SetNull)
+  assignedConseillerMsdp   User?            @relation("MsdpAssignedConseiller", fields: [assignedConseillerMsdpId], references: [id], onDelete: SetNull)
+  assignedProfileId        String?
+  assignedProfile          PastoralProfile? @relation("MsdpAssignedProfile", fields: [assignedProfileId], references: [id], onDelete: SetNull)
+  assignedById             String?
+  assignedBy               User?            @relation("MsdpAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  // Rendez-vous à l'origine du suivi, quand il naît d'une orientation (spec 052).
+  sourceAppointmentId String?             @unique
+  sourceAppointment   AppointmentRequest? @relation("MsdpSourceAppointment", fields: [sourceAppointmentId], references: [id], onDelete: SetNull)
+
+  // Rapprochement avec les autres demandes de la même personne (spec 052).
+  personJourneyId String?
+  personJourney   PersonJourney? @relation(fields: [personJourneyId], references: [id], onDelete: SetNull)
 
   // Timestamps pour KPIs délais
   assignedAt    DateTime?
@@ -1407,7 +1478,25 @@ model MsdpFollowUp {
 
   @@index([churchId, status])
   @@index([assignedConseillerMsdpId])
+  @@index([assignedProfileId])
+  @@index([personJourneyId])
   @@map("msdp_follow_ups")
+}
+
+/// Réglages du module care, par église (spec 052) — même forme qu'IntegrationSettings.
+model CareSettings {
+  id       String @id @default(cuid())
+  churchId String @unique
+
+  unassignedDelayDays  Int @default(7) // reçue non confiée → alerte aux référents
+  unscheduledDelayDays Int @default(14) // confiée non planifiée → alerte à l'accompagnant
+
+  church Church @relation(fields: [churchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("care_settings")
 }
 
 /// Parcours d'intégration d'une personne dans l'église.
@@ -1447,6 +1536,11 @@ model PersonJourney {
   // Auteur du dossier (null si créé automatiquement)
   createdById String?
   createdBy   User?   @relation("PersonJourneyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  // Rapprochement (spec 052) : autres demandes de rendez-vous / suivis de nouveaux convertis
+  // de la même personne.
+  appointmentRequests AppointmentRequest[]
+  msdpFollowUps       MsdpFollowUp[]
 
   church Church @relation(fields: [churchId], references: [id])
 

@@ -2,7 +2,7 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
 import { prisma } from "@/lib/prisma";
 import IntegrationDashboard from "./IntegrationDashboard";
-import PublicFormBanner from "./PublicFormBanner";
+import PublicFormBanner from "@/components/PublicFormBanner";
 
 export default async function IntegrationRequestsPage() {
   const session = await requireAuth();
@@ -44,7 +44,10 @@ export default async function IntegrationRequestsPage() {
       </div>
       {church?.slug && !scope.scoped && (
         <div className="mb-6">
-          <PublicFormBanner slug={church.slug} />
+          <PublicFormBanner
+            path={`/rejoindre/${church.slug}`}
+            label="Lien public — formulaire de rejoindre une famille"
+          />
         </div>
       )}
       <IntegrationDashboard

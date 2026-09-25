@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { registry } from "@/lib/registry";
 import JoinForm from "./JoinForm";
 
 export default async function RejoindrePublicPage({
@@ -31,7 +32,7 @@ export default async function RejoindrePublicPage({
       </header>
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8">
-        <JoinForm churchId={church.id} churchName={church.name} />
+        <JoinForm churchId={church.id} churchName={church.name} showPastoralCare={registry.has("care")} />
       </main>
 
       <footer className="text-center text-xs text-gray-400 py-5 border-t border-gray-200">

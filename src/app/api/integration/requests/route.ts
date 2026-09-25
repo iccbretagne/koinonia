@@ -5,6 +5,7 @@ import {
   buildConfirmationEmail,
   contactConsentSchema,
   initialRequestStatusData,
+  integrationBus,
 } from "@/modules/integration";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
@@ -123,63 +124,71 @@ export async function POST(request: Request) {
       }
     }
 
-    // Créer un AppointmentRequest si soin pastoral demandé
-    let appointmentRequestId: string | null = null;
-    if (data.pastoralCareRequested) {
-      const appt = await prisma.appointmentRequest.create({
+    // Demande d'intégration + dossier de parcours + annonce à `care` (soin pastoral, appel au
+    // salut) dans une même transaction (spec 052, ADR-0015) : `integration` n'écrit plus
+    // directement d'`AppointmentRequest`, il émet `request.submitted` — `care`, s'il est actif,
+    // y réagit pour créer la demande de rendez-vous et/ou le suivi de nouveau converti. Un échec
+    // de cette création fait échouer la soumission plutôt que de perdre silencieusement un appel
+    // au salut ou une demande de soin pastoral.
+    const integrationRequest = await prisma.$transaction(async (tx) => {
+      const created = await tx.familyIntegrationRequest.create({
         data: {
           churchId: data.churchId,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email || null,
           phone: data.phone,
-          subject: "Soins pastoraux (demande intégration famille)",
-          message: data.pastoralMessage || "Demande de soin pastoral via formulaire d'intégration famille.",
+          address: data.address || null,
+          lat,
+          lng,
+          ageRange: data.ageRange as FamilyAgeRange,
+          churchStatus: data.churchStatus as FamilyChurchStatus,
+          memberId: data.memberId || null,
+          pastoralCareRequested: data.pastoralCareRequested,
+          salvationCall: data.salvationCall,
+          suggestedFamilyId,
+          suggestedFamilyName,
+          contactConsent: data.contactConsent,
+          ...initialRequestStatusData(data.contactConsent, new Date()),
         },
-        select: { id: true },
       });
-      appointmentRequestId = appt.id;
-    }
 
-    // Créer la demande d'intégration
-    const integrationRequest = await prisma.familyIntegrationRequest.create({
-      data: {
-        churchId: data.churchId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email || null,
-        phone: data.phone,
-        address: data.address || null,
-        lat,
-        lng,
-        ageRange: data.ageRange as FamilyAgeRange,
-        churchStatus: data.churchStatus as FamilyChurchStatus,
-        memberId: data.memberId || null,
-        pastoralCareRequested: data.pastoralCareRequested,
-        salvationCall: data.salvationCall,
-        appointmentRequestId,
-        suggestedFamilyId,
-        suggestedFamilyName,
-        contactConsent: data.contactConsent,
-        ...initialRequestStatusData(data.contactConsent, new Date()),
-      },
+      // Dossier de parcours (dédup silencieux si doublon téléphone/email)
+      let personJourneyId: string | null = null;
+      const journey = await tx.personJourney
+        .create({
+          data: {
+            churchId: data.churchId,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            email: data.email || null,
+            sourceRequestId: created.id,
+          },
+        })
+        .catch(() => null);
+      personJourneyId = journey?.id ?? null;
+
+      await integrationBus.emit(
+        "request.submitted",
+        { tx, churchId: data.churchId },
+        {
+          requestId: created.id,
+          churchId: data.churchId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email || null,
+          salvationCall: data.salvationCall,
+          pastoralCare: data.pastoralCareRequested
+            ? { message: data.pastoralMessage || "Demande de soin pastoral via formulaire d'intégration famille." }
+            : null,
+          personJourneyId,
+        }
+      );
+
+      return created;
     });
-
-    // Créer automatiquement un dossier PersonJourney (dédup silencieux si doublon téléphone/email)
-    await prisma.personJourney
-      .create({
-        data: {
-          churchId: data.churchId,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone,
-          email: data.email || null,
-          sourceRequestId: integrationRequest.id,
-        },
-      })
-      .catch(() => {
-        // Doublon silencieux : dossier existant conservé
-      });
 
     // Email de confirmation au demandeur
     if (data.email) {

@@ -39,7 +39,7 @@ Utiliser l'église ICC Rennes (seed).
 | Resp. Département | Planning + membres de ses départements + discipolat lecture |
 | Faiseur de Disciples | Discipolat uniquement (ses disciples) |
 | Reporter | Événements lecture + comptes rendus |
-| Qualificateur agenda | Qualification des demandes de RDV pastoral |
+| Référent soins pastoraux | Qualification des demandes de RDV pastoral et suivi MSDP |
 | Comptable | Traitement des demandes financières + statistiques |
 
 Pour les captures Salles / Intégration nécessitant un accès par appartenance de
@@ -48,7 +48,7 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 
 ---
 
-## Liste des 38 captures
+## Liste des 43 captures
 
 ### Planning (3)
 
@@ -115,45 +115,48 @@ un compte Super Admin ou Admin plutôt qu'un compte dédié.
 | 24 | `guide-salles-reservation.png` | `/rooms` | Planning des salles avec un créneau réservé |
 | 25 | `guide-salles-mains-courantes.png` | `/rooms/checklists` | Liste de réservations avec état des mains courantes |
 
-### Agenda pastoral (3)
+### Suivi pastoral (7)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 26 | `guide-agenda-demande.png` | `/agenda/request` | Formulaire de demande de RDV rempli |
-| 27 | `guide-agenda-qualification.png` | `/agenda/requests` | Demandes en attente avec formulaire de qualification ouvert |
-| 28 | `guide-agenda-planification.png` | `/agenda/schedule` | Demandes validées à planifier |
+| 26 | `guide-care-demande.png` | `/requests/new` | Tuile « Rendez-vous pastoral » et formulaire de demande rempli |
+| 27 | `guide-care-qualification.png` | `/care` | Demande en attente avec le sélecteur de référent (deux groupes) ouvert |
+| 28 | `guide-care-suivi-accompagnant.png` | `/care/requests/[id]` | Fiche d'une demande confiée à un membre du MSDP, action « Fixer la date » ou « Compte rendu du rendez-vous » ouverte |
+| 29 | `guide-care-msdp.png` | `/care` | Onglet « Nouveaux convertis » avec un suivi en cours et son référent |
+| 30 | `guide-agenda-planification.png` | `/agenda/schedule` | Demandes confiées à un profil pastoral, à planifier |
+| 31 | `guide-care-parametres.png` | `/care/parametres` | Réglage des deux délais de relance (non confiée / confiée sans date) |
+| 32 | `guide-care-stats.png` | `/care/stats` | Statistiques des rendez-vous pastoraux et du suivi MSDP |
 
 ### Comptabilité (3)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 29 | `guide-comptabilite-demande.png` | `/accounting/requests/new` | Formulaire de note de frais partiellement rempli |
-| 30 | `guide-comptabilite-gestion.png` | `/accounting/requests` | Liste des demandes financières avec statuts |
-| 31 | `guide-comptabilite-stats.png` | `/accounting/stats` | Statistiques par statut et département |
+| 33 | `guide-comptabilite-demande.png` | `/accounting/requests/new` | Formulaire de note de frais partiellement rempli |
+| 34 | `guide-comptabilite-gestion.png` | `/accounting/requests` | Liste des demandes financières avec statuts |
+| 35 | `guide-comptabilite-stats.png` | `/accounting/stats` | Statistiques par statut et département |
 
 ### Emplois (2)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 32 | `guide-emplois-liste.png` | `/jobs` | Onglet Offres avec plusieurs annonces |
-| 33 | `guide-emplois-moderation.png` | `/admin/jobs` | Liste des annonces avec actions de modération |
+| 36 | `guide-emplois-liste.png` | `/jobs` | Onglet Offres avec plusieurs annonces |
+| 37 | `guide-emplois-moderation.png` | `/admin/jobs` | Liste des annonces avec actions de modération |
 
-### Intégration (6)
+### Intégration (5)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 34 | `guide-integration-demandes.png` | `/integration/requests` | Liste des demandes d'intégration avec statuts |
-| 35 | `guide-integration-msdp.png` | `/integration/requests/[id]` | Onglet suivi MSDP avec conseiller assigné |
-| 36 | `guide-integration-bergers.png` | `/integration/leaders` | Liste des bergers de famille et affectations |
-| 37 | `guide-integration-stats.png` | `/integration/stats` | Statistiques d'intégration (délais, taux) |
-| 37b | `guide-integration-attente.png` | `/integration/requests/[id]` | Fiche d'une demande en attente de recontact : bandeau d'attente, boutons « J'ai relancé » / « Reprendre le suivi », historique des statuts |
-| 37c | `guide-integration-parametres.png` | `/integration/parametres` | Réglage des deux délais de relance |
+| 38 | `guide-integration-demandes.png` | `/integration/requests` | Liste des demandes d'intégration avec statuts |
+| 39 | `guide-integration-bergers.png` | `/integration/leaders` | Liste des bergers de famille et affectations |
+| 40 | `guide-integration-stats.png` | `/integration/stats` | Statistiques d'intégration (délais, taux) |
+| 41 | `guide-integration-attente.png` | `/integration/requests/[id]` | Fiche d'une demande en attente de recontact : bandeau d'attente, boutons « J'ai relancé » / « Reprendre le suivi », historique des statuts, résumé du suivi MSDP avec lien vers `/care/followups/[id]` |
+| 42 | `guide-integration-parametres.png` | `/integration/parametres` | Réglage des deux délais de relance |
 
 ### Profil (1)
 
 | # | Fichier | URL | État à capturer |
 |---|---|---|---|
-| 38 | `guide-profile.png` | `/profile` | Profil avec section liaison STAR visible |
+| 43 | `guide-profile.png` | `/profile` | Profil avec section liaison STAR visible |
 
 ---
 

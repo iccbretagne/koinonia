@@ -1,4 +1,4 @@
-export type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "AGENDA_QUALIFIER" | "ACCOUNTANT";
+export type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "PASTORAL_CARE_REFERENT" | "ACCOUNTANT";
 
 const PLANNING_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"];
 const CONFIG_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"];
@@ -7,7 +7,7 @@ const REPORT_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "REPORTER"
 const DISCIPLESHIP_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DEPARTMENT_HEAD", "DISCIPLE_MAKER"];
 const SERVICE_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "ACCOUNTANT"];
 // « Gestion pastorale » n'apparaît que pour les roles qui qualifient ou traitent les demandes de RDV.
-const PASTORAL_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "AGENDA_QUALIFIER"];
+const PASTORAL_ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "PASTORAL_CARE_REFERENT"];
 
 export interface TourStep {
   /** CSS selector for the target element, or "center" for a centered modal */

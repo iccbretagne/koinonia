@@ -15,6 +15,7 @@ function createModelMock() {
     delete: vi.fn(),
     deleteMany: vi.fn(),
     count: vi.fn(),
+    groupBy: vi.fn(),
   };
 }
 
@@ -56,6 +57,7 @@ export const prismaMock = {
   mediaShareToken: createModelMock(),
   mediaSettings: createModelMock(),
   msdpFollowUp: createModelMock(),
+  careSettings: createModelMock(),
   // Module agenda
   pastoralProfile: createModelMock(),
   appointmentRequest: createModelMock(),

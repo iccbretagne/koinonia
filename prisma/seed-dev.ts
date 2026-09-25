@@ -864,6 +864,10 @@ async function main() {
     data: {
       churchId: churchByKey[mainChurchKey].id,
       requestId: integrationRequestAssigned.id,
+      firstName: integrationRequestAssigned.firstName,
+      lastName: integrationRequestAssigned.lastName,
+      phone: integrationRequestAssigned.phone,
+      email: integrationRequestAssigned.email,
       status: "CONTACTED",
       assignedConseillerMsdpId: admin.id,
       assignedAt: daysFrom(TODAY, -12),

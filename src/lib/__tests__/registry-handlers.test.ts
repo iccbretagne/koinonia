@@ -144,4 +144,49 @@ describe("registry — abonnements et ENABLED_MODULES (spec 038)", () => {
 
     expect(prismaMock.discipleshipAttendance.deleteMany).toHaveBeenCalledOnce();
   });
+
+  /**
+   * Integration → Care (spec 052, ADR-0015, T33) : même principe que Media → Planning
+   * ci-dessus — l'abonnement **crée** une donnée appartenant à `care`, donc conditionné
+   * par `registry.has("care")` (« nettoyer oui, créer non »).
+   */
+  async function emitRequestSubmitted() {
+    vi.resetModules();
+    const { integrationBus } = await import("@/modules/integration");
+    await import("@/lib/registry");
+    const fakeTx = prismaMock as unknown as Parameters<typeof integrationBus.emit>[1]["tx"];
+    await integrationBus.emit(
+      "request.submitted",
+      { tx: fakeTx, churchId: "church-1" },
+      {
+        requestId: "integration-req-1",
+        churchId: "church-1",
+        firstName: "Jean",
+        lastName: "Dupont",
+        phone: "0600000000",
+        email: null,
+        salvationCall: true,
+        pastoralCare: null,
+        personJourneyId: null,
+      }
+    );
+  }
+
+  it("crée un suivi MSDP via care quand care est actif (comportement par défaut)", async () => {
+    delete process.env.ENABLED_MODULES;
+    prismaMock.msdpFollowUp.upsert.mockResolvedValue({} as never);
+
+    await emitRequestSubmitted();
+
+    expect(prismaMock.msdpFollowUp.upsert).toHaveBeenCalledOnce();
+  });
+
+  it("ne crée RIEN quand care est désactivé (registry.has(\"care\") === false)", async () => {
+    process.env.ENABLED_MODULES = "core,planning,integration";
+
+    await emitRequestSubmitted();
+
+    expect(prismaMock.msdpFollowUp.upsert).not.toHaveBeenCalled();
+    expect(prismaMock.appointmentRequest.upsert).not.toHaveBeenCalled();
+  });
 });

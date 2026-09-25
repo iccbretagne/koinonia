@@ -3,6 +3,7 @@ import { resolveChurchId } from "@/lib/auth";
 import { requireAgendaManage } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { updateAppointmentScheduledFor, revertAppointmentToValidated } from "@/modules/care";
 import { z } from "zod";
 
 const updateSchema = z.object({
@@ -28,19 +29,29 @@ export async function PATCH(
     const body = await request.json();
     const data = updateSchema.parse(body);
 
-    const entry = await prisma.agendaEntry.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.startsAt !== undefined && { startsAt: new Date(data.startsAt) }),
-        ...(data.endsAt !== undefined && { endsAt: data.endsAt ? new Date(data.endsAt) : null }),
-        ...(data.location !== undefined && { location: data.location }),
-        updatedById: session.user.id,
-      },
-      include: {
-        recipient: { select: { id: true, name: true, role: true } },
-      },
+    // Orchestrateur (spec 052) : un changement de date répercute `scheduledFor` sur la
+    // demande liée (service `care`), dans la même transaction que l'écriture de l'agenda.
+    const entry = await prisma.$transaction(async (tx) => {
+      const updated = await tx.agendaEntry.update({
+        where: { id },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.description !== undefined && { description: data.description }),
+          ...(data.startsAt !== undefined && { startsAt: new Date(data.startsAt) }),
+          ...(data.endsAt !== undefined && { endsAt: data.endsAt ? new Date(data.endsAt) : null }),
+          ...(data.location !== undefined && { location: data.location }),
+          updatedById: session.user.id,
+        },
+        include: {
+          recipient: { select: { id: true, name: true, role: true } },
+        },
+      });
+
+      if (data.startsAt !== undefined && updated.requestId) {
+        await updateAppointmentScheduledFor(tx, updated.requestId, new Date(data.startsAt));
+      }
+
+      return updated;
     });
 
     await logAudit({
@@ -74,12 +85,9 @@ export async function DELETE(
     if (!entry) throw new ApiError(404, "Entrée agenda introuvable");
 
     await prisma.$transaction(async (tx) => {
-      // Si l'entrée est liée à une demande, repasser la demande en VALIDATED
+      // Si l'entrée est liée à une demande, repasser la demande en VALIDATED (service `care`)
       if (entry.requestId) {
-        await tx.appointmentRequest.update({
-          where: { id: entry.requestId },
-          data: { status: "VALIDATED", scheduledById: null, scheduledAt: null },
-        });
+        await revertAppointmentToValidated(tx, entry.requestId);
       }
       await tx.agendaEntry.delete({ where: { id } });
     });

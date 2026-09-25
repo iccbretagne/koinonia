@@ -13,7 +13,6 @@ type FieldErrors = Partial<Record<string, string>>;
 const AGE_RANGES = ["18-20 ans", "21-30 ans", "31-40 ans", "41-50 ans", "+50 ans"];
 const DURATIONS = ["Moins de 1 an", "1 à 2 ans", "2 à 3 ans", "3 à 5 ans", "+ 5 ans"];
 const MOTIFS = ["Renseignements", "Démarches administratives", "Vie familiale", "Croissance spirituelle", "Oppressions", "Maladie", "Service", "Études"];
-const DAYS = ["Mardi", "Dimanche"];
 
 function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly field: string }) {
   if (!errors[field]) return null;
@@ -57,7 +56,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     isStar: "",
     department: "",
     motifs: [] as string[],
-    preferredDay: "",
+    details: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -107,12 +106,13 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     setSubmitting(true); setGlobalError(null); setFieldErrors({});
 
     try {
-      const res = await fetch("/api/agenda/requests/public", {
+      const res = await fetch("/api/care/requests/public", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           churchSlug, ...form,
           department: form.department || null,
+          details: form.details.trim() || undefined,
           turnstileToken,
         }),
       });
@@ -257,10 +257,21 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Choix du jour *</label>
-          <RadioGroup name="preferredDay" options={DAYS} value={form.preferredDay}
-            onChange={(v) => set("preferredDay", v)} errors={fieldErrors} />
-          <FieldError errors={fieldErrors} field="preferredDay" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Votre message <span className="font-normal text-gray-400">(facultatif)</span>
+          </label>
+          <textarea
+            value={form.details}
+            onChange={(e) => set("details", e.target.value)}
+            rows={4}
+            maxLength={2000}
+            placeholder="Décrivez votre situation ou ce que vous souhaitez aborder…"
+            className={inputClass(fieldErrors, "details", "resize-none")}
+          />
+          <FieldError errors={fieldErrors} field="details" />
+          <p className="text-xs text-gray-400 mt-1">
+            Ce message n&apos;est lu que par l&apos;équipe qui confie votre demande et par le référent qui vous accompagnera.
+          </p>
         </div>
       </div>
 

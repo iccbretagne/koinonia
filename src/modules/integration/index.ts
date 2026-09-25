@@ -47,15 +47,5 @@ export {
 export type { FamilyPatchBody, FamilyRequestState, FamilyActor } from "./services/family-state";
 export { recordStatusChange, getRequestHistory, getRequestAccessInfo } from "./services/family-history";
 export type { RequestHistoryEntry } from "./services/family-history";
-export {
-  msdpPatchSchema,
-  hasMsdpManagementAccess,
-  computeMsdpTransitionData,
-  buildMsdpCounselorNotifEmail,
-  notifyMsdpCounselorAssigned,
-  buildMsdpInactivityEmail,
-  runMsdpInactivityNotifications,
-} from "./services/msdp-service";
-export type { MsdpPatchBody } from "./services/msdp-service";
 
 export { integrationModule } from "./manifest";
