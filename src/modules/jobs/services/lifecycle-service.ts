@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { sendEmail, buildJobOfferRenewalEmail } from "@/lib/email";
+import { buildJobOfferRenewalEmail } from "@/lib/email";
+import { dispatchUserEmails } from "@/lib/notifications";
 
 /**
  * Cycle de vie des offres d'emploi (spec 034).
@@ -86,6 +87,7 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
       await prisma.notification.create({
         data: {
           userId: offer.authorId,
+          domain: "jobs",
           type: RENEWAL_NOTIF_TYPE,
           title: "Votre offre d'emploi est-elle toujours d'actualité ?",
           message,
@@ -96,8 +98,10 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
       console.error("Échec de création de notification de relance d'offre (offre redacted):", err instanceof Error ? err.message : err);
     }
 
-    // Email : best-effort, isolé, sans interrompre la boucle ni le cycle.
-    if (process.env.SMTP_HOST && offer.author.email) {
+    // Email : best-effort, isolé, sans interrompre la boucle ni le cycle. Gouverné par le domaine
+    // "jobs" (activé par défaut, T14) — volontairement indépendant de
+    // `JobNotificationSubscription.email`, qui gouverne un réglage différent (spec 053, T31).
+    if (offer.author.email) {
       const { subject, html } = buildJobOfferRenewalEmail({
         authorName: offer.author.displayName ?? offer.author.name ?? null,
         jobTitle: offer.title,
@@ -105,12 +109,8 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
         archiveDate,
         jobUrl: `${appUrl}/jobs/${offer.id}`,
       });
-      try {
-        await sendEmail({ to: offer.author.email, subject, html });
-      } catch (err) {
-        emailFailures++;
-        console.error("Échec d'envoi d'email de relance d'offre (destinataire redacted):", err instanceof Error ? err.message : err);
-      }
+      const { failed } = await dispatchUserEmails([offer.authorId], "jobs", { subject, html });
+      emailFailures += failed;
     }
   }
 

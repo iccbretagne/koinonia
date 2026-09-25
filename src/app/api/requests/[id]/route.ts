@@ -330,6 +330,7 @@ export async function PATCH(
       if (data.status === "APPROUVEE" || updated.status === "EXECUTEE") {
         createNotification({
           userId: existing.submittedById,
+          domain: "requests",
           type: "REQUEST_APPROVED",
           title: "Demande approuvée",
           message: `Votre demande « ${existing.title} » a été approuvée.`,
@@ -338,6 +339,7 @@ export async function PATCH(
       } else if (data.status === "REFUSEE") {
         createNotification({
           userId: existing.submittedById,
+          domain: "requests",
           type: "REQUEST_REJECTED",
           title: "Demande refusée",
           message: `Votre demande « ${existing.title} » a été refusée.${data.reviewNotes ? ` Motif : ${data.reviewNotes}` : ""}`,

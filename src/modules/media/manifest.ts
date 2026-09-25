@@ -53,6 +53,20 @@ export const mediaModule = defineModule({
     "media:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
 
+  // Domaine de notification (spec 053) : aucun email aujourd'hui (décision sur un fichier
+  // déposé — approuvé, refusé, révision demandée — seulement dans l'application) — désactivé
+  // par défaut. Domaine découvert en implémentant la spec (absent de la table initiale de
+  // `spec.md`, amendé en même temps).
+  notificationDomains: [
+    {
+      key: "media",
+      label: "Médias",
+      description: "Fichier approuvé, refusé, ou révision demandée sur un projet média.",
+      defaultEmail: false,
+      visibleWith: ["media:upload", "media:review"],
+    },
+  ],
+
   navigation: [
     { label: "Communication & Production", icon: "media", href: "/media", permission: "media:view" },
   ],

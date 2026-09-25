@@ -150,6 +150,7 @@ model User {
   sessions                          Session[]
   auditLogs                         AuditLog[]
   notifications                     Notification[]
+  notificationEmailPreferences      NotificationEmailPreference[]
   submittedAnnouncements            Announcement[]               @relation("AnnouncementSubmittedBy")
   submittedRequests                 Request[]                    @relation("RequestSubmittedBy")
   reviewedRequests                  Request[]                    @relation("RequestReviewedBy")
@@ -695,10 +696,35 @@ model Notification {
   read      Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
+  /// Domaine de la notification (spec 053) — déclaré par le manifeste du module émetteur,
+  /// utilisé par la préférence email de l'utilisateur. Nullable : les notifications
+  /// antérieures à la spec 053 sont rattachées par la migration (historique d'affichage
+  /// uniquement), les modules qui ne le renseignent pas encore laissent la colonne vide.
+  domain    String?
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
+  @@index([userId, domain])
   @@map("notifications")
+}
+
+/// Préférence email d'un utilisateur pour un domaine de notification (spec 053).
+/// Absence de ligne = valeur par défaut du domaine (déclarée par son manifeste,
+/// `NotificationDomainDescriptor.defaultEmail`) : aucune donnée à migrer pour les comptes
+/// qui n'ont jamais ouvert la page de réglage.
+model NotificationEmailPreference {
+  userId    String
+  /// Clé de domaine déclarée par un manifeste (`planning`, `care`, …), ou `*` pour
+  /// l'interrupteur général « Recevoir des emails de Koinonia ». Validée par le registre
+  /// des modules à l'écriture (Zod côté API), pas par un enum — un domaine se déclare sans
+  /// migration de schéma.
+  domain    String
+  enabled   Boolean
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, domain])
+  @@map("notification_email_preferences")
 }
 
 // ─── Notices de service ────────────────────────────────────────────

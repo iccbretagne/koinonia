@@ -1,7 +1,7 @@
 import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { sendEmail } from "@/lib/email";
+import { createNotification, notifyUsers } from "@/lib/notifications";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { getCareAccess } from "../auth";
@@ -329,35 +329,37 @@ export async function notifyMsdpCounselorAssigned(params: {
   appUrl: string;
 }): Promise<void> {
   const { counselorId, followUpId, personName, appUrl } = params;
-  await prisma.notification
-    .create({
-      data: {
-        userId: counselorId,
-        type: "CARE_MSDP_ASSIGNED",
-        title: "Nouveau suivi MSDP assigné",
-        message: `Vous êtes désigné comme référent pour le suivi de ${personName}.`,
-        link: `/care/followups/${followUpId}`,
-      },
-    })
-    .catch(() => {});
 
+  // Toujours un compte (membre du MSDP ou profil pastoral rattaché) : email gouverné par la
+  // préférence du domaine "care" (spec 053), via le helper partagé.
   const counselor = await prisma.user.findUnique({
     where: { id: counselorId },
     select: { name: true, email: true },
   });
 
-  if (counselor?.email) {
-    await sendEmail({
-      to: counselor.email,
-      subject: "Un suivi MSDP vous a été confié",
-      html: buildMsdpCounselorNotifEmail({
-        counselorName: counselor.name ?? counselor.email,
-        personName,
-        followUpId,
-        appUrl,
-      }),
-    }).catch(() => {});
-  }
+  await createNotification(
+    {
+      userId: counselorId,
+      domain: "care",
+      type: "CARE_MSDP_ASSIGNED",
+      title: "Nouveau suivi MSDP assigné",
+      message: `Vous êtes désigné comme référent pour le suivi de ${personName}.`,
+      link: `/care/followups/${followUpId}`,
+    },
+    counselor?.email
+      ? {
+          email: {
+            subject: "Un suivi MSDP vous a été confié",
+            html: buildMsdpCounselorNotifEmail({
+              counselorName: counselor.name ?? counselor.email,
+              personName,
+              followUpId,
+              appUrl,
+            }),
+          },
+        }
+      : undefined
+  ).catch(() => {});
 }
 
 // ─── Inactivité ───────────────────────────────────────────────────────────────
@@ -485,32 +487,35 @@ export async function runMsdpInactivityNotifications(
     const title = titleMap[followUp.status] ?? "Suivi MSDP inactif";
     const message = `${personName} — aucune mise à jour depuis ${daysSince} jours.`;
 
+    // Toujours des comptes (membre du MSDP, ou compte rattaché au profil pastoral) : email
+    // gouverné par la préférence du domaine "care" (spec 053), via le helper partagé.
     if (followUp.assignedConseillerMsdp) {
-      await prisma.notification.create({
-        data: { userId: followUp.assignedConseillerMsdp.id, type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
-      }).catch(() => {});
+      await createNotification(
+        { userId: followUp.assignedConseillerMsdp.id, domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
+        followUp.assignedConseillerMsdp.email
+          ? {
+              email: {
+                subject: `${followUp.church.name} — ${title}`,
+                html: buildMsdpInactivityEmail({ churchName: followUp.church.name, personName, status: followUp.status, daysSince, link, appUrl }),
+              },
+            }
+          : undefined
+      ).catch(() => {});
       notified++;
-      if (process.env.SMTP_HOST && followUp.assignedConseillerMsdp.email) {
-        await sendEmail({
-          to: followUp.assignedConseillerMsdp.email,
-          subject: `${followUp.church.name} — ${title}`,
-          html: buildMsdpInactivityEmail({ churchName: followUp.church.name, personName, status: followUp.status, daysSince, link, appUrl }),
-        }).catch(() => {});
-      }
     } else {
       const managers = await getMsdpManagers(followUp.churchId);
-      for (const manager of managers) {
-        await prisma.notification.create({
-          data: { userId: manager.id, type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
-        }).catch(() => {});
-        notified++;
-        if (process.env.SMTP_HOST && manager.email) {
-          await sendEmail({
-            to: manager.email,
-            subject: `${followUp.church.name} — ${title}`,
-            html: buildMsdpInactivityEmail({ churchName: followUp.church.name, personName, status: followUp.status, daysSince, link, appUrl }),
-          }).catch(() => {});
-        }
+      if (managers.length > 0) {
+        await notifyUsers(
+          managers.map((m) => m.id),
+          { domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
+          {
+            email: {
+              subject: `${followUp.church.name} — ${title}`,
+              html: buildMsdpInactivityEmail({ churchName: followUp.church.name, personName, status: followUp.status, daysSince, link, appUrl }),
+            },
+          }
+        ).catch(() => {});
+        notified += managers.length;
       }
     }
   }

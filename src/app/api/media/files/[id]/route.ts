@@ -156,6 +156,7 @@ export async function PATCH(
       if (notif) {
         createNotification({
           userId: creatorId,
+          domain: "media",
           type: `MEDIA_FILE_${data.status}`,
           title: notif.title,
           message: notif.message,

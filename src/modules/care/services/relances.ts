@@ -239,6 +239,7 @@ export async function runCareRelances(): Promise<{
       await prisma.notification.createMany({
         data: userIds.map((userId) => ({
           userId,
+          domain: "care",
           type: RELANCE_TYPE_UNASSIGNED,
           title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
           message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
@@ -256,6 +257,7 @@ export async function runCareRelances(): Promise<{
     if (!shouldNotify(RELANCE_TYPE_UNSCHEDULED, link, delaysFor(r.churchId).unscheduledDelayDays)) continue;
     const isRequest = r.kind === "requests";
     const notification = {
+      domain: "care",
       type: RELANCE_TYPE_UNSCHEDULED,
       title: isRequest ? "Rendez-vous pastoral à planifier" : "Suivi de nouveau converti sans premier contact",
       message: `${r.personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, ${

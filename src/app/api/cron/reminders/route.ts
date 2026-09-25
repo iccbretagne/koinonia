@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail } from "@/lib/email";
+import { createNotification, notifyUsers } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -73,29 +74,31 @@ export async function POST(request: Request) {
               daysUntil: daysAhead,
             });
 
-            // Email vers le compte utilisateur lié (priorité) ou member.email en fallback
-            const recipientEmail = linkedUser?.email ?? member.email;
-            if (process.env.SMTP_HOST && recipientEmail) {
-              try {
-                await sendEmail({ to: recipientEmail, subject, html });
-                emailsSent++;
-              } catch {
-                console.error("Failed to send reminder email (recipient redacted)");
-              }
-            }
-
-            // Notification in-app pour le STAR lui-même
+            // Compte lié (spec 053) : in-app + email gouverné par la préférence du domaine
+            // "planning". Sans compte : email direct à `member.email`, inchangé.
             if (linkedUser) {
-              await prisma.notification.create({
-                data: {
+              await createNotification(
+                {
                   userId: linkedUser.userId,
+                  domain: "planning",
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
                   message: `Vous êtes en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
                   link: `/dashboard`,
                 },
+                linkedUser.email ? { email: { subject, html } } : undefined
+              ).catch(() => {
+                console.error("Failed to notify serving member (recipient redacted)");
               });
+              emailsSent++;
               notificationsCreated++;
+            } else if (process.env.SMTP_HOST && member.email) {
+              try {
+                await sendEmail({ to: member.email, subject, html });
+                emailsSent++;
+              } catch {
+                console.error("Failed to send reminder email (recipient redacted)");
+              }
             }
 
             // Notification in-app pour les responsables de département
@@ -104,17 +107,18 @@ export async function POST(request: Request) {
               include: { userChurchRole: { select: { userId: true } } },
             });
 
-            for (const deptHead of deptHeads) {
-              await prisma.notification.create({
-                data: {
-                  userId: deptHead.userChurchRole.userId,
+            if (deptHeads.length > 0) {
+              await notifyUsers(
+                deptHeads.map((d) => d.userChurchRole.userId),
+                {
+                  domain: "planning",
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
                   message: `${memberName} est en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
                   link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
-                },
-              });
-              notificationsCreated++;
+                }
+              );
+              notificationsCreated += deptHeads.length;
             }
           }
         }

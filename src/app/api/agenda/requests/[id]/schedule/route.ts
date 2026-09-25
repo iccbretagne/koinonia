@@ -91,20 +91,41 @@ export async function PATCH(
     const dateStr = startsAt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
     const timeStr = startsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     if (existing.userId) {
-      createNotification({
-        userId: existing.userId,
-        type: "CARE_APPOINTMENT_SCHEDULED",
-        title: "Rendez-vous pastoral confirmé",
-        message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
-        link: "/requests",
-      }).catch(() => {});
-    }
-    if (existing.email) {
+      // Compte : email gouverné par la préférence du domaine "care" (spec 053), via le helper
+      // partagé — jamais un envoi direct pour un demandeur qui a un compte.
+      let emailContent: { subject: string; html: string } | undefined;
+      if (existing.email) {
+        const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
+        if (church) {
+          // Contenu complet dans l'email au demandeur : c'est sa propre demande, pas une fuite
+          // vers un tiers (protocole, secrétariat) — seul le titre d'agenda et la réponse API
+          // masquent `subject`.
+          const { subject: emailSubject, html } = buildAppointmentScheduledEmail({
+            firstName: existing.firstName,
+            lastName: existing.lastName,
+            subject: existing.subject,
+            churchName: church.name,
+            startsAt,
+            location: data.location ?? null,
+          });
+          emailContent = { subject: emailSubject, html };
+        }
+      }
+      createNotification(
+        {
+          userId: existing.userId,
+          domain: "care",
+          type: "CARE_APPOINTMENT_SCHEDULED",
+          title: "Rendez-vous pastoral confirmé",
+          message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
+          link: "/requests",
+        },
+        emailContent ? { email: emailContent } : undefined
+      ).catch(() => {});
+    } else if (existing.email) {
+      // Demandeur sans compte (formulaire public) : seul canal possible, aucune préférence à consulter.
       const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
       if (church) {
-        // Contenu complet dans l'email au demandeur : c'est sa propre demande, pas une fuite
-        // vers un tiers (protocole, secrétariat) — seul le titre d'agenda et la réponse API
-        // masquent `subject`.
         const { subject: emailSubject, html } = buildAppointmentScheduledEmail({
           firstName: existing.firstName,
           lastName: existing.lastName,

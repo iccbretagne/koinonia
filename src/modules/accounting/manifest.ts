@@ -21,6 +21,18 @@ export const accountingModule = defineModule({
     "accounting:stats":   ["SUPER_ADMIN", "ADMIN", "ACCOUNTANT", "SECRETARY"],
   },
 
+  // Domaine de notification (spec 053) : envoie déjà des emails (paiement remis, changement de
+  // statut) — activé par défaut.
+  notificationDomains: [
+    {
+      key: "accounting",
+      label: "Comptabilité",
+      description: "Nouvelle demande, changement de statut, paiement.",
+      defaultEmail: true,
+      visibleWith: ["accounting:submit", "accounting:view", "accounting:manage"],
+    },
+  ],
+
   navigation: [
     { label: "Comptabilité", icon: "accounting", href: "/accounting/requests", permission: "accounting:view" },
   ],

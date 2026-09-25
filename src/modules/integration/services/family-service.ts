@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { sendEmail } from "@/lib/email";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
+import { createNotification, notifyUsers, dispatchUserEmails } from "@/lib/notifications";
 
 // ─── Emails ──────────────────────────────────────────────────────────────────
 
@@ -156,30 +156,31 @@ export async function notifyBergerAssigned(params: {
   });
   if (!berger) return;
 
-  await prisma.notification.create({
-    data: {
+  await createNotification(
+    {
       userId: berger.id,
+      domain: "integration",
       type: "INTEGRATION_ASSIGNED",
       title: "Nouvelle demande d'intégration",
       message: `${firstName} ${lastName} vous a été affecté${familyName ? ` (${familyName})` : ""}.`,
       link: `/admin/integration/requests/${requestId}`,
     },
-  }).catch(() => {});
-
-  if (berger.email) {
-    await sendEmail({
-      to: berger.email,
-      subject: "Nouvelle demande d'intégration vous a été affectée",
-      html: buildBergerNotifEmail({
-        bergerName: berger.name ?? berger.email,
-        firstName,
-        lastName,
-        familyName,
-        requestId,
-        appUrl,
-      }),
-    }).catch(() => {});
-  }
+    berger.email
+      ? {
+          email: {
+            subject: "Nouvelle demande d'intégration vous a été affectée",
+            html: buildBergerNotifEmail({
+              bergerName: berger.name ?? berger.email,
+              firstName,
+              lastName,
+              familyName,
+              requestId,
+              appUrl,
+            }),
+          },
+        }
+      : undefined
+  ).catch(() => {});
 }
 
 // ─── Équipe intégration ───────────────────────────────────────────────────────
@@ -267,31 +268,20 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
 
     if (req.status === "SUBMITTED") {
       const managers = await getManagers(req.churchId);
-      for (const manager of managers) {
-        await prisma.notification.create({
-          data: { userId: manager.id, type: INACTIVITY_NOTIF_TYPE, title, message, link },
-        });
-        notified++;
-        if (process.env.SMTP_HOST && manager.email) {
-          await sendEmail({
-            to: manager.email,
-            subject: `${req.church.name} — ${title}`,
-            html: buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl }),
-          }).catch(() => {});
-        }
+      if (managers.length > 0) {
+        const managerIds = managers.map((m) => m.id);
+        await notifyUsers(managerIds, { domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link });
+        notified += managers.length;
+        const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
+        await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
       }
     } else if (req.assignedBerger) {
-      await prisma.notification.create({
-        data: { userId: req.assignedBerger.id, type: INACTIVITY_NOTIF_TYPE, title, message, link },
-      });
+      const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
+      await createNotification(
+        { userId: req.assignedBerger.id, domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link },
+        req.assignedBerger.email ? { email: { subject: `${req.church.name} — ${title}`, html } } : undefined
+      ).catch(() => {});
       notified++;
-      if (process.env.SMTP_HOST && req.assignedBerger.email) {
-        await sendEmail({
-          to: req.assignedBerger.email,
-          subject: `${req.church.name} — ${title}`,
-          html: buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl }),
-        }).catch(() => {});
-      }
     }
   }
 
@@ -307,15 +297,13 @@ export async function notifyBergerUnassigned(params: {
   lastName: string;
 }): Promise<void> {
   const { bergerId, firstName, lastName } = params;
-  await prisma.notification.create({
-    data: {
-      userId: bergerId,
-      type: "INTEGRATION_UNASSIGNED",
-      title: "Demande d'intégration retirée",
-      message: `La demande de ${firstName} ${lastName} ne vous est plus confiée.`,
-      // Pas de lien vers la fiche : le berger n'y a plus accès.
-      link: null,
-    },
+  await createNotification({
+    userId: bergerId,
+    domain: "integration",
+    type: "INTEGRATION_UNASSIGNED",
+    title: "Demande d'intégration retirée",
+    message: `La demande de ${firstName} ${lastName} ne vous est plus confiée.`,
+    // Pas de lien vers la fiche : le berger n'y a plus accès.
   }).catch(() => {});
 }
 
@@ -484,18 +472,12 @@ export async function runWaitingRelanceNotifications(
     const title = `Relance due : ${personName}`;
     const message = `Relancer ${relanceTargetLabel(req.status)} au sujet de la demande de ${personName}.`;
     const managers = await getManagers(req.churchId);
-    for (const manager of managers) {
-      await prisma.notification.create({
-        data: { userId: manager.id, type: RELANCE_NOTIF_TYPE, title, message, link },
-      });
-      notified++;
-      if (process.env.SMTP_HOST && manager.email) {
-        await sendEmail({
-          to: manager.email,
-          subject: `${req.church.name} — ${title}`,
-          html: buildRelanceEmail({ churchName: req.church.name, personName, status: req.status, link, appUrl }),
-        }).catch(() => {});
-      }
+    if (managers.length > 0) {
+      const managerIds = managers.map((m) => m.id);
+      await notifyUsers(managerIds, { domain: "integration", type: RELANCE_NOTIF_TYPE, title, message, link });
+      notified += managers.length;
+      const html = buildRelanceEmail({ churchName: req.church.name, personName, status: req.status, link, appUrl });
+      await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
     }
   }
 
@@ -516,15 +498,15 @@ export async function notifyIntegrationTeamHandback(params: {
   const { churchId, requestId, firstName, lastName, bergerName, reason } = params;
   const managers = await createIntegrationManagersResolver()(churchId);
   const message = `${bergerName ?? "Le berger"} renvoie la demande de ${firstName} ${lastName} à l'équipe intégration : ${reason}`;
-  for (const manager of managers) {
-    await prisma.notification.create({
-      data: {
-        userId: manager.id,
-        type: "INTEGRATION_HANDBACK",
-        title: "Demande renvoyée à l'intégration",
-        message,
-        link: `/integration/requests/${requestId}`,
-      },
-    }).catch(() => {});
-  }
+  if (managers.length === 0) return;
+  await notifyUsers(
+    managers.map((m) => m.id),
+    {
+      domain: "integration",
+      type: "INTEGRATION_HANDBACK",
+      title: "Demande renvoyée à l'intégration",
+      message,
+      link: `/integration/requests/${requestId}`,
+    }
+  ).catch(() => {});
 }
