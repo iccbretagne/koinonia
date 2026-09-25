@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import {
   getCareAccess,
@@ -5,6 +6,9 @@ import {
   listMsdpFollowUps,
   resolveRequestReaderAccess,
   projectRequest,
+  getCareSettings,
+  isUnassignedDue,
+  isUnscheduledDue,
 } from "@/modules/care";
 import CareTabs from "./CareTabs";
 
@@ -60,12 +64,44 @@ export default async function CarePage() {
           (f.assignedProfile && access.ownProfileIds.includes(f.assignedProfile.id))
       );
 
+  const delays = await getCareSettings(churchId);
+  const now = new Date();
+  const unassignedCount = requests.filter(
+    (r) => access.canQualify && isUnassignedDue(r, delays, now)
+  ).length;
+  const unscheduledCount = requests.filter((r) => {
+    const isOwn = (r.assignedTo && access.ownProfileIds.includes(r.assignedTo.id)) || r.assignedMemberId === access.userId;
+    return (access.canQualify || isOwn) && isUnscheduledDue(r, delays, now);
+  }).length;
+
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Suivi pastoral</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900">Suivi pastoral</h1>
+        <div className="flex items-center gap-3 shrink-0">
+          {access.canOverview && (
+            <Link href="/care/stats" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+              Statistiques
+            </Link>
+          )}
+          {access.canQualify && (
+            <Link href="/care/parametres" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+              Paramètres
+            </Link>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-500 mb-4">
         Demandes de rendez-vous pastoral et suivi des nouveaux convertis.
       </p>
+      {(unassignedCount > 0 || unscheduledCount > 0) && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4 text-sm text-orange-800">
+          À relancer :
+          {unassignedCount > 0 && <> {unassignedCount} demande{unassignedCount > 1 ? "s" : ""} non confiée{unassignedCount > 1 ? "s" : ""}</>}
+          {unassignedCount > 0 && unscheduledCount > 0 && " · "}
+          {unscheduledCount > 0 && <> {unscheduledCount} demande{unscheduledCount > 1 ? "s" : ""} sans date fixée</>}
+        </div>
+      )}
       <CareTabs
         churchId={churchId}
         canQualify={access.canQualify}

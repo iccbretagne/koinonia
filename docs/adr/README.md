@@ -41,7 +41,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0012](0012-manifeste-declare-surface-http.md) | Le manifeste déclare la surface HTTP du module ; le proxy l'applique | Accepté |
 | [0013](0013-perimetre-appartenance-lecture-seule.md) | Périmètre d'appartenance, en lecture seule, distinct du périmètre de responsabilité | Accepté — amendé par 0014 |
 | [0014](0014-fonctions-departement-droits-ecriture.md) | Certaines fonctions de département confèrent des droits d'écriture, nommément | Accepté |
-| [0015](0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Proposé |
+| [0015](0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Accepté |
 
 ## Note sur les ADR 0001–0003
 

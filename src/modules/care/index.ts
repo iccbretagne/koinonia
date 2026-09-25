@@ -65,3 +65,17 @@ export type { RelatedItem } from "./services/related";
 
 export { handleIntegrationSubmitted } from "./services/intake";
 export type { IntegrationRequestSubmittedPayload } from "./services/intake";
+
+export { DEFAULT_CARE_SETTINGS, getCareSettings, updateCareSettings } from "./services/settings";
+export type { CareDelays } from "./services/settings";
+
+export {
+  unassignedDueAt,
+  unscheduledDueAt,
+  isUnassignedDue,
+  isUnscheduledDue,
+  runCareRelances,
+} from "./services/relances";
+
+export { getCareStats } from "./services/stats";
+export type { CareStats, AppointmentStats, MsdpStats } from "./services/stats";
