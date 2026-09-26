@@ -9,6 +9,7 @@ import Select from "@/components/ui/Select";
 import DataTable from "@/components/ui/DataTable";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
 import { isAbsencePast } from "@/lib/absence-lock";
+import { ROLE_SHORT_LABELS } from "@/lib/roles";
 import AbsencesTimeline from "./AbsencesTimeline";
 
 type StatusFilter = "ACTIVE" | "ALL" | "CANCELLED";
@@ -740,9 +741,9 @@ export default function AbsencesClient({
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
                 options={[
-                  { value: "STAR", label: "STAR" },
-                  { value: "DEPARTMENT_HEAD", label: "Resp. département" },
-                  { value: "MINISTER", label: "Ministre" },
+                  { value: "STAR", label: ROLE_SHORT_LABELS.STAR },
+                  { value: "DEPARTMENT_HEAD", label: ROLE_SHORT_LABELS.DEPARTMENT_HEAD },
+                  { value: "MINISTER", label: ROLE_SHORT_LABELS.MINISTER },
                 ]}
               />
               <div className="sm:ml-auto sm:w-56">

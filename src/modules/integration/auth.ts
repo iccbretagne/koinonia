@@ -41,8 +41,7 @@ export async function requireIntegrationAccess(
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
   // Admin / Secrétaire → accès complet
-  if (userPerms.has("members:manage") || userPerms.has("events:manage"))
-    return { session, scope: { scoped: false } };
+  if (userPerms.has("integration:manage")) return { session, scope: { scoped: false } };
 
   // Équipe Intégration ou MSDP → accès complet (les routes API MSDP/parcours l'ouvrent déjà)
   if ((await isIntegrationMember(session, churchId)) || (await isMsdpMember(session, churchId)))
@@ -70,6 +69,18 @@ export async function requireIntegrationAccess(
 export async function requireIntegrationExportAccess(
   churchId: string
 ): Promise<{ session: Session }> {
+  return requireIntegrationFullAccess(churchId);
+}
+
+/**
+ * Garde des dossiers « parcours » (`PersonJourney`) : coordonnées personnelles, création,
+ * modification et suppression — un berger/co-berger au périmètre restreint (ses familles
+ * uniquement) n'y a pas accès, contrairement aux dossiers d'accueil (spec 054/#583, défaut A2 de
+ * `audit-rbac.md` — la garde était copiée trois fois avec le raccourci `members:manage`).
+ */
+export async function requireIntegrationFullAccess(
+  churchId: string
+): Promise<{ session: Session }> {
   const { session, scope } = await requireIntegrationAccess(churchId);
   if (scope.scoped) throw new Error("FORBIDDEN");
   return { session };
@@ -78,10 +89,9 @@ export async function requireIntegrationExportAccess(
 /**
  * Garde du réglage des délais de relance (spec 051) : plus stricte que la consultation.
  *
- * Réservée au Super Admin, à l'Admin/Secrétaire (`events:manage`) et au responsable d'un
+ * Réservée au Super Admin, à l'Admin/Secrétaire (`integration:manage`) et au responsable d'un
  * département de fonction `INTEGRATION` (rôle `DEPARTMENT_HEAD` rattaché à ce département).
- * Un simple membre de l'équipe ou un berger est refusé. `members:manage` n'est volontairement
- * pas retenu : tout Ministre et tout Resp. département le détient, quel que soit son département.
+ * Un simple membre de l'équipe ou un berger est refusé.
  */
 export async function requireIntegrationSettingsAccess(
   churchId: string
@@ -94,7 +104,7 @@ export async function requireIntegrationSettingsAccess(
 
   const { rolePermissions } = await import("@/lib/registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-  if (userPerms.has("events:manage")) return { session };
+  if (userPerms.has("integration:manage")) return { session };
 
   const headDeptIds = roles
     .filter((r) => r.role === "DEPARTMENT_HEAD")

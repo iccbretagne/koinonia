@@ -290,10 +290,11 @@ Compt = Comptable.
 | `absences:view` | x | x | x | x | x | | | | | |
 | `absences:manage` | x | x | x | x | x | | | | | |
 | `church:manage` | x | | | | | | | | | |
-| `users:manage` | x | | | | | | | | | |
-| `discipleship:view` | x | x | x | | x | x | | | | |
+| `users:manage` | x | x | | | | | | | | |
+| `integration:manage` | x | x | x | | | | | | | |
+| `discipleship:view` | x | x | x | x | x | x | | | | |
 | `discipleship:manage` | x | x | x | | | x | | | | |
-| `discipleship:export` | x | | x | | | | | | | |
+| `discipleship:export` | x | x | x | | | | | | | |
 | `reports:view` | x | x | x | | | | x | | | |
 | `reports:edit` | x | x | x | | | | x | | | |
 | `audio:listen` | x | x | x | x | x | x | x | x | x | x |
@@ -314,18 +315,23 @@ Compt = Comptable.
 | `care:qualify` | x | x | | | | | | | x | |
 | `care:view` | x | x | x | | | | | | x | |
 | `rooms:view` | x | x | x | x | x | | | | | |
-| `rooms:reserve` | x | x | | x | x | | | | | |
+| `rooms:reserve` | x | x | x | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |
 | `jobs:view`/`post`/`seek`/`freelance` | x | x | x | x | x | x | x | x | x | x |
 | `jobs:manage` | x | x | x | | | | | | | |
 
-Le module `integration` ne déclare aucune permission (accès géré par
-`requireIntegrationAccess()` — Super Admin, `members:manage`/`events:manage`, appartenance au
-département fonction `INTEGRATION`/`MSDP`, ou berger/conseiller assigné). Le réglage des délais de
-relance (spec 051, `/integration/parametres`) passe par `requireIntegrationSettingsAccess()`, plus
-strict : Super Admin, `events:manage`, ou `DEPARTMENT_HEAD` d'un département `INTEGRATION`
-(`members:manage` volontairement écarté — tout Ministre/Resp. département le détient). Le module `storage`
-est une infrastructure pure sans permission propre.
+Le module `integration` déclare `integration:manage` (Super Admin, Admin, Secrétaire) : accès
+complet aux dossiers d'accueil et « parcours » (coordonnées personnelles, export), résolu par
+`requireIntegrationAccess()`/`requireIntegrationFullAccess()` (`src/modules/integration/auth.ts`),
+qui accorde en plus un accès complet à tout membre d'un département de fonction
+`INTEGRATION`/`MSDP`, et un accès restreint (à ses familles, sans export ni « parcours ») à un
+berger/conseiller assigné. Depuis la spec 054 (issue #583), cette permission **remplace**
+l'ancienne approximation par `members:manage`/`events:manage` : jusque-là, tout Ministre et tout
+Resp. département y accédait quel que soit son département, alors que la documentation l'a
+toujours réservé à l'administration et à l'équipe dédiée. Le réglage des délais de relance
+(spec 051, `/integration/parametres`) passe par `requireIntegrationSettingsAccess()`, plus strict :
+Super Admin, `integration:manage`, ou `DEPARTMENT_HEAD` d'un département `INTEGRATION`. Le module
+`storage` est une infrastructure pure sans permission propre.
 
 Le module `care` (spec 052, ADR-0015) porte les demandes de rendez-vous pastoral (ex-`agenda`) et
 les suivis de nouveaux convertis MSDP (ex-`integration`). `requireCareQualify()`/`getCareAccess()`
@@ -353,8 +359,11 @@ de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission
 **Spécificités du Secrétaire** :
 - Voit tous les départements de son église (même périmètre que Admin)
 - Planning en lecture seule (pas de `planning:edit`)
-- Membres en lecture seule dans l'admin (pas de `members:manage`)
-- Peut gérer les événements (`events:manage`)
+- Membres en lecture seule dans l'admin (pas de `members:manage`) — mais valide les demandes
+  d'accès et lie/délie un compte à une fiche STAR (`access:manage`, spec 054/#583 : ces deux
+  gestes ne dépendent plus de `members:manage`)
+- Gère les accès complets à l'accueil et aux parcours d'intégration (`integration:manage`)
+- Peut réserver une salle (`rooms:reserve`, spec 054/#583)
 - Accès complet aux comptes rendus (`reports:view` + `reports:edit`)
 - Gestion complète du discipolat (`discipleship:manage` + `discipleship:export`) : créer/modifier/supprimer les relations, changer le FD et le premier FD
 - Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`)
@@ -362,6 +371,20 @@ de `/integration/stats` au lot 1, `care:view`) — sans introduire de permission
   mais ne les qualifie ni ne les affecte (`care:qualify`, réservée au Référent soins pastoraux)
 - Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes de
   compta (`accounting:manage`, réservé au Comptable)
+
+**Spécificités du Responsable de département** (spec 054/#583) :
+- Gère ses fiches STAR (`members:manage`) dans son périmètre de responsabilité
+  (`user_departments`) — y compris repérer et fusionner des doublons, mais seulement quand **les
+  deux fiches** sont entièrement dans son périmètre (`isMemberFullyInScope`,
+  `src/lib/member-scope.ts`) : une fiche partagée avec un autre département engagerait un autre
+  responsable
+- N'a **pas** `access:manage` : ne valide plus les demandes d'accès, ne lie/délie plus de compte
+  à une fiche STAR, et n'attribue plus le rôle STAR en masse — ces trois gestes étaient jusque-là
+  ouverts par `members:manage`, sans respecter son périmètre ni cette restriction ; ils relèvent
+  désormais de l'administration de l'église et du Ministre de son ministère
+- N'a pas non plus `integration:manage` : perd l'accès aux dossiers d'accueil et aux « parcours »
+  hors de son département, sauf s'il appartient par ailleurs à l'équipe dédiée (fonction
+  `INTEGRATION`/`MSDP`)
 
 **Spécificités du STAR** (spec 031, issues #462/#463) :
 - N'a pas `planning:department` : pas d'accès à `/dashboard` (grille par département), ni aux
