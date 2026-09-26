@@ -2,7 +2,8 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
-import { sendEmail, buildAccountingStatusEmail } from "@/lib/email";
+import { buildAccountingStatusEmail } from "@/lib/email";
+import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 import { z } from "zod";
 
 const patchSchema = z.discriminatedUnion("action", [
@@ -235,6 +236,7 @@ async function createNextOccurrence(
   await tx.notification.create({
     data: {
       userId:  current.submittedById,
+      domain:  "accounting",
       type:    "ACCOUNTING_NEW_OCCURRENCE",
       title:   "Nouvelle occurrence créée",
       message: `Une nouvelle occurrence de "${current.label}" a été soumise automatiquement.`,
@@ -267,17 +269,16 @@ async function notifySubmitter(
     CANCELLED:  "Demande annulée",
   };
 
-  await prisma.notification.create({
-    data: {
-      userId:  req.submittedById,
-      type:    `ACCOUNTING_${status}`,
-      title:   titles[status] ?? "Mise à jour demande",
-      message: messages[status] ?? `Statut mis à jour : ${status}`,
-      link:    `/accounting/requests/${req.id}`,
-    },
+  await createNotification({
+    userId:  req.submittedById,
+    domain:  "accounting",
+    type:    `ACCOUNTING_${status}`,
+    title:   titles[status] ?? "Mise à jour demande",
+    message: messages[status] ?? `Statut mis à jour : ${status}`,
+    link:    `/accounting/requests/${req.id}`,
   });
 
-  // Email — fire-and-forget, ne bloque pas la réponse
+  // Email — fire-and-forget, gouverné par la préférence du domaine "accounting" (spec 053)
   // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
   const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
   prisma.user.findUnique({ where: { id: req.submittedById }, select: { name: true, email: true } })
@@ -296,7 +297,7 @@ async function notifySubmitter(
         churchName:      church?.name ?? "Koinonia",
         requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
       });
-      return sendEmail({ to: user.email, subject, html });
+      return dispatchUserEmails([req.submittedById], "accounting", { subject, html });
     })
-    .catch((err) => console.error("[accounting] sendEmail failed:", err?.message ?? err));
+    .catch((err) => console.error("[accounting] dispatchUserEmails failed:", err?.message ?? err));
 }

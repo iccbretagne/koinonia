@@ -88,8 +88,13 @@ Migration `add_notification_email_preferences` :
   `JOB_%` → `jobs`). Sert uniquement à la règle d'affichage (« a déjà reçu une notification de ce
   domaine »). Aucune ligne de préférence n'est créée : les défauts restent dans le code.
 
-Les réglages existants de l'emploi (`JobNotificationSubscription`) sont **conservés** : la
-préférence du domaine `jobs` y reste stockée (`email`), le registre sait la lire.
+Les réglages existants de l'emploi (`JobNotificationSubscription`) sont **conservés**, mais
+restent un filtre granulaire indépendant (types d'offres suivis, alertes de nouvelles offres) —
+décision actée en cours d'implémentation (lot 1, T32-T40) : la préférence générique du domaine
+`jobs` (comme tout autre domaine) vit dans `NotificationEmailPreference`, sans lecture ni écriture
+de `JobNotificationSubscription.email`. Les deux réglages s'appliquent en cumul (voir T30) plutôt
+que de fusionner un champ générique avec un filtre métier fin — plus simple et sans couplage
+surprenant entre un interrupteur générique et un réglage détaillé existant.
 
 ## Registre des domaines
 
@@ -145,8 +150,8 @@ Après l'insertion in-app, les helpers appellent `dispatchUserEmails(userIds, do
 
 1. une requête charge l'email des destinataires et leurs préférences (`*` et `domain`) ;
 2. `resolveEmailPreference(prefs, domain)` (fonction **pure**, testée) : global désactivé → non ;
-   sinon préférence explicite du domaine, sinon `defaultEmail` du domaine. Pour `jobs`, lecture de
-   `JobNotificationSubscription.email` ;
+   sinon préférence explicite du domaine, sinon `defaultEmail` du domaine — `jobs` compris, sans
+   lecture de `JobNotificationSubscription.email` (voir décision ci-dessus) ;
 3. pour chaque destinataire retenu avec une adresse, `sendEmail` avec `appendPreferenceFooter(html,
    domainLabel)` (lien `APP_URL + /profile/notifications`) ;
 4. toute erreur SMTP est **journalisée et avalée** : l'action métier ne dépend jamais de l'email
@@ -181,9 +186,10 @@ ouverture/fermeture, absences, feuille d'annonces), demandes (`api/requests`), c
 | `/api/notifications/preferences` | PUT | `requireAuth()` (soi-même) | `{ emailEnabled?: boolean, domains?: Record<string, boolean> }` | même forme que GET |
 
 Zod : `domains` limité aux clés **visibles pour l'appelant** (une clé inconnue ou non visible →
-400). Écriture par `upsert` sur `(userId, domain)`. `jobs` écrit dans
-`JobNotificationSubscription.email`. Route déclarée dans le manifeste `core` (ADR-0012), déjà
-couverte par le préfixe `/api/notifications` — à vérifier par `route-exhaustiveness.test.ts`.
+400). Écriture par `upsert` sur `(userId, domain)` pour chaque clé, `jobs` compris (indépendant de
+`JobNotificationSubscription.email`, voir décision ci-dessus). Route déclarée dans le manifeste
+`core` (ADR-0012), déjà couverte par le préfixe `/api/notifications` — à vérifier par
+`route-exhaustiveness.test.ts`.
 
 ## UI / composants
 
@@ -213,8 +219,12 @@ couverte par le préfixe `/api/notifications` — à vérifier par `route-exhaus
   empêchent le contournement.
 - **Écarté** : colonnes booléennes par domaine sur `User` — *Raison* : migration à chaque domaine,
   table NextAuth touchée.
-- **Écarté** : fusionner `JobNotificationSubscription` dans la nouvelle table — *Raison* : ses
-  réglages sont plus fins (types d'offres, in-app) ; la spec demande de les garder tels quels.
+- **Écarté** : fusionner `JobNotificationSubscription` dans la nouvelle table, ou faire lire/écrire
+  son champ `email` par la préférence générique du domaine `jobs` — *Raison* : ses réglages sont
+  plus fins (types d'offres, in-app) et gouvernent un besoin différent (alertes de nouvelles
+  offres) ; les coupler au switch générique surprendrait l'utilisateur (décocher l'un changerait
+  l'autre) et laisserait un utilisateur jamais abonné sans ligne où stocker la préférence
+  générique. Les deux réglages restent indépendants et s'appliquent en cumul (T30, T31).
 - **Écarté** : envoi des emails en file asynchrone — *Raison* : volumes faibles, pas
   d'infrastructure de file aujourd'hui ; l'erreur est avalée et journalisée. À reconsidérer si le
   volume grossit.
@@ -241,7 +251,8 @@ couverte par le préfixe `/api/notifications` — à vérifier par `route-exhaus
 - Helpers : `domain` transmis à l'in-app ; email générique si pas de gabarit.
 - Registre : clés uniques, domaines des modules inactifs absents.
 - API : GET renvoie seulement les domaines visibles ; PUT refuse une clé inconnue ou non visible,
-  écrit la bonne ligne, `jobs` écrit dans l'abonnement emploi ; 401 sans session.
+  écrit la bonne ligne pour chaque domaine (`jobs` compris, sans toucher à l'abonnement emploi) ;
+  401 sans session.
 - **Tests-gardiens** : `sendEmail` importé seulement par `src/lib/notifications.ts` et les
   fichiers de la liste blanche ; `prisma.notification.create`/`createMany` absents hors
   `src/lib/notifications.ts` (lot 2).

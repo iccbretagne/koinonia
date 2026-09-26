@@ -191,6 +191,7 @@ export async function POST(
     if (userId !== session.user.id) {
       createNotification({
         userId,
+        domain: "account",
         type: "ROLE_ASSIGNED",
         title: "Nouveau rôle attribué",
         message: `Le rôle ${role} vous a été attribué dans cette église.`,

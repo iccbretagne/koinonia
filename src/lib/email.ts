@@ -44,6 +44,23 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   });
 }
 
+/**
+ * Ajoute le pied de page « pourquoi je reçois cet email » (spec 053) : rappelle le domaine et
+ * pointe vers la page de préférences. Utilisé uniquement pour les emails à un utilisateur
+ * (jamais pour un destinataire sans compte, qui n'a pas de préférences à régler).
+ */
+export function appendPreferenceFooter(html: string, domainLabel: string): string {
+  // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const footer = `
+    <p style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+      Vous recevez cet email parce que vous avez activé les notifications « ${escapeHtml(domainLabel)} ».
+      <a href="${appUrl}/profile/notifications" style="color: #9ca3af;">Gérer mes notifications</a>
+    </p>
+  `;
+  return `${html}${footer}`;
+}
+
 export function parseEmailList(raw: string | null | undefined): string[] {
   if (!raw) return [];
   const seen = new Set<string>();

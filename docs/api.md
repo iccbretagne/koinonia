@@ -2224,6 +2224,51 @@ Marque des notifications comme lues.
 
 **Réponse** : `{ "success": true }`.
 
+### `GET /api/notifications/preferences`
+
+Préférences de notification par email de l'utilisateur courant (spec 053, ADR-0016) : interrupteur
+général et une entrée par domaine **visible** pour lui (permission détenue, ou notification déjà
+reçue sur ce domaine). Un même jeu de préférences pour toutes ses églises.
+
+**Authentification** : session valide uniquement
+
+**Réponse** :
+```json
+{
+  "emailEnabled": true,
+  "hasEmail": true,
+  "domains": [
+    {
+      "key": "accounting",
+      "label": "Comptabilité",
+      "description": "Demandes financières : traitement, validation, rejet, paiement remis.",
+      "enabled": true
+    }
+  ]
+}
+```
+
+`hasEmail` à `false` : le compte n'a pas d'adresse email, ces réglages restent sans effet.
+
+### `PUT /api/notifications/preferences`
+
+Met à jour les préférences de l'utilisateur courant. `userId` toujours pris de la session, jamais
+du corps.
+
+**Authentification** : session valide uniquement
+
+**Body** (les deux champs sont optionnels, seuls ceux fournis sont modifiés) :
+```json
+{
+  "emailEnabled": false,
+  "domains": { "accounting": false, "care": true }
+}
+```
+
+Une clé de `domains` inconnue du registre ou non visible pour l'appelant → `400`.
+
+**Réponse** : même forme que `GET` (état après mise à jour).
+
 ---
 
 ## Journaux d'audit

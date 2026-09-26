@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList } from "@/lib/email";
 import { registry } from "@/lib/registry";
+import { createNotification, notifyUsers } from "@/lib/notifications";
 
 /**
  * `/api/cron` est une adresse du **noyau** (spec 038, `NOYAU_ROUTES`) : elle répond
@@ -102,6 +103,21 @@ async function runReminders() {
         },
       });
 
+      // Batch-lookup des comptes utilisateurs liés aux membres concernés (spec 053) : un membre
+      // avec un compte lié reçoit son rappel via le mécanisme de préférence (domaine
+      // "planning") ; un membre sans compte reste sur l'email direct à `member.email`, inchangé
+      // — même logique que `cron/reminders/route.ts` (T26).
+      const allMemberIds = events.flatMap((e) =>
+        e.eventDepts.flatMap((ed) => ed.plannings.map((p) => p.memberId))
+      );
+      const memberLinks = allMemberIds.length > 0
+        ? await prisma.memberUserLink.findMany({
+            where: { memberId: { in: allMemberIds }, validatedAt: { not: null } },
+            select: { memberId: true, userId: true },
+          })
+        : [];
+      const linkedUserIdByMember = new Map(memberLinks.map((l) => [l.memberId, l.userId]));
+
       for (const event of events) {
         for (const eventDept of event.eventDepts) {
           for (const planning of eventDept.plannings) {
@@ -115,7 +131,24 @@ async function runReminders() {
               daysUntil: daysAhead,
             });
 
-            if (process.env.SMTP_HOST && member.email) {
+            const linkedUserId = linkedUserIdByMember.get(member.id) ?? null;
+            if (linkedUserId) {
+              await createNotification(
+                {
+                  userId: linkedUserId,
+                  domain: "planning",
+                  type: "PLANNING_REMINDER",
+                  title: `Rappel : ${event.title}`,
+                  message: `Vous êtes en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
+                  link: `/dashboard`,
+                },
+                member.email ? { email: { subject, html } } : undefined
+              ).catch((err) => {
+                console.error("Failed to notify serving member (recipient redacted):", err instanceof Error ? err.message : err);
+              });
+              emailsSent++;
+              notificationsCreated++;
+            } else if (process.env.SMTP_HOST && member.email) {
               try {
                 await sendEmail({ to: member.email, subject, html });
                 emailsSent++;
@@ -129,17 +162,18 @@ async function runReminders() {
               include: { userChurchRole: { select: { userId: true } } },
             });
 
-            for (const deptHead of deptHeads) {
-              await prisma.notification.create({
-                data: {
-                  userId: deptHead.userChurchRole.userId,
+            if (deptHeads.length > 0) {
+              await notifyUsers(
+                deptHeads.map((d) => d.userChurchRole.userId),
+                {
+                  domain: "planning",
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
                   message: `${memberName} est en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}`,
                   link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
-                },
-              });
-              notificationsCreated++;
+                }
+              );
+              notificationsCreated += deptHeads.length;
             }
           }
         }

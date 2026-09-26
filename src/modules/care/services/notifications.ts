@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createNotification, notifyDeptMembers } from "@/lib/notifications";
+import { createNotification, notifyDeptMembers, notifyUsers, type NotificationEmailContent } from "@/lib/notifications";
 import { sendEmail, buildAppointmentScheduledEmail, buildAppointmentRejectedEmail } from "@/lib/email";
 import { DEPT_FN } from "@/lib/department-functions";
 import type { ResolvedAssignee } from "./assignee";
@@ -7,10 +7,19 @@ import { REJECT_REASON_LABELS, type REJECT_REASON_CODES } from "./appointment-st
 
 type RejectReasonCode = (typeof REJECT_REASON_CODES)[number];
 
+/** Domaine de notification unique du module (spec 053) — même clé que déclarée dans le manifeste. */
+const DOMAIN = "care";
+
 /**
  * Notifications du nouveau flux (spec 052, lot 2) — affectation, dessaisissement, retour au
  * référent, date fixée par un membre du MSDP, rejet avec motif. Les emails aux accompagnants
  * ne contiennent jamais `message` ni `subject` : seulement l'identité et un lien.
+ *
+ * Spec 053 : un destinataire **avec un compte** (`userId` présent) reçoit toujours l'in-app ;
+ * l'email qui l'accompagne suit désormais sa préférence du domaine "care", via le helper
+ * partagé (`createNotification`/`notifyUsers`, option `email`). Un destinataire **sans compte**
+ * (profil pastoral non rattaché, ou demandeur du formulaire public) reste sur un envoi direct,
+ * inchangé : il n'a pas de préférence à régler.
  */
 
 export type CareItemKind = "requests" | "followups";
@@ -39,15 +48,28 @@ export async function notifyAssigneeAssigned(params: {
   const label = kind === "requests" ? "rendez-vous pastoral" : "suivi de nouveau converti";
 
   if (assignee.userId) {
-    await createNotification({
-      userId: assignee.userId,
-      type: "CARE_ASSIGNED",
-      title: "Nouvel accompagnement confié",
-      message: `On vous a confié ${itemLabel(kind)} ${personName}.`,
-      link,
-    }).catch(() => {});
+    const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
+    const email: NotificationEmailContent | undefined = assignee.email
+      ? {
+          subject: `Un ${label} vous a été confié`,
+          html: `<p>Bonjour ${assignee.name ?? ""},</p><p>Un ${label} concernant <strong>${personName}</strong> vous a été confié.</p><p><a href="${appUrl}${link}">Voir →</a></p>`,
+        }
+      : undefined;
+    await createNotification(
+      {
+        userId: assignee.userId,
+        domain: DOMAIN,
+        type: "CARE_ASSIGNED",
+        title: "Nouvel accompagnement confié",
+        message: `On vous a confié ${itemLabel(kind)} ${personName}.`,
+        link,
+      },
+      email ? { email } : undefined
+    ).catch(() => {});
+    return;
   }
 
+  // Profil pastoral sans compte : seul canal possible, aucune préférence à consulter.
   if (assignee.email) {
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
     await sendEmail({
@@ -67,6 +89,7 @@ export async function notifyAssigneeUnassigned(params: {
   if (!params.userId) return;
   await createNotification({
     userId: params.userId,
+    domain: DOMAIN,
     type: "CARE_UNASSIGNED",
     title: "Accompagnement réaffecté",
     message: `Vous n'êtes plus en charge de ${itemLabel(params.kind)} ${params.personName}.`,
@@ -92,15 +115,12 @@ export async function notifyReferentsHandback(params: {
   });
   const userIds = Array.from(new Set(referents.map((r) => r.userId)));
   if (userIds.length === 0) return;
-  await prisma.notification.createMany({
-    data: userIds.map((userId) => ({
-      userId,
-      type: "CARE_HANDBACK",
-      title: "Demande rendue pour réaffectation",
-      message: `${personName} — motif : ${reason}`,
-      link: itemLink(kind, itemId),
-    })),
-    skipDuplicates: true,
+  await notifyUsers(userIds, {
+    domain: DOMAIN,
+    type: "CARE_HANDBACK",
+    title: "Demande rendue pour réaffectation",
+    message: `${personName} — motif : ${reason}`,
+    link: itemLink(kind, itemId),
   });
 }
 
@@ -110,6 +130,7 @@ export async function notifyProtocoleToSchedule(params: {
   personName: string;
 }): Promise<void> {
   await notifyDeptMembers(params.churchId, DEPT_FN.PROTOCOLE, {
+    domain: DOMAIN,
     type: "CARE_APPOINTMENT_VALIDATED",
     title: "Demande RDV à planifier",
     message: `La demande de ${params.personName} est prête à être planifiée.`,
@@ -128,17 +149,40 @@ export async function notifyRequesterScheduled(params: {
   scheduledFor: Date;
 }): Promise<void> {
   const { userId, email, firstName, lastName, subject, churchId, scheduledFor } = params;
+  const dateStr = scheduledFor.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr = scheduledFor.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
   if (userId) {
-    const dateStr = scheduledFor.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-    const timeStr = scheduledFor.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-    await createNotification({
-      userId,
-      type: "CARE_APPOINTMENT_SCHEDULED",
-      title: "Rendez-vous pastoral confirmé",
-      message: `Votre demande « ${subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
-      link: "/requests",
-    }).catch(() => {});
+    let emailContent: NotificationEmailContent | undefined;
+    if (email) {
+      const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
+      if (church) {
+        const { subject: emailSubject, html } = buildAppointmentScheduledEmail({
+          firstName,
+          lastName,
+          subject,
+          churchName: church.name,
+          startsAt: scheduledFor,
+          location: null,
+        });
+        emailContent = { subject: emailSubject, html };
+      }
+    }
+    await createNotification(
+      {
+        userId,
+        domain: DOMAIN,
+        type: "CARE_APPOINTMENT_SCHEDULED",
+        title: "Rendez-vous pastoral confirmé",
+        message: `Votre demande « ${subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
+        link: "/requests",
+      },
+      emailContent ? { email: emailContent } : undefined
+    ).catch(() => {});
+    return;
   }
+
+  // Demandeur sans compte (formulaire public) : seul canal possible, aucune préférence à consulter.
   if (email) {
     const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
     if (church) {
@@ -171,14 +215,35 @@ export async function notifyRequesterRejected(params: {
   const fullReason = comment ? `${reasonLabel} — ${comment}` : reasonLabel;
 
   if (userId) {
-    await createNotification({
-      userId,
-      type: "CARE_APPOINTMENT_REJECTED",
-      title: "Demande de RDV non retenue",
-      message: `Votre demande de rendez-vous pastoral n'a pas pu être retenue. Motif : ${fullReason}`,
-      link: "/requests",
-    }).catch(() => {});
+    let emailContent: NotificationEmailContent | undefined;
+    if (email) {
+      const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
+      if (church) {
+        const { subject: emailSubject, html } = buildAppointmentRejectedEmail({
+          firstName,
+          lastName,
+          subject,
+          churchName: church.name,
+          rejectReason: fullReason,
+        });
+        emailContent = { subject: emailSubject, html };
+      }
+    }
+    await createNotification(
+      {
+        userId,
+        domain: DOMAIN,
+        type: "CARE_APPOINTMENT_REJECTED",
+        title: "Demande de RDV non retenue",
+        message: `Votre demande de rendez-vous pastoral n'a pas pu être retenue. Motif : ${fullReason}`,
+        link: "/requests",
+      },
+      emailContent ? { email: emailContent } : undefined
+    ).catch(() => {});
+    return;
   }
+
+  // Demandeur sans compte (formulaire public) : seul canal possible, aucune préférence à consulter.
   if (email) {
     const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
     if (church) {

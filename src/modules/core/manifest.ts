@@ -48,6 +48,18 @@ export const coreModule = defineModule({
     "access:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"],
   },
 
+  // Domaine de notification (spec 053) : aucun email aujourd'hui (rôle attribué, liaison
+  // membre) — désactivé par défaut. Toujours affiché (`visibleWith` omis) : rôle attribué et
+  // liaison membre concernent potentiellement tout utilisateur, quel que soit son rôle.
+  notificationDomains: [
+    {
+      key: "account",
+      label: "Compte et accès",
+      description: "Rôle attribué, liaison avec la fiche membre acceptée ou refusée.",
+      defaultEmail: false,
+    },
+  ],
+
   navigation: [
     { label: "Configuration", icon: "settings", href: "/admin", permission: "users:manage" },
   ],

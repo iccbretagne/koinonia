@@ -1,7 +1,9 @@
 # Spec — Préférences de notifications par email
 
 - **Numéro** : 053
-- **Statut** : Validée
+- **Statut** : Implémentée (lot 1 — mécanisme, page « Mes notifications » et migration des 10
+  sites d'email existants ; lot 2 restant — faire passer les notifications encore in-app
+  seulement par le même mécanisme — voir `tasks.md`)
 - **Créée le** : 2026-09-25
 - **Branche suggérée** : `feat/preferences-notifications-email`
 - **Issue source** : [#581](https://github.com/iccbretagne/koinonia/issues/581)
@@ -127,28 +129,33 @@ Chaque email envoyé à un utilisateur se termine par une phrase indiquant pourq
 
 ## Critères d'acceptation
 
-- [ ] Un utilisateur connecté accède, depuis son profil, à une page « Mes notifications » qui
+- [x] Un utilisateur connecté accède, depuis son profil, à une page « Mes notifications » qui
       montre l'interrupteur général et un réglage par domaine.
-- [ ] Désactiver un domaine arrête tous les emails de ce domaine pour cet utilisateur, et pour
+- [x] Désactiver un domaine arrête tous les emails de ce domaine pour cet utilisateur, et pour
       lui seul ; les notifications dans l'application de ce domaine continuent d'arriver.
+      *(vérifiable dès le lot 1 sur les domaines déjà migrés — comptabilité, planning, suivi
+      pastoral, intégration, emploi)*
 - [ ] Activer un domaine qui n'envoyait pas d'email fait partir par email les notifications de ce
-      domaine destinées à cet utilisateur.
-- [ ] Désactiver l'interrupteur général arrête tous les emails liés aux domaines ; le réactiver
+      domaine destinées à cet utilisateur. *(le mécanisme le permet — `resolveEmailPreference`
+      respecte une préférence explicite au-delà de `defaultEmail` — mais aucun des 10 sites migrés
+      au lot 1 n'a `defaultEmail: false` : rien à observer avant que le lot 2 migre un premier
+      site de ce type, ex. `rooms`)*
+- [x] Désactiver l'interrupteur général arrête tous les emails liés aux domaines ; le réactiver
       rétablit les réglages par domaine précédents.
-- [ ] À la mise en service, un utilisateur qui n'a rien réglé reçoit encore par email tout ce
+- [x] À la mise en service, un utilisateur qui n'a rien réglé reçoit encore par email tout ce
       qu'il recevait avant ; les domaines qui envoyaient déjà des emails sont activés en entier,
       les autres sont désactivés.
-- [ ] Chaque email envoyé à un utilisateur contient le domaine concerné et un lien vers
+- [x] Chaque email envoyé à un utilisateur contient le domaine concerné et un lien vers
       « Mes notifications ».
-- [ ] Les emails adressés à des personnes sans compte partent comme avant.
-- [ ] Un utilisateur ne peut ni voir ni modifier les préférences d'un autre utilisateur, quel que
+- [x] Les emails adressés à des personnes sans compte partent comme avant.
+- [x] Un utilisateur ne peut ni voir ni modifier les préférences d'un autre utilisateur, quel que
       soit son rôle.
-- [ ] Un utilisateur sans adresse email voit un message l'indiquant sur la page.
-- [ ] La page n'affiche que les domaines où l'utilisateur peut recevoir des notifications.
-- [ ] Un utilisateur présent dans plusieurs églises a un seul jeu de réglages, appliqué à
+- [x] Un utilisateur sans adresse email voit un message l'indiquant sur la page.
+- [x] La page n'affiche que les domaines où l'utilisateur peut recevoir des notifications.
+- [x] Un utilisateur présent dans plusieurs églises a un seul jeu de réglages, appliqué à
       toutes.
-- [ ] Les réglages existants du module emploi sont conservés et restent modifiables.
-- [ ] Aucune action métier n'échoue parce qu'un email n'est pas envoyé.
+- [x] Les réglages existants du module emploi sont conservés et restent modifiables.
+- [x] Aucune action métier n'échoue parce qu'un email n'est pas envoyé.
 
 ## Hors périmètre
 

@@ -168,6 +168,7 @@ async function notifyAccountingTeam(
     await prisma.notification.createMany({
       data: accountants.map(({ userId }) => ({
         userId,
+        domain:  "accounting",
         type:    "ACCOUNTING_NEW_REQUEST",
         title:   "Nouvelle demande financière",
         message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,

@@ -30,4 +30,18 @@ export const integrationModule = defineModule({
   },
 
   permissions: {},
+
+  // Domaine de notification (spec 053) : envoie déjà des emails (berger affecté) — activé par
+  // défaut. Pas de permission propre au module (voir CLAUDE.md) : la visibilité s'appuie sur les
+  // permissions du module planning qui approximent aujourd'hui l'équipe intégration
+  // (`requireIntegrationAccess`).
+  notificationDomains: [
+    {
+      key: "integration",
+      label: "Intégration",
+      description: "Demande d'accueil confiée, demande renvoyée, rappel de relance.",
+      defaultEmail: true,
+      visibleWith: ["members:manage", "events:manage"],
+    },
+  ],
 });
