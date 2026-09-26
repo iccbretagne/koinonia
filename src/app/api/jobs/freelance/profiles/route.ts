@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const modalityEnum = z.enum(["REMOTE", "ONSITE", "HYBRID"]);
@@ -75,14 +76,13 @@ async function notifyFreelanceProfileSubscribers(profile: {
   await Promise.allSettled(
     subs.map(async (sub) => {
       if (sub.inApp) {
-        await prisma.notification.create({
-          data: {
-            userId:  sub.userId,
-            type:    "FREELANCE_PROFILE",
-            title:   "Nouveau freelance disponible",
-            message: `${authorName} propose ses services : « ${profile.title} »`,
-            link:    `/jobs/freelance/profiles/${profile.id}`,
-          },
+        await createNotification({
+          userId:  sub.userId,
+          domain:  "jobs",
+          type:    "FREELANCE_PROFILE",
+          title:   "Nouveau freelance disponible",
+          message: `${authorName} propose ses services : « ${profile.title} »`,
+          link:    `/jobs/freelance/profiles/${profile.id}`,
         });
       }
     })

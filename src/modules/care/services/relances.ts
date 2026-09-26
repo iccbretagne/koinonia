@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { notifyDeptMembers } from "@/lib/notifications";
+import { createNotification, notifyDeptMembers, notifyUsers } from "@/lib/notifications";
 import { DEPT_FN } from "@/lib/department-functions";
 import { DEFAULT_CARE_SETTINGS, type CareDelays } from "./settings";
 
@@ -236,16 +236,12 @@ export async function runCareRelances(): Promise<{
     if (userIds.length === 0) continue;
     for (const r of items) {
       const isRequest = r.kind === "requests";
-      await prisma.notification.createMany({
-        data: userIds.map((userId) => ({
-          userId,
-          domain: "care",
-          type: RELANCE_TYPE_UNASSIGNED,
-          title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
-          message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
-          link: linkOf(r),
-        })),
-        skipDuplicates: true,
+      await notifyUsers(userIds, {
+        domain: "care",
+        type: RELANCE_TYPE_UNASSIGNED,
+        title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
+        message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
+        link: linkOf(r),
       });
       unassignedNotified++;
     }
@@ -269,9 +265,7 @@ export async function runCareRelances(): Promise<{
     // protocole qui le planifie ; pour un suivi confié à un profil pastoral, son compte s'il en a un.
     const recipientUserId = r.memberUserId ?? (!isRequest ? r.profile?.userId ?? null : null);
     if (recipientUserId) {
-      await prisma.notification
-        .create({ data: { userId: recipientUserId, ...notification } })
-        .catch(() => {});
+      await createNotification({ userId: recipientUserId, ...notification }).catch(() => {});
       unscheduledNotified++;
     } else if (isRequest && r.profile) {
       await notifyDeptMembers(r.churchId, DEPT_FN.PROTOCOLE, notification).catch(() => {});

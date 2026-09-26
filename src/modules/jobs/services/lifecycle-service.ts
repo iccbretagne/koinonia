@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildJobOfferRenewalEmail } from "@/lib/email";
-import { dispatchUserEmails } from "@/lib/notifications";
+import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 
 /**
  * Cycle de vie des offres d'emploi (spec 034).
@@ -84,15 +84,13 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
 
     // Notification in-app : toujours, même sans email exploitable.
     try {
-      await prisma.notification.create({
-        data: {
-          userId: offer.authorId,
-          domain: "jobs",
-          type: RENEWAL_NOTIF_TYPE,
-          title: "Votre offre d'emploi est-elle toujours d'actualité ?",
-          message,
-          link: `/jobs/${offer.id}`,
-        },
+      await createNotification({
+        userId: offer.authorId,
+        domain: "jobs",
+        type: RENEWAL_NOTIF_TYPE,
+        title: "Votre offre d'emploi est-elle toujours d'actualité ?",
+        message,
+        link: `/jobs/${offer.id}`,
       });
     } catch (err) {
       console.error("Échec de création de notification de relance d'offre (offre redacted):", err instanceof Error ? err.message : err);

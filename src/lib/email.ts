@@ -61,6 +61,40 @@ export function appendPreferenceFooter(html: string, domainLabel: string): strin
   return `${html}${footer}`;
 }
 
+/**
+ * Gabarit générique (spec 053, lot 2) : construit le contenu email d'une notification qui n'a
+ * pas de gabarit dédié — le titre et le message de la notification in-app suffisent. Utilisé par
+ * `dispatchIfNoTx` (`@/lib/notifications`) quand l'appelant ne fournit pas de contenu email
+ * propre, pour que « un domaine activé envoie désormais toutes ses notifications par email »
+ * (y compris celles qui n'étaient jusqu'ici que dans l'application) reste vrai sans exiger un
+ * gabarit HTML par site d'émission.
+ */
+export function buildGenericNotificationEmail(params: {
+  title: string;
+  message: string;
+  link?: string;
+}): { subject: string; html: string } {
+  // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const title = escapeHtml(params.title);
+  const message = escapeHtml(params.message);
+  return {
+    subject: params.title,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin: 0 0 12px; font-weight: 600; color: #111827;">${title}</p>
+          <p style="margin: 0; color: #374151;">${message}</p>
+          ${params.link ? `<p style="margin: 20px 0 0;"><a href="${appUrl}${params.link}" style="color: #5E17EB; font-weight: 600;">Voir →</a></p>` : ""}
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function parseEmailList(raw: string | null | undefined): string[] {
   if (!raw) return [];
   const seen = new Set<string>();

@@ -54,6 +54,10 @@ describe("PATCH /api/member-link-requests/[id] — approbation (comportement act
     mockResolveChurchId.mockResolvedValue("church-1");
     prismaMock.notification.create.mockResolvedValue({} as never);
     prismaMock.memberLinkRequest.update.mockResolvedValue({} as never);
+    // `createNotification` (spec 053) tente l'email par défaut (gabarit générique, lot 2) —
+    // non mocké, ces tests portent sur l'attribution de rôle, pas sur l'envoi d'email.
+    prismaMock.user.findMany.mockResolvedValue([] as never);
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([] as never);
   });
 
   it("attribue le rôle STAR quand la personne n'a encore aucun rôle dans l'église", async () => {

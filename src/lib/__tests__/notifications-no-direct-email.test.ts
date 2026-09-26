@@ -19,7 +19,7 @@ import { join, relative, sep } from "node:path";
 
 const SRC_DIR = join(__dirname, "../..");
 
-const IGNORED_DIR_NAMES = new Set(["__tests__", "node_modules"]);
+const IGNORED_DIR_NAMES = new Set(["__tests__", "node_modules", "generated"]);
 const SCANNED_EXTENSIONS = [".ts", ".tsx"];
 
 /** Chaque entrée : pourquoi ce site reste en dehors du mécanisme de préférence. */
@@ -69,5 +69,32 @@ describe("garde-fou : sendEmail direct réservé au mécanisme et à sa liste bl
   it("chaque entrée de la liste blanche importe encore sendEmail (pas d'entrée obsolète)", () => {
     const stale = [...WHITELIST].filter((f) => !importers.includes(f));
     expect(stale, `Entrée(s) de la liste blanche qui n'importent plus sendEmail — à retirer : ${stale.join(", ")}`).toEqual([]);
+  });
+});
+
+/**
+ * Garde-fou complémentaire (spec 053, lot 2, T58) : après la migration de tous les sites
+ * d'écriture directe, plus aucun `prisma.notification.create`/`createMany` ni
+ * `tx.notification.create`/`createMany` ne doit subsister hors de `src/lib/notifications.ts` —
+ * sans quoi cette écriture échapperait au domaine et à la préférence utilisateur. Un nouveau
+ * site doit toujours passer par `createNotification`/`notifyUsers`/`notifyUsersWithRole`/
+ * `notifyDeptMembers`.
+ */
+const DIRECT_NOTIFICATION_WRITE = /\.notification\s*\.\s*(create|createMany)\s*\(/;
+const NOTIFICATIONS_LIB_PATH = "src/lib/notifications.ts";
+
+describe("garde-fou : écriture de Notification réservée aux helpers de src/lib/notifications.ts (spec 053, lot 2)", () => {
+  const files = walk(SRC_DIR);
+  const writers = files
+    .filter((f) => DIRECT_NOTIFICATION_WRITE.test(readFileSync(f, "utf-8")))
+    .map((f) => relative(join(__dirname, "../../.."), f).split(sep).join("/"));
+
+  it("seul src/lib/notifications.ts écrit directement dans Notification", () => {
+    const unauthorized = writers.filter((f) => f !== NOTIFICATIONS_LIB_PATH);
+    expect(unauthorized, `Écriture directe de Notification hors du mécanisme : ${unauthorized.join(", ")}`).toEqual([]);
+  });
+
+  it("src/lib/notifications.ts écrit toujours directement (le test n'est pas devenu trivial)", () => {
+    expect(writers).toContain(NOTIFICATIONS_LIB_PATH);
   });
 });

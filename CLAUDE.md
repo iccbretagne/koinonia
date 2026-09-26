@@ -290,7 +290,9 @@ in-app puis, hors transaction (`tx` fourni ⇒ email jamais envoyé ici, à l'ap
 `dispatchUserEmails(userIds, domain, content)` : il applique la préférence utilisateur
 (`resolveEmailPreference` — interrupteur général, puis préférence explicite du domaine, puis
 `defaultEmail`), ajoute le pied de page « Vous recevez cet email parce que… » et avale/journalise
-toute erreur SMTP.
+toute erreur SMTP. **Pas de contenu email fourni ne veut pas dire aucun email** : à défaut,
+`buildGenericNotificationEmail` (`@/lib/email`) en construit un depuis `title`/`message`/`link` —
+un gabarit dédié ne sert qu'à un contenu plus riche que celui déjà affiché dans l'app.
 
 **Liste blanche** : un `sendEmail` direct reste légitime pour un destinataire **sans compte**
 utilisateur (formulaire public, adresse institutionnelle configurée par l'église, profil

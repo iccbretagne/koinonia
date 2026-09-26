@@ -4,6 +4,33 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Ajouté
+
+- **Préférences de notifications par email** (spec 053, issue #581) : page « Mes notifications »
+  (`/profile/notifications`) où chaque utilisateur choisit, par domaine (planning, demandes,
+  suivi pastoral, intégration, comptabilité, salles, médias, compte et accès, emploi), s'il
+  reçoit des emails — avec un interrupteur général. Les réglages détaillés existants de l'emploi
+  restent inchangés et modifiables au même endroit.
+
+### Modifié
+
+- **Décision d'envoyer un email désormais centralisée** : tous les sites de notification passent
+  par le même mécanisme (`src/lib/notifications.ts`), qui applique la préférence de
+  l'utilisateur avant tout envoi — plus aucune route ne décide seule d'envoyer un email. Un
+  domaine activé envoie désormais **toutes** ses notifications par email, y compris celles qui
+  n'étaient jusqu'ici que dans l'application (à défaut de gabarit dédié, un gabarit générique est
+  construit depuis le titre et le message de la notification).
+  ⚠️ **Conséquence à surveiller** : les domaines Planning et Emploi étant activés par défaut, des
+  notifications qui ne partaient jamais par email jusqu'ici (désignation ouverture/fermeture,
+  ajout/retrait de service, nouveau profil en recherche d'emploi, nouvelle mission/profil
+  freelance) commenceront à en envoyer aux utilisateurs qui n'ont pas encore réglé leurs
+  préférences — à vérifier en recette (volume) avant la mise en production.
+- Plusieurs sites envoyaient déjà un email inconditionnel à un compte lié sans jamais vérifier de
+  préférence (rappels de service, relance MSDP, planification de rendez-vous pastoral) —
+  corrigés au passage pour respecter le nouveau mécanisme comme tout le reste.
+
 ## [v1.24.0] - 2026-09-14
 
 ### Ajouté

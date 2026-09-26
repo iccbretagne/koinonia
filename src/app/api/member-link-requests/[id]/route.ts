@@ -4,6 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
 import { admitToChurch } from "@/lib/admission";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const schema = z.object({
@@ -67,16 +68,15 @@ export async function PATCH(
       await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reject" } });
 
       // Notify the requester that their request was rejected
-      await prisma.notification.create({
-        data: {
-          userId: linkRequest.userId,
-          type: "MEMBER_LINK_REJECTED",
-          title: "Demande de liaison refusée",
-          message: rejectReason
-            ? `Votre demande de liaison a été refusée : ${rejectReason}`
-            : "Votre demande de liaison compte STAR a été refusée.",
-          link: "/profile",
-        },
+      await createNotification({
+        userId: linkRequest.userId,
+        domain: "account",
+        type: "MEMBER_LINK_REJECTED",
+        title: "Demande de liaison refusée",
+        message: rejectReason
+          ? `Votre demande de liaison a été refusée : ${rejectReason}`
+          : "Votre demande de liaison compte STAR a été refusée.",
+        link: "/profile",
       });
 
       return successResponse(updated);
@@ -144,14 +144,13 @@ export async function PATCH(
     await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "approve", requestedRole } });
 
     // Notify the requester that their request was approved
-    await prisma.notification.create({
-      data: {
-        userId: linkRequest.userId,
-        type: "MEMBER_LINK_APPROVED",
-        title: "Demande de liaison approuvée",
-        message: "Votre compte a été lié à votre fiche STAR. Vous pouvez maintenant accéder à votre planning.",
-        link: "/planning",
-      },
+    await createNotification({
+      userId: linkRequest.userId,
+      domain: "account",
+      type: "MEMBER_LINK_APPROVED",
+      title: "Demande de liaison approuvée",
+      message: "Votre compte a été lié à votre fiche STAR. Vous pouvez maintenant accéder à votre planning.",
+      link: "/planning",
     });
 
     return successResponse({ approved: true });

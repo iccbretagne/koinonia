@@ -55,6 +55,13 @@ helpers écrivent la ligne in-app puis, hors transaction, délèguent l'email à
 sinon préférence explicite du domaine ; sinon `defaultEmail`) et ajoute le pied de page « Vous
 recevez cet email parce que… » avec le lien vers `/profile/notifications`.
 
+**Un contenu email absent ne veut pas dire aucun email** (lot 2) : à défaut de gabarit fourni par
+l'appelant, `buildGenericNotificationEmail` (`@/lib/email`) en construit un depuis `title`/
+`message`/`link` de la notification elle-même. C'est ce qui rend vrai « un domaine activé envoie
+désormais toutes ses notifications par email, y compris celles qui n'étaient jusqu'ici que dans
+l'application » sans exiger un gabarit HTML par site d'émission — un site ne garde un gabarit
+dédié que pour un contenu plus riche que le titre/message déjà affichés dans l'app.
+
 **Le domaine `jobs` reste indépendant du réglage détaillé existant
 (`JobNotificationSubscription.email`)** — décision affinée en cours d'implémentation par rapport
 au plan initial de la spec 053, qui envisageait de les fusionner. Les deux réglages s'appliquent
