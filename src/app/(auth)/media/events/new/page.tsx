@@ -21,7 +21,7 @@ export default async function NewMediaEventPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Nouvel événement média</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Nouvel événement média</h1>
       <NewMediaEventForm churchId={churchId} planningEvents={planningEvents} />
     </div>
   );

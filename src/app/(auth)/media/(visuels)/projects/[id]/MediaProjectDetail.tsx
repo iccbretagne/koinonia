@@ -84,27 +84,27 @@ const FILE_STATUS_LABELS: Record<MediaFileStatus, string> = {
 };
 
 const FILE_STATUS_COLORS: Record<MediaFileStatus, string> = {
-  PENDING:            "bg-yellow-100 text-yellow-800",
-  APPROVED:           "bg-green-100 text-green-800",
-  REJECTED:           "bg-red-100 text-red-800",
-  PREVALIDATED:       "bg-blue-100 text-blue-800",
-  PREREJECTED:        "bg-orange-100 text-orange-800",
-  DRAFT:              "bg-gray-100 text-gray-700",
-  IN_REVIEW:          "bg-purple-100 text-purple-800",
-  REVISION_REQUESTED: "bg-amber-100 text-amber-800",
-  FINAL_APPROVED:     "bg-emerald-100 text-emerald-800",
+  PENDING:            "bg-warning-soft text-warning",
+  APPROVED:           "bg-success-soft text-success",
+  REJECTED:           "bg-danger-soft text-danger",
+  PREVALIDATED:       "bg-info-soft text-info",
+  PREREJECTED:        "bg-warning-soft text-warning",
+  DRAFT:              "bg-surface-sunken text-ink-muted",
+  IN_REVIEW:          "bg-brand-soft text-brand-text",
+  REVISION_REQUESTED: "bg-warning-soft text-warning",
+  FINAL_APPROVED:     "bg-success-soft text-success",
 };
 
 const FILE_STATUS_DOT: Record<MediaFileStatus, string> = {
-  PENDING:            "bg-yellow-400",
-  APPROVED:           "bg-green-500",
-  REJECTED:           "bg-red-500",
-  PREVALIDATED:       "bg-blue-500",
-  PREREJECTED:        "bg-orange-500",
-  DRAFT:              "bg-gray-400",
-  IN_REVIEW:          "bg-purple-500",
-  REVISION_REQUESTED: "bg-amber-500",
-  FINAL_APPROVED:     "bg-emerald-500",
+  PENDING:            "bg-warning",
+  APPROVED:           "bg-success",
+  REJECTED:           "bg-danger",
+  PREVALIDATED:       "bg-info",
+  PREREJECTED:        "bg-warning",
+  DRAFT:              "bg-control-line",
+  IN_REVIEW:          "bg-brand",
+  REVISION_REQUESTED: "bg-warning",
+  FINAL_APPROVED:     "bg-success",
 };
 
 const FILE_TYPE_LABELS: Record<MediaFileType, string> = {
@@ -179,36 +179,36 @@ function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = fal
 }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-surface rounded-2xl shadow-overlay max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? "bg-red-100" : "bg-gray-100"}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? "bg-danger-soft" : "bg-surface-sunken"}`}>
             {danger ? (
-              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             ) : (
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             )}
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{title}</p>
-            <p className="text-sm text-gray-500 mt-0.5">{message}</p>
+            <p className="font-semibold text-ink">{title}</p>
+            <p className="text-sm text-ink-muted mt-0.5">{message}</p>
           </div>
         </div>
         <div className="flex gap-2 justify-end pt-1">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-200 hover:border-gray-300 rounded-xl transition-colors"
+            className="px-4 py-2 text-sm text-ink-muted hover:text-ink border border-line hover:border-control-line rounded-xl transition-colors"
           >
             Annuler
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-xl transition-colors ${
-              danger ? "bg-red-600 hover:bg-red-700" : "bg-icc-violet hover:bg-icc-violet/90"
+            className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors ${
+              danger ? "bg-danger text-on-danger hover:bg-danger/90" : "bg-brand text-on-brand hover:bg-brand-hover"
             }`}
           >
             {confirmLabel}
@@ -284,23 +284,23 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
     <>
       <div className="space-y-3">
         {tokens.length === 0 && !open && (
-          <p className="text-sm text-gray-400 text-center py-2">Aucun lien de partage</p>
+          <p className="text-sm text-ink-subtle text-center py-2">Aucun lien de partage</p>
         )}
 
         {tokens.map((token) => {
           const url = getTokenUrl(token);
           const isExpired = token.expiresAt && new Date(token.expiresAt) < new Date();
           return (
-            <div key={token.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isExpired ? "bg-red-50 border-red-200 opacity-70" : "bg-gray-50 border-gray-200"}`}>
+            <div key={token.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isExpired ? "bg-danger-soft border-danger/30 opacity-70" : "bg-surface-sunken border-line"}`}>
               <span className="text-lg shrink-0">{TOKEN_TYPE_ICONS[token.type]}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-gray-700">{TOKEN_TYPE_LABELS[token.type]}</span>
-                  {token.label && <span className="text-xs text-gray-500">{token.label}</span>}
-                  {isExpired && <span className="text-xs text-red-600 font-medium">Expiré</span>}
+                  <span className="text-xs font-semibold text-ink-muted">{TOKEN_TYPE_LABELS[token.type]}</span>
+                  {token.label && <span className="text-xs text-ink-muted">{token.label}</span>}
+                  {isExpired && <span className="text-xs text-danger font-medium">Expiré</span>}
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5 truncate font-mono">{url}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-ink-subtle mt-0.5 truncate font-mono">{url}</p>
+                <p className="text-xs text-ink-subtle mt-0.5">
                   {token.usageCount} usage{token.usageCount > 1 ? "s" : ""}
                   {token.expiresAt && ` · expire le ${formatDate(token.expiresAt)}`}
                 </p>
@@ -308,13 +308,13 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
               <div className="flex gap-1.5 shrink-0">
                 <button
                   onClick={() => copy(url, token.id)}
-                  className={`text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${copied === token.id ? "bg-green-50 border-green-200 text-green-700" : "border-gray-200 text-gray-500 hover:text-icc-violet hover:border-icc-violet"}`}
+                  className={`text-xs border rounded-lg px-2.5 py-1.5 transition-colors ${copied === token.id ? "bg-success-soft border-success/30 text-success" : "border-line text-ink-muted hover:text-brand-text hover:border-brand"}`}
                 >
                   {copied === token.id ? "✓ Copié" : "Copier"}
                 </button>
                 <button
                   onClick={() => setPendingDeleteToken(token.id)}
-                  className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 rounded-lg px-2.5 py-1.5 transition-colors"
+                  className="text-xs text-danger hover:text-danger border border-danger/30 hover:bg-danger-soft rounded-lg px-2.5 py-1.5 transition-colors"
                 >
                   Suppr.
                 </button>
@@ -324,15 +324,15 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
         })}
 
         {open ? (
-          <div className="p-4 border-2 border-icc-violet/30 rounded-xl bg-icc-violet/5 space-y-3">
-            <p className="text-sm font-medium text-gray-700">Nouveau lien de partage</p>
+          <div className="p-4 border border-brand/30 rounded-xl bg-brand-soft space-y-3">
+            <p className="text-sm font-medium text-ink-muted">Nouveau lien de partage</p>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Type</label>
+                <label className="text-xs text-ink-muted mb-1 block">Type</label>
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as MediaTokenType)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet bg-white"
+                  className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
                 >
                   {(Object.keys(TOKEN_TYPE_LABELS) as MediaTokenType[]).map((t) => (
                     <option key={t} value={t}>{TOKEN_TYPE_ICONS[t]} {TOKEN_TYPE_LABELS[t]}</option>
@@ -340,32 +340,32 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Durée (0 = illimité)</label>
+                <label className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
                 <div className="relative">
                   <input
                     type="number"
                     min="0"
                     value={newExpiry}
                     onChange={(e) => setNewExpiry(e.target.value)}
-                    className="w-full border-2 border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                    className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
                   />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">jours</span>
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-subtle pointer-events-none">jours</span>
                 </div>
               </div>
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Étiquette (optionnel)</label>
+              <label className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
               <input
                 type="text"
                 placeholder="Ex : Révision client"
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
               />
             </div>
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && <p className="text-xs text-danger">{error}</p>}
             <div className="flex gap-2 justify-end">
-              <button onClick={() => { setOpen(false); setError(null); }} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
+              <button onClick={() => { setOpen(false); setError(null); }} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
                 Annuler
               </button>
               <Button onClick={createToken} disabled={creating} size="sm">
@@ -376,7 +376,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl py-2.5 text-sm text-gray-500 hover:border-icc-violet hover:text-icc-violet transition-colors"
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-control-line rounded-xl py-2.5 text-sm text-ink-muted hover:border-brand hover:text-brand-text transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -411,14 +411,15 @@ function VideoPlayer({ src, thumbnail, onExpired }: {
 
   if (error) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400 p-4">
+      <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-ink-subtle p-4">
         {thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={thumbnail} alt="" className="absolute inset-0 w-full h-full object-contain opacity-20" />
         )}
-        <p className="relative text-sm text-gray-300 text-center z-10">Impossible de lire la vidéo</p>
+        <p className="relative text-sm text-ink-subtle text-center z-10">Impossible de lire la vidéo</p>
         <button
           onClick={() => { setError(false); onExpired(); }}
+          /* Bouton sur aperçu vidéo toujours sombre, indépendant du thème */
           className="relative z-10 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors"
         >
           Recharger
@@ -529,7 +530,7 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
 
   return (
     <div
-      className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-icc-violet hover:bg-icc-violet/5 transition-all"
+      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft transition-all"
       onClick={() => inputRef.current?.click()}
       onDrop={(e) => { e.preventDefault(); handleFiles(Array.from(e.dataTransfer.files)); }}
       onDragOver={(e) => e.preventDefault()}
@@ -544,24 +545,24 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
       />
       {uploading && progress ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700 truncate">{progress.file}</p>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-icc-violet h-2 rounded-full transition-all" style={{ width: `${progress.pct}%` }} />
+          <p className="text-sm font-medium text-ink-muted truncate">{progress.file}</p>
+          <div className="w-full bg-surface-sunken rounded-full h-2">
+            <div className="bg-brand h-2 rounded-full transition-all" style={{ width: `${progress.pct}%` }} />
           </div>
-          <p className="text-xs text-gray-500">{progress.pct}%</p>
+          <p className="text-xs text-ink-muted">{progress.pct}%</p>
         </div>
       ) : (
         <>
-          <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8 text-ink-subtle mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          <p className="text-sm text-gray-500">
-            Glissez vos fichiers ici ou <span className="text-icc-violet font-medium">cliquez pour choisir</span>
+          <p className="text-sm text-ink-muted">
+            Glissez vos fichiers ici ou <span className="text-brand-text font-medium">cliquez pour choisir</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">Vidéo (MP4, MOV, WebM) · Visuel (JPEG, PNG, WebP, SVG, PDF)</p>
+          <p className="text-xs text-ink-subtle mt-1">Vidéo (MP4, MOV, WebM) · Visuel (JPEG, PNG, WebP, SVG, PDF)</p>
         </>
       )}
-      {error && <p className="mt-2 text-xs text-red-600 whitespace-pre-line">{error}</p>}
+      {error && <p className="mt-2 text-xs text-danger whitespace-pre-line">{error}</p>}
     </div>
   );
 }
@@ -615,36 +616,36 @@ function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonl
       {!showForm ? (
         <button
           onClick={() => inputRef.current?.click()}
-          className="text-xs text-icc-violet border border-icc-violet/30 rounded-lg px-2.5 py-1.5 hover:bg-icc-violet/5 transition-colors font-medium"
+          className="text-xs text-brand-text border border-brand/30 rounded-lg px-2.5 py-1.5 hover:bg-brand-soft transition-colors font-medium"
         >
           + Nouvelle version
         </button>
       ) : (
-        <div className="mt-2 space-y-2 p-3 bg-icc-violet/5 rounded-lg border border-icc-violet/20">
-          <p className="text-xs font-medium text-gray-700 truncate">{pendingFile?.name}</p>
+        <div className="mt-2 space-y-2 p-3 bg-brand-soft rounded-lg border border-brand/20">
+          <p className="text-xs font-medium text-ink-muted truncate">{pendingFile?.name}</p>
           <input
             type="text"
             placeholder="Note (optionnel)"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-icc-violet"
+            className="w-full text-xs border border-line rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-focus"
           />
           {uploading && (
-            <div className="w-full bg-gray-200 rounded-full h-1.5">
-              <div className="bg-icc-violet h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="w-full bg-surface-sunken rounded-full h-1.5">
+              <div className="bg-brand h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
           )}
           <div className="flex gap-2">
             <button onClick={upload} disabled={uploading}
-              className="text-xs bg-icc-violet text-white px-3 py-1 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 font-medium">
+              className="text-xs bg-brand text-on-brand px-3 py-1 rounded-lg hover:bg-brand-hover disabled:opacity-50 font-medium">
               {uploading ? `Upload ${pct}%…` : "Envoyer"}
             </button>
             <button onClick={() => { setShowForm(false); setPendingFile(null); }}
-              className="text-xs text-gray-500 px-2 py-1 hover:text-gray-700">
+              className="text-xs text-ink-muted px-2 py-1 hover:text-ink-muted">
               Annuler
             </button>
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-danger">{error}</p>}
         </div>
       )}
     </div>
@@ -743,27 +744,27 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
       />
     )}
     <div className="fixed inset-0 z-[60] flex">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative ml-auto w-full max-w-xl bg-white h-full flex flex-col shadow-2xl overflow-hidden">
+      <div className="absolute inset-0 bg-scrim" onClick={onClose} />
+      <div className="relative ml-auto w-full max-w-xl bg-surface h-full flex flex-col shadow-overlay overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-line shrink-0">
           {/* Navigation prev/next */}
           {allFiles.length > 1 && (
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => hasPrev && onNavigate(allFiles[fileIndex - 1])}
                 disabled={!hasPrev}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-muted hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span className="text-xs text-gray-400 tabular-nums w-10 text-center">{fileIndex + 1}/{allFiles.length}</span>
+              <span className="text-xs text-ink-subtle tabular-nums w-10 text-center">{fileIndex + 1}/{allFiles.length}</span>
               <button
                 onClick={() => hasNext && onNavigate(allFiles[fileIndex + 1])}
                 disabled={!hasNext}
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-ink-muted hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -773,15 +774,15 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium shrink-0">
+              <span className="text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded font-medium shrink-0">
                 {FILE_TYPE_LABELS[file.type]}
               </span>
               <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0 ${FILE_STATUS_COLORS[file.status]}`}>
                 {FILE_STATUS_LABELS[file.status]}
               </span>
-              <span className="text-xs text-gray-400 truncate">
+              <span className="text-xs text-ink-subtle truncate">
                 {file.filename}
-                {latestVersion && <span className="ml-1 text-gray-300">v{latestVersion.versionNumber}</span>}
+                {latestVersion && <span className="ml-1 text-ink-subtle">v{latestVersion.versionNumber}</span>}
               </span>
             </div>
           </div>
@@ -789,7 +790,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
             {canManage && (
               <button
                 onClick={() => setPendingDelete(true)}
-                className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition-colors"
+                className="text-danger hover:text-danger hover:bg-danger-soft rounded-lg p-1.5 transition-colors"
                 title="Supprimer ce fichier"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,7 +798,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                 </svg>
               </button>
             )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 rounded-lg p-1.5">
+            <button onClick={onClose} className="text-ink-subtle hover:text-ink-muted rounded-lg p-1.5">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -806,6 +807,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
         </div>
 
         {/* Preview — height capped on mobile so content below stays reachable */}
+        {/* Aperçu média toujours sombre (cadre vidéo/photo), indépendant du thème */}
         <div className="shrink-0 bg-black h-44 md:h-56 relative overflow-hidden">
           {file.type === "VIDEO" ? (
             loadingVersions ? (
@@ -815,18 +817,18 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
             ) : versions[0]?.streamUrl ? (
               <VideoPlayer src={versions[0].streamUrl} thumbnail={file.thumbnailUrl ?? undefined} onExpired={loadVersions} />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400 p-4">
-                <svg className="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-ink-subtle p-4">
+                <svg className="w-10 h-10 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <p className="text-sm text-gray-500 text-center">Vidéo non disponible<br/><span className="text-xs text-gray-400">Vérifiez la configuration S3</span></p>
+                <p className="text-sm text-ink-muted text-center">Vidéo non disponible<br/><span className="text-xs text-ink-subtle">Vérifiez la configuration S3</span></p>
               </div>
             )
           ) : file.thumbnailUrl && file.mimeType.startsWith("image/") ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-600">
+            <div className="w-full h-full flex items-center justify-center text-ink-muted">
               <p className="text-sm">Aucun aperçu disponible</p>
             </div>
           )}
@@ -834,32 +836,32 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
         {/* Actions review */}
         {canReview && file.status === "IN_REVIEW" && (
-          <div className="shrink-0 flex gap-2 px-4 py-2.5 border-b border-gray-100 bg-gray-50">
+          <div className="shrink-0 flex gap-2 px-4 py-2.5 border-b border-line bg-surface-sunken">
             <button onClick={() => { onReviewFile(file.id, "FINAL_APPROVED"); onClose(); }}
-              className="flex-1 text-sm bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium">
+              className="flex-1 text-sm bg-success-soft text-success py-2 rounded-lg hover:bg-success/20 font-medium">
               ✓ Valider
             </button>
             <button onClick={() => { onReviewFile(file.id, "REVISION_REQUESTED"); onClose(); }}
-              className="flex-1 text-sm bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 font-medium">
+              className="flex-1 text-sm bg-warning-soft text-warning py-2 rounded-lg hover:bg-warning/20 font-medium">
               ↩ Révision
             </button>
             <button onClick={() => { onReviewFile(file.id, "REJECTED"); onClose(); }}
-              className="flex-1 text-sm bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 font-medium">
+              className="flex-1 text-sm bg-danger-soft text-danger py-2 rounded-lg hover:bg-danger/20 font-medium">
               ✗ Rejeter
             </button>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="shrink-0 flex border-b border-gray-200 px-5">
+        <div className="shrink-0 flex border-b border-line px-5">
           {(["versions", "comments"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`py-2.5 px-1 mr-5 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab
-                  ? "border-icc-violet text-icc-violet"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-brand text-brand-text"
+                  : "border-transparent text-ink-muted hover:text-ink-muted"
               }`}
             >
               {tab === "versions" ? `Versions (${versions.length || "…"})` : `Commentaires (${comments.length || "…"})`}
@@ -875,21 +877,21 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                 <NewVersionUpload fileId={file.id} onDone={() => { loadVersions(); onRefresh(); }} />
               )}
               {loadingVersions ? (
-                <p className="text-xs text-gray-400 text-center py-4">Chargement…</p>
+                <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
               ) : versions.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-4">Aucune version enregistrée.</p>
+                <p className="text-xs text-ink-subtle text-center py-4">Aucune version enregistrée.</p>
               ) : (
                 versions.map((v, idx) => (
-                  <div key={v.id} className={`p-3 rounded-xl border ${idx === 0 ? "border-icc-violet/30 bg-icc-violet/5" : "border-gray-200 bg-gray-50"}`}>
+                  <div key={v.id} className={`p-3 rounded-xl border ${idx === 0 ? "border-brand/30 bg-brand-soft" : "border-line bg-surface-sunken"}`}>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold ${idx === 0 ? "text-icc-violet" : "text-gray-500"}`}>
+                      <span className={`text-xs font-bold ${idx === 0 ? "text-brand-text" : "text-ink-muted"}`}>
                         v{v.versionNumber} {idx === 0 && "(dernière)"}
                       </span>
-                      <span className="text-xs text-gray-400">{formatDateTime(v.createdAt)}</span>
+                      <span className="text-xs text-ink-subtle">{formatDateTime(v.createdAt)}</span>
                     </div>
-                    {v.notes && <p className="text-xs text-gray-600 mt-1">{v.notes}</p>}
+                    {v.notes && <p className="text-xs text-ink-muted mt-1">{v.notes}</p>}
                     {v.createdBy && (
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-ink-subtle mt-0.5">
                         par {v.createdBy.displayName ?? v.createdBy.name ?? "Inconnu"}
                       </p>
                     )}
@@ -901,36 +903,36 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
           {activeTab === "comments" && (
             loadingComments ? (
-              <p className="text-xs text-gray-400 text-center py-4">Chargement…</p>
+              <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
             ) : comments.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">Aucun commentaire.</p>
+              <p className="text-xs text-ink-subtle text-center py-4">Aucun commentaire.</p>
             ) : (
               <div className="space-y-2">
                 {comments.map((c) => (
                   <div key={c.id} className="space-y-2">
-                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
+                    <div className="bg-surface-sunken rounded-xl p-3 border border-line">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-gray-700">
+                        <span className="text-xs font-medium text-ink-muted">
                           {c.author?.displayName ?? c.author?.name ?? c.authorName ?? "Anonyme"}
                         </span>
                         {c.timecode !== null && (
-                          <span className="text-xs bg-icc-violet/10 text-icc-violet px-1.5 py-0.5 rounded font-mono">
+                          <span className="text-xs bg-brand-soft text-brand-text px-1.5 py-0.5 rounded font-mono">
                             {formatTimecode(c.timecode)}
                           </span>
                         )}
-                        <span className="text-xs text-gray-400 ml-auto">{formatDateTime(c.createdAt)}</span>
+                        <span className="text-xs text-ink-subtle ml-auto">{formatDateTime(c.createdAt)}</span>
                       </div>
-                      <p className="text-sm text-gray-800">{c.content}</p>
+                      <p className="text-sm text-ink">{c.content}</p>
                     </div>
                     {c.replies?.map((r) => (
-                      <div key={r.id} className="ml-4 bg-white rounded-xl p-3 border border-gray-200">
+                      <div key={r.id} className="ml-4 bg-surface rounded-xl p-3 border border-line">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium text-gray-700">
+                          <span className="text-xs font-medium text-ink-muted">
                             {r.author?.displayName ?? r.author?.name ?? r.authorName ?? "Anonyme"}
                           </span>
-                          <span className="text-xs text-gray-400 ml-auto">{formatDateTime(r.createdAt)}</span>
+                          <span className="text-xs text-ink-subtle ml-auto">{formatDateTime(r.createdAt)}</span>
                         </div>
-                        <p className="text-sm text-gray-800">{r.content}</p>
+                        <p className="text-sm text-ink">{r.content}</p>
                       </div>
                     ))}
                   </div>
@@ -942,18 +944,18 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
         {/* Comment input — pinned at bottom, always reachable */}
         {activeTab === "comments" && (
-          <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-gray-200 bg-white">
+          <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-line bg-surface">
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Ajouter un commentaire…"
               rows={2}
-              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
+              className="flex-1 text-sm border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-focus resize-none"
             />
             <button
               onClick={postComment}
               disabled={postingComment || !newComment.trim()}
-              className="self-end text-sm bg-icc-violet text-white px-3 py-2 rounded-lg hover:bg-icc-violet/90 disabled:opacity-40 font-medium"
+              className="self-end text-sm bg-brand text-on-brand px-3 py-2 rounded-lg hover:bg-brand-hover disabled:opacity-40 font-medium"
             >
               Envoyer
             </button>
@@ -1089,9 +1091,9 @@ export default function MediaProjectDetail({
 
       <div className="space-y-5">
         {/* ── Header ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
           <div className="p-5">
-            <Link href="/media/projects" className="text-xs text-gray-400 hover:text-icc-violet transition-colors inline-flex items-center gap-1 mb-3">
+            <Link href="/media/projects" className="text-xs text-ink-subtle hover:text-brand-text transition-colors inline-flex items-center gap-1 mb-3">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -1100,20 +1102,20 @@ export default function MediaProjectDetail({
 
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-gray-900 truncate">{project.name}</h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <h1 className="text-2xl font-bold text-ink truncate">{project.name}</h1>
+                <p className="text-sm text-ink-muted mt-1">
                   Créé le {formatDate(project.createdAt)}
                   {" · par "}
                   {project.createdBy.displayName ?? project.createdBy.name ?? "Inconnu"}
                 </p>
                 {project.description && (
-                  <p className="text-sm text-gray-600 mt-2 leading-relaxed">{project.description}</p>
+                  <p className="text-sm text-ink-muted mt-2 leading-relaxed">{project.description}</p>
                 )}
               </div>
               {canManage && (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="text-xs text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 transition-colors shrink-0"
+                  className="text-xs text-danger hover:text-danger border border-danger/30 hover:border-danger/30 rounded-lg px-3 py-2 hover:bg-danger-soft transition-colors shrink-0"
                 >
                   Supprimer
                 </button>
@@ -1122,60 +1124,60 @@ export default function MediaProjectDetail({
 
             {/* Stat pills */}
             <div className="flex flex-wrap gap-2 mt-4">
-              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5">
-                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-1.5 bg-surface-sunken border border-line rounded-lg px-3 py-1.5">
+                <svg className="w-3.5 h-3.5 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span className="text-xs font-semibold text-gray-700">{allFiles.length}</span>
-                <span className="text-xs text-gray-500">fichier{allFiles.length !== 1 ? "s" : ""}</span>
+                <span className="text-xs font-semibold text-ink-muted">{allFiles.length}</span>
+                <span className="text-xs text-ink-muted">fichier{allFiles.length !== 1 ? "s" : ""}</span>
               </div>
               {inReviewCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
-                  <span className="text-xs font-semibold text-purple-800">{inReviewCount}</span>
-                  <span className="text-xs text-purple-700">en révision</span>
+                <div className="flex items-center gap-1.5 bg-brand-soft border border-brand/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
+                  <span className="text-xs font-semibold text-brand-text">{inReviewCount}</span>
+                  <span className="text-xs text-brand-text">en révision</span>
                 </div>
               )}
               {revisionCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                  <span className="text-xs font-semibold text-amber-800">{revisionCount}</span>
-                  <span className="text-xs text-amber-700">révision demandée</span>
+                <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+                  <span className="text-xs font-semibold text-warning">{revisionCount}</span>
+                  <span className="text-xs text-warning">révision demandée</span>
                 </div>
               )}
               {prevalidatedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                  <span className="text-xs font-semibold text-blue-800">{prevalidatedCount}</span>
-                  <span className="text-xs text-blue-700">pré-validé{prevalidatedCount > 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1.5 bg-info-soft border border-info/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-info shrink-0" />
+                  <span className="text-xs font-semibold text-info">{prevalidatedCount}</span>
+                  <span className="text-xs text-info">pré-validé{prevalidatedCount > 1 ? "s" : ""}</span>
                 </div>
               )}
               {prerejectedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
-                  <span className="text-xs font-semibold text-orange-800">{prerejectedCount}</span>
-                  <span className="text-xs text-orange-700">pré-rejeté{prerejectedCount > 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+                  <span className="text-xs font-semibold text-warning">{prerejectedCount}</span>
+                  <span className="text-xs text-warning">pré-rejeté{prerejectedCount > 1 ? "s" : ""}</span>
                 </div>
               )}
               {approvedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                  <span className="text-xs font-semibold text-green-800">{approvedCount}</span>
-                  <span className="text-xs text-green-700">approuvé{approvedCount > 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+                  <span className="text-xs font-semibold text-success">{approvedCount}</span>
+                  <span className="text-xs text-success">approuvé{approvedCount > 1 ? "s" : ""}</span>
                 </div>
               )}
               {finalApprovedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="text-xs font-semibold text-emerald-800">{finalApprovedCount}</span>
-                  <span className="text-xs text-emerald-700">validé{finalApprovedCount > 1 ? "s" : ""} final</span>
+                <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+                  <span className="text-xs font-semibold text-success">{finalApprovedCount}</span>
+                  <span className="text-xs text-success">validé{finalApprovedCount > 1 ? "s" : ""} final</span>
                 </div>
               )}
               {rejectedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                  <span className="text-xs font-semibold text-red-800">{rejectedCount}</span>
-                  <span className="text-xs text-red-700">rejeté{rejectedCount > 1 ? "s" : ""}</span>
+                <div className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 rounded-lg px-3 py-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+                  <span className="text-xs font-semibold text-danger">{rejectedCount}</span>
+                  <span className="text-xs text-danger">rejeté{rejectedCount > 1 ? "s" : ""}</span>
                 </div>
               )}
             </div>
@@ -1185,16 +1187,16 @@ export default function MediaProjectDetail({
           {allFiles.length > 0 && (
             <div className="px-5 pb-4">
               <div className="flex items-center justify-between mb-1.5">
-                <p className="text-xs text-gray-500">Progression de la validation</p>
-                <p className="text-xs font-semibold text-gray-700">{progressPct}%</p>
+                <p className="text-xs text-ink-muted">Progression de la validation</p>
+                <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
+              <div className="h-2 bg-surface-sunken rounded-full overflow-hidden flex">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-500"
+                  className="h-full bg-success transition-all duration-500"
                   style={{ width: `${allFiles.length > 0 ? ((finalApprovedCount + approvedCount) / allFiles.length) * 100 : 0}%` }}
                 />
                 <div
-                  className="h-full bg-red-400 transition-all duration-500"
+                  className="h-full bg-danger transition-all duration-500"
                   style={{ width: `${allFiles.length > 0 ? ((rejectedCount + prerejectedCount) / allFiles.length) * 100 : 0}%` }}
                 />
               </div>
@@ -1204,14 +1206,14 @@ export default function MediaProjectDetail({
 
         {/* ── Liens de partage ────────────────────────────────── */}
         {canManage && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4 text-icc-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
+            <h2 className="text-sm font-semibold text-ink mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4 text-brand-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
               Liens de partage
               {project.shareTokens.length > 0 && (
-                <span className="ml-auto text-xs text-gray-400 font-normal">
+                <span className="ml-auto text-xs text-ink-subtle font-normal">
                   {project.shareTokens.length} lien{project.shareTokens.length > 1 ? "s" : ""}
                 </span>
               )}
@@ -1221,9 +1223,9 @@ export default function MediaProjectDetail({
         )}
 
         {/* ── Fichiers ────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div className="bg-surface rounded-2xl border border-line shadow-card">
           {/* Toolbar */}
-          <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+          <div className="px-5 pt-4 pb-3 border-b border-line">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               {/* Onglets statut */}
               <div className="flex items-center gap-1 flex-wrap">
@@ -1233,13 +1235,13 @@ export default function MediaProjectDetail({
                     onClick={() => setStatusFilter(tab.value)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       statusFilter === tab.value
-                        ? "bg-icc-violet text-white"
-                        : "text-gray-500 hover:bg-gray-100"
+                        ? "bg-brand text-on-brand"
+                        : "text-ink-muted hover:bg-surface-sunken"
                     }`}
                   >
                     {tab.label}
                     <span className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${
-                      statusFilter === tab.value ? "bg-white/20 text-white" : "bg-gray-100 text-gray-600"
+                      statusFilter === tab.value ? "bg-on-brand/20 text-on-brand" : "bg-surface-sunken text-ink-muted"
                     }`}>
                       {tab.count}
                     </span>
@@ -1251,7 +1253,7 @@ export default function MediaProjectDetail({
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as MediaFileType | "")}
-                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet bg-white"
+                  className="border border-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
                 >
                   <option value="">Tous types</option>
                   {(Object.keys(FILE_TYPE_LABELS) as MediaFileType[]).map((t) => (
@@ -1263,8 +1265,8 @@ export default function MediaProjectDetail({
                     onClick={() => setShowUpload((v) => !v)}
                     className={`flex items-center gap-1.5 text-sm border rounded-lg px-3 py-1.5 transition-colors ${
                       showUpload
-                        ? "border-icc-violet text-icc-violet bg-icc-violet/5"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                        ? "border-brand text-brand-text bg-brand-soft"
+                        : "border-line text-ink-muted hover:border-control-line hover:bg-surface-sunken"
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1279,15 +1281,15 @@ export default function MediaProjectDetail({
 
           {/* Bannière d'activité */}
           {activity && (
-            <div className="px-5 py-2 border-b border-gray-100 bg-amber-50 flex items-center gap-3">
-              <div className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="text-xs font-medium text-amber-800">{activity.label}</span>
+            <div className="px-5 py-2 border-b border-line bg-warning-soft flex items-center gap-3">
+              <div className="w-3.5 h-3.5 border-2 border-warning border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-xs font-medium text-warning">{activity.label}</span>
             </div>
           )}
 
           {/* Zone d'upload (toggle) */}
           {showUpload && (
-            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+            <div className="px-5 py-4 border-b border-line bg-surface-sunken/50">
               <FileUploadZone
                 projectId={project.id}
                 onUploaded={() => { setShowUpload(false); refreshProject(); }}
@@ -1301,17 +1303,17 @@ export default function MediaProjectDetail({
           {/* Grille fichiers */}
           <div className="p-4">
             {filteredFiles.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
-                <svg className="w-12 h-12 text-gray-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="text-center py-16 text-ink-subtle">
+                <svg className="w-12 h-12 text-ink-subtle mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-ink-subtle">
                   {allFiles.length === 0 ? "Aucun fichier dans ce projet" : "Aucun résultat pour ces filtres"}
                 </p>
                 {(statusFilter || typeFilter) && (
                   <button
                     onClick={() => { setStatusFilter(""); setTypeFilter(""); }}
-                    className="mt-2 text-xs text-icc-violet hover:underline"
+                    className="mt-2 text-xs text-brand-text hover:underline"
                   >
                     Réinitialiser les filtres
                   </button>
@@ -1326,16 +1328,16 @@ export default function MediaProjectDetail({
                   return (
                     <div
                       key={file.id}
-                      className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden hover:border-icc-violet transition-all shadow-sm hover:shadow-md cursor-pointer group"
+                      className="bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group"
                       onClick={() => setSelectedFile(file)}
                     >
                       {/* Preview */}
-                      <div className="aspect-video bg-gray-100 relative overflow-hidden">
+                      <div className="aspect-video bg-surface-sunken relative overflow-hidden">
                         {thumb && isImage ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-ink-subtle">
                             {file.type === "VIDEO" ? (
                               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1352,29 +1354,31 @@ export default function MediaProjectDetail({
                           </div>
                         )}
                         {/* Badge version */}
+                        {/* Scrim toujours sombre : texte blanc fixe, indépendant du thème */}
                         {latestV && (
-                          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded font-mono">
+                          <div className="absolute top-2 left-2 bg-scrim text-white text-xs px-1.5 py-0.5 rounded font-mono">
                             v{latestV.versionNumber}
                           </div>
                         )}
                         {/* Dot statut */}
                         <div className="absolute top-2 right-2">
-                          <span className={`block w-2.5 h-2.5 rounded-full shadow-sm border border-white/50 ${FILE_STATUS_DOT[file.status]}`} />
+                          {/* Halo blanc fixe pour rester visible sur une vignette de couleur quelconque */}
+                          <span className={`block w-2.5 h-2.5 rounded-full shadow-card border border-white/50 ${FILE_STATUS_DOT[file.status]}`} />
                         </div>
                       </div>
 
                       {/* Info */}
                       <div className="p-3">
                         <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                          <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">
+                          <span className="text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded font-medium">
                             {FILE_TYPE_LABELS[file.type]}
                           </span>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${FILE_STATUS_COLORS[file.status]}`}>
                             {FILE_STATUS_LABELS[file.status]}
                           </span>
                         </div>
-                        <p className="text-sm font-medium text-gray-900 truncate">{file.filename}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-sm font-medium text-ink truncate">{file.filename}</p>
+                        <p className="text-xs text-ink-subtle mt-0.5">
                           {formatSize(file.size)}
                           {file.duration ? ` · ${formatDuration(file.duration)}` : ""}
                         </p>

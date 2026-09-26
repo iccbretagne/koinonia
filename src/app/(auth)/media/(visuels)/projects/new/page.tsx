@@ -9,7 +9,7 @@ export default async function NewMediaProjectPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Nouveau projet média</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Nouveau projet média</h1>
       <NewMediaProjectForm churchId={churchId} />
     </div>
   );

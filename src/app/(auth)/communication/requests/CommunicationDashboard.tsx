@@ -35,17 +35,17 @@ interface Props {
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-100 text-amber-800",
-  EN_COURS: "bg-blue-100 text-blue-800",
-  LIVRE: "bg-green-100 text-green-800",
-  ANNULE: "bg-gray-100 text-gray-500",
+  EN_ATTENTE: "bg-warning-soft text-warning",
+  EN_COURS: "bg-info-soft text-info",
+  LIVRE: "bg-success-soft text-success",
+  ANNULE: "bg-surface-sunken text-ink-muted",
 };
 
 const VISUEL_STATUS_INFO: Record<string, { icon: string; label: string; color: string }> = {
-  EN_ATTENTE: { icon: "⏳", label: "Visuel en attente", color: "text-amber-600" },
-  EN_COURS: { icon: "●", label: "Visuel en cours de création", color: "text-blue-600" },
-  LIVRE: { icon: "✓", label: "Visuel livré", color: "text-green-600" },
-  ANNULE: { icon: "✗", label: "Visuel annulé", color: "text-gray-400" },
+  EN_ATTENTE: { icon: "⏳", label: "Visuel en attente", color: "text-warning" },
+  EN_COURS: { icon: "●", label: "Visuel en cours de création", color: "text-info" },
+  LIVRE: { icon: "✓", label: "Visuel livré", color: "text-success" },
+  ANNULE: { icon: "✗", label: "Visuel annulé", color: "text-ink-subtle" },
 };
 
 export default function CommunicationDashboard({ requests: initial }: Props) {
@@ -102,18 +102,18 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
     const visuelDeliveryLink = (vp.deliveryLink as string) ?? null;
 
     return (
-      <div key={req.id} className="bg-white rounded-lg shadow p-5 border border-gray-100">
+      <div key={req.id} className="bg-surface rounded-lg shadow-card p-5 border border-line">
         <div className="flex items-start justify-between gap-4 mb-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-gray-900">{req.title}</h3>
+              <h3 className="font-semibold text-ink">{req.title}</h3>
               {req.announcement?.isSaveTheDate && (
-                <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full">
                   Save the Date
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-ink-muted mt-0.5">
               {source} · {author}
               {req.announcement?.eventDate && (
                 <> · {new Date(req.announcement.eventDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}</>
@@ -132,7 +132,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
           const isExpanded = expandedContent.has(req.id);
           return (
             <div className="mb-3">
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+              <p className="text-sm text-ink-muted whitespace-pre-wrap">
                 {isLong && !isExpanded ? `${content.slice(0, PREVIEW).trimEnd()}…` : content}
               </p>
               {isLong && (
@@ -142,7 +142,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
                     if (isExpanded) next.delete(req.id); else next.add(req.id);
                     return next;
                   })}
-                  className="mt-1 text-xs text-icc-violet hover:underline"
+                  className="mt-1 text-xs text-brand-text hover:underline"
                 >
                   {isExpanded ? "Voir moins" : "Voir plus"}
                 </button>
@@ -173,21 +173,21 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
             href={deliveryLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-icc-violet underline mb-3"
+            className="inline-flex items-center gap-1 text-sm text-brand-text underline mb-3"
           >
             Voir le post publié →
           </a>
         )}
 
         {(req.status === "EN_ATTENTE" || req.status === "EN_COURS") && (
-          <div className="border-t border-gray-100 pt-3 space-y-2">
+          <div className="border-t border-line pt-3 space-y-2">
             {req.status === "EN_COURS" && (
               <input
                 type="url"
                 value={deliveryLinks[req.id] ?? ""}
                 onChange={(e) => setDeliveryLinks((prev) => ({ ...prev, [req.id]: e.target.value }))}
                 placeholder="Lien du post publié (optionnel)"
-                className="block w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-xs focus:outline-none focus:border-icc-violet"
+                className="block w-full px-3 py-2 border border-control-line rounded-lg text-xs focus:outline-none focus:border-brand"
               />
             )}
             <div className="flex flex-wrap gap-2">
@@ -229,9 +229,9 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
     <div className="space-y-8">
       {pending.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
             En attente
-            <span className="bg-icc-violet text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-brand text-on-brand text-xs font-bold px-2 py-0.5 rounded-full">
               {pending.length}
             </span>
           </h2>
@@ -240,18 +240,18 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
       )}
       {inProgress.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">En cours</h2>
+          <h2 className="text-lg font-semibold text-ink mb-3">En cours</h2>
           <div className="space-y-4">{inProgress.map(renderRequest)}</div>
         </section>
       )}
       {done.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Terminés</h2>
+          <h2 className="text-lg font-semibold text-ink mb-3">Terminés</h2>
           <div className="space-y-4">{done.map(renderRequest)}</div>
         </section>
       )}
       {requests.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-ink-subtle">
           <p className="text-lg">Aucune demande réseaux sociaux.</p>
         </div>
       )}

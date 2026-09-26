@@ -35,10 +35,10 @@ export default async function AudioSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Audio — Paramètres</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-2">Audio — Paramètres</h1>
+      <p className="text-sm text-ink-muted mb-6">
         Le département de captation audio se configure désormais parmi les{" "}
-        <Link href="/admin/departments/functions" className="text-icc-violet underline">
+        <Link href="/admin/departments/functions" className="text-brand-text underline">
           fonctions départementales
         </Link>{" "}
         (fonction « Captation Audio »).

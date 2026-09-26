@@ -11,26 +11,28 @@ const STATUS_LABELS: Record<string, string> = {
   ABANDONED: "Abandonnée",
 };
 
+// Barres de l'entonnoir : même famille sémantique que STATUS_BADGE ci-dessous, pour rester
+// cohérent entre la barre et la pastille de statut.
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED: "bg-gray-400",
-  WAITING_RECONTACT: "bg-orange-300",
-  WAITING_MISSION: "bg-orange-500",
-  ASSIGNED: "bg-blue-400",
-  CONTACTED: "bg-yellow-400",
-  WHATSAPP_ADDED: "bg-green-400",
-  INTEGRATED: "bg-icc-violet",
-  ABANDONED: "bg-red-400",
+  SUBMITTED: "bg-control-line",
+  WAITING_RECONTACT: "bg-warning",
+  WAITING_MISSION: "bg-warning",
+  ASSIGNED: "bg-info",
+  CONTACTED: "bg-warning",
+  WHATSAPP_ADDED: "bg-success",
+  INTEGRATED: "bg-brand",
+  ABANDONED: "bg-danger",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  SUBMITTED: "bg-gray-100 text-gray-700 border-gray-200",
-  WAITING_RECONTACT: "bg-orange-50 text-orange-700 border-orange-200",
-  WAITING_MISSION: "bg-orange-50 text-orange-800 border-orange-300",
-  ASSIGNED: "bg-blue-50 text-blue-700 border-blue-200",
-  CONTACTED: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  WHATSAPP_ADDED: "bg-green-50 text-green-700 border-green-200",
-  INTEGRATED: "bg-icc-violet/10 text-icc-violet border-icc-violet/20",
-  ABANDONED: "bg-red-50 text-red-700 border-red-200",
+  SUBMITTED: "bg-surface-sunken text-ink-muted border-line",
+  WAITING_RECONTACT: "bg-warning-soft text-warning border-warning/30",
+  WAITING_MISSION: "bg-warning-soft text-warning border-warning/30",
+  ASSIGNED: "bg-info-soft text-info border-info/30",
+  CONTACTED: "bg-warning-soft text-warning border-warning/30",
+  WHATSAPP_ADDED: "bg-success-soft text-success border-success/30",
+  INTEGRATED: "bg-brand-soft text-brand-text border-brand/20",
+  ABANDONED: "bg-danger-soft text-danger border-danger/30",
 };
 
 // Miroir client de ABANDON_REASON_LABELS (module intégration) : un composant client ne peut
@@ -91,30 +93,30 @@ function KpiCard({
   readonly accent?: boolean;
 }) {
   return (
-    <div className={`bg-white rounded-xl border p-4 sm:p-5 ${accent ? "border-icc-violet/30 bg-icc-violet/5" : "border-gray-200"}`}>
-      <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
-      <p className={`text-3xl font-bold ${accent ? "text-icc-violet" : "text-gray-900"}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className={`bg-surface rounded-xl border p-4 sm:p-5 ${accent ? "border-brand/30 bg-brand-soft" : "border-line"}`}>
+      <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
+      <p className={`text-3xl font-bold ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
+      {sub && <p className="text-xs text-ink-subtle mt-1">{sub}</p>}
     </div>
   );
 }
 
 function BarChart({ data, total }: { readonly data: { label: string; count: number }[]; readonly total: number }) {
-  if (total === 0) return <p className="text-sm text-gray-400">Aucune donnée</p>;
+  if (total === 0) return <p className="text-sm text-ink-subtle">Aucune donnée</p>;
   const max = Math.max(...data.map((d) => d.count), 1);
   return (
     <div className="space-y-2">
       {data.map((d) => (
         <div key={d.label} className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 w-24 shrink-0 truncate">{d.label}</span>
-          <div className="flex-1 bg-gray-100 rounded-full h-2">
+          <span className="text-xs text-ink-muted w-24 shrink-0 truncate">{d.label}</span>
+          <div className="flex-1 bg-surface-sunken rounded-full h-2">
             <div
-              className="bg-icc-violet rounded-full h-2 transition-all"
+              className="bg-brand rounded-full h-2 transition-all"
               style={{ width: `${Math.round((d.count / max) * 100)}%` }}
             />
           </div>
-          <span className="text-xs font-medium text-gray-700 w-8 text-right shrink-0">{d.count}</span>
-          <span className="text-xs text-gray-400 w-8 text-right shrink-0">
+          <span className="text-xs font-medium text-ink-muted w-8 text-right shrink-0">{d.count}</span>
+          <span className="text-xs text-ink-subtle w-8 text-right shrink-0">
             {total > 0 ? `${Math.round((d.count / total) * 100)}%` : "–"}
           </span>
         </div>
@@ -162,10 +164,10 @@ export default function StatsView({
       </div>
 
       {/* Funnel */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">Entonnoir de progression</h2>
+      <div className="bg-surface rounded-xl border border-line p-5">
+        <h2 className="font-semibold text-ink mb-4">Entonnoir de progression</h2>
         {total === 0 ? (
-          <p className="text-sm text-gray-400">Aucune donnée</p>
+          <p className="text-sm text-ink-subtle">Aucune donnée</p>
         ) : (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2">
             {FUNNEL_STATUSES.map((s, i) => {
@@ -173,8 +175,8 @@ export default function StatsView({
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
-                  <span className="text-sm font-bold text-gray-900">{count}</span>
-                  <div className="w-full bg-gray-100 rounded-lg overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
+                  <span className="text-sm font-bold text-ink">{count}</span>
+                  <div className="w-full bg-surface-sunken rounded-lg overflow-hidden h-20 sm:h-auto sm:w-full sm:min-h-[20px]">
                     <div
                       className={`${STATUS_COLORS[s]} rounded-lg transition-all`}
                       style={{ height: `${Math.max(pct, 4)}%`, minHeight: "8px" }}
@@ -183,9 +185,9 @@ export default function StatsView({
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_BADGE[s]}`}>
                     {STATUS_LABELS[s]}
                   </span>
-                  <span className="text-xs text-gray-400">{pct}%</span>
+                  <span className="text-xs text-ink-subtle">{pct}%</span>
                   {i < FUNNEL_STATUSES.length - 1 && (
-                    <span className="hidden sm:block text-gray-300 text-lg absolute">→</span>
+                    <span className="hidden sm:block text-ink-subtle text-lg absolute">→</span>
                   )}
                 </div>
               );
@@ -195,10 +197,10 @@ export default function StatsView({
       </div>
 
       {/* Tendance mensuelle */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">Demandes par mois (12 derniers mois)</h2>
+      <div className="bg-surface rounded-xl border border-line p-5">
+        <h2 className="font-semibold text-ink mb-4">Demandes par mois (12 derniers mois)</h2>
         {byMonth.every((m) => m.count === 0) ? (
-          <p className="text-sm text-gray-400">Aucune demande sur la période</p>
+          <p className="text-sm text-ink-subtle">Aucune demande sur la période</p>
         ) : (
           <div className="flex items-end gap-1.5 h-28">
             {byMonth.map((m) => {
@@ -207,12 +209,12 @@ export default function StatsView({
               const label = `${MONTH_NAMES[parseInt(month) - 1]} ${year.slice(2)}`;
               return (
                 <div key={m.month} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                  <span className="text-xs text-gray-600 font-medium">{m.count > 0 ? m.count : ""}</span>
+                  <span className="text-xs text-ink-muted font-medium">{m.count > 0 ? m.count : ""}</span>
                   <div
-                    className="w-full bg-icc-violet rounded-t-md transition-all"
+                    className="w-full bg-brand rounded-t-md transition-all"
                     style={{ height: `${height}%`, minHeight: m.count > 0 ? "4px" : "0" }}
                   />
-                  <span className="text-[10px] text-gray-400 rotate-0 leading-tight text-center">{label}</span>
+                  <span className="text-[10px] text-ink-subtle rotate-0 leading-tight text-center">{label}</span>
                 </div>
               );
             })}
@@ -223,10 +225,10 @@ export default function StatsView({
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Par famille */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 lg:col-span-1">
-          <h2 className="font-semibold text-gray-900 mb-4">Par famille (top 10)</h2>
+        <div className="bg-surface rounded-xl border border-line p-5 lg:col-span-1">
+          <h2 className="font-semibold text-ink mb-4">Par famille (top 10)</h2>
           {byFamily.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune affectation</p>
+            <p className="text-sm text-ink-subtle">Aucune affectation</p>
           ) : (
             <BarChart
               data={byFamily.map((f) => ({ label: f.familyName, count: f.count }))}
@@ -236,8 +238,8 @@ export default function StatsView({
         </div>
 
         {/* Par tranche d'âge */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Tranche d&apos;âge</h2>
+        <div className="bg-surface rounded-xl border border-line p-5">
+          <h2 className="font-semibold text-ink mb-4">Tranche d&apos;âge</h2>
           <BarChart
             data={byAgeRange.map((r) => ({ label: AGE_LABELS[r.ageRange] ?? r.ageRange, count: r.count }))}
             total={total}
@@ -245,9 +247,9 @@ export default function StatsView({
         </div>
 
         {/* Par statut église + soins pastoraux */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
+        <div className="bg-surface rounded-xl border border-line p-5 space-y-5">
           <div>
-            <h2 className="font-semibold text-gray-900 mb-4">Situation à l&apos;église</h2>
+            <h2 className="font-semibold text-ink mb-4">Situation à l&apos;église</h2>
             <BarChart
               data={byChurchStatus.map((r) => ({
                 label: CHURCH_STATUS_LABELS[r.churchStatus] ?? r.churchStatus,
@@ -256,11 +258,11 @@ export default function StatsView({
               total={total}
             />
           </div>
-          <div className="border-t border-gray-100 pt-4">
-            <p className="text-xs text-gray-500 font-medium mb-1">Soins pastoraux demandés</p>
+          <div className="border-t border-line pt-4">
+            <p className="text-xs text-ink-muted font-medium mb-1">Soins pastoraux demandés</p>
             <div className="flex items-end gap-2">
-              <span className="text-2xl font-bold text-amber-600">{pastoralCare}</span>
-              <span className="text-sm text-gray-400 mb-0.5">
+              <span className="text-2xl font-bold text-warning">{pastoralCare}</span>
+              <span className="text-sm text-ink-subtle mb-0.5">
                 {total > 0 ? `(${Math.round((pastoralCare / total) * 100)}% des demandes)` : ""}
               </span>
             </div>
@@ -270,13 +272,13 @@ export default function StatsView({
 
       {/* Statuts abandonnés en bas */}
       {abandoned > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-danger-soft border border-danger/30 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-danger-soft flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-sm text-red-700">
+          <p className="text-sm text-danger">
             <span className="font-semibold">{abandoned} demande{abandoned > 1 ? "s" : ""} abandonnée{abandoned > 1 ? "s" : ""}</span>
             {" "}— répartition par motif ci-dessous.
           </p>
@@ -284,8 +286,8 @@ export default function StatsView({
       )}
 
       {abandoned > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Motifs d&apos;abandon</h2>
+        <div className="bg-surface rounded-xl border border-line p-5">
+          <h2 className="font-semibold text-ink mb-4">Motifs d&apos;abandon</h2>
           <BarChart
             data={[...byAbandonReason]
               .sort((a, b) => b.count - a.count)

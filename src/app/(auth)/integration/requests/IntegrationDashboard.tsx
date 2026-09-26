@@ -16,14 +16,14 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:      "bg-amber-100 text-amber-800",
-  WAITING_RECONTACT: "bg-orange-100 text-orange-800",
-  WAITING_MISSION:   "bg-orange-100 text-orange-800",
-  ASSIGNED:       "bg-blue-100 text-blue-800",
-  CONTACTED:      "bg-indigo-100 text-indigo-800",
-  WHATSAPP_ADDED: "bg-green-100 text-green-700",
-  INTEGRATED:     "bg-emerald-100 text-emerald-800",
-  ABANDONED:      "bg-gray-100 text-gray-500",
+  SUBMITTED:      "bg-warning-soft text-warning",
+  WAITING_RECONTACT: "bg-warning-soft text-warning",
+  WAITING_MISSION:   "bg-warning-soft text-warning",
+  ASSIGNED:       "bg-info-soft text-info",
+  CONTACTED:      "bg-info-soft text-info",
+  WHATSAPP_ADDED: "bg-success-soft text-success",
+  INTEGRATED:     "bg-success-soft text-success",
+  ABANDONED:      "bg-surface-sunken text-ink-muted",
 };
 
 const STATUS_FILTERS = [
@@ -175,11 +175,11 @@ export default function IntegrationDashboard({
     <div className="space-y-5">
       {/* Bandeau "À traiter" */}
       {actionable.length > 0 && (
-        <div className="bg-icc-violet/5 border border-icc-violet/20 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-icc-violet flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-icc-violet animate-pulse" />
+        <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
             À traiter
-            <span className="text-icc-violet/60 font-normal">({actionable.length})</span>
+            <span className="text-brand-text/60 font-normal">({actionable.length})</span>
           </h2>
           <div className="space-y-1.5">
             {actionable.slice(0, 6).map((r) => {
@@ -189,29 +189,29 @@ export default function IntegrationDashboard({
                 <Link
                   key={r.id}
                   href={`/integration/requests/${r.id}`}
-                  className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-gray-100 hover:border-icc-violet/40 hover:shadow-sm transition-all group"
+                  className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-brand/40 hover:shadow-card transition-all group"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">
+                    <p className="font-medium text-ink text-sm">
                       {r.firstName} {r.lastName}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-ink-subtle mt-0.5">
                       {STATUS_LABELS[r.status]}
                       {r.assignedFamilyName ? ` · ${r.assignedFamilyName}` : ""}
                       {" · "}
-                      <span className={days >= 7 ? "text-amber-600 font-medium" : ""}>
+                      <span className={days >= 7 ? "text-warning font-medium" : ""}>
                         {days}j
                       </span>
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-icc-violet bg-icc-violet/10 px-2.5 py-1 rounded-full group-hover:bg-icc-violet group-hover:text-white transition-colors whitespace-nowrap">
+                  <span className="shrink-0 text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full group-hover:bg-brand group-hover:text-on-brand transition-colors whitespace-nowrap">
                     {action} →
                   </span>
                 </Link>
               );
             })}
             {actionable.length > 6 && (
-              <p className="text-xs text-gray-400 text-center pt-0.5">
+              <p className="text-xs text-ink-subtle text-center pt-0.5">
                 + {actionable.length - 6} autres demandes à traiter
               </p>
             )}
@@ -221,26 +221,26 @@ export default function IntegrationDashboard({
 
       {/* Bandeau "À relancer" : visible tant que la relance n'est pas consignée (spec 051) */}
       {toRelance.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-orange-500" />
+        <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-warning flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-warning" />
             À relancer
-            <span className="text-orange-700/60 font-normal">({toRelance.length})</span>
+            <span className="text-warning/60 font-normal">({toRelance.length})</span>
           </h2>
           <div className="space-y-1.5">
             {toRelance.map((r) => (
               <Link
                 key={r.id}
                 href={`/integration/requests/${r.id}`}
-                className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-gray-100 hover:border-orange-300 hover:shadow-sm transition-all"
+                className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-warning/30 hover:shadow-card transition-all"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900 text-sm">
+                  <p className="font-medium text-ink text-sm">
                     {r.firstName} {r.lastName}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{STATUS_LABELS[r.status]}</p>
+                  <p className="text-xs text-ink-subtle mt-0.5">{STATUS_LABELS[r.status]}</p>
                 </div>
-                <span className="shrink-0 text-xs font-medium text-orange-800 bg-orange-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                <span className="shrink-0 text-xs font-medium text-warning bg-warning-soft px-2.5 py-1 rounded-full whitespace-nowrap">
                   {relanceTarget(r.status)} →
                 </span>
               </Link>
@@ -260,14 +260,14 @@ export default function IntegrationDashboard({
               onClick={() => setStatusFilter(f.value)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                 active
-                  ? "bg-icc-violet text-white border-icc-violet"
-                  : "border-gray-200 text-gray-600 hover:border-icc-violet hover:text-icc-violet"
+                  ? "bg-brand text-on-brand border-brand"
+                  : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
               }`}
             >
               {f.label}
               <span
                 className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  active ? "bg-white/20" : "bg-gray-100 text-gray-500"
+                  active ? "bg-surface/20" : "bg-surface-sunken text-ink-muted"
                 }`}
               >
                 {count}
@@ -284,10 +284,10 @@ export default function IntegrationDashboard({
           placeholder="Rechercher par nom, téléphone, famille…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-80 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full sm:w-80 border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
         />
         {isScoped && (
-          <p className="text-sm text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 self-start">
+          <p className="text-sm text-ink-muted bg-info-soft border border-info/30 rounded-lg px-3 py-2 self-start">
             Affichage limité aux demandes de votre famille.
           </p>
         )}
@@ -300,23 +300,23 @@ export default function IntegrationDashboard({
             >
               {exporting ? "Export…" : `Exporter (${filtered.length})`}
             </Button>
-            {exportError && <p className="text-xs text-icc-rouge">{exportError}</p>}
+            {exportError && <p className="text-xs text-danger">{exportError}</p>}
           </div>
         )}
       </div>
 
       {/* Liste */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
+        <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
           Aucune demande{statusFilter ? " avec ce statut" : ""}.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-surface rounded-xl border border-line overflow-hidden">
           {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+                <tr className="border-b border-line bg-surface-sunken text-left text-xs text-ink-muted uppercase tracking-wide">
                   <th className="px-4 py-3 font-medium">Personne</th>
                   <th className="px-4 py-3 font-medium">Statut</th>
                   <th className="px-4 py-3 font-medium">Famille · Berger</th>
@@ -324,7 +324,7 @@ export default function IntegrationDashboard({
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {filtered.map((r) => {
                   const days = daysSince(r.submittedAt);
                   const isYours = r.assignedBerger?.id === currentUserId;
@@ -332,40 +332,40 @@ export default function IntegrationDashboard({
                   return (
                     <tr
                       key={r.id}
-                      className={`hover:bg-gray-50 transition-colors ${isYours ? "bg-icc-violet/[0.02]" : ""}`}
+                      className={`hover:bg-surface-sunken transition-colors ${isYours ? "bg-brand/[0.02]" : ""}`}
                     >
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-ink">
                           {r.firstName} {r.lastName}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-0.5">
                           {isYours && (
-                            <span className="text-xs text-icc-violet bg-icc-violet/10 px-1.5 py-0.5 rounded font-medium">
+                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">
                               Vous
                             </span>
                           )}
                           {r.pastoralCareRequested && (
-                            <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-warning bg-warning-soft px-1.5 py-0.5 rounded">
                               Soin pastoral
                             </span>
                           )}
                           {r.salvationCall && (
-                            <span className="text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded">
                               Appel au salut
                             </span>
                           )}
                           {r.relanceDue && (
-                            <span className="text-xs text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded font-medium">
+                            <span className="text-xs text-warning bg-warning-soft px-1.5 py-0.5 rounded font-medium">
                               À relancer
                             </span>
                           )}
                           {isIntegration && isUnmatchedAddress(r) && (
-                            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-ink-muted bg-surface-sunken px-1.5 py-0.5 rounded">
                               Adresse non rattachée
                             </span>
                           )}
                           {r.status === "ABANDONED" && r.abandonReasonCode && (
-                            <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-ink-muted bg-surface-sunken px-1.5 py-0.5 rounded">
                               {ABANDON_REASON_LABELS[r.abandonReasonCode] ?? r.abandonReasonCode}
                             </span>
                           )}
@@ -374,28 +374,28 @@ export default function IntegrationDashboard({
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"
+                            STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"
                           }`}
                         >
                           {STATUS_LABELS[r.status] ?? r.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">
+                      <td className="px-4 py-3 text-xs text-ink-muted">
                         {r.assignedFamilyName ? (
                           <div>
-                            <p className="font-medium text-gray-700">{r.assignedFamilyName}</p>
+                            <p className="font-medium text-ink-muted">{r.assignedFamilyName}</p>
                             {r.assignedBerger?.name && (
-                              <p className="text-gray-400">{r.assignedBerger.name}</p>
+                              <p className="text-ink-subtle">{r.assignedBerger.name}</p>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-300">—</span>
+                          <span className="text-ink-subtle">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`text-xs ${
-                            days >= 7 ? "text-amber-600 font-semibold" : "text-gray-400"
+                            days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"
                           }`}
                         >
                           {days}j
@@ -405,14 +405,14 @@ export default function IntegrationDashboard({
                         {nextAction ? (
                           <Link
                             href={`/integration/requests/${r.id}`}
-                            className="text-xs font-medium text-icc-violet bg-icc-violet/10 px-2.5 py-1 rounded-full hover:bg-icc-violet hover:text-white transition-colors whitespace-nowrap"
+                            className="text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full hover:bg-brand hover:text-on-brand transition-colors whitespace-nowrap"
                           >
                             {nextAction} →
                           </Link>
                         ) : (
                           <Link
                             href={`/integration/requests/${r.id}`}
-                            className="text-xs font-medium text-icc-violet border border-icc-violet/40 px-2.5 py-1 rounded-full hover:bg-icc-violet hover:text-white transition-colors whitespace-nowrap"
+                            className="text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand hover:text-on-brand transition-colors whitespace-nowrap"
                           >
                             Voir →
                           </Link>
@@ -426,7 +426,7 @@ export default function IntegrationDashboard({
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden divide-y divide-gray-100">
+          <div className="md:hidden divide-y divide-line">
             {filtered.map((r) => {
               const days = daysSince(r.submittedAt);
               const isYours = r.assignedBerger?.id === currentUserId;
@@ -435,16 +435,16 @@ export default function IntegrationDashboard({
                 <Link
                   key={r.id}
                   href={`/integration/requests/${r.id}`}
-                  className="block px-4 py-3 hover:bg-gray-50 transition-colors"
+                  className="block px-4 py-3 hover:bg-surface-sunken transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-ink">
                           {r.firstName} {r.lastName}
                         </p>
                         {isYours && (
-                          <span className="text-xs text-icc-violet bg-icc-violet/10 px-1.5 py-0.5 rounded font-medium">
+                          <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">
                             Vous
                           </span>
                         )}
@@ -452,34 +452,34 @@ export default function IntegrationDashboard({
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         <span
                           className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"
+                            STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"
                           }`}
                         >
                           {STATUS_LABELS[r.status] ?? r.status}
                         </span>
                         {nextAction && (
-                          <span className="text-xs font-medium text-icc-violet bg-icc-violet/10 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-medium text-brand-text bg-brand-soft px-2 py-0.5 rounded-full">
                             {nextAction} →
                           </span>
                         )}
                         {r.relanceDue && (
-                          <span className="text-xs font-medium text-orange-800 bg-orange-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-medium text-warning bg-warning-soft px-2 py-0.5 rounded-full">
                             À relancer
                           </span>
                         )}
                         {isIntegration && isUnmatchedAddress(r) && (
-                          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs text-ink-muted bg-surface-sunken px-2 py-0.5 rounded-full">
                             Adresse non rattachée
                           </span>
                         )}
                       </div>
                       {r.assignedFamilyName && (
-                        <p className="text-xs text-gray-500 mt-1">{r.assignedFamilyName}</p>
+                        <p className="text-xs text-ink-muted mt-1">{r.assignedFamilyName}</p>
                       )}
                     </div>
                     <span
                       className={`text-xs shrink-0 mt-0.5 ${
-                        days >= 7 ? "text-amber-600 font-semibold" : "text-gray-400"
+                        days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"
                       }`}
                     >
                       {days}j
@@ -492,7 +492,7 @@ export default function IntegrationDashboard({
         </div>
       )}
 
-      <p className="text-xs text-gray-400 text-right">
+      <p className="text-xs text-ink-subtle text-right">
         {filtered.length} demande{filtered.length !== 1 ? "s" : ""}
       </p>
     </div>

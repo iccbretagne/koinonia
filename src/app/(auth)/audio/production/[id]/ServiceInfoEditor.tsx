@@ -96,7 +96,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
     return (
       <div className="mb-6">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-ink">
             {service.title ||
               service.planningEventTitle ||
               new Date(service.serviceDate).toLocaleDateString("fr-FR")}
@@ -105,7 +105,7 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
             Modifier
           </Button>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-ink-muted">
           {new Date(service.serviceDate).toLocaleDateString("fr-FR")}
           {" · "}
           {getEventTypeLabel(service.type)}
@@ -118,8 +118,8 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
   }
 
   return (
-    <div className="mb-6 border-2 border-gray-200 rounded-lg p-4 space-y-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+    <div className="mb-6 border border-line rounded-lg p-4 space-y-3">
+      {error && <p className="text-sm text-danger">{error}</p>}
       <Input label="Date du culte" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <Select
         label="Événement"

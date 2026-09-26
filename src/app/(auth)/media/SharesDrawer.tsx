@@ -80,23 +80,23 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
 
   return (
     <Modal open={open} onClose={onClose} title="Partages actifs">
-      {error && <p className="text-icc-rouge text-sm mb-3">{error}</p>}
-      {shares === null && !error && <p className="text-gray-500 text-sm">Chargement…</p>}
-      {shares?.length === 0 && <p className="text-gray-500 text-sm">Aucun lien de partage actif.</p>}
+      {error && <p className="text-danger text-sm mb-3">{error}</p>}
+      {shares === null && !error && <p className="text-ink-muted text-sm">Chargement…</p>}
+      {shares?.length === 0 && <p className="text-ink-muted text-sm">Aucun lien de partage actif.</p>}
       <ul className="flex flex-col gap-3">
         {shares?.map((share) => (
-          <li key={share.id} className="border-2 border-gray-200 rounded-lg p-3 flex flex-col gap-2">
+          <li key={share.id} className="border border-line rounded-lg p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-sm text-gray-900">
+              <span className="font-medium text-sm text-ink">
                 {share.label || TYPE_LABELS[share.type] || share.type}
               </span>
-              <span className="text-xs text-gray-500">{share.usageCount} utilisation(s)</span>
+              <span className="text-xs text-ink-muted">{share.usageCount} utilisation(s)</span>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-ink-muted">
               {share.sources.map((s) => s.name).join(", ") || "Sources indisponibles"}
             </p>
             {share.expiresAt && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-muted">
                 Expire le {new Date(share.expiresAt).toLocaleDateString("fr-FR")}
               </p>
             )}

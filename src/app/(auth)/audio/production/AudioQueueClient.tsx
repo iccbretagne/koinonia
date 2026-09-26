@@ -38,11 +38,11 @@ const STATUS_LABELS: Record<AudioServiceRow["status"], string> = {
 };
 
 const STATUS_BADGE: Record<AudioServiceRow["status"], string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  PENDING_REVIEW: "bg-amber-100 text-amber-800",
-  READY: "bg-icc-bleu/10 text-icc-bleu",
-  PUBLISHED: "bg-green-100 text-green-800",
-  UNPUBLISHED: "bg-red-100 text-red-800",
+  DRAFT: "bg-surface-sunken text-ink-muted",
+  PENDING_REVIEW: "bg-warning-soft text-warning",
+  READY: "bg-info/10 text-info",
+  PUBLISHED: "bg-success-soft text-success",
+  UNPUBLISHED: "bg-danger-soft text-danger",
 };
 
 interface DayEvent {
@@ -110,7 +110,7 @@ function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly o
   return (
     <Modal open={open} onClose={onClose} title="Déposer un enregistrement">
       <div className="space-y-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <Select
           label="Événement"
@@ -292,7 +292,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
         <Button onClick={() => setModalOpen(true)}>Déposer un enregistrement</Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-3 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-3 mb-3 text-sm text-ink-muted">
         <span>
           {visible.length} enregistrement{visible.length > 1 ? "s" : ""}
         </span>
@@ -311,10 +311,10 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
             header: "Enregistrement",
             accessor: (row) => (
               <div>
-                <div className="font-medium text-gray-900">
+                <div className="font-medium text-ink">
                   {row.title || row.eventTitle || new Date(row.serviceDate).toLocaleDateString("fr-FR")}
                 </div>
-                {row.speaker && <div className="text-xs text-gray-500">{row.speaker}</div>}
+                {row.speaker && <div className="text-xs text-ink-muted">{row.speaker}</div>}
               </div>
             ),
           },

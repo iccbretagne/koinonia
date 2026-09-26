@@ -14,7 +14,7 @@ export default async function IntegrationRequestDetailPage({
   const { id } = await params;
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const req = await prisma.familyIntegrationRequest.findUnique({
     where: { id },
@@ -58,11 +58,11 @@ export default async function IntegrationRequestDetailPage({
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/integration/requests" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+        <Link href="/integration/requests" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
           ← Demandes
         </Link>
-        <span className="text-gray-300">/</span>
-        <span className="text-sm text-gray-600 font-medium">{req.firstName} {req.lastName}</span>
+        <span className="text-ink-subtle">/</span>
+        <span className="text-sm text-ink-muted font-medium">{req.firstName} {req.lastName}</span>
       </div>
       <RequestDetail
         request={req}

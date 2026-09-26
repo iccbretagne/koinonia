@@ -27,8 +27,8 @@ export default async function MediaRequestsPage() {
   if (mediaDeptIds.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Demandes visuels</h1>
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+        <h1 className="text-2xl font-bold text-ink mb-4">Demandes visuels</h1>
+        <div className="p-4 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
           Aucun département n&apos;est configuré comme <strong>Production Média</strong>.{" "}
           <a href="/admin/departments/functions" className="underline">
             Configurer maintenant
@@ -72,9 +72,9 @@ export default async function MediaRequestsPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Demandes visuels</h1>
+        <h1 className="text-2xl font-bold text-ink">Demandes visuels</h1>
         {pending > 0 && (
-          <span className="bg-icc-violet text-white text-sm font-bold px-2.5 py-1 rounded-full">
+          <span className="bg-brand text-on-brand text-sm font-bold px-2.5 py-1 rounded-full">
             {pending}
           </span>
         )}

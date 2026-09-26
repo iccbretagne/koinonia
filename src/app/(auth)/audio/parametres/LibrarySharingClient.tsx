@@ -95,11 +95,11 @@ export default function LibrarySharingClient({
   }
 
   return (
-    <div className="mt-8 pt-6 border-t-2 border-gray-100">
-      <h2 className="text-lg font-semibold text-gray-900 mb-2">Partage de ma bibliothèque</h2>
-      <p className="text-sm text-gray-500 mb-4">
+    <div className="mt-8 pt-6 border-t-2 border-line">
+      <h2 className="text-lg font-semibold text-ink mb-2">Partage de ma bibliothèque</h2>
+      <p className="text-sm text-ink-muted mb-4">
         Votre identifiant public :{" "}
-        <span className="font-mono font-semibold text-icc-violet">{ownSlug}</span>. Communiquez-le
+        <span className="font-mono font-semibold text-brand-text">{ownSlug}</span>. Communiquez-le
         à une église qui souhaite vous ouvrir sa bibliothèque — vos membres verront alors ses
         cultes publiés. Pour ouvrir la vôtre à une autre église, saisissez ci-dessous
         l&apos;identifiant qu&apos;elle vous a communiqué.
@@ -123,17 +123,17 @@ export default function LibrarySharingClient({
         </Button>
       </div>
 
-      {error && <p className="text-sm text-icc-rouge mb-4">{error}</p>}
+      {error && <p className="text-sm text-danger mb-4">{error}</p>}
 
       {shares.length === 0 ? (
-        <p className="text-sm text-gray-400">Aucune église n&apos;a accès à votre bibliothèque pour l&apos;instant.</p>
+        <p className="text-sm text-ink-subtle">Aucune église n&apos;a accès à votre bibliothèque pour l&apos;instant.</p>
       ) : (
-        <ul className="divide-y divide-gray-100 border-2 border-gray-100 rounded-lg overflow-hidden">
+        <ul className="divide-y divide-line border border-line rounded-lg overflow-hidden">
           {shares.map((s) => (
             <li key={s.id} className="flex items-center justify-between px-4 py-3">
               <div>
-                <p className="font-medium text-gray-900">{s.churchName}</p>
-                <p className="text-xs text-gray-400">{s.churchSlug}</p>
+                <p className="font-medium text-ink">{s.churchName}</p>
+                <p className="text-xs text-ink-subtle">{s.churchSlug}</p>
               </div>
               <Button variant="danger" size="sm" onClick={() => setRevokeTarget(s)}>
                 Révoquer
@@ -148,7 +148,7 @@ export default function LibrarySharingClient({
         onClose={() => setConfirmChurchName(null)}
         title="Confirmer l'ouverture de la bibliothèque"
       >
-        <p className="text-sm text-gray-700 mb-6">
+        <p className="text-sm text-ink-muted mb-6">
           Vous êtes sur le point d&apos;ouvrir votre bibliothèque à{" "}
           <span className="font-semibold">{confirmChurchName}</span>. Ses membres pourront
           réécouter tous vos cultes publiés. Confirmez-vous ?
@@ -168,7 +168,7 @@ export default function LibrarySharingClient({
         onClose={() => setRevokeTarget(null)}
         title="Révoquer ce partage"
       >
-        <p className="text-sm text-gray-700 mb-6">
+        <p className="text-sm text-ink-muted mb-6">
           <span className="font-semibold">{revokeTarget?.churchName}</span> perdra
           immédiatement l&apos;accès à votre bibliothèque. Confirmez-vous ?
         </p>

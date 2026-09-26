@@ -71,7 +71,7 @@ export default async function AudioLibraryPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">(re)Écouter</h1>
+      <h1 className="text-2xl font-bold text-ink mb-4">(re)Écouter</h1>
 
       <LibraryFiltersClient
         speakers={speakers}
@@ -103,13 +103,13 @@ export default async function AudioLibraryPage({
         <div className="text-center py-16 px-4">
           {hasActiveFilters ? (
             <>
-              <p className="text-gray-500 mb-4">Aucun résultat pour cette recherche.</p>
+              <p className="text-ink-muted mb-4">Aucun résultat pour cette recherche.</p>
               <Link href="/audio/ecouter">
                 <Button variant="secondary" size="sm">Voir tous les enregistrements</Button>
               </Link>
             </>
           ) : (
-            <p className="text-gray-500">Aucun enregistrement publié pour l&apos;instant.</p>
+            <p className="text-ink-muted">Aucun enregistrement publié pour l&apos;instant.</p>
           )}
         </div>
       ) : (
@@ -118,14 +118,16 @@ export default async function AudioLibraryPage({
             <li key={s.id}>
               <Link
                 href={`/audio/ecouter/${s.id}`}
-                className="block bg-white rounded-xl shadow border-2 border-gray-100 p-4 hover:border-icc-violet/40 transition-colors h-full"
+                className="block bg-surface rounded-xl shadow-card border border-line p-4 hover:border-brand/40 transition-colors h-full"
               >
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet shrink-0">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-text shrink-0">
                       {getEventTypeLabel(s.type)}
                     </span>
                     {s.churchId !== churchId && (
+                      // Couleur de l'église choisie par chaque église (Church.primaryColor) : aplat
+                      // inline volontaire, cf. exceptions de docs/design-system/migration.md.
                       <span
                         className="text-xs font-medium px-2 py-0.5 rounded-full text-white truncate"
                         style={{ backgroundColor: s.churchPrimaryColor }}
@@ -134,18 +136,18 @@ export default async function AudioLibraryPage({
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400 shrink-0">
+                  <span className="text-xs text-ink-subtle shrink-0">
                     {new Date(s.serviceDate).toLocaleDateString("fr-FR")}
                   </span>
                 </div>
-                <p className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                <p className="font-semibold text-ink mb-1 line-clamp-2">
                   {s.title || "Enregistrement du culte"}
                 </p>
-                {s.speaker && <p className="text-sm text-gray-500 mb-2">{s.speaker}</p>}
+                {s.speaker && <p className="text-sm text-ink-muted mb-2">{s.speaker}</p>}
                 {s.series && (
-                  <p className="text-xs text-icc-violet mb-2">Série : {s.series}</p>
+                  <p className="text-xs text-brand-text mb-2">Série : {s.series}</p>
                 )}
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ink-subtle">
                   {s.segmentCount} séquence{s.segmentCount > 1 ? "s" : ""} · {formatDuration(s.totalDurationMs)}
                 </p>
               </Link>
