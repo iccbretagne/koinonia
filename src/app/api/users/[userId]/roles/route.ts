@@ -4,6 +4,8 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
+import { ASSIGNABLE_BY_MINISTER, PRIVILEGED_ROLES } from "@/lib/roles";
+import type { Role } from "@/generated/prisma/client";
 import { z } from "zod";
 
 // { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
@@ -47,13 +49,6 @@ const roleInclude = {
   },
 } as const;
 
-const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as const;
-
-// Rôles rattachables à un ministère ou un département — les seuls qu'un Ministre au
-// périmètre restreint peut attribuer/retirer (spec 031, issue #467). Tout le reste
-// (REPORTER, ACCOUNTANT, DISCIPLE_MAKER, PASTORAL_CARE_REFERENT) est transverse à l'église.
-const MINISTRY_SCOPED_ROLES = ["MINISTER", "DEPARTMENT_HEAD", "STAR"] as const;
-
 type MinistryScope = ReturnType<typeof getUserMinistryScope>;
 
 /**
@@ -71,7 +66,7 @@ function assertRoleWithinMinistryScope(
 ): void {
   if (!scope.scoped) return;
 
-  if (!MINISTRY_SCOPED_ROLES.includes(role as typeof MINISTRY_SCOPED_ROLES[number])) {
+  if (!ASSIGNABLE_BY_MINISTER.includes(role as Role)) {
     throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
   }
   if (role === "MINISTER" && (!ministryId || !scope.ministryIds.includes(ministryId))) {
@@ -113,7 +108,7 @@ export async function POST(
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
-    if (PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+    if (PRIVILEGED_ROLES.includes(role as Role)) {
       if (!session.user.isSuperAdmin) {
         throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
       }
@@ -348,7 +343,7 @@ export async function DELETE(
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     // Block deletion of privileged roles by non-super-admins
-    if (PRIVILEGED_ROLES.includes(role as typeof PRIVILEGED_ROLES[number])) {
+    if (PRIVILEGED_ROLES.includes(role as Role)) {
       if (!delSession.user.isSuperAdmin) {
         throw new ApiError(403, "Droits insuffisants pour supprimer ce rôle");
       }

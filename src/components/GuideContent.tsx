@@ -2,38 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
+import type { Role } from "@/generated/prisma/client";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "PASTORAL_CARE_REFERENT" | "ACCOUNTANT";
+type RoleKey = Role;
 
 interface GuideContentProps {
   readonly defaultRole: RoleKey;
 }
-
-const ROLE_LABELS: Record<RoleKey, string> = {
-  SUPER_ADMIN: "Super Admin",
-  ADMIN: "Admin",
-  SECRETARY: "Secrétaire",
-  MINISTER: "Ministre",
-  DEPARTMENT_HEAD: "Resp. Département",
-  DISCIPLE_MAKER: "Faiseur de Disciples",
-  REPORTER: "Reporter (Comptes rendus)",
-  STAR: "STAR (Membre)",
-  PASTORAL_CARE_REFERENT: "Référent soins pastoraux",
-  ACCOUNTANT: "Comptable",
-};
-
-const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
-  SUPER_ADMIN: "Accès complet à toutes les fonctionnalités et toutes les églises.",
-  ADMIN: "Gestion complète d'une église : planning, membres, événements, discipolat et comptes rendus.",
-  SECRETARY: "Vision globale en lecture avec gestion des événements, discipolat et comptes rendus. Ces droits sont aussi accordés à toute personne membre d'un département portant la fonction Secrétariat, sans que le rôle lui soit attribué.",
-  MINISTER: "Gestion du planning et des membres pour les départements de son ministère.",
-  DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés. Accès au discipolat.",
-  DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",
-  REPORTER: "Accès en lecture et écriture aux comptes rendus d'événements et statistiques.",
-  STAR: "Membre actif (STAR) : consulte son planning personnel et celui de ses départements en lecture seule.",
-  PASTORAL_CARE_REFERENT: "Qualification des demandes de RDV pastoral : valide ou rejette, assigne au bon profil.",
-  ACCOUNTANT: "Comptable : gestion des demandes financières (notes de frais, avances de budget), confirmation des paiements.",
-};
 
 type AccessLevel = "edit" | "read" | "none";
 
@@ -505,7 +481,7 @@ const FEATURES: Feature[] = [
   },
 ];
 
-const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "PASTORAL_CARE_REFERENT", "ACCOUNTANT"];
+const ROLES: readonly RoleKey[] = ALL_ROLES;
 
 function AccessBadge({ level }: { readonly level: AccessLevel }) {
   switch (level) {

@@ -26,6 +26,7 @@ describe("AccessPage — étanchéité inter-églises (spec 031, T26)", () => {
     vi.clearAllMocks();
     mockGetCurrentChurchId.mockResolvedValue("church-1");
     prismaMock.user.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
     prismaMock.memberLinkRequest.findMany.mockResolvedValue([]);
     prismaMock.ministry.findMany.mockResolvedValue([]);
   });

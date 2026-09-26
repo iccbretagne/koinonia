@@ -47,8 +47,9 @@ Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffi
 |---|---|
 | Créer et gérer les STAR | Communauté → **STAR** |
 | Valider les demandes d'accès | Configuration → Accès & rôles, onglet **Demandes** |
-| Nommer ministres, responsables et adjoints | Onglet **Rôles** |
-| Attribuer un rôle fonctionnel | Onglet **Rôles transverses** |
+| Chercher une personne et voir tous ses accès (rôles + hérités) | Onglet **Personnes**, puis sa fiche |
+| Nommer ministres, responsables et adjoints | Onglet **Par rôle**, ou depuis la fiche de la personne |
+| Attribuer un rôle fonctionnel (Comptable, Reporter, Référent…) | Onglet **Par rôle**, ou depuis la fiche de la personne |
 
 ## Les règles à connaître
 

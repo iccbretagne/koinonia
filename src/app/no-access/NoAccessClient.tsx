@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 
 type Church = { id: string; name: string };
 
@@ -40,12 +41,14 @@ type Candidate = {
 
 type Step = "reconcile" | "identity" | "match" | "department" | "role" | "confirm" | "pending";
 
+// DEPUTY n'est pas un rôle d'église (Role) — c'est un attribut (isDeputy) d'un DEPARTMENT_HEAD —
+// d'où ce libellé propre, les autres venant de la source unique `@/lib/roles` (spec 054).
 const ROLE_LABELS: Record<NonNullable<RequestedRole>, string> = {
-  DEPARTMENT_HEAD: "Responsable de département",
+  DEPARTMENT_HEAD: ROLE_LABELS_BASE.DEPARTMENT_HEAD,
   DEPUTY: "Adjoint de département",
-  MINISTER: "Ministre",
-  DISCIPLE_MAKER: "Faiseur de disciples",
-  REPORTER: "Reporter (accès comptes rendus)",
+  MINISTER: ROLE_LABELS_BASE.MINISTER,
+  DISCIPLE_MAKER: ROLE_LABELS_BASE.DISCIPLE_MAKER,
+  REPORTER: ROLE_LABELS_BASE.REPORTER,
 };
 
 const TRANSVERSE_ROLES: NonNullable<RequestedRole>[] = ["DISCIPLE_MAKER", "REPORTER"];

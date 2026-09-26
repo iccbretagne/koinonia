@@ -181,7 +181,47 @@ Un utilisateur peut avoir **plusieurs rôles** dans **plusieurs églises** via l
 - **Super Admin** : automatique à la première connexion si l'email est dans `SUPER_ADMIN_EMAILS`
 - **Autres rôles** : via l'interface admin (`/admin/users`), avec affectation optionnelle de ministère (MINISTER) ou départements (DEPARTMENT_HEAD)
 - **isDeputy** : la table `user_departments` (liaison `DEPARTMENT_HEAD` ↔ départements) dispose d'un flag `isDeputy` pour distinguer le responsable principal du responsable adjoint (deputy)
-- **STAR** : attribué depuis `/admin/access` (onglet STAR) ; les départements visibles sont dérivés automatiquement depuis `MemberUserLink → Member → MemberDepartment` — aucune entrée `user_departments` n'est créée
+- **STAR** : attribué depuis la fiche personne ou la page du rôle STAR dans `/admin/access` ; les
+  départements visibles sont dérivés automatiquement depuis `MemberUserLink → Member →
+  MemberDepartment` — aucune entrée `user_departments` n'est créée
+
+### Gestion des accès (`/admin/access`, spec 054)
+
+Trois onglets (`AccessTabs`), garde `access:manage` :
+
+- **Personnes** (`PeopleList`) — recherche par nom/email, rôles et nombre d'accès hérités par
+  personne (`loadAccessPeople`/`listInheritedAccess`, `src/lib/access-overview.ts`), lien vers la
+  fiche de chacune
+- **Par rôle** (`RolesOverview`) — un bloc par catégorie de rôle (`ROLE_CATEGORY` de
+  `src/lib/roles.ts`), chaque rôle avec sa description et son nombre de détenteurs ; masque les
+  rôles transverses à un Ministre au périmètre restreint
+- **Demandes** (`RequestsPanel`) — approbation/refus/reconsidération des demandes d'accès
+  (comportement inchangé, extrait à l'identique de l'ancien `AccessClient.tsx`)
+
+Deux pages dédiées, chacune 404 (jamais 403) quand la cible échappe au périmètre de l'appelant —
+un Ministre restreint ne doit pas pouvoir distinguer « inexistant » de « hors périmètre » :
+
+- **Fiche personne** (`/admin/access/users/[userId]`, `PersonAccessClient`) — identité, fiche
+  STAR liée, rôles par catégorie (cases à cocher, description au survol), responsabilités
+  (ministère/départements via `ResponsibilityModal`), et les **accès hérités** de la personne en
+  lecture seule, avec leur origine
+- **Détenteurs d'un rôle** (`/admin/access/roles/[role]`, `RoleHoldersClient`) — liste des
+  détenteurs avec retrait, ajout direct parmi les personnes du périmètre appelant ; pour
+  MINISTER/DEPARTMENT_HEAD, vue structurée ministère → départements
+
+**Accès hérités** (`listInheritedAccess`, `src/lib/access-overview.ts`) : droits qui ne passent
+par aucun rôle d'église — appartenance à un département de fonction (ADR-0014, table
+`FUNCTION_ACCESS`, filtrée par `registry.has(module)`), droit supplémentaire du responsable d'un
+département de fonction (ex. dépublier un culte), rôle Secrétaire virtuel (spec 045), profil
+pastoral lié, berger/co-berger de famille, accompagnant en charge d'un suivi pastoral **ouvert**
+(spec 052). Toujours affichés en lecture seule, jamais retirables depuis cet écran (sauf le rôle
+Secrétaire virtuel qui, lui, n'est de toute façon jamais retirable).
+
+Les libellés/descriptions/catégories de rôle (`ROLE_LABELS`, `ROLE_SHORT_LABELS`,
+`ROLE_DESCRIPTIONS`, `ROLE_CATEGORY`, `ASSIGNABLE_BY_MINISTER`, `PRIVILEGED_ROLES`, `ALL_ROLES`)
+ont une source unique : `src/lib/roles.ts`, importée par le guide (`GuideContent.tsx`),
+`/admin/users`, `/admin/access`, les demandes d'accès et `RequestForm.tsx` — un test-gardien
+(`role-labels-single-source.test.ts`) empêche la réapparition d'une table locale.
 
 ---
 
