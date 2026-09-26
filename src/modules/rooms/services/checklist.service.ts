@@ -163,15 +163,18 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
     });
 
     if (hasIssue) {
-      await tx.notification.create({
-        data: {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification(
+        {
           userId: reservation.createdById,
+          domain: "rooms",
           type: "ROOM_CHECKLIST_ISSUE",
           title: "Écart constaté sur une salle",
           message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} ».`,
           link: "/rooms",
         },
-      });
+        { tx }
+      );
     }
 
     return updated;
@@ -219,15 +222,18 @@ export async function reportIssueWithoutDeclaration(
       },
     });
 
-    await tx.notification.create({
-      data: {
+    const { createNotification } = await import("@/lib/notifications");
+    await createNotification(
+      {
         userId: reservation.createdById,
+        domain: "rooms",
         type: "ROOM_CHECKLIST_ISSUE",
         title: "Écart constaté sur une salle",
         message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} », dont la main courante n'avait pas été déclarée.`,
         link: "/rooms",
       },
-    });
+      { tx }
+    );
 
     return updated;
   });

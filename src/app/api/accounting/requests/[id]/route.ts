@@ -233,8 +233,8 @@ async function createNextOccurrence(
     select: { id: true },
   });
 
-  await tx.notification.create({
-    data: {
+  await createNotification(
+    {
       userId:  current.submittedById,
       domain:  "accounting",
       type:    "ACCOUNTING_NEW_OCCURRENCE",
@@ -242,7 +242,8 @@ async function createNextOccurrence(
       message: `Une nouvelle occurrence de "${current.label}" a été soumise automatiquement.`,
       link:    `/accounting/requests/${nextReq.id}`,
     },
-  });
+    { tx }
+  );
 }
 
 async function notifySubmitter(

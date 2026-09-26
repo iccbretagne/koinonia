@@ -231,48 +231,48 @@ n'étaient jusqu'ici que dans l'application.
 
 ### 2.1 Sites déjà sur les helpers — ajout du domaine
 
-- [ ] **T46** [P] — `domain: "planning"` sur les deux appels `createNotification` (ouverture/fermeture).
+- [x] **T46** [P] — `domain: "planning"` sur les deux appels `createNotification` (ouverture/fermeture).
       *(fichier : `src/modules/planning/services/opening-closing.service.ts`)*
-- [ ] **T47** [P] — `domain: "requests"`. *(fichier : `src/modules/planning/services/announcement-sheet.service.ts`)*
-- [ ] **T48** [P] — `domain: "media"`. *(fichier : `src/app/api/media/files/[id]/route.ts`)*
-- [ ] **T49** [P] — `domain: "requests"` sur les deux appels `notifyDeptMembers`.
+- [x] **T47** [P] — `domain: "requests"`. *(fichier : `src/modules/planning/services/announcement-sheet.service.ts`)*
+- [x] **T48** [P] — `domain: "media"`. *(fichier : `src/app/api/media/files/[id]/route.ts`)*
+- [x] **T49** [P] — `domain: "requests"` sur les deux appels `notifyDeptMembers`.
       *(fichier : `src/app/api/requests/route.ts`)*
-- [ ] **T50** [P] — `domain: "requests"`. *(fichier : `src/app/api/requests/[id]/route.ts`)*
-- [ ] **T51** [P] — `domain: "account"`. *(fichier : `src/app/api/users/[userId]/roles/route.ts`)*
-- [ ] **T52** — La notification in-app aux comptables sur une nouvelle demande (T24) passe
+- [x] **T50** [P] — `domain: "requests"`. *(fichier : `src/app/api/requests/[id]/route.ts`)*
+- [x] **T51** [P] — `domain: "account"`. *(fichier : `src/app/api/users/[userId]/roles/route.ts`)*
+- [x] **T52** — La notification in-app aux comptables sur une nouvelle demande (T24) passe
       désormais aussi par le filtre email du domaine `accounting` : un comptable qui active ce
       domaine reçoit un email personnel, en plus de l'adresse institutionnelle existante qui ne
       change pas. *(fichier : `src/app/api/accounting/requests/route.ts`)*
 
 ### 2.2 Sites en écriture Prisma directe — conversion vers les helpers
 
-- [ ] **T53** [P] — Les 6 `tx.notification.create` convertis en `createNotification(tx, ...,
+- [x] **T53** [P] — Les 6 `tx.notification.create` convertis en `createNotification(tx, ...,
       { domain: "planning" })` (T21). *(fichier : `src/modules/planning/services/absence.service.ts`)*
-- [ ] **T54** [P] — Les 2 `tx.notification.create` convertis, `domain: "rooms"`.
+- [x] **T54** [P] — Les 2 `tx.notification.create` convertis, `domain: "rooms"`.
       *(fichier : `src/modules/rooms/services/checklist.service.ts`)*
-- [ ] **T55** [P] — Le `createMany` remplacé par des appels `notifyUsers`, `domain: "planning"` —
+- [x] **T55** [P] — Le `createMany` remplacé par des appels `notifyUsers`, `domain: "planning"` —
       conserver le fire-and-forget (`.catch(() => {})`) pour l'écriture in-app comme pour l'email.
       *(fichier : `src/app/api/events/[eventId]/departments/[deptId]/planning/route.ts`)*
-- [ ] **T56** [P] — Les 3 `notification.create(Many)` convertis, `domain: "account"`.
+- [x] **T56** [P] — Les 3 `notification.create(Many)` convertis, `domain: "account"`.
       *(fichiers : `src/app/api/member-link-requests/route.ts`, `src/app/api/member-link-requests/[id]/route.ts`)*
-- [ ] **T57** [P] — Convertis, `domain: "jobs"` — même remarque qu'en T30 : les filtres
+- [x] **T57** [P] — Convertis, `domain: "jobs"` — même remarque qu'en T30 : les filtres
       `wantSeekers`/`wantFreelanceMissions`/`wantFreelanceProfiles` restent appliqués avant l'appel.
       *(fichiers : `src/app/api/jobs/seekers/route.ts`, `src/app/api/jobs/freelance/missions/route.ts`, `src/app/api/jobs/freelance/profiles/route.ts`)*
 
 ### 2.3 Cohérence et documentation
 
-- [ ] **T58** — Étendre le test-gardien T45 : après ce lot, aucun `prisma.notification.create`/
+- [x] **T58** — Étendre le test-gardien T45 : après ce lot, aucun `prisma.notification.create`/
       `createMany` ni `tx.notification.create`/`createMany` ne doit subsister hors de
       `src/lib/notifications.ts` (recherche statique).
-- [ ] **T59** — Amender `specs/053-preferences-notifications-email/spec.md` : ajouter la ligne
+- [x] **T59** — Amender `specs/053-preferences-notifications-email/spec.md` : ajouter la ligne
       « Médias » au tableau des domaines (découverte T13), avec l'exemple « fichier accepté ou
       refusé ».
 
 ### 2.4 Tests
 
-- [ ] **T60** — Étendre T44 aux sites du lot 2 : les tests existants (absence, checklist salles,
+- [x] **T60** — Étendre T44 aux sites du lot 2 : les tests existants (absence, checklist salles,
       planning, demandes, accès, emploi) vérifient le `domain` transmis.
-- [ ] **T61** — Test de bout en bout minimal (Prisma et `sendEmail` mockés) : un domaine
+- [x] **T61** — Test de bout en bout minimal (Prisma et `sendEmail` mockés) : un domaine
       désactivé par défaut (ex. `rooms`) puis activé par l'utilisateur fait effectivement partir
       un email lors du déclenchement d'une notification de ce domaine.
       *(fichier : `src/lib/__tests__/notifications.test.ts`)*

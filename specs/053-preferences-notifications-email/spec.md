@@ -1,9 +1,9 @@
 # Spec — Préférences de notifications par email
 
 - **Numéro** : 053
-- **Statut** : Implémentée (lot 1 — mécanisme, page « Mes notifications » et migration des 10
-  sites d'email existants ; lot 2 restant — faire passer les notifications encore in-app
-  seulement par le même mécanisme — voir `tasks.md`)
+- **Statut** : Implémentée (lots 1 et 2 — mécanisme, page « Mes notifications », migration des
+  sites d'email existants et gabarit générique pour les notifications jusque-là in-app
+  seulement ; les 13 critères d'acceptation sont couverts)
 - **Créée le** : 2026-09-25
 - **Branche suggérée** : `feat/preferences-notifications-email`
 - **Issue source** : [#581](https://github.com/iccbretagne/koinonia/issues/581)
@@ -67,6 +67,7 @@ La page présente :
 | Intégration | demande d'accueil confiée, demande renvoyée, rappel de relance |
 | Comptabilité | nouvelle demande, changement de statut, paiement |
 | Salles | problème signalé sur une salle |
+| Médias | fichier accepté ou refusé |
 | Compte et accès | rôle attribué, liaison avec la fiche membre acceptée ou refusée |
 | Emploi | offres et profils (réglages détaillés déjà existants, repris tels quels) |
 
@@ -135,11 +136,11 @@ Chaque email envoyé à un utilisateur se termine par une phrase indiquant pourq
       lui seul ; les notifications dans l'application de ce domaine continuent d'arriver.
       *(vérifiable dès le lot 1 sur les domaines déjà migrés — comptabilité, planning, suivi
       pastoral, intégration, emploi)*
-- [ ] Activer un domaine qui n'envoyait pas d'email fait partir par email les notifications de ce
-      domaine destinées à cet utilisateur. *(le mécanisme le permet — `resolveEmailPreference`
-      respecte une préférence explicite au-delà de `defaultEmail` — mais aucun des 10 sites migrés
-      au lot 1 n'a `defaultEmail: false` : rien à observer avant que le lot 2 migre un premier
-      site de ce type, ex. `rooms`)*
+- [x] Activer un domaine qui n'envoyait pas d'email fait partir par email les notifications de ce
+      domaine destinées à cet utilisateur. *(mécanisme complété au lot 2 : à défaut de gabarit
+      dédié, un gabarit générique est construit depuis `title`/`message`/`link` — vérifiable en
+      production sur le domaine « Compte et accès » (`defaultEmail: false`), dont les sites
+      (rôle attribué, liaison approuvée/refusée) ne sont pas transactionnels)*
 - [x] Désactiver l'interrupteur général arrête tous les emails liés aux domaines ; le réactiver
       rétablit les réglages par domaine précédents.
 - [x] À la mise en service, un utilisateur qui n'a rien réglé reçoit encore par email tout ce

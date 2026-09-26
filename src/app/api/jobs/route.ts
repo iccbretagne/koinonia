@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { buildJobOfferEmail } from "@/lib/email";
-import { dispatchUserEmails } from "@/lib/notifications";
+import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 import { z } from "zod";
 
 const jobSchema = z.object({
@@ -103,15 +103,13 @@ async function notifySubscribers(job: {
   await Promise.allSettled(
     subs.map(async (sub) => {
       if (sub.inApp) {
-        await prisma.notification.create({
-          data: {
-            userId:  sub.userId,
-            domain:  "jobs",
-            type:    "JOB_OFFER",
-            title:   `Nouvelle offre ${typeLabel}`,
-            message: `${job.title} chez ${job.company}`,
-            link:    `/jobs/${job.id}`,
-          },
+        await createNotification({
+          userId:  sub.userId,
+          domain:  "jobs",
+          type:    "JOB_OFFER",
+          title:   `Nouvelle offre ${typeLabel}`,
+          message: `${job.title} chez ${job.company}`,
+          link:    `/jobs/${job.id}`,
         });
       }
       // Filtre fin existant (spec 053, T30) : `sub.email` reste la condition d'envoi, la

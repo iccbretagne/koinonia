@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
+import { notifyUsers, dispatchUserEmails } from "@/lib/notifications";
 import { assertAttachmentsAssignable } from "@/modules/accounting";
 import { z } from "zod";
 
@@ -163,23 +164,23 @@ async function notifyAccountingTeam(
     where: { churchId, role: "ACCOUNTANT" },
     select: { userId: true },
   });
+  const accountantIds = accountants.map((a) => a.userId);
 
-  if (accountants.length > 0) {
-    await prisma.notification.createMany({
-      data: accountants.map(({ userId }) => ({
-        userId,
-        domain:  "accounting",
-        type:    "ACCOUNTING_NEW_REQUEST",
-        title:   "Nouvelle demande financière",
-        message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
-        link:    `/accounting/requests/${req.id}`,
-      })),
+  if (accountantIds.length > 0) {
+    await notifyUsers(accountantIds, {
+      domain:  "accounting",
+      type:    "ACCOUNTING_NEW_REQUEST",
+      title:   "Nouvelle demande financière",
+      message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
+      link:    `/accounting/requests/${req.id}`,
     });
   }
 
-  // Email aux adresses comptabilité configurées
+  // Email : adresse institutionnelle configurée par l'église (church.accountingEmails, liste
+  // blanche, inchangée) + comptables ayant personnellement activé le domaine "accounting"
+  // (spec 053, T52) — les deux se cumulent, l'un ne remplace pas l'autre.
   const emails = parseEmailList(church?.accountingEmails);
-  if (emails.length > 0) {
+  if (emails.length > 0 || accountantIds.length > 0) {
     // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
     const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -193,7 +194,13 @@ async function notifyAccountingTeam(
       churchName:     church!.name,
       requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
     });
-    sendEmail({ to: emails, subject, html })
-      .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
+    if (emails.length > 0) {
+      sendEmail({ to: emails, subject, html })
+        .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
+    }
+    if (accountantIds.length > 0) {
+      dispatchUserEmails(accountantIds, "accounting", { subject, html })
+        .catch((err) => console.error("[accounting] dispatchUserEmails to accountants failed:", err?.message ?? err));
+    }
   }
 }

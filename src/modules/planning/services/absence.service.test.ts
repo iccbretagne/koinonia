@@ -15,13 +15,18 @@ const {
 } = await import("@/modules/planning");
 const { planningBus } = await import("@/modules/planning");
 
+// Depuis la migration vers `notifyUsers` (spec 053, lot 2), l'écriture in-app passe par
+// `notification.createMany` (un seul appel, plusieurs destinataires) plutôt que par un
+// `notification.create` par destinataire.
 function notifiedUserIds() {
-  return prismaMock.notification.create.mock.calls.map((c) => (c[0] as { data: { userId: string } }).data.userId);
+  return prismaMock.notification.createMany.mock.calls.flatMap(
+    (c) => (c[0] as { data: { userId: string }[] }).data.map((d) => d.userId)
+  );
 }
 
 function notificationsOfType(type: string) {
-  return prismaMock.notification.create.mock.calls
-    .map((c) => (c[0] as { data: { userId: string; type: string } }).data)
+  return prismaMock.notification.createMany.mock.calls
+    .flatMap((c) => (c[0] as { data: { userId: string; type: string }[] }).data)
     .filter((d) => d.type === type);
 }
 
@@ -206,7 +211,7 @@ describe("declareAbsence", () => {
       { userId: "user-resp2" },
     ] as never);
     prismaMock.memberUserLink.findMany.mockResolvedValue([{ userId: "user-star" }] as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
   });
 
   it("crée l'absence et retourne l'enregistrement créé", async () => {
@@ -222,7 +227,7 @@ describe("declareAbsence", () => {
 
     await declareAbsence(baseParams);
 
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(2);
+    expect(prismaMock.notification.createMany).toHaveBeenCalledTimes(1);
     expect(new Set(notifiedUserIds())).toEqual(new Set(["user-resp1", "user-resp2"]));
     expect(notificationsOfType("ABSENCE_CONFLICT")).toHaveLength(0);
   });
@@ -306,7 +311,7 @@ describe("cancelAbsence", () => {
     ] as never);
     prismaMock.userChurchRole.findMany.mockResolvedValue([] as never);
     prismaMock.memberUserLink.findMany.mockResolvedValue([{ userId: "user-star" }] as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
   });
 
   it("notifie systématiquement les responsables déjà notifiés à la déclaration", async () => {
@@ -350,7 +355,7 @@ describe("cancelAbsence", () => {
       cancelAbsence({ absenceId: "abs-1", churchId: "church-1", cancelledById: "user-1" })
     ).rejects.toMatchObject({ statusCode: 409 });
     expect(prismaMock.absence.update).not.toHaveBeenCalled();
-    expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
   });
 
   it("refuse (409) si l'absence est déjà annulée", async () => {
@@ -405,7 +410,7 @@ describe("declareAbsence avec backups", () => {
     prismaMock.userChurchRole.findMany.mockResolvedValue([]);
     prismaMock.planning.findMany.mockResolvedValue([]);
     prismaMock.absenceBackup.createMany.mockResolvedValue({ count: 1 } as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
   });
 
   it("crée les AbsenceBackup et notifie un backup STAR lié à un compte", async () => {
@@ -641,7 +646,7 @@ describe("cancelAbsence notifie les backups", () => {
     prismaMock.userDepartment.findMany.mockResolvedValue([]);
     prismaMock.userChurchRole.findMany.mockResolvedValue([]);
     prismaMock.planning.findMany.mockResolvedValue([]);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
   });
 
   it("notifie les backups STAR et RESPONSIBLE de l'absence annulée", async () => {
@@ -695,7 +700,7 @@ describe("updateAbsence", () => {
     prismaMock.planning.findMany.mockResolvedValue([]);
     prismaMock.absenceBackup.deleteMany.mockResolvedValue({ count: 0 } as never);
     prismaMock.absenceBackup.createMany.mockResolvedValue({ count: 0 } as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
   });
 
   afterEach(() => {

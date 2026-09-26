@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockDispatchUserEmails = vi.fn();
+const mockCreateNotification = vi.fn();
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email", () => ({
   buildJobOfferRenewalEmail: vi.fn().mockReturnValue({ subject: "s", html: "h" }),
 }));
 vi.mock("@/lib/notifications", () => ({
   dispatchUserEmails: (...args: unknown[]) => mockDispatchUserEmails(...args),
+  createNotification: (...args: unknown[]) => mockCreateNotification(...args),
 }));
 
 const { runJobOffersLifecycle } = await import("../services/lifecycle-service");
@@ -33,10 +35,10 @@ describe("runJobOffersLifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDispatchUserEmails.mockResolvedValue({ sent: 1, failed: 0 });
+    mockCreateNotification.mockResolvedValue(undefined);
     prismaMock.jobOffer.updateMany.mockResolvedValue({ count: 0 } as never);
     prismaMock.jobOffer.findMany.mockResolvedValue([] as never);
     prismaMock.jobOffer.update.mockResolvedValue({} as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
   });
 
   it("passe 1 : archivage — cible les offres PUBLISHED relancées depuis >14j OU à deadline dépassée", async () => {
@@ -69,8 +71,8 @@ describe("runJobOffersLifecycle", () => {
     expect(prismaMock.jobOffer.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "o1" }, data: { renewalRequestedAt: expect.any(Date) } })
     );
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: "u1", domain: "jobs", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" }) })
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "u1", domain: "jobs", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" })
     );
     expect(mockDispatchUserEmails).toHaveBeenCalledTimes(1);
     expect(mockDispatchUserEmails).toHaveBeenCalledWith(["u1"], "jobs", { subject: "s", html: "h" });
@@ -100,7 +102,7 @@ describe("runJobOffersLifecycle", () => {
 
     const res = await runJobOffersLifecycle("http://app");
 
-    expect(prismaMock.notification.create).toHaveBeenCalledTimes(1);
+    expect(mockCreateNotification).toHaveBeenCalledTimes(1);
     expect(mockDispatchUserEmails).not.toHaveBeenCalled();
     expect(res.renewalsSent).toBe(1);
   });

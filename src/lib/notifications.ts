@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendEmail, appendPreferenceFooter } from "@/lib/email";
+import { sendEmail, appendPreferenceFooter, buildGenericNotificationEmail } from "@/lib/email";
 import { notificationDomains } from "@/lib/registry";
 import { resolveEmailPreference, GLOBAL_DOMAIN } from "@/lib/notification-preferences";
 import type { Prisma } from "@/generated/prisma/client";
@@ -24,7 +24,12 @@ export interface NotificationOptions {
    * le fire-and-forget déjà pratiqué en comptabilité).
    */
   tx?: Prisma.TransactionClient;
-  /** Contenu de l'email, si cette notification doit pouvoir partir par email. Ignoré si `tx` est fourni (voir ci-dessus). */
+  /**
+   * Contenu de l'email. À défaut, un gabarit générique est construit depuis `title`/`message`/
+   * `link` de la notification (spec 053, lot 2) : l'absence de gabarit dédié n'empêche jamais
+   * l'email de partir si la préférence de l'utilisateur l'autorise. Ignoré si `tx` est fourni
+   * (voir ci-dessus).
+   */
   email?: NotificationEmailContent;
 }
 
@@ -36,9 +41,10 @@ interface NotificationInput {
   link?: string;
 }
 
-async function dispatchIfNoTx(userIds: string[], domain: string, options?: NotificationOptions): Promise<void> {
-  if (options?.tx || !options?.email) return;
-  await dispatchUserEmails(userIds, domain, options.email);
+async function dispatchIfNoTx(userIds: string[], notification: NotificationInput, options?: NotificationOptions): Promise<void> {
+  if (options?.tx) return;
+  const email = options?.email ?? buildGenericNotificationEmail(notification);
+  await dispatchUserEmails(userIds, notification.domain, email);
 }
 
 /** Crée une notification pour un utilisateur — `domain` obligatoire (spec 053). */
@@ -49,7 +55,7 @@ export async function createNotification(
   const client: PrismaOrTx = options?.tx ?? prisma;
   const { userId, domain, type, title, message, link } = params;
   await client.notification.create({ data: { userId, domain, type, title, message, link } });
-  await dispatchIfNoTx([userId], domain, options);
+  await dispatchIfNoTx([userId], params, options);
 }
 
 /** Notifie plusieurs utilisateurs déjà identifiés par l'appelant (spec 053). */
@@ -64,7 +70,7 @@ export async function notifyUsers(
     data: userIds.map((userId) => ({ userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(userIds, notification.domain, options);
+  await dispatchIfNoTx(userIds, notification, options);
 }
 
 /** Notifie tous les utilisateurs ayant un rôle donné dans une église. */
@@ -84,7 +90,7 @@ export async function notifyUsersWithRole(
     data: roles.map((r) => ({ userId: r.userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(roles.map((r) => r.userId), notification.domain, options);
+  await dispatchIfNoTx(roles.map((r) => r.userId), notification, options);
 }
 
 /** Notifie tous les membres d'un département ayant une fonction système donnée. */
@@ -113,7 +119,7 @@ export async function notifyDeptMembers(
     data: userIds.map((userId) => ({ userId, ...notification })),
     skipDuplicates: true,
   });
-  await dispatchIfNoTx(userIds, notification.domain, options);
+  await dispatchIfNoTx(userIds, notification, options);
 }
 
 /**

@@ -6,6 +6,10 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/email", () => ({
   sendEmail: (...args: unknown[]) => mockSendEmail(...args),
   appendPreferenceFooter: (html: string, label: string) => `${html}<!--footer:${label}-->`,
+  buildGenericNotificationEmail: (params: { title: string; message: string; link?: string }) => ({
+    subject: params.title,
+    html: `<p>${params.message}</p>`,
+  }),
 }));
 
 const {
@@ -173,14 +177,60 @@ describe("sans tx — l'email part quand un contenu est fourni et la préférenc
     expect(mockSendEmail).toHaveBeenCalledTimes(1);
   });
 
-  it("createNotification sans email fourni : aucun envoi", async () => {
+  it("createNotification sans contenu email fourni : construit un gabarit générique et l'envoie quand même (spec 053, lot 2)", async () => {
+    prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "a@example.com" }]);
+
     await createNotification({ userId: "u1", domain: "accounting", type: "T", title: "t", message: "m" });
-    expect(mockSendEmail).not.toHaveBeenCalled();
+
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ subject: "t" }));
   });
 
   it("notifyUsers([]) : aucune écriture, aucun envoi", async () => {
     await notifyUsers([], { domain: "accounting", type: "T", title: "t", message: "m" }, { email: { subject: "s", html: "h" } });
     expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
     expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Test de bout en bout (spec 053, T61) : un domaine désactivé par défaut (`rooms`,
+ * `defaultEmail: false`) n'envoie rien tant que l'utilisateur ne l'a pas explicitement activé,
+ * puis envoie effectivement l'email une fois cette préférence enregistrée — en passant par le
+ * point d'entrée réel (`createNotification`), pas directement par `dispatchUserEmails`.
+ */
+describe("bout en bout — activer un domaine désactivé par défaut déclenche bien l'email", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendEmail.mockResolvedValue(undefined);
+    prismaMock.notification.create.mockResolvedValue({});
+    prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "a@example.com" }]);
+  });
+
+  it("domaine « rooms » jamais réglé : aucun email, malgré un contenu email fourni", async () => {
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+
+    await createNotification(
+      { userId: "u1", domain: "rooms", type: "ROOM_CHECKLIST_ISSUE", title: "t", message: "m", link: "/rooms" },
+      { email: { subject: "s", html: "h" } }
+    );
+
+    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+
+  it("domaine « rooms » explicitement activé par l'utilisateur : l'email part", async () => {
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([
+      { userId: "u1", domain: "rooms", enabled: true },
+    ]);
+
+    await createNotification(
+      { userId: "u1", domain: "rooms", type: "ROOM_CHECKLIST_ISSUE", title: "t", message: "m", link: "/rooms" },
+      { email: { subject: "s", html: "h" } }
+    );
+
+    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith({ to: "a@example.com", subject: "s", html: expect.stringContaining("<!--footer:") });
   });
 });

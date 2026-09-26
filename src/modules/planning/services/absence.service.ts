@@ -517,18 +517,19 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
 
     const memberName = `${member.firstName} ${member.lastName}`;
     const when = formatWhen(targeting, events);
+    const { notifyUsers } = await import("@/lib/notifications");
 
-    for (const userId of responsibleUserIds) {
-      await tx.notification.create({
-        data: {
-          userId,
-          type: "ABSENCE_DECLARED",
-          title: "Absence déclarée",
-          message: `${memberName} a déclaré une absence ${when}.`,
-          link: "/absences",
-        },
-      });
-    }
+    await notifyUsers(
+      responsibleUserIds,
+      {
+        domain: "planning",
+        type: "ABSENCE_DECLARED",
+        title: "Absence déclarée",
+        message: `${memberName} a déclaré une absence ${when}.`,
+        link: "/absences",
+      },
+      { tx }
+    );
 
     if (hasConflict) {
       const recipients = new Set(responsibleUserIds);
@@ -536,17 +537,17 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
       for (const l of links) recipients.add(l.userId);
 
       const plural = conflicts.length > 1;
-      for (const userId of recipients) {
-        await tx.notification.create({
-          data: {
-            userId,
-            type: "ABSENCE_CONFLICT",
-            title: "Conflit planning / absence",
-            message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
-            link: "/absences",
-          },
-        });
-      }
+      await notifyUsers(
+        Array.from(recipients),
+        {
+          domain: "planning",
+          type: "ABSENCE_CONFLICT",
+          title: "Conflit planning / absence",
+          message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+          link: "/absences",
+        },
+        { tx }
+      );
     }
 
     if (backups.length > 0) {
@@ -555,17 +556,17 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
         memberId: b.type === "STAR" ? b.memberId ?? null : null,
         userChurchRoleId: b.type === "RESPONSIBLE" ? b.userChurchRoleId ?? null : null,
       })), churchId, tx));
-      for (const userId of backupRecipients) {
-        await tx.notification.create({
-          data: {
-            userId,
-            type: "ABSENCE_BACKUP_ASSIGNED",
-            title: "Désigné en backup",
-            message: `Vous avez été désigné en backup de ${memberName} pour son absence ${when}.`,
-            link: "/absences",
-          },
-        });
-      }
+      await notifyUsers(
+        Array.from(backupRecipients),
+        {
+          domain: "planning",
+          type: "ABSENCE_BACKUP_ASSIGNED",
+          title: "Désigné en backup",
+          message: `Vous avez été désigné en backup de ${memberName} pour son absence ${when}.`,
+          link: "/absences",
+        },
+        { tx }
+      );
     }
 
     await planningBus.emit(
@@ -669,17 +670,18 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
       absence.targetEvents.map((e) => ({ eventId: e.eventId ?? "", title: e.eventTitle, date: e.eventDate }))
     );
 
-    for (const userId of recipients) {
-      await tx.notification.create({
-        data: {
-          userId,
-          type: "ABSENCE_CANCELLED",
-          title: "Absence annulée",
-          message: `L'absence de ${memberName} (${when}) a été annulée.`,
-          link: "/absences",
-        },
-      });
-    }
+    const { notifyUsers } = await import("@/lib/notifications");
+    await notifyUsers(
+      Array.from(recipients),
+      {
+        domain: "planning",
+        type: "ABSENCE_CANCELLED",
+        title: "Absence annulée",
+        message: `L'absence de ${memberName} (${when}) a été annulée.`,
+        link: "/absences",
+      },
+      { tx }
+    );
 
     await planningBus.emit(
       "planning:absence:cancelled",
@@ -908,32 +910,33 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
       ...memberLinkedUserIds,
     ]);
 
-    for (const userId of updateRecipients) {
-      await tx.notification.create({
-        data: {
-          userId,
-          type: "ABSENCE_UPDATED",
-          title: "Absence modifiée",
-          message: `L'absence de ${memberName} a été modifiée (${when}).`,
-          link: "/absences",
-        },
-      });
-    }
+    const { notifyUsers } = await import("@/lib/notifications");
+    await notifyUsers(
+      Array.from(updateRecipients),
+      {
+        domain: "planning",
+        type: "ABSENCE_UPDATED",
+        title: "Absence modifiée",
+        message: `L'absence de ${memberName} a été modifiée (${when}).`,
+        link: "/absences",
+      },
+      { tx }
+    );
 
     if (hasConflictAfter && !hadConflictBefore) {
       const plural = conflictsAfter.length > 1;
       const conflictRecipients = new Set([...responsibleUserIdsAfter, ...memberLinkedUserIds]);
-      for (const userId of conflictRecipients) {
-        await tx.notification.create({
-          data: {
-            userId,
-            type: "ABSENCE_CONFLICT",
-            title: "Conflit planning / absence",
-            message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
-            link: "/absences",
-          },
-        });
-      }
+      await notifyUsers(
+        Array.from(conflictRecipients),
+        {
+          domain: "planning",
+          type: "ABSENCE_CONFLICT",
+          title: "Conflit planning / absence",
+          message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+          link: "/absences",
+        },
+        { tx }
+      );
     }
 
     await planningBus.emit(

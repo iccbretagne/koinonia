@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
+import { notifyUsers } from "@/lib/notifications";
 import { z } from "zod";
 
 const roleSchema = z
@@ -122,16 +123,16 @@ export async function POST(request: Request) {
       distinct: ["userId"],
     });
     if (adminRoles.length > 0) {
-      await prisma.notification.createMany({
-        data: adminRoles.map((r) => ({
-          userId: r.userId,
+      await notifyUsers(
+        adminRoles.map((r) => r.userId),
+        {
+          domain: "account",
           type: "MEMBER_LINK_REQUEST",
           title: "Nouvelle demande de liaison",
           message: `${requesterName} a soumis une demande de liaison compte STAR.`,
           link: "/admin/access",
-        })),
-        skipDuplicates: true,
-      });
+        }
+      );
     }
 
     return successResponse(req, 201);
