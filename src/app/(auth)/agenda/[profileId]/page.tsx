@@ -63,10 +63,10 @@ export default async function ProfileAgendaPage({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">
+      <h1 className="text-2xl font-bold text-ink mb-1">
         Agenda — {profile.name}
       </h1>
-      <p className="text-sm text-gray-500 mb-6">{ROLE_LABELS[profile.role]}</p>
+      <p className="text-sm text-ink-muted mb-6">{ROLE_LABELS[profile.role]}</p>
       <ProfileAgenda profile={profile} entries={entries} weekStart={toLocalISO(from)} />
     </div>
   );

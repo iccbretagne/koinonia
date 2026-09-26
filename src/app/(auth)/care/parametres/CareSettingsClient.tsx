@@ -47,7 +47,7 @@ export default function CareSettingsClient({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 space-y-4">
+    <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
       <Input
         label="Demande non confiée (jours)"
         type="number"
@@ -64,8 +64,8 @@ export default function CareSettingsClient({
         value={unscheduled}
         onChange={(e) => setUnscheduled(e.target.value)}
       />
-      {message && <p className="text-sm text-green-700">{message}</p>}
-      {error && <p className="text-sm text-icc-rouge">{error}</p>}
+      {message && <p className="text-sm text-success">{message}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
           {saving ? "Enregistrement…" : "Enregistrer"}

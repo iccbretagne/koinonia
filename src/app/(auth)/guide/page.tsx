@@ -12,8 +12,8 @@ export default async function GuidePage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Guide des fonctionnalités</h1>
-      <p className="text-gray-600 mb-8">
+      <h1 className="text-2xl font-bold text-ink mb-6">Guide des fonctionnalités</h1>
+      <p className="text-ink-muted mb-8">
         Découvrez les fonctionnalités disponibles selon votre rôle. Sélectionnez un profil pour voir ses accès.
       </p>
       <GuideContent defaultRole={currentRole} />

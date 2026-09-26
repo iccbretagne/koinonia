@@ -76,10 +76,10 @@ export default function FollowupActions({
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {(canAssign || canReassign) && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-surface rounded-xl border border-line p-5">
           {mode === "assign" || mode === "reassign" ? (
             <div className="space-y-3">
               <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
@@ -108,15 +108,15 @@ export default function FollowupActions({
         </Button>
       )}
       {mode === "handback" && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Motif du retour au référent <span className="text-red-500">*</span>
+        <div className="bg-surface rounded-xl border border-line p-5 space-y-3">
+          <label className="block text-xs font-medium text-ink-muted mb-1">
+            Motif du retour au référent <span className="text-danger">*</span>
           </label>
           <textarea
             value={handbackReason}
             onChange={(e) => setHandbackReason(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
           />
           <div className="flex gap-2">
             <Button size="sm" variant="danger" disabled={loading} onClick={handback}>Confirmer</Button>
@@ -139,13 +139,13 @@ export default function FollowupActions({
       )}
 
       {canNote && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+        <div className="bg-surface rounded-xl border border-line p-5">
+          <label className="block text-xs font-medium text-ink-muted mb-1">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
           />
           <Button size="sm" className="mt-2" disabled={loading} onClick={() => patch({ action: "note", notes })}>
             Enregistrer

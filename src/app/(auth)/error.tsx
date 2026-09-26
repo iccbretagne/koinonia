@@ -25,9 +25,9 @@ export default function AuthError({ error }: { readonly error: Error & { digest?
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg border-2 border-gray-200 p-8 text-center">
-        <div className="w-16 h-16 bg-icc-rouge/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-icc-rouge" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="max-w-md w-full bg-surface rounded-lg border border-line p-8 text-center">
+        <div className="w-16 h-16 bg-danger-soft rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-danger" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -36,22 +36,22 @@ export default function AuthError({ error }: { readonly error: Error & { digest?
             />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">
+        <h1 className="text-xl font-bold text-ink mb-2">
           {known?.title ?? "Une erreur est survenue"}
         </h1>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-ink-muted mb-6">
           {known?.body ?? "Impossible d'afficher cette page. Réessayez ou revenez à l'accueil."}
         </p>
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm font-medium rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium rounded-lg border border-line text-ink-muted hover:bg-surface-sunken"
           >
             Page précédente
           </button>
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 text-sm font-medium rounded-lg bg-icc-violet text-white hover:bg-icc-violet/90"
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand hover:bg-brand-hover"
           >
             Accueil
           </button>

@@ -17,11 +17,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:  "bg-amber-100 text-amber-800",
-  PROCESSING: "bg-blue-100 text-blue-800",
-  APPROVED:   "bg-emerald-100 text-emerald-800",
-  REJECTED:   "bg-red-100 text-red-600",
-  CANCELLED:  "bg-gray-100 text-gray-500",
+  SUBMITTED:  "bg-warning-soft text-warning",
+  PROCESSING: "bg-info-soft text-info",
+  APPROVED:   "bg-success-soft text-success",
+  REJECTED:   "bg-danger-soft text-danger",
+  CANCELLED:  "bg-surface-sunken text-ink-muted",
 };
 
 interface Request {
@@ -100,26 +100,26 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
       {/* Statistiques */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: "En attente",     value: stats.submitted,       color: "text-amber-600" },
-          { label: "En traitement",  value: stats.processing,      color: "text-blue-600" },
-          { label: "Validées",       value: stats.approved,        color: "text-emerald-600" },
-          { label: "Rejetées",       value: stats.rejected,        color: "text-red-500" },
-          { label: "Paiements dus",  value: stats.pendingPayments, color: "text-purple-600" },
+          { label: "En attente",     value: stats.submitted,       color: "text-warning" },
+          { label: "En traitement",  value: stats.processing,      color: "text-info" },
+          { label: "Validées",       value: stats.approved,        color: "text-success" },
+          { label: "Rejetées",       value: stats.rejected,        color: "text-danger" },
+          { label: "Paiements dus",  value: stats.pendingPayments, color: "text-brand-text" },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+          <div key={s.label} className="bg-surface rounded-xl border border-line px-4 py-3">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            <p className="text-xs text-ink-muted mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* Bandeau "À traiter" */}
       {actionable.length > 0 && (
-        <div className="bg-icc-violet/5 border border-icc-violet/20 rounded-xl p-4 space-y-3">
-          <h2 className="text-sm font-semibold text-icc-violet flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-icc-violet animate-pulse" />
+        <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
             À traiter
-            <span className="text-icc-violet/60 font-normal">({actionable.length})</span>
+            <span className="text-brand-text/60 font-normal">({actionable.length})</span>
           </h2>
           <div className="space-y-1.5">
             {actionable.slice(0, 5).map((r) => {
@@ -128,23 +128,23 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                 <Link
                   key={r.id}
                   href={`/accounting/requests/${r.id}`}
-                  className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2.5 border border-gray-100 hover:border-icc-violet/40 hover:shadow-sm transition-all group"
+                  className="flex items-center justify-between gap-3 bg-surface rounded-lg px-3 py-2.5 border border-line hover:border-brand/40 hover:shadow-card transition-all group"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 text-sm truncate">{r.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="font-medium text-ink text-sm truncate">{r.label}</p>
+                    <p className="text-xs text-ink-subtle mt-0.5">
                       {r.department?.name ?? "Personnel"} · {fmtAmount(r.amount)} ·{" "}
-                      <span className={days >= 7 ? "text-amber-600 font-medium" : ""}>{days}j</span>
+                      <span className={days >= 7 ? "text-warning font-medium" : ""}>{days}j</span>
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-icc-violet bg-icc-violet/10 px-2.5 py-1 rounded-full group-hover:bg-icc-violet group-hover:text-white transition-colors whitespace-nowrap">
+                  <span className="shrink-0 text-xs font-medium text-brand-text bg-brand-soft px-2.5 py-1 rounded-full group-hover:bg-brand-hover group-hover:text-on-brand transition-colors whitespace-nowrap">
                     {r.status === "SUBMITTED" ? "Prendre en charge →" : "Valider →"}
                   </span>
                 </Link>
               );
             })}
             {actionable.length > 5 && (
-              <p className="text-xs text-gray-400 text-center pt-0.5">+ {actionable.length - 5} autres</p>
+              <p className="text-xs text-ink-subtle text-center pt-0.5">+ {actionable.length - 5} autres</p>
             )}
           </div>
         </div>
@@ -160,8 +160,8 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                 onClick={() => setStatusFilter(f.value)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   statusFilter === f.value
-                    ? "bg-icc-violet text-white border-icc-violet"
-                    : "border-gray-200 text-gray-600 hover:border-icc-violet hover:text-icc-violet"
+                    ? "bg-brand text-on-brand border-brand"
+                    : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
                 }`}
               >
                 {f.label}
@@ -175,8 +175,8 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                 onClick={() => setTypeFilter(t)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   typeFilter === t
-                    ? "bg-gray-800 text-white border-gray-800"
-                    : "border-gray-200 text-gray-600 hover:border-gray-400"
+                    ? "bg-brand text-on-brand border-brand"
+                    : "border-line text-ink-muted hover:border-brand"
                 }`}
               >
                 {t === "" ? "Tous types" : TYPE_LABELS[t]}
@@ -189,22 +189,22 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           placeholder="Rechercher…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-56 shrink-0 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+          className="w-56 shrink-0 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand"
         />
       </div>
 
       {/* Liste */}
       {filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">
+        <div className="bg-surface rounded-xl border border-line p-8 text-center text-ink-subtle text-sm">
           Aucune demande.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-surface rounded-xl border border-line overflow-hidden">
           {/* Desktop */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+                <tr className="border-b border-line bg-surface-sunken text-left text-xs text-ink-muted uppercase tracking-wide">
                   <th className="px-4 py-3 font-medium">Demande</th>
                   <th className="px-4 py-3 font-medium">Département</th>
                   <th className="px-4 py-3 font-medium">Montant</th>
@@ -213,45 +213,45 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {filtered.map((r) => {
                   const days = daysSince(r.createdAt);
                   const isOwn = r.submittedBy.id === currentUserId;
                   const pendingPmts = r.payments.filter((p) => !p.releasedAt).length;
                   return (
-                    <tr key={r.id} className={`hover:bg-gray-50 transition-colors ${isOwn ? "bg-icc-violet/[0.02]" : ""}`}>
+                    <tr key={r.id} className={`hover:bg-surface-sunken transition-colors ${isOwn ? "bg-brand/[0.02]" : ""}`}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 truncate max-w-xs">{r.label}</p>
+                        <p className="font-medium text-ink truncate max-w-xs">{r.label}</p>
                         <div className="flex gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-xs text-gray-400">{TYPE_LABELS[r.type]}</span>
+                          <span className="text-xs text-ink-subtle">{TYPE_LABELS[r.type]}</span>
                           {r.priority === "URGENT" && (
-                            <span className="text-xs text-red-600 bg-red-50 px-1.5 py-0.5 rounded font-medium">Urgent</span>
+                            <span className="text-xs text-danger bg-danger-soft px-1.5 py-0.5 rounded font-medium">Urgent</span>
                           )}
                           {isOwn && (
-                            <span className="text-xs text-icc-violet bg-icc-violet/10 px-1.5 py-0.5 rounded font-medium">Vous</span>
+                            <span className="text-xs text-brand-text bg-brand-soft px-1.5 py-0.5 rounded font-medium">Vous</span>
                           )}
                           {r._count.attachments > 0 && (
-                            <span className="text-xs text-gray-400">📎 {r._count.attachments}</span>
+                            <span className="text-xs text-ink-subtle">📎 {r._count.attachments}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{r.department?.name ?? "Personnel"}</td>
-                      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{fmtAmount(r.amount)}</td>
+                      <td className="px-4 py-3 text-sm text-ink-muted">{r.department?.name ?? "Personnel"}</td>
+                      <td className="px-4 py-3 font-medium text-ink whitespace-nowrap">{fmtAmount(r.amount)}</td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"}`}>
                           {STATUS_LABELS[r.status] ?? r.status}
                         </span>
                         {pendingPmts > 0 && (
-                          <p className="text-xs text-amber-600 mt-0.5">{pendingPmts} paiement{pendingPmts > 1 ? "s" : ""} à confirmer</p>
+                          <p className="text-xs text-warning mt-0.5">{pendingPmts} paiement{pendingPmts > 1 ? "s" : ""} à confirmer</p>
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs ${days >= 7 ? "text-amber-600 font-semibold" : "text-gray-400"}`}>{days}j</span>
+                        <span className={`text-xs ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/accounting/requests/${r.id}`}
-                          className="text-xs font-medium text-icc-violet border border-icc-violet/40 px-2.5 py-1 rounded-full hover:bg-icc-violet hover:text-white transition-colors whitespace-nowrap"
+                          className="text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors whitespace-nowrap"
                         >
                           Voir →
                         </Link>
@@ -264,23 +264,23 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
           </div>
 
           {/* Mobile */}
-          <div className="md:hidden divide-y divide-gray-100">
+          <div className="md:hidden divide-y divide-line">
             {filtered.map((r) => {
               const days = daysSince(r.createdAt);
               return (
-                <Link key={r.id} href={`/accounting/requests/${r.id}`} className="block px-4 py-3 hover:bg-gray-50 transition-colors">
+                <Link key={r.id} href={`/accounting/requests/${r.id}`} className="block px-4 py-3 hover:bg-surface-sunken transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 text-sm truncate">{r.label}</p>
+                      <p className="font-medium text-ink text-sm truncate">{r.label}</p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[r.status] ?? "bg-surface-sunken text-ink-muted"}`}>
                           {STATUS_LABELS[r.status]}
                         </span>
-                        <span className="text-xs text-gray-500">{fmtAmount(r.amount)}</span>
-                        <span className="text-xs text-gray-400">{r.department?.name ?? "Personnel"}</span>
+                        <span className="text-xs text-ink-muted">{fmtAmount(r.amount)}</span>
+                        <span className="text-xs text-ink-subtle">{r.department?.name ?? "Personnel"}</span>
                       </div>
                     </div>
-                    <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-amber-600 font-semibold" : "text-gray-400"}`}>{days}j</span>
+                    <span className={`text-xs shrink-0 mt-0.5 ${days >= 7 ? "text-warning font-semibold" : "text-ink-subtle"}`}>{days}j</span>
                   </div>
                 </Link>
               );
@@ -289,7 +289,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
         </div>
       )}
 
-      <p className="text-xs text-gray-400 text-right">
+      <p className="text-xs text-ink-subtle text-right">
         {filtered.length} demande{filtered.length !== 1 ? "s" : ""} · Total engagé : {fmtAmount(stats.totalAmount)}
       </p>
     </div>

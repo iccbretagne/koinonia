@@ -107,13 +107,13 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
   }
 
   return (
-    <form onSubmit={submit} className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
-      <h1 className="text-lg font-bold text-gray-900">
+    <form onSubmit={submit} className="bg-surface rounded-xl border border-line p-5 space-y-5">
+      <h1 className="text-lg font-bold text-ink">
         {correction ? "Corriger la demande financière" : "Nouvelle demande financière"}
       </h1>
 
       {correction && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800 space-y-1">
+        <div className="bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 text-sm text-warning space-y-1">
           <p>
             Correction de <span className="font-medium">&ldquo;{correction.label}&rdquo;</span> — les
             informations de la demande rejetée sont reprises, modifiez ce qui doit l&apos;être.
@@ -129,7 +129,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Mode */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Type de demande</label>
+        <label className="block text-sm font-medium text-ink-muted">Type de demande</label>
         <div className="flex flex-wrap gap-2">
           {[
             { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
@@ -147,11 +147,11 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
                   else if (opt.value === "one_shot") setType("EXPENSE_REPORT");
                 }}
                 className={`flex-1 min-w-[140px] text-left px-4 py-3 rounded-xl border-2 transition-colors ${
-                  isActive ? "border-icc-violet bg-icc-violet/5" : "border-gray-200 hover:border-gray-300"
+                  isActive ? "border-brand bg-brand-soft" : "border-line hover:border-control-line"
                 }`}
               >
-                <p className={`text-sm font-medium ${isActive ? "text-icc-violet" : "text-gray-800"}`}>{opt.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{opt.desc}</p>
+                <p className={`text-sm font-medium ${isActive ? "text-brand-text" : "text-ink"}`}>{opt.label}</p>
+                <p className="text-xs text-ink-subtle mt-0.5">{opt.desc}</p>
               </button>
             );
           })}
@@ -160,15 +160,15 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Département */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink-muted">
           Département
-          {!isRecurringMode && <span className="text-gray-400 font-normal ml-1">(facultatif pour les notes de frais personnelles)</span>}
+          {!isRecurringMode && <span className="text-ink-subtle font-normal ml-1">(facultatif pour les notes de frais personnelles)</span>}
         </label>
         <select
           value={form.departmentId}
           onChange={(e) => set("departmentId", e.target.value)}
           required={isRecurringMode}
-          className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
         >
           {!isRecurringMode && (
             <option value="">— Personnel (sans département)</option>
@@ -181,7 +181,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Intitulé */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">Intitulé</label>
+        <label className="block text-sm font-medium text-ink-muted">Intitulé</label>
         <input
           type="text"
           value={form.label}
@@ -189,13 +189,13 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
           required
           maxLength={200}
           placeholder="ex : Achat matériel son — culte du 15 juin"
-          className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
         />
       </div>
 
       {/* Montant */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">Montant TTC (€)</label>
+        <label className="block text-sm font-medium text-ink-muted">Montant TTC (€)</label>
         <input
           type="number"
           value={form.amount}
@@ -204,40 +204,40 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
           min={0.01}
           step={0.01}
           placeholder="0,00"
-          className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full border border-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
         />
       </div>
 
       {/* Récurrence */}
       {mode === "recurring" && (
-        <div className="space-y-3 bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide">Paramètres de récurrence</p>
+        <div className="space-y-3 bg-brand-soft border border-brand/30 rounded-xl p-4">
+          <p className="text-xs font-semibold text-brand-text uppercase tracking-wide">Paramètres de récurrence</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-700">Tous les</span>
+            <span className="text-sm text-ink-muted">Tous les</span>
             <input
               type="number"
               value={recurrence.every}
               onChange={(e) => setRecurrence((r) => ({ ...r, every: e.target.value }))}
               min={1} max={99}
-              className="w-16 border-2 border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-purple-400"
+              className="w-16 border border-line rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-brand"
             />
             <select
               value={recurrence.unit}
               onChange={(e) => setRecurrence((r) => ({ ...r, unit: e.target.value as "WEEK" | "MONTH" }))}
-              className="border-2 border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-purple-400"
+              className="border border-line rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-brand"
             >
               <option value="WEEK">semaine(s)</option>
               <option value="MONTH">mois</option>
             </select>
           </div>
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-gray-600">Date de la première occurrence</label>
+            <label className="block text-xs font-medium text-ink-muted">Date de la première occurrence</label>
             <input
               type="date"
               value={recurrence.firstDate}
               onChange={(e) => setRecurrence((r) => ({ ...r, firstDate: e.target.value }))}
               required={mode === "recurring"}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-purple-400"
+              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand"
             />
           </div>
         </div>
@@ -245,22 +245,22 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Description */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
-          Description <span className="text-gray-400 font-normal">(facultatif)</span>
+        <label className="block text-sm font-medium text-ink-muted">
+          Description <span className="text-ink-subtle font-normal">(facultatif)</span>
         </label>
         <textarea
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={3}
           placeholder="Détail de la dépense, contexte, références devis…"
-          className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+          className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
         />
       </div>
 
       {/* Pièces jointes */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Pièces jointes <span className="text-gray-400 font-normal">(reçu, facture, devis…)</span>
+        <label className="block text-sm font-medium text-ink-muted">
+          Pièces jointes <span className="text-ink-subtle font-normal">(reçu, facture, devis…)</span>
         </label>
         <AttachmentManager
           attachments={attachments}
@@ -270,14 +270,14 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
         />
       </div>
 
-      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
 
       <div className="flex gap-3 justify-end pt-1">
-        <Link href={redirectTo} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</Link>
+        <Link href={redirectTo} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</Link>
         <button
           type="submit"
           disabled={loading}
-          className="px-5 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="px-5 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           {loading ? "Envoi…" : "Soumettre la demande"}
         </button>

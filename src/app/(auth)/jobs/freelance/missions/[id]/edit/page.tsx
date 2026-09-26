@@ -19,7 +19,7 @@ export default async function EditMissionPage({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Modifier la mission</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Modifier la mission</h1>
       <MissionFormClient initial={mission} defaultEmail={session.user.email ?? ""} />
     </div>
   );

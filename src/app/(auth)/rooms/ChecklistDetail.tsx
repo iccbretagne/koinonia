@@ -34,8 +34,8 @@ function yesNo(value: boolean | null): string {
 function Field({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="flex justify-between gap-2">
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="text-gray-900 text-right">{value}</dd>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className="text-ink text-right">{value}</dd>
     </div>
   );
 }
@@ -43,8 +43,8 @@ function Field({ label, value }: { readonly label: string; readonly value: strin
 function Section({ title, children }: { readonly title: string; readonly children: ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{title}</h3>
-      <dl className="space-y-1 bg-gray-50 rounded-lg p-3 text-sm">{children}</dl>
+      <h3 className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-1">{title}</h3>
+      <dl className="space-y-1 bg-surface-sunken rounded-lg p-3 text-sm">{children}</dl>
     </div>
   );
 }
@@ -59,11 +59,11 @@ export default function ChecklistDetail({ checklist }: { readonly checklist: Che
             <Field label="Heure" value={formatDateTime(checklist.openedAt)} />
             <Field label="Clés reçues de" value={checklist.keyReceivedFromName ?? "—"} />
             {checklist.openingNotes && (
-              <p className="text-gray-700 whitespace-pre-wrap pt-1 border-t border-gray-200 mt-1">{checklist.openingNotes}</p>
+              <p className="text-ink-muted whitespace-pre-wrap pt-1 border-t border-line mt-1">{checklist.openingNotes}</p>
             )}
           </>
         ) : (
-          <p className="text-gray-400 italic">Non renseigné</p>
+          <p className="text-ink-subtle italic">Non renseigné</p>
         )}
       </Section>
 
@@ -76,16 +76,16 @@ export default function ChecklistDetail({ checklist }: { readonly checklist: Che
             <Field label="Salle/matériel en bon état" value={yesNo(checklist.equipmentOk)} />
             <Field label="Clés remises à" value={checklist.keyReturnedToName ?? "—"} />
             {checklist.equipmentNotes && (
-              <p className="text-gray-700 whitespace-pre-wrap pt-1 border-t border-gray-200 mt-1">
+              <p className="text-ink-muted whitespace-pre-wrap pt-1 border-t border-line mt-1">
                 Matériel : {checklist.equipmentNotes}
               </p>
             )}
             {checklist.closingNotes && (
-              <p className="text-gray-700 whitespace-pre-wrap pt-1 border-t border-gray-200 mt-1">{checklist.closingNotes}</p>
+              <p className="text-ink-muted whitespace-pre-wrap pt-1 border-t border-line mt-1">{checklist.closingNotes}</p>
             )}
           </>
         ) : (
-          <p className="text-gray-400 italic">Non renseigné</p>
+          <p className="text-ink-subtle italic">Non renseigné</p>
         )}
       </Section>
 
@@ -97,18 +97,18 @@ export default function ChecklistDetail({ checklist }: { readonly checklist: Che
             <Field label="Constaté : nettoyée" value={yesNo(checklist.validatedCleaned)} />
             <Field label="Constaté : salle/matériel en bon état" value={yesNo(checklist.validatedEquipmentOk)} />
             {checklist.closedWithoutDeclaration && (
-              <p className="text-xs text-yellow-700 pt-1 border-t border-gray-200 mt-1">
+              <p className="text-xs text-warning pt-1 border-t border-line mt-1">
                 Traité sans déclaration préalable de l&apos;utilisateur.
               </p>
             )}
             {checklist.incidentNotes && (
-              <p className="text-gray-700 whitespace-pre-wrap pt-1 border-t border-gray-200 mt-1">
+              <p className="text-ink-muted whitespace-pre-wrap pt-1 border-t border-line mt-1">
                 Écart : {checklist.incidentNotes}
               </p>
             )}
           </>
         ) : (
-          <p className="text-gray-400 italic">Non renseigné</p>
+          <p className="text-ink-subtle italic">Non renseigné</p>
         )}
       </Section>
     </div>

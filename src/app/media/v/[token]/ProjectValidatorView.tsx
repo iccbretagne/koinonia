@@ -30,13 +30,13 @@ type ProjectValidationData = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
-  IN_REVIEW:          "bg-yellow-600 text-white",
-  PREVALIDATED:       "bg-blue-600 text-white",
-  PREREJECTED:        "bg-orange-600 text-white",
-  APPROVED:           "bg-green-600 text-white",
-  FINAL_APPROVED:     "bg-emerald-700 text-white",
-  REJECTED:           "bg-red-600 text-white",
-  REVISION_REQUESTED: "bg-purple-600 text-white",
+  IN_REVIEW:          "bg-warning text-surface",
+  PREVALIDATED:       "bg-info text-surface",
+  PREREJECTED:        "bg-warning text-surface",
+  APPROVED:           "bg-success text-surface",
+  FINAL_APPROVED:     "bg-success text-surface",
+  REJECTED:           "bg-danger text-on-danger",
+  REVISION_REQUESTED: "bg-brand text-on-brand",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -73,9 +73,9 @@ function ProgressBar({ total, approved, rejected }: { readonly total: number; re
   const pendingPct  = 100 - approvedPct - rejectedPct;
   return (
     <div className="h-1 w-full flex shrink-0 overflow-hidden">
-      <div className="bg-green-500 transition-all duration-300" style={{ width: `${approvedPct}%` }} />
-      <div className="bg-red-500 transition-all duration-300"   style={{ width: `${rejectedPct}%` }} />
-      <div className="bg-white/10"                              style={{ width: `${pendingPct}%` }} />
+      <div className="bg-success transition-all duration-300" style={{ width: `${approvedPct}%` }} />
+      <div className="bg-danger transition-all duration-300"   style={{ width: `${rejectedPct}%` }} />
+      <div className="bg-ink/10"                              style={{ width: `${pendingPct}%` }} />
     </div>
   );
 }
@@ -84,17 +84,17 @@ function ProgressBar({ total, approved, rejected }: { readonly total: number; re
 
 function FileTypeIcon({ mimeType, className = "w-16 h-16" }: { readonly mimeType: string; readonly className?: string }) {
   if (mimeType.startsWith("video/")) return (
-    <svg className={`${className} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
     </svg>
   );
   if (mimeType === "application/pdf") return (
-    <svg className={`${className} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   );
   return (
-    <svg className={`${className} text-gray-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className={`${className} text-ink-subtle`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   );
@@ -121,17 +121,17 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
       <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
+        <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <span className="text-white/60 text-xs truncate max-w-[60%]">{file.filename}</span>
+        <span className="text-on-brand/60 text-xs truncate max-w-[60%]">{file.filename}</span>
         {hdUrl ? (
           <a href={hdUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-            className="text-xs text-white/50 hover:text-white underline shrink-0 transition-colors">
+            className="text-xs text-on-brand/50 hover:text-on-brand underline shrink-0 transition-colors">
             Ouvrir ↗
           </a>
         ) : <span />}
@@ -142,15 +142,15 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
           <img
             src={hdUrl ?? file.thumbnailUrl ?? ""}
             alt={file.filename}
-            className="max-w-full max-h-[80vh] object-contain rounded shadow-2xl"
+            className="max-w-full max-h-[80vh] object-contain rounded shadow-overlay"
             style={{ filter: loading && !hdUrl ? "blur(3px)" : "none", transition: "filter 300ms" }}
           />
           {loading && !hdUrl && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-on-brand/20 border-t-on-brand rounded-full animate-spin" />
             </div>
           )}
-          {hdUrl && <div className="absolute top-2 right-2 text-[10px] text-white/40 bg-black/40 rounded px-1.5 py-0.5">HD</div>}
+          {hdUrl && <div className="absolute top-2 right-2 text-[10px] text-on-brand/40 bg-scrim rounded px-1.5 py-0.5">HD</div>}
         </div>
       </div>
     </div>
@@ -186,19 +186,19 @@ function ActionDrawer({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end sm:items-center sm:justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
+    <div data-theme="dark" className="fixed inset-0 z-40 flex flex-col justify-end sm:items-center sm:justify-center">
+      <div className="absolute inset-0 bg-scrim" onClick={onCancel} />
       <div
-        className="relative bg-gray-900 border-t border-white/10 sm:border sm:rounded-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-4 shadow-2xl rounded-t-2xl"
+        className="relative bg-surface border-t border-ink/10 sm:border sm:rounded-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-4 shadow-overlay rounded-t-2xl"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
-        <p className="font-semibold text-white text-base">
+        <p className="font-semibold text-ink text-base">
           {isRevision
             ? "Demande de révision"
             : isPrevalidator ? "Écarter ce fichier" : "Rejeter ce fichier"}
         </p>
         <div>
-          <label className="block text-sm text-gray-400 mb-1.5">
+          <label className="block text-sm text-ink-subtle mb-1.5">
             {isRevision ? "Modifications demandées *" : "Raison (optionnel)"}
           </label>
           <textarea
@@ -211,13 +211,13 @@ function ActionDrawer({
                 ? "Décrivez les modifications à apporter…"
                 : "Expliquez pourquoi ce fichier est rejeté…"
             }
-            className="w-full bg-gray-800 text-white rounded-xl px-3 py-2.5 text-sm resize-none border border-white/10 focus:border-white/30 focus:outline-none placeholder-gray-600"
+            className="w-full bg-surface-sunken text-ink rounded-xl px-3 py-2.5 text-sm resize-none border border-ink/10 focus:border-ink/30 focus:outline-none placeholder:text-ink-subtle"
           />
         </div>
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 text-sm text-gray-400 border border-white/10 rounded-xl hover:bg-white/5 transition-colors"
+            className="flex-1 py-2.5 text-sm text-ink-subtle border border-ink/10 rounded-xl hover:bg-ink/5 transition-colors"
           >
             Annuler
           </button>
@@ -226,8 +226,8 @@ function ActionDrawer({
             disabled={!canConfirm}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors disabled:opacity-40 ${
               isRevision
-                ? "bg-purple-600 hover:bg-purple-700 text-white"
-                : "bg-red-600 hover:bg-red-700 text-white"
+                ? "bg-brand hover:bg-brand/90 text-on-brand"
+                : "bg-danger hover:bg-danger/90 text-on-danger"
             }`}
           >
             {saving
@@ -280,28 +280,28 @@ function SummaryView({
   });
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <header className="sticky top-0 z-10 bg-gray-950/95 border-b border-white/10 px-4 pt-4 pb-3">
+    <div data-theme="dark" className="min-h-screen bg-bg text-ink flex flex-col">
+      <header className="sticky top-0 z-10 bg-bg/95 border-b border-ink/10 px-4 pt-4 pb-3">
         <div className="flex items-center justify-between mb-3">
-          <button onClick={onBack} className="text-sm text-white/60 hover:text-white transition-colors">
+          <button onClick={onBack} className="text-sm text-ink/60 hover:text-ink transition-colors">
             ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
           </button>
           <span className="text-sm font-medium truncate max-w-[40%]">{projectName}</span>
-          <span className="text-xs text-white/40 tabular-nums shrink-0">{total} fichier{total > 1 ? "s" : ""}</span>
+          <span className="text-xs text-ink/40 tabular-nums shrink-0">{total} fichier{total > 1 ? "s" : ""}</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="rounded-xl px-3 py-2 text-center bg-green-500/15 border border-green-500/30">
-            <p className="text-xl font-bold text-green-400 tabular-nums">{approvedCount}</p>
-            <p className="text-xs text-green-400/70">{isPrevalidator ? "pré-validés" : "approuvés"}</p>
+          <div className="rounded-xl px-3 py-2 text-center bg-success/15 border border-success/30">
+            <p className="text-xl font-bold text-success tabular-nums">{approvedCount}</p>
+            <p className="text-xs text-success/70">{isPrevalidator ? "pré-validés" : "approuvés"}</p>
           </div>
-          <div className="rounded-xl px-3 py-2 text-center bg-white/5 border border-white/10">
-            <p className="text-xl font-bold text-white/50 tabular-nums">{pendingCount}</p>
-            <p className="text-xs text-white/30">en attente</p>
+          <div className="rounded-xl px-3 py-2 text-center bg-ink/5 border border-ink/10">
+            <p className="text-xl font-bold text-ink/50 tabular-nums">{pendingCount}</p>
+            <p className="text-xs text-ink/30">en attente</p>
           </div>
-          <div className="rounded-xl px-3 py-2 text-center bg-red-500/15 border border-red-500/30">
-            <p className="text-xl font-bold text-red-400 tabular-nums">{rejectedCount}</p>
-            <p className="text-xs text-red-400/70">{isPrevalidator ? "écartés" : "rejetés"}</p>
+          <div className="rounded-xl px-3 py-2 text-center bg-danger/15 border border-danger/30">
+            <p className="text-xl font-bold text-danger tabular-nums">{rejectedCount}</p>
+            <p className="text-xs text-danger/70">{isPrevalidator ? "écartés" : "rejetés"}</p>
           </div>
         </div>
 
@@ -319,8 +319,8 @@ function SummaryView({
                 onClick={() => setFilter(key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
                   filter === key
-                    ? "bg-white/20 text-white border-transparent"
-                    : "bg-transparent text-white/40 border-white/10 hover:text-white/60"
+                    ? "bg-ink/20 text-ink border-transparent"
+                    : "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60"
                 }`}
               >
                 {label} <span className="tabular-nums opacity-70">({count})</span>
@@ -337,12 +337,12 @@ function SummaryView({
             <button
               key={file.id}
               onClick={() => onGoTo(originalIndex)}
-              className={`w-full text-left bg-gray-900 rounded-xl border overflow-hidden transition-colors hover:bg-gray-800 ${
-                actionable ? "border-white/10" : "border-white/5"
+              className={`w-full text-left bg-surface rounded-xl border overflow-hidden transition-colors hover:bg-surface-sunken ${
+                actionable ? "border-ink/10" : "border-ink/5"
               }`}
             >
               <div className="flex items-center gap-3 p-3">
-                <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-800 shrink-0 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-lg overflow-hidden bg-surface-sunken shrink-0 flex items-center justify-center">
                   {file.mimeType.startsWith("image/") && file.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-cover" />
@@ -352,13 +352,13 @@ function SummaryView({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.filename}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatSize(file.size)}</p>
-                  <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold rounded-full ${STATUS_BADGE[file.status] ?? "bg-gray-700 text-gray-300"}`}>
+                  <p className="text-xs text-ink-subtle mt-0.5">{formatSize(file.size)}</p>
+                  <span className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold rounded-full ${STATUS_BADGE[file.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
                     {STATUS_LABELS[file.status] ?? file.status}
                   </span>
                 </div>
                 {actionable && (
-                  <svg className="w-4 h-4 text-white/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-ink/30 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 )}
@@ -367,7 +367,7 @@ function SummaryView({
           );
         })}
         {filtered.length === 0 && (
-          <p className="text-center text-gray-500 py-12 text-sm">Aucun fichier dans cette catégorie.</p>
+          <p className="text-center text-ink-muted py-12 text-sm">Aucun fichier dans cette catégorie.</p>
         )}
       </div>
     </div>
@@ -553,8 +553,8 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
 
   if (totalFiles === 0) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <p className="text-gray-500">Aucun fichier à valider.</p>
+      <div data-theme="dark" className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <p className="text-ink-muted">Aucun fichier à valider.</p>
       </div>
     );
   }
@@ -581,7 +581,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
     : { approve: "Approuver",   reject: "Rejeter",  revision: "Révision" };
 
   return (
-    <>
+    <div data-theme="dark" className="contents">
       {showLightbox && currentFile && (
         <ImageLightbox file={currentFile} token={token} onClose={() => setShowLightbox(false)} />
       )}
@@ -598,7 +598,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
         />
       )}
 
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col select-none overflow-hidden">
+      <div className="min-h-screen bg-bg text-ink flex flex-col select-none overflow-hidden">
         {/* Progress bar */}
         <ProgressBar total={totalFiles} approved={approvedCount} rejected={rejectedCount} />
 
@@ -608,21 +608,21 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
             <button
               onClick={() => navigate(-1)}
               disabled={currentIndex === 0}
-              className="text-white/60 disabled:opacity-25 text-2xl w-8 flex items-center justify-center hover:text-white transition-colors"
+              className="text-ink/60 disabled:opacity-25 text-2xl w-8 flex items-center justify-center hover:text-ink transition-colors"
               aria-label="Précédent"
             >‹</button>
-            <span className="text-sm tabular-nums text-white/60 min-w-[3rem] text-center">{currentIndex + 1}/{totalFiles}</span>
+            <span className="text-sm tabular-nums text-ink/60 min-w-[3rem] text-center">{currentIndex + 1}/{totalFiles}</span>
             <button
               onClick={() => navigate(1)}
               disabled={currentIndex === totalFiles - 1}
-              className="text-white/60 disabled:opacity-25 text-2xl w-8 flex items-center justify-center hover:text-white transition-colors"
+              className="text-ink/60 disabled:opacity-25 text-2xl w-8 flex items-center justify-center hover:text-ink transition-colors"
               aria-label="Suivant"
             >›</button>
           </div>
 
           <p className="text-sm font-medium truncate max-w-[40%] text-center">{project.name}</p>
 
-          <button onClick={() => setShowSummary(true)} className="text-sm text-white/60 hover:text-white transition-colors shrink-0">
+          <button onClick={() => setShowSummary(true)} className="text-sm text-ink/60 hover:text-ink transition-colors shrink-0">
             Récap
           </button>
         </header>
@@ -652,13 +652,13 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
                     <img
                       src={currentFile.thumbnailUrl ?? ""}
                       alt={currentFile.filename}
-                      className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-2xl"
+                      className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-overlay"
                       draggable={false}
                     />
                     <button
                       onClick={(e) => { e.stopPropagation(); setShowLightbox(true); }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className="absolute bottom-2 right-2 text-xs text-white/60 hover:text-white bg-black/50 hover:bg-black/70 rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+                      className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -670,20 +670,20 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
                   <div className="w-full max-w-[90vw] sm:max-w-[70vw]">
                     {fileUrlLoading ? (
                       <div className="h-48 sm:h-56 flex items-center justify-center">
-                        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
                       </div>
                     ) : fileUrl ? (
                       <video
                         controls
                         src={fileUrl}
-                        className="w-full max-h-[48vh] sm:max-h-[58vh] rounded-lg shadow-2xl bg-black"
+                        className="w-full max-h-[48vh] sm:max-h-[58vh] rounded-lg shadow-overlay bg-scrim"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <div className="h-40 flex flex-col items-center justify-center gap-2">
                         <FileTypeIcon mimeType={currentFile.mimeType} />
-                        <p className="text-gray-500 text-sm">Impossible de charger la vidéo</p>
+                        <p className="text-ink-muted text-sm">Impossible de charger la vidéo</p>
                       </div>
                     )}
                   </div>
@@ -691,7 +691,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
                   <div className="flex flex-col items-center gap-4 py-6">
                     <FileTypeIcon mimeType={currentFile.mimeType} className="w-20 h-20" />
                     {fileUrlLoading ? (
-                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
                     ) : fileUrl ? (
                       <a
                         href={fileUrl}
@@ -699,7 +699,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm text-white/80 transition-colors"
+                        className="px-4 py-2 bg-ink/10 hover:bg-ink/20 rounded-xl text-sm text-ink/80 transition-colors"
                       >
                         Ouvrir le PDF ↗
                       </a>
@@ -713,12 +713,12 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
               </div>
 
               {/* File info */}
-              <p className="text-sm font-medium text-white/90 truncate max-w-[80vw] text-center">
+              <p className="text-sm font-medium text-ink/90 truncate max-w-[80vw] text-center">
                 {currentFile.filename}
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">{formatSize(currentFile.size)}</p>
+              <p className="text-xs text-ink-muted mt-0.5">{formatSize(currentFile.size)}</p>
               {currentFile.status !== "IN_REVIEW" && (
-                <span className={`mt-1.5 inline-block px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${STATUS_BADGE[currentFile.status] ?? "bg-gray-700 text-gray-300"}`}>
+                <span className={`mt-1.5 inline-block px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${STATUS_BADGE[currentFile.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
                   {STATUS_LABELS[currentFile.status] ?? currentFile.status}
                 </span>
               )}
@@ -731,7 +731,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
               className={`absolute inset-0 flex items-start ${dragX > 0 ? "justify-start" : "justify-end"} pointer-events-none`}
               style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}
             >
-              <div className={`m-4 mt-20 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-white ${dragX > 0 ? "bg-green-500" : "bg-red-500"}`}>
+              <div className={`m-4 mt-20 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-on-danger ${dragX > 0 ? "bg-success" : "bg-danger"}`}>
                 {dragX > 0 ? "✓" : "✗"}
               </div>
             </div>
@@ -740,16 +740,16 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
 
         {/* Stats bar */}
         <div className="px-4 py-1.5 flex items-center justify-center gap-3 shrink-0 text-xs">
-          <span className="text-green-400 tabular-nums">{approvedCount} {isPrevalidator ? "pré-validés" : "approuvés"}</span>
-          <span className="text-white/20">·</span>
-          <span className="text-white/40 tabular-nums">{actionableCount} en attente</span>
-          <span className="text-white/20">·</span>
-          <span className="text-red-400 tabular-nums">{rejectedCount} {isPrevalidator ? "écartés" : "rejetés"}</span>
+          <span className="text-success tabular-nums">{approvedCount} {isPrevalidator ? "pré-validés" : "approuvés"}</span>
+          <span className="text-ink/20">·</span>
+          <span className="text-ink/40 tabular-nums">{actionableCount} en attente</span>
+          <span className="text-ink/20">·</span>
+          <span className="text-danger tabular-nums">{rejectedCount} {isPrevalidator ? "écartés" : "rejetés"}</span>
         </div>
 
         {/* All decided banner */}
         {actionableCount === 0 && totalFiles > 0 && (
-          <div className="bg-green-700/80 text-white text-sm px-4 py-2 text-center shrink-0">
+          <div className="bg-success/80 text-surface text-sm px-4 py-2 text-center shrink-0">
             Tout est traité.{" "}
             <button onClick={() => setShowSummary(true)} className="font-bold underline">Voir le récap</button>
           </div>
@@ -764,14 +764,14 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
             <button
               onClick={() => setDrawer("reject")}
               disabled={saving}
-              className="w-16 h-16 sm:w-14 sm:h-14 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 text-white text-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-lg"
+              className="w-16 h-16 sm:w-14 sm:h-14 rounded-full bg-danger hover:bg-danger/90 active:scale-95 text-on-danger text-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-float"
               aria-label={labels.reject}
               title={labels.reject}
             >✗</button>
             <button
               onClick={() => setDrawer("revision")}
               disabled={saving}
-              className="w-12 h-12 sm:w-11 sm:h-11 rounded-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white flex items-center justify-center disabled:opacity-50 transition-all shadow-lg"
+              className="w-12 h-12 sm:w-11 sm:h-11 rounded-full bg-brand hover:bg-brand/90 active:scale-95 text-on-brand flex items-center justify-center disabled:opacity-50 transition-all shadow-float"
               aria-label={labels.revision}
               title={labels.revision}
             >
@@ -782,7 +782,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
             <button
               onClick={handleApprove}
               disabled={saving}
-              className="w-16 h-16 sm:w-14 sm:h-14 rounded-full bg-green-500 hover:bg-green-600 active:scale-95 text-white text-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-lg"
+              className="w-16 h-16 sm:w-14 sm:h-14 rounded-full bg-success hover:bg-success/90 active:scale-95 text-surface text-2xl flex items-center justify-center disabled:opacity-50 transition-all shadow-float"
               aria-label={labels.approve}
               title={labels.approve}
             >✓</button>
@@ -792,21 +792,21 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
             className="px-4 pt-2 flex items-center justify-center gap-2 shrink-0"
             style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
           >
-            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_BADGE[currentFile?.status ?? ""] ?? "bg-gray-700 text-gray-300"}`}>
+            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_BADGE[currentFile?.status ?? ""] ?? "bg-surface-sunken text-ink-subtle"}`}>
               {STATUS_LABELS[currentFile?.status ?? ""] ?? "—"}
             </span>
-            <span className="text-xs text-gray-600">Aucune action disponible</span>
+            <span className="text-xs text-ink-muted">Aucune action disponible</span>
           </div>
         )}
 
         {/* Keyboard hints — desktop only */}
         {canAct && (
           <div className="hidden sm:flex px-4 py-1 justify-center gap-4 shrink-0">
-            <span className="text-[10px] text-white/25">← : {labels.reject}</span>
-            <span className="text-[10px] text-white/25">R : révision</span>
-            <span className="text-[10px] text-white/25">→ : {labels.approve}</span>
+            <span className="text-[10px] text-ink/25">← : {labels.reject}</span>
+            <span className="text-[10px] text-ink/25">R : révision</span>
+            <span className="text-[10px] text-ink/25">→ : {labels.approve}</span>
             {currentFile?.mimeType.startsWith("image/") && (
-              <span className="text-[10px] text-white/25">H : HD</span>
+              <span className="text-[10px] text-ink/25">H : HD</span>
             )}
           </div>
         )}
@@ -814,16 +814,16 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
         {/* Undo toast */}
         {undoAction && (
           <div
-            className="fixed left-4 right-4 bg-gray-800 text-white rounded-xl px-4 py-3 flex items-center justify-between z-30 shadow-xl"
+            className="fixed left-4 right-4 bg-surface text-ink rounded-xl px-4 py-3 flex items-center justify-between z-30 shadow-overlay"
             style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom))" }}
           >
             <span className="text-sm">
               {STATUS_LABELS[files.find((f) => f.id === undoAction.fileId)?.status ?? ""] ?? "Décision enregistrée"}
             </span>
-            <button onClick={undo} className="text-icc-violet font-bold text-sm ml-4">ANNULER</button>
+            <button onClick={undo} className="text-brand-text font-bold text-sm ml-4">ANNULER</button>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

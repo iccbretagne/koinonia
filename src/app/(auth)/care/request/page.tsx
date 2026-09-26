@@ -13,11 +13,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
-  VALIDATED: "bg-blue-100 text-blue-800",
-  SCHEDULED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-100 text-gray-600",
-  REJECTED: "bg-red-100 text-red-700",
+  PENDING: "bg-warning-soft text-warning",
+  VALIDATED: "bg-info-soft text-info",
+  SCHEDULED: "bg-success-soft text-success",
+  CLOSED: "bg-surface-sunken text-ink-muted",
+  REJECTED: "bg-danger-soft text-danger",
 };
 
 /**
@@ -49,14 +49,14 @@ export default async function CareRequestPage({
     return (
       <div className="max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Mes demandes de RDV</h1>
+          <h1 className="text-2xl font-bold text-ink">Mes demandes de RDV</h1>
           <Link href="/care/request?new=1" className={buttonClasses("primary")}>
             + Nouvelle demande
           </Link>
         </div>
 
         {requests.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+          <div className="text-center py-12 text-ink-subtle border border-line border-dashed rounded-lg">
             <p className="text-lg">Aucune demande de rendez-vous.</p>
             <p className="text-sm mt-1">
               Cliquez sur &quot;+ Nouvelle demande&quot; pour solliciter un entretien pastoral.
@@ -65,11 +65,11 @@ export default async function CareRequestPage({
         ) : (
           <div className="space-y-3">
             {requests.map((r) => (
-              <div key={r.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+              <div key={r.id} className="bg-surface rounded-lg border border-line px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900">{r.subject}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="font-medium text-ink">{r.subject}</p>
+                    <p className="text-xs text-ink-subtle mt-0.5">
                       {r.createdAt.toLocaleDateString("fr-FR", {
                         day: "2-digit",
                         month: "short",
@@ -79,7 +79,7 @@ export default async function CareRequestPage({
                   </div>
                   <span
                     className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-                      STATUS_COLOR[r.status] ?? "bg-gray-100 text-gray-500"
+                      STATUS_COLOR[r.status] ?? "bg-surface-sunken text-ink-muted"
                     }`}
                   >
                     {STATUS_LABEL[r.status] ?? r.status}
@@ -121,12 +121,12 @@ export default async function CareRequestPage({
     <div className="max-w-xl mx-auto">
       <Link
         href={backHref}
-        className="text-sm text-gray-400 hover:text-icc-violet transition-colors mb-4 inline-block"
+        className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block"
       >
         ← {backLabel}
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Demande de RDV pastoral</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-2">Demande de RDV pastoral</h1>
+      <p className="text-sm text-ink-muted mb-6">
         Soumettez votre demande. Elle sera étudiée puis confiée à un référent qui vous accompagnera.
       </p>
       <RequestForm

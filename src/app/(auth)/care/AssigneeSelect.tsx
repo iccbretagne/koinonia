@@ -55,7 +55,7 @@ export default function AssigneeSelect({ churchId, value, onChange }: {
         const [kind, id] = raw.split(":");
         onChange({ kind: kind as "PROFILE" | "MEMBER", id });
       }}
-      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+      className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
     >
       <option value="">{loading ? "Chargement…" : "— Sélectionner —"}</option>
       <optgroup label="Profils pastoraux">

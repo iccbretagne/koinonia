@@ -14,12 +14,12 @@ function getPeriodRange() {
 export default async function AccountingStatsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   try {
     await requireChurchPermission("accounting:stats", churchId);
   } catch {
-    return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
+    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
   const { from, to } = getPeriodRange();
@@ -172,8 +172,8 @@ export default async function AccountingStatsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Comptabilité</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Vue d&apos;ensemble des demandes et paiements</p>
+        <h1 className="text-2xl font-bold text-ink">Comptabilité</h1>
+        <p className="text-sm text-ink-muted mt-0.5">Vue d&apos;ensemble des demandes et paiements</p>
       </div>
       <AccountingNav canViewStats active="stats" />
       <AccountingStats initialData={initialData} churchId={churchId} />

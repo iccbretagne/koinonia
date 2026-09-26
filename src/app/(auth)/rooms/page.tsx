@@ -7,7 +7,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 export default async function RoomsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("rooms:view", churchId);
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
@@ -24,7 +24,7 @@ export default async function RoomsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Salles</h1>
+        <h1 className="text-2xl font-bold text-ink">Salles</h1>
         {isControlTeam && (
           <Link href="/rooms/checklists" className={buttonClasses("secondary", "sm")}>
             Contrôle des mains courantes →

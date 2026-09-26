@@ -116,10 +116,10 @@ export default async function PastoralDashboardPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       {/* En-tête */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-ink">
           Bonjour, {session.user.displayName ?? session.user.name}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-ink-muted mt-1">
           {roleLabel[profile.role]} · {profile.church.name}
         </p>
       </div>
@@ -127,26 +127,26 @@ export default async function PastoralDashboardPage() {
       {/* Cartes d'églises */}
       {churchCards.length > 0 && (
         <section>
-          <h2 className="text-base font-semibold text-gray-700 mb-3">
+          <h2 className="text-base font-semibold text-ink-muted mb-3">
             {churchCards.length === 1 ? "Mon église" : "Mes églises"}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {churchCards.map((church) => (
-              <div key={church.id} className="border-2 border-gray-200 rounded-lg p-4 space-y-3 bg-white">
+              <div key={church.id} className="border border-line rounded-lg p-4 space-y-3 bg-surface">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold text-gray-900">{church.name}</p>
+                  <p className="font-semibold text-ink">{church.name}</p>
                   {"isResponsible" in church && church.isResponsible && (
-                    <span className="shrink-0 text-xs bg-icc-violet/10 text-icc-violet font-medium px-2 py-0.5 rounded-full">
+                    <span className="shrink-0 text-xs bg-brand-soft text-brand-text font-medium px-2 py-0.5 rounded-full">
                       Responsable
                     </span>
                   )}
                   {"isResponsible" in church && !church.isResponsible && (
-                    <span className="shrink-0 text-xs bg-gray-100 text-gray-500 font-medium px-2 py-0.5 rounded-full">
+                    <span className="shrink-0 text-xs bg-surface-sunken text-ink-muted font-medium px-2 py-0.5 rounded-full">
                       Superviseur
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-4 text-sm text-ink-muted">
                   <span className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -155,7 +155,7 @@ export default async function PastoralDashboardPage() {
                   </span>
                 </div>
                 {"responsible" in church && church.responsible && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-ink-subtle">
                     Resp. : {church.responsible.name} ({roleLabel[church.responsible.role]})
                   </p>
                 )}
@@ -199,24 +199,24 @@ export default async function PastoralDashboardPage() {
         {/* Agenda pastoral */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-700">Mon agenda</h2>
+            <h2 className="text-base font-semibold text-ink-muted">Mon agenda</h2>
             <a href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
               Tout voir →
             </a>
           </div>
           {upcomingAgenda.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Aucun rendez-vous à venir.</p>
+            <p className="text-sm text-ink-subtle italic">Aucun rendez-vous à venir.</p>
           ) : (
             <div className="space-y-2">
               {upcomingAgenda.map((entry) => (
-                <div key={entry.id} className="flex gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="w-14 shrink-0 text-xs text-gray-400 pt-0.5">
+                <div key={entry.id} className="flex gap-3 bg-surface border border-line rounded-lg px-3 py-2.5">
+                  <div className="w-14 shrink-0 text-xs text-ink-subtle pt-0.5">
                     {formatDate(entry.startsAt)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{entry.title}</p>
+                    <p className="text-sm font-medium text-ink truncate">{entry.title}</p>
                     {entry.location && (
-                      <p className="text-xs text-gray-400 truncate">{entry.location}</p>
+                      <p className="text-xs text-ink-subtle truncate">{entry.location}</p>
                     )}
                   </div>
                 </div>
@@ -228,24 +228,24 @@ export default async function PastoralDashboardPage() {
         {/* Événements à venir */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-700">Événements</h2>
+            <h2 className="text-base font-semibold text-ink-muted">Événements</h2>
             <a href="/events" className={buttonClasses("ghost", "sm")}>
               Calendrier →
             </a>
           </div>
           {upcomingEvents.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Aucun événement à venir.</p>
+            <p className="text-sm text-ink-subtle italic">Aucun événement à venir.</p>
           ) : (
             <div className="space-y-2">
               {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="w-14 shrink-0 text-xs text-gray-400 pt-0.5">
+                <div key={event.id} className="flex gap-3 bg-surface border border-line rounded-lg px-3 py-2.5">
+                  <div className="w-14 shrink-0 text-xs text-ink-subtle pt-0.5">
                     {formatDate(event.date)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{event.title}</p>
+                    <p className="text-sm font-medium text-ink truncate">{event.title}</p>
                     {allChurchIds.length > 1 && (
-                      <p className="text-xs text-gray-400 truncate">{event.church.name}</p>
+                      <p className="text-xs text-ink-subtle truncate">{event.church.name}</p>
                     )}
                   </div>
                 </div>

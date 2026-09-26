@@ -45,29 +45,29 @@ export default async function NoAccessPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg border-2 border-gray-200 p-8">
-        <div className="w-16 h-16 bg-icc-violet/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-icc-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-surface rounded-lg border border-line p-8">
+        <div className="w-16 h-16 bg-brand-soft rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-brand-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
 
-        <h1 className="text-xl font-bold text-gray-900 mb-1 text-center">Accès en attente</h1>
-        <p className="text-sm text-gray-500 text-center mb-6">
+        <h1 className="text-xl font-bold text-ink mb-1 text-center">Accès en attente</h1>
+        <p className="text-sm text-ink-muted text-center mb-6">
           {session.user.name && (
-            <span className="font-medium text-gray-700">{session.user.name} · </span>
+            <span className="font-medium text-ink-muted">{session.user.name} · </span>
           )}
           {session.user.email}
         </p>
 
         {pendingRequests.length > 0 && (
-          <div className="mb-5 flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <svg className="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="mb-5 flex items-start gap-3 bg-warning-soft border border-warning/30 rounded-lg p-3">
+            <svg className="w-5 h-5 text-warning mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-yellow-800">
+            <p className="text-sm text-warning">
               {churches.length === 0
                 ? "Votre demande d'accès est en cours de traitement. Un administrateur va l'examiner prochainement."
                 : "Une demande est déjà en attente pour certaines de vos églises."}
@@ -86,12 +86,12 @@ export default async function NoAccessPage() {
             }))}
           />
         ) : pendingRequests.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center">Aucune église disponible.</p>
+          <p className="text-sm text-ink-subtle text-center">Aucune église disponible.</p>
         ) : null}
 
-        <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+        <div className="mt-6 pt-4 border-t border-line text-center">
           <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
-            <button type="submit" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <button type="submit" className="text-sm text-ink-subtle hover:text-ink-muted transition-colors">
               Se déconnecter
             </button>
           </form>

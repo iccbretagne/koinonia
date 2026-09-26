@@ -90,19 +90,19 @@ export default function MissionDetailClient({
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs?tab=freelance" className="text-sm text-gray-400 hover:text-gray-600">
+        <Link href="/jobs?tab=freelance" className="text-sm text-ink-subtle hover:text-ink-muted">
           ← Freelance
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+      <div className="bg-surface rounded-lg border border-line p-6">
         {isFilled && (
-          <div className="mb-4 px-4 py-3 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
+          <div className="mb-4 px-4 py-3 bg-success-soft text-success text-sm rounded-lg border border-success/30">
             Mission pourvue — le prestataire a été trouvé.
           </div>
         )}
         {isArchived && (
-          <div className="mb-4 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
+          <div className="mb-4 px-4 py-2 bg-surface-sunken text-ink-muted text-sm rounded-lg">
             Cette mission a été archivée par un modérateur.
           </div>
         )}
@@ -110,15 +110,15 @@ export default function MissionDetailClient({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <div className="flex flex-wrap gap-2 mb-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-surface-sunken text-ink-muted px-2.5 py-0.5 rounded-full font-medium">
                 {mission.domain}
               </span>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-info-soft text-info px-2.5 py-0.5 rounded-full font-medium">
                 {MODALITY_LABEL[mission.modality]}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">{mission.title}</h1>
-            <p className="text-gray-600 mt-0.5">{authorName}</p>
+            <h1 className="text-xl font-bold text-ink">{mission.title}</h1>
+            <p className="text-ink-muted mt-0.5">{authorName}</p>
           </div>
 
           {(canManage || isAuthor) && (
@@ -126,7 +126,7 @@ export default function MissionDetailClient({
               {isAuthor && !isFilled && !isArchived && (
                 <Link
                   href={`/jobs/freelance/missions/${mission.id}/edit`}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken transition-colors"
                 >
                   Modifier
                 </Link>
@@ -135,7 +135,7 @@ export default function MissionDetailClient({
                 <button
                   onClick={markFilled}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-success/30 text-success rounded-lg hover:bg-success-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "Mission pourvue ✓"}
                 </button>
@@ -144,7 +144,7 @@ export default function MissionDetailClient({
                 <button
                   onClick={toggleArchive}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : isArchived ? "Republier" : "Archiver"}
                 </button>
@@ -153,7 +153,7 @@ export default function MissionDetailClient({
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-icc-rouge/30 text-icc-rouge rounded-lg hover:bg-icc-rouge/5 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-danger/30 text-danger rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "Supprimer"}
                 </button>
@@ -162,39 +162,39 @@ export default function MissionDetailClient({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500 mb-5 py-3 border-y border-gray-100">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-muted mb-5 py-3 border-y border-line">
           {mission.duration && (
-            <span>Durée : <strong className="text-gray-700">{mission.duration}</strong></span>
+            <span>Durée : <strong className="text-ink-muted">{mission.duration}</strong></span>
           )}
           {mission.location && mission.modality !== "REMOTE" && (
-            <span>Localisation : <strong className="text-gray-700">{mission.location || "À préciser"}</strong></span>
+            <span>Localisation : <strong className="text-ink-muted">{mission.location || "À préciser"}</strong></span>
           )}
           {mission.dailyRate && (
-            <span>TJM : <strong className="text-gray-700">{mission.dailyRate}</strong></span>
+            <span>TJM : <strong className="text-ink-muted">{mission.dailyRate}</strong></span>
           )}
           {mission.hourlyRate && (
-            <span>Taux horaire : <strong className="text-gray-700">{mission.hourlyRate}</strong></span>
+            <span>Taux horaire : <strong className="text-ink-muted">{mission.hourlyRate}</strong></span>
           )}
           <span>
             Publié le{" "}
-            <strong className="text-gray-700">
+            <strong className="text-ink-muted">
               {new Date(mission.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
             </strong>
           </span>
         </div>
 
         <div className="prose prose-sm max-w-none">
-          <p className="text-gray-700 whitespace-pre-wrap">{mission.description}</p>
+          <p className="text-ink-muted whitespace-pre-wrap">{mission.description}</p>
         </div>
 
         {(mission.contactEmail || mission.contactUrl) && (
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Contact</p>
+          <div className="mt-6 pt-5 border-t border-line">
+            <p className="text-sm font-semibold text-ink-muted mb-3">Contact</p>
             <div className="flex flex-wrap gap-3">
               {mission.contactEmail && (
                 <a
                   href={`mailto:${mission.contactEmail}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
                 >
                   Envoyer un email →
                 </a>
@@ -204,7 +204,7 @@ export default function MissionDetailClient({
                   href={mission.contactUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 border-2 border-icc-violet text-icc-violet text-sm font-semibold rounded-lg hover:bg-icc-violet/5 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-brand text-brand-text text-sm font-semibold rounded-lg hover:bg-brand-soft transition-colors"
                 >
                   Voir le lien ↗
                 </a>

@@ -18,8 +18,8 @@ export default async function NewAgendaEntryPage() {
   if (profiles.length === 0) {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Nouvelle entrée agenda</h1>
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+        <h1 className="text-2xl font-bold text-ink mb-4">Nouvelle entrée agenda</h1>
+        <div className="p-4 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
           Aucun profil pastoral configuré.{" "}
           <a href="/admin/pastoral-profiles" className="underline">Configurer maintenant →</a>
         </div>
@@ -29,7 +29,7 @@ export default async function NewAgendaEntryPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Nouvelle entrée agenda</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Nouvelle entrée agenda</h1>
       <NewEntryForm churchId={churchId} profiles={profiles} />
     </div>
   );

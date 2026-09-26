@@ -21,14 +21,14 @@ function memberName(a: { member: { firstName: string; lastName: string } }): str
 }
 
 function ConflictBadge({ hasConflict }: { readonly hasConflict: boolean }) {
-  return hasConflict ? <span className="text-orange-700 font-medium">⚠ Conflit planning</span> : <>—</>;
+  return hasConflict ? <span className="text-warning font-medium">⚠ Conflit planning</span> : <>—</>;
 }
 
 function StatusBadge({ status }: { readonly status: "ACTIVE" | "CANCELLED" }) {
   return status === "ACTIVE" ? (
-    <span className="text-green-700 font-medium">Active</span>
+    <span className="text-success font-medium">Active</span>
   ) : (
-    <span className="text-gray-400">Annulée</span>
+    <span className="text-ink-subtle">Annulée</span>
   );
 }
 
@@ -119,8 +119,8 @@ function RadioPills({
           key={opt.value}
           className={`flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full border text-sm cursor-pointer transition-colors ${
             value === opt.value
-              ? "bg-icc-violet text-white border-icc-violet"
-              : "border-gray-300 text-gray-700 hover:border-icc-violet"
+              ? "bg-brand text-on-brand border-brand"
+              : "border-control-line text-ink-muted hover:border-brand"
           }`}
         >
           <input
@@ -172,7 +172,7 @@ function WhenCell({ a }: { readonly a: AbsenceRow }) {
     <span title={sorted.map((e) => `${e.title} (${eventDateFmt(e.date)})`).join(", ")}>
       {first.deleted ? (
         <>
-          <span className="line-through text-gray-400">{first.title}</span> (événement supprimé)
+          <span className="line-through text-ink-subtle">{first.title}</span> (événement supprimé)
         </>
       ) : (
         `${first.title} (${eventDateFmt(first.date)})`
@@ -607,18 +607,18 @@ export default function AbsencesClient({
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Absences</h1>
+      <h1 className="text-2xl font-bold text-ink">Absences</h1>
 
-      {error && <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg">{error}</div>}
+      {error && <div className="p-3 bg-danger-soft text-danger text-sm rounded-lg">{error}</div>}
 
       {selfMembers.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Mes absences</h2>
+            <h2 className="text-lg font-semibold text-ink">Mes absences</h2>
             <Button size="sm" onClick={openDeclareForSelf}>Déclarer une absence</Button>
           </div>
           {loadingSelf ? (
-            <p className="text-gray-500 text-sm">Chargement...</p>
+            <p className="text-ink-muted text-sm">Chargement...</p>
           ) : (
             <DataTable
               data={activeAbsences}
@@ -655,20 +655,20 @@ export default function AbsencesClient({
       {canView && (
         <section className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">Vue d&apos;ensemble</h2>
+            <h2 className="text-lg font-semibold text-ink">Vue d&apos;ensemble</h2>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex border-2 border-gray-300 rounded-lg overflow-hidden">
+              <div className="flex border border-control-line rounded-lg overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setViewMode("table")}
-                  className={`px-3 py-1.5 text-sm ${viewMode === "table" ? "bg-icc-violet text-white" : "bg-white text-gray-600"}`}
+                  className={`px-3 py-1.5 text-sm ${viewMode === "table" ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"}`}
                 >
                   Tableau
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("timeline")}
-                  className={`px-3 py-1.5 text-sm ${viewMode === "timeline" ? "bg-icc-violet text-white" : "bg-white text-gray-600"}`}
+                  className={`px-3 py-1.5 text-sm ${viewMode === "timeline" ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"}`}
                 >
                   Frise
                 </button>
@@ -762,7 +762,7 @@ export default function AbsencesClient({
           </div>
 
           {loadingAll ? (
-            <p className="text-gray-500 text-sm">Chargement...</p>
+            <p className="text-ink-muted text-sm">Chargement...</p>
           ) : viewMode === "timeline" ? (
             <AbsencesTimeline absences={displayedAbsences} onSelect={selectFromTimeline} />
           ) : (
@@ -843,7 +843,7 @@ export default function AbsencesClient({
           )}
 
           <div className="space-y-2">
-            <span className="block text-sm font-medium text-gray-700">Quand ?</span>
+            <span className="block text-sm font-medium text-ink-muted">Quand ?</span>
             <RadioPills
               name="formKind"
               value={formKind}
@@ -873,21 +873,21 @@ export default function AbsencesClient({
             ) : (
               <div className="pt-1 space-y-2">
                 {loadingTargetOptions ? (
-                  <p className="text-xs text-gray-400">Chargement des événements...</p>
+                  <p className="text-xs text-ink-subtle">Chargement des événements...</p>
                 ) : eventsByMonth.length === 0 ? (
-                  <p className="text-sm text-gray-400">Aucun événement disponible.</p>
+                  <p className="text-sm text-ink-subtle">Aucun événement disponible.</p>
                 ) : (
-                  <div className="max-h-64 overflow-y-auto border-2 border-gray-300 rounded-lg p-2 space-y-3">
+                  <div className="max-h-64 overflow-y-auto border border-control-line rounded-lg p-2 space-y-3">
                     {eventsByMonth.map(([month, events]) => (
                       <div key={month}>
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1 mb-1">
+                        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide px-1 mb-1">
                           {month}
                         </p>
                         <div className="space-y-1">
                           {events.map((ev) => (
                             <label
                               key={ev.id}
-                              className="flex items-start gap-2 px-2 py-2 min-h-[44px] rounded text-sm hover:bg-gray-50 cursor-pointer"
+                              className="flex items-start gap-2 px-2 py-2 min-h-[44px] rounded text-sm hover:bg-surface-sunken cursor-pointer"
                             >
                               <input
                                 type="checkbox"
@@ -897,7 +897,7 @@ export default function AbsencesClient({
                                     prev.includes(ev.id) ? prev.filter((id) => id !== ev.id) : [...prev, ev.id]
                                   )
                                 }
-                                className="mt-0.5 shrink-0 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                                className="mt-0.5 shrink-0 rounded border-control-line text-brand-text focus:ring-focus"
                               />
                               <span className="min-w-0 break-words leading-snug">
                                 {ev.title} — {eventDateFmt(ev.date)}
@@ -909,13 +909,13 @@ export default function AbsencesClient({
                     ))}
                   </div>
                 )}
-                {deselectedEventsMessage && <p className="text-xs text-orange-600">{deselectedEventsMessage}</p>}
+                {deselectedEventsMessage && <p className="text-xs text-warning">{deselectedEventsMessage}</p>}
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <span className="block text-sm font-medium text-gray-700">Pour quels départements ?</span>
+            <span className="block text-sm font-medium text-ink-muted">Pour quels départements ?</span>
             <RadioPills
               name="formAllDepartments"
               value={formAllDepartments ? "ALL" : "SOME"}
@@ -947,7 +947,7 @@ export default function AbsencesClient({
           />
 
           {declareMode === "manage" && loadingManageBackupOptions && (
-            <p className="text-xs text-gray-400">Vérification du backup possible...</p>
+            <p className="text-xs text-ink-subtle">Vérification du backup possible...</p>
           )}
           {showBackupField && activeBackupOptions.length > 0 && (
             <CheckboxGroup
@@ -958,7 +958,7 @@ export default function AbsencesClient({
             />
           )}
 
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {formError && <p className="text-sm text-danger">{formError}</p>}
 
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setDeclareOpen(false)}>Annuler</Button>

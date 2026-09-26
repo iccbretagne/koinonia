@@ -40,9 +40,9 @@ export default function PastoralMembersClient({
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Membres</h1>
+        <h1 className="text-xl font-bold text-ink">Membres</h1>
         {churchName && (
-          <p className="text-sm text-gray-500 mt-0.5">{churchName}</p>
+          <p className="text-sm text-ink-muted mt-0.5">{churchName}</p>
         )}
       </div>
 
@@ -51,28 +51,28 @@ export default function PastoralMembersClient({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Rechercher par nom, email, département…"
-        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+        className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
       />
 
       {filtered.length === 0 ? (
-        <p className="text-gray-400 italic text-sm py-6 text-center">
+        <p className="text-ink-subtle italic text-sm py-6 text-center">
           {query ? "Aucun résultat." : "Aucun membre trouvé."}
         </p>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
+        <div className="bg-surface border border-line rounded-lg divide-y divide-line">
           {filtered.map((member) => {
             const dept = member.departments[0]?.department;
             return (
               <div key={member.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-full bg-icc-violet/10 text-icc-violet flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand-soft text-brand-text flex items-center justify-center text-sm font-semibold shrink-0">
                   {member.firstName[0]}{member.lastName[0]}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-ink">
                     {member.firstName} {member.lastName}
                   </p>
                   {dept && (
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs text-ink-subtle truncate">
                       {dept.ministry.name} · {dept.name}
                     </p>
                   )}
@@ -81,7 +81,7 @@ export default function PastoralMembersClient({
                   {member.email && (
                     <a
                       href={`mailto:${member.email}`}
-                      className="text-gray-400 hover:text-icc-violet transition-colors"
+                      className="text-ink-subtle hover:text-brand-text transition-colors"
                       title={member.email}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ export default function PastoralMembersClient({
                   {member.phone && (
                     <a
                       href={`tel:${member.phone}`}
-                      className="text-gray-400 hover:text-icc-violet transition-colors"
+                      className="text-ink-subtle hover:text-brand-text transition-colors"
                       title={member.phone}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@ export default function PastoralMembersClient({
         </div>
       )}
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-subtle">
         {filtered.length}{filtered.length !== members.length ? ` / ${members.length}` : ""} membre{members.length !== 1 ? "s" : ""}
       </p>
     </div>

@@ -30,9 +30,9 @@ const TYPE_LABELS: Record<ContractType, string> = {
 };
 
 const TYPE_COLORS: Record<ContractType, string> = {
-  EMPLOI:     "bg-icc-violet/10 text-icc-violet",
-  STAGE:      "bg-icc-bleu/10 text-icc-bleu",
-  ALTERNANCE: "bg-icc-jaune/20 text-amber-700",
+  EMPLOI:     "bg-brand-soft text-brand-text",
+  STAGE:      "bg-info-soft text-info",
+  ALTERNANCE: "bg-accent-soft text-warning",
 };
 
 const STATUS_FILTER_LABELS: Record<"ALL" | SeekerStatus, string> = {
@@ -82,7 +82,7 @@ export default function SeekersListClient({
             className={`px-3 py-1.5 text-xs font-semibold rounded-full border-2 transition-colors ${
               activeFilters.has(type)
                 ? TYPE_COLORS[type] + " border-current"
-                : "border-gray-200 text-gray-500 hover:border-gray-300"
+                : "border-line text-ink-muted hover:border-control-line"
             }`}
           >
             {TYPE_LABELS[type]}
@@ -91,7 +91,7 @@ export default function SeekersListClient({
         {activeFilters.size > 0 && (
           <button
             onClick={() => setActiveFilters(new Set())}
-            className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="px-3 py-1.5 text-xs text-ink-subtle hover:text-ink-muted transition-colors"
           >
             Effacer
           </button>
@@ -106,8 +106,8 @@ export default function SeekersListClient({
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1 text-xs font-semibold rounded-full border-2 transition-colors ${
                 statusFilter === s
-                  ? "border-icc-violet text-icc-violet bg-icc-violet/5"
-                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  ? "border-brand text-brand-text bg-brand-soft"
+                  : "border-line text-ink-muted hover:bg-surface-sunken"
               }`}
             >
               {STATUS_FILTER_LABELS[s]}
@@ -117,7 +117,7 @@ export default function SeekersListClient({
       )}
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-ink-subtle">
           <p className="text-lg font-medium">
             {seekers.length === 0 ? "Aucun profil de recherche pour le moment" : "Aucun profil ne correspond au filtre"}
           </p>
@@ -126,7 +126,7 @@ export default function SeekersListClient({
               <p className="text-sm mt-1">Soyez le premier à publier votre recherche !</p>
               <Link
                 href="/jobs/seekers/new"
-                className="inline-block mt-4 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                className="inline-block mt-4 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
               >
                 Publier mon profil
               </Link>
@@ -194,7 +194,7 @@ function SeekerCard({
   return (
     <Link
       href={`/jobs/seekers/${seeker.id}`}
-      className={`block bg-white rounded-lg border-2 p-5 hover:border-icc-violet/30 hover:shadow-sm transition-all ${isArchived ? "border-gray-100 opacity-60" : "border-gray-100"}`}
+      className={`block bg-surface rounded-lg border-2 p-5 hover:border-brand/30 hover:shadow-card transition-all ${isArchived ? "border-line opacity-60" : "border-line"}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -205,46 +205,46 @@ function SeekerCard({
               </span>
             ))}
             {isOwn && (
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Mon profil</span>
+              <span className="text-xs text-ink-subtle bg-surface-sunken px-2 py-0.5 rounded-full">Mon profil</span>
             )}
             {canManage && seeker.status !== "ACTIVE" && (
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              <span className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
                 {STATUS_FILTER_LABELS[seeker.status as SeekerStatus] ?? seeker.status}
               </span>
             )}
           </div>
-          <h3 className="font-semibold text-gray-900 text-base leading-snug">{seeker.title}</h3>
-          <p className="text-sm text-gray-600 mt-0.5">{authorName}</p>
+          <h3 className="font-semibold text-ink text-base leading-snug">{seeker.title}</h3>
+          <p className="text-sm text-ink-muted mt-0.5">{authorName}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1">
             {seeker.location && (
-              <p className="text-xs text-gray-400">{seeker.location}{seeker.remote ? " · télétravail" : ""}</p>
+              <p className="text-xs text-ink-subtle">{seeker.location}{seeker.remote ? " · télétravail" : ""}</p>
             )}
             {!seeker.location && seeker.remote && (
-              <p className="text-xs text-gray-400">Télétravail</p>
+              <p className="text-xs text-ink-subtle">Télétravail</p>
             )}
             {seeker.sector && (
-              <p className="text-xs text-gray-400">{seeker.sector}</p>
+              <p className="text-xs text-ink-subtle">{seeker.sector}</p>
             )}
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-ink-subtle">
             {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
           </p>
           {availableDate && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-ink-subtle mt-0.5">
               Dispo le {availableDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
             </p>
           )}
         </div>
       </div>
-      <p className="text-sm text-gray-500 mt-2 line-clamp-2">{seeker.description}</p>
+      <p className="text-sm text-ink-muted mt-2 line-clamp-2">{seeker.description}</p>
       {canManage && (
         <div className="mt-3 flex justify-end">
           <button
             onClick={toggleStatus}
             disabled={loading}
-            className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
             {loading ? "…" : isArchived ? "Republier" : "Retirer"}
           </button>

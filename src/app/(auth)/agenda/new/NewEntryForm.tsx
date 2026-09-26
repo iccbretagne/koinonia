@@ -60,9 +60,9 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5 bg-white rounded-lg shadow border border-gray-100 p-6">
+    <form onSubmit={submit} className="space-y-5 bg-surface rounded-lg shadow border border-line p-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <label className="block text-sm font-medium text-ink-muted mb-1">Type</label>
         <div className="flex gap-4">
           {(["ACTIVITY", "APPOINTMENT"] as const).map((t) => (
             <label key={t} className="flex items-center gap-2 cursor-pointer">
@@ -80,14 +80,14 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Profil pastoral <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-ink-muted mb-1">
+          Profil pastoral <span className="text-danger">*</span>
         </label>
         <select
           value={form.recipientId}
           onChange={(e) => set("recipientId", e.target.value)}
           required
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
         >
           {profiles.map((p) => (
             <option key={p.id} value={p.id}>{p.name} — {ROLE_LABELS[p.role] ?? p.role}</option>
@@ -96,8 +96,8 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Titre <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-ink-muted mb-1">
+          Titre <span className="text-danger">*</span>
         </label>
         <input
           type="text"
@@ -105,52 +105,52 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
           onChange={(e) => set("title", e.target.value)}
           required
           placeholder="Culte, réunion d'équipe, RDV avec..."
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Début <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-ink-muted mb-1">
+            Début <span className="text-danger">*</span>
           </label>
           <input
             type="datetime-local"
             value={form.startsAt}
             onChange={(e) => set("startsAt", e.target.value)}
             required
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fin</label>
+          <label className="block text-sm font-medium text-ink-muted mb-1">Fin</label>
           <input
             type="datetime-local"
             value={form.endsAt}
             onChange={(e) => set("endsAt", e.target.value)}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Lieu</label>
+        <label className="block text-sm font-medium text-ink-muted mb-1">Lieu</label>
         <input
           type="text"
           value={form.location}
           onChange={(e) => set("location", e.target.value)}
           placeholder="Salle, adresse..."
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-ink-muted mb-1">Description</label>
         <textarea
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={3}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
         />
       </div>
 

@@ -77,41 +77,41 @@ export default async function CareRequestDetailPage({
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link href="/care" className="text-sm text-gray-400 hover:text-icc-violet transition-colors mb-4 inline-block">
+      <Link href="/care" className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block">
         ← Suivi pastoral
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">{item.firstName} {item.lastName}</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-1">{item.firstName} {item.lastName}</h1>
+      <p className="text-sm text-ink-muted mb-6">
         {STATUS_LABEL[item.status] ?? item.status}
         {wasHandedBack && (
-          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-warning-soft text-warning">
             Rendue par le référent
           </span>
         )}
       </p>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-        <p className="text-sm text-gray-600">
+      <div className="bg-surface rounded-xl border border-line p-5 space-y-3">
+        <p className="text-sm text-ink-muted">
           {item.email} {item.phone && `· ${item.phone}`}
         </p>
         {!projected.masked ? (
           <>
-            <p className="text-sm font-medium text-gray-800">{projected.subject}</p>
-            <p className="text-sm text-gray-600 whitespace-pre-line">{projected.message}</p>
+            <p className="text-sm font-medium text-ink">{projected.subject}</p>
+            <p className="text-sm text-ink-muted whitespace-pre-line">{projected.message}</p>
           </>
         ) : (
-          <p className="text-sm text-gray-400 italic">Contenu confidentiel — réservé aux Référents soins pastoraux et au référent en charge.</p>
+          <p className="text-sm text-ink-subtle italic">Contenu confidentiel — réservé aux Référents soins pastoraux et au référent en charge.</p>
         )}
         {item.assignedTo && (
-          <p className="text-sm text-gray-600">Référent : <strong>{item.assignedTo.name}</strong></p>
+          <p className="text-sm text-ink-muted">Référent : <strong>{item.assignedTo.name}</strong></p>
         )}
         {item.assignedMember && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Référent : <strong>{item.assignedMember.name ?? item.assignedMember.email}</strong>
           </p>
         )}
         {item.scheduledFor && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Rendez-vous : <strong>{new Date(item.scheduledFor).toLocaleString("fr-FR")}</strong>
           </p>
         )}
@@ -130,14 +130,14 @@ export default async function CareRequestDetailPage({
       </div>
 
       {related.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Autres demandes de la personne</h2>
+        <div className="bg-surface rounded-xl border border-line p-5 mt-4">
+          <h2 className="text-sm font-semibold text-ink-muted mb-2">Autres demandes de la personne</h2>
           <ul className="space-y-1.5">
             {related.map((r) => (
               <li key={`${r.kind}-${r.id}`}>
                 <Link
                   href={r.kind === "request" ? `/care/requests/${r.id}` : `/care/followups/${r.id}`}
-                  className="text-sm text-icc-violet hover:underline"
+                  className="text-sm text-brand-text hover:underline"
                 >
                   {r.kind === "request" ? "Rendez-vous pastoral" : "Suivi de nouveau converti"} —{" "}
                   {RELATED_STATUS_LABEL[r.status] ?? r.status}

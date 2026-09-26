@@ -97,12 +97,12 @@ const CHURCH_STATUS_OPTIONS: { value: string; label: string }[] = [
 
 function FieldError({ errors, field }: { readonly errors: FieldErrors; readonly field: string }) {
   if (!errors[field]) return null;
-  return <p className="text-xs text-red-600 mt-1">{errors[field]}</p>;
+  return <p className="text-xs text-danger mt-1">{errors[field]}</p>;
 }
 
 function inputClass(errors: FieldErrors, field: string, extra = "") {
-  return `w-full border-2 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
-    errors[field] ? "border-red-500 bg-red-50" : "border-gray-300"
+  return `w-full border-2 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand ${
+    errors[field] ? "border-danger bg-danger-soft" : "border-control-line"
   } ${extra}`;
 }
 
@@ -121,15 +121,15 @@ function RadioGroup({
 }) {
   return (
     <div
-      className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-lg border border-red-300 bg-red-50" : ""}`}
+      className={`flex flex-wrap gap-2 ${errors[name] ? "p-2 rounded-lg border border-danger/30 bg-danger-soft" : ""}`}
     >
       {options.map((opt) => (
         <label
           key={opt.value}
           className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
             value === opt.value
-              ? "bg-icc-violet text-white border-icc-violet"
-              : "border-gray-200 text-gray-700 hover:border-icc-violet"
+              ? "bg-brand text-on-brand border-brand"
+              : "border-line text-ink-muted hover:border-brand"
           }`}
         >
           <input
@@ -234,36 +234,36 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
   if (success) {
     return (
-      <div className="bg-white rounded-xl border border-green-200 p-6 sm:p-8 text-center space-y-4">
-        <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto text-3xl">
+      <div className="bg-surface rounded-xl border border-success/30 p-6 sm:p-8 text-center space-y-4">
+        <div className="w-14 h-14 rounded-full bg-success-soft flex items-center justify-center mx-auto text-3xl">
           ✓
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Demande envoyée !</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="text-lg font-semibold text-ink">Demande envoyée !</h2>
+        <p className="text-sm text-ink-muted">
           Ta demande pour rejoindre une famille à <strong>{churchName}</strong> a bien été reçue.{" "}
           {success.contactLater
             ? "Comme tu l'as souhaité, notre équipe conserve tes coordonnées et te recontactera plus tard."
             : "Notre équipe va prendre contact avec toi très prochainement."}
         </p>
         {success.suggestedFamilyName && (
-          <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-3 text-sm text-left">
-            <p className="font-medium text-icc-violet mb-0.5">Famille suggérée</p>
-            <p className="text-gray-700">{success.suggestedFamilyName}</p>
-            <p className="text-xs text-gray-500 mt-1">
+          <div className="bg-brand-soft border border-brand/30 rounded-lg px-4 py-3 text-sm text-left">
+            <p className="font-medium text-brand-text mb-0.5">Famille suggérée</p>
+            <p className="text-ink-muted">{success.suggestedFamilyName}</p>
+            <p className="text-xs text-ink-muted mt-1">
               L&apos;équipe confirmera cette affectation lors du suivi.
             </p>
           </div>
         )}
         {success.pastoralCare && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-left">
-            <p className="text-amber-800">
+          <div className="bg-warning-soft border border-warning/30 rounded-lg px-4 py-3 text-sm text-left">
+            <p className="text-warning">
               Ta demande de soin pastoral a également été enregistrée. Un pasteur te contactera
               séparément.
             </p>
           </div>
         )}
         {form.email && (
-          <p className="text-xs text-gray-400">Un email de confirmation a été envoyé à {form.email}.</p>
+          <p className="text-xs text-ink-subtle">Un email de confirmation a été envoyé à {form.email}.</p>
         )}
       </div>
     );
@@ -272,13 +272,13 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Identité */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">Qui es-tu ?</h2>
+      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
+        <h2 className="text-base font-semibold text-ink">Qui es-tu ?</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prénom <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-ink-muted mb-1">
+              Prénom <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -290,8 +290,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
             <FieldError errors={fieldErrors} field="firstName" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nom <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-ink-muted mb-1">
+              Nom <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -305,8 +305,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Téléphone <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-ink-muted mb-1">
+            Téléphone <span className="text-danger">*</span>
           </label>
           <input
             type="tel"
@@ -320,8 +320,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email <span className="text-gray-400 text-xs">(pour recevoir une confirmation)</span>
+          <label className="block text-sm font-medium text-ink-muted mb-1">
+            Email <span className="text-ink-subtle text-xs">(pour recevoir une confirmation)</span>
           </label>
           <input
             type="email"
@@ -335,26 +335,26 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       </div>
 
       {/* Trouve ta famille */}
-      <div className={`rounded-xl border-2 p-4 sm:p-6 space-y-4 transition-colors ${familySuggestion.familyName ? "border-icc-violet/30 bg-icc-violet/5" : "border-gray-200 bg-white"}`}>
+      <div className={`rounded-xl border-2 p-4 sm:p-6 space-y-4 transition-colors ${familySuggestion.familyName ? "border-brand/30 bg-brand-soft" : "border-line bg-surface"}`}>
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-icc-violet/10 flex items-center justify-center shrink-0 mt-0.5">
-            <svg className="w-4 h-4 text-icc-violet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-brand-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Trouve ta famille</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="text-base font-semibold text-ink">Trouve ta famille</h2>
+            <p className="text-xs text-ink-muted mt-0.5">
               Saisis ton adresse pour qu&apos;on t&apos;oriente vers la famille la plus proche de chez toi.
             </p>
           </div>
         </div>
 
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ton adresse</label>
+          <label className="block text-sm font-medium text-ink-muted mb-1">Ton adresse</label>
           <div className="relative">
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -371,7 +371,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
           {/* Indice d'utilisation — visible tant que l'utilisateur n'a pas sélectionné */}
           {!familySuggestion.searched && !familySuggestion.loading && (
-            <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+            <p className="text-xs text-ink-subtle mt-1.5 flex items-center gap-1">
               <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -382,7 +382,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
           )}
 
           {addressSuggestions.length > 0 && (
-            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto max-h-48">
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-surface border border-line rounded-lg shadow-float overflow-y-auto max-h-48">
               {addressSuggestions.map((s) => (
                 <li key={s.label}>
                   <button
@@ -393,15 +393,15 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
                       clearSuggestions();
                       familySuggestion.lookup(s.label);
                     }}
-                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-icc-violet/5 hover:text-icc-violet transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-brand-soft hover:text-brand-text transition-colors flex items-center gap-2"
                   >
-                    <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 text-ink-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>
                       <span className="font-medium">{s.label.split(",")[0]}</span>
-                      <span className="text-gray-400 text-xs ml-1">{s.label.split(",").slice(1).join(",")}</span>
+                      <span className="text-ink-subtle text-xs ml-1">{s.label.split(",").slice(1).join(",")}</span>
                     </span>
                   </button>
                 </li>
@@ -412,27 +412,27 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
         {/* Résultat famille */}
         {familySuggestion.loading && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="inline-block w-4 h-4 border-2 border-icc-violet border-t-transparent rounded-full animate-spin shrink-0" />
+          <div className="flex items-center gap-2 text-sm text-ink-muted">
+            <span className="inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin shrink-0" />
             Recherche de ta famille en cours…
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.familyName && (
-          <div className="flex items-center gap-3 bg-white border border-icc-violet/30 rounded-xl px-4 py-3.5 shadow-sm min-h-[64px]">
-            <div className="w-10 h-10 rounded-full bg-icc-violet flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-3 bg-surface border border-brand/30 rounded-xl px-4 py-3.5 shadow-card min-h-[64px]">
+            <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-on-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-icc-violet font-medium uppercase tracking-wide">Ta famille</p>
-              <p className="text-base font-bold text-gray-900 truncate">{familySuggestion.familyName}</p>
+              <p className="text-xs text-brand-text font-medium uppercase tracking-wide">Ta famille</p>
+              <p className="text-base font-bold text-ink truncate">{familySuggestion.familyName}</p>
             </div>
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.searched && familySuggestion.familyName === null && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-            <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-2 text-xs text-ink-muted bg-surface-sunken border border-line rounded-lg px-3 py-2.5">
+            <svg className="w-4 h-4 text-ink-subtle shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Aucune famille trouvée pour ce secteur — l&apos;équipe d&apos;intégration te contactera pour t&apos;orienter.
@@ -441,12 +441,12 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       </div>
 
       {/* Profil */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">Ton profil</h2>
+      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
+        <h2 className="text-base font-semibold text-ink">Ton profil</h2>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tranche d&apos;âge <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-ink-muted mb-2">
+            Tranche d&apos;âge <span className="text-danger">*</span>
           </label>
           <RadioGroup
             name="ageRange"
@@ -459,8 +459,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Quelle est ta situation à l&apos;église ? <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-ink-muted mb-2">
+            Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span>
           </label>
           <RadioGroup
             name="churchStatus"
@@ -473,8 +473,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Quand souhaites-tu être contacté·e ? <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-ink-muted mb-2">
+            Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span>
           </label>
           <RadioGroup
             name="contactConsent"
@@ -488,8 +488,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       </div>
 
       {/* Appel au salut */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-3">
-        <h2 className="text-base font-semibold text-gray-900">Appel au salut</h2>
+      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-3">
+        <h2 className="text-base font-semibold text-ink">Appel au salut</h2>
         <label className="flex items-start gap-3 cursor-pointer group">
           <div className="mt-0.5">
             <input
@@ -501,18 +501,18 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
             <div
               className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                 form.salvationCall
-                  ? "bg-icc-violet border-icc-violet"
-                  : "border-gray-300 group-hover:border-icc-violet"
+                  ? "bg-brand border-brand"
+                  : "border-control-line group-hover:border-brand"
               }`}
             >
               {form.salvationCall && (
-                <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                <svg className="w-3 h-3 text-on-brand" viewBox="0 0 12 12" fill="none">
                   <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </div>
           </div>
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-ink-muted">
             J&apos;ai fait l&apos;appel au salut lors du culte
           </span>
         </label>
@@ -520,10 +520,10 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
       {/* Soin pastoral — case affichée seulement si `care` est actif (spec 052) */}
       {showPastoralCare && (
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-3">
+      <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-3">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Soins pastoraux</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-base font-semibold text-ink">Soins pastoraux</h2>
+          <p className="text-sm text-ink-muted mt-1">
             Tu traverses une épreuve spirituelle, émotionnelle ou relationnelle&nbsp;? Tu portes des blessures
             du passé, une dépression ou des difficultés familiales dont tu voudrais te libérer&nbsp;?
           </p>
@@ -540,26 +540,26 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
             <div
               className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
                 form.pastoralCareRequested
-                  ? "bg-icc-violet border-icc-violet"
-                  : "border-gray-300 group-hover:border-icc-violet"
+                  ? "bg-brand border-brand"
+                  : "border-control-line group-hover:border-brand"
               }`}
             >
               {form.pastoralCareRequested && (
-                <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                <svg className="w-3 h-3 text-on-brand" viewBox="0 0 12 12" fill="none">
                   <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </div>
           </div>
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-ink-muted">
             Oui, je souhaite être accompagné par l&apos;équipe des soins pastoraux
           </span>
         </label>
 
         {form.pastoralCareRequested && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Précise ta demande <span className="text-gray-400 text-xs">(facultatif)</span>
+            <label className="block text-sm font-medium text-ink-muted mb-1">
+              Précise ta demande <span className="text-ink-subtle text-xs">(facultatif)</span>
             </label>
             <textarea
               value={form.pastoralMessage}
@@ -575,7 +575,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       )}
 
       {globalError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">
           {globalError}
         </p>
       )}
@@ -583,12 +583,12 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-icc-violet text-white py-3 rounded-lg font-medium text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-icc-violet disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+        className="w-full bg-brand text-on-brand py-3 rounded-lg font-medium text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}
       </button>
 
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-ink-subtle text-center">
         * Champs obligatoires. Tes informations sont utilisées uniquement dans le cadre de ton
         intégration.
       </p>

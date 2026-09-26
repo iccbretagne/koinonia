@@ -55,11 +55,11 @@ const REQUEST_STATUS_LABELS: Record<string, string> = {
 };
 
 const REQUEST_STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
-  VALIDATED: "bg-blue-100 text-blue-800",
-  SCHEDULED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-100 text-gray-600",
-  REJECTED: "bg-red-100 text-red-700",
+  PENDING: "bg-warning-soft text-warning",
+  VALIDATED: "bg-info-soft text-info",
+  SCHEDULED: "bg-success-soft text-success",
+  CLOSED: "bg-surface-sunken text-ink-muted",
+  REJECTED: "bg-danger-soft text-danger",
 };
 
 const MSDP_STATUS_LABELS: Record<string, string> = {
@@ -72,12 +72,12 @@ const MSDP_STATUS_LABELS: Record<string, string> = {
 };
 
 const MSDP_STATUS_COLORS: Record<string, string> = {
-  SUBMITTED: "bg-amber-100 text-amber-800",
-  ASSIGNED: "bg-blue-100 text-blue-800",
-  CONTACTED: "bg-indigo-100 text-indigo-800",
-  IN_FORMATION: "bg-purple-100 text-purple-700",
-  COMPLETED: "bg-emerald-100 text-emerald-800",
-  ABANDONED: "bg-red-100 text-red-600",
+  SUBMITTED: "bg-warning-soft text-warning",
+  ASSIGNED: "bg-info-soft text-info",
+  CONTACTED: "bg-info-soft text-info",
+  IN_FORMATION: "bg-brand-soft text-brand-text",
+  COMPLETED: "bg-success-soft text-success",
+  ABANDONED: "bg-danger-soft text-danger",
 };
 
 function QualifyForm({ req, churchId, onDone }: {
@@ -130,13 +130,13 @@ function QualifyForm({ req, churchId, onDone }: {
     return (
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Motif de refus <span className="text-red-500">*</span>
+          <label className="block text-xs font-medium text-ink-muted mb-1">
+            Motif de refus <span className="text-danger">*</span>
           </label>
           <select
             value={reasonCode}
             onChange={(e) => setReasonCode(e.target.value)}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
           >
             <option value="">— Sélectionner —</option>
             {REJECT_REASON_OPTIONS.map(([code, label]) => (
@@ -145,12 +145,12 @@ function QualifyForm({ req, churchId, onDone }: {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Commentaire (optionnel)</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+            className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
           />
         </div>
         <div className="flex gap-2">
@@ -164,20 +164,20 @@ function QualifyForm({ req, churchId, onDone }: {
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          Référent <span className="text-red-500">*</span>
+        <label className="block text-xs font-medium text-ink-muted mb-1">
+          Référent <span className="text-danger">*</span>
         </label>
         <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-medium text-ink-muted mb-1">
           Note transmise au référent (optionnel)
         </label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+          className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
         />
       </div>
       <div className="flex gap-2">
@@ -198,23 +198,23 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
   return (
     <div className="space-y-6">
       {pending.length === 0 ? (
-        <p className="text-sm text-gray-400">Aucune demande en attente de qualification.</p>
+        <p className="text-sm text-ink-subtle">Aucune demande en attente de qualification.</p>
       ) : (
         <div className="space-y-4">
           {pending.map((req) => (
-            <div key={req.id} className="bg-white rounded-lg shadow border border-gray-100 p-5">
+            <div key={req.id} className="bg-surface rounded-lg shadow border border-line p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900">{req.firstName} {req.lastName}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{req.email} {req.phone && `· ${req.phone}`}</p>
-                  {!req.masked && <p className="text-sm font-medium text-gray-700 mt-1">{req.subject}</p>}
-                  {!req.masked && <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">{req.message}</p>}
+                  <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">{req.email} {req.phone && `· ${req.phone}`}</p>
+                  {!req.masked && <p className="text-sm font-medium text-ink-muted mt-1">{req.subject}</p>}
+                  {!req.masked && <p className="text-sm text-ink-muted mt-1 whitespace-pre-line">{req.message}</p>}
                 </div>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-ink-subtle shrink-0">
                   {new Date(req.createdAt).toLocaleDateString("fr-FR")}
                 </span>
               </div>
-              <div className="border-t border-gray-100 pt-3 mt-3">
+              <div className="border-t border-line pt-3 mt-3">
                 {expanded === req.id ? (
                   <QualifyForm
                     req={req}
@@ -232,19 +232,19 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
 
       {others.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Autres demandes</h3>
+          <h3 className="text-sm font-semibold text-ink-muted mb-2">Autres demandes</h3>
           <div className="space-y-2">
             {others.map((req) => (
               <Link
                 key={req.id}
                 href={`/care/requests/${req.id}`}
-                className="flex items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-icc-violet transition-colors"
+                className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line px-4 py-3 hover:border-brand transition-colors"
               >
                 <div>
-                  <p className="font-medium text-gray-900">{req.firstName} {req.lastName}</p>
-                  <p className="text-xs text-gray-400">{new Date(req.createdAt).toLocaleDateString("fr-FR")}</p>
+                  <p className="font-medium text-ink">{req.firstName} {req.lastName}</p>
+                  <p className="text-xs text-ink-subtle">{new Date(req.createdAt).toLocaleDateString("fr-FR")}</p>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${REQUEST_STATUS_COLORS[req.status] ?? "bg-gray-100 text-gray-500"}`}>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${REQUEST_STATUS_COLORS[req.status] ?? "bg-surface-sunken text-ink-muted"}`}>
                   {REQUEST_STATUS_LABELS[req.status] ?? req.status}
                 </span>
               </Link>
@@ -258,7 +258,7 @@ function RequestsTab({ requests: initial, churchId }: { readonly requests: Appoi
 
 function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
   if (followUps.length === 0) {
-    return <p className="text-sm text-gray-400">Aucun suivi de nouveau converti.</p>;
+    return <p className="text-sm text-ink-subtle">Aucun suivi de nouveau converti.</p>;
   }
   return (
     <div className="space-y-2">
@@ -272,15 +272,15 @@ function FollowupsTab({ followUps }: { readonly followUps: FollowUpItem[] }) {
           <Link
             key={f.id}
             href={`/care/followups/${f.id}`}
-            className="flex items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-icc-violet transition-colors"
+            className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line px-4 py-3 hover:border-brand transition-colors"
           >
             <div>
-              <p className="font-medium text-gray-900">{name || "—"}</p>
-              <p className="text-xs text-gray-400">
+              <p className="font-medium text-ink">{name || "—"}</p>
+              <p className="text-xs text-ink-subtle">
                 {referent ? `Référent : ${referent}` : "Sans référent"}
               </p>
             </div>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${MSDP_STATUS_COLORS[f.status] ?? "bg-gray-100 text-gray-500"}`}>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${MSDP_STATUS_COLORS[f.status] ?? "bg-surface-sunken text-ink-muted"}`}>
               {MSDP_STATUS_LABELS[f.status] ?? f.status}
             </span>
           </Link>
@@ -295,15 +295,15 @@ export default function CareTabs({ canQualify, requests, followUps, churchId }: 
 
   return (
     <div>
-      <div className="flex gap-2 border-b border-gray-200 mb-5">
+      <div className="flex gap-2 border-b border-line mb-5">
         <button
           onClick={() => setTab("requests")}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === "requests" ? "border-icc-violet text-icc-violet" : "border-transparent text-gray-500 hover:text-gray-700"
+            tab === "requests" ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink-muted"
           }`}
         >
           Rendez-vous {requests.filter((r) => r.status === "PENDING").length > 0 && canQualify && (
-            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-icc-violet text-white">
+            <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-brand text-on-brand">
               {requests.filter((r) => r.status === "PENDING").length}
             </span>
           )}
@@ -311,7 +311,7 @@ export default function CareTabs({ canQualify, requests, followUps, churchId }: 
         <button
           onClick={() => setTab("followups")}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === "followups" ? "border-icc-violet text-icc-violet" : "border-transparent text-gray-500 hover:text-gray-700"
+            tab === "followups" ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink-muted"
           }`}
         >
           Nouveaux convertis

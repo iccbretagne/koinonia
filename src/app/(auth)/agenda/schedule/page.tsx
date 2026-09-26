@@ -20,8 +20,8 @@ export default async function AgendaSchedulePage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Planification des RDV</h1>
-      <p className="text-sm text-gray-500 mb-6">Demandes validées à planifier</p>
+      <h1 className="text-2xl font-bold text-ink mb-2">Planification des RDV</h1>
+      <p className="text-sm text-ink-muted mb-6">Demandes validées à planifier</p>
       <ScheduleDashboard requests={requests} />
     </div>
   );

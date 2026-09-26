@@ -31,9 +31,9 @@ const TYPE_LABELS: Record<ContractType, string> = {
 };
 
 const TYPE_COLORS: Record<ContractType, string> = {
-  EMPLOI:     "bg-icc-violet/10 text-icc-violet",
-  STAGE:      "bg-icc-bleu/10 text-icc-bleu",
-  ALTERNANCE: "bg-icc-jaune/20 text-amber-700",
+  EMPLOI:     "bg-brand-soft text-brand-text",
+  STAGE:      "bg-info-soft text-info",
+  ALTERNANCE: "bg-accent-soft text-warning",
 };
 
 export default function SeekerDetailClient({
@@ -109,19 +109,19 @@ export default function SeekerDetailClient({
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs?tab=seekers" className="text-sm text-gray-400 hover:text-gray-600">
+        <Link href="/jobs?tab=seekers" className="text-sm text-ink-subtle hover:text-ink-muted">
           ← Tous les profils
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+      <div className="bg-surface rounded-lg border border-line p-6">
         {isFound && (
-          <div className="mb-4 px-4 py-3 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
+          <div className="mb-4 px-4 py-3 bg-success-soft text-success text-sm rounded-lg border border-success/30">
             Ce profil est clôturé — emploi trouvé ! 🎉
           </div>
         )}
         {isArchived && (
-          <div className="mb-4 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
+          <div className="mb-4 px-4 py-2 bg-surface-sunken text-ink-muted text-sm rounded-lg">
             Ce profil a été archivé par un modérateur.
           </div>
         )}
@@ -135,8 +135,8 @@ export default function SeekerDetailClient({
                 </span>
               ))}
             </div>
-            <h1 className="text-xl font-bold text-gray-900">{seeker.title}</h1>
-            <p className="text-gray-600 mt-0.5">{authorName}</p>
+            <h1 className="text-xl font-bold text-ink">{seeker.title}</h1>
+            <p className="text-ink-muted mt-0.5">{authorName}</p>
           </div>
 
           {(canManage || isAuthor) && (
@@ -144,7 +144,7 @@ export default function SeekerDetailClient({
               {isAuthor && !isFound && !isArchived && (
                 <Link
                   href={`/jobs/seekers/${seeker.id}/edit`}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken transition-colors"
                 >
                   Modifier
                 </Link>
@@ -153,7 +153,7 @@ export default function SeekerDetailClient({
                 <button
                   onClick={markFound}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-success/30 text-success rounded-lg hover:bg-success-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "J'ai trouvé ! 🎉"}
                 </button>
@@ -162,7 +162,7 @@ export default function SeekerDetailClient({
                 <button
                   onClick={toggleArchive}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : isArchived ? "Republier" : "Archiver"}
                 </button>
@@ -171,7 +171,7 @@ export default function SeekerDetailClient({
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-icc-rouge/30 text-icc-rouge rounded-lg hover:bg-icc-rouge/5 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-danger/30 text-danger rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "Supprimer"}
                 </button>
@@ -181,42 +181,42 @@ export default function SeekerDetailClient({
         </div>
 
         {/* Métadonnées */}
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500 mb-5 py-3 border-y border-gray-100">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-muted mb-5 py-3 border-y border-line">
           {seeker.sector && (
-            <span>Secteur : <strong className="text-gray-700">{seeker.sector}</strong></span>
+            <span>Secteur : <strong className="text-ink-muted">{seeker.sector}</strong></span>
           )}
           {seeker.location && (
             <span>
-              Localisation : <strong className="text-gray-700">{seeker.location}{seeker.remote ? " · télétravail" : ""}</strong>
+              Localisation : <strong className="text-ink-muted">{seeker.location}{seeker.remote ? " · télétravail" : ""}</strong>
             </span>
           )}
           {!seeker.location && seeker.remote && (
-            <span><strong className="text-gray-700">Télétravail</strong></span>
+            <span><strong className="text-ink-muted">Télétravail</strong></span>
           )}
           {availableDate && (
             <span>
-              Disponible le : <strong className="text-gray-700">{availableDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong>
+              Disponible le : <strong className="text-ink-muted">{availableDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong>
             </span>
           )}
           <span>
-            Publié par <strong className="text-gray-700">{authorName}</strong> le {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+            Publié par <strong className="text-ink-muted">{authorName}</strong> le {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
           </span>
         </div>
 
         {/* Description */}
         <div className="prose prose-sm max-w-none">
-          <p className="text-gray-700 whitespace-pre-wrap">{seeker.description}</p>
+          <p className="text-ink-muted whitespace-pre-wrap">{seeker.description}</p>
         </div>
 
         {/* Contact */}
         {(seeker.contactEmail || seeker.contactUrl) && (
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Contact</p>
+          <div className="mt-6 pt-5 border-t border-line">
+            <p className="text-sm font-semibold text-ink-muted mb-3">Contact</p>
             <div className="flex flex-wrap gap-3">
               {seeker.contactEmail && (
                 <a
                   href={`mailto:${seeker.contactEmail}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
                 >
                   Envoyer un email →
                 </a>
@@ -226,7 +226,7 @@ export default function SeekerDetailClient({
                   href={seeker.contactUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 border-2 border-icc-violet text-icc-violet text-sm font-semibold rounded-lg hover:bg-icc-violet/5 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-brand text-brand-text text-sm font-semibold rounded-lg hover:bg-brand-soft transition-colors"
                 >
                   Voir le profil ↗
                 </a>
