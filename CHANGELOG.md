@@ -21,9 +21,35 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   pastoral, berger de famille, suivi pastoral en cours — affichés en lecture seule avec leur
   origine, y compris pour une personne qui n'a aucun rôle. Chaque rôle proposé est accompagné
   d'une phrase expliquant ce qu'il donne, et porte le même libellé sur tous les écrans.
+- **Suivi pastoral** (spec 052, #590, ADR-0015) : nouvel espace `/care` qui réunit les demandes de
+  rendez-vous pastoral (jusqu'ici dans l'agenda) et les suivis de nouveaux convertis MSDP
+  (jusqu'ici dans l'intégration). Le Référent soins pastoraux qualifie chaque demande et la confie
+  à un profil pastoral ou à un membre du MSDP ; la personne en charge fixe le rendez-vous, en
+  saisit le compte rendu ou rend la demande avec un motif ; un rejet porte un motif qualifié. Le
+  contenu de la demande reste confidentiel (lu par le référent et l'accompagnant seulement), les
+  demandes d'une même personne sont rapprochées, et les relances sont réglables par église
+  (`/care/parametres`, bandeau « À relancer ») avec des statistiques dédiées (`/care/stats`). Les
+  formulaires de demande gagnent un champ « Votre message » facultatif ; un compte lié à sa fiche
+  STAR n'a plus à redonner son statut ni son département. Le demandeur suit ses rendez-vous dans
+  « Mes demandes ».
+- **Suivi de l'accueil des nouveaux arrivants** (spec 051, #582) : une demande d'intégration peut
+  être mise en attente (« à recontacter plus tard », « transmise au département mission »), dès
+  le formulaire public (« contacté maintenant / plus tard ») ou en cours de suivi ; relances
+  réglables par église (`/integration/parametres`) avec alerte à l'équipe et bandeau « À
+  relancer », sans jamais d'abandon automatique ; historique des statuts sur la fiche ; le berger
+  peut renvoyer une demande à l'intégration avec une raison ; un abandon exige désormais un motif
+  (liste fixe et commentaire), repris sur la fiche, le tableau de bord et les statistiques.
 
 ### Modifié
 
+- ⚠️ **Rôle « Qualificateur agenda » renommé « Référent soins pastoraux »** (spec 052) :
+  `AGENDA_QUALIFIER` devient `PASTORAL_CARE_REFERENT` — les personnes qui le détenaient le
+  conservent. Les demandes de rendez-vous pastoral et les suivis MSDP existants ont été repris tels
+  quels dans `/care` par migration, et les anciennes adresses redirigent vers le nouvel espace.
+  `/care` est réservé au Référent soins pastoraux et à l'administration de l'église (qualification
+  et affectation), à la Secrétaire (consultation), et à l'accompagnant pour les seules demandes qui
+  lui sont confiées : **un Ministre ou un Responsable de département n'y a pas accès** du seul fait
+  de son rôle.
 - **Décision d'envoyer un email désormais centralisée** : tous les sites de notification passent
   par le même mécanisme (`src/lib/notifications.ts`), qui applique la préférence de
   l'utilisateur avant tout envoi — plus aucune route ne décide seule d'envoyer un email. Un
@@ -53,14 +79,17 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   de discipolat comme l'Admin (`discipleship:export`).
 - **Retirer un STAR de son dernier département** le place dans « Sans département » au lieu
   d'être refusé ; le rattacher ensuite à un vrai département l'en sort automatiquement.
-- Mise à jour des dépendances (minor/patch) : `@aws-sdk/client-s3` et
-  `@aws-sdk/s3-request-presigner` 3.1133.0 → 3.1138.0, `html2canvas-pro` 2.4.3 → 2.4.4,
-  `tsx` 4.23.13 → 4.23.15, `@types/node` 25.9.7 → 25.9.8.
+- Mise à jour des dépendances (minor/patch, #578 et #596) : `react` et `react-dom` 19.2.8 →
+  19.3.0, `@aws-sdk/client-s3` et `@aws-sdk/s3-request-presigner` 3.1128.0 → 3.1138.0,
+  `html2canvas-pro` 2.4.2 → 2.4.4, `tsx` 4.23.13 → 4.23.15, `@types/react`/`@types/react-dom`
+  → 19.3.0, `@types/node` 25.9.5 → 25.9.8.
 
 ### Sécurité
 
-- `next` et `eslint-config-next` 16.3.5 → 16.3.6 : corrige GHSA-vcvr-r3jv-pc5j (exécution de
-  code à distance dans `next/og` `ImageResponse`).
+- `next` et `eslint-config-next` 16.3.4 → 16.3.6 : la 16.3.6 corrige GHSA-vcvr-r3jv-pc5j
+  (exécution de code à distance dans `next/og` `ImageResponse`).
+- Sauvegarde et restauration de la base : `mysqldump`/`mysql` sont désormais invoqués par un
+  chemin absolu résolu une fois, et non plus par leur nom (Sonar #539).
 
 ### Corrigé
 
@@ -76,6 +105,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   existant en mars 2026 l'avaient reçu par migration), ce qui faisait échouer la création d'un
   disciple sans fiche STAR — et, désormais, le retrait d'un STAR de son dernier département — sur
   ces églises.
+- **Demandes d'intégration rouvertes dans un état incohérent** (spec 051) : la réouverture propose
+  désormais de reprendre le suivi ou de repartir de zéro, le berger dessaisi en est informé, et
+  une migration a remis en ordre les demandes déjà rouvertes.
+- **Suivi pastoral** (spec 052) : l'accompagnant désigné est prévenu dans l'application **et** par
+  email (l'email ne partait que vers un profil sans compte) ; les relances couvrent aussi les
+  suivis de nouveaux convertis.
+- **Lien « Mon profil » invisible sur mobile** pour un compte sans photo (#597) : une icône
+  générique remplace l'avatar absent.
 
 ## [v1.24.0] - 2026-09-14
 
