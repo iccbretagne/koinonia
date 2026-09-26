@@ -4,7 +4,8 @@
 - **Source de vérité vérifiée** : manifestes `src/modules/*/manifest.ts` (agrégés par
   `buildRolePermissions`), croisés avec le test figé `src/core/__tests__/permissions.test.ts`,
   la matrice de `CLAUDE.md` / `docs/auth.md`, et les gardes réellement appelées dans le code.
-- **Statut** : en revue — les décisions **D1 à D7** sont à trancher avant `/plan`.
+- **Statut** : validé le 2026-09-26 — **D1 à D6 : option recommandée** ; **D7 : option A**
+  (la Secrétaire peut réserver les salles).
 
 > Document d'annexe technique : contrairement à `spec.md`, il nomme permissions, fichiers et
 > gardes. Il alimente `plan.md` ; il ne le remplace pas.
