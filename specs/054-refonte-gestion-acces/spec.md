@@ -51,6 +51,19 @@ de l'application sans que la documentation ne le signale. Cette refonte ne se li
 seul cas des dossiers d'accueil : tout endroit où ce même raisonnement défaillant est confirmé
 pendant les travaux doit être corrigé dans le même mouvement.
 
+L'audit du RBAC mené avant le plan l'a confirmé à deux autres endroits : le suivi du parcours des
+nouveaux arrivants (coordonnées, notes, suppression de dossiers) et la gestion des comptes
+utilisateurs (où un Ministre ou un Responsable de département peut supprimer un compte préparé à
+l'avance, y compris destiné à un administrateur — alors que l'écran correspondant est réservé à
+l'Admin).
+
+Il a aussi mis au jour un problème voisin : certains gestes sur les membres ignorent le périmètre
+de responsabilité de l'appelant, alors que la consultation et la modification des fiches le
+respectent. Un Ministre ou un Responsable de département peut ainsi agir sur **toute l'église**
+pour : repérer et fusionner des fiches en doublon, lier ou délier un compte à une fiche, attribuer
+en masse le rôle STAR, et valider ou refuser les demandes d'accès. Aucune documentation ne dit que
+ces gestes doivent échapper au périmètre.
+
 Sans cette refonte, chaque nouveau rôle ou mécanisme d'accès aggrave la situation : la page
 devient chaque fois moins lisible, et l'écart entre ce que dit la documentation et ce que fait
 réellement l'application peut se reproduire ailleurs sans que personne ne le remarque.
@@ -129,7 +142,14 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
 - [ ] Tout autre endroit de l'application où une permission large est utilisée comme raccourci
       pour un rôle administratif précis — sur-octroyant ainsi l'accès à des rôles qui détiennent
       cette permission pour une autre raison légitime — est corrigé pour respecter la restriction
-      réellement documentée, dès qu'un tel cas est confirmé pendant les travaux.
+      réellement documentée, dès qu'un tel cas est confirmé pendant les travaux — au minimum le
+      suivi du parcours des nouveaux arrivants et la gestion des comptes utilisateurs.
+- [ ] Les gestes sur les membres (repérage et fusion de doublons, liaison et déliaison d'un
+      compte à une fiche, attribution en masse du rôle STAR, validation ou refus des demandes
+      d'accès) respectent le périmètre de responsabilité de l'appelant, comme la consultation et
+      la modification des fiches : un Ministre ou un Responsable de département n'agit que sur les
+      membres et les demandes de son périmètre ; l'administration de l'église garde un accès
+      global.
 
 ## Hors périmètre
 
@@ -139,9 +159,12 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
 - Un moyen de demander ou d'accorder un accès temporaire aux dossiers d'accueil pour une personne
   qui n'appartient pas à l'équipe dédiée (voir décision ci-dessous).
 - Refonte visuelle globale de l'application : seul l'espace de gestion des accès est concerné.
-- Toute incohérence entre documentation et comportement réel qui ne reproduit pas ce même
-  anti-motif (permission large utilisée comme raccourci de rôle administratif) — à traiter
-  séparément, même si elle est découverte en cours de refonte.
+- Toute incohérence entre documentation et comportement réel qui ne relève ni de cet anti-motif
+  (permission large utilisée comme raccourci de rôle administratif) ni d'un périmètre de
+  responsabilité ignoré — à traiter séparément, même si elle est découverte en cours de refonte.
+- Les endroits où une permission sert de raccourci pour « Admin ou Secrétaire » **sans
+  sur-octroyer d'accès aujourd'hui** (la permission n'est détenue que par ces rôles) : ils sont
+  signalés dans la documentation comme fragiles, mais pas corrigés.
 
 ## Décisions
 
@@ -163,6 +186,11 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
   pour ne pas livrer un correctif de sécurité partiel alors qu'un audit du RBAC actuel est mené en
   parallèle de cette feature ; reste borné à ce seul anti-motif (voir « Hors périmètre »), pas à
   toute incohérence documentation/comportement.
+- **Périmètre de responsabilité sur les gestes « membres » (lot 2)** : les quatre gestes relevés
+  par l'audit (doublons et fusion, liaison de comptes, attribution en masse du rôle STAR,
+  validation des demandes d'accès) entrent tous dans cette feature, et pas seulement ceux qui
+  relèvent strictement de la gestion des accès. Choisi pour corriger le RBAC d'un seul coup
+  plutôt que de laisser des écarts connus dans une issue à part.
 
 ## Questions ouvertes
 
