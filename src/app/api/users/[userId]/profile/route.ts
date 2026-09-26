@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rolePermissions } from "@/lib/registry";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 
@@ -20,7 +21,9 @@ export async function PATCH(
     const isSelf = session.user.id === userId;
 
     if (!isSelf) {
-      // Admin/secretary can edit profile of users who share at least one church
+      // users:manage peut modifier le profil d'un utilisateur avec qui il partage une église
+      // (spec 054/#583 — remplace le contrôle de rôle codé en dur SUPER_ADMIN/ADMIN/SECRETARY,
+      // qui approximait déjà cette permission sans passer par rolePermissions)
       const targetUser = await prisma.user.findUnique({
         where: { id: userId },
         select: { churchRoles: { select: { churchId: true } } },
@@ -28,13 +31,15 @@ export async function PATCH(
       if (!targetUser) throw new ApiError(404, "Utilisateur introuvable");
 
       const targetChurchIds = new Set(targetUser.churchRoles.map((r) => r.churchId));
-      const hasSharedChurchAdmin = session.user.churchRoles.some(
-        (r) =>
-          ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role) &&
-          targetChurchIds.has(r.churchId)
-      );
+      const hasSharedChurchAccess = session.user.isSuperAdmin
+        ? true
+        : session.user.churchRoles.some(
+            (r) =>
+              targetChurchIds.has(r.churchId) &&
+              (rolePermissions[r.role] ?? []).includes("users:manage")
+          );
 
-      if (!hasSharedChurchAdmin) {
+      if (!hasSharedChurchAccess) {
         throw new ApiError(403, "Non autorisé");
       }
     }

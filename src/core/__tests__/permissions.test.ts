@@ -88,6 +88,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "integration:manage",
     "jobs:freelance",
     "jobs:manage",
     "jobs:post",
@@ -128,10 +129,12 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "care:view",
     "departments:manage",
     "departments:view",
+    "discipleship:export",
     "discipleship:manage",
     "discipleship:view",
     "events:manage",
     "events:view",
+    "integration:manage",
     "jobs:freelance",
     "jobs:manage",
     "jobs:post",
@@ -151,6 +154,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "rooms:manage",
     "rooms:reserve",
     "rooms:view",
+    "users:manage",
   ],
   SECRETARY: [
     "absences:manage",
@@ -169,6 +173,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "integration:manage",
     "jobs:freelance",
     "jobs:manage",
     "jobs:post",
@@ -181,6 +186,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "planning:view",
     "reports:edit",
     "reports:view",
+    "rooms:reserve",
     "rooms:view",
   ],
   MINISTER: [
@@ -411,11 +417,29 @@ describe("roleHasPermission", () => {
     expect(roleHasPermission(buildFullRegistry(), "DISCIPLE_MAKER", "planning:edit")).toBe(false);
   });
 
-  it("church:manage et users:manage restent réservés au SUPER_ADMIN", () => {
+  it("church:manage reste réservé au SUPER_ADMIN", () => {
     const registry = buildFullRegistry();
     for (const role of ALL_ROLES.filter((r) => r !== "SUPER_ADMIN")) {
       expect(roleHasPermission(registry, role, "church:manage"), `Rôle ${role}`).toBe(false);
+    }
+  });
+
+  it("users:manage est réservé à SUPER_ADMIN et ADMIN (#583)", () => {
+    const registry = buildFullRegistry();
+    expect(roleHasPermission(registry, "SUPER_ADMIN", "users:manage")).toBe(true);
+    expect(roleHasPermission(registry, "ADMIN", "users:manage")).toBe(true);
+    for (const role of ALL_ROLES.filter((r) => r !== "SUPER_ADMIN" && r !== "ADMIN")) {
       expect(roleHasPermission(registry, role, "users:manage"), `Rôle ${role}`).toBe(false);
+    }
+  });
+
+  it("integration:manage n'approxime plus members:manage/events:manage (#583)", () => {
+    const registry = buildFullRegistry();
+    for (const role of ["SUPER_ADMIN", "ADMIN", "SECRETARY"] as Role[]) {
+      expect(roleHasPermission(registry, role, "integration:manage"), `Rôle ${role}`).toBe(true);
+    }
+    for (const role of ["MINISTER", "DEPARTMENT_HEAD"] as Role[]) {
+      expect(roleHasPermission(registry, role, "integration:manage"), `Rôle ${role}`).toBe(false);
     }
   });
 

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, getUserMinistryScope } from "@/lib/auth";
+import { resolveMemberDepartmentScope, isLinkRequestInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
@@ -21,7 +22,10 @@ export async function PATCH(
     const { id } = await params;
 
     const churchId = await resolveChurchId("memberLinkRequest", id);
-    const session = await requireChurchPermission("members:manage", churchId);
+    // access:manage (Super Admin, Admin, Secrétaire, Ministre borné à son ministère) — remplace
+    // members:manage, qui laissait tout Resp. département traiter les demandes de toute
+    // l'église (spec 054/#583, défaut B4 de audit-rbac.md)
+    const session = await requireChurchPermission("access:manage", churchId);
 
     const body = await request.json();
     const { action, rejectReason, departmentId: adminDeptOverride, confirmDuplicate } = schema.parse(body);
@@ -29,13 +33,30 @@ export async function PATCH(
     const linkRequest = await prisma.memberLinkRequest.findUnique({
       where: { id },
       include: {
-        member: true,
+        member: { include: { departments: { select: { departmentId: true } } } },
         department: true,
         ministry: true,
         user: true,
       },
     });
     if (!linkRequest) throw new ApiError(404, "Demande introuvable");
+
+    const memberScope = await resolveMemberDepartmentScope(session, churchId);
+    const ministryScope = getUserMinistryScope(session, churchId);
+    const inScope = isLinkRequestInScope(
+      memberScope,
+      ministryScope.scoped ? ministryScope.ministryIds : [],
+      { departmentId: linkRequest.departmentId, ministryId: linkRequest.ministryId },
+      linkRequest.member?.departments.map((d) => d.departmentId) ?? []
+    );
+    if (!inScope) throw new ApiError(403, "Cette demande est hors de votre périmètre");
+    if (
+      adminDeptOverride &&
+      memberScope.scoped &&
+      !memberScope.departmentIds.includes(adminDeptOverride)
+    ) {
+      throw new ApiError(403, "Ce département est hors de votre périmètre");
+    }
 
     // Reconsidérer une demande refusée → repasser en PENDING
     if (action === "reconsider") {

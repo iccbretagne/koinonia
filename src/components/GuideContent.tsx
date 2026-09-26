@@ -2,38 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
+import type { Role } from "@/generated/prisma/client";
 
-type RoleKey = "SUPER_ADMIN" | "ADMIN" | "SECRETARY" | "MINISTER" | "DEPARTMENT_HEAD" | "DISCIPLE_MAKER" | "REPORTER" | "STAR" | "PASTORAL_CARE_REFERENT" | "ACCOUNTANT";
+type RoleKey = Role;
 
 interface GuideContentProps {
   readonly defaultRole: RoleKey;
 }
-
-const ROLE_LABELS: Record<RoleKey, string> = {
-  SUPER_ADMIN: "Super Admin",
-  ADMIN: "Admin",
-  SECRETARY: "Secrétaire",
-  MINISTER: "Ministre",
-  DEPARTMENT_HEAD: "Resp. Département",
-  DISCIPLE_MAKER: "Faiseur de Disciples",
-  REPORTER: "Reporter (Comptes rendus)",
-  STAR: "STAR (Membre)",
-  PASTORAL_CARE_REFERENT: "Référent soins pastoraux",
-  ACCOUNTANT: "Comptable",
-};
-
-const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
-  SUPER_ADMIN: "Accès complet à toutes les fonctionnalités et toutes les églises.",
-  ADMIN: "Gestion complète d'une église : planning, membres, événements, discipolat et comptes rendus.",
-  SECRETARY: "Vision globale en lecture avec gestion des événements, discipolat et comptes rendus. Ces droits sont aussi accordés à toute personne membre d'un département portant la fonction Secrétariat, sans que le rôle lui soit attribué.",
-  MINISTER: "Gestion du planning et des membres pour les départements de son ministère.",
-  DEPARTMENT_HEAD: "Gestion du planning et des membres pour ses départements assignés. Accès au discipolat.",
-  DISCIPLE_MAKER: "Suivi des disciples et de leur arbre de lignée.",
-  REPORTER: "Accès en lecture et écriture aux comptes rendus d'événements et statistiques.",
-  STAR: "Membre actif (STAR) : consulte son planning personnel et celui de ses départements en lecture seule.",
-  PASTORAL_CARE_REFERENT: "Qualification des demandes de RDV pastoral : valide ou rejette, assigne au bon profil.",
-  ACCOUNTANT: "Comptable : gestion des demandes financières (notes de frais, avances de budget), confirmation des paiements.",
-};
 
 type AccessLevel = "edit" | "read" | "none";
 
@@ -139,11 +115,11 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Statistiques & Export",
-    description: "Visualisez les taux de présence par disciple sur une période. Export Excel de l'ensemble des relations et statistiques de l'église (réservé à Super Admin et Secrétaire).",
+    description: "Visualisez les taux de présence par disciple sur une période. Export Excel de l'ensemble des relations et statistiques de l'église (réservé à Super Admin, Admin et Secrétaire).",
     category: "Discipolat",
     screenshotTitle: "Statistiques discipolat",
     screenshotFile: "guide-discipleship-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Annonces ─────────────────────────────────────────────────────────────
@@ -227,11 +203,11 @@ const FEATURES: Feature[] = [
   // ── Administration ────────────────────────────────────────────────────────
   {
     name: "Accès & rôles",
-    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter). Validez ou rejetez les demandes d'onboarding. Un responsable de département peut être désigné adjoint (isDeputy).",
+    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter). Validez ou rejetez les demandes d'onboarding, et liez ou déliez un compte à une fiche STAR — la Secrétaire le peut également (spec 054). Un responsable de département peut être désigné adjoint (isDeputy).",
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Ministères & départements",
@@ -251,11 +227,11 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Gestion des utilisateurs",
-    description: "Consultez tous les comptes connectés. Gérez les accès globaux et la liaison entre comptes Google et fiches STAR.",
+    description: "Consultez tous les comptes de l'église, pré-créez-en un avant sa première connexion, ou supprimez un compte préparé par erreur qui ne s'est jamais connecté (spec 054).",
     category: "Administration",
     screenshotTitle: "Gestion des utilisateurs",
     screenshotFile: "guide-admin-users.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Journaux d'audit",
@@ -283,7 +259,7 @@ const FEATURES: Feature[] = [
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Contrôle des mains courantes",
@@ -505,7 +481,7 @@ const FEATURES: Feature[] = [
   },
 ];
 
-const ROLES: RoleKey[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "PASTORAL_CARE_REFERENT", "ACCOUNTANT"];
+const ROLES: readonly RoleKey[] = ALL_ROLES;
 
 function AccessBadge({ level }: { readonly level: AccessLevel }) {
   switch (level) {

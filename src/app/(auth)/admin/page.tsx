@@ -1,18 +1,27 @@
 import { redirect } from "next/navigation";
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 
 export default async function AdminPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (churchId) await requireChurchPermission("members:manage", churchId);
 
-  const userRoles = session.user.churchRoles.map((r) => r.role);
-  const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
+  // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un responsable de
+  // l'église A obtient les droits de l'église B (issue #490).
+  const churchRoles = churchId
+    ? session.user.churchRoles.filter((r) => r.churchId === churchId)
+    : [];
+  const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPermissions.has("church:manage")) {
+  if (session.user.isSuperAdmin || userPermissions.has("church:manage")) {
     redirect("/admin/churches");
   }
+  if (userPermissions.has("users:manage")) {
+    redirect("/admin/users");
+  }
+  if (userPermissions.has("access:manage")) {
+    redirect("/admin/access");
+  }
 
-  redirect("/admin/users");
+  throw new Error("FORBIDDEN");
 }

@@ -1,4 +1,4 @@
-import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +17,11 @@ export default async function MembersPage() {
     churchRoles.flatMap((r) => rolePermissions[r.role] ?? [])
   );
   const canManage = userPermissions.has("members:manage");
+  // Valider les demandes d'accès et lier/délier un compte relèvent d'access:manage, pas de
+  // members:manage : un Resp. département gère ses fiches STAR mais plus ces deux gestes,
+  // réservés à l'administration et au Ministre de son ministère (spec 054/#583, D3)
+  const canLink = userPermissions.has("access:manage");
+  const ministryScope = getUserMinistryScope(session, churchId);
   const scope = await resolveMemberDepartmentScope(session, churchId);
 
   const membersWhere = scope.scoped
@@ -27,10 +32,19 @@ export default async function MembersPage() {
     ? { id: { in: scope.departmentIds } }
     : { ministry: { churchId } };
 
-  const [pendingRequests, rejectedRequests] = canManage
+  const ministryOrFilter = ministryScope.scoped
+    ? {
+        OR: [
+          { ministryId: { in: ministryScope.ministryIds } },
+          { department: { ministryId: { in: ministryScope.ministryIds } } },
+        ],
+      }
+    : {};
+
+  const [pendingRequests, rejectedRequests] = canLink
     ? await Promise.all([
         prisma.memberLinkRequest.findMany({
-          where: { status: "PENDING", churchId },
+          where: { status: "PENDING", churchId, ...ministryOrFilter },
           include: {
             user: { select: { id: true, name: true, email: true, image: true } },
             member: {
@@ -49,7 +63,7 @@ export default async function MembersPage() {
           orderBy: { createdAt: "asc" },
         }),
         prisma.memberLinkRequest.findMany({
-          where: { status: "REJECTED", churchId },
+          where: { status: "REJECTED", churchId, ...ministryOrFilter },
           select: {
             id: true,
             firstName: true,
@@ -170,6 +184,7 @@ export default async function MembersPage() {
           ministryName: d.ministry.name,
         }))}
         readOnly={!canManage}
+        canLink={canLink}
         scoped={scope.scoped}
         churchId={churchId}
       />

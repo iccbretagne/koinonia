@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
+import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
 export async function GET(request: Request) {
@@ -7,10 +8,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchPermission("members:manage", churchId);
+    const session = await requireChurchPermission("members:manage", churchId);
+
+    // Filtré au périmètre de l'appelant — sinon un Resp. département verrait les emails de
+    // toute l'église (spec 054/#583, même défaut que la page /admin/members/duplicates).
+    const scope = await resolveMemberDepartmentScope(session, churchId);
+    const membersWhere = scope.scoped
+      ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }
+      : { departments: { some: { department: { ministry: { churchId } } } } };
 
     const members = await prisma.member.findMany({
-      where: { departments: { some: { department: { ministry: { churchId } } } } },
+      where: membersWhere,
       include: {
         departments: {
           include: {

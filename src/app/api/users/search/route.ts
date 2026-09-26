@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchPermission("members:manage", churchId);
+    // access:manage : cette route n'est appelée que pour lier un compte (spec 054/#583, D3)
+    await requireChurchPermission("access:manage", churchId);
     if (q.length < 2) return successResponse([]);
 
     const memberLinksSelect = { where: { churchId }, select: { id: true } } as const;

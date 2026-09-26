@@ -1,4 +1,6 @@
 import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
+import { resolveMemberDepartmentScope } from "@/lib/member-scope";
+import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
@@ -9,8 +11,21 @@ export default async function DuplicatesPage() {
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
   await requireChurchPermission("members:manage", churchId);
 
+  // Filtré au périmètre de l'appelant — un Resp. département ne voyait jusqu'ici les emails de
+  // toute l'église (spec 054/#583, défaut B1). L'attribution du rôle STAR en masse relève
+  // d'access:manage, distincte de members:manage (D3).
+  const scope = await resolveMemberDepartmentScope(session, churchId);
+  const canAssignStarRoles = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === churchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
+  ).has("access:manage");
+  const membersWhere = scope.scoped
+    ? { departments: { some: { departmentId: { in: scope.departmentIds } } } }
+    : { departments: { some: { department: { ministry: { churchId } } } } };
+
   const members = await prisma.member.findMany({
-    where: { departments: { some: { department: { ministry: { churchId } } } } },
+    where: membersWhere,
     include: {
       departments: {
         include: {
@@ -104,7 +119,12 @@ export default async function DuplicatesPage() {
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Doublons potentiels</h1>
       </div>
-      <DuplicatesView groups={serialized} allMembers={allMembers} churchId={churchId} />
+      <DuplicatesView
+        groups={serialized}
+        allMembers={allMembers}
+        churchId={churchId}
+        canAssignStarRoles={canAssignStarRoles}
+      />
     </div>
   );
 }
