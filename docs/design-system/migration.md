@@ -8,7 +8,7 @@ Utilitaires disponibles (déclarés dans `src/app/globals.css`) : `bg-bg`, `bg-s
 `bg-surface-sunken`, `border-line`, `border-control-line`, `text-ink`, `text-ink-muted`,
 `text-ink-subtle`, `bg-brand`, `hover:bg-brand-hover`, `text-brand-text`, `bg-brand-soft`,
 `text-on-brand`, `bg-accent`, `bg-accent-soft`, `text-on-accent`, `text-/bg-/border-` +
-`success|warning|danger|info` et leurs variantes `-soft`, `text-on-danger`, `ring-focus`,
+`success|warning|danger|info` et leurs variantes `-soft`, `text-on-danger|on-success|on-warning|on-info` (texte sur l'aplat correspondant), `ring-focus`,
 `bg-scrim`, `rounded-chip|control|card|sheet`, `shadow-card|float|overlay`, `font-display`.
 Les modificateurs d'opacité fonctionnent (`border-danger/30`, `bg-brand/10`).
 
