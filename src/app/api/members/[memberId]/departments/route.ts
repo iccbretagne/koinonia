@@ -50,8 +50,8 @@ export async function POST(
  * Retire un STAR d'un département sans supprimer sa fiche.
  *
  * Le DELETE de la fiche refuse un STAR partiellement hors périmètre ; c'est ici que se fait le
- * retrait ciblé. Refusé sur la dernière affiliation : un STAR sans département n'appartiendrait
- * plus à aucune église.
+ * retrait ciblé. Sur la dernière affiliation, bascule vers le département système « Sans
+ * département » plutôt que de refuser (cf. `detachMemberFromDepartment`).
  */
 export async function DELETE(
   request: Request,
@@ -69,7 +69,7 @@ export async function DELETE(
       throw new ApiError(403, "Ce département n'est pas dans votre périmètre");
     }
 
-    const updated = await detachMemberFromDepartment(memberId, departmentId);
+    const updated = await detachMemberFromDepartment(memberId, departmentId, churchId);
 
     await logAudit({
       userId: session.user.id,
