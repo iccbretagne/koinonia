@@ -78,7 +78,7 @@
     --on-success: #1b1530;
     --on-warning: #1b1530;
     --on-info: #1b1530;
-  --shadow-1: none;
+    --shadow-1: none;
     --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
     --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.6);
   }
