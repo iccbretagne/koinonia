@@ -88,44 +88,44 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
   return (
     <div className="space-y-6">
       {/* Formulaire */}
-      <div className="bg-white rounded-lg shadow border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">{editId ? "Modifier le profil" : "Nouveau profil"}</h2>
+      <div className="bg-surface rounded-lg shadow-card border border-line p-5">
+        <h2 className="font-semibold text-ink mb-4">{editId ? "Modifier le profil" : "Nouveau profil"}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Nom <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Nom <span className="text-danger">*</span></label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
               placeholder="Prénom Nom"
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Rôle <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Rôle <span className="text-danger">*</span></label>
             <select
               value={form.role}
               onChange={(e) => set("role", e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             >
               {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Email</label>
             <input
               type="email"
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Compte utilisateur (optionnel)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Compte utilisateur (optionnel)</label>
             <select
               value={form.userId}
               onChange={(e) => set("userId", e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             >
               <option value="">— Aucun —</option>
               {users.map((u) => (
@@ -144,27 +144,27 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
 
       {/* Liste */}
       {profiles.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-6">Aucun profil pastoral configuré.</p>
+        <p className="text-sm text-ink-muted text-center py-6">Aucun profil pastoral configuré.</p>
       ) : (
-        <div className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
+        <div className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-surface-sunken border-b border-line">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Nom</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Rôle</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Email</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Compte lié</th>
+                <th className="px-4 py-3 text-left font-medium text-ink-muted">Nom</th>
+                <th className="px-4 py-3 text-left font-medium text-ink-muted">Rôle</th>
+                <th className="px-4 py-3 text-left font-medium text-ink-muted">Email</th>
+                <th className="px-4 py-3 text-left font-medium text-ink-muted">Compte lié</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {profiles.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50/50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{roleLabel(p.role)}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.email ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.user?.displayName ?? p.user?.name ?? "—"}</td>
+                <tr key={p.id} className="hover:bg-surface-sunken/50">
+                  <td className="px-4 py-3 font-medium text-ink">{p.name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{roleLabel(p.role)}</td>
+                  <td className="px-4 py-3 text-ink-muted">{p.email ?? "—"}</td>
+                  <td className="px-4 py-3 text-ink-muted">{p.user?.displayName ?? p.user?.name ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2 justify-end">
                       <Button size="sm" variant="secondary" onClick={() => startEdit(p)}>Modifier</Button>

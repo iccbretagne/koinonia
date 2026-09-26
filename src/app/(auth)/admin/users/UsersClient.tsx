@@ -292,8 +292,8 @@ export default function UsersClient({
             onClick={() => setActiveLetter(null)}
             className={`px-2 py-1 text-xs font-medium rounded ${
               activeLetter === null
-                ? "bg-icc-violet text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-brand text-on-brand"
+                : "bg-surface-sunken text-ink-muted hover:bg-surface-sunken"
             }`}
           >
             Tous
@@ -306,22 +306,22 @@ export default function UsersClient({
               }
               className={`px-2 py-1 text-xs font-medium rounded ${
                 activeLetter === letter
-                  ? "bg-icc-violet text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-brand text-on-brand"
+                  : "bg-surface-sunken text-ink-muted hover:bg-surface-sunken"
               }`}
             >
               {letter}
             </button>
           ))}
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-muted">
           {filteredUsers.length} utilisateur{filteredUsers.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       <div className="space-y-4">
         {filteredUsers.map((user) => (
-          <div key={user.id} className="bg-white rounded-lg shadow p-4">
+          <div key={user.id} className="bg-surface rounded-lg shadow-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-3 min-w-0">
                 {user.image && (
@@ -334,18 +334,18 @@ export default function UsersClient({
                   />
                 )}
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
+                  <p className="font-medium text-ink truncate">
                     {user.displayName || user.name || "Sans nom"}
                     {user.displayName && user.name && user.displayName !== user.name && (
-                      <span className="text-sm text-gray-400 ml-1">({user.name})</span>
+                      <span className="text-sm text-ink-subtle ml-1">({user.name})</span>
                     )}
                     {user.neverConnected && (
-                      <span className="ml-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700">
+                      <span className="ml-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-warning-soft text-warning">
                         Jamais connecté
                       </span>
                     )}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                  <p className="text-sm text-ink-muted truncate">{user.email}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -367,7 +367,7 @@ export default function UsersClient({
                 {user.churchRoles.map((r) => (
                   <span
                     key={r.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 rounded-md text-sm text-gray-700"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-surface-sunken rounded-md text-sm text-ink-muted"
                   >
                     {formatRoleBadge(r)}
                     {canManageRoles &&
@@ -375,7 +375,7 @@ export default function UsersClient({
                         r.role === "DEPARTMENT_HEAD") && (
                         <button
                           onClick={() => openEditAssignment(user.id, r)}
-                          className="ml-1 p-0.5 rounded text-icc-violet hover:bg-icc-violet hover:text-white transition-colors"
+                          className="ml-1 p-0.5 rounded text-brand-text hover:bg-brand-hover hover:text-on-brand transition-colors"
                           title="Modifier l'affectation"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,7 +388,7 @@ export default function UsersClient({
                         onClick={() =>
                           handleRemoveRole(user.id, r.church.id, r.role)
                         }
-                        className="ml-0.5 p-0.5 rounded text-red-400 hover:bg-red-500 hover:text-white transition-colors"
+                        className="ml-0.5 p-0.5 rounded text-danger hover:bg-danger hover:text-on-danger transition-colors"
                         title="Supprimer le rôle"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,13 +400,13 @@ export default function UsersClient({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">Aucun rôle</p>
+              <p className="text-sm text-ink-subtle">Aucun rôle</p>
             )}
           </div>
         ))}
 
         {filteredUsers.length === 0 && (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-ink-muted py-8">
             Aucun utilisateur trouvé.
           </p>
         )}
@@ -426,7 +426,7 @@ export default function UsersClient({
             required
           />
           {displayNameError && (
-            <p className="text-sm text-red-600">{displayNameError}</p>
+            <p className="text-sm text-danger">{displayNameError}</p>
           )}
           <div className="flex justify-end gap-2">
             <Button
@@ -475,7 +475,7 @@ export default function UsersClient({
             />
           )}
 
-          {editError && <p className="text-sm text-red-600">{editError}</p>}
+          {editError && <p className="text-sm text-danger">{editError}</p>}
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"

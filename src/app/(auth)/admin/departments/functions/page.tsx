@@ -5,7 +5,7 @@ import DeptFunctionsClient from "./DeptFunctionsClient";
 export default async function DeptFunctionsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("events:manage", churchId);
 
   const departments = await prisma.department.findMany({
@@ -16,10 +16,10 @@ export default async function DeptFunctionsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <h1 className="text-2xl font-bold text-ink mb-2">
         Fonctions des départements
       </h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-ink-muted mb-6">
         Configurez quel département est en charge de chaque fonction système.
         Ces assignations déterminent le routage des demandes et les accès aux modules spécialisés.
       </p>

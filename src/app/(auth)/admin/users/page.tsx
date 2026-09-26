@@ -5,7 +5,7 @@ import UsersClient from "./UsersClient";
 export default async function UsersPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("users:manage", churchId);
 
   const users = await prisma.user.findMany({
@@ -49,7 +49,7 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Utilisateurs</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Utilisateurs</h1>
       <UsersClient
         churchId={churchId}
         initialUsers={users.map((u) => ({

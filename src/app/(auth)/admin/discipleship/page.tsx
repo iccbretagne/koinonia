@@ -9,8 +9,8 @@ export default async function DiscipleshipPage() {
   if (!churchId) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Discipolat</h1>
-        <p className="text-gray-500">Aucune église sélectionnée.</p>
+        <h1 className="text-2xl font-bold text-ink mb-6">Discipolat</h1>
+        <p className="text-ink-muted">Aucune église sélectionnée.</p>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export default async function DiscipleshipPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Discipolat</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Discipolat</h1>
       <DiscipleshipClient
         churchId={churchId}
         members={members}

@@ -63,25 +63,25 @@ function getDeptType(label: string): DeptType {
 
 const DEPT_FIELDS: Record<Exclude<DeptType, null>, FieldConfig[]> = {
   accueil: [
-    { key: "hommes",  label: "Hommes",  color: "border-blue-200 focus:border-blue-400" },
-    { key: "femmes",  label: "Femmes",  color: "border-pink-200 focus:border-pink-400" },
-    { key: "enfants", label: "Enfants", color: "border-yellow-200 focus:border-yellow-400" },
+    { key: "hommes",  label: "Hommes",  color: "border-info/30 focus:border-info" },
+    { key: "femmes",  label: "Femmes",  color: "border-danger/30 focus:border-danger" },
+    { key: "enfants", label: "Enfants", color: "border-warning/30 focus:border-warning" },
   ],
   "sainte-cene": [
-    { key: "supportsUtilises", label: "Supports utilisés", color: "border-gray-200 focus:border-gray-400" },
-    { key: "supportsRestants", label: "Supports restants", color: "border-gray-200 focus:border-gray-400" },
+    { key: "supportsUtilises", label: "Supports utilisés", color: "border-line focus:border-control-line" },
+    { key: "supportsRestants", label: "Supports restants", color: "border-line focus:border-control-line" },
   ],
   integration: [
-    { key: "hommes",    label: "Nouveaux arrivants (H)",  color: "border-blue-200 focus:border-blue-400" },
-    { key: "femmes",    label: "Nouveaux arrivants (F)",  color: "border-pink-200 focus:border-pink-400" },
-    { key: "passage",   label: "De passage",              color: "border-gray-200 focus:border-gray-400" },
-    { key: "convertis", label: "Nouveaux convertis",      color: "border-green-200 focus:border-green-400" },
-    { key: "voeux",     label: "Renouvellement de vœux",  color: "border-icc-violet/40 focus:border-icc-violet" },
+    { key: "hommes",    label: "Nouveaux arrivants (H)",  color: "border-info/30 focus:border-info" },
+    { key: "femmes",    label: "Nouveaux arrivants (F)",  color: "border-danger/30 focus:border-danger" },
+    { key: "passage",   label: "De passage",              color: "border-line focus:border-control-line" },
+    { key: "convertis", label: "Nouveaux convertis",      color: "border-success/30 focus:border-success" },
+    { key: "voeux",     label: "Renouvellement de vœux",  color: "border-brand/40 focus:border-brand" },
   ],
   navette: [
-    { key: "hommes",  label: "Hommes",  color: "border-blue-200 focus:border-blue-400" },
-    { key: "femmes",  label: "Femmes",  color: "border-pink-200 focus:border-pink-400" },
-    { key: "enfants", label: "Enfants", color: "border-yellow-200 focus:border-yellow-400" },
+    { key: "hommes",  label: "Hommes",  color: "border-info/30 focus:border-info" },
+    { key: "femmes",  label: "Femmes",  color: "border-danger/30 focus:border-danger" },
+    { key: "enfants", label: "Enfants", color: "border-warning/30 focus:border-warning" },
   ],
 };
 
@@ -101,10 +101,10 @@ function SaveIndicator({ status, error }: { readonly status: SaveStatus; readonl
   if (status === "idle") return null;
   const configs: Record<SaveStatus, { cls: string; text: string }> = {
     idle:    { cls: "", text: "" },
-    pending: { cls: "text-amber-500", text: "Modifications non sauvegardées…" },
-    saving:  { cls: "text-gray-400",  text: "Sauvegarde en cours…" },
-    saved:   { cls: "text-green-600", text: "Sauvegardé automatiquement ✓" },
-    error:   { cls: "text-icc-rouge", text: error ?? "Erreur de sauvegarde" },
+    pending: { cls: "text-warning", text: "Modifications non sauvegardées…" },
+    saving:  { cls: "text-ink-subtle",  text: "Sauvegarde en cours…" },
+    saved:   { cls: "text-success", text: "Sauvegardé automatiquement ✓" },
+    error:   { cls: "text-danger", text: error ?? "Erreur de sauvegarde" },
   };
   const { cls, text } = configs[status];
   return (
@@ -284,12 +284,12 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       {showGlobalRecap && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes"), color: "text-blue-600 bg-blue-50" },
-            { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes"), color: "text-pink-600 bg-pink-50" },
-            { label: "Total adultes", value: totalAdultes,                             color: "text-icc-violet bg-icc-violet/5" },
-            { label: "Total général", value: totalGeneral,                             color: "text-gray-700 bg-gray-50" },
+            { label: "Hommes",        value: statVal(accueilSection!.stats, "hommes"), color: "text-info bg-info-soft" },
+            { label: "Femmes",        value: statVal(accueilSection!.stats, "femmes"), color: "text-danger bg-danger-soft" },
+            { label: "Total adultes", value: totalAdultes,                             color: "text-brand-text bg-brand-soft" },
+            { label: "Total général", value: totalGeneral,                             color: "text-ink-muted bg-surface-sunken" },
           ].map((stat) => (
-            <div key={stat.label} className={`rounded-lg border-2 border-gray-100 p-4 text-center ${stat.color}`}>
+            <div key={stat.label} className={`rounded-lg border border-line p-4 text-center ${stat.color}`}>
               <div className="text-2xl font-bold">{stat.value ?? 0}</div>
               <div className="text-xs font-medium mt-1 opacity-70">{stat.label}</div>
             </div>
@@ -300,7 +300,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       {/* Navigation + export */}
       <div className="flex items-center gap-2 flex-wrap">
         <Link href="/admin/reports" className="mr-auto">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -310,7 +310,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         <button
           type="button"
           onClick={handleExportPDF}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-info bg-info/5 border border-info/20 rounded-lg hover:bg-info/10 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -320,10 +320,10 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
         <button
           type="button"
           onClick={handleCopyWhatsApp}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border-2 transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
             copied
-              ? "text-green-700 bg-green-50 border-green-200"
-              : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
+              ? "text-success bg-success-soft border-success/30"
+              : "text-success bg-success-soft border-success/30 hover:bg-success-soft"
           }`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,26 +338,26 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       </div>
 
       {/* Orateur et titre du message */}
-      <div className="bg-white rounded-lg border-2 border-gray-100 p-4 space-y-3">
+      <div className="bg-surface rounded-lg border border-line p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Orateur</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Orateur</label>
             <input
               type="text"
               value={speaker}
               onChange={(e) => { setSpeaker(e.target.value); scheduleSave(); }}
               placeholder="Nom de l'orateur"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titre du message</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Titre du message</label>
             <input
               type="text"
               value={messageTitle}
               onChange={(e) => { setMessageTitle(e.target.value); scheduleSave(); }}
               placeholder="Titre du message"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
         </div>
@@ -366,27 +366,27 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       {/* Sections */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Sections</h2>
-          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">+ Section libre</button>
+          <h2 className="text-lg font-semibold text-ink">Sections</h2>
+          <button type="button" onClick={addSection} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">+ Section libre</button>
         </div>
 
         {sections.map((section, i) => {
           const deptType = getDeptType(section.label);
           const fields = deptType ? DEPT_FIELDS[deptType] : null;
           return (
-            <div key={i} className="bg-white rounded-lg border-2 border-gray-100 p-4">
+            <div key={i} className="bg-surface rounded-lg border border-line p-4">
               <div className="flex items-center gap-3 mb-3">
                 <input
                   type="text"
                   value={section.label}
                   onChange={(e) => updateSectionField(i, "label", e.target.value)}
-                  className="flex-1 text-sm font-semibold text-gray-800 border-0 border-b-2 border-gray-200 focus:border-icc-violet focus:outline-none bg-transparent pb-1"
+                  className="flex-1 text-sm font-semibold text-ink border-0 border-b-2 border-line focus:border-brand focus:outline-none bg-transparent pb-1"
                 />
                 {section.department && (
-                  <span className="text-xs text-gray-400">{section.department.ministry.name}</span>
+                  <span className="text-xs text-ink-subtle">{section.department.ministry.name}</span>
                 )}
                 <button type="button" onClick={() => removeSection(i)}
-                  className="text-gray-300 hover:text-icc-rouge transition-colors" title="Supprimer">
+                  className="text-ink-subtle hover:text-danger transition-colors" title="Supprimer">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -397,27 +397,27 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                 <div className={`grid gap-3 mb-3 ${fields.length <= 2 ? "grid-cols-2" : fields.length <= 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3"}`}>
                   {fields.map(({ key, label, color }) => (
                     <div key={key}>
-                      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                      <label className="block text-xs text-ink-muted mb-1">{label}</label>
                       <input
                         type="number" min={0}
                         value={statVal(section.stats, key) ?? ""}
                         onChange={(e) => updateStat(i, key, e.target.value === "" ? null : parseInt(e.target.value, 10))}
                         placeholder="—"
-                        className={`w-full border-2 ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
+                        className={`w-full border ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
                       />
                     </div>
                   ))}
                   {(deptType === "accueil" || deptType === "navette") && (
                     <>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Total adultes</label>
-                        <div className="w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 bg-gray-50">
+                        <label className="block text-xs text-ink-muted mb-1">Total adultes</label>
+                        <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0)}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Total adultes + enfants</label>
-                        <div className="w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 bg-gray-50">
+                        <label className="block text-xs text-ink-muted mb-1">Total adultes + enfants</label>
+                        <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0) + (statVal(section.stats, "enfants") ?? 0)}
                         </div>
                       </div>
@@ -427,13 +427,13 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
               )}
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Observations</label>
+                <label className="block text-xs text-ink-muted mb-1">Observations</label>
                 <textarea
                   value={section.notes ?? ""}
                   onChange={(e) => updateSectionField(i, "notes", e.target.value || null)}
                   rows={2}
                   placeholder="Remarques, points de vigilance..."
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
                 />
               </div>
             </div>
@@ -442,25 +442,25 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       </div>
 
       {/* Champs globaux */}
-      <div className="bg-white rounded-lg border-2 border-gray-100 p-4 space-y-4">
+      <div className="bg-surface rounded-lg border border-line p-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Observations générales</label>
+          <label className="block text-sm font-medium text-ink-muted mb-1">Observations générales</label>
           <textarea
             value={notes}
             onChange={(e) => { setNotes(e.target.value); scheduleSave(); }}
             rows={3}
             placeholder="Bilan global de l'événement..."
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Décisions / Actions</label>
+          <label className="block text-sm font-medium text-ink-muted mb-1">Décisions / Actions</label>
           <textarea
             value={decisions}
             onChange={(e) => { setDecisions(e.target.value); scheduleSave(); }}
             rows={3}
             placeholder="Décisions prises, actions à mener..."
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
           />
         </div>
       </div>
@@ -472,12 +472,12 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           type="button"
           onClick={performSave}
           disabled={saveStatus === "saving"}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-icc-bleu bg-icc-bleu/5 border-2 border-icc-bleu/20 rounded-lg hover:bg-icc-bleu/10 transition-colors disabled:opacity-50 ml-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-info bg-info/5 border border-info/20 rounded-lg hover:bg-info/10 transition-colors disabled:opacity-50 ml-auto"
         >
           {saveStatus === "saving" ? "Sauvegarde…" : "Enregistrer maintenant"}
         </button>
         <Link href="/admin/reports">
-          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-icc-violet bg-icc-violet/5 border-2 border-icc-violet/20 rounded-lg hover:bg-icc-violet/10 transition-colors">
+          <button type="button" className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-text bg-brand-soft border border-brand/20 rounded-lg hover:bg-brand-soft transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>

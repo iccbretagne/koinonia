@@ -22,7 +22,7 @@ export default function RolesOverview({ roleCounts, hideTransverseRoles }: Props
         if (roles.length === 0) return null;
         return (
           <div key={category}>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <h2 className="text-sm font-semibold text-ink-muted uppercase tracking-wide mb-2">
               {ROLE_CATEGORY_LABELS[category]}
             </h2>
             <div className="space-y-2">
@@ -30,13 +30,13 @@ export default function RolesOverview({ roleCounts, hideTransverseRoles }: Props
                 <Link
                   key={role}
                   href={`/admin/access/roles/${role}`}
-                  className="flex items-center justify-between gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 hover:border-icc-violet/30 transition-colors"
+                  className="flex items-center justify-between gap-3 bg-surface rounded-lg border border-line shadow-card px-4 py-3 hover:border-brand/30 transition-colors"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{ROLE_LABELS[role]}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{ROLE_DESCRIPTIONS[role]}</p>
+                    <p className="text-sm font-medium text-ink">{ROLE_LABELS[role]}</p>
+                    <p className="text-xs text-ink-muted mt-0.5">{ROLE_DESCRIPTIONS[role]}</p>
                   </div>
-                  <span className="shrink-0 text-xs font-medium bg-icc-violet/10 text-icc-violet border border-icc-violet/20 px-2.5 py-1 rounded-full">
+                  <span className="shrink-0 text-xs font-medium bg-brand-soft text-brand-text border border-brand/20 px-2.5 py-1 rounded-full">
                     {roleCounts[role] ?? 0}
                   </span>
                 </Link>

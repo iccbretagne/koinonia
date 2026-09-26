@@ -157,17 +157,17 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={prevMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+          className="p-2 rounded-lg hover:bg-surface-sunken text-ink-muted transition-colors"
           aria-label="Mois précédent"
         >
           ‹
         </button>
-        <span className="text-base font-semibold text-gray-800 min-w-[160px] text-center">
+        <span className="text-base font-semibold text-ink min-w-[160px] text-center">
           {MONTH_NAMES[month]} {year}
         </span>
         <button
           onClick={nextMonth}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+          className="p-2 rounded-lg hover:bg-surface-sunken text-ink-muted transition-colors"
           aria-label="Mois suivant"
         >
           ›
@@ -175,11 +175,11 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Chargement…</p>
+        <p className="text-sm text-ink-subtle">Chargement…</p>
       ) : events.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-200">
-          <p className="text-gray-400 text-sm">Aucun événement avec service d&apos;accueil ce mois-ci.</p>
-          <p className="text-gray-400 text-xs mt-1">Activez le flag &laquo;&nbsp;Familles de service attendues&nbsp;&raquo; sur les événements concernés.</p>
+        <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-line">
+          <p className="text-ink-subtle text-sm">Aucun événement avec service d&apos;accueil ce mois-ci.</p>
+          <p className="text-ink-subtle text-xs mt-1">Activez le flag &laquo;&nbsp;Familles de service attendues&nbsp;&raquo; sur les événements concernés.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -188,17 +188,17 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
             const isOpen = openEventId === event.id;
 
             return (
-              <div key={event.id} className="bg-white rounded-lg shadow-sm border border-gray-100">
+              <div key={event.id} className="bg-surface rounded-lg shadow-card border border-line">
                 {/* Event row — stacked on mobile, inline on desktop */}
                 <div className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
                   {/* Date + title */}
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <span className="text-xs text-gray-400 shrink-0 capitalize pt-0.5 w-24">
+                    <span className="text-xs text-ink-subtle shrink-0 capitalize pt-0.5 w-24">
                       {formatDate(event.date)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-gray-800 truncate block">{event.title}</span>
-                      <span className="text-xs text-gray-400">{event.type}</span>
+                      <span className="text-sm font-medium text-ink truncate block">{event.title}</span>
+                      <span className="text-xs text-ink-subtle">{event.type}</span>
                     </div>
                   </div>
 
@@ -206,18 +206,18 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                   <div className="flex items-center gap-2 justify-between sm:justify-end">
                     <div className="flex flex-wrap gap-1.5">
                       {eventAssignments.length === 0 ? (
-                        <span className="text-xs text-gray-300 italic">Non affecté</span>
+                        <span className="text-xs text-ink-subtle italic">Non affecté</span>
                       ) : (
                         eventAssignments.map((a) => (
                           <span
                             key={a.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-icc-violet/10 text-icc-violet text-xs rounded-full font-medium"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-brand-soft text-brand-text text-xs rounded-full font-medium"
                           >
                             {a.welcomeDutyFamily.familyName}
                             <button
                               onClick={() => remove(a.id)}
                               disabled={removing === a.id}
-                              className="text-icc-violet/50 hover:text-icc-violet disabled:opacity-40 leading-none ml-0.5"
+                              className="text-brand-text hover:text-brand-text disabled:opacity-40 leading-none ml-0.5"
                               aria-label="Retirer"
                             >
                               ✕
@@ -230,8 +230,8 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                       onClick={() => openSuggestions(event.id)}
                       className={`shrink-0 text-sm px-3 py-2 rounded-lg border transition-colors ${
                         isOpen
-                          ? "border-icc-violet bg-icc-violet text-white"
-                          : "border-gray-200 text-gray-500 hover:border-icc-violet hover:text-icc-violet"
+                          ? "border-brand bg-brand text-on-brand"
+                          : "border-line text-ink-muted hover:border-brand hover:text-brand-text"
                       }`}
                     >
                       {isOpen ? "Fermer" : "+ Affecter"}
@@ -241,14 +241,14 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
 
                 {/* Suggestion panel */}
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-3 bg-gray-50 rounded-b-lg">
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                  <div className="border-t border-line px-4 py-3 bg-surface-sunken rounded-b-lg">
+                    <p className="text-xs font-semibold text-ink-muted uppercase mb-2">
                       Rotation suggérée
                     </p>
                     {loadingSugg ? (
-                      <p className="text-xs text-gray-400">Chargement…</p>
+                      <p className="text-xs text-ink-subtle">Chargement…</p>
                     ) : suggestions.length === 0 ? (
-                      <p className="text-xs text-gray-400">Toutes les familles du pool sont déjà affectées.</p>
+                      <p className="text-xs text-ink-subtle">Toutes les familles du pool sont déjà affectées.</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {suggestions.map((s) => (
@@ -256,14 +256,14 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
                             key={s.id}
                             onClick={() => assign(event.id, s.id)}
                             disabled={assigning === s.id}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-icc-violet hover:text-icc-violet disabled:opacity-50 transition-colors"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-surface border border-line rounded-full text-sm text-ink-muted hover:border-brand hover:text-brand-text disabled:opacity-50 transition-colors"
                           >
                             <span className="font-medium">{s.familyName}</span>
-                            <span className="text-gray-400 text-xs">{formatLastServed(s.lastServedAt)}</span>
+                            <span className="text-ink-subtle text-xs">{formatLastServed(s.lastServedAt)}</span>
                             {assigning === s.id ? (
-                              <span className="text-gray-400 text-xs">…</span>
+                              <span className="text-ink-subtle text-xs">…</span>
                             ) : (
-                              <span className="text-icc-violet">+</span>
+                              <span className="text-brand-text">+</span>
                             )}
                           </button>
                         ))}

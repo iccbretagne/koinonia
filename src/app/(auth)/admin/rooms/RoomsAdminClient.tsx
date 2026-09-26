@@ -194,7 +194,7 @@ export default function RoomsAdminClient({
             accessor: (r) => (
               <span
                 className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  r.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                  r.isActive ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-muted"
                 }`}
               >
                 {r.isActive ? "Active" : "Désactivée"}
@@ -230,9 +230,9 @@ export default function RoomsAdminClient({
             onChange={(e) => setCapacity(e.target.value)}
           />
           <Input label="Lieu (optionnel)" value={location} onChange={(e) => setLocation(e.target.value)} />
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-danger">{error}</p>}
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setFormOpen(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
+            <button onClick={() => setFormOpen(false)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
               Annuler
             </button>
             <Button onClick={save} disabled={saving || !name}>
@@ -245,19 +245,19 @@ export default function RoomsAdminClient({
       <Modal open={!!accessRoom} onClose={() => setAccessRoom(null)} title={`Partage — ${accessRoom?.name ?? ""}`}>
         {accessRoom && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-muted">
               Églises autorisées à réserver cette salle, en plus de la vôtre.
             </p>
             <ul className="space-y-2">
               {accessRoom.sharedWith.length === 0 && (
-                <li className="text-sm text-gray-400">Aucune église partenaire pour l&apos;instant.</li>
+                <li className="text-sm text-ink-subtle">Aucune église partenaire pour l&apos;instant.</li>
               )}
               {accessRoom.sharedWith.map((a) => (
-                <li key={a.id} className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+                <li key={a.id} className="flex items-center justify-between border border-line rounded-lg px-3 py-2">
                   <span className="text-sm">{a.church.name}</span>
                   <button
                     onClick={() => removeAccess(accessRoom.id, a.church.id)}
-                    className="text-xs text-icc-rouge hover:underline"
+                    className="text-xs text-danger hover:underline"
                   >
                     Retirer
                   </button>

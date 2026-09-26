@@ -23,7 +23,7 @@ export default async function PastoralProfilesPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Profils pastoraux</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Profils pastoraux</h1>
       <PastoralProfilesAdmin churchId={churchId} profiles={profiles} users={users} />
     </div>
   );

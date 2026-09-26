@@ -124,7 +124,7 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           placeholder={"comptabilite@eglise.fr\nresponsable@eglise.fr"}
         />
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-ink-muted mb-1">
             Couleur principale (bandeau d&apos;entête)
           </label>
           <div className="flex items-center gap-3">
@@ -132,24 +132,24 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
               type="color"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
-              className="h-10 w-16 rounded border-2 border-gray-200 cursor-pointer p-0.5"
+              className="h-10 w-16 rounded border border-line cursor-pointer p-0.5"
             />
             <input
               type="text"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}
               placeholder="#5E17EB"
-              className="w-32 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-icc-violet"
+              className="w-32 border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-brand"
             />
             <div
-              className="h-10 w-24 rounded-lg border border-gray-200 shrink-0"
+              className="h-10 w-24 rounded-lg border border-line shrink-0"
               style={{ backgroundColor: primaryColor }}
             />
           </div>
         </div>
 
-        <div className="pt-2 border-t border-gray-100">
-          <p className="text-xs text-gray-500 mb-3">Supervision pastorale</p>
+        <div className="pt-2 border-t border-line">
+          <p className="text-xs text-ink-muted mb-3">Supervision pastorale</p>
           <div className="space-y-4">
             <Select
               label="Responsable pastoral de l'église"
@@ -166,9 +166,9 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         {success && (
-          <p className="text-sm text-green-600">Église mise à jour.</p>
+          <p className="text-sm text-success">Église mise à jour.</p>
         )}
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>

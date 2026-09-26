@@ -10,14 +10,14 @@ export default async function BackupsPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Sauvegardes</h1>
-        <p className="text-sm text-gray-500 mb-6">Dump SQL complet de la base de données.</p>
+        <h1 className="text-2xl font-bold text-ink mb-1">Sauvegardes</h1>
+        <p className="text-sm text-ink-muted mb-6">Dump SQL complet de la base de données.</p>
         <BackupsClient />
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Configuration structurelle</h2>
-        <p className="text-sm text-gray-500 mb-6">
+        <h2 className="text-xl font-bold text-ink mb-1">Configuration structurelle</h2>
+        <p className="text-sm text-ink-muted mb-6">
           Export et restauration partielle des données de configuration (églises, ministères,
           départements, membres, liaisons).
         </p>

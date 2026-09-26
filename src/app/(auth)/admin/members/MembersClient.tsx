@@ -593,7 +593,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un STAR..."
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand"
           />
         </div>
         <div className="w-full sm:w-64">
@@ -611,7 +611,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         {(search || filterDept) && (
           <button
             onClick={() => { setSearch(""); setFilterDept(""); }}
-            className="text-sm text-gray-400 hover:text-gray-600 whitespace-nowrap"
+            className="text-sm text-ink-subtle hover:text-ink-muted whitespace-nowrap"
           >
             Réinitialiser
           </button>
@@ -620,14 +620,14 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
       {/* Count + select all */}
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-muted">
           {filtered.length} STAR{filtered.length > 1 ? "s" : ""}
           {(search || filterDept) && ` sur ${members.length}`}
         </p>
         {!readOnly && filtered.length > 0 && (
           <button
             onClick={toggleSelectAll}
-            className="text-sm text-icc-violet hover:underline"
+            className="text-sm text-brand-text hover:underline"
           >
             {selectedIds.size === filtered.length ? "Tout désélectionner" : "Tout sélectionner"}
           </button>
@@ -636,7 +636,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
       {/* Cards grid */}
       {filtered.length === 0 ? (
-        <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+        <div className="p-8 text-center text-ink-subtle border border-line border-dashed rounded-lg">
           Aucun STAR.
         </div>
       ) : (
@@ -647,8 +647,8 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             return (
               <div
                 key={m.id}
-                className={`bg-white rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
-                  isSelected ? "border-icc-violet bg-icc-violet/5" : "border-gray-200 hover:border-gray-300"
+                className={`bg-surface rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
+                  isSelected ? "border-brand bg-brand-soft" : "border-line hover:border-control-line"
                 }`}
               >
                 {/* Header: checkbox + name */}
@@ -658,19 +658,19 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(m.id)}
-                      className="mt-0.5 rounded border-gray-300 text-icc-violet focus:ring-icc-violet shrink-0"
+                      className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">
+                    <p className="font-semibold text-ink truncate">
                       {m.lastName} {m.firstName}
                     </p>
                     {m.userLink ? (
-                      <p className="text-xs text-green-700 truncate mt-0.5">
+                      <p className="text-xs text-success truncate mt-0.5">
                         {m.userLink.userName ?? m.userLink.userEmail}
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-400 mt-0.5">Non lié</p>
+                      <p className="text-xs text-ink-subtle mt-0.5">Non lié</p>
                     )}
                   </div>
                 </div>
@@ -678,13 +678,13 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 {/* Departments */}
                 <div className="flex flex-wrap gap-1.5">
                   {m.primaryDepartment && (
-                    <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
                       {m.primaryDepartment.name}
-                      <span className="text-icc-violet/60 ml-1">{m.primaryDepartment.ministry.name}</span>
+                      <span className="text-brand-text ml-1">{m.primaryDepartment.ministry.name}</span>
                     </span>
                   )}
                   {secondaryDepts.map((d) => (
-                    <span key={d.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    <span key={d.id} className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
                       {d.name}
                     </span>
                   ))}
@@ -692,7 +692,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
 
                 {/* Actions */}
                 {(!readOnly || canLink) && (
-                  <div className="flex gap-2 flex-wrap pt-1 border-t border-gray-100">
+                  <div className="flex gap-2 flex-wrap pt-1 border-t border-line">
                     {canLink && (
                       m.userLink ? (
                         <Button variant="secondary" size="sm" onClick={() => handleUnlink(m)}>
@@ -783,40 +783,40 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             }))}
           />
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Départements supplémentaires</p>
-            <div className="space-y-1 max-h-40 overflow-y-auto border-2 border-gray-200 rounded-lg p-2">
+            <p className="text-sm font-medium text-ink-muted mb-2">Départements supplémentaires</p>
+            <div className="space-y-1 max-h-40 overflow-y-auto border border-line rounded-lg p-2">
               {departments
                 .filter((d) => d.id !== departmentId)
                 .map((d) => (
-                  <label key={d.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                  <label key={d.id} className="flex items-center gap-2 cursor-pointer hover:bg-surface-sunken rounded px-1 py-0.5">
                     <input
                       type="checkbox"
                       checked={additionalDeptIds.includes(d.id)}
                       onChange={() => toggleAdditionalDept(d.id)}
-                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                      className="rounded border-control-line text-brand-text focus:ring-focus"
                     />
-                    <span className="text-sm text-gray-700">
-                      {d.name} <span className="text-gray-400 text-xs">({d.ministryName})</span>
+                    <span className="text-sm text-ink-muted">
+                      {d.name} <span className="text-ink-subtle text-xs">({d.ministryName})</span>
                     </span>
                   </label>
                 ))}
             </div>
           </div>
           {duplicateCandidates && duplicateCandidates.length > 0 && (
-            <div className="rounded-lg border-2 border-icc-jaune bg-icc-jaune/10 p-3 space-y-2">
-              <p className="text-sm font-medium text-gray-800">
+            <div className="rounded-lg border border-accent bg-accent-soft p-3 space-y-2">
+              <p className="text-sm font-medium text-ink">
                 Ces fiches existent déjà dans l&apos;église — rattacher ou créer quand même ?
               </p>
               <ul className="space-y-1">
                 {duplicateCandidates.map((d) => (
-                  <li key={d.id} className="text-sm text-gray-700 flex items-center justify-between gap-2">
+                  <li key={d.id} className="text-sm text-ink-muted flex items-center justify-between gap-2">
                     <span>
                       {d.lastName} {d.firstName}
-                      {d.email && <span className="text-gray-400 ml-1 text-xs">{d.email}</span>}
+                      {d.email && <span className="text-ink-subtle ml-1 text-xs">{d.email}</span>}
                     </span>
                     <button
                       type="button"
-                      className="text-xs text-icc-violet hover:underline whitespace-nowrap"
+                      className="text-xs text-brand-text hover:underline whitespace-nowrap"
                       onClick={() => {
                         setModalOpen(false);
                         setDuplicateCandidates(null);
@@ -839,7 +839,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               </Button>
             </div>
           )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
               Annuler
@@ -858,7 +858,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         title={`Lier un compte à ${linkModal?.firstName} ${linkModal?.lastName}`}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Recherchez l&apos;utilisateur à lier à ce STAR.
           </p>
           <div>
@@ -868,18 +868,18 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               onChange={(e) => { setUserQuery(e.target.value); setSelectedUser(null); }}
               placeholder="Nom ou email..."
             />
-            {userSearching && <p className="text-xs text-gray-400 mt-1">Recherche...</p>}
+            {userSearching && <p className="text-xs text-ink-subtle mt-1">Recherche...</p>}
             {userResults.length > 0 && !selectedUser && (
-              <ul className="mt-1 border-2 border-gray-200 rounded-lg overflow-hidden">
+              <ul className="mt-1 border border-line rounded-lg overflow-hidden">
                 {userResults.map((u) => (
                   <li key={u.id}>
                     <button
                       type="button"
                       onClick={() => { setSelectedUser(u); setUserQuery(u.displayName ?? u.name ?? u.email); setUserResults([]); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-icc-violet/5 transition-colors"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-brand-soft transition-colors"
                     >
                       <span className="font-medium">{u.displayName ?? u.name ?? u.email}</span>
-                      {(u.displayName ?? u.name) && <span className="text-gray-400 ml-1 text-xs">{u.email}</span>}
+                      {(u.displayName ?? u.name) && <span className="text-ink-subtle ml-1 text-xs">{u.email}</span>}
                     </button>
                   </li>
                 ))}
@@ -887,16 +887,16 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             )}
             {userQuery.length >= 2 && !userSearching && userResults.length === 0 && !selectedUser && (
               canLinkByEmail ? (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-ink-muted mt-1">
                   Aucun compte n&apos;existe avec cette adresse. Un compte sera créé et rattaché à
                   ce STAR dès sa première connexion.
                 </p>
               ) : (
-                <p className="text-xs text-gray-400 mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
+                <p className="text-xs text-ink-subtle mt-1">Aucun utilisateur trouvé (déjà liés exclus)</p>
               )
             )}
           </div>
-          {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
+          {linkError && <p className="text-sm text-danger">{linkError}</p>}
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" onClick={() => setLinkModal(null)}>Annuler</Button>
             <Button onClick={handleLink} disabled={(!selectedUser && !canLinkByEmail) || linkLoading}>
@@ -913,7 +913,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         title={`Retirer ${removeModal?.firstName} ${removeModal?.lastName} d'un département`}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             La fiche du STAR est conservée. Ses affectations de planning et ses tâches à venir dans
             le département retiré sont supprimées.
           </p>
@@ -921,10 +921,10 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             {(removeModal?.allDepartments ?? [])
               .filter((d) => manageableIds.has(d.id))
               .map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3 border-2 border-gray-200 rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-700">
+                <li key={d.id} className="flex items-center justify-between gap-3 border border-line rounded-lg px-3 py-2">
+                  <span className="text-sm text-ink-muted">
                     {d.name}
-                    {d.isPrimary && <span className="text-xs text-icc-violet ml-1">principal</span>}
+                    {d.isPrimary && <span className="text-xs text-brand-text ml-1">principal</span>}
                   </span>
                   <Button
                     variant="danger"
@@ -937,7 +937,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 </li>
               ))}
           </ul>
-          {removeError && <p className="text-sm text-icc-rouge">{removeError}</p>}
+          {removeError && <p className="text-sm text-danger">{removeError}</p>}
           <div className="flex justify-end">
             <Button variant="secondary" onClick={() => setRemoveModal(null)}>Fermer</Button>
           </div>
@@ -947,7 +947,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       {/* Ajouter un STAR existant */}
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Ajouter un STAR existant">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Recherchez un STAR déjà enregistré dans l&apos;église, même hors de votre périmètre,
             pour le rattacher à l&apos;un de vos départements.
           </p>
@@ -958,19 +958,19 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               onChange={(e) => { setLookupQuery(e.target.value); setLookupSelected(null); }}
               placeholder="Nom ou prénom..."
             />
-            {lookupSearching && <p className="text-xs text-gray-400 mt-1">Recherche...</p>}
+            {lookupSearching && <p className="text-xs text-ink-subtle mt-1">Recherche...</p>}
             {lookupResults.length > 0 && !lookupSelected && (
-              <ul className="mt-1 border-2 border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <ul className="mt-1 border border-line rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                 {lookupResults.map((r) => (
                   <li key={r.id}>
                     <button
                       type="button"
                       onClick={() => { setLookupSelected(r); setLookupResults([]); }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-icc-violet/5 transition-colors"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-brand-soft transition-colors"
                     >
                       <span className="font-medium">{r.lastName} {r.firstName}</span>
                       {r.departmentNames.length > 0 && (
-                        <span className="text-gray-400 ml-1 text-xs">{r.departmentNames.join(", ")}</span>
+                        <span className="text-ink-subtle ml-1 text-xs">{r.departmentNames.join(", ")}</span>
                       )}
                     </button>
                   </li>
@@ -978,10 +978,10 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               </ul>
             )}
             {lookupQuery.trim().length >= 2 && !lookupSearching && lookupResults.length === 0 && !lookupSelected && (
-              <p className="text-xs text-gray-400 mt-1">Aucun STAR trouvé.</p>
+              <p className="text-xs text-ink-subtle mt-1">Aucun STAR trouvé.</p>
             )}
             {lookupSelected && (
-              <p className="text-sm text-gray-700 mt-2">
+              <p className="text-sm text-ink-muted mt-2">
                 Sélectionné : <span className="font-medium">{lookupSelected.lastName} {lookupSelected.firstName}</span>
               </p>
             )}
@@ -993,11 +993,11 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
             options={departments.map((d) => ({ value: d.id, label: `${d.name} (${d.ministryName})` }))}
           />
           {lookupSelected?.departmentIds.includes(addDeptId) && (
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="text-sm text-warning bg-warning-soft border border-warning/30 rounded-lg px-3 py-2">
               Ce STAR appartient déjà à ce département.
             </p>
           )}
-          {addError && <p className="text-sm text-icc-rouge">{addError}</p>}
+          {addError && <p className="text-sm text-danger">{addError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setAddOpen(false)}>Annuler</Button>
             <Button
@@ -1016,7 +1016,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         onClose={() => setBulkModalOpen(false)}
         title={`Modifier ${selectedIds.size} STAR`}
       >
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-ink-muted mb-4">
           Seuls les champs remplis seront modifiés.
         </p>
         <form onSubmit={handleBulkEdit} className="space-y-4">
@@ -1042,7 +1042,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
               label: `${d.name} (${d.ministryName})`,
             }))}
           />
-          {bulkError && <p className="text-sm text-red-600">{bulkError}</p>}
+          {bulkError && <p className="text-sm text-danger">{bulkError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setBulkModalOpen(false)}>
               Annuler

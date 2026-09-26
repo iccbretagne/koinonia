@@ -49,7 +49,7 @@ export default async function ChurchDetailPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-6">
         Modifier l&apos;église
       </h1>
       <ChurchEditClient

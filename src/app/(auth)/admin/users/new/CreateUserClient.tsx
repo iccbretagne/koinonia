@@ -84,7 +84,7 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg space-y-6 bg-white rounded-lg shadow p-5">
+    <form onSubmit={handleSubmit} className="max-w-lg space-y-6 bg-surface rounded-lg shadow-card p-5">
       <Input
         label="Adresse e-mail Google attendue"
         type="email"
@@ -159,12 +159,12 @@ export default function CreateUserClient({ churchId, availableMembers, departmen
       )}
 
       {availableMembers.length === 0 && mode === "existing" && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-subtle">
           Aucune fiche STAR sans compte dans cette église — créez-en une nouvelle ci-dessus.
         </p>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="flex gap-3">
         <Button type="submit" disabled={!canSubmit || loading}>

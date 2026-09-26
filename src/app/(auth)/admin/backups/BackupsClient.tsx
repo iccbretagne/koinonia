@@ -45,17 +45,17 @@ function RestoreModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-surface rounded-2xl shadow-overlay w-full max-w-md p-6 space-y-4">
         {step === 1 ? (
           <>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl shrink-0">
+              <div className="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center text-danger text-xl shrink-0">
                 ⚠️
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Restaurer une sauvegarde</h2>
+              <h2 className="text-lg font-bold text-ink">Restaurer une sauvegarde</h2>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2 text-sm text-red-800">
+            <div className="bg-danger-soft border border-danger/30 rounded-xl p-4 space-y-2 text-sm text-danger">
               <p className="font-semibold">Cette action est irréversible.</p>
               <ul className="list-disc pl-4 space-y-1">
                 <li>Toutes les données actuelles seront <strong>écrasées</strong> par cette sauvegarde.</li>
@@ -63,22 +63,22 @@ function RestoreModal({
                 <li>L&apos;application sera indisponible pendant la restauration.</li>
               </ul>
             </div>
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-ink-muted">
               <span className="font-medium">Sauvegarde sélectionnée :</span>
               <br />
-              <span className="text-gray-500 text-xs">{keyToLabel(backup.key)}</span>
-              <span className="ml-2 text-gray-400 text-xs">({formatBytes(backup.sizeBytes)})</span>
+              <span className="text-ink-muted text-xs">{keyToLabel(backup.key)}</span>
+              <span className="ml-2 text-ink-subtle text-xs">({formatBytes(backup.sizeBytes)})</span>
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={() => setStep(2)}
-                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors"
+                className="px-4 py-2 text-sm rounded-lg bg-danger text-on-danger font-medium hover:bg-danger/90 transition-colors"
               >
                 Je comprends, continuer →
               </button>
@@ -87,30 +87,30 @@ function RestoreModal({
         ) : (
           <>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xl shrink-0">
+              <div className="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center text-danger text-xl shrink-0">
                 🔴
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Confirmation finale</h2>
+              <h2 className="text-lg font-bold text-ink">Confirmation finale</h2>
             </div>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-ink-muted">
               Confirmez-vous la restauration de la base de données vers la sauvegarde du{" "}
               <strong>{formatDate(backup.lastModified)}</strong> ?
             </p>
-            <p className="text-xs text-red-600 font-medium">
+            <p className="text-xs text-danger font-medium">
               Toutes les données actuelles seront définitivement perdues.
             </p>
             <div className="flex gap-2 justify-end pt-2">
               <button
                 onClick={onCancel}
                 disabled={loading}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-lg border border-line text-ink-muted hover:bg-surface-sunken transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
-                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm rounded-lg bg-danger text-on-danger font-medium hover:bg-danger/90 disabled:opacity-50 transition-colors"
               >
                 {loading ? "Restauration en cours…" : "Restaurer maintenant"}
               </button>
@@ -214,63 +214,63 @@ export default function BackupsClient() {
   return (
     <div className="space-y-5 max-w-3xl">
       {/* ── Actions ─────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-surface rounded-2xl border border-line shadow-card p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Déclencher une sauvegarde</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Crée un dump SQL compressé et le stocke sur S3.</p>
+            <h2 className="text-sm font-semibold text-ink">Déclencher une sauvegarde</h2>
+            <p className="text-xs text-ink-muted mt-0.5">Crée un dump SQL compressé et le stocke sur S3.</p>
           </div>
           <button
             onClick={triggerBackup}
             disabled={triggering}
-            className="px-4 py-2 text-sm rounded-xl bg-icc-violet text-white font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors shrink-0"
+            className="px-4 py-2 text-sm rounded-xl bg-brand text-on-brand font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors shrink-0"
           >
             {triggering ? "Sauvegarde en cours…" : "Sauvegarder maintenant"}
           </button>
         </div>
         {triggerResult && (
-          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${triggerResult.startsWith("Erreur") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${triggerResult.startsWith("Erreur") ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>
             {triggerResult}
           </p>
         )}
         {restoreResult && (
-          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${restoreResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          <p className={`text-xs mt-3 px-3 py-2 rounded-lg ${restoreResult.success ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}>
             {restoreResult.message}
           </p>
         )}
       </div>
 
       {/* ── Liste ────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">
+      <div className="bg-surface rounded-2xl border border-line shadow-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-ink">
             Sauvegardes disponibles
             {backups.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-gray-400">{backups.length}</span>
+              <span className="ml-2 text-xs font-normal text-ink-subtle">{backups.length}</span>
             )}
           </h2>
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
             disabled={loading}
-            className="text-xs text-gray-400 hover:text-icc-violet transition-colors disabled:opacity-50"
+            className="text-xs text-ink-subtle hover:text-brand-text transition-colors disabled:opacity-50"
           >
             Actualiser
           </button>
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-400">Chargement…</div>
+          <div className="p-8 text-center text-sm text-ink-subtle">Chargement…</div>
         ) : error ? (
-          <div className="p-8 text-center text-sm text-red-500">{error}</div>
+          <div className="p-8 text-center text-sm text-danger">{error}</div>
         ) : backups.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">Aucune sauvegarde disponible.</div>
+          <div className="p-8 text-center text-sm text-ink-subtle">Aucune sauvegarde disponible.</div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-line">
             {backups.map((b) => (
-              <li key={b.key} className="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
+              <li key={b.key} className="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-surface-sunken transition-colors">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{keyToLabel(b.key)}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-sm font-medium text-ink truncate">{keyToLabel(b.key)}</p>
+                  <p className="text-xs text-ink-subtle mt-0.5">
                     {formatDate(b.lastModified)} · {formatBytes(b.sizeBytes)}
                   </p>
                 </div>
@@ -278,13 +278,13 @@ export default function BackupsClient() {
                   <button
                     onClick={() => downloadBackup(b)}
                     disabled={downloadingKey === b.key}
-                    className="text-xs text-icc-violet hover:text-icc-violet/80 border border-icc-violet/20 hover:border-icc-violet/40 rounded-lg px-3 py-1.5 hover:bg-icc-violet/5 disabled:opacity-50 transition-colors"
+                    className="text-xs text-brand-text hover:text-brand-text border border-brand/20 hover:border-brand/40 rounded-lg px-3 py-1.5 hover:bg-brand-soft disabled:opacity-50 transition-colors"
                   >
                     {downloadingKey === b.key ? "…" : "Télécharger"}
                   </button>
                   <button
                     onClick={() => { setRestoreResult(null); setRestoreTarget(b); }}
-                    className="text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-colors"
+                    className="text-xs text-danger hover:text-danger border border-danger/30 hover:border-danger/30 rounded-lg px-3 py-1.5 hover:bg-danger-soft transition-colors"
                   >
                     Restaurer
                   </button>

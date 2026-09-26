@@ -19,10 +19,10 @@ interface AuditLogEntry {
 }
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
-  CREATE: { label: "Création", color: "bg-green-100 text-green-800" },
-  UPDATE: { label: "Modification", color: "bg-blue-100 text-blue-800" },
-  DELETE: { label: "Suppression", color: "bg-red-100 text-red-800" },
-  EXPORT: { label: "Export", color: "bg-purple-100 text-purple-800" },
+  CREATE: { label: "Création", color: "bg-success-soft text-success" },
+  UPDATE: { label: "Modification", color: "bg-info-soft text-info" },
+  DELETE: { label: "Suppression", color: "bg-danger-soft text-danger" },
+  EXPORT: { label: "Export", color: "bg-brand-soft text-brand-text" },
 };
 
 export default function AuditLogsClient() {
@@ -66,12 +66,12 @@ export default function AuditLogsClient() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-400">Chargement...</div>;
+    return <div className="p-8 text-center text-ink-subtle">Chargement...</div>;
   }
 
   if (logs.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
+      <div className="p-8 text-center text-ink-subtle border border-line border-dashed rounded-card">
         Aucune entrée dans l&apos;historique
       </div>
     );
@@ -79,43 +79,43 @@ export default function AuditLogsClient() {
 
   return (
     <div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-surface rounded-card shadow-card overflow-hidden">
         <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-50 border-b">
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Date</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Utilisateur</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Action</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Détails</th>
+            <tr className="bg-surface-sunken border-b border-line">
+              <th className="px-4 py-3 text-left text-xs font-medium text-ink-muted">Date</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-ink-muted">Utilisateur</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-ink-muted">Action</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-ink-muted">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-ink-muted">Détails</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-line">
             {logs.map((log) => {
               const actionInfo = ACTION_LABELS[log.action] || {
                 label: log.action,
-                color: "bg-gray-100 text-gray-800",
+                color: "bg-surface-sunken text-ink",
               };
               return (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                <tr key={log.id} className="hover:bg-surface-sunken">
+                  <td className="px-4 py-3 text-sm text-ink-muted whitespace-nowrap">
                     {formatDate(log.createdAt)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
+                  <td className="px-4 py-3 text-sm text-ink-muted">
                     {getUserName(log.user)}
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${actionInfo.color}`}
+                      className={`inline-block px-2 py-0.5 text-xs rounded-chip font-medium ${actionInfo.color}`}
                     >
                       {actionInfo.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
+                  <td className="px-4 py-3 text-sm text-ink-muted">
                     {log.entityType}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">
+                  <td className="px-4 py-3 text-xs text-ink-muted max-w-xs truncate">
                     {log.details ? JSON.stringify(log.details) : "-"}
                   </td>
                 </tr>
@@ -135,7 +135,7 @@ export default function AuditLogsClient() {
           >
             Précédent
           </Button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-ink-muted">
             Page {page} / {totalPages}
           </span>
           <Button

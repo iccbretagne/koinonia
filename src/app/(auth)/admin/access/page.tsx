@@ -9,7 +9,7 @@ import RequestsPanel from "./RequestsPanel";
 export default async function AccessPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   // access:manage couvre SUPER_ADMIN, ADMIN, SECRETARY et MINISTER (borné à son
   // ministère ci-dessous) — aligné sur la garde de l'API (spec 031/#467)
   await requireChurchPermission("access:manage", churchId);
@@ -109,8 +109,8 @@ export default async function AccessPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Accès &amp; rôles</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-ink">Accès &amp; rôles</h1>
+        <p className="text-sm text-ink-muted mt-1">
           Retrouvez une personne pour voir tous ses accès, ou un rôle pour voir tous ses détenteurs.
         </p>
       </div>

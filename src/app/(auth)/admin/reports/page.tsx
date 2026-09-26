@@ -5,7 +5,7 @@ import ReportsClient from "./ReportsClient";
 export default async function ReportsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("reports:view", churchId);
 
   const events = await prisma.event.findMany({
@@ -35,8 +35,8 @@ export default async function ReportsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Comptes rendus</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-ink">Comptes rendus</h1>
+        <p className="text-sm text-ink-muted mt-1">
           Suivi des comptes rendus d&apos;événements et statistiques agrégées.
         </p>
       </div>

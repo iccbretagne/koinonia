@@ -71,12 +71,12 @@ export default function ResponsibilityModal({
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <div className="space-y-4">
-        {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-ink-muted">{subtitle}</p>}
 
         {fixedUserLabel ? (
           <p className="text-sm">
-            <span className="text-gray-400">Personne : </span>
-            <span className="font-medium text-gray-900">{fixedUserLabel}</span>
+            <span className="text-ink-subtle">Personne : </span>
+            <span className="font-medium text-ink">{fixedUserLabel}</span>
           </p>
         ) : (
           <Select
@@ -90,8 +90,8 @@ export default function ResponsibilityModal({
 
         {fixedTargetLabel ? (
           <p className="text-sm">
-            <span className="text-gray-400">{mode === "minister" ? "Ministère : " : "Département : "}</span>
-            <span className="font-medium text-gray-900">{fixedTargetLabel}</span>
+            <span className="text-ink-subtle">{mode === "minister" ? "Ministère : " : "Département : "}</span>
+            <span className="font-medium text-ink">{fixedTargetLabel}</span>
           </p>
         ) : (
           <Select
@@ -105,13 +105,13 @@ export default function ResponsibilityModal({
 
         {mode === "department-head" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <label className="block text-sm font-medium text-ink-muted mb-2">Type</label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setIsDeputy(false)}
                 className={`flex-1 py-2 text-sm rounded-lg border-2 font-medium transition-colors ${
-                  !isDeputy ? "border-gray-800 bg-gray-800 text-white" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  !isDeputy ? "border-brand bg-brand text-on-brand" : "border-line text-ink-muted hover:bg-surface-sunken"
                 }`}
               >
                 Responsable principal
@@ -120,7 +120,7 @@ export default function ResponsibilityModal({
                 type="button"
                 onClick={() => setIsDeputy(true)}
                 className={`flex-1 py-2 text-sm rounded-lg border-2 font-medium transition-colors ${
-                  isDeputy ? "border-gray-300 bg-gray-100 text-gray-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  isDeputy ? "border-control-line bg-surface-sunken text-ink-muted" : "border-line text-ink-muted hover:bg-surface-sunken"
                 }`}
               >
                 Responsable adjoint
@@ -129,7 +129,7 @@ export default function ResponsibilityModal({
           </div>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>Annuler</Button>

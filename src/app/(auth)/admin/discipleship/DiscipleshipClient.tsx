@@ -90,7 +90,7 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
   return (
     <div>
       {/* Tab bar + toggle "Tous / Mes disciples" */}
-      <div className="flex flex-wrap items-end justify-between gap-2 mb-6 border-b-2 border-gray-200">
+      <div className="flex flex-wrap items-end justify-between gap-2 mb-6 border-b-2 border-line">
         <div className="flex gap-1">
           {(["relations", "appel", "stats"] as const).map((tab) => (
             <button
@@ -98,8 +98,8 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-3 sm:py-2 text-sm font-medium rounded-t-lg transition-colors ${
                 activeTab === tab
-                  ? "bg-icc-violet text-white"
-                  : "text-gray-600 hover:text-icc-violet hover:bg-icc-violet/5"
+                  ? "bg-brand text-on-brand"
+                  : "text-ink-muted hover:text-brand-text hover:bg-brand-soft"
               }`}
             >
               {TAB_LABELS[tab]}
@@ -108,13 +108,13 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
         </div>
 
         {showMineFilter && (
-          <div className="flex rounded-lg border-2 border-icc-violet/20 overflow-hidden mb-0.5">
+          <div className="flex rounded-lg border border-brand/20 overflow-hidden mb-0.5">
             <button
               onClick={() => setFilterMine(false)}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 !filterMine
-                  ? "bg-icc-violet text-white"
-                  : "bg-white text-icc-violet hover:bg-icc-violet-light"
+                  ? "bg-brand text-on-brand"
+                  : "bg-surface text-brand-text hover:bg-brand-soft"
               }`}
             >
               Tous
@@ -123,8 +123,8 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
               onClick={() => setFilterMine(true)}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                 filterMine
-                  ? "bg-icc-violet text-white"
-                  : "bg-white text-icc-violet hover:bg-icc-violet-light"
+                  ? "bg-brand text-on-brand"
+                  : "bg-surface text-brand-text hover:bg-brand-soft"
               }`}
             >
               Mes disciples
@@ -214,20 +214,20 @@ function DiscipleCombobox({
     <div ref={containerRef} className="space-y-2">
       {/* Selected chip */}
       {isSelected && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-icc-violet/10 border-2 border-icc-violet/30 rounded-lg text-sm">
-          <svg className="w-4 h-4 text-icc-violet shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2 px-3 py-2 bg-brand-soft border border-brand/30 rounded-lg text-sm">
+          <svg className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="flex-1 font-medium text-gray-900">
+          <span className="flex-1 font-medium text-ink">
             {isNew
               ? `${(value as {firstName:string;lastName:string}).firstName} ${(value as {firstName:string;lastName:string}).lastName}`.trim()
               : `${selectedMember?.firstName} ${selectedMember?.lastName}`}
           </span>
           {selectedMember && (
-            <span className="text-xs text-gray-400">{getDept(selectedMember.departments)?.ministry?.name ?? "??"} / {getDept(selectedMember.departments)?.name ?? "??"}</span>
+            <span className="text-xs text-ink-subtle">{getDept(selectedMember.departments)?.ministry?.name ?? "??"} / {getDept(selectedMember.departments)?.name ?? "??"}</span>
           )}
-          {isNew && <span className="text-xs text-icc-violet">nouveau</span>}
-          <button type="button" onClick={handleClear} className="text-gray-400 hover:text-gray-600 ml-1">
+          {isNew && <span className="text-xs text-brand-text">nouveau</span>}
+          <button type="button" onClick={handleClear} className="text-ink-subtle hover:text-ink-muted ml-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -244,29 +244,29 @@ function DiscipleCombobox({
               value={firstName}
               onChange={(e) => handleFieldChange("firstName", e.target.value)}
               placeholder="Prénom"
-              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
             <input
               type="text"
               value={lastName}
               onChange={(e) => handleFieldChange("lastName", e.target.value)}
               placeholder="Nom"
-              className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
 
           {/* Suggestions */}
           {hasInput && filtered.length > 0 && (
-            <ul className="border-2 border-gray-200 rounded-lg overflow-hidden text-sm max-h-48 overflow-y-auto">
+            <ul className="border border-line rounded-lg overflow-hidden text-sm max-h-48 overflow-y-auto">
               {filtered.map((m) => (
                 <li key={m.id}>
                   <button
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); selectMember(m); }}
-                    className="w-full text-left px-3 py-2 hover:bg-icc-violet/5 transition-colors border-b border-gray-100 last:border-0"
+                    className="w-full text-left px-3 py-2 hover:bg-brand-soft transition-colors border-b border-line last:border-0"
                   >
-                    <span className="font-medium text-gray-900">{m.firstName} {m.lastName}</span>
-                    <span className="ml-2 text-xs text-gray-400">{getDept(m.departments)?.ministry?.name ?? "??"} / {getDept(m.departments)?.name ?? "??"}</span>
+                    <span className="font-medium text-ink">{m.firstName} {m.lastName}</span>
+                    <span className="ml-2 text-xs text-ink-subtle">{getDept(m.departments)?.ministry?.name ?? "??"} / {getDept(m.departments)?.name ?? "??"}</span>
                   </button>
                 </li>
               ))}
@@ -275,14 +275,14 @@ function DiscipleCombobox({
 
           {/* Create option */}
           {noMatch && (
-            <div className="flex items-center gap-3 px-3 py-2 border-2 border-dashed border-gray-200 rounded-lg text-sm">
-              <span className="flex-1 text-gray-500">
+            <div className="flex items-center gap-3 px-3 py-2 border border-dashed border-line rounded-lg text-sm">
+              <span className="flex-1 text-ink-muted">
                 Aucun résultat pour «&nbsp;{[firstName, lastName].filter(Boolean).join(" ")}&nbsp;»
               </span>
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); confirmNew(); }}
-                className="text-icc-violet font-medium hover:underline whitespace-nowrap"
+                className="text-brand-text font-medium hover:underline whitespace-nowrap"
               >
                 + Créer ce membre
               </button>
@@ -516,39 +516,39 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
         )}
       </div>
 
-      {loading && <p className="text-sm text-gray-400">Chargement...</p>}
-      {error && <p className="text-sm text-icc-rouge">{error}</p>}
+      {loading && <p className="text-sm text-ink-subtle">Chargement...</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {!loading && !error && (
-        <div className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
+        <div className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
           {displayedRows.length === 0 ? (
-            <p className="text-sm text-gray-400 p-6">Aucune relation de discipolat.</p>
+            <p className="text-sm text-ink-subtle p-6">Aucune relation de discipolat.</p>
           ) : (
             <>
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b-2 border-gray-100 bg-gray-50">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Disciple</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">FD actuel</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Premier FD</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">Depuis</th>
+                  <tr className="border-b-2 border-line bg-surface-sunken">
+                    <th className="text-left px-4 py-3 font-semibold text-ink-muted">Disciple</th>
+                    <th className="text-left px-4 py-3 font-semibold text-ink-muted">FD actuel</th>
+                    <th className="text-left px-4 py-3 font-semibold text-ink-muted">Premier FD</th>
+                    <th className="text-left px-4 py-3 font-semibold text-ink-muted">Depuis</th>
                     {canManage && <th className="px-4 py-3" />}
                   </tr>
                 </thead>
                 <tbody>
                   {displayedRows.map((row) => (
-                    <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <tr key={row.id} className="border-b border-line hover:bg-surface-sunken transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
-                        <div className="text-xs text-gray-400">
+                        <div className="font-medium text-ink">{fullName(row.disciple)}</div>
+                        <div className="text-xs text-ink-subtle">
                           {getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{fullName(row.discipleMaker)}</td>
-                      <td className="px-4 py-3 text-gray-500">{fullName(row.firstMaker)}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-ink-muted">{fullName(row.discipleMaker)}</td>
+                      <td className="px-4 py-3 text-ink-muted">{fullName(row.firstMaker)}</td>
+                      <td className="px-4 py-3 text-ink-subtle text-xs">
                         {row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}
                       </td>
                       {canManage && (
@@ -580,25 +580,25 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-gray-100">
+            <div className="md:hidden divide-y divide-line">
               {displayedRows.map((row) => (
                 <div key={row.id} className="p-4 space-y-2">
                   <div>
-                    <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
-                    <div className="text-xs text-gray-400">{getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}</div>
+                    <div className="font-medium text-ink">{fullName(row.disciple)}</div>
+                    <div className="text-xs text-ink-subtle">{getDept(row.disciple.departments)?.ministry?.name ?? "??"} / {getDept(row.disciple.departments)?.name ?? "??"}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     <div>
-                      <span className="text-xs text-gray-400">FD actuel</span>
-                      <div className="text-gray-700">{fullName(row.discipleMaker)}</div>
+                      <span className="text-xs text-ink-subtle">FD actuel</span>
+                      <div className="text-ink-muted">{fullName(row.discipleMaker)}</div>
                     </div>
                     <div>
-                      <span className="text-xs text-gray-400">Premier FD</span>
-                      <div className="text-gray-500">{fullName(row.firstMaker)}</div>
+                      <span className="text-xs text-ink-subtle">Premier FD</span>
+                      <div className="text-ink-muted">{fullName(row.firstMaker)}</div>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-xs text-gray-400">Depuis</span>
-                      <div className="text-gray-500 text-xs">{row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}</div>
+                      <span className="text-xs text-ink-subtle">Depuis</span>
+                      <div className="text-ink-muted text-xs">{row.startedAt ? new Date(row.startedAt).toLocaleDateString("fr-FR") : "—"}</div>
                     </div>
                   </div>
                   {canManage && (
@@ -633,14 +633,14 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="Nouvelle relation de discipolat">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Disciple</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Disciple</label>
             <DiscipleCombobox
               options={availableDisciples}
               value={discipleSelection}
               onChange={setDiscipleSelection}
             />
             {discipleSelection && typeof discipleSelection === "object" && (
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-ink-subtle">
                 Nouveau membre — sera ajouté dans «&nbsp;Sans département&nbsp;».
               </p>
             )}
@@ -654,7 +654,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
           )}
-          {createError && <p className="text-sm text-icc-rouge">{createError}</p>}
+          {createError && <p className="text-sm text-danger">{createError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setCreateModal(false)}>
               Annuler
@@ -672,47 +672,47 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
           <form onSubmit={handleEditProfile} className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                <label className="block text-sm font-medium text-ink-muted mb-1">Prénom</label>
                 <input
                   type="text"
                   value={editFirstName}
                   onChange={(e) => setEditFirstName(e.target.value)}
                   required
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <label className="block text-sm font-medium text-ink-muted mb-1">Nom</label>
                 <input
                   type="text"
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
                   required
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-gray-400 font-normal">(optionnel)</span></label>
+              <label className="block text-sm font-medium text-ink-muted mb-1">Email <span className="text-ink-subtle font-normal">(optionnel)</span></label>
               <input
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
                 placeholder="prenom.nom@email.com"
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone <span className="text-gray-400 font-normal">(optionnel)</span></label>
+              <label className="block text-sm font-medium text-ink-muted mb-1">Téléphone <span className="text-ink-subtle font-normal">(optionnel)</span></label>
               <input
                 type="tel"
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 placeholder="+33 6 00 00 00 00"
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
-            {editProfileError && <p className="text-sm text-icc-rouge">{editProfileError}</p>}
+            {editProfileError && <p className="text-sm text-danger">{editProfileError}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setEditProfileRow(null)}>
                 Annuler
@@ -729,10 +729,10 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <Modal open={!!changeFDRow} onClose={() => setChangeFDRow(null)} title="Changer le faiseur de disciples">
         {changeFDRow && (
           <form onSubmit={handleChangeFD} className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-muted">
               Disciple : <strong>{fullName(changeFDRow.disciple)}</strong>
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-ink-muted">
               FD actuel : {fullName(changeFDRow.discipleMaker)}
             </p>
             <Select
@@ -741,7 +741,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               onChange={(e) => setNewFDId(e.target.value)}
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
-            {changeFDError && <p className="text-sm text-icc-rouge">{changeFDError}</p>}
+            {changeFDError && <p className="text-sm text-danger">{changeFDError}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setChangeFDRow(null)}>
                 Annuler
@@ -758,10 +758,10 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       <Modal open={!!editRelationRow} onClose={() => setEditRelationRow(null)} title="Modifier la relation de discipolat">
         {editRelationRow && (
           <form onSubmit={handleEditRelation} className="space-y-4">
-            <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
-              <span className="text-gray-500">Disciple : </span>
-              <strong className="text-gray-900">{fullName(editRelationRow.disciple)}</strong>
-              <span className="ml-2 text-xs text-gray-400">
+            <div className="px-3 py-2 bg-surface-sunken rounded-lg text-sm">
+              <span className="text-ink-muted">Disciple : </span>
+              <strong className="text-ink">{fullName(editRelationRow.disciple)}</strong>
+              <span className="ml-2 text-xs text-ink-subtle">
                 {getDept(editRelationRow.disciple.departments)?.ministry?.name ?? "??"} / {getDept(editRelationRow.disciple.departments)?.name ?? "??"}
               </span>
             </div>
@@ -777,7 +777,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               onChange={(e) => setEditRelationFirstMakerId(e.target.value)}
               options={members.map((m) => ({ value: m.id, label: memberLabel(m) }))}
             />
-            {editRelationError && <p className="text-sm text-icc-rouge">{editRelationError}</p>}
+            {editRelationError && <p className="text-sm text-danger">{editRelationError}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setEditRelationRow(null)}>
                 Annuler
@@ -912,24 +912,24 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
     return acc;
   }, {} as Record<string, { maker: { id: string; firstName: string; lastName: string }; disciples: DiscipleshipRow[] }>);
 
-  if (loadingEvents) return <p className="text-sm text-gray-400">Chargement des événements...</p>;
+  if (loadingEvents) return <p className="text-sm text-ink-subtle">Chargement des événements...</p>;
   if (events.length === 0) return (
-    <p className="text-sm text-gray-500">
+    <p className="text-sm text-ink-muted">
       Aucun événement suivi pour le discipolat.{" "}
-      <span className="text-gray-400">Activez le suivi discipolat sur un événement depuis Administration → Événements → Configurer.</span>
+      <span className="text-ink-subtle">Activez le suivi discipolat sur un événement depuis Administration → Événements → Configurer.</span>
     </p>
   );
 
   return (
     <div>
       {/* Event selector */}
-      <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-white border-2 border-gray-100 rounded-lg">
+      <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
         <div className="flex-1 min-w-48">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Événement</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Événement</label>
           <select
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
           >
             {events.map((ev) => (
               <option key={ev.id} value={ev.id}>
@@ -943,35 +943,35 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
             {saving ? "Enregistrement..." : "Enregistrer l'appel"}
           </Button>
         )}
-        {saved && <span className="text-sm text-green-600 font-medium">Appel enregistré ✓</span>}
+        {saved && <span className="text-sm text-success font-medium">Appel enregistré ✓</span>}
       </div>
 
-      {error && <p className="text-sm text-icc-rouge mb-4">{error}</p>}
+      {error && <p className="text-sm text-danger mb-4">{error}</p>}
 
       {loadingAttendance ? (
-        <p className="text-sm text-gray-400">Chargement...</p>
+        <p className="text-sm text-ink-subtle">Chargement...</p>
       ) : discipleships.length === 0 ? (
-        <p className="text-sm text-gray-400">Aucun disciple enregistré.</p>
+        <p className="text-sm text-ink-subtle">Aucun disciple enregistré.</p>
       ) : (
         <div className="space-y-4">
           {Object.values(grouped).map(({ maker, disciples }) => (
-            <div key={maker.id} className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">
+            <div key={maker.id} className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
+              <div className="px-4 py-3 bg-surface-sunken border-b border-line">
+                <span className="text-sm font-semibold text-ink-muted">
                   FD : {fullName(maker)}
                 </span>
-                <span className="ml-3 text-xs text-gray-400">
+                <span className="ml-3 text-xs text-ink-subtle">
                   {disciples.filter((d) => presentIds.has(d.discipleId)).length} / {disciples.length} présent{disciples.length > 1 ? "s" : ""}
                 </span>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-line">
                 {disciples.map((d) => {
                   const present = presentIds.has(d.discipleId);
                   return (
                     <label
                       key={d.id}
                       className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                        present ? "bg-green-50" : "hover:bg-gray-50"
+                        present ? "bg-success-soft" : "hover:bg-surface-sunken"
                       } ${!canManage ? "pointer-events-none" : ""}`}
                     >
                       <input
@@ -979,13 +979,13 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
                         checked={present}
                         onChange={() => canManage && togglePresence(d.discipleId)}
                         disabled={!canManage}
-                        className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                        className="h-4 w-4 rounded border-control-line text-brand-text focus:ring-focus"
                       />
-                      <span className="text-sm font-medium text-gray-900">{fullName(d.disciple)}</span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-sm font-medium text-ink">{fullName(d.disciple)}</span>
+                      <span className="text-xs text-ink-subtle">
                         {getDept(d.disciple.departments)?.ministry?.name ?? "??"} / {getDept(d.disciple.departments)?.name ?? "??"}
                       </span>
-                      <span className={`ml-auto text-xs font-medium ${present ? "text-green-600" : "text-gray-400"}`}>
+                      <span className={`ml-auto text-xs font-medium ${present ? "text-success" : "text-ink-subtle"}`}>
                         {present ? "Présent" : "Absent"}
                       </span>
                     </label>
@@ -1053,24 +1053,24 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
   return (
     <div>
       {/* Period selector */}
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4 mb-6 p-4 bg-white border-2 border-gray-100 rounded-lg">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
         <div className="flex gap-3 flex-1">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Du</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Du</label>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Au</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Au</label>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
         </div>
@@ -1086,12 +1086,12 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
         </div>
       </div>
 
-      {error && <p className="text-sm text-icc-rouge mb-4">{error}</p>}
+      {error && <p className="text-sm text-danger mb-4">{error}</p>}
 
       {data && (
         <>
           {data.trackedEvents.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucun événement suivi sur cette période.</p>
+            <p className="text-sm text-ink-subtle">Aucun événement suivi sur cette période.</p>
           ) : (
             (() => {
               const displayedStats = filterMine && linkedMemberId
@@ -1099,52 +1099,52 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                 : data.stats;
               return (
             <>
-              <p className="text-xs text-gray-400 mb-3">
+              <p className="text-xs text-ink-subtle mb-3">
                 {data.trackedEvents.length} événement{data.trackedEvents.length > 1 ? "s" : ""} suivi{data.trackedEvents.length > 1 ? "s" : ""} sur la période
-                {filterMine && <span className="ml-2 text-icc-violet font-medium">— Mes disciples uniquement</span>}
+                {filterMine && <span className="ml-2 text-brand-text font-medium">— Mes disciples uniquement</span>}
               </p>
-              <div className="bg-white rounded-lg shadow border-2 border-gray-100 overflow-hidden">
+              <div className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
                 {displayedStats.length === 0 ? (
-                  <p className="text-sm text-gray-400 p-6">Aucun disciple enregistré.</p>
+                  <p className="text-sm text-ink-subtle p-6">Aucun disciple enregistré.</p>
                 ) : (
                   <>
                   {/* Desktop table */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b-2 border-gray-100 bg-gray-50">
-                          <th className="text-left px-4 py-3 font-semibold text-gray-700">Disciple</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-700">FD</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-700">Présences / Total</th>
-                          <th className="text-left px-4 py-3 font-semibold text-gray-700">Taux</th>
+                        <tr className="border-b-2 border-line bg-surface-sunken">
+                          <th className="text-left px-4 py-3 font-semibold text-ink-muted">Disciple</th>
+                          <th className="text-left px-4 py-3 font-semibold text-ink-muted">FD</th>
+                          <th className="text-left px-4 py-3 font-semibold text-ink-muted">Présences / Total</th>
+                          <th className="text-left px-4 py-3 font-semibold text-ink-muted">Taux</th>
                         </tr>
                       </thead>
                       <tbody>
                         {displayedStats.map((row) => (
-                          <tr key={row.discipleshipId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 font-medium text-gray-900">{fullName(row.disciple)}</td>
-                            <td className="px-4 py-3 text-gray-600">{fullName(row.discipleMaker)}</td>
-                            <td className="px-4 py-3 text-gray-600">
+                          <tr key={row.discipleshipId} className="border-b border-line hover:bg-surface-sunken transition-colors">
+                            <td className="px-4 py-3 font-medium text-ink">{fullName(row.disciple)}</td>
+                            <td className="px-4 py-3 text-ink-muted">{fullName(row.discipleMaker)}</td>
+                            <td className="px-4 py-3 text-ink-muted">
                               {row.stats.present} / {row.stats.totalEvents}
                             </td>
                             <td className="px-4 py-3">
                               {row.stats.rate === null ? (
-                                <span className="text-gray-400">—</span>
+                                <span className="text-ink-subtle">—</span>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                  <div className="w-24 h-2 bg-surface-sunken rounded-full overflow-hidden">
                                     <div
                                       className={`h-full rounded-full transition-all ${
                                         row.stats.rate >= 80
-                                          ? "bg-green-500"
+                                          ? "bg-success-soft0"
                                           : row.stats.rate >= 50
-                                          ? "bg-icc-jaune"
-                                          : "bg-icc-rouge"
+                                          ? "bg-accent"
+                                          : "bg-danger"
                                       }`}
                                       style={{ width: `${row.stats.rate}%` }}
                                     />
                                   </div>
-                                  <span className="text-xs font-medium text-gray-700">{row.stats.rate}%</span>
+                                  <span className="text-xs font-medium text-ink-muted">{row.stats.rate}%</span>
                                 </div>
                               )}
                             </td>
@@ -1155,34 +1155,34 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                   </div>
 
                   {/* Mobile cards */}
-                  <div className="md:hidden divide-y divide-gray-100">
+                  <div className="md:hidden divide-y divide-line">
                     {displayedStats.map((row) => (
                       <div key={row.discipleshipId} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-medium text-gray-900">{fullName(row.disciple)}</div>
-                            <div className="text-xs text-gray-400">FD : {fullName(row.discipleMaker)}</div>
+                            <div className="font-medium text-ink">{fullName(row.disciple)}</div>
+                            <div className="text-xs text-ink-subtle">FD : {fullName(row.discipleMaker)}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-medium text-gray-700">{row.stats.present}/{row.stats.totalEvents}</div>
-                            <div className="text-xs text-gray-400">présences</div>
+                            <div className="text-sm font-medium text-ink-muted">{row.stats.present}/{row.stats.totalEvents}</div>
+                            <div className="text-xs text-ink-subtle">présences</div>
                           </div>
                         </div>
                         {row.stats.rate !== null && (
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 bg-surface-sunken rounded-full overflow-hidden">
                               <div
                                 className={`h-full rounded-full transition-all ${
                                   row.stats.rate >= 80
-                                    ? "bg-green-500"
+                                    ? "bg-success-soft0"
                                     : row.stats.rate >= 50
-                                    ? "bg-icc-jaune"
-                                    : "bg-icc-rouge"
+                                    ? "bg-accent"
+                                    : "bg-danger"
                                 }`}
                                 style={{ width: `${row.stats.rate}%` }}
                               />
                             </div>
-                            <span className="text-xs font-bold text-gray-700 w-10 text-right">{row.stats.rate}%</span>
+                            <span className="text-xs font-bold text-ink-muted w-10 text-right">{row.stats.rate}%</span>
                           </div>
                         )}
                       </div>
