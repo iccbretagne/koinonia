@@ -109,6 +109,20 @@
   --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
 
+/* Variante `dark:` alignée sur le thème effectif (choix explicite data-theme, sinon réglage
+   système). À réserver aux rares cas qu'un token ne couvre pas (ex. logo à lettres blanches
+   ou sombres) : les couleurs d'interface passent par les tokens, qui basculent seuls. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
 @theme {
   /* Couleurs d'identité de la charte ICC : logo, illustrations, graphiques. Jamais pour du
      texte d'interface (voir tokens danger/info/brand-text). */
