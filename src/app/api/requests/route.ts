@@ -185,6 +185,7 @@ async function createVisuel(_request: Request, body: unknown) {
   await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Request", entityId: created.id, details: { title: data.title, type: "VISUEL" } });
 
   notifyDeptMembers(data.churchId, DEPT_FN.PRODUCTION_MEDIA, {
+    domain: "requests",
     type: "REQUEST_SUBMITTED",
     title: "Nouvelle demande de visuel",
     message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,
@@ -234,6 +235,7 @@ async function createDemand(_request: Request, body: unknown) {
   await logAudit({ userId: session.user.id, churchId: data.churchId, action: "CREATE", entityType: "Request", entityId: created.id, details: { title: data.title, type: data.type } });
 
   notifyDeptMembers(data.churchId, DEPT_FN.SECRETARIAT, {
+    domain: "requests",
     type: "REQUEST_SUBMITTED",
     title: "Nouvelle demande",
     message: `« ${data.title} » a été soumis par ${session.user.displayName ?? session.user.name ?? "un utilisateur"}.`,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { notifyUsersWithRole } from "@/lib/notifications";
+import { notifyUsersWithRole, dispatchUserEmails } from "@/lib/notifications";
 import { sendEmail, buildAppointmentConfirmationEmail } from "@/lib/email";
 import type { Prisma, AppointmentRequestStatus } from "@/generated/prisma/client";
 import { resolveAssignee, type ResolvedAssignee } from "./assignee";
@@ -69,12 +69,18 @@ export async function submitAppointmentRequest(
   ]);
 
   notifyUsersWithRole(data.churchId, "PASTORAL_CARE_REFERENT", {
+    domain: "care",
     type: "CARE_APPOINTMENT_PENDING",
     title: "Nouvelle demande de RDV",
     message: `${data.firstName} ${data.lastName} a soumis une demande : « ${data.subject} ».`,
     link: "/care",
   }).catch(() => {});
 
+  // Confirmation de dépôt au demandeur : aucune notification in-app n'existait déjà pour lui à
+  // cette étape (seule la confirmation par email), donc pas d'ajout via `createNotification`
+  // (qui en créerait une nouvelle) — spec 053, `dispatchUserEmails` seul, gouverné par sa
+  // préférence du domaine "care" s'il a un compte. Sans compte (formulaire public), l'envoi
+  // reste direct, inchangé.
   if (data.email && church) {
     const { subject: emailSubject, html } = buildAppointmentConfirmationEmail({
       firstName: data.firstName,
@@ -82,9 +88,15 @@ export async function submitAppointmentRequest(
       subject: data.subject,
       churchName: church.name,
     });
-    sendEmail({ to: data.email, subject: emailSubject, html }).catch((err) => {
-      console.error("[care/appointments] sendEmail confirmation failed:", err?.message ?? err);
-    });
+    if (userId) {
+      dispatchUserEmails([userId], "care", { subject: emailSubject, html }).catch((err) => {
+        console.error("[care/appointments] dispatchUserEmails confirmation failed:", err?.message ?? err);
+      });
+    } else {
+      sendEmail({ to: data.email, subject: emailSubject, html }).catch((err) => {
+        console.error("[care/appointments] sendEmail confirmation failed:", err?.message ?? err);
+      });
+    }
   }
 
   return request;

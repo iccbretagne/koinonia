@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
-import { sendEmail, buildJobOfferEmail } from "@/lib/email";
+import { buildJobOfferEmail } from "@/lib/email";
+import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 import { z } from "zod";
 
 const jobSchema = z.object({
@@ -102,16 +103,17 @@ async function notifySubscribers(job: {
   await Promise.allSettled(
     subs.map(async (sub) => {
       if (sub.inApp) {
-        await prisma.notification.create({
-          data: {
-            userId:  sub.userId,
-            type:    "JOB_OFFER",
-            title:   `Nouvelle offre ${typeLabel}`,
-            message: `${job.title} chez ${job.company}`,
-            link:    `/jobs/${job.id}`,
-          },
+        await createNotification({
+          userId:  sub.userId,
+          domain:  "jobs",
+          type:    "JOB_OFFER",
+          title:   `Nouvelle offre ${typeLabel}`,
+          message: `${job.title} chez ${job.company}`,
+          link:    `/jobs/${job.id}`,
         });
       }
+      // Filtre fin existant (spec 053, T30) : `sub.email` reste la condition d'envoi, la
+      // préférence du domaine "jobs" (activée par défaut) s'ajoute par-dessus sans le remplacer.
       if (sub.email && sub.user.email) {
         const { subject, html } = buildJobOfferEmail({
           subscriberName: sub.user.displayName ?? sub.user.name ?? null,
@@ -126,7 +128,7 @@ async function notifySubscribers(job: {
           contactUrl:     job.contactUrl,
           jobUrl,
         });
-        await sendEmail({ to: sub.user.email, subject, html });
+        await dispatchUserEmails([sub.userId], "jobs", { subject, html });
       }
     })
   );

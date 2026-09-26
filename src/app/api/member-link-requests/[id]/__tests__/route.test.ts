@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createAuthScopeMocks } from "@/__mocks__/auth";
 
 const mockRequireChurchPermission = vi.fn();
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
@@ -15,6 +15,7 @@ const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
+  ...createAuthScopeMocks(),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }));
@@ -54,6 +55,10 @@ describe("PATCH /api/member-link-requests/[id] — approbation (comportement act
     mockResolveChurchId.mockResolvedValue("church-1");
     prismaMock.notification.create.mockResolvedValue({} as never);
     prismaMock.memberLinkRequest.update.mockResolvedValue({} as never);
+    // `createNotification` (spec 053) tente l'email par défaut (gabarit générique, lot 2) —
+    // non mocké, ces tests portent sur l'attribution de rôle, pas sur l'envoi d'email.
+    prismaMock.user.findMany.mockResolvedValue([] as never);
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([] as never);
   });
 
   it("attribue le rôle STAR quand la personne n'a encore aucun rôle dans l'église", async () => {
@@ -169,7 +174,7 @@ describe("PATCH /api/member-link-requests/[id] — approbation (comportement act
       departmentId: null,
       ministryId: "ministry-1",
       requestedRole: "MINISTER",
-      member: { id: "member-existing", firstName: "Emmanuella", lastName: "Sohou" },
+      member: { id: "member-existing", firstName: "Emmanuella", lastName: "Sohou", departments: [] },
     } as never);
     prismaMock.ministry.findUnique.mockResolvedValue({ churchId: "church-1" } as never);
     prismaMock.memberUserLink.create.mockResolvedValue({} as never);
@@ -217,7 +222,7 @@ describe("PATCH /api/member-link-requests/[id] — approbation (comportement act
       departmentId: null,
       ministryId: "ministry-1",
       requestedRole: "MINISTER",
-      member: { id: "member-existing", firstName: "Emmanuella", lastName: "Sohou" },
+      member: { id: "member-existing", firstName: "Emmanuella", lastName: "Sohou", departments: [] },
     } as never);
     prismaMock.ministry.findUnique.mockResolvedValue({ churchId: "AUTRE-EGLISE" } as never);
     setupTransaction();

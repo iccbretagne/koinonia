@@ -28,4 +28,18 @@ export const jobsModule = defineModule({
     "jobs:freelance":  ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER", "STAR", "PASTORAL_CARE_REFERENT", "ACCOUNTANT"],
     "jobs:manage":     ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
+
+  // Domaine de notification (spec 053) : envoie déjà des emails (relance de renouvellement
+  // d'offre, inconditionnelle) — activé par défaut. Les alertes de nouvelles offres restent
+  // gouvernées par le réglage détaillé existant (`JobNotificationSubscription`), affiché sur la
+  // même page mais indépendant de ce booléen.
+  notificationDomains: [
+    {
+      key: "jobs",
+      label: "Emploi",
+      description: "Offres et profils (réglages détaillés ci-dessous).",
+      defaultEmail: true,
+      visibleWith: ["jobs:view"],
+    },
+  ],
 });

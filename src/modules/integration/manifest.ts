@@ -29,5 +29,27 @@ export const integrationModule = defineModule({
     ],
   },
 
-  permissions: {},
+  permissions: {
+    // Accès complet aux dossiers d'accueil et parcours (coordonnées personnelles, export) —
+    // Super Admin, Admin, Secrétaire. Ne s'approxime plus par members:manage/events:manage,
+    // détenus par tout Ministre/Resp. département quel que soit son département (spec 054/#583).
+    // L'équipe (fonction INTEGRATION/MSDP) et les bergers gardent leur accès via une garde dédiée
+    // (requireIntegrationAccess), indépendante de cette permission.
+    "integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
+  },
+
+  // Domaine de notification (spec 053) : envoie déjà des emails (berger affecté) — activé par
+  // défaut. Visible avec `integration:manage` (spec 054, plus l'ancien raccourci
+  // members:manage/events:manage) ; l'équipe (INTEGRATION/MSDP) et les bergers, qui n'ont pas
+  // cette permission, voient quand même le réglage dès qu'ils ont reçu une notification du
+  // domaine (`isDomainVisible`, historique).
+  notificationDomains: [
+    {
+      key: "integration",
+      label: "Intégration",
+      description: "Demande d'accueil confiée, demande renvoyée, rappel de relance.",
+      defaultEmail: true,
+      visibleWith: ["integration:manage"],
+    },
+  ],
 });

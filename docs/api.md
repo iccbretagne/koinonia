@@ -923,7 +923,8 @@ occurrence et toutes les suivantes de la série ; le passé n'est jamais touché
 
 Liste les utilisateurs avec leurs rôles par église.
 
-**Permission requise** : `members:manage`
+**Permission requise** : `users:manage` (spec 054/#583 — remplace `members:manage`, qui donnait
+cette liste à tout Ministre/Resp. département)
 
 **Query params** :
 - `churchId` (optionnel) — filtre par église
@@ -934,7 +935,8 @@ Liste les utilisateurs avec leurs rôles par église.
 
 Recherche d'utilisateurs pour l'écran de liaison compte↔STAR (`GET /admin/members`).
 
-**Permission requise** : `members:manage` sur `churchId`
+**Permission requise** : `access:manage` sur `churchId` (spec 054/#583 — cette route n'est
+appelée que pour lier un compte)
 
 **Query params** :
 - `q` (requis) — terme de recherche (minimum 2 caractères)
@@ -957,7 +959,10 @@ Les utilisateurs déjà liés à un STAR dans `churchId` sont exclus des deux m�
 
 Met à jour le nom d'affichage d'un utilisateur.
 
-**Autorisation** : l'utilisateur peut modifier son propre profil ; les rôles `SUPER_ADMIN`, `ADMIN` et `SECRETARY` peuvent modifier n'importe quel profil.
+**Autorisation** : l'utilisateur peut modifier son propre profil ; `users:manage` (Super Admin,
+Admin) permet de modifier le profil d'un utilisateur avec qui l'appelant partage une église
+(spec 054/#583 — remplace le contrôle de rôle `SUPER_ADMIN`/`ADMIN`/`SECRETARY` codé en dur, qui
+approximait déjà cette permission sans passer par `rolePermissions`).
 
 **Body** :
 ```json
@@ -1066,7 +1071,10 @@ reçoit aussi un accès effectif à l'église (rôle STAR par défaut si elle n'
 dans cette église), pas seulement un lien. Aucune exigence de rattachement préalable à cette
 église : c'est précisément la condition que cet appel crée.
 
-**Permission requise** : `members:manage`
+**Permission requise** : `access:manage`, et la fiche STAR (ou le département de la nouvelle
+fiche) dans le périmètre de l'appelant pour un Ministre au périmètre restreint (spec 054/#583 —
+remplace `members:manage`, qui ouvrait ce geste à tout Resp. département sans respecter de
+périmètre)
 
 **Body — compte déjà identifié** (`userId`, typiquement issu de `GET /api/users/search`) :
 ```json
@@ -1161,7 +1169,9 @@ Champs optionnels communs :
 
 Liste les demandes de liaison, filtrées par statut.
 
-**Permission requise** : `members:manage`
+**Permission requise** : `access:manage` — un Ministre au périmètre restreint (`getUserMinistryScope`)
+ne voit que les demandes de son ou ses ministères (spec 054/#583 — remplace `members:manage`, qui
+donnait toutes les demandes de l'église à tout Resp. département)
 
 **Query params** :
 - `churchId` (optionnel) — filtre par église
@@ -1173,7 +1183,9 @@ Liste les demandes de liaison, filtrées par statut.
 
 Approuve ou rejette une demande de liaison.
 
-**Permission requise** : `members:manage`
+**Permission requise** : `access:manage`, et la demande (département/ministère visé, ou fiche
+STAR existante) dans le périmètre de l'appelant pour un Ministre au périmètre restreint —
+`403` sinon (spec 054/#583, remplace `members:manage`)
 
 **Body** :
 ```json
@@ -2223,6 +2235,51 @@ Marque des notifications comme lues.
 ```
 
 **Réponse** : `{ "success": true }`.
+
+### `GET /api/notifications/preferences`
+
+Préférences de notification par email de l'utilisateur courant (spec 053, ADR-0016) : interrupteur
+général et une entrée par domaine **visible** pour lui (permission détenue, ou notification déjà
+reçue sur ce domaine). Un même jeu de préférences pour toutes ses églises.
+
+**Authentification** : session valide uniquement
+
+**Réponse** :
+```json
+{
+  "emailEnabled": true,
+  "hasEmail": true,
+  "domains": [
+    {
+      "key": "accounting",
+      "label": "Comptabilité",
+      "description": "Demandes financières : traitement, validation, rejet, paiement remis.",
+      "enabled": true
+    }
+  ]
+}
+```
+
+`hasEmail` à `false` : le compte n'a pas d'adresse email, ces réglages restent sans effet.
+
+### `PUT /api/notifications/preferences`
+
+Met à jour les préférences de l'utilisateur courant. `userId` toujours pris de la session, jamais
+du corps.
+
+**Authentification** : session valide uniquement
+
+**Body** (les deux champs sont optionnels, seuls ceux fournis sont modifiés) :
+```json
+{
+  "emailEnabled": false,
+  "domains": { "accounting": false, "care": true }
+}
+```
+
+Une clé de `domains` inconnue du registre ou non visible pour l'appelant → `400`.
+
+**Réponse** : même forme que `GET` (état après mise à jour).
 
 ---
 

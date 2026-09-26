@@ -6,6 +6,7 @@ import {
   ApiError,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notifications";
 import { findActiveAbsencesForPlanning } from "@/modules/planning";
 import { z } from "zod";
 
@@ -292,7 +293,6 @@ export async function PUT(
       const userIdByMember = new Map(links.map((l) => [l.memberId, l.userId]));
       const eventTitle = event?.title ?? "l'événement";
 
-      const notifs: { userId: string; type: string; title: string; message: string; link: string }[] = [];
       for (const p of plannings) {
         const userId = userIdByMember.get(p.memberId);
         if (!userId || userId === session.user.id) continue;
@@ -301,35 +301,33 @@ export async function PUT(
         const next = p.status;
         if (prev === next) continue;
 
+        let notif: { type: string; title: string; message: string; link: string } | null = null;
         if (prev === null && next !== null) {
-          notifs.push({
-            userId,
+          notif = {
             type: "PLANNING_ASSIGNED",
             title: "Affectation au planning",
             message: `Vous êtes affecté(e) à « ${eventTitle} » — statut : ${STATUS_LABELS[next] ?? next}.`,
             link: "/dashboard",
-          });
+          };
         } else if (prev !== null && next === null) {
-          notifs.push({
-            userId,
+          notif = {
             type: "PLANNING_REMOVED",
             title: "Retrait du planning",
             message: `Vous avez été retiré(e) du planning de « ${eventTitle} ».`,
             link: "/dashboard",
-          });
+          };
         } else if (prev !== null && next !== null) {
-          notifs.push({
-            userId,
+          notif = {
             type: "PLANNING_STATUS_CHANGED",
             title: "Statut planning modifié",
             message: `Votre statut pour « ${eventTitle} » : ${STATUS_LABELS[prev] ?? prev} → ${STATUS_LABELS[next] ?? next}.`,
             link: "/dashboard",
-          });
+          };
         }
-      }
 
-      if (notifs.length > 0) {
-        prisma.notification.createMany({ data: notifs, skipDuplicates: true }).catch(() => {});
+        if (notif) {
+          notifyUsers([userId], { domain: "planning", ...notif }).catch(() => {});
+        }
       }
     }
 

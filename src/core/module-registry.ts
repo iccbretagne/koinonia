@@ -27,6 +27,33 @@ export interface JobDescriptor {
   handler: (ctx: { tx: Prisma.TransactionClient }) => Promise<void>;
 }
 
+/**
+ * Domaine de notification (spec 053) : regroupe les notifications d'un module pour le
+ * réglage des préférences email (« Mes notifications »). Une clé de domaine se déclare sans
+ * migration de schéma — `Notification.domain` et `NotificationEmailPreference.domain` sont de
+ * simples chaînes, validées contre ce registre à l'écriture (Zod côté API), pas par un enum.
+ */
+export interface NotificationDomainDescriptor {
+  /** Identifiant stable, unique entre tous les modules actifs (ex. "planning", "care"). */
+  key: string;
+  /** Libellé affiché sur la page de préférences (ex. « Planning et service »). */
+  label: string;
+  /** Phrase d'exemples affichée sous le libellé (ex. « ajout ou retrait d'un service… »). */
+  description: string;
+  /**
+   * Valeur effective quand l'utilisateur n'a jamais réglé ce domaine. Vrai pour un domaine qui
+   * envoie déjà des emails aujourd'hui (même partiellement) — la mise en service de la spec 053
+   * ne doit retirer aucun email à personne.
+   */
+  defaultEmail: boolean;
+  /**
+   * Le domaine n'est proposé sur la page que si l'utilisateur détient l'une de ces permissions
+   * dans au moins une de ses églises, ou a déjà reçu une notification de ce domaine. Omis =
+   * toujours affiché (ex. le domaine "account", qui concerne tout le monde).
+   */
+  visibleWith?: readonly Permission[];
+}
+
 export interface ModuleRoutes {
   authenticated?: RouteDescriptor[];
   public?: RouteDescriptor[];
@@ -42,6 +69,7 @@ export interface ModuleManifest {
   permissions?: Record<Permission, readonly RoleName[]>;
   navigation?: NavigationItem[];
   jobs?: JobDescriptor[];
+  notificationDomains?: NotificationDomainDescriptor[];
 }
 
 export function defineModule(manifest: ModuleManifest): ModuleManifest {
@@ -135,6 +163,29 @@ export class ModuleRegistry {
         }
         owners.set(perm, mod.name);
         result[perm] = roles;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Agrège les domaines de notification déclarés par tous les modules enregistrés (spec 053).
+   * Throw si deux modules déclarent la même clé — miroir de `collectPermissions()`.
+   */
+  collectNotificationDomains(): NotificationDomainDescriptor[] {
+    const result: NotificationDomainDescriptor[] = [];
+    const owners = new Map<string, string>();
+
+    for (const mod of this.modules.values()) {
+      for (const domain of mod.notificationDomains ?? []) {
+        if (owners.has(domain.key)) {
+          throw new Error(
+            `Conflit de domaine de notification "${domain.key}" entre les modules "${owners.get(domain.key)}" et "${mod.name}"`
+          );
+        }
+        owners.set(domain.key, mod.name);
+        result.push(domain);
       }
     }
 

@@ -8,13 +8,19 @@ vi.mock("@/lib/auth", () => ({ requireAuth: () => mockRequireAuth() }));
 vi.mock("@/lib/registry", () => ({
   rolePermissions: {
     STAR: [],
-    ADMIN: ["members:manage", "events:manage"],
-    SECRETARY: ["events:manage"],
+    ADMIN: ["integration:manage", "members:manage", "events:manage"],
+    SECRETARY: ["integration:manage", "events:manage"],
+    MINISTER: ["members:manage"],
     DEPARTMENT_HEAD: ["members:manage"],
   },
 }));
 
-const { requireIntegrationAccess, requireIntegrationSettingsAccess } = await import("../auth");
+const {
+  requireIntegrationAccess,
+  requireIntegrationFullAccess,
+  requireIntegrationExportAccess,
+  requireIntegrationSettingsAccess,
+} = await import("../auth");
 
 function starSession(departmentIds: string[], role = "STAR") {
   return {
@@ -53,6 +59,58 @@ describe("requireIntegrationAccess", () => {
     prismaMock.familyLeaderAssignment.findMany.mockResolvedValue([] as never);
 
     await expect(requireIntegrationAccess("c1")).rejects.toThrow("FORBIDDEN");
+  });
+
+  it.each(["ADMIN", "SECRETARY"])("%s (integration:manage) a un accès complet (#583)", async (role) => {
+    mockRequireAuth.mockResolvedValue(starSession([], role));
+
+    const { scope } = await requireIntegrationAccess("c1");
+
+    expect(scope).toEqual({ scoped: false });
+  });
+
+  it.each(["MINISTER", "DEPARTMENT_HEAD"])(
+    "%s (members:manage seul, hors équipe) est refusé — l'anti-motif #583 ne doit pas revenir",
+    async (role) => {
+      mockRequireAuth.mockResolvedValue(starSession(["d-autre"], role));
+      prismaMock.department.count.mockResolvedValue(0 as never);
+      prismaMock.familyLeaderAssignment.findMany.mockResolvedValue([] as never);
+
+      await expect(requireIntegrationAccess("c1")).rejects.toThrow("FORBIDDEN");
+    }
+  );
+
+  it("un berger a un accès restreint (scoped) à ses familles", async () => {
+    mockRequireAuth.mockResolvedValue(starSession(["d-autre"], "STAR"));
+    prismaMock.department.count.mockResolvedValue(0 as never);
+    prismaMock.familyLeaderAssignment.findMany.mockResolvedValue([{ familyId: 1 }] as never);
+
+    const { scope } = await requireIntegrationAccess("c1");
+
+    expect(scope).toEqual({ scoped: true, familyIds: [1] });
+  });
+});
+
+describe("requireIntegrationFullAccess / requireIntegrationExportAccess", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("un berger au périmètre restreint est refusé (parcours et export réservés à l'accès complet)", async () => {
+    mockRequireAuth.mockResolvedValue(starSession(["d-autre"], "STAR"));
+    prismaMock.department.count.mockResolvedValue(0 as never);
+    prismaMock.familyLeaderAssignment.findMany.mockResolvedValue([{ familyId: 1 }] as never);
+
+    await expect(requireIntegrationFullAccess("c1")).rejects.toThrow("FORBIDDEN");
+    await expect(requireIntegrationExportAccess("c1")).rejects.toThrow("FORBIDDEN");
+  });
+
+  it("un membre de l'équipe MSDP a l'accès complet", async () => {
+    mockRequireAuth.mockResolvedValue(starSession(["d-msdp"], "STAR"));
+    prismaMock.department.count.mockImplementation((async (args: { where: { function: string } }) =>
+      args.where.function === "MSDP" ? 1 : 0) as never);
+
+    await expect(requireIntegrationFullAccess("c1")).resolves.toBeDefined();
   });
 });
 

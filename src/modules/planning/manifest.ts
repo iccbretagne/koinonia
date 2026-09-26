@@ -76,6 +76,28 @@ export const planningModule = defineModule({
     "absences:manage":     ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
   },
 
+  // Domaines de notification (spec 053). `planning` couvre déjà des emails aujourd'hui (rappels
+  // de service) — activé par défaut, en entier (le domaine ne peut pas être « à moitié » activé).
+  // `requests` (feuille d'annonces, statut d'une demande) n'en envoie aucun — désactivé par
+  // défaut.
+  notificationDomains: [
+    {
+      key: "planning",
+      label: "Planning et service",
+      description:
+        "Ajout ou retrait d'un service, rappel avant un service, changements de planning, absences et remplaçants.",
+      defaultEmail: true,
+      visibleWith: ["planning:view"],
+    },
+    {
+      key: "requests",
+      label: "Demandes",
+      description: "Demande reçue, acceptée ou refusée, feuille d'annonces déposée.",
+      defaultEmail: false,
+      visibleWith: ["planning:view", "media:view"],
+    },
+  ],
+
   navigation: [
     { label: "Planning",    icon: "planning",    href: "/dashboard",    permission: "planning:department" },
     { label: "Événements",  icon: "calendar",    href: "/events",       permission: "events:view" },

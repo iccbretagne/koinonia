@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, getUserMinistryScope } from "@/lib/auth";
+import { resolveMemberDepartmentScope, isLinkRequestInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
 import { admitToChurch } from "@/lib/admission";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const schema = z.object({
@@ -21,7 +23,10 @@ export async function PATCH(
     const { id } = await params;
 
     const churchId = await resolveChurchId("memberLinkRequest", id);
-    const session = await requireChurchPermission("members:manage", churchId);
+    // access:manage (Super Admin, Admin, Secrétaire, Ministre borné à son ministère) — remplace
+    // members:manage, qui laissait tout Resp. département traiter les demandes de toute
+    // l'église (spec 054/#583, défaut B4 de audit-rbac.md)
+    const session = await requireChurchPermission("access:manage", churchId);
 
     const body = await request.json();
     const { action, rejectReason, departmentId: adminDeptOverride, confirmDuplicate } = schema.parse(body);
@@ -29,13 +34,30 @@ export async function PATCH(
     const linkRequest = await prisma.memberLinkRequest.findUnique({
       where: { id },
       include: {
-        member: true,
+        member: { include: { departments: { select: { departmentId: true } } } },
         department: true,
         ministry: true,
         user: true,
       },
     });
     if (!linkRequest) throw new ApiError(404, "Demande introuvable");
+
+    const memberScope = await resolveMemberDepartmentScope(session, churchId);
+    const ministryScope = getUserMinistryScope(session, churchId);
+    const inScope = isLinkRequestInScope(
+      memberScope,
+      ministryScope.scoped ? ministryScope.ministryIds : [],
+      { departmentId: linkRequest.departmentId, ministryId: linkRequest.ministryId },
+      linkRequest.member?.departments.map((d) => d.departmentId) ?? []
+    );
+    if (!inScope) throw new ApiError(403, "Cette demande est hors de votre périmètre");
+    if (
+      adminDeptOverride &&
+      memberScope.scoped &&
+      !memberScope.departmentIds.includes(adminDeptOverride)
+    ) {
+      throw new ApiError(403, "Ce département est hors de votre périmètre");
+    }
 
     // Reconsidérer une demande refusée → repasser en PENDING
     if (action === "reconsider") {
@@ -67,16 +89,15 @@ export async function PATCH(
       await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reject" } });
 
       // Notify the requester that their request was rejected
-      await prisma.notification.create({
-        data: {
-          userId: linkRequest.userId,
-          type: "MEMBER_LINK_REJECTED",
-          title: "Demande de liaison refusée",
-          message: rejectReason
-            ? `Votre demande de liaison a été refusée : ${rejectReason}`
-            : "Votre demande de liaison compte STAR a été refusée.",
-          link: "/profile",
-        },
+      await createNotification({
+        userId: linkRequest.userId,
+        domain: "account",
+        type: "MEMBER_LINK_REJECTED",
+        title: "Demande de liaison refusée",
+        message: rejectReason
+          ? `Votre demande de liaison a été refusée : ${rejectReason}`
+          : "Votre demande de liaison compte STAR a été refusée.",
+        link: "/profile",
       });
 
       return successResponse(updated);
@@ -144,14 +165,13 @@ export async function PATCH(
     await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "approve", requestedRole } });
 
     // Notify the requester that their request was approved
-    await prisma.notification.create({
-      data: {
-        userId: linkRequest.userId,
-        type: "MEMBER_LINK_APPROVED",
-        title: "Demande de liaison approuvée",
-        message: "Votre compte a été lié à votre fiche STAR. Vous pouvez maintenant accéder à votre planning.",
-        link: "/planning",
-      },
+    await createNotification({
+      userId: linkRequest.userId,
+      domain: "account",
+      type: "MEMBER_LINK_APPROVED",
+      title: "Demande de liaison approuvée",
+      message: "Votre compte a été lié à votre fiche STAR. Vous pouvez maintenant accéder à votre planning.",
+      link: "/planning",
     });
 
     return successResponse({ approved: true });

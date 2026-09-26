@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const createSeekerSchema = z
@@ -94,14 +95,13 @@ async function notifySeekerSubscribers(seeker: {
   await Promise.allSettled(
     subs.map(async (sub) => {
       if (sub.inApp) {
-        await prisma.notification.create({
-          data: {
-            userId:  sub.userId,
-            type:    "JOB_SEEKER",
-            title:   "Nouveau profil en recherche",
-            message: `${authorName} cherche un emploi : « ${seeker.title} »`,
-            link:    `/jobs/seekers/${seeker.id}`,
-          },
+        await createNotification({
+          userId:  sub.userId,
+          domain:  "jobs",
+          type:    "JOB_SEEKER",
+          title:   "Nouveau profil en recherche",
+          message: `${authorName} cherche un emploi : « ${seeker.title} »`,
+          link:    `/jobs/seekers/${seeker.id}`,
         });
       }
     })

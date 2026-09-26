@@ -206,6 +206,7 @@ export async function notifyReaders(
     userIds.map((userId) =>
       createNotification({
         userId,
+        domain: "requests",
         type: "ANNOUNCEMENT_SHEET_DEPOSITED",
         title,
         message,

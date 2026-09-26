@@ -2,10 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockNotifyDeptMembers = vi.fn();
+const mockNotifyUsers = vi.fn();
+const mockCreateNotification = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/notifications", () => ({
   notifyDeptMembers: (...args: unknown[]) => mockNotifyDeptMembers(...args),
+  notifyUsers: (...args: unknown[]) => mockNotifyUsers(...args),
+  createNotification: (...args: unknown[]) => mockCreateNotification(...args),
 }));
 
 const {
@@ -89,8 +93,8 @@ describe("runCareRelances", () => {
     vi.clearAllMocks();
     prismaMock.careSettings.findMany.mockResolvedValue([]);
     prismaMock.notification.findMany.mockResolvedValue([]);
-    prismaMock.notification.createMany.mockResolvedValue({ count: 0 } as never);
-    prismaMock.notification.create.mockResolvedValue({} as never);
+    mockNotifyUsers.mockResolvedValue(undefined);
+    mockCreateNotification.mockResolvedValue(undefined);
     mockNotifyDeptMembers.mockResolvedValue(undefined);
     prismaMock.msdpFollowUp.findMany.mockResolvedValue([]);
   });
@@ -132,13 +136,9 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: [
-          expect.objectContaining({ userId: "admin-1", type: "CARE_RELANCE_UNASSIGNED" }),
-          expect.objectContaining({ userId: "referent-1", type: "CARE_RELANCE_UNASSIGNED" }),
-        ],
-      })
+    expect(mockNotifyUsers).toHaveBeenCalledWith(
+      ["admin-1", "referent-1"],
+      expect.objectContaining({ type: "CARE_RELANCE_UNASSIGNED" })
     );
     expect(result.unassignedNotified).toBe(1);
   });
@@ -150,7 +150,7 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
     expect(result.unassignedNotified).toBe(0);
   });
 
@@ -161,10 +161,8 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ userId: "member-1", type: "CARE_RELANCE_UNSCHEDULED" }),
-      })
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "member-1", type: "CARE_RELANCE_UNSCHEDULED" })
     );
     expect(mockNotifyDeptMembers).not.toHaveBeenCalled();
     expect(result.unscheduledNotified).toBe(1);
@@ -182,7 +180,7 @@ describe("runCareRelances", () => {
       "PROTOCOLE",
       expect.objectContaining({ type: "CARE_RELANCE_UNSCHEDULED" })
     );
-    expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(mockCreateNotification).not.toHaveBeenCalled();
     expect(result.unscheduledNotified).toBe(1);
   });
 
@@ -196,7 +194,7 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
     expect(result.unassignedNotified).toBe(0);
   });
 
@@ -215,7 +213,7 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.createMany).toHaveBeenCalled();
+    expect(mockNotifyUsers).toHaveBeenCalled();
     expect(result.unassignedNotified).toBe(1);
   });
 
@@ -268,16 +266,12 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.createMany).toHaveBeenCalledWith(
+    expect(mockNotifyUsers).toHaveBeenCalledWith(
+      ["referent-1"],
       expect.objectContaining({
-        data: [
-          expect.objectContaining({
-            userId: "referent-1",
-            type: "CARE_RELANCE_UNASSIGNED",
-            title: "Suivi de nouveau converti à confier",
-            link: "/care/followups/f-2",
-          }),
-        ],
+        type: "CARE_RELANCE_UNASSIGNED",
+        title: "Suivi de nouveau converti à confier",
+        link: "/care/followups/f-2",
       })
     );
     expect(result.unassignedNotified).toBe(1);
@@ -291,14 +285,12 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
+    expect(mockCreateNotification).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          userId: "member-2",
-          type: "CARE_RELANCE_UNSCHEDULED",
-          link: "/care/followups/f-1",
-          message: expect.stringContaining("Grâce Mavoungou"),
-        }),
+        userId: "member-2",
+        type: "CARE_RELANCE_UNSCHEDULED",
+        link: "/care/followups/f-1",
+        message: expect.stringContaining("Grâce Mavoungou"),
       })
     );
     expect(mockNotifyDeptMembers).not.toHaveBeenCalled();
@@ -313,8 +305,8 @@ describe("runCareRelances", () => {
 
     const result = await runCareRelances();
 
-    expect(prismaMock.notification.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: "pastor-user-2" }) })
+    expect(mockCreateNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "pastor-user-2" })
     );
     expect(mockNotifyDeptMembers).not.toHaveBeenCalled();
     expect(result.unscheduledNotified).toBe(1);

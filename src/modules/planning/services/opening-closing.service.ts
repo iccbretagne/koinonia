@@ -113,6 +113,7 @@ export async function notifyAssignment(
   const { createNotification } = await import("@/lib/notifications");
   await createNotification({
     userId,
+    domain: "planning",
     type: "OPENING_CLOSING_ASSIGNED",
     title: `Désigné(e) pour ${slotLabel}`,
     message: `Vous avez été désigné(e) pour ${slotLabel.toLowerCase()} l'église lors de « ${eventTitle} ».`,
@@ -135,6 +136,7 @@ export async function notifyRemoval(
   const { createNotification } = await import("@/lib/notifications");
   await createNotification({
     userId,
+    domain: "planning",
     type: "OPENING_CLOSING_REMOVED",
     title: `Retiré(e) de ${slotLabel}`,
     message: `Vous n'êtes plus désigné(e) pour ${slotLabel.toLowerCase()} l'église lors de « ${eventTitle} ».`,

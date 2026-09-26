@@ -2,7 +2,8 @@ import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
-import { sendEmail, buildAccountingPaymentEmail } from "@/lib/email";
+import { buildAccountingPaymentEmail } from "@/lib/email";
+import { createNotification, dispatchUserEmails } from "@/lib/notifications";
 import { z } from "zod";
 
 const releaseSchema = z.object({
@@ -74,17 +75,16 @@ export async function PATCH(
     const partialMsg = isPartial
       ? ` (partiel : ${released} € sur ${planned} €, solde de ${remainder} € reporté)`
       : "";
-    await prisma.notification.create({
-      data: {
-        userId:  payment.request.submittedById,
-        type:    "ACCOUNTING_PAYMENT_RELEASED",
-        title:   "Fonds remis",
-        message: `Un paiement pour "${payment.request.label}" a été confirmé remis${partialMsg}.`,
-        link:    `/accounting/requests/${payment.requestId}`,
-      },
+    await createNotification({
+      userId:  payment.request.submittedById,
+      domain:  "accounting",
+      type:    "ACCOUNTING_PAYMENT_RELEASED",
+      title:   "Fonds remis",
+      message: `Un paiement pour "${payment.request.label}" a été confirmé remis${partialMsg}.`,
+      link:    `/accounting/requests/${payment.requestId}`,
     });
 
-    // Email — fire-and-forget
+    // Email — fire-and-forget, gouverné par la préférence du domaine "accounting" (spec 053)
     // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
     const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const trancheNumber = await prisma.financialPayment.count({
@@ -106,9 +106,9 @@ export async function PATCH(
           churchName:     church?.name ?? "Koinonia",
           requestUrl:     `${appUrl}/accounting/requests/${payment.requestId}`,
         });
-        return sendEmail({ to: user.email, subject, html });
+        return dispatchUserEmails([payment.request.submittedById], "accounting", { subject, html });
       })
-      .catch((err) => console.error("[accounting/payments] sendEmail failed:", err?.message ?? err));
+      .catch((err) => console.error("[accounting/payments] dispatchUserEmails failed:", err?.message ?? err));
 
     return successResponse(result);
   } catch (error) {

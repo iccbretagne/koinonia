@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireAuth } from "@/lib/auth";
-import { isIntegrationMember, isMsdpMember } from "@/modules/integration";
+import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
@@ -15,39 +14,13 @@ const createSchema = z.object({
   notes: z.string().max(10000).optional(),
 });
 
-async function canAccess(churchId: string): Promise<boolean> {
-  const session = await requireAuth();
-  if (session.user.isSuperAdmin) return true;
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length > 0) {
-    const { rolePermissions } = await import("@/lib/registry");
-    const perms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-    if (perms.has("members:manage") || perms.has("events:manage")) return true;
-  }
-  if (await isIntegrationMember(session, churchId)) return true;
-  return isMsdpMember(session, churchId);
-}
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    const session = await requireAuth();
-    const hasAccess =
-      session.user.isSuperAdmin ||
-      (await (async () => {
-        const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-        if (roles.length > 0) {
-          const { rolePermissions } = await import("@/lib/registry");
-          const perms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-          if (perms.has("members:manage") || perms.has("events:manage")) return true;
-        }
-        if (await isIntegrationMember(session, churchId)) return true;
-        return isMsdpMember(session, churchId);
-      })());
-    if (!hasAccess) throw new ApiError(403, "Accès refusé");
+    await requireIntegrationFullAccess(churchId);
 
     const milestone = searchParams.get("milestone"); // FAMILY | PCNC | STAR | DISCIPLESHIP
     const search = searchParams.get("search") ?? "";
@@ -83,10 +56,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = createSchema.parse(await request.json());
-    const session = await requireAuth();
-
-    const hasAccess = await canAccess(body.churchId);
-    if (!hasAccess) throw new ApiError(403, "Accès refusé");
+    const { session } = await requireIntegrationFullAccess(body.churchId);
 
     // Déduplication par téléphone (blocage dur)
     if (body.phone) {
