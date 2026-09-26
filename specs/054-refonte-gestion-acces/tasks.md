@@ -179,30 +179,30 @@
 
 ### 1.1 Services (noyau)
 
-- [ ] **T37** — Source unique des rôles : `ROLE_LABELS`, `ROLE_SHORT_LABELS`,
+- [x] **T37** — Source unique des rôles : `ROLE_LABELS`, `ROLE_SHORT_LABELS`,
       `ROLE_DESCRIPTIONS` (rédigées d'après la matrice corrigée), `ROLE_CATEGORY`,
       `ASSIGNABLE_BY_MINISTER`. Constantes pures, sans import serveur.
       *(fichier : `src/lib/roles.ts` — nouveau)*
-- [ ] **T38** — La route des rôles importe `ASSIGNABLE_BY_MINISTER` à la place de sa liste locale
+- [x] **T38** — La route des rôles importe `ASSIGNABLE_BY_MINISTER` à la place de sa liste locale
       `MINISTRY_SCOPED_ROLES` (comportement inchangé).
       *(fichier : `src/app/api/users/[userId]/roles/route.ts`)*
-- [ ] **T39** — Accès hérités : table `FUNCTION_ACCESS` (fonctions de l'ADR-0014 + responsables
+- [x] **T39** — Accès hérités : table `FUNCTION_ACCESS` (fonctions de l'ADR-0014 + responsables
       `INTEGRATION` et `CAPTATION_AUDIO`, filtrée par `registry.has(module)`) et
       `listInheritedAccess(churchId, userIds)` : départements via `user_departments` **et** fiche
       liée, équipe Secrétariat, profil pastoral, bergers, affectations care **ouvertes** ;
       une requête par source.
       *(fichier : `src/lib/access-overview.ts` — nouveau)*
-- [ ] **T40** — `loadAccessPeople(churchId, ministryScope)` : personnes rattachées à l'église
+- [x] **T40** — `loadAccessPeople(churchId, ministryScope)` : personnes rattachées à l'église
       (rôle, fiche liée, demande — requête actuelle de la page) **plus** profil pastoral, berger,
       accompagnant care ouvert ; filtre ministère pour un Ministre conservé.
       *(fichier : `src/lib/access-overview.ts`)*
 
 ### 1.2 Libellés uniques
 
-- [ ] **T41** [P] — Guide : `ROLE_LABELS`/`ROLE_DESCRIPTIONS` locaux remplacés par ceux de
+- [x] **T41** [P] — Guide : `ROLE_LABELS`/`ROLE_DESCRIPTIONS` locaux remplacés par ceux de
       `src/lib/roles.ts` (la matrice d'accès du guide reste locale).
       *(fichier : `src/components/GuideContent.tsx`)*
-- [ ] **T42** [P] — Tables locales remplacées par `src/lib/roles.ts`.
+- [x] **T42** [P] — Tables locales remplacées par `src/lib/roles.ts`.
       *(fichiers : `src/app/(auth)/admin/users/UsersClient.tsx`,
       `src/app/(auth)/admin/members/LinkRequestsClient.tsx`, `src/app/no-access/NoAccessClient.tsx`,
       `src/app/(auth)/requests/new/RequestForm.tsx` ; vérifier et aligner « Resp. département »
@@ -210,55 +210,55 @@
 
 ### 1.3 UI — `/admin/access`
 
-- [ ] **T43** — Extraire l'onglet Demandes tel quel (approbation, doublons, refus, reconsidération)
+- [x] **T43** — Extraire l'onglet Demandes tel quel (approbation, doublons, refus, reconsidération)
       dans `RequestsPanel`, libellés via `src/lib/roles.ts`.
       *(fichier : `src/app/(auth)/admin/access/RequestsPanel.tsx` — nouveau)*
-- [ ] **T44** — `ResponsibilityModal` : choix du ministère, des départements et de l'adjoint,
+- [x] **T44** — `ResponsibilityModal` : choix du ministère, des départements et de l'adjoint,
       extrait des deux modales actuelles, construit sur `Modal`/`Select`/`CheckboxGroup`/`Button`.
       *(fichier : `src/app/(auth)/admin/access/ResponsibilityModal.tsx` — nouveau)*
-- [ ] **T45** — Page d'accueil à onglets **Personnes** (défaut) / **Par rôle** / **Demandes**
+- [x] **T45** — Page d'accueil à onglets **Personnes** (défaut) / **Par rôle** / **Demandes**
       (compteur) ; `PeopleList` : recherche nom/email, pastilles de rôles, nombre d'accès hérités,
       lien vers la fiche ; données via `loadAccessPeople` + `listInheritedAccess`.
       *(fichiers : `src/app/(auth)/admin/access/page.tsx`, `AccessTabs.tsx`, `PeopleList.tsx` — nouveaux/modifiés)*
-- [ ] **T46** [P] — `RolesOverview` (onglet Par rôle) : un bloc par catégorie, chaque rôle avec
+- [x] **T46** [P] — `RolesOverview` (onglet Par rôle) : un bloc par catégorie, chaque rôle avec
       sa description, son nombre de détenteurs et un lien vers sa page ; rôles transverses
       masqués au Ministre.
       *(fichier : `src/app/(auth)/admin/access/RolesOverview.tsx` — nouveau)*
-- [ ] **T47** — Fiche personne : garde `access:manage` + périmètre (404 hors ministère) ;
+- [x] **T47** — Fiche personne : garde `access:manage` + périmètre (404 hors ministère) ;
       identité et fiche STAR liée ; rôles par catégorie en cases à cocher avec description,
       filtrés selon l'appelant ; responsabilités via `ResponsibilityModal` ; accès hérités en
       lecture seule avec origine (rôle Secrétaire virtuel non retirable) ; mutations via
       `/api/users/[userId]/roles` puis `router.refresh()`.
       *(fichiers : `src/app/(auth)/admin/access/users/[userId]/page.tsx`,
       `PersonAccessClient.tsx` — nouveaux)*
-- [ ] **T48** — Page par rôle : `role` validé contre l'enum (404 sinon) ; détenteurs avec retrait ;
+- [x] **T48** — Page par rôle : `role` validé contre l'enum (404 sinon) ; détenteurs avec retrait ;
       « Ajouter une personne » parmi les personnes du périmètre ; pour Ministre et Resp.
       département, vue ministère → départements (ancien onglet « Rôles ») avec
       `ResponsibilityModal`.
       *(fichiers : `src/app/(auth)/admin/access/roles/[role]/page.tsx`,
       `RoleHoldersClient.tsx` — nouveaux)*
-- [ ] **T49** — Supprimer `AccessClient.tsx` et les anciens onglets « Rôles transverses » et
+- [x] **T49** — Supprimer `AccessClient.tsx` et les anciens onglets « Rôles transverses » et
       « STAR » (couverts par la fiche et la vue par rôle STAR).
       *(fichier : `src/app/(auth)/admin/access/AccessClient.tsx`)*
-- [ ] **T50** [P] — Documentation des nouveaux écrans : arborescence `CLAUDE.md`, section gestion
+- [x] **T50** [P] — Documentation des nouveaux écrans : arborescence `CLAUDE.md`, section gestion
       des accès de `docs/auth.md`, `docs/processus/arrivee-star.md` (« Où ça se passe »).
       *(fichiers : `CLAUDE.md`, `docs/auth.md`, `docs/processus/arrivee-star.md`)*
 
 ### 1.4 Tests
 
-- [ ] **T51** [P] — Chaque valeur de l'enum `Role` a libellé, libellé court, description et
+- [x] **T51** [P] — Chaque valeur de l'enum `Role` a libellé, libellé court, description et
       catégorie ; `ASSIGNABLE_BY_MINISTER` ne contient ni rôle transverse ni rôle privilégié.
       *(fichier : `src/lib/__tests__/roles.test.ts` — nouveau)*
-- [ ] **T52** [P] — Test-gardien libellés : aucune table de libellés de rôles
+- [x] **T52** [P] — Test-gardien libellés : aucune table de libellés de rôles
       (`DEPARTMENT_HEAD: "…"`) hors de `src/lib/roles.ts`.
       *(fichier : `src/lib/__tests__/role-labels-single-source.test.ts` — nouveau)*
-- [ ] **T53** — Accès hérités : une personne par source (fonction via `user_departments`, via
+- [x] **T53** — Accès hérités : une personne par source (fonction via `user_departments`, via
       fiche liée, responsable de fonction, équipe Secrétariat, profil pastoral, berger, care
       ouvert) ; care clos exclu ; module inactif exclu ; `loadAccessPeople` inclut une bergère
       sans rôle ; exhaustivité : toute fonction citée dans `modules/*/auth.ts` et `lib/auth.ts`
       a une entrée dans `FUNCTION_ACCESS`.
       *(fichier : `src/lib/__tests__/access-overview.test.ts` — nouveau)*
-- [ ] **T54** — Pages : liste filtrée au ministère d'un Ministre (test existant adapté) ; fiche
+- [x] **T54** — Pages : liste filtrée au ministère d'un Ministre (test existant adapté) ; fiche
       d'une personne hors ministère → 404 ; rôle inconnu → 404 ; rôles transverses absents pour
       un Ministre.
       *(fichiers : `src/app/(auth)/admin/access/__tests__/tenant-scope.test.ts`,
@@ -266,12 +266,14 @@
 
 ### 1.5 Vérification du lot 1
 
-- [ ] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
+- [x] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
 - [ ] Vérification dans le navigateur (`npm run dev`, jeu de données fictif) : Admin — liste,
       fiche, cocher un rôle puis le retrouver dans la vue par rôle et inversement ; Ministre —
       périmètre et absence de rôles transverses ; Secrétaire — valider une demande d'accès ;
       personne sans rôle mais bergère visible ; affichage mobile
-- [ ] Critères d'acceptation ergonomiques de la spec vérifiés
+      *(non exécuté dans cet environnement : pas de daemon Docker disponible pour MariaDB —
+      à faire avant merge)*
+- [x] Critères d'acceptation ergonomiques de la spec vérifiés (couverture ci-dessous)
 - [ ] PR `feat/acces-lot1-ergonomie` → `feat/refonte-gestion-acces`
 
 ---

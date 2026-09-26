@@ -117,21 +117,21 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
 
 ## Critères d'acceptation
 
-- [ ] Une liste de personnes, cherchable par nom, montre pour chacune un résumé de ses accès.
-- [ ] Depuis une seule fiche par personne, un administrateur habilité voit l'ensemble des accès
+- [x] Une liste de personnes, cherchable par nom, montre pour chacune un résumé de ses accès.
+- [x] Depuis une seule fiche par personne, un administrateur habilité voit l'ensemble des accès
       réels de cette personne (rôles d'église, responsabilités, accès hérités avec leur origine)
       sans devoir consulter plusieurs écrans.
-- [ ] Chaque rôle proposé à l'attribution est accompagné d'une phrase expliquant ce qu'il donne.
-- [ ] Un accès hérité d'un autre mécanisme (appartenance à un département spécialisé, affectation
+- [x] Chaque rôle proposé à l'attribution est accompagné d'une phrase expliquant ce qu'il donne.
+- [x] Un accès hérité d'un autre mécanisme (appartenance à un département spécialisé, affectation
       nominative à un dossier) apparaît sur la fiche de la personne concernée, en lecture seule,
       avec son origine, même en l'absence de tout rôle d'église.
-- [ ] Les accès peuvent aussi être consultés par rôle : liste de tous les détenteurs d'un rôle
+- [x] Les accès peuvent aussi être consultés par rôle : liste de tous les détenteurs d'un rôle
       donné, avec la possibilité d'y ajouter quelqu'un.
-- [ ] Un changement d'accès effectué depuis la fiche d'une personne est immédiatement reflété si
+- [x] Un changement d'accès effectué depuis la fiche d'une personne est immédiatement reflété si
       on consulte ensuite ce rôle depuis la vue « par rôle », et réciproquement.
-- [ ] Un même rôle est désigné par le même libellé sur tous les écrans où il apparaît (gestion
+- [x] Un même rôle est désigné par le même libellé sur tous les écrans où il apparaît (gestion
       des accès, guide utilisateur intégré, documentation).
-- [ ] Un Ministre au périmètre restreint ne voit et ne peut agir que sur les personnes et les
+- [x] Un Ministre au périmètre restreint ne voit et ne peut agir que sur les personnes et les
       rôles rattachables de son ou ses ministères ; il ne voit ni ne peut attribuer un rôle
       transverse à l'église.
 - [ ] L'accès aux dossiers d'accueil de nouveaux arrivants (consultation des coordonnées

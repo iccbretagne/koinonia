@@ -6,6 +6,7 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
+import { ROLE_LABELS } from "@/lib/roles";
 
 type RequestCategory = "announcement" | "visual" | "demand" | null;
 type DemandType =
@@ -103,12 +104,9 @@ function computeDeadlineFromOffset(eventDate: string, offset: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const ROLES_FOR_ACCESS = [
-  { value: "MINISTER", label: "Ministre" },
-  { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
-  { value: "DISCIPLE_MAKER", label: "Faiseur de disciples" },
-  { value: "REPORTER", label: "Reporter" },
-];
+const ROLES_FOR_ACCESS = (["MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER", "REPORTER"] as const).map(
+  (value) => ({ value, label: ROLE_LABELS[value] })
+);
 
 function initFromEditData(editData: EditData): {
   category: RequestCategory;

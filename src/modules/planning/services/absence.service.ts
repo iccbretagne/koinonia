@@ -1,6 +1,7 @@
 import type { Prisma, Absence, AbsenceBackupType, AbsenceKind } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
 import { isAbsencePast } from "@/lib/absence-lock";
+import { ROLE_SHORT_LABELS } from "@/lib/roles";
 import { planningBus } from "../bus";
 import {
   validateTargeting,
@@ -298,7 +299,7 @@ export async function listBackupOptions(
     new Map(responsibleRoles.map((r) => [r.id, r])).values()
   ).map((r) => ({
     value: `RESPONSIBLE:${r.id}`,
-    label: `${r.user.displayName ?? r.user.name} (${r.role === "MINISTER" ? "Ministre" : "Resp. département"})`,
+    label: `${r.user.displayName ?? r.user.name} (${ROLE_SHORT_LABELS[r.role === "MINISTER" ? "MINISTER" : "DEPARTMENT_HEAD"]})`,
   }));
 
   return { eligible: true, options: [...starOptions, ...responsibleOptions] };

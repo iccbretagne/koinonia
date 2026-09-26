@@ -9,22 +9,8 @@ import Select from "@/components/ui/Select";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
 import Modal from "@/components/ui/Modal";
 import { buttonClasses } from "@/components/ui/button-classes";
-
-const ROLES = [
-  { value: "SUPER_ADMIN", label: "Super Admin" },
-  { value: "ADMIN", label: "Admin" },
-  { value: "SECRETARY", label: "Secrétaire" },
-  { value: "MINISTER", label: "Ministre" },
-  { value: "DEPARTMENT_HEAD", label: "Responsable de département" },
-  { value: "DISCIPLE_MAKER", label: "Faiseur de Disciples" },
-  { value: "REPORTER", label: "Reporter (Comptes rendus)" },
-  { value: "PASTORAL_CARE_REFERENT", label: "Référent soins pastoraux" },
-  { value: "ACCOUNTANT", label: "Comptable" },
-];
-
-const ROLE_LABELS: Record<string, string> = Object.fromEntries(
-  ROLES.map((r) => [r.value, r.label])
-);
+import { ROLE_LABELS } from "@/lib/roles";
+import type { Role } from "@/generated/prisma/client";
 
 interface UserRole {
   id: string;
@@ -194,7 +180,7 @@ export default function UsersClient({
     churchId: string,
     role: string
   ) {
-    if (!confirm(`Supprimer le rôle ${ROLE_LABELS[role] || role} ?`)) return;
+    if (!confirm(`Supprimer le rôle ${ROLE_LABELS[role as Role] || role} ?`)) return;
 
     try {
       const res = await fetch(`/api/users/${userId}/roles`, {
@@ -249,7 +235,7 @@ export default function UsersClient({
   }
 
   function formatRoleBadge(r: UserRole) {
-    const roleLabel = ROLE_LABELS[r.role] || r.role;
+    const roleLabel = ROLE_LABELS[r.role as Role] || r.role;
     let label = `${roleLabel} - ${r.church.name}`;
     if (r.role === "MINISTER" && r.ministry) {
       label += ` (${r.ministry.name})`;
