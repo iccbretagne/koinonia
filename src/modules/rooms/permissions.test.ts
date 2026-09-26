@@ -16,4 +16,8 @@ describe("roomsModule.permissions — STAR (spec 031, issue #463)", () => {
       expect(grantees).toContain("DEPARTMENT_HEAD");
     }
   });
+
+  it("accorde rooms:reserve à la Secrétaire (spec 054/#583, D7)", () => {
+    expect(roomsModule.permissions?.["rooms:reserve"]).toContain("SECRETARY");
+  });
 });

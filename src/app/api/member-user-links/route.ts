@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
+import { resolveMemberDepartmentScope, isMemberInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
@@ -44,16 +45,27 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { memberId, newMember, churchId, userId: inputUserId, email, confirmCreate } = createSchema.parse(body);
-    const session = await requireChurchPermission("members:manage", churchId);
+    // access:manage (Super Admin, Admin, Secrétaire, Ministre borné à son ministère) — remplace
+    // members:manage, qui laissait tout Resp. département lier n'importe quelle fiche de
+    // l'église (spec 054/#583, défaut B3 de audit-rbac.md)
+    const session = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `link:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
+    const memberScope = await resolveMemberDepartmentScope(session, churchId);
 
     // Une nouvelle fiche STAR n'a par définition aucun lien existant à vérifier : les contrôles
     // ci-dessous (appartenance à l'église, doublon de lien) ne concernent que `memberId`.
     if (memberId) {
       const member = await prisma.member.findFirst({
         where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
+        include: { departments: { select: { departmentId: true } } },
       });
       if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
+      if (!isMemberInScope(memberScope, member.departments.map((d) => d.departmentId))) {
+        throw new ApiError(403, "Ce STAR est hors de votre périmètre");
+      }
+    }
+    if (newMember && memberScope.scoped && !memberScope.departmentIds.includes(newMember.departmentId)) {
+      throw new ApiError(403, "Ce département est hors de votre périmètre");
     }
 
     // Résoudre le compte cible. Aucune exigence de rattachement préalable à cette église : c'est
@@ -127,13 +139,24 @@ export async function DELETE(request: Request) {
   try {
     const body = await request.json();
     const { memberId, churchId } = deleteSchema.parse(body);
-    const session = await requireChurchPermission("members:manage", churchId);
+    const session = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `unlink:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
     const link = await prisma.memberUserLink.findUnique({
       where: { memberId_churchId: { memberId, churchId } },
     });
     if (!link) throw new ApiError(404, "Ce STAR n'est lié à aucun compte dans cette église");
+
+    const memberScope = await resolveMemberDepartmentScope(session, churchId);
+    if (memberScope.scoped) {
+      const member = await prisma.member.findUnique({
+        where: { id: memberId },
+        include: { departments: { select: { departmentId: true } } },
+      });
+      if (!member || !isMemberInScope(memberScope, member.departments.map((d) => d.departmentId))) {
+        throw new ApiError(403, "Ce STAR est hors de votre périmètre");
+      }
+    }
 
     await prisma.memberUserLink.delete({ where: { id: link.id } });
 

@@ -20,10 +20,8 @@ const configLinksDef = [
   { href: "/admin/departments/functions", label: "Fonctions dép.",    permissions: ["events:manage"] },
   { href: "/admin/rooms",                 label: "Salles",            permissions: ["rooms:manage"] },
   // Personnes
-  // Réservé à l'administration d'église : inutile aux Ministres/Resp. département, qui gèrent
-  // leurs STAR depuis /admin/members.
-  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["members:manage"], adminOnly: true },
-  { href: "/admin/access",                label: "Accès & rôles",     permissions: ["departments:manage"] },
+  { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
+  { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
   { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:manage"] },
   // Système
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:manage"] },
@@ -154,10 +152,6 @@ export default async function AuthLayout({
   const visibleConfigLinks = configLinksDef
     .filter((link) => {
       if (link.superAdminOnly) return session.user.isSuperAdmin;
-      if (link.adminOnly && !session.user.isSuperAdmin) {
-        const isChurchAdmin = churchRoles.some((r) => r.churchId === currentChurchId && r.role === "ADMIN");
-        if (!isChurchAdmin) return false;
-      }
       return link.permissions.some((p) => userPermissions.has(p));
     })
     .map(({ href, label }) => ({ href, label }));
@@ -244,14 +238,17 @@ export default async function AuthLayout({
   const integrationLinks: { href: string; label: string }[] = [];
 
   if (currentChurchId) {
-    const isGlobalManager = session.user.isSuperAdmin || userPermissions.has("events:manage");
+    // integration:manage — remplace events:manage, qui approximait "Admin/Secrétaire" sans
+    // couvrir la bonne restriction (spec 054/#583, D4)
+    const isIntegrationGlobalManager =
+      session.user.isSuperAdmin || userPermissions.has("integration:manage");
     const userDeptIdsSet = new Set(
       churchRoles
         .filter((r) => r.churchId === currentChurchId)
         .flatMap((r) => r.departments.map((d) => d.department.id))
     );
     const isIntegrationMember =
-      isGlobalManager ||
+      isIntegrationGlobalManager ||
       (userDeptIdsSet.size > 0 &&
         (await prisma.department.count({
           where: {
@@ -283,7 +280,7 @@ export default async function AuthLayout({
       (await prisma.department.count({
         where: { function: "INTEGRATION", ministry: { churchId: currentChurchId }, id: { in: headDeptIds } },
       })) > 0;
-    if (isGlobalManager || isIntegrationHead) {
+    if (isIntegrationGlobalManager || isIntegrationHead) {
       integrationLinks.push({ href: "/integration/parametres", label: "Paramètres intégration" });
     }
   }

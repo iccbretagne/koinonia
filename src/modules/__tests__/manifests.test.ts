@@ -51,13 +51,13 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
 };
 
 /**
- * Propriétaire de chaque permission. `storage` et `integration` n'en déclarent aucune :
- * infrastructure pure pour le premier, accès géré par `requireIntegrationAccess()` pour le second.
+ * Propriétaire de chaque permission. `storage` n'en déclare aucune : infrastructure pure.
  */
 const PERMISSION_OWNER: Record<string, string> = {
   "access:manage": "core",
   "church:manage": "core",
   "users:manage": "core",
+  "integration:manage": "integration",
   "absences:manage": "planning",
   "absences:view": "planning",
   "departments:manage": "planning",
@@ -198,9 +198,17 @@ describe("Manifestes des modules", () => {
     }
   });
 
-  it("storage et integration ne déclarent aucune permission", () => {
+  it("storage ne déclare aucune permission", () => {
     expect(Object.keys(storageModule.permissions ?? {})).toEqual([]);
-    expect(Object.keys(integrationModule.permissions ?? {})).toEqual([]);
+  });
+
+  it("integration déclare integration:manage (spec 054/#583)", () => {
+    expect(Object.keys(integrationModule.permissions ?? {})).toEqual(["integration:manage"]);
+    expect(integrationModule.permissions?.["integration:manage"]).toEqual([
+      "SUPER_ADMIN",
+      "ADMIN",
+      "SECRETARY",
+    ]);
   });
 
   it("core ne déclare que des permissions globales", () => {

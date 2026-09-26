@@ -43,6 +43,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0014](0014-fonctions-departement-droits-ecriture.md) | Certaines fonctions de département confèrent des droits d'écriture, nommément | Accepté |
 | [0015](0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Accepté |
 | [0016](0016-preferences-notifications-email.md) | Un domaine par notification, email décidé centralement par préférence utilisateur | Accepté |
+| [0017](0017-permission-n-approxime-pas-un-role.md) | Une permission n'approxime jamais un rôle administratif | Accepté |
 
 ## Note sur les ADR 0001–0003
 

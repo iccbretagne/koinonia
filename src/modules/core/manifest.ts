@@ -42,9 +42,12 @@ export const coreModule = defineModule({
 
   permissions: {
     "church:manage": ["SUPER_ADMIN"],
-    "users:manage":  ["SUPER_ADMIN"],
-    // Gestion des accès/rôles au sein d'une église — distinct de users:manage (plateforme,
-    // Super Admin uniquement). Remplace l'emprunt à events:manage (spec 031, issue #467)
+    // Gestion des comptes utilisateurs d'une église : liste, pré-création, suppression d'un
+    // compte jamais connecté, renommage (spec 054/#583 — ne s'approxime plus par
+    // members:manage, détenu par tout Ministre/Resp. département quel que soit son périmètre).
+    "users:manage":  ["SUPER_ADMIN", "ADMIN"],
+    // Gestion des accès/rôles au sein d'une église — distinct de users:manage (cycle de vie du
+    // compte). Remplace l'emprunt à events:manage (spec 031, issue #467)
     "access:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"],
   },
 

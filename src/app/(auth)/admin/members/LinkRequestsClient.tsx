@@ -5,17 +5,20 @@ import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
+import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 
 type Department = { id: string; name: string; ministryName: string };
 
 type RequestedRole = "DEPARTMENT_HEAD" | "DEPUTY" | "MINISTER" | "DISCIPLE_MAKER" | "REPORTER" | null;
 
+// DEPUTY n'est pas un rôle d'église (Role) — c'est un attribut (isDeputy) d'un DEPARTMENT_HEAD —
+// d'où ce libellé propre, les autres venant de la source unique `@/lib/roles` (spec 054).
 const ROLE_LABELS: Record<NonNullable<RequestedRole>, string> = {
-  DEPARTMENT_HEAD: "Responsable de département",
+  DEPARTMENT_HEAD: ROLE_LABELS_BASE.DEPARTMENT_HEAD,
   DEPUTY: "Adjoint",
-  MINISTER: "Ministre",
-  DISCIPLE_MAKER: "Faiseur de disciples",
-  REPORTER: "Reporter",
+  MINISTER: ROLE_LABELS_BASE.MINISTER,
+  DISCIPLE_MAKER: ROLE_LABELS_BASE.DISCIPLE_MAKER,
+  REPORTER: ROLE_LABELS_BASE.REPORTER,
 };
 
 interface LinkRequest {

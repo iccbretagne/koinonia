@@ -60,8 +60,11 @@ On **amende ADR-0013** : sa règle 1 devient la règle **par défaut**, et non p
 5. **Fonctions concernées à ce jour** : `SECRETARIAT` (trame des annonces, ouverture/fermeture,
    et à partir de la spec 045 l'ensemble des droits du Secrétariat), le ministère
    `Coordination générale` (trame), `PRODUCTION_MEDIA` et `COMMUNICATION` (médias),
-   `CAPTATION_AUDIO` (audio), `PROTOCOLE` (agenda pastoral). Toute nouvelle entrée passe par une
-   spec.
+   `CAPTATION_AUDIO` (audio), `PROTOCOLE` (agenda pastoral), `INTEGRATION` et `MSDP` (dossiers
+   d'accueil et parcours d'intégration, `requireIntegrationAccess`), `PHOTOS` (espace
+   Communication & Production). Ces trois dernières manquaient à cette liste avant la spec 054 —
+   elles existaient déjà dans le code au moment où cet ADR a été rédigé. Toute nouvelle entrée
+   passe par une spec.
 
 ## Alternatives considérées
 

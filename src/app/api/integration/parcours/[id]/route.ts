@@ -1,22 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireAuth } from "@/lib/auth";
-import { isIntegrationMember, isMsdpMember } from "@/modules/integration";
+import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
-import type { Session } from "next-auth";
-
-async function hasAccess(session: Session, churchId: string): Promise<boolean> {
-  if (session.user.isSuperAdmin) return true;
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length > 0) {
-    const { rolePermissions } = await import("@/lib/registry");
-    const perms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-    if (perms.has("members:manage") || perms.has("events:manage")) return true;
-  }
-  if (await isIntegrationMember(session, churchId)) return true;
-  return isMsdpMember(session, churchId);
-}
 
 const patchSchema = z.object({
   integratedInFamily: z.boolean().optional(),
@@ -51,8 +37,7 @@ export async function GET(
     });
     if (!journey) throw new ApiError(404, "Dossier introuvable");
 
-    const session = await requireAuth();
-    if (!(await hasAccess(session, journey.churchId))) throw new ApiError(403, "Accès refusé");
+    await requireIntegrationFullAccess(journey.churchId);
 
     return successResponse(journey);
   } catch (error) {
@@ -72,8 +57,7 @@ export async function PATCH(
     });
     if (!journey) throw new ApiError(404, "Dossier introuvable");
 
-    const session = await requireAuth();
-    if (!(await hasAccess(session, journey.churchId))) throw new ApiError(403, "Accès refusé");
+    const { session } = await requireIntegrationFullAccess(journey.churchId);
 
     const body = patchSchema.parse(await request.json());
     const now = new Date();
@@ -146,8 +130,7 @@ export async function DELETE(
     });
     if (!journey) throw new ApiError(404, "Dossier introuvable");
 
-    const session = await requireAuth();
-    if (!(await hasAccess(session, journey.churchId))) throw new ApiError(403, "Accès refusé");
+    const { session } = await requireIntegrationFullAccess(journey.churchId);
 
     await prisma.personJourney.delete({ where: { id } });
 

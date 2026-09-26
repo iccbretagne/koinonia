@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
+import { resolveMemberDepartmentScope, isMemberFullyInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
@@ -48,6 +49,21 @@ export async function POST(request: Request) {
     if (srcChurchId !== tgtChurchId) throw new ApiError(400, "Les membres n'appartiennent pas à la même église");
 
     const session = await requireChurchPermission("members:manage", srcChurchId);
+
+    // Appelant restreint : la fusion supprime la fiche source et déplace ses affiliations, donc
+    // les DEUX fiches doivent être entièrement dans son périmètre — plus strict que la
+    // modification, qui préserve les affiliations hors périmètre (spec 054/#583, défaut B1)
+    const memberScope = await resolveMemberDepartmentScope(session, srcChurchId);
+    if (memberScope.scoped) {
+      const [sourceDepts, targetDepts] = await Promise.all([
+        prisma.memberDepartment.findMany({ where: { memberId: sourceId }, select: { departmentId: true } }),
+        prisma.memberDepartment.findMany({ where: { memberId: targetId }, select: { departmentId: true } }),
+      ]);
+      const bothInScope =
+        isMemberFullyInScope(memberScope, sourceDepts.map((d) => d.departmentId)) &&
+        isMemberFullyInScope(memberScope, targetDepts.map((d) => d.departmentId));
+      if (!bothInScope) throw new ApiError(403, "Ces fiches sont hors de votre périmètre");
+    }
 
     await prisma.$transaction(async (tx) => {
       // ── Départements ──────────────────────────────────────────────────────────

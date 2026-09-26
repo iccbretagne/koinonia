@@ -25,6 +25,8 @@ interface Props {
   readonly groups: Group[];
   readonly allMembers: MemberSummary[];
   readonly churchId: string;
+  /** access:manage — attribuer le rôle STAR en masse, distinct de members:manage (spec 054/#583). */
+  readonly canAssignStarRoles: boolean;
 }
 
 const REASON_LABEL: Record<Group["reason"], string> = {
@@ -360,7 +362,7 @@ function MemberPicker({
   );
 }
 
-export default function DuplicatesView({ groups, allMembers, churchId }: Props) {
+export default function DuplicatesView({ groups, allMembers, churchId, canAssignStarRoles }: Props) {
   const router = useRouter();
   const [mergeGroup, setMergeGroup] = useState<Group | null>(null);
   const [assigningStars, setAssigningStars] = useState(false);
@@ -394,6 +396,7 @@ export default function DuplicatesView({ groups, allMembers, churchId }: Props) 
   return (
     <div className="space-y-6">
       {/* Bulk STAR assign */}
+      {canAssignStarRoles && (
       <div className="border-2 rounded-lg p-4 bg-icc-violet/5 border-icc-violet/20">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
@@ -412,6 +415,7 @@ export default function DuplicatesView({ groups, allMembers, churchId }: Props) 
           </p>
         )}
       </div>
+      )}
 
       {/* Fusion manuelle */}
       <div className="border-2 rounded-lg p-4">
