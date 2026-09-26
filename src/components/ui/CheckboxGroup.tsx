@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Checkbox from "./Checkbox";
+import { fieldLabelClasses } from "./field-classes";
 
 interface CheckboxGroupProps {
   readonly label: string;
@@ -9,6 +11,10 @@ interface CheckboxGroupProps {
   readonly onChange: (selected: string[]) => void;
 }
 
+/**
+ * Groupe de cases à cocher dans un `fieldset` (docs/design-system/components/Checkbox.md) :
+ * chaque ligne est entièrement cliquable et fait au moins 44px de haut.
+ */
 export default function CheckboxGroup({
   label,
   options,
@@ -24,33 +30,26 @@ export default function CheckboxGroup({
   }
 
   return (
-    <fieldset className="space-y-1">
-      <legend className="block text-sm font-medium text-gray-700">
-        {label}
-      </legend>
-      <div className="max-h-64 overflow-y-auto border-2 border-gray-300 rounded-lg p-2 space-y-1">
+    <fieldset className="flex min-w-0 flex-col gap-1.5">
+      <legend className={`${fieldLabelClasses} mb-1.5`}>{label}</legend>
+      <div className="max-h-64 overflow-y-auto overscroll-contain rounded-control border border-control-line bg-surface p-1">
         {options.length === 0 && (
-          <p className="text-sm text-gray-400 py-1">Aucune option</p>
+          <p className="px-3 py-2.5 text-[15px] leading-[22px] text-ink-subtle">Aucune option</p>
         )}
         {options.map((opt) => (
           <label
             key={opt.value}
-            className={`flex items-start gap-2 px-2 py-1.5 rounded text-sm ${
-              opt.disabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-50 cursor-pointer"
+            className={`flex min-h-11 items-start gap-3 rounded-chip px-3 py-2.5 text-[15px] leading-[22px] text-ink ${
+              opt.disabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-surface-sunken"
             }`}
           >
-            <input
-              type="checkbox"
+            <Checkbox
+              className="mt-px"
               checked={selected.includes(opt.value)}
               disabled={opt.disabled}
               onChange={() => toggle(opt.value)}
-              className="mt-0.5 shrink-0 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
             />
-            <span className="min-w-0 break-words leading-snug">
-              {opt.label}
-            </span>
+            <span className={`min-w-0 break-words ${opt.disabled ? "opacity-45" : ""}`}>{opt.label}</span>
           </label>
         ))}
       </div>

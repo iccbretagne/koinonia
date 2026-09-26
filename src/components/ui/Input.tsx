@@ -1,39 +1,40 @@
 "use client";
 
-import { InputHTMLAttributes } from "react";
+import { InputHTMLAttributes, ReactNode } from "react";
+import { FieldLabel, FieldMessage, useFieldIds } from "./Field";
+import { controlClasses } from "./field-classes";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   readonly label?: string;
   readonly error?: string;
+  /** Aide affichée sous le champ (remplacée par l'erreur quand il y en a une). */
+  readonly hint?: ReactNode;
 }
 
+/** Champ texte avec libellé, aide et erreur (docs/design-system/components/Field.md). */
 export default function Input({
   label,
   error,
+  hint,
   id,
   className = "",
+  "aria-describedby": describedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: InputProps) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+  const { controlId, messageId, ariaDescribedBy } = useFieldIds({ id, hint, error, describedBy });
 
   return (
-    <div className="space-y-1">
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700"
-        >
-          {label}
-        </label>
-      )}
+    <div className="flex flex-col gap-1.5">
+      {label && <FieldLabel htmlFor={controlId}>{label}</FieldLabel>}
       <input
-        id={inputId}
-        className={`block w-full px-3 py-2.5 md:py-2 border-2 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
-          error ? "border-red-500" : "border-gray-300"
-        } ${className}`}
+        id={controlId}
+        aria-invalid={error ? true : ariaInvalid}
+        aria-describedby={ariaDescribedBy}
+        className={`${controlClasses(Boolean(error))} ${className}`}
         {...props}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <FieldMessage id={messageId} hint={hint} error={error} />
     </div>
   );
 }

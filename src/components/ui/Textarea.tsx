@@ -1,41 +1,42 @@
 "use client";
 
-import { TextareaHTMLAttributes } from "react";
+import { ReactNode, TextareaHTMLAttributes } from "react";
+import { FieldLabel, FieldMessage, useFieldIds } from "./Field";
+import { textareaClasses } from "./field-classes";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   readonly label?: string;
   readonly error?: string;
+  /** Aide affichée sous le champ (remplacée par l'erreur quand il y en a une). */
+  readonly hint?: ReactNode;
 }
 
+/** Zone de texte avec libellé, aide et erreur (docs/design-system/components/Field.md). */
 export default function Textarea({
   label,
   error,
+  hint,
   id,
   rows = 3,
   className = "",
+  "aria-describedby": describedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: TextareaProps) {
-  const textareaId = id || label?.toLowerCase().replace(/\s+/g, "-");
+  const { controlId, messageId, ariaDescribedBy } = useFieldIds({ id, hint, error, describedBy });
 
   return (
-    <div className="space-y-1">
-      {label && (
-        <label
-          htmlFor={textareaId}
-          className="block text-sm font-medium text-gray-700"
-        >
-          {label}
-        </label>
-      )}
+    <div className="flex flex-col gap-1.5">
+      {label && <FieldLabel htmlFor={controlId}>{label}</FieldLabel>}
       <textarea
-        id={textareaId}
+        id={controlId}
         rows={rows}
-        className={`block w-full px-3 py-2.5 md:py-2 border-2 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet ${
-          error ? "border-red-500" : "border-gray-300"
-        } ${className}`}
+        aria-invalid={error ? true : ariaInvalid}
+        aria-describedby={ariaDescribedBy}
+        className={`${textareaClasses(Boolean(error))} ${className}`}
         {...props}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <FieldMessage id={messageId} hint={hint} error={error} />
     </div>
   );
 }

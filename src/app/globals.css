@@ -268,6 +268,11 @@ input[type="datetime-local"]:focus::-webkit-calendar-picker-indicator {
 [data-theme="dark"] .skeleton-shimmer::after {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .skeleton-shimmer::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

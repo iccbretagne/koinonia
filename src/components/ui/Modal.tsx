@@ -1,27 +1,49 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useId } from "react";
+import { X } from "lucide-react";
+import IconButton from "./IconButton";
+import { useModalDialog } from "./use-modal-dialog";
 
 interface ModalProps {
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly title: string;
+  readonly title: ReactNode;
   readonly children: ReactNode;
+  /** Largeur desktop : `md` = 480px (défaut), `lg` = 640px pour un formulaire dense. */
+  readonly size?: "md" | "lg";
+  /**
+   * Présentation sous 768px : `fullscreen` (défaut, formulaire) avec en-tête collant, ou `sheet`
+   * (confirmation courte) en feuille ancrée en bas, qui se ferme aussi par appui sur le voile.
+   */
+  readonly mobileLayout?: "fullscreen" | "sheet";
 }
 
-export default function Modal({ open, onClose, title, children }: ModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+const desktopWidth = {
+  md: "md:w-[480px]",
+  lg: "md:w-[640px]",
+};
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
+const mobileClasses = {
+  fullscreen: "h-full max-h-full w-full",
+  sheet: "mt-auto h-fit max-h-[85dvh] w-full rounded-t-sheet",
+};
 
-    if (open) {
-      dialog.showModal();
-    } else {
-      dialog.close();
-    }
-  }, [open]);
+/**
+ * Fenêtre modale (docs/design-system/components/Dialog.md) sur `<dialog>` natif : focus piégé,
+ * Échap ferme, focus rendu au déclencheur. Desktop : 480px centrée, `rounded-card`,
+ * `shadow-overlay`, voile `scrim`. Mobile : plein écran avec en-tête collant, ou feuille du bas.
+ */
+export default function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = "md",
+  mobileLayout = "fullscreen",
+}: ModalProps) {
+  const dialogRef = useModalDialog(open);
+  const titleId = useId();
 
   if (!open) return null;
 
@@ -29,20 +51,34 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="rounded-none md:rounded-xl shadow-xl p-0 backdrop:bg-black/50 w-full h-full md:h-auto md:max-w-lg md:w-full border-0 md:border-2 border-icc-violet/20 m-0 md:m-auto max-h-full md:max-h-[85vh] overflow-y-auto"
+      onClick={
+        mobileLayout === "sheet"
+          ? (e) => {
+              // Appui sur le voile : la cible est le <dialog> lui-même (le contenu le remplit).
+              if (e.target === e.currentTarget) onClose();
+            }
+          : undefined
+      }
+      aria-labelledby={titleId}
+      className={`m-0 max-w-none overflow-y-auto overscroll-contain border-0 bg-surface p-0 text-ink shadow-overlay
+        backdrop:bg-scrim
+        transition-[opacity,scale] duration-200 ease-out starting:open:scale-[0.98] starting:open:opacity-0
+        ${mobileClasses[mobileLayout]}
+        md:m-auto md:h-fit md:max-h-[85vh] md:max-w-[calc(100vw-2rem)] md:rounded-card ${desktopWidth[size]}`}
     >
-      <div className="p-4 md:p-6 min-h-full md:min-h-0">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-icc-violet">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none min-h-[44px] min-w-[44px] flex items-center justify-center md:min-h-0 md:min-w-0"
-          >
-            &times;
-          </button>
-        </div>
-        {children}
+      <div
+        className={`sticky top-0 z-10 flex items-center justify-between gap-3 bg-surface pl-4 pr-2 md:border-b-0 md:pl-6 md:pr-3 md:pt-3 ${
+          mobileLayout === "fullscreen"
+            ? "border-b border-line pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]"
+            : "pt-2"
+        }`}
+      >
+        <h2 id={titleId} className="min-w-0 font-display text-[17px] font-semibold leading-6 text-ink">
+          {title}
+        </h2>
+        <IconButton icon={X} aria-label="Fermer" onClick={onClose} />
       </div>
+      <div data-dialog-body className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 md:px-6 md:pb-6">{children}</div>
     </dialog>
   );
 }

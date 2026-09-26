@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { TriangleAlert } from "lucide-react";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { ToastProvider } from "@/components/ui/Toast";
 import {
   STAGING_BUILD_VERSION,
   STAGING_BANNER_HEIGHT_CLASS,
@@ -87,7 +88,7 @@ export default function RootLayout({
         className={`font-sans antialiased bg-bg text-ink ${STAGING_BUILD_VERSION ? STAGING_BANNER_BODY_PADDING_CLASS : ""}`}
       >
         <StagingBanner />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
         <ServiceWorkerRegistration />
       </body>
     </html>

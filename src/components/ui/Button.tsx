@@ -1,13 +1,18 @@
 "use client";
 
 import { ButtonHTMLAttributes } from "react";
-import { sizeClasses, variantClasses, type Size, type Variant } from "./button-classes";
+import { buttonClasses, type Size, type Variant } from "./button-classes";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: Variant;
   readonly size?: Size;
 }
 
+/**
+ * Bouton d'action (docs/design-system/components/Button.md). Au plus un `primary` par écran.
+ * Pendant un envoi : `disabled` et libellé à l'action en cours (« Enregistrement… ») — pas de
+ * prop `loading`. Une icône Lucide 16px peut précéder le libellé.
+ */
 export default function Button({
   variant = "primary",
   size = "md",
@@ -16,10 +21,7 @@ export default function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button
-      className={`font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-      {...props}
-    >
+    <button className={`${buttonClasses(variant, size)} ${className}`} {...props}>
       {children}
     </button>
   );
