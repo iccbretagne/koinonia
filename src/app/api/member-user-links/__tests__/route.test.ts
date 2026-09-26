@@ -9,13 +9,14 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createAuthScopeMocks } from "@/__mocks__/auth";
 
 const mockRequireChurchPermission = vi.fn();
 const mockRequireRateLimit = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
+  ...createAuthScopeMocks(),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -31,6 +32,7 @@ const baseMember = {
   id: "member-1",
   firstName: "Jean",
   lastName: "Dupont",
+  departments: [],
 };
 
 function setupTransaction() {

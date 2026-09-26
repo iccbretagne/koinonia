@@ -139,11 +139,11 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Statistiques & Export",
-    description: "Visualisez les taux de présence par disciple sur une période. Export Excel de l'ensemble des relations et statistiques de l'église (réservé à Super Admin et Secrétaire).",
+    description: "Visualisez les taux de présence par disciple sur une période. Export Excel de l'ensemble des relations et statistiques de l'église (réservé à Super Admin, Admin et Secrétaire).",
     category: "Discipolat",
     screenshotTitle: "Statistiques discipolat",
     screenshotFile: "guide-discipleship-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "read", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Annonces ─────────────────────────────────────────────────────────────
@@ -227,11 +227,11 @@ const FEATURES: Feature[] = [
   // ── Administration ────────────────────────────────────────────────────────
   {
     name: "Accès & rôles",
-    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter). Validez ou rejetez les demandes d'onboarding. Un responsable de département peut être désigné adjoint (isDeputy).",
+    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter). Validez ou rejetez les demandes d'onboarding, et liez ou déliez un compte à une fiche STAR — la Secrétaire le peut également (spec 054). Un responsable de département peut être désigné adjoint (isDeputy).",
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Ministères & départements",
@@ -251,11 +251,11 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Gestion des utilisateurs",
-    description: "Consultez tous les comptes connectés. Gérez les accès globaux et la liaison entre comptes Google et fiches STAR.",
+    description: "Consultez tous les comptes de l'église, pré-créez-en un avant sa première connexion, ou supprimez un compte préparé par erreur qui ne s'est jamais connecté (spec 054).",
     category: "Administration",
     screenshotTitle: "Gestion des utilisateurs",
     screenshotFile: "guide-admin-users.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Journaux d'audit",
@@ -283,7 +283,7 @@ const FEATURES: Feature[] = [
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Contrôle des mains courantes",

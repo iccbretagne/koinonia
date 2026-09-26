@@ -201,6 +201,7 @@ devra afficher « en lecture seule, avec l'origine ».
 | B2 | `api/admin/members/assign-star-roles/route.ts:12` | Pas de périmètre | RD / Min : rôle STAR en masse sur toute l'église |
 | B3 | `api/member-user-links/route.ts:47,130` | Pas de périmètre | RD / Min : lier/délier n'importe quelle fiche |
 | B4 | `api/member-link-requests/*`, `admin/members/page.tsx` | Pas de périmètre (et Sec bloquée) | RD : toutes les demandes d'accès → D3 |
+| B5 | `api/admin/members/duplicates/route.ts:10` | Pas de périmètre — route non appelée par l'écran (qui calcule lui-même), mais reachable directement | RD / Min : emails de toute l'église. Trouvé en implémentant B1, mêmes causes |
 
 ## 5. Documentation à corriger (quelles que soient les décisions)
 
@@ -210,3 +211,27 @@ devra afficher « en lecture seule, avec l'origine ».
 - Commentaire obsolète `api/discipleships/[id]/member/route.ts:15` (« admins (members:manage) »
   — la garde réelle est `discipleship:manage`).
 - `docs/processus/arrivee-star.md` : cohérence avec D3 (qui valide les demandes d'accès).
+
+## 6. Statut d'implémentation (lot 2)
+
+Toutes les décisions D1–D7 et tous les défauts confirmés ci-dessus sont **corrigés** dans le lot 2 :
+
+| # / décision | Statut | Où |
+|---|---|---|
+| A1 | ✅ corrigé | `requireIntegrationAccess` → `integration:manage` |
+| A2 | ✅ corrigé | `requireIntegrationFullAccess`, routes `/api/integration/parcours*` |
+| A3 | ✅ corrigé | `GET /api/users`, `DELETE /api/users/[userId]` → `users:manage` |
+| B1 | ✅ corrigé | `/admin/members/duplicates` filtré au périmètre ; fusion refusée si une fiche déborde |
+| B2 | ✅ corrigé | `assign-star-roles` → `access:manage` + périmètre |
+| B3 | ✅ corrigé | `member-user-links` → `access:manage` + périmètre |
+| B4 | ✅ corrigé | `member-link-requests` → `access:manage` + périmètre |
+| B5 | ✅ corrigé | `api/admin/members/duplicates/route.ts` filtré au périmètre |
+| D1 | ✅ option A | `members:manage` inchangé, périmètre appliqué sur B1–B3 |
+| D2 | ✅ option A | `users:manage` = SA+Ad ; page et API alignées, rôle codé en dur retiré |
+| D3 | ✅ option A | `access:manage` + périmètre sur validation/liaison ; le RD ne les a plus |
+| D4 | ✅ option A | `integration:manage` déclarée, garde manuelle retirée |
+| D5 | ✅ option A | `discipleship:export` + Admin |
+| D6 | ✅ option A | Doc corrigée (`CLAUDE.md`, `docs/auth.md`) — comportement inchangé |
+| D7 | ✅ option A | `rooms:reserve` + Secrétaire |
+
+Test-gardien : `src/lib/__tests__/rbac-no-role-proxy.test.ts` (ADR-0017).

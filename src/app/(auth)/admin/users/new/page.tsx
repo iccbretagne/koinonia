@@ -6,12 +6,7 @@ export default async function CreateUserPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
-  await requireChurchPermission("members:manage", churchId);
-
-  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (!session.user.isSuperAdmin && !churchRoles.some((r) => r.role === "ADMIN")) {
-    throw new Error("FORBIDDEN");
-  }
+  await requireChurchPermission("users:manage", churchId);
 
   // Fiches STAR de cette église sans compte lié dans cette église (spec 037 : le lien est
   // propre à une église, un membre peut en avoir un ailleurs sans être exclu ici).

@@ -29,5 +29,12 @@ export const integrationModule = defineModule({
     ],
   },
 
-  permissions: {},
+  permissions: {
+    // Accès complet aux dossiers d'accueil et parcours (coordonnées personnelles, export) —
+    // Super Admin, Admin, Secrétaire. Ne s'approxime plus par members:manage/events:manage,
+    // détenus par tout Ministre/Resp. département quel que soit son département (spec 054/#583).
+    // L'équipe (fonction INTEGRATION/MSDP) et les bergers gardent leur accès via une garde dédiée
+    // (requireIntegrationAccess), indépendante de cette permission.
+    "integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
+  },
 });

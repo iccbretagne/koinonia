@@ -11,7 +11,7 @@
 ## Prérequis
 
 - [x] Branche de base créée : `feat/refonte-gestion-acces` (spec, audit, plan)
-- [ ] Branche du lot 2 créée depuis la base : `feat/acces-lot2-rbac`
+- [x] Branche du lot 2 créée depuis la base : `feat/acces-lot2-rbac`
 - [ ] Branche du lot 1 créée depuis la base **après fusion du lot 2** : `feat/acces-lot1-ergonomie`
 
 ---
@@ -20,29 +20,29 @@
 
 ### 2.1 Matrice (manifestes)
 
-- [ ] **T1** — `users:manage` : `["SUPER_ADMIN", "ADMIN"]`, commentaire réécrit (comptes de
+- [x] **T1** — `users:manage` : `["SUPER_ADMIN", "ADMIN"]`, commentaire réécrit (comptes de
       l'église : liste, pré-création, suppression d'un compte jamais connecté, renommage) — D2.
       *(fichier : `src/modules/core/manifest.ts`)*
-- [ ] **T2** [P] — Déclarer `"integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"]` — D4.
+- [x] **T2** [P] — Déclarer `"integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"]` — D4.
       *(fichier : `src/modules/integration/manifest.ts`)*
-- [ ] **T3** [P] — Ajouter `ADMIN` à `discipleship:export` — D5.
+- [x] **T3** [P] — Ajouter `ADMIN` à `discipleship:export` — D5.
       *(fichier : `src/modules/discipleship/manifest.ts`)*
-- [ ] **T4** [P] — Ajouter `SECRETARY` à `rooms:reserve` — D7.
+- [x] **T4** [P] — Ajouter `SECRETARY` à `rooms:reserve` — D7.
       *(fichier : `src/modules/rooms/manifest.ts`)*
-- [ ] **T5** — Mettre à jour la matrice figée et les tests de manifestes pour T1–T4 (même
+- [x] **T5** — Mettre à jour la matrice figée et les tests de manifestes pour T1–T4 (même
       commit que T1–T4, CLAUDE.md règle 10).
       *(fichiers : `src/core/__tests__/permissions.test.ts`, `src/modules/rooms/permissions.test.ts`,
       `src/modules/__tests__/manifests.test.ts`)*
 
 ### 2.2 Services et gardes
 
-- [ ] **T6** — Ajouter à `member-scope.ts` trois prédicats purs :
+- [x] **T6** — Ajouter à `member-scope.ts` trois prédicats purs :
       `isMemberInScope(scope, memberDepartmentIds)` (au moins un département commun),
       `isMemberFullyInScope(scope, memberDepartmentIds)` (tous les départements dans le
       périmètre), `isLinkRequestInScope(scope, ministryIds, request)` (département demandé, ou
       ministère demandé, ou fiche existante dans le périmètre ; `scope` non restreint → vrai).
       *(fichier : `src/lib/member-scope.ts`)*
-- [ ] **T7** — Gardes intégration : `requireIntegrationAccess` remplace
+- [x] **T7** — Gardes intégration : `requireIntegrationAccess` remplace
       `members:manage || events:manage` par `integration:manage` ; `requireIntegrationSettingsAccess`
       remplace `events:manage` par `integration:manage` ; nouvelle `requireIntegrationFullAccess`
       (refuse un périmètre restreint) dont `requireIntegrationExportAccess` devient un alias.
@@ -51,125 +51,125 @@
 
 ### 2.3 API
 
-- [ ] **T8** — Parcours : supprimer les trois copies de `hasAccess`/`canAccess` et appeler
+- [x] **T8** — Parcours : supprimer les trois copies de `hasAccess`/`canAccess` et appeler
       `requireIntegrationFullAccess(churchId)` sur GET/POST et GET/PATCH/DELETE (A2).
       *(fichiers : `src/app/api/integration/parcours/route.ts`,
       `src/app/api/integration/parcours/[id]/route.ts`)*
-- [ ] **T9** [P] — `GET /api/users` et `DELETE /api/users/[userId]` : `users:manage` (A3).
+- [x] **T9** [P] — `GET /api/users` et `DELETE /api/users/[userId]` : `users:manage` (A3).
       *(fichiers : `src/app/api/users/route.ts`, `src/app/api/users/[userId]/route.ts`)*
-- [ ] **T10** [P] — `PATCH /api/users/[userId]/profile` : soi-même, ou `users:manage` (via
+- [x] **T10** [P] — `PATCH /api/users/[userId]/profile` : soi-même, ou `users:manage` (via
       `rolePermissions`) dans une église commune, à la place des rôles codés en dur.
       *(fichier : `src/app/api/users/[userId]/profile/route.ts`)*
-- [ ] **T11** — Demandes d'accès : `GET` et `PATCH [id]` passent à `access:manage` ; `GET` filtre
+- [x] **T11** — Demandes d'accès : `GET` et `PATCH [id]` passent à `access:manage` ; `GET` filtre
       au périmètre du Ministre ; `PATCH` refuse (403) une demande hors périmètre
       (`isLinkRequestInScope`) (B4, D3).
       *(fichiers : `src/app/api/member-link-requests/route.ts`,
       `src/app/api/member-link-requests/[id]/route.ts`)*
-- [ ] **T12** — Liaison de comptes : `POST`/`DELETE` passent à `access:manage` ; refus si
+- [x] **T12** — Liaison de comptes : `POST`/`DELETE` passent à `access:manage` ; refus si
       `memberId` hors périmètre (`isMemberInScope`) ou `newMember.departmentId` hors périmètre (B3).
       *(fichier : `src/app/api/member-user-links/route.ts`)*
-- [ ] **T13** [P] — `GET /api/users/search` : `access:manage` (D3).
+- [x] **T13** [P] — `GET /api/users/search` : `access:manage` (D3).
       *(fichier : `src/app/api/users/search/route.ts`)*
-- [ ] **T14** [P] — Attribution STAR en masse : `access:manage` ; ne traiter que les liens dont
+- [x] **T14** [P] — Attribution STAR en masse : `access:manage` ; ne traiter que les liens dont
       la fiche est dans le périmètre (B2).
       *(fichier : `src/app/api/admin/members/assign-star-roles/route.ts`)*
-- [ ] **T15** [P] — Fusion : garder `members:manage` ; appelant restreint → 403 sauf si
+- [x] **T15** [P] — Fusion : garder `members:manage` ; appelant restreint → 403 sauf si
       `isMemberFullyInScope` pour la source **et** la cible (B1).
       *(fichier : `src/app/api/admin/members/merge/route.ts`)*
 
 ### 2.4 Pages et navigation
 
-- [ ] **T16** [P] — `/admin/users` et `/admin/users/new` : `requireChurchPermission("users:manage")`,
+- [x] **T16** [P] — `/admin/users` et `/admin/users/new` : `requireChurchPermission("users:manage")`,
       suppression du contrôle de rôle `ADMIN` codé en dur ; `canManageRoles` dérivé de
       `users:manage`.
       *(fichiers : `src/app/(auth)/admin/users/page.tsx`, `src/app/(auth)/admin/users/new/page.tsx`)*
-- [ ] **T17** [P] — Redirecteur `/admin` : `church:manage` → `/admin/churches`, `users:manage` →
+- [x] **T17** [P] — Redirecteur `/admin` : `church:manage` → `/admin/churches`, `users:manage` →
       `/admin/users`, `access:manage` → `/admin/access`, sinon `FORBIDDEN` ; permissions calculées
       sur l'église courante uniquement.
       *(fichier : `src/app/(auth)/admin/page.tsx`)*
-- [ ] **T18** — Menu : « Utilisateurs » sur `users:manage` (retrait de `adminOnly`), « Accès &
+- [x] **T18** — Menu : « Utilisateurs » sur `users:manage` (retrait de `adminOnly`), « Accès &
       rôles » sur `access:manage` ; liens Intégration (dont Paramètres) sur `integration:manage`
       au lieu de `isGlobalManager`.
       *(fichier : `src/app/(auth)/layout.tsx`)*
-- [ ] **T19** — Page STAR : demandes d'accès et boutons « lier/délier » affichés si
+- [x] **T19** — Page STAR : demandes d'accès et boutons « lier/délier » affichés si
       `access:manage`, demandes filtrées au périmètre ; bouton « Doublons » si `members:manage`.
       *(fichiers : `src/app/(auth)/admin/members/page.tsx`, `MembersClient.tsx`,
       `LinkRequestsClient.tsx`)*
-- [ ] **T20** — Page doublons : membres filtrés par `resolveMemberDepartmentScope` ; action
+- [x] **T20** — Page doublons : membres filtrés par `resolveMemberDepartmentScope` ; action
       « attribuer STAR en masse » visible seulement avec `access:manage`.
       *(fichiers : `src/app/(auth)/admin/members/duplicates/page.tsx`, `DuplicatesView.tsx`)*
-- [ ] **T21** [P] — Guide intégré : lignes de la matrice d'accès touchées par D2–D7 et par la
+- [x] **T21** [P] — Guide intégré : lignes de la matrice d'accès touchées par D2–D7 et par la
       perte des droits d'accueil/parcours et de validation des demandes pour Min/RD.
       *(fichier : `src/components/GuideContent.tsx`)*
 
 ### 2.5 Documentation
 
-- [ ] **T22** — Matrice et règles : ligne `integration:manage`, `users:manage` (Ad),
+- [x] **T22** — Matrice et règles : ligne `integration:manage`, `users:manage` (Ad),
       `discipleship:export` (Ad), `rooms:reserve` (Sec), `discipleship:view` (Min, D6) ;
       paragraphe du module `integration` sans raccourci ; spécificités Secrétaire / Resp.
       département (validation et liaison via `access:manage`) ; raccourcis `events:manage`
       signalés comme fragiles.
       *(fichiers : `CLAUDE.md`, `docs/auth.md`)*
-- [ ] **T23** [P] — Permissions des routes modifiées (tableau « Gardes et routes » du plan).
+- [x] **T23** [P] — Permissions des routes modifiées (tableau « Gardes et routes » du plan).
       *(fichier : `docs/api.md`)*
-- [ ] **T24** [P] — Processus d'arrivée STAR : qui valide les demandes d'accès ; « Qualificateur
+- [x] **T24** [P] — Processus d'arrivée STAR : qui valide les demandes d'accès ; « Qualificateur
       Agenda » → « Référent soins pastoraux ».
       *(fichier : `docs/processus/arrivee-star.md`)*
-- [ ] **T25** [P] — ADR-0017 « Une permission n'approxime jamais un rôle » (Accepté) ; ADR-0014
+- [x] **T25** [P] — ADR-0017 « Une permission n'approxime jamais un rôle » (Accepté) ; ADR-0014
       règle 5 complétée (`INTEGRATION`, `MSDP`, `PHOTOS`) ; index des ADR.
       *(fichiers : `docs/adr/0017-permission-n-approxime-pas-un-role.md`,
       `docs/adr/0014-fonctions-departement-droits-ecriture.md`, `docs/adr/README.md`)*
-- [ ] **T26** [P] — Commentaire obsolète (« admins (members:manage) ») ; statut des défauts
+- [x] **T26** [P] — Commentaire obsolète (« admins (members:manage) ») ; statut des défauts
       A1–A3, B1–B4 passé à « corrigé » dans l'annexe.
       *(fichiers : `src/app/api/discipleships/[id]/member/route.ts`,
       `specs/054-refonte-gestion-acces/audit-rbac.md`)*
-- [ ] **T27** [P] — CHANGELOG, section non publiée : correctifs de sécurité et **pertes de droits
+- [x] **T27** [P] — CHANGELOG, section non publiée : correctifs de sécurité et **pertes de droits
       voulues** (Min/RD hors équipe d'accueil ; RD : validation des demandes, liaison, STAR en
       masse), nouveaux droits (Sec : salles, validation ; Ad : export discipolat).
       *(fichier : `CHANGELOG.md`)*
 
 ### 2.6 Tests
 
-- [ ] **T28** — Test-gardien : échoue si `members:manage` ou `events:manage` apparaît dans un
+- [x] **T28** — Test-gardien : échoue si `members:manage` ou `events:manage` apparaît dans un
       fichier de `src/` (hors tests) absent d'une liste blanche où chaque entrée est justifiée ;
       les raccourcis `events:manage` sans sur-octroi y sont marqués « fragile ».
       *(fichier : `src/lib/__tests__/rbac-no-role-proxy.test.ts`)*
-- [ ] **T29** — Gardes intégration : Min et RD hors équipe → `FORBIDDEN` ; Secrétaire (réelle et
+- [x] **T29** — Gardes intégration : Min et RD hors équipe → `FORBIDDEN` ; Secrétaire (réelle et
       virtuelle) → global ; membre `INTEGRATION`/`MSDP` → global ; berger → restreint ;
       `requireIntegrationFullAccess` et l'export refusent le berger ; réglages : Min → refus,
       responsable `INTEGRATION` → accès.
       *(fichier : `src/modules/integration/__tests__/auth.test.ts`)*
-- [ ] **T30** [P] — Parcours : Ministre hors équipe → 403 sur les cinq méthodes ; membre de
+- [x] **T30** [P] — Parcours : Ministre hors équipe → 403 sur les cinq méthodes ; membre de
       l'équipe → 200 ; berger → 403.
       *(fichier : `src/app/api/integration/parcours/__tests__/route.test.ts` — nouveau)*
-- [ ] **T31** [P] — Utilisateurs : liste et suppression → 403 pour Min/RD/Secrétaire, 200 pour
+- [x] **T31** [P] — Utilisateurs : liste et suppression → 403 pour Min/RD/Secrétaire, 200 pour
       Admin ; profil : soi-même → 200, Admin d'une église commune → 200, Min → 403.
       *(fichiers : `src/app/api/users/__tests__/route.test.ts`,
       `src/app/api/users/[userId]/__tests__/route.test.ts`,
       `src/app/api/users/[userId]/profile/__tests__/route.test.ts` — nouveau)*
-- [ ] **T32** [P] — Demandes d'accès : Secrétaire valide ; Ministre valide dans son ministère et
+- [x] **T32** [P] — Demandes d'accès : Secrétaire valide ; Ministre valide dans son ministère et
       reçoit 403 ailleurs ; RD → 403 ; `GET` filtré pour le Ministre.
       *(fichiers : `src/app/api/member-link-requests/[id]/__tests__/route.test.ts`,
       `src/app/api/member-link-requests/__tests__/dept-scope.test.ts` — nouveau)*
-- [ ] **T33** [P] — Liaison : RD → 403 ; Ministre → 403 hors ministère (fiche existante et
+- [x] **T33** [P] — Liaison : RD → 403 ; Ministre → 403 hors ministère (fiche existante et
       nouvelle fiche) ; Secrétaire → 201.
       *(fichier : `src/app/api/member-user-links/__tests__/route.test.ts`)*
-- [ ] **T34** [P] — Attribution STAR en masse (seulement le périmètre) et fusion (refus si une
+- [x] **T34** [P] — Attribution STAR en masse (seulement le périmètre) et fusion (refus si une
       des deux fiches déborde ; accepté si tout est dans le périmètre ; Admin non restreint).
       *(fichiers : `src/app/api/admin/members/assign-star-roles/__tests__/dept-scope.test.ts`,
       `src/app/api/admin/members/merge/__tests__/dept-scope.test.ts` — nouveaux)*
-- [ ] **T35** [P] — Prédicats de périmètre (dont périmètre vide, non restreint, demande sans
+- [x] **T35** [P] — Prédicats de périmètre (dont périmètre vide, non restreint, demande sans
       ministère ni département).
       *(fichier : `src/lib/__tests__/member-scope.test.ts` — nouveau)*
-- [ ] **T36** — Adapter les tests existants qui supposaient l'ancien comportement.
+- [x] **T36** — Adapter les tests existants qui supposaient l'ancien comportement.
       *(fichiers : `src/lib/__tests__/auth-security.test.ts`, `auth-multitenant.test.ts`,
       `auth-secretariat-role.test.ts`, `src/app/api/events/[eventId]/__tests__/security.test.ts`,
       `src/app/api/room-reservations/__tests__/orphan-star-author.test.ts` — selon échecs)*
 
 ### 2.7 Vérification du lot 2
 
-- [ ] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
-- [ ] Critères d'acceptation RBAC de la spec (dossiers d'accueil, anti-motif généralisé,
+- [x] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
+- [x] Critères d'acceptation RBAC de la spec (dossiers d'accueil, anti-motif généralisé,
       périmètre des gestes « membres ») vérifiés
 - [ ] PR `feat/acces-lot2-rbac` → `feat/refonte-gestion-acces`
 
