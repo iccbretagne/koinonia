@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { excludeChurchesAlreadyReached } from "@/lib/onboarding";
 import Link from "next/link";
 import ProfileClient from "./ProfileClient";
+import ThemeSelector from "@/components/ThemeSelector";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -99,6 +100,13 @@ export default async function ProfilePage() {
         >
           Mes notifications →
         </Link>
+      </div>
+
+      {/* Apparence (spec 055) — préférence stockée dans le navigateur */}
+      <div className="bg-surface rounded-card border border-line shadow-card p-6 mb-6">
+        <h2 className="text-sm font-semibold text-ink-muted uppercase tracking-wide mb-1">Apparence</h2>
+        <p className="text-sm text-ink-muted mb-4">Le thème « Système » suit le réglage de votre téléphone ou de votre ordinateur.</p>
+        <ThemeSelector />
       </div>
 
       {/* Liens STAR */}

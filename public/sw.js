@@ -1,8 +1,8 @@
-const CACHE_NAME = "koinonia-v1";
+const CACHE_NAME = "koinonia-v2";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
-  "/icons/icon.svg",
+  "/brand/koinonia-app-icon.svg",
   "/manifest.json",
 ];
 

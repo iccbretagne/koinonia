@@ -32,10 +32,11 @@ chargements de données actuels ; seuls le rendu, la navigation et les composant
    PageHeader, Toast (fournisseur + `useToast`), Skeleton, EmptyState, BottomSheet. Icônes
    `lucide-react`.
 3. **Coquille** — TopBar, Sidebar repliable (rail), BottomNav adaptée au rôle + panneau « Plus »
-   (remplace MobileNavSheet), recherche de pages ⌘K (client, sur les entrées de navigation déjà
-   calculées par `(auth)/layout.tsx`), une seule définition des entrées de navigation partagée.
-   Aucune donnée supplémentaire chargée.
-4. **Écrans à fort trafic** — Mon planning, grille de planning (contrôle segmenté), événements,
+   (remplace MobileNavSheet), palette de recherche ⌘K (pages : entrées de navigation déjà
+   calculées par `(auth)/layout.tsx` ; STAR et événements : routes GET existantes, périmètre
+   inchangé), une seule définition des entrées de navigation partagée.
+4. **Écrans à fort trafic** — page « Aujourd'hui » (composée à partir des fonctions et requêtes
+   déjà utilisées par Mon planning, les événements et les demandes ; aucune nouvelle route), Mon planning, grille de planning (contrôle segmenté), événements,
    demandes, espaces à cartes, profil ; `loading.tsx` par segment ; toasts sur les actions.
 5. **Balayage** — remplacement des classes de palette brute par les tokens dans tout `src/`,
    puis règle ESLint (`no-restricted-syntax` sur les littéraux `className`) qui les interdit.

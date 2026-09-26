@@ -1,19 +1,19 @@
 {
   "name": "Koinonia",
   "short_name": "Koinonia",
-  "description": "Gestion des plannings de service",
+  "description": "Le back-office opérationnel de votre église, en une seule application.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F9FAFB",
-  "theme_color": "#5E17EB",
+  "background_color": "#f6f5fa",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/icons/icon.svg",
+      "src": "/brand/koinonia-app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     },
     {
-      "src": "/icons/icon.svg",
+      "src": "/brand/koinonia-app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
