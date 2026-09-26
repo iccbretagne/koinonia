@@ -38,6 +38,22 @@ export async function POST(request: Request) {
         data: { name, slug },
       });
 
+      // Ministère + département système « Sans département » : parking pour un STAR sans
+      // département réel (détachement de sa dernière affiliation) et pour un disciple créé sans
+      // fiche STAR (POST /api/discipleships). Sans cette entrée, les deux échouent (cf. seed.ts,
+      // qui la crée pour l'église de développement, et la migration 20260320000001 qui l'avait
+      // rétro-créée pour les églises existant à cette date — jamais reproduit ici depuis).
+      await tx.ministry.create({
+        data: {
+          name: "Système",
+          churchId: newChurch.id,
+          isSystem: true,
+          departments: {
+            create: { name: "Sans département", isSystem: true },
+          },
+        },
+      });
+
       // If admin email specified, create or find user and assign ADMIN role
       if (adminEmail) {
         let user = await tx.user.findUnique({ where: { email: adminEmail } });
