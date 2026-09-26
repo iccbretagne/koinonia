@@ -3,6 +3,7 @@ export type { IntegrationEvents } from "./events";
 export {
   requireIntegrationAccess,
   requireIntegrationExportAccess,
+  requireIntegrationFullAccess,
   requireIntegrationSettingsAccess,
   isIntegrationMember,
   isMsdpMember,

@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchPermission("members:manage", churchId);
+    await requireChurchPermission("users:manage", churchId);
 
     const users = await prisma.user.findMany({
       where: { churchRoles: { some: { churchId } } },

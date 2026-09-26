@@ -18,7 +18,7 @@ export async function DELETE(
     const { userId } = await params;
     const body = await request.json();
     const { churchId } = deleteSchema.parse(body);
-    const session = await requireChurchPermission("members:manage", churchId);
+    const session = await requireChurchPermission("users:manage", churchId);
 
     const user = await deleteNeverConnectedUser(userId, churchId);
 

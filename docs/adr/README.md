@@ -42,6 +42,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0013](0013-perimetre-appartenance-lecture-seule.md) | Périmètre d'appartenance, en lecture seule, distinct du périmètre de responsabilité | Accepté — amendé par 0014 |
 | [0014](0014-fonctions-departement-droits-ecriture.md) | Certaines fonctions de département confèrent des droits d'écriture, nommément | Accepté |
 | [0015](0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Accepté |
+| [0017](0017-permission-n-approxime-pas-un-role.md) | Une permission n'approxime jamais un rôle administratif | Accepté |
 
 ## Note sur les ADR 0001–0003
 
