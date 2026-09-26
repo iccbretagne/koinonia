@@ -1,7 +1,7 @@
 # Spec — Refonte de la gestion des accès (ergonomie et cohérence)
 
 - **Numéro** : 054
-- **Statut** : Validée
+- **Statut** : Implémentée (v1.25.0 — lot 2 #599, lot 1 #600, PR finale #601)
 - **Créée le** : 2026-09-26
 - **Branche suggérée** : `feat/refonte-gestion-acces`
 - **Issue source** : [#583](https://github.com/iccbretagne/koinonia/issues/583)
@@ -134,17 +134,17 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
 - [x] Un Ministre au périmètre restreint ne voit et ne peut agir que sur les personnes et les
       rôles rattachables de son ou ses ministères ; il ne voit ni ne peut attribuer un rôle
       transverse à l'église.
-- [ ] L'accès aux dossiers d'accueil de nouveaux arrivants (consultation des coordonnées
+- [x] L'accès aux dossiers d'accueil de nouveaux arrivants (consultation des coordonnées
       personnelles, export) est restreint aux personnes réellement habilitées d'après la
       documentation en vigueur — un Ministre ou un Responsable de département n'y accède plus par
       défaut du seul fait de son rôle général, sauf s'il appartient par ailleurs à l'équipe dédiée
       à l'accueil.
-- [ ] Tout autre endroit de l'application où une permission large est utilisée comme raccourci
+- [x] Tout autre endroit de l'application où une permission large est utilisée comme raccourci
       pour un rôle administratif précis — sur-octroyant ainsi l'accès à des rôles qui détiennent
       cette permission pour une autre raison légitime — est corrigé pour respecter la restriction
       réellement documentée, dès qu'un tel cas est confirmé pendant les travaux — au minimum le
       suivi du parcours des nouveaux arrivants et la gestion des comptes utilisateurs.
-- [ ] Les gestes sur les membres (repérage et fusion de doublons, liaison et déliaison d'un
+- [x] Les gestes sur les membres (repérage et fusion de doublons, liaison et déliaison d'un
       compte à une fiche, attribution en masse du rôle STAR, validation ou refus des demandes
       d'accès) respectent le périmètre de responsabilité de l'appelant, comme la consultation et
       la modification des fiches : un Ministre ou un Responsable de département n'agit que sur les

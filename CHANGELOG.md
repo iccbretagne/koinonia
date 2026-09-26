@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [v1.25.0] - 2026-09-26
 
 ### Ajouté
 
@@ -13,6 +13,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   suivi pastoral, intégration, comptabilité, salles, médias, compte et accès, emploi), s'il
   reçoit des emails — avec un interrupteur général. Les réglages détaillés existants de l'emploi
   restent inchangés et modifiables au même endroit.
+- **Gestion des accès repensée** (spec 054, issue #583) : « Accès & rôles » (`/admin/access`)
+  s'organise en trois onglets — **Personnes** (recherche par nom ou email, résumé des accès de
+  chacun), **Par rôle** (tous les détenteurs d'un rôle, avec ajout direct) et **Demandes**
+  (inchangé). Une fiche par personne réunit ses rôles, ses responsabilités (ministère,
+  départements) et ses **accès hérités** — appartenance à un département spécialisé, profil
+  pastoral, berger de famille, suivi pastoral en cours — affichés en lecture seule avec leur
+  origine, y compris pour une personne qui n'a aucun rôle. Chaque rôle proposé est accompagné
+  d'une phrase expliquant ce qu'il donne, et porte le même libellé sur tous les écrans.
 
 ### Modifié
 
@@ -43,6 +51,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   sans pouvoir les traiter, le peut désormais.
 - La Secrétaire peut désormais réserver une salle (`rooms:reserve`) et exporter les statistiques
   de discipolat comme l'Admin (`discipleship:export`).
+- **Retirer un STAR de son dernier département** le place dans « Sans département » au lieu
+  d'être refusé ; le rattacher ensuite à un vrai département l'en sort automatiquement.
+- Mise à jour des dépendances (minor/patch) : `@aws-sdk/client-s3` et
+  `@aws-sdk/s3-request-presigner` 3.1133.0 → 3.1138.0, `html2canvas-pro` 2.4.3 → 2.4.4,
+  `tsx` 4.23.13 → 4.23.15, `@types/node` 25.9.7 → 25.9.8.
+
+### Sécurité
+
+- `next` et `eslint-config-next` 16.3.5 → 16.3.6 : corrige GHSA-vcvr-r3jv-pc5j (exécution de
+  code à distance dans `next/og` `ImageResponse`).
 
 ### Corrigé
 
@@ -53,6 +71,11 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   appartiennent par ailleurs à l'équipe d'accueil (fonction de département `INTEGRATION`/`MSDP`).
   La même faille existait sur la liste des comptes utilisateurs et la suppression d'un compte
   préparé à l'avance (`/api/users`) : elle est corrigée de la même façon.
+- **Église créée depuis l'application sans département système** : l'onboarding d'une église ne
+  créait pas le ministère « Système » / département « Sans département » (seules les églises
+  existant en mars 2026 l'avaient reçu par migration), ce qui faisait échouer la création d'un
+  disciple sans fiche STAR — et, désormais, le retrait d'un STAR de son dernier département — sur
+  ces églises.
 
 ## [v1.24.0] - 2026-09-14
 

@@ -12,7 +12,7 @@
 
 - [x] Branche de base créée : `feat/refonte-gestion-acces` (spec, audit, plan)
 - [x] Branche du lot 2 créée depuis la base : `feat/acces-lot2-rbac`
-- [ ] Branche du lot 1 créée depuis la base **après fusion du lot 2** : `feat/acces-lot1-ergonomie`
+- [x] Branche du lot 1 : `feat/acces-lot1-ergonomie` *(créée depuis `feat/acces-lot2-rbac` avant sa fusion, pour ne pas attendre ; résultat identique une fois #599 mergée dans la base)*
 
 ---
 
@@ -171,7 +171,7 @@
 - [x] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
 - [x] Critères d'acceptation RBAC de la spec (dossiers d'accueil, anti-motif généralisé,
       périmètre des gestes « membres ») vérifiés
-- [ ] PR `feat/acces-lot2-rbac` → `feat/refonte-gestion-acces`
+- [x] PR `feat/acces-lot2-rbac` → `feat/refonte-gestion-acces` (#599)
 
 ---
 
@@ -267,25 +267,24 @@
 ### 1.5 Vérification du lot 1
 
 - [x] `npm run typecheck && npm run lint && npm run lint:boundaries && npm run test`
-- [ ] Vérification dans le navigateur (`npm run dev`, jeu de données fictif) : Admin — liste,
+- [x] Vérification dans le navigateur (`npm run dev`, jeu de données fictif) : Admin — liste,
       fiche, cocher un rôle puis le retrouver dans la vue par rôle et inversement ; Ministre —
       périmètre et absence de rôles transverses ; Secrétaire — valider une demande d'accès ;
       personne sans rôle mais bergère visible ; affichage mobile
-      *(non exécuté dans cet environnement : pas de daemon Docker disponible pour MariaDB —
-      à faire avant merge)*
+      *(faite en recette sur staging, validée le 2026-09-26)*
 - [x] Critères d'acceptation ergonomiques de la spec vérifiés (couverture ci-dessous)
-- [ ] PR `feat/acces-lot1-ergonomie` → `feat/refonte-gestion-acces`
+- [x] PR `feat/acces-lot1-ergonomie` → `feat/refonte-gestion-acces` (#600)
 
 ---
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test`
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits ; statut de la spec → `Implémentée`
-- [ ] PR finale `feat/refonte-gestion-acces` → `main`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test`
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits ; statut de la spec → `Implémentée`
+- [x] PR finale `feat/refonte-gestion-acces` → `main`
 
 ## Couverture des critères d'acceptation
 
