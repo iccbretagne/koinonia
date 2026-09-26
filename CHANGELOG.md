@@ -4,6 +4,34 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Corrigé
+
+- **Dossiers d'accueil et parcours d'intégration accessibles au-delà de l'équipe dédiée**
+  (spec 054, issue #583) : la garde d'accès approximait « Admin/Secrétaire » par la permission
+  `members:manage`/`events:manage`, détenue aussi par tout Ministre et tout Responsable de
+  département quel que soit son département. Ces deux rôles n'y accèdent plus, sauf s'ils
+  appartiennent par ailleurs à l'équipe d'accueil (fonction de département `INTEGRATION`/`MSDP`).
+  La même faille existait sur la liste des comptes utilisateurs et la suppression d'un compte
+  préparé à l'avance (`/api/users`) : elle est corrigée de la même façon.
+
+### Modifié
+
+- **Gestion des accès et des fiches STAR mise en cohérence avec le périmètre de responsabilité**
+  (spec 054, issue #583) : un Ministre ou un Responsable de département ne peut plus, hors de son
+  périmètre, repérer et fusionner des fiches en doublon, lier ou délier un compte à une fiche
+  STAR, ni attribuer le rôle STAR en masse — ces gestes ignoraient jusqu'ici le périmètre que la
+  consultation et la modification des fiches respectent déjà.
+  ⚠️ **Perte de droits à signaler avant mise en production** : la validation des demandes
+  d'accès et la liaison de comptes ne relèvent plus de `members:manage` mais d'`access:manage` —
+  un **Responsable de département ne valide plus les demandes d'accès et ne lie plus de compte**
+  (il gère toujours ses fiches STAR) ; ces deux gestes restent ouverts à l'administration de
+  l'église et au Ministre pour son ministère. La Secrétaire, qui voyait déjà les demandes d'accès
+  sans pouvoir les traiter, le peut désormais.
+- La Secrétaire peut désormais réserver une salle (`rooms:reserve`) et exporter les statistiques
+  de discipolat comme l'Admin (`discipleship:export`).
+
 ## [v1.24.0] - 2026-09-14
 
 ### Ajouté

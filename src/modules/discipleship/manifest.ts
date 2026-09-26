@@ -23,7 +23,7 @@ export const discipleshipModule = defineModule({
   permissions: {
     "discipleship:view":   ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD", "DISCIPLE_MAKER"],
     "discipleship:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "DISCIPLE_MAKER"],
-    "discipleship:export": ["SUPER_ADMIN", "SECRETARY"],
+    "discipleship:export": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
 
   navigation: [

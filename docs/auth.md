@@ -212,7 +212,7 @@ RSP = Référent soins pastoraux, Compt = Comptable.
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `church:manage` | x | | | | | | | | | |
-| `users:manage` | x | | | | | | | | | |
+| `users:manage` | x | x | | | | | | | | |
 | `access:manage` | x | x | x | x | | | | | | |
 
 #### Module `planning`
@@ -237,9 +237,9 @@ RSP = Référent soins pastoraux, Compt = Comptable.
 
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `discipleship:view` | x | x | x | | x | x | | | | |
+| `discipleship:view` | x | x | x | x | x | x | | | | |
 | `discipleship:manage` | x | x | x | | | x | | | | |
-| `discipleship:export` | x | | x | | | | | | | |
+| `discipleship:export` | x | x | x | | | | | | | |
 
 #### Module `audio`
 
@@ -322,7 +322,7 @@ deux mêmes permissions sans en introduire de nouvelle : réglages des délais d
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `rooms:view` | x | x | x | x | x | | | | | |
-| `rooms:reserve` | x | x | | x | x | | | | | |
+| `rooms:reserve` | x | x | x | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |
 
 #### Module `jobs` (emploi)
@@ -340,20 +340,28 @@ réservée à Admin/Secrétaire :
 
 #### Module `integration`
 
-Ce module ne déclare **aucune** permission dans son manifeste (`permissions: {}`) : l'accès
-n'est pas régi par `rolePermissions` mais par `requireIntegrationAccess()`
-(`src/modules/integration/auth.ts`), qui accorde un accès complet à Super Admin, à tout rôle
-possédant `members:manage` ou `events:manage` (Admin, Secrétaire), ou à un membre du
-département fonction `INTEGRATION`/`MSDP`, et un accès restreint (à ses familles) à un berger
-ou conseiller MSDP assigné via `FamilyLeaderAssignment`. `requireIntegrationExportAccess()` est
-strictement réservé aux accès non restreints (pas de berger/conseiller au périmètre limité).
+| Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `integration:manage` | x | x | x | | | | | | | |
+
+Accès complet aux dossiers d'accueil et aux « parcours » (coordonnées personnelles, export),
+résolu par `requireIntegrationAccess()`/`requireIntegrationFullAccess()`
+(`src/modules/integration/auth.ts`), qui accorde en plus un accès complet à tout membre du
+département fonction `INTEGRATION`/`MSDP`, et un accès restreint (à ses familles, sans export ni
+« parcours ») à un berger ou conseiller MSDP assigné via `FamilyLeaderAssignment`.
+`requireIntegrationExportAccess()`/`requireIntegrationFullAccess()` sont strictement réservés aux
+accès non restreints (pas de berger/conseiller au périmètre limité) — un berger n'a donc jamais
+accès aux dossiers « parcours », contrairement aux dossiers d'accueil qu'il peut consulter pour
+ses familles.
+
+Depuis la spec 054 (issue #583), `integration:manage` **remplace** l'ancienne approximation par
+`members:manage`/`events:manage` dans ces deux gardes, et dans les routes `/api/integration/parcours*`
+qui la recopiaient. Jusque-là, tout Ministre et tout Resp. département y accédait quel que soit
+son département — un accès plus large que ce que cette documentation a toujours décrit.
 
 `requireIntegrationSettingsAccess()` garde le réglage des délais de relance (spec 051,
-`/integration/parametres` et `GET/PUT /api/integration/settings`) : Super Admin, rôles détenant
-`events:manage` (Admin, Secrétaire), ou `DEPARTMENT_HEAD` rattaché à un département de fonction
-`INTEGRATION`. `members:manage` est volontairement écarté — tout Ministre et tout Resp.
-département le détient, quel que soit son département — de même qu'un simple membre de l'équipe
-ou un berger.
+`/integration/parametres` et `GET/PUT /api/integration/settings`) : Super Admin, `integration:manage`,
+ou `DEPARTMENT_HEAD` rattaché à un département de fonction `INTEGRATION`.
 
 Au sein d'une demande, les droits par action sont calculés par la machine à états
 (`computeFamilyTransitionData`, `src/modules/integration/services/family-state.ts`) :
@@ -369,8 +377,10 @@ Infrastructure pure (client S3, jetons opaques), aucune permission propre — co
 **Spécificités du Secrétaire** :
 - Voit tous les départements de son église (même périmètre que Admin)
 - Planning en lecture seule (pas de `planning:edit`)
-- Membres en lecture seule dans l'admin (pas de `members:manage`)
-- Peut gérer les événements (`events:manage`)
+- Membres en lecture seule dans l'admin (pas de `members:manage`) — mais valide les demandes
+  d'accès et lie/délie un compte à une fiche STAR (`access:manage`, spec 054/#583)
+- Gère les accès complets à l'accueil et aux parcours d'intégration (`integration:manage`)
+- Peut réserver une salle (`rooms:reserve`, spec 054/#583)
 - Peut exporter les données discipolat (`discipleship:export`)
 - Accès en lecture/écriture aux comptes rendus (`reports:view` + `reports:edit`)
 - Accès complet à l'agenda pastoral (`agenda:view` + `agenda:manage`)
@@ -378,6 +388,19 @@ Infrastructure pure (client S3, jetons opaques), aucune permission propre — co
   les qualifie ni ne les affecte (`care:qualify`, réservée au Référent soins pastoraux)
 - Voit les statistiques comptables (`accounting:stats`) mais ne traite pas les demandes
   (`accounting:manage`)
+
+**Spécificités du Responsable de département** (spec 054/#583) :
+- Gère ses fiches STAR (`members:manage`) dans son périmètre de responsabilité
+  (`user_departments`), incluant le repérage et la fusion de doublons — mais seulement quand les
+  **deux** fiches sont entièrement dans son périmètre (`isMemberFullyInScope`,
+  `src/lib/member-scope.ts`) : une fiche partagée avec un autre département engagerait un autre
+  responsable, plus strict que la modification d'une fiche (`isMemberInScope`, un département
+  commun suffit)
+- N'a pas `access:manage` : ne valide plus les demandes d'accès, ne lie/délie plus de compte à
+  une fiche STAR, et n'attribue plus le rôle STAR en masse — ces trois gestes étaient jusque-là
+  ouverts par `members:manage`, sans respecter le périmètre ni cette restriction
+- N'a pas `integration:manage` : perd l'accès aux dossiers d'accueil et aux « parcours » hors de
+  son département, sauf appartenance par ailleurs à l'équipe dédiée (fonction `INTEGRATION`/`MSDP`)
 
 **Spécificités du Reporter** :
 - Accès aux événements en lecture (`events:view`) et aux comptes rendus (`reports:view` + `reports:edit`)

@@ -41,6 +41,12 @@ interface Props {
   readonly initialMembers: Member[];
   readonly departments: { id: string; name: string; ministryName: string }[];
   readonly readOnly?: boolean;
+  /**
+   * Lier/délier un compte relève d'`access:manage`, distinct de `members:manage` (`readOnly`
+   * ci-dessus) depuis la spec 054/#583 — un Resp. département gère ses fiches STAR mais ne lie
+   * plus de compte, réservé à l'administration et au Ministre de son ministère.
+   */
+  readonly canLink?: boolean;
   /** L'appelant ne gère qu'une partie des départements : il lui faut retirer/rattacher un STAR. */
   readonly scoped?: boolean;
   readonly churchId: string;
@@ -49,7 +55,7 @@ interface Props {
 const LS_FILTER_DEPT = "members_filter_dept";
 const LS_FILTER_SEARCH = "members_filter_search";
 
-export default function MembersClient({ initialMembers, departments, readOnly = false, scoped = false, churchId }: Props) {
+export default function MembersClient({ initialMembers, departments, readOnly = false, canLink = false, scoped = false, churchId }: Props) {
   const [members, setMembers] = useState(initialMembers);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -685,37 +691,43 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 </div>
 
                 {/* Actions */}
-                {!readOnly && (
+                {(!readOnly || canLink) && (
                   <div className="flex gap-2 flex-wrap pt-1 border-t border-gray-100">
-                    {m.userLink ? (
-                      <Button variant="secondary" size="sm" onClick={() => handleUnlink(m)}>
-                        Délier
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
-                      >
-                        Lier
-                      </Button>
-                    )}
-                    <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>
-                      Modifier
-                    </Button>
-                    {m.allDepartments.length > 1 &&
-                      m.allDepartments.some((d) => manageableIds.has(d.id)) && (
+                    {canLink && (
+                      m.userLink ? (
+                        <Button variant="secondary" size="sm" onClick={() => handleUnlink(m)}>
+                          Délier
+                        </Button>
+                      ) : (
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => { setRemoveError(null); setRemoveModal(m); }}
+                          onClick={() => { setLinkModal(m); setUserQuery(""); setSelectedUser(null); setUserResults([]); setLinkError(null); }}
                         >
-                          Retirer
+                          Lier
                         </Button>
-                      )}
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(m)}>
-                      Supprimer
-                    </Button>
+                      )
+                    )}
+                    {!readOnly && (
+                      <>
+                        <Button variant="secondary" size="sm" onClick={() => openEdit(m)}>
+                          Modifier
+                        </Button>
+                        {m.allDepartments.length > 1 &&
+                          m.allDepartments.some((d) => manageableIds.has(d.id)) && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => { setRemoveError(null); setRemoveModal(m); }}
+                            >
+                              Retirer
+                            </Button>
+                          )}
+                        <Button variant="danger" size="sm" onClick={() => handleDelete(m)}>
+                          Supprimer
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

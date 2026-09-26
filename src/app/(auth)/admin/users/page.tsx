@@ -6,13 +6,7 @@ export default async function UsersPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
   if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
-  await requireChurchPermission("members:manage", churchId);
-
-  const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  const isSuperAdmin = session.user.churchRoles.some((r) => r.role === "SUPER_ADMIN");
-  if (!session.user.isSuperAdmin && !churchRoles.some((r) => r.role === "ADMIN")) {
-    throw new Error("FORBIDDEN");
-  }
+  await requireChurchPermission("users:manage", churchId);
 
   const users = await prisma.user.findMany({
     where: {
@@ -49,7 +43,9 @@ export default async function UsersPage() {
     orderBy: { name: "asc" },
   });
 
-  const canManageRoles = isSuperAdmin || churchRoles.some((r) => r.role === "ADMIN");
+  // La page est déjà réservée à users:manage (Super Admin / Admin) — quiconque l'atteint peut
+  // gérer les rôles depuis cet écran (spec 054/#583).
+  const canManageRoles = true;
 
   return (
     <div>

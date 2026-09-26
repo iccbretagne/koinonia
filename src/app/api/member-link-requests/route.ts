@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { auth, requireChurchPermission } from "@/lib/auth";
+import { auth, requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -147,12 +147,24 @@ export async function GET(request: Request) {
     const status = searchParams.get("status") ?? "PENDING";
 
     if (!churchId) throw new ApiError(400, "churchId requis");
-    await requireChurchPermission("members:manage", churchId);
+    // access:manage (Super Admin, Admin, Secrétaire, Ministre borné à son ministère) — remplace
+    // members:manage, qui donnait accès à toutes les demandes de l'église à tout Resp.
+    // département quel que soit son département (spec 054/#583, défaut B4 de audit-rbac.md)
+    const session = await requireChurchPermission("access:manage", churchId);
+    const ministryScope = getUserMinistryScope(session, churchId);
 
     const requests = await prisma.memberLinkRequest.findMany({
       where: {
         churchId,
         status: status as "PENDING" | "APPROVED" | "REJECTED",
+        ...(ministryScope.scoped
+          ? {
+              OR: [
+                { ministryId: { in: ministryScope.ministryIds } },
+                { department: { ministryId: { in: ministryScope.ministryIds } } },
+              ],
+            }
+          : {}),
       },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },

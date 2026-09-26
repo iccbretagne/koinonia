@@ -11,8 +11,8 @@ const updateSchema = z.object({
 });
 
 // PATCH /api/discipleships/[id]/member — mise à jour du profil du disciple
-// Accessible au FD (discipleship:manage) pour ses propres disciples
-// et aux admins (members:manage)
+// Accessible au FD (discipleship:manage) pour ses propres disciples,
+// et à Super Admin/Admin/Secrétaire (discipleship:manage, non scopé pour ces rôles)
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

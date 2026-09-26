@@ -23,7 +23,7 @@ La fiche STAR existe indépendamment du compte : on peut être STAR sans jamais 
 |---|---|
 | Le responsable de département | Crée la fiche STAR et la rattache à son département |
 | La personne | Se connecte et demande son accès |
-| L'administration | Valide la demande et attribue les rôles |
+| L'administration (ou le Ministre pour son ministère) | Valide la demande et attribue les rôles |
 
 ## Les étapes
 
@@ -37,7 +37,7 @@ La fiche STAR existe indépendamment du compte : on peut être STAR sans jamais 
 
 Les **rôles hiérarchiques** suivent l'organisation : un ministre par ministère, un ou plusieurs responsables par département, avec la possibilité de désigner des adjoints. C'est ce qui donne la main sur un planning.
 
-Les **rôles transverses** donnent des accès fonctionnels indépendants de cette hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Qualificateur Agenda, Comptable, Reporter. Admin et Secrétaire sont réservés aux super-administrateurs.
+Les **rôles transverses** donnent des accès fonctionnels indépendants de cette hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Référent soins pastoraux, Comptable, Reporter. Admin et Secrétaire sont réservés aux super-administrateurs.
 
 Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffit pour être planifié, déclarer ses absences et déposer des demandes.
 
@@ -53,10 +53,11 @@ Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffi
 ## Les règles à connaître
 
 - **L'email conditionne tout le reste.** Sans lui, le rattachement du compte devient manuel, et c'est là que naissent les doublons.
-- **Un rôle transverse n'est pas une promotion**, c'est une fonction. Comptable, Reporter ou Qualificateur décrivent un travail à faire, pas un rang.
+- **Un rôle transverse n'est pas une promotion**, c'est une fonction. Comptable, Reporter ou Référent décrivent un travail à faire, pas un rang.
 - **Retirer n'est pas supprimer.** Retirer sort la personne d'un département ; supprimer efface la fiche et son historique. Quelqu'un qui cesse de servir se retire, il ne se supprime pas.
 - **Délier détache le compte de la fiche** sans toucher à la fiche elle-même — utile lorsqu'un rattachement s'est fait sur la mauvaise personne.
 - **Les doublons se surveillent.** Un écran dédié les signale. Deux fiches pour une même personne, ce sont deux plannings, deux historiques et deux absences déclarées à moitié.
+- **Valider une demande et lier un compte relèvent de l'administration** (ou du Ministre pour son ministère) — un responsable de département crée et gère ses fiches STAR, mais ne valide plus de demande d'accès ni ne lie de compte (spec 054).
 
 ## Les cas particuliers
 

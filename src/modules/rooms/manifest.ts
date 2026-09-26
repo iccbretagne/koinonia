@@ -26,7 +26,7 @@ export const roomsModule = defineModule({
   permissions: {
     // STAR retiré : réservation de salle réservée aux responsables (spec 031, issue #463)
     "rooms:view":    ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
-    "rooms:reserve": ["SUPER_ADMIN", "ADMIN", "MINISTER", "DEPARTMENT_HEAD"],
+    "rooms:reserve": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
     "rooms:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
 

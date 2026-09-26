@@ -36,3 +36,48 @@ export async function resolveMemberDepartmentScope(
     ),
   };
 }
+
+/**
+ * Vrai si un appelant restreint partage au moins un département avec la fiche visée — même
+ * règle que `PATCH /api/members/[memberId]` (spec 054/#583, défaut B1-B3 de `audit-rbac.md`).
+ * Un appelant non restreint (Admin, Secrétaire, Super Admin) voit toujours vrai.
+ */
+export function isMemberInScope(scope: MemberScope, memberDepartmentIds: string[]): boolean {
+  if (!scope.scoped) return true;
+  return memberDepartmentIds.some((id) => scope.departmentIds.includes(id));
+}
+
+/**
+ * Vrai si **tous** les départements de la fiche visée sont dans le périmètre de l'appelant.
+ * Plus strict que `isMemberInScope` : réservé aux gestes qui font disparaître une fiche ou
+ * déplacent ses affiliations (fusion), où un département partagé hors périmètre engagerait un
+ * autre responsable (plan.md, « Décisions »).
+ */
+export function isMemberFullyInScope(scope: MemberScope, memberDepartmentIds: string[]): boolean {
+  if (!scope.scoped) return true;
+  return memberDepartmentIds.every((id) => scope.departmentIds.includes(id));
+}
+
+export type LinkRequestScopeInput = {
+  departmentId: string | null;
+  ministryId: string | null;
+};
+
+/**
+ * Vrai si une demande d'accès (ou de liaison) est dans le périmètre de l'appelant : son
+ * département demandé est géré par l'appelant, ou son ministère demandé est un des siens, ou la
+ * fiche STAR déjà existante (`memberDepartmentIds`) partage un département avec lui.
+ * `ministryIds` vient de `getUserMinistryScope` — un appelant restreint qui atteint cette
+ * fonction est nécessairement un Ministre (seul rôle restreint à détenir `access:manage`).
+ */
+export function isLinkRequestInScope(
+  scope: MemberScope,
+  ministryIds: string[],
+  request: LinkRequestScopeInput,
+  memberDepartmentIds: string[] = []
+): boolean {
+  if (!scope.scoped) return true;
+  if (request.departmentId && scope.departmentIds.includes(request.departmentId)) return true;
+  if (request.ministryId && ministryIds.includes(request.ministryId)) return true;
+  return isMemberInScope(scope, memberDepartmentIds);
+}
