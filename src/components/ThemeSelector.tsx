@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 
 type ThemeChoice = "system" | "light" | "dark";
@@ -32,15 +32,22 @@ function readChoice(): ThemeChoice {
  * Choix du thème (spec 055) : stocké dans le navigateur uniquement — aucune donnée serveur.
  * Le script inline de `src/app/layout.tsx` réapplique ce choix avant le premier rendu.
  */
-export default function ThemeSelector() {
-  const [choice, setChoice] = useState<ThemeChoice>("system");
+// Abonnés locaux : `storage` ne se déclenche que pour les autres onglets.
+const listeners = new Set<() => void>();
 
-  useEffect(() => {
-    setChoice(readChoice());
-  }, []);
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+export default function ThemeSelector() {
+  const choice = useSyncExternalStore(subscribe, readChoice, () => "system" as ThemeChoice);
 
   function apply(next: ThemeChoice) {
-    setChoice(next);
     try {
       if (next === "system") localStorage.removeItem(STORAGE_KEY);
       else localStorage.setItem(STORAGE_KEY, next);
@@ -48,6 +55,7 @@ export default function ThemeSelector() {
       // Stockage indisponible (navigation privée) : le choix s'applique pour cette page seulement.
     }
     applyToDocument(next);
+    listeners.forEach((listener) => listener());
   }
 
   return (
