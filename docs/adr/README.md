@@ -44,6 +44,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0015](0015-module-suivi-rendez-vous-pastoraux.md) | Module `care` : suivi et rendez-vous pastoraux, distinct d'`integration` et d'`agenda` | Accepté |
 | [0016](0016-preferences-notifications-email.md) | Un domaine par notification, email décidé centralement par préférence utilisateur | Accepté |
 | [0017](0017-permission-n-approxime-pas-un-role.md) | Une permission n'approxime jamais un rôle administratif | Accepté |
+| [0018](0018-tokens-semantiques-design-system.md) | L'interface passe par des tokens sémantiques (thèmes clair/sombre) | Accepté |
 
 ## Note sur les ADR 0001–0003
 

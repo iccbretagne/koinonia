@@ -1,0 +1,139 @@
+<!-- @dsCard group="Maquettes" height=880 width=1240 page=true subtitle="Accueil d'un STAR, planning d'un responsable, menu Plus" -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquette mobile</title>
+<style>
+  .m-stage { display: flex; gap: var(--space-8); padding: var(--space-6); width: 1240px; box-sizing: border-box; background: var(--bg); }
+  .m-shot { display: flex; flex-direction: column; gap: var(--space-3); }
+  .m-shot > .k-eyebrow { padding-left: var(--space-2); }
+  .m-phone { width: 375px; height: 780px; border: 1px solid var(--line); border-radius: 36px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; position: relative; box-shadow: var(--shadow-2); }
+  .m-status { height: 32px; flex: none; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font: 600 13px/1 var(--font-body); color: var(--ink); }
+  .m-scroll { flex: 1; overflow: hidden; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+  .m-hello { font: 700 22px/28px var(--font-display); margin: 0; letter-spacing: -0.01em; }
+  .m-next { background: var(--brand); color: var(--on-brand); border-radius: var(--radius-lg); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+  .m-next__top { display: flex; gap: var(--space-3); align-items: center; }
+  .m-next .m-date { background: rgba(255, 255, 255, 0.16); color: var(--on-brand); }
+  .m-next .m-date small { color: var(--on-brand); opacity: 0.8; }
+  .m-next h2 { margin: 0; font: 600 17px/22px var(--font-display); }
+  .m-next p { margin: 0; font-size: 14px; line-height: 20px; opacity: 0.9; }
+  .m-next .k-chip { background: var(--surface); color: var(--success); align-self: flex-start; }
+  .m-next__actions { display: flex; gap: var(--space-2); }
+  .m-next__actions .k-btn { flex: 1; }
+  .m-btn-on { background: var(--surface); color: var(--brand-text); }
+  .m-btn-out { background: transparent; color: var(--on-brand); border-color: rgba(255, 255, 255, 0.5); }
+  .m-date { width: 48px; flex: none; text-align: center; border-radius: var(--radius-md); background: var(--surface-sunken); padding: 5px 0; }
+  .m-date small { display: block; font: 700 10px/12px var(--font-display); letter-spacing: 0.08em; color: var(--ink-subtle); }
+  .m-date strong { display: block; font: 700 19px/22px var(--font-display); font-variant-numeric: tabular-nums; }
+  .m-h { margin: 0; font: 600 15px/20px var(--font-display); display: flex; justify-content: space-between; align-items: baseline; }
+  .m-h a { font: 600 13px/18px var(--font-body); color: var(--brand-text); text-decoration: none; }
+  .m-list { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+  .m-list .k-rowcard { min-height: 60px; }
+  .m-list .k-rowcard:last-child { border-bottom: 0; }
+  .m-chev { color: var(--ink-subtle); }
+  .m-plan .k-plan__row { padding: 8px var(--space-3); }
+  .m-plan .k-seg button { min-width: 36px; height: 34px; }
+  .m-toast { position: absolute; left: var(--space-3); right: var(--space-3); bottom: calc(var(--bottom-nav) + var(--space-3)); max-width: none; }
+  .m-sheetwrap { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+  .m-sheetwrap .k-sheet { padding-bottom: var(--space-6); }
+</style>
+</head>
+<body>
+<div class="m-stage">
+
+  <div class="m-shot"><div class="k-eyebrow">STAR · Accueil</div>
+  <div class="m-phone">
+    <div class="m-status"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="k-topbar"><button class="k-topbar__church"><img src="/_blob/12f9d57fc5dd154a67545dcc7bf21d98" alt="" width="30" style="margin-right:2px">ICC Rennes<span data-i="chevron-down" data-c="k-icon--sm"></span></button><button class="k-iconbtn" aria-label="Rechercher"><span data-i="search"></span></button><button class="k-iconbtn" aria-label="Notifications, 1 non lue"><span data-i="bell"></span><span class="k-count">1</span></button><span class="k-topbar__stripe" style="background:var(--icc-violet)"></span></div>
+    <div class="m-scroll">
+      <div><div class="k-eyebrow">Samedi 3 octobre</div><h1 class="m-hello">Bonjour Marie</h1></div>
+      <div class="m-next">
+        <div class="m-next__top"><div class="m-date"><small>DIM</small><strong>4</strong></div><div><h2>Culte du dimanche</h2><p>Choristes · arrivée 8h30 · tenue noire</p></div></div>
+        <span class="k-chip"><span data-i="circle-check"></span>En service</span>
+        <div class="m-next__actions"><button class="k-btn m-btn-on">Voir l'équipe</button><button class="k-btn m-btn-out">Je ne peux pas</button></div>
+      </div>
+      <h2 class="m-h">Cette semaine <a href="#">Mon planning</a></h2>
+      <div class="m-list">
+        <div class="k-rowcard"><div class="m-date"><small>JEU</small><strong>8</strong></div><div class="k-rowcard__main"><div class="k-rowcard__title">Répétition générale</div><div class="k-rowcard__meta">19h00 · Salle 2</div></div><span data-i="chevron-right" data-c="m-chev"></span></div>
+        <div class="k-rowcard"><div class="m-date"><small>DIM</small><strong>11</strong></div><div class="k-rowcard__main"><div class="k-rowcard__title">Culte du dimanche</div><div class="k-rowcard__meta">Choristes</div></div><span class="k-chip k-chip--danger">Indisponible</span></div>
+      </div>
+      <h2 class="m-h">Mes demandes</h2>
+      <div class="m-list">
+        <div class="k-rowcard"><span class="k-avatar"><span data-i="image" data-c="k-icon--sm"></span></span><div class="k-rowcard__main"><div class="k-rowcard__title">Visuel « Soirée louange »</div><div class="k-rowcard__meta">Production Média · envoyée mardi</div></div><span class="k-chip k-chip--warning">En cours</span></div>
+      </div>
+    </div>
+    <nav class="k-bottomnav" aria-label="Navigation">
+      <a href="#" aria-current="page"><span class="k-bottomnav__pill"><span data-i="house"></span></span>Accueil</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="calendar-check"></span></span>Mon planning</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="calendar"></span></span>Agenda</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="inbox"></span></span>Demandes</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="grid"></span></span>Plus</a>
+    </nav>
+  </div></div>
+
+  <div class="m-shot"><div class="k-eyebrow">Responsable · Planning</div>
+  <div class="m-phone">
+    <div class="m-status"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="k-topbar" style="padding-left:var(--space-1)"><button class="k-iconbtn" aria-label="Retour"><span data-i="chevron-left"></span></button><span class="k-topbar__title">Culte du 4 octobre</span><button class="k-iconbtn" aria-label="Plus d'actions"><span data-i="more"></span></button><span class="k-topbar__stripe" style="background:var(--icc-violet)"></span></div>
+    <nav class="k-tabs" aria-label="Événement" style="background:var(--surface);padding:0 var(--space-2)"><a class="k-tab" href="#" aria-current="page">Équipe</a><a class="k-tab" href="#">Tâches <span class="k-count">2</span></a><a class="k-tab" href="#">Consignes</a><a class="k-tab" href="#">Debrief</a></nav>
+    <div class="m-scroll" style="gap:var(--space-3)">
+      <div class="k-alert" style="padding:var(--space-3)"><span data-i="alert"></span><div style="font-size:14px;line-height:20px"><strong>Clavier non couvert.</strong> <a href="#" style="color:var(--brand-text);font-weight:600">Trouver un STAR</a></div></div>
+      <div class="k-plan m-plan">
+        <div class="k-plan__row" style="background:var(--surface-sunken)"><div class="k-eyebrow" style="color:var(--ink-muted)">Choristes</div><span class="k-muted" style="font-size:13px">3 / 6</span></div>
+        <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Marie Kouassi</div><div class="k-plan__fn">Soprano</div></div><div class="k-seg"><button class="is-service" aria-pressed="true" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+        <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Esther Diallo</div><div class="k-plan__fn">Alto</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="true" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+        <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Samuel Tano</div><div class="k-plan__fn">Ténor</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="true" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+        <div class="k-plan__row" style="background:var(--surface-sunken)"><div class="k-eyebrow" style="color:var(--ink-muted)">Musiciens</div><span class="k-muted" style="font-size:13px">3 / 4</span></div>
+        <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Jonathan Bamba</div><div class="k-plan__fn">Clavier</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="true" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+        <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">David Koffi</div><div class="k-plan__fn">Clavier</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="true" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+      </div>
+    </div>
+    <div class="k-toast m-toast" role="status"><span data-i="circle-check" data-c="k-toast__icon--success"></span><span class="k-toast__msg">David placé en remplaçant</span><button class="k-btn k-btn--ghost k-btn--sm">Annuler</button></div>
+    <nav class="k-bottomnav" aria-label="Navigation">
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="house"></span></span>Accueil</a>
+      <a href="#" aria-current="page"><span class="k-bottomnav__pill"><span data-i="grid"></span></span>Planning</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="calendar"></span></span>Agenda</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="users"></span></span>Personnes</a>
+      <a href="#"><span class="k-bottomnav__pill"><span data-i="more"></span></span>Plus</a>
+    </nav>
+  </div></div>
+
+  <div class="m-shot"><div class="k-eyebrow">Menu « Plus »</div>
+  <div class="m-phone">
+    <div class="m-status"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="k-topbar"><button class="k-topbar__church"><img src="/_blob/12f9d57fc5dd154a67545dcc7bf21d98" alt="" width="30" style="margin-right:2px">ICC Rennes<span data-i="chevron-down" data-c="k-icon--sm"></span></button><button class="k-iconbtn" aria-label="Rechercher"><span data-i="search"></span></button><button class="k-iconbtn" aria-label="Notifications"><span data-i="bell"></span></button><span class="k-topbar__stripe" style="background:var(--icc-violet)"></span></div>
+    <div class="m-scroll"><div class="k-skel" style="height:14px;width:40%"></div><div class="k-skel" style="height:26px;width:65%"></div><div class="k-skel" style="height:150px"></div><div class="k-skel" style="height:60px"></div><div class="k-skel" style="height:60px"></div></div>
+    <div class="m-sheetwrap k-scrim">
+      <div class="k-sheet">
+        <div class="k-sheet__grab"></div>
+        <div class="k-eyebrow" style="margin:0 var(--space-2) var(--space-2)">Espaces</div>
+        <div class="k-sheet__grid">
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="house"></span></span>Accueil</a>
+          <a class="k-tile" href="#" aria-current="page"><span class="k-tile__icon"><span data-i="grid"></span></span>Planning</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="calendar"></span></span>Agenda</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="users"></span></span>Personnes</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="inbox"></span></span>Demandes</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="image"></span></span>Médias</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="music"></span></span>Audio</a>
+          <a class="k-tile" href="#"><span class="k-tile__icon"><span data-i="box"></span></span>Ressources</a>
+        </div>
+        <div style="border-top:1px solid var(--line);margin-top:var(--space-3);padding-top:var(--space-2);display:flex;flex-direction:column">
+          <a class="k-nav-item" href="#"><span data-i="user"></span>Mon profil</a>
+          <a class="k-nav-item" href="#"><span data-i="info"></span>Guide d'utilisation</a>
+        </div>
+      </div>
+      <nav class="k-bottomnav" aria-label="Navigation">
+        <a href="#"><span class="k-bottomnav__pill"><span data-i="house"></span></span>Accueil</a>
+        <a href="#"><span class="k-bottomnav__pill"><span data-i="grid"></span></span>Planning</a>
+        <a href="#"><span class="k-bottomnav__pill"><span data-i="calendar"></span></span>Agenda</a>
+        <a href="#"><span class="k-bottomnav__pill"><span data-i="users"></span></span>Personnes</a>
+        <a href="#" aria-current="page"><span class="k-bottomnav__pill"><span data-i="more"></span></span>Plus</a>
+      </nav>
+    </div>
+  </div></div>
+
+</div>
+<script>Koinonia.hydrate();</script>
+</body>
+</html>
