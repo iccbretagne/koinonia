@@ -1,5 +1,6 @@
 import { boot } from "@/core/boot";
 import { buildRolePermissions } from "@/core/permissions";
+import { buildNotificationDomains } from "@/core/notification-domains";
 import { planningBus } from "@/modules/planning";
 // Import ciblé sur `bus.ts` plutôt que l'index du module : l'index d'`integration`
 // réexporte `auth.ts`, qui importe `@/lib/auth` (NextAuth) au niveau module — un import
@@ -25,6 +26,13 @@ export const registry = boot({
  * src/lib/permissions.ts a été supprimé).
  */
 export const rolePermissions = buildRolePermissions(registry);
+
+/**
+ * Domaines de notification déclarés par les modules actifs (spec 053), triés par clé.
+ * Source de vérité pour la page « Mes notifications » et pour valider les préférences écrites
+ * par l'utilisateur (`GET`/`PUT /api/notifications/preferences`).
+ */
+export const notificationDomains = buildNotificationDomains(registry);
 
 // ─── Abonnements cross-module ─────────────────────────────────────────────────
 //

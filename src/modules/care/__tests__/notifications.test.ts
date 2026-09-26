@@ -3,6 +3,7 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 const mockSendEmail = vi.fn();
 const mockCreateNotification = vi.fn();
+const mockNotifyUsers = vi.fn();
 const mockNotifyDeptMembers = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
@@ -13,6 +14,7 @@ vi.mock("@/lib/email", () => ({
 }));
 vi.mock("@/lib/notifications", () => ({
   createNotification: (...args: unknown[]) => mockCreateNotification(...args),
+  notifyUsers: (...args: unknown[]) => mockNotifyUsers(...args),
   notifyDeptMembers: (...args: unknown[]) => mockNotifyDeptMembers(...args),
 }));
 
@@ -37,7 +39,7 @@ describe("notifyAssigneeAssigned", () => {
     mockSendEmail.mockResolvedValue(undefined);
   });
 
-  it("accompagnant avec compte et email : notification in-app et email", async () => {
+  it("accompagnant avec compte et email : notification in-app, contenu email transmis via la préférence du domaine « care »", async () => {
     await notifyAssigneeAssigned({
       assignee: { kind: "MEMBER", id: "u1", userId: "u1", name: "Jean", email: "jean@example.com" },
       kind: "requests",
@@ -46,16 +48,20 @@ describe("notifyAssigneeAssigned", () => {
     });
 
     expect(mockCreateNotification).toHaveBeenCalledTimes(1);
-    expect(mockCreateNotification).toHaveBeenCalledWith(
+    const [params, options] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(
       expect.objectContaining({
         userId: "u1",
+        domain: "care",
         type: "CARE_ASSIGNED",
         link: "/care/requests/req-1",
         message: "On vous a confié la demande de rendez-vous pastoral de Marie Curie.",
       })
     );
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "jean@example.com" }));
+    expect(options?.email).toBeDefined();
+    // L'email n'est jamais envoyé ici directement : c'est createNotification (mocké) qui le
+    // ferait, gouverné par la préférence de l'utilisateur — pas ce site d'émission.
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
   it("accompagnant avec compte sans email : notification in-app seule, l'affectation n'échoue pas", async () => {
@@ -66,9 +72,9 @@ describe("notifyAssigneeAssigned", () => {
       personName: "Marie Curie",
     });
 
-    expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "On vous a confié le suivi de Marie Curie." })
-    );
+    const [params, options] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(expect.objectContaining({ message: "On vous a confié le suivi de Marie Curie." }));
+    expect(options).toBeUndefined();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
@@ -126,7 +132,7 @@ describe("notifyAssigneeUnassigned", () => {
 describe("notifyReferentsHandback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.notification.createMany.mockResolvedValue({ count: 0 } as never);
+    mockNotifyUsers.mockResolvedValue(undefined);
   });
 
   it("notifie tous les détenteurs de care:qualify de l'église", async () => {
@@ -143,13 +149,9 @@ describe("notifyReferentsHandback", () => {
       reason: "hors périmètre",
     });
 
-    expect(prismaMock.notification.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: [
-          expect.objectContaining({ userId: "admin-1", type: "CARE_HANDBACK" }),
-          expect.objectContaining({ userId: "referent-1", type: "CARE_HANDBACK" }),
-        ],
-      })
+    expect(mockNotifyUsers).toHaveBeenCalledWith(
+      ["admin-1", "referent-1"],
+      expect.objectContaining({ domain: "care", type: "CARE_HANDBACK" })
     );
   });
 
@@ -164,7 +166,7 @@ describe("notifyReferentsHandback", () => {
       reason: "x",
     });
 
-    expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
   });
 });
 
@@ -202,12 +204,12 @@ describe("notifyRequesterScheduled", () => {
     scheduledFor: new Date("2026-01-15T10:00:00Z"),
   };
 
-  it("demandeur connecté : notification in-app", async () => {
+  it("demandeur connecté sans email : notification in-app seule", async () => {
     await notifyRequesterScheduled({ ...base, userId: "requester-1", email: null });
 
-    expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "requester-1", type: "CARE_APPOINTMENT_SCHEDULED" })
-    );
+    const [params, options] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(expect.objectContaining({ userId: "requester-1", domain: "care", type: "CARE_APPOINTMENT_SCHEDULED" }));
+    expect(options).toBeUndefined();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
@@ -218,11 +220,13 @@ describe("notifyRequesterScheduled", () => {
     expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "marie@example.com" }));
   });
 
-  it("demandeur connecté avec email : les deux canaux, comme pour une planification par le protocole", async () => {
+  it("demandeur connecté avec email : notification in-app, contenu email transmis via la préférence du domaine", async () => {
     await notifyRequesterScheduled({ ...base, userId: "requester-1", email: "marie@example.com" });
 
     expect(mockCreateNotification).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    const [, options] = mockCreateNotification.mock.calls[0];
+    expect(options?.email).toBeDefined();
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 });
 
@@ -246,7 +250,8 @@ describe("notifyRequesterRejected", () => {
   it("inclut le motif qualifié dans le message in-app", async () => {
     await notifyRequesterRejected({ ...base, userId: "requester-1", email: null });
 
-    expect(mockCreateNotification).toHaveBeenCalledWith(
+    const [params] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(
       expect.objectContaining({
         type: "CARE_APPOINTMENT_REJECTED",
         message: expect.stringContaining("Hors du champ pastoral"),
@@ -257,9 +262,8 @@ describe("notifyRequesterRejected", () => {
   it("ajoute le commentaire libre au motif si présent", async () => {
     await notifyRequesterRejected({ ...base, userId: "requester-1", email: null, comment: "déjà suivi ailleurs" });
 
-    expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining("déjà suivi ailleurs") })
-    );
+    const [params] = mockCreateNotification.mock.calls[0];
+    expect(params).toEqual(expect.objectContaining({ message: expect.stringContaining("déjà suivi ailleurs") }));
   });
 
   it("demandeur non connecté avec email : envoi d'un email de rejet", async () => {

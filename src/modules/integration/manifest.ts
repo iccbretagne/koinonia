@@ -37,4 +37,19 @@ export const integrationModule = defineModule({
     // (requireIntegrationAccess), indépendante de cette permission.
     "integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
+
+  // Domaine de notification (spec 053) : envoie déjà des emails (berger affecté) — activé par
+  // défaut. Visible avec `integration:manage` (spec 054, plus l'ancien raccourci
+  // members:manage/events:manage) ; l'équipe (INTEGRATION/MSDP) et les bergers, qui n'ont pas
+  // cette permission, voient quand même le réglage dès qu'ils ont reçu une notification du
+  // domaine (`isDomainVisible`, historique).
+  notificationDomains: [
+    {
+      key: "integration",
+      label: "Intégration",
+      description: "Demande d'accueil confiée, demande renvoyée, rappel de relance.",
+      defaultEmail: true,
+      visibleWith: ["integration:manage"],
+    },
+  ],
 });

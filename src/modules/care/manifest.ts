@@ -36,6 +36,18 @@ export const careModule = defineModule({
     "care:view": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "PASTORAL_CARE_REFERENT"],
   },
 
+  // Domaine de notification (spec 053) : envoie déjà des emails (personne désignée, relances,
+  // inactivité MSDP) — activé par défaut.
+  notificationDomains: [
+    {
+      key: "care",
+      label: "Suivi pastoral",
+      description: "Demande confiée, date de rendez-vous, rappel de relance, demande rendue.",
+      defaultEmail: true,
+      visibleWith: ["care:qualify", "care:view"],
+    },
+  ],
+
   navigation: [
     { label: "Suivi pastoral", icon: "heart", href: "/care", permission: "care:view" },
   ],

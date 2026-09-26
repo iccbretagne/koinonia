@@ -11,6 +11,7 @@ vi.mock("@/lib/notifications", () => ({
   notifyUsersWithRole: vi.fn().mockResolvedValue(undefined),
   notifyDeptMembers: vi.fn().mockResolvedValue(undefined),
   createNotification: vi.fn().mockResolvedValue(undefined),
+  dispatchUserEmails: vi.fn().mockResolvedValue({ sent: 0, failed: 0 }),
 }));
 // `submitAppointmentRequest` (services/appointments.ts) importe `./followups`, qui importe
 // `../auth` → `@/lib/auth` (NextAuth) au niveau module — mocké ici même si ce test n'exerce

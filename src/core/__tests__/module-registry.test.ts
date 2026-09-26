@@ -110,3 +110,61 @@ describe("ModuleRegistry.collectPermissions", () => {
     expect(() => r.collectPermissions()).toThrow(/Conflit de permission "x:do"/);
   });
 });
+
+describe("ModuleRegistry.collectNotificationDomains", () => {
+  it("agrège les domaines de notification de tous les modules enregistrés", () => {
+    const coreWithDomain = defineModule({
+      name: "core",
+      version: "1.0.0",
+      notificationDomains: [{ key: "account", label: "Compte", description: "d", defaultEmail: false }],
+    });
+    const planningWithDomain = defineModule({
+      name: "planning",
+      version: "1.0.0",
+      dependsOn: ["core"],
+      notificationDomains: [{ key: "planning", label: "Planning", description: "d", defaultEmail: true }],
+    });
+
+    const r = new ModuleRegistry();
+    r.register(coreWithDomain);
+    r.register(planningWithDomain);
+
+    const domains = r.collectNotificationDomains();
+    expect(domains.map((d) => d.key)).toEqual(expect.arrayContaining(["account", "planning"]));
+  });
+
+  it("ignore le domaine d'un module non enregistré (instance sans ce module)", () => {
+    const coreWithDomain = defineModule({
+      name: "core",
+      version: "1.0.0",
+      notificationDomains: [{ key: "account", label: "Compte", description: "d", defaultEmail: false }],
+    });
+
+    const r = new ModuleRegistry();
+    r.register(coreWithDomain);
+    // "planning" (et son domaine) n'est jamais enregistré.
+
+    const domains = r.collectNotificationDomains();
+    expect(domains).toHaveLength(1);
+    expect(domains[0].key).toBe("account");
+  });
+
+  it("throw en cas de conflit de clé de domaine entre deux modules", () => {
+    const m1 = defineModule({
+      name: "m1",
+      version: "1.0.0",
+      notificationDomains: [{ key: "x", label: "X1", description: "d", defaultEmail: false }],
+    });
+    const m2 = defineModule({
+      name: "m2",
+      version: "1.0.0",
+      notificationDomains: [{ key: "x", label: "X2", description: "d", defaultEmail: false }],
+    });
+
+    const r = new ModuleRegistry();
+    r.register(m1);
+    r.register(m2);
+
+    expect(() => r.collectNotificationDomains()).toThrow(/Conflit de domaine de notification "x"/);
+  });
+});

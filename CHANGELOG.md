@@ -6,18 +6,30 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
-### Corrigé
+### Ajouté
 
-- **Dossiers d'accueil et parcours d'intégration accessibles au-delà de l'équipe dédiée**
-  (spec 054, issue #583) : la garde d'accès approximait « Admin/Secrétaire » par la permission
-  `members:manage`/`events:manage`, détenue aussi par tout Ministre et tout Responsable de
-  département quel que soit son département. Ces deux rôles n'y accèdent plus, sauf s'ils
-  appartiennent par ailleurs à l'équipe d'accueil (fonction de département `INTEGRATION`/`MSDP`).
-  La même faille existait sur la liste des comptes utilisateurs et la suppression d'un compte
-  préparé à l'avance (`/api/users`) : elle est corrigée de la même façon.
+- **Préférences de notifications par email** (spec 053, issue #581) : page « Mes notifications »
+  (`/profile/notifications`) où chaque utilisateur choisit, par domaine (planning, demandes,
+  suivi pastoral, intégration, comptabilité, salles, médias, compte et accès, emploi), s'il
+  reçoit des emails — avec un interrupteur général. Les réglages détaillés existants de l'emploi
+  restent inchangés et modifiables au même endroit.
 
 ### Modifié
 
+- **Décision d'envoyer un email désormais centralisée** : tous les sites de notification passent
+  par le même mécanisme (`src/lib/notifications.ts`), qui applique la préférence de
+  l'utilisateur avant tout envoi — plus aucune route ne décide seule d'envoyer un email. Un
+  domaine activé envoie désormais **toutes** ses notifications par email, y compris celles qui
+  n'étaient jusqu'ici que dans l'application (à défaut de gabarit dédié, un gabarit générique est
+  construit depuis le titre et le message de la notification).
+  ⚠️ **Conséquence à surveiller** : les domaines Planning et Emploi étant activés par défaut, des
+  notifications qui ne partaient jamais par email jusqu'ici (désignation ouverture/fermeture,
+  ajout/retrait de service, nouveau profil en recherche d'emploi, nouvelle mission/profil
+  freelance) commenceront à en envoyer aux utilisateurs qui n'ont pas encore réglé leurs
+  préférences — à vérifier en recette (volume) avant la mise en production.
+- Plusieurs sites envoyaient déjà un email inconditionnel à un compte lié sans jamais vérifier de
+  préférence (rappels de service, relance MSDP, planification de rendez-vous pastoral) —
+  corrigés au passage pour respecter le nouveau mécanisme comme tout le reste.
 - **Gestion des accès et des fiches STAR mise en cohérence avec le périmètre de responsabilité**
   (spec 054, issue #583) : un Ministre ou un Responsable de département ne peut plus, hors de son
   périmètre, repérer et fusionner des fiches en doublon, lier ou délier un compte à une fiche
@@ -31,6 +43,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   sans pouvoir les traiter, le peut désormais.
 - La Secrétaire peut désormais réserver une salle (`rooms:reserve`) et exporter les statistiques
   de discipolat comme l'Admin (`discipleship:export`).
+
+### Corrigé
+
+- **Dossiers d'accueil et parcours d'intégration accessibles au-delà de l'équipe dédiée**
+  (spec 054, issue #583) : la garde d'accès approximait « Admin/Secrétaire » par la permission
+  `members:manage`/`events:manage`, détenue aussi par tout Ministre et tout Responsable de
+  département quel que soit son département. Ces deux rôles n'y accèdent plus, sauf s'ils
+  appartiennent par ailleurs à l'équipe d'accueil (fonction de département `INTEGRATION`/`MSDP`).
+  La même faille existait sur la liste des comptes utilisateurs et la suppression d'un compte
+  préparé à l'avance (`/api/users`) : elle est corrigée de la même façon.
 
 ## [v1.24.0] - 2026-09-14
 
