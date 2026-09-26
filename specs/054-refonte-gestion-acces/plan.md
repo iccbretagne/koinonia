@@ -2,7 +2,7 @@
 
 - **Spec associée** : `./spec.md`
 - **Annexe** : `./audit-rbac.md` (grille RBAC, décisions D1–D7 validées le 2026-09-26)
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-09-26
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -24,10 +24,10 @@
 
 ## Approche générale
 
-Deux lots, livrés **dans l'ordre inverse de leur numéro** : le lot 2 (cohérence RBAC, dont les
-correctifs de sécurité) part en premier, puis le lot 1 (ergonomie). C'est ce qu'impose la
-décision de la spec (« livrer le correctif de sécurité sans attendre le chantier ergonomique »),
-et le lot 1 s'appuie sur la matrice corrigée (descriptions de rôles, `integration:manage`).
+Deux lots, développés **dans l'ordre inverse de leur numéro** : le lot 2 (cohérence RBAC, dont
+les correctifs de sécurité) d'abord, puis le lot 1 (ergonomie), qui s'appuie sur la matrice
+corrigée (descriptions de rôles, `integration:manage`). Les deux partent ensemble dans une seule
+PR finale vers `main` (voir « Livraison »).
 
 - **Lot 2 — RBAC** : on applique D1–D7. Chaque garde vérifie la permission qui nomme
   **l'action** (`users:manage`, `access:manage`, `integration:manage`), jamais une permission
@@ -199,9 +199,8 @@ Aucun nouvel endpoint : la fiche et la vue par rôle chargent leurs données cô
 
 ## Décisions & alternatives écartées
 
-- **Choix** : livrer le lot 2 avant le lot 1 — *Pourquoi* : c'est l'intention de la spec
-  (correctif de sécurité sans attendre) ; en plus, les descriptions de rôles du lot 1 décrivent
-  la matrice corrigée.
+- **Choix** : développer le lot 2 avant le lot 1 — *Pourquoi* : les descriptions de rôles du
+  lot 1 décrivent la matrice corrigée, et la fiche personne affiche `integration:manage`.
 - **Choix** : `integration:manage` plutôt qu'une liste de rôles dans la garde — *Pourquoi* :
   l'accès devient visible dans la grille et sur la fiche personne ; même modèle que `care`.
 - **Choix** : réutiliser `resolveMemberDepartmentScope` — *Pourquoi* : c'est déjà le périmètre des
@@ -250,18 +249,18 @@ Aucun nouvel endpoint : la fiche et la vue par rôle chargent leurs données cô
   au contrôle. ADR-0017 le signale.
 - **Découpage de `AccessClient.tsx`** : risque de régression sur l'onglet Demandes (approbation
   avec détection de doublons). Il est extrait sans être réécrit.
-- **Livraison en deux PR vers `main`** : voir « Point à arbitrer ».
+- **Correctif de sécurité retardé** : livré avec le lot 1 dans la PR finale (voir « Livraison »).
 
-## Point à arbitrer (constitution V)
+## Livraison (constitution V)
 
-La constitution prévoit, pour une feature longue, **une seule PR finale** `feat/X → main`. La
-décision de la spec (sortir le correctif de sécurité sans attendre l'ergonomie) demande **deux
-PR vers `main`**, une par lot, depuis la même base `feat/refonte-gestion-acces` :
+Stratégie multi-PR standard, **une seule PR finale vers `main`** (arbitrage du 2026-09-26) :
 
-1. `feat/acces-lot2-rbac` → `feat/refonte-gestion-acces` → **`main`** (spec, plan, lot 2) ;
-2. `feat/acces-lot1-ergonomie` (repartie de `main`) → `feat/refonte-gestion-acces` → **`main`**.
+1. `feat/acces-lot2-rbac` → `feat/refonte-gestion-acces` ;
+2. `feat/acces-lot1-ergonomie` (repartie de `feat/refonte-gestion-acces` après la fusion du
+   lot 2) → `feat/refonte-gestion-acces` ;
+3. `feat/refonte-gestion-acces` → `main`.
 
-L'alternative conforme (une seule PR finale) retarde le correctif de sécurité jusqu'à la fin du
+Conséquence assumée : le correctif de sécurité du lot 2 n'atteint la production qu'avec le
 lot 1.
 
 ## Stratégie de tests

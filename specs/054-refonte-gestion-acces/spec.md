@@ -175,8 +175,9 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
   médias…), utilisé par plusieurs modules.
 - **Découpage en deux lots** : lot 1 — ergonomie de l'écran (fiche par personne, vue par rôle),
   sans toucher au modèle de droits sous-jacent ; lot 2 — mise en cohérence du RBAC, dont la
-  correction du périmètre d'accès aux dossiers d'accueil. Choisi pour livrer le correctif de
-  sécurité sans attendre la fin du chantier ergonomique, plus long et plus visible côté interface.
+  correction du périmètre d'accès aux dossiers d'accueil. Les deux lots sont livrés ensemble, en
+  une seule fois (arbitrage du 2026-09-26) : le correctif de sécurité attend donc la fin du
+  chantier ergonomique.
 - **Accès ponctuel aux dossiers d'accueil** : hors périmètre. Une personne qui en aurait
   ponctuellement besoin sans appartenir à l'équipe dédiée passe par cette équipe ou par un
   administrateur, qui y accède déjà. Aucun mécanisme de demande d'accès temporaire n'est ajouté
