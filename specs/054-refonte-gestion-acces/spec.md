@@ -44,6 +44,13 @@ incohérence entre l'intention documentée et le comportement réel doit être c
 de cette refonte, puisqu'elle illustre exactement le problème de fond (un accès réel qui ne
 correspond à aucune vérité affichée nulle part).
 
+Ce cas n'est pas nécessairement isolé : le même raisonnement défaillant — une permission large
+accordée pour une raison légitime (par exemple gérer les membres, ou gérer les événements)
+réutilisée ailleurs comme raccourci pour « est administrateur » — peut exister à d'autres endroits
+de l'application sans que la documentation ne le signale. Cette refonte ne se limite donc pas au
+seul cas des dossiers d'accueil : tout endroit où ce même raisonnement défaillant est confirmé
+pendant les travaux doit être corrigé dans le même mouvement.
+
 Sans cette refonte, chaque nouveau rôle ou mécanisme d'accès aggrave la situation : la page
 devient chaque fois moins lisible, et l'écart entre ce que dit la documentation et ce que fait
 réellement l'application peut se reproduire ailleurs sans que personne ne le remarque.
@@ -119,6 +126,10 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
       documentation en vigueur — un Ministre ou un Responsable de département n'y accède plus par
       défaut du seul fait de son rôle général, sauf s'il appartient par ailleurs à l'équipe dédiée
       à l'accueil.
+- [ ] Tout autre endroit de l'application où une permission large est utilisée comme raccourci
+      pour un rôle administratif précis — sur-octroyant ainsi l'accès à des rôles qui détiennent
+      cette permission pour une autre raison légitime — est corrigé pour respecter la restriction
+      réellement documentée, dès qu'un tel cas est confirmé pendant les travaux.
 
 ## Hors périmètre
 
@@ -128,8 +139,9 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
 - Un moyen de demander ou d'accorder un accès temporaire aux dossiers d'accueil pour une personne
   qui n'appartient pas à l'équipe dédiée (voir décision ci-dessous).
 - Refonte visuelle globale de l'application : seul l'espace de gestion des accès est concerné.
-- Toute autre incohérence entre documentation et comportement réel qui serait découverte en cours
-  de refonte mais qui ne concerne pas la gestion des accès elle-même — à traiter séparément.
+- Toute incohérence entre documentation et comportement réel qui ne reproduit pas ce même
+  anti-motif (permission large utilisée comme raccourci de rôle administratif) — à traiter
+  séparément, même si elle est découverte en cours de refonte.
 
 ## Décisions
 
@@ -146,6 +158,11 @@ réellement l'application peut se reproduire ailleurs sans que personne ne le re
   ponctuellement besoin sans appartenir à l'équipe dédiée passe par cette équipe ou par un
   administrateur, qui y accède déjà. Aucun mécanisme de demande d'accès temporaire n'est ajouté
   par cette feature.
+- **Portée de la correction RBAC (lot 2)** : généralisée à tout endroit confirmé où le même
+  anti-motif est reproduit — pas seulement le cas des dossiers d'accueil déjà identifié. Choisi
+  pour ne pas livrer un correctif de sécurité partiel alors qu'un audit du RBAC actuel est mené en
+  parallèle de cette feature ; reste borné à ce seul anti-motif (voir « Hors périmètre »), pas à
+  toute incohérence documentation/comportement.
 
 ## Questions ouvertes
 
