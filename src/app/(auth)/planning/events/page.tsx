@@ -1,20 +1,21 @@
 import Link from "next/link";
+import { CalendarX2, ChevronRight, Church } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button-classes";
+import DateTile from "@/components/DateTile";
+import PeriodNav from "@/components/PeriodNav";
+import { eventTypeTone } from "@/components/event-type-tone";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusChip from "@/components/ui/StatusChip";
+import { getEventTypeLabel } from "@/lib/event-types";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { weekBounds, shiftWeek, currentWeekMonday, buildWeekEventsQuery } from "@/lib/week";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
 function formatTime(date: Date) {
-  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h");
 }
 
 function formatWeekLabel(start: Date, end: Date) {
@@ -31,7 +32,9 @@ export default async function StarWeeklyEventsPage({
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) {
+    return <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />;
+  }
   await requireChurchPermission("planning:view", churchId);
 
   const { week } = await searchParams;
@@ -46,60 +49,63 @@ export default async function StarWeeklyEventsPage({
   const prevWeek = shiftWeek(mondayISO, -1);
   const nextWeek = shiftWeek(mondayISO, 1);
 
-  return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Agenda de l&apos;église</h1>
-        <p className="text-sm text-gray-500 mt-1">Vue de la semaine</p>
-      </div>
+  const now = new Date();
+  // Prochain événement de la semaine affichée (donnée déjà chargée) : carte mise en avant.
+  const nextEvent = events.find((e) => e.date >= now);
 
-      {/* Navigation semaine */}
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href={`/planning/events?week=${prevWeek}`}
-          className="p-2 rounded-lg border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-          aria-label="Semaine précédente"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <h2 className="text-base font-semibold text-gray-800 capitalize">
-          {formatWeekLabel(start, end)}
-        </h2>
-        <Link
-          href={`/planning/events?week=${nextWeek}`}
-          className="p-2 rounded-lg border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-          aria-label="Semaine suivante"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Agenda de l'église" description="Les événements de l'église, semaine par semaine." />
+
+      <PeriodNav
+        label={formatWeekLabel(start, end)}
+        prev={{ href: `/planning/events?week=${prevWeek}` }}
+        next={{ href: `/planning/events?week=${nextWeek}` }}
+        prevLabel="Semaine précédente"
+        nextLabel="Semaine suivante"
+      />
 
       {events.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-          <p className="text-lg">Aucun événement cette semaine.</p>
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarX2}
+            title="Aucun événement cette semaine"
+            description="Passez à la semaine suivante pour voir les prochains événements."
+            action={
+              <Link href={`/planning/events?week=${nextWeek}`} className={buttonClasses("secondary")}>
+                Semaine suivante
+              </Link>
+            }
+          />
         </div>
       ) : (
-        <div className="space-y-2">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-lg border-2 border-gray-200 px-4 py-3"
-            >
-              <p className="font-medium text-gray-900">{event.title}</p>
-              <p className="text-xs text-gray-500 mt-0.5 capitalize">
-                {formatDate(event.date)}
-                <span className="mx-1.5">·</span>
-                {formatTime(event.date)}
-                <span className="mx-1.5">·</span>
-                <span className="font-semibold text-gray-700">{event.type}</span>
-              </p>
-            </div>
-          ))}
-        </div>
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
+          {events.map((event) => {
+            const isNext = event.id === nextEvent?.id;
+            const isPast = event.date < now;
+            return (
+              <li key={event.id} className={`border-t border-line first:border-t-0 ${isPast ? "opacity-60" : ""}`}>
+                <Link
+                  href={`/events/${event.id}/star-view`}
+                  className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                >
+                  <DateTile date={event.date} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">
+                      {formatTime(event.date)}
+                      {isNext && <span className="font-semibold text-brand-text"> · Prochain</span>}
+                    </p>
+                  </div>
+                  <StatusChip tone={eventTypeTone(event.type)} className="shrink-0">
+                    {getEventTypeLabel(event.type)}
+                  </StatusChip>
+                  <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getPreferencesView } from "@/lib/notification-preferences";
 import NotificationPreferencesClient from "./NotificationPreferencesClient";
 import JobSubscriptionClient from "./JobSubscriptionClient";
+import PageHeader from "@/components/ui/PageHeader";
 
 export default async function NotificationPreferencesPage() {
   const session = await auth();
@@ -11,8 +12,12 @@ export default async function NotificationPreferencesPage() {
   const view = await getPreferencesView(session.user.id!);
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Mes notifications</h1>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <PageHeader
+        eyebrow="Mon profil"
+        title="Mes notifications"
+        description="Les notifications restent visibles dans l'application ; choisissez ce que vous recevez aussi par email."
+      />
       <NotificationPreferencesClient initialView={view} />
       <JobSubscriptionClient />
     </div>

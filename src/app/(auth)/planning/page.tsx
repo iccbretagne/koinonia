@@ -1,102 +1,49 @@
+import Link from "next/link";
+import { Church, Link2 } from "lucide-react";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { listTeamEventsForMember } from "@/modules/planning";
-import MyPlanningView from "./MyPlanningView";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
 import { buttonClasses } from "@/components/ui/button-classes";
+import MyPlanningView from "./MyPlanningView";
+import { loadMyPlanning } from "./my-planning-data";
+
 export default async function MyPlanningPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) {
+    return <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />;
+  }
   await requireChurchPermission("planning:view", churchId);
 
-  // Resolve the linked member for this user + church
-  const link = await prisma.memberUserLink.findUnique({
-    where: { userId_churchId: { userId: session.user.id, churchId } },
-    select: { memberId: true, member: { select: { firstName: true, lastName: true } } },
-  });
+  const data = await loadMyPlanning(session.user.id, churchId);
 
-  if (!link) {
+  if (!data) {
     // User has planning:view but no member link — show empty state
     return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        <p className="text-lg font-medium">Aucun compte STAR lié</p>
-        <p className="text-sm mt-1">
-          Rendez-vous dans votre profil pour lier votre compte à un membre.
-        </p>
-        <a
-          href="/profile"
-          className={`${buttonClasses("primary", "sm")} mt-4`}
-        >
-          Gérer mon profil →
-        </a>
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Mon planning" />
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={Link2}
+            title="Aucun compte STAR lié"
+            description="Liez votre compte à votre fiche STAR depuis votre profil pour voir vos services."
+            action={
+              <Link href="/profile" className={buttonClasses("primary")}>
+                Gérer mon profil
+              </Link>
+            }
+          />
+        </div>
       </div>
     );
   }
 
-  const [plannings, taskAssignments, openingClosingAssignments, teamEvents] = await Promise.all([
-    prisma.planning.findMany({
-      where: {
-        memberId: link.memberId,
-        status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] },
-      },
-      include: {
-        eventDepartment: {
-          include: {
-            event: { select: { id: true, title: true, type: true, date: true } },
-            department: { select: { id: true, name: true } },
-          },
-        },
-      },
-      orderBy: { eventDepartment: { event: { date: "asc" } } },
-    }),
-    prisma.taskAssignment.findMany({
-      where: { memberId: link.memberId },
-      select: { eventId: true, task: { select: { name: true, departmentId: true } } },
-    }),
-    prisma.openingClosingAssignment.findMany({
-      where: { memberId: link.memberId },
-      include: { event: { select: { id: true, title: true, type: true, date: true } } },
-      orderBy: { event: { date: "asc" } },
-    }),
-    listTeamEventsForMember(churchId, link.memberId),
-  ]);
-
-  // Service d'ouverture/fermeture (spec 041) — pas de département propre, représenté comme une
-  // entrée de planning synthétique pour réutiliser l'affichage existant de `MyPlanningView`.
-  const openingClosingEntries = openingClosingAssignments.map((a) => ({
-    id: `opening-closing-${a.id}`,
-    status: "EN_SERVICE" as const,
-    eventDepartment: {
-      event: a.event,
-      department: {
-        id: "opening-closing",
-        name: a.slot === "OPENING" ? "Ouverture de l'église" : "Fermeture de l'église",
-      },
-    },
-  }));
-
-  // Map eventId_departmentId → task names (clé composite pour éviter les croisements)
-  const tasksByEvent = new Map<string, string[]>();
-  for (const ta of taskAssignments) {
-    const key = `${ta.eventId}_${ta.task.departmentId}`;
-    const arr = tasksByEvent.get(key) ?? [];
-    arr.push(ta.task.name);
-    tasksByEvent.set(key, arr);
-  }
-
-  const memberName = `${link.member.firstName} ${link.member.lastName}`;
+  const memberName = `${data.member.firstName} ${data.member.lastName}`;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Mon planning</h1>
-        <p className="text-sm text-gray-500 mt-1">{memberName}</p>
-      </div>
-      <MyPlanningView
-        plannings={[...plannings, ...openingClosingEntries]}
-        tasksByEvent={Object.fromEntries(tasksByEvent)}
-        teamEvents={teamEvents}
-      />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Mon planning" description={memberName} />
+      <MyPlanningView plannings={data.plannings} tasksByEvent={data.tasksByEvent} teamEvents={data.teamEvents} />
     </div>
   );
 }

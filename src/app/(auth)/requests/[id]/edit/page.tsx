@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
+import { Church } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
 import RequestForm, { type EditData } from "../../new/RequestForm";
 
 interface Props {
@@ -13,7 +16,9 @@ export default async function EditRequestPage({ params }: Props) {
 
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) {
+    return <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />;
+  }
   await requireChurchPermission("members:view", churchId);
 
   // Fetch the request with its announcement relation
@@ -142,8 +147,8 @@ export default async function EditRequestPage({ params }: Props) {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Modifier la demande</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Modifier la demande" description="Vous pouvez la modifier tant qu'elle est en attente." />
       <RequestForm
         churchId={churchId}
         canSubmitDemands={canSubmitDemands}

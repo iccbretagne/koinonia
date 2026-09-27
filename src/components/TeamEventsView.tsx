@@ -5,6 +5,15 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import Textarea from "@/components/ui/Textarea";
+import { useToast } from "@/components/ui/Toast";
+import { CalendarX2, MapPin, Pencil, Plus, Repeat, Trash2 } from "lucide-react";
+import DateTile from "./DateTile";
+import { ghostDangerClasses } from "./ghost-danger";
 
 interface TeamEventItem {
   id: string;
@@ -37,6 +46,7 @@ function toLocalDatetime(input: string | Date): string {
 }
 
 export default function TeamEventsView({ departmentId, departmentName, canEdit }: TeamEventsViewProps) {
+  const toast = useToast();
   const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
   const [events, setEvents] = useState<TeamEventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +64,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
   const [error, setError] = useState<string | null>(null);
   const [truncatedMessage, setTruncatedMessage] = useState<string | null>(null);
 
+  const [pendingDelete, setPendingDelete] = useState<TeamEventItem | null>(null);
   const [scopeStep, setScopeStep] = useState<"edit" | "delete" | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -148,6 +159,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
         );
       }
       closeModal();
+      toast.success(editing ? "Événement d'équipe modifié" : "Événement d'équipe créé");
       await fetchEvents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur");
@@ -165,8 +177,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       setModalOpen(true);
       return;
     }
-    if (!confirm(`Supprimer l'événement d'équipe « ${ev.title} » ?`)) return;
-    doDelete(ev, "occurrence");
+    setPendingDelete(ev);
   }
 
   async function doDelete(ev: TeamEventItem, scope: "occurrence" | "following") {
@@ -174,70 +185,88 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       const res = await fetch(`/api/team-events/${ev.id}?scope=${scope}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Erreur lors de la suppression");
+        toast.error(data.error || "Suppression impossible. Réessayez dans un instant.");
         return;
       }
+      toast.success("Événement d'équipe supprimé");
+      setPendingDelete(null);
       setScopeStep(null);
       setEditing(null);
       setModalOpen(false);
       await fetchEvents();
     } catch {
-      alert("Erreur réseau");
+      toast.error("Suppression impossible. Vérifiez votre connexion.");
     }
   }
 
-  if (loading) {
-    return <div className="p-8 text-center text-gray-400">Chargement des événements d&apos;équipe...</div>;
-  }
+  const periodOptions = [
+    { value: "upcoming" as const, label: "À venir" },
+    { value: "past" as const, label: "Passés" },
+  ];
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Événements d&apos;équipe{departmentName ? ` — ${departmentName}` : ""}
-        </h2>
-        {canEdit && (
+    <section aria-labelledby="team-events-title" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="team-events-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
+            Événements d&apos;équipe{departmentName ? ` — ${departmentName}` : ""}
+          </h2>
+          <p className="text-[13px] leading-[18px] text-ink-muted">
+            Répétitions, réunions et formations, visibles par les STAR dans « Mon planning ».
+          </p>
+        </div>
+        {canEdit && !(period === "upcoming" && !loading && events.length === 0) && (
           <Button size="sm" onClick={openCreate}>
-            + Nouvel événement d&apos;équipe
+            <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Nouvel événement
           </Button>
         )}
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setPeriod("upcoming")}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
-            period === "upcoming"
-              ? "bg-icc-violet text-white border-icc-violet"
-              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-          }`}
-        >
-          À venir
-        </button>
-        <button
-          onClick={() => setPeriod("past")}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
-            period === "past"
-              ? "bg-icc-violet text-white border-icc-violet"
-              : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-          }`}
-        >
-          Passés
-        </button>
+      <div role="group" aria-label="Période" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+        {periodOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={period === option.value}
+            onClick={() => setPeriod(option.value)}
+            className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
+              focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
+                period === option.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
+              }`}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
-      {truncatedMessage && (
-        <div className="mb-4 p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
-          {truncatedMessage}
-        </div>
-      )}
+      {truncatedMessage && <Alert tone="warning">{truncatedMessage}</Alert>}
 
-      {events.length === 0 ? (
-        <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-          {period === "upcoming" ? "Aucun événement d'équipe à venir" : "Aucun événement d'équipe passé"}
+      {loading ? (
+        <SkeletonList rows={3} label="Chargement des événements d'équipe…" />
+      ) : events.length === 0 ? (
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarX2}
+            title={period === "upcoming" ? "Aucun événement d'équipe à venir" : "Aucun événement d'équipe passé"}
+            description={
+              period === "upcoming" && canEdit
+                ? "Planifiez une répétition, une réunion ou une formation pour votre équipe."
+                : undefined
+            }
+            action={
+              period === "upcoming" && canEdit ? (
+                <Button onClick={openCreate}>
+                  <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                  Nouvel événement
+                </Button>
+              ) : undefined
+            }
+            size="sm"
+          />
         </div>
       ) : (
-        <div className="space-y-2">
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
           {events.map((ev) => {
             const start = new Date(ev.startsAt);
             const end = new Date(ev.endsAt);
@@ -245,39 +274,55 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             const timeLabel = `${start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
 
             return (
-              <div
+              <li
                 key={ev.id}
-                className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 bg-white border border-gray-200 rounded-lg px-4 py-3"
+                className="flex flex-col gap-3 border-t border-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-center"
               >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-medium text-gray-800 text-sm">{ev.title}</span>
-                    {ev.seriesId && (
-                      <span className="text-icc-violet text-sm" title="Fait partie d'une série récurrente">
-                        ↻
-                      </span>
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  <DateTile date={start} />
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-ink">
+                      {ev.title}
+                      {ev.seriesId && (
+                        <span className="inline-flex items-center gap-1 text-[13px] font-normal text-ink-muted" title="Fait partie d'une série récurrente">
+                          <Repeat aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+                          <span className="sr-only sm:not-sr-only">Récurrent</span>
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[13px] leading-[18px] text-ink-muted">
+                      {dateLabel} · {timeLabel}
+                    </p>
+                    {ev.location && (
+                      <p className="inline-flex items-center gap-1 text-[13px] leading-[18px] text-ink-muted">
+                        <MapPin aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+                        {ev.location}
+                      </p>
                     )}
+                    {ev.description && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">{ev.description}</p>}
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {dateLabel} · {timeLabel}
-                    {ev.location ? ` · ${ev.location}` : ""}
-                  </p>
-                  {ev.description && <p className="text-xs text-gray-500 mt-1">{ev.description}</p>}
                 </div>
                 {canEdit && (
-                  <div className="flex gap-1 shrink-0 justify-end">
-                    <Button variant="edit" size="sm" onClick={() => openEdit(ev)}>
+                  <div className="flex shrink-0 justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
+                      <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Modifier
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => handleDeleteClick(ev)}>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(ev)}
+                      className={ghostDangerClasses}
+                      aria-label={`Supprimer « ${ev.title} »`}
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
                       Supprimer
-                    </Button>
+                    </button>
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
       <Modal
@@ -295,29 +340,25 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       >
         {scopeStep === "edit" ? (
           <div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="mb-6 text-[15px] leading-[22px] text-ink-muted">
               Cet événement fait partie d&apos;une série. Que souhaitez-vous modifier ?
             </p>
-            {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+            {error && <Alert tone="danger" className="mb-4">{error}</Alert>}
             <div className="flex flex-col gap-3">
               <Button onClick={() => doSave("occurrence")} disabled={saving} variant="secondary">
-                {saving ? "Enregistrement..." : "Cette occurrence uniquement"}
+                {saving ? "Enregistrement…" : "Cette occurrence uniquement"}
               </Button>
               <Button onClick={() => doSave("following")} disabled={saving}>
-                {saving ? "Enregistrement..." : "Cette occurrence et les suivantes"}
+                {saving ? "Enregistrement…" : "Cette occurrence et les suivantes"}
               </Button>
-              <button
-                type="button"
-                onClick={() => setScopeStep(null)}
-                className="text-sm text-gray-500 hover:text-gray-700 underline mt-1"
-              >
+              <Button type="button" variant="ghost" onClick={() => setScopeStep(null)}>
                 Retour au formulaire
-              </button>
+              </Button>
             </div>
           </div>
         ) : scopeStep === "delete" && editing ? (
           <div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="mb-6 text-[15px] leading-[22px] text-ink-muted">
               Cet événement fait partie d&apos;une série. Que souhaitez-vous supprimer ?
             </p>
             <div className="flex flex-col gap-3">
@@ -327,13 +368,9 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
               <Button onClick={() => doDelete(editing, "following")} variant="danger">
                 Cette occurrence et les suivantes
               </Button>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-sm text-gray-500 hover:text-gray-700 underline mt-1"
-              >
+              <Button type="button" variant="ghost" onClick={closeModal}>
                 Annuler
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -356,23 +393,20 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
               />
             </div>
             <Input
-              label="Lieu (optionnel)"
+              label="Lieu (facultatif)"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Description (optionnel)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="block w-full px-3 py-2.5 md:py-2 border-2 border-gray-300 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
-              />
-            </div>
+            <Textarea
+              label="Description (facultatif)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
             {!editing && (
               <>
                 <Select
-                  label="Récurrence (optionnel)"
+                  label="Récurrence (facultatif)"
                   value={recurrenceRule}
                   onChange={(e) => setRecurrenceRule(e.target.value)}
                   options={RECURRENCE_OPTIONS}
@@ -389,18 +423,28 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
                 )}
               </>
             )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <Alert tone="danger">{error}</Alert>}
             <div className="flex flex-col sm:flex-row gap-2 justify-end">
               <Button type="button" variant="secondary" onClick={closeModal} className="w-full sm:w-auto">
                 Annuler
               </Button>
               <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-                {saving ? "Enregistrement..." : editing ? "Enregistrer" : "Créer"}
+                {saving ? "Enregistrement…" : editing ? "Enregistrer" : "Créer l'événement"}
               </Button>
             </div>
           </form>
         )}
       </Modal>
-    </div>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="Supprimer cet événement d'équipe ?"
+        message={`« ${pendingDelete?.title ?? ""} » sera retiré du planning des STAR du département.`}
+        confirmLabel="Supprimer l'événement"
+        variant="danger"
+        onConfirm={() => pendingDelete && doDelete(pendingDelete, "occurrence")}
+        onCancel={() => setPendingDelete(null)}
+      />
+    </section>
   );
 }

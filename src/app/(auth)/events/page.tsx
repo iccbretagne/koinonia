@@ -7,6 +7,9 @@ import Link from "next/link";
 // rendue côté serveur.
 import { buttonClasses } from "@/components/ui/button-classes";
 import CalendarClient from "./CalendarClient";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import { Church, Settings2 } from "lucide-react";
 
 export default async function ChurchAgendaPage() {
   const session = await auth();
@@ -15,9 +18,11 @@ export default async function ChurchAgendaPage() {
   const currentChurchId = await getCurrentChurchId(session);
   if (!currentChurchId) {
     return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        Vous n&apos;êtes assigné à aucune église.
-      </div>
+      <EmptyState
+        icon={Church}
+        title="Aucune église"
+        description="Vous n'êtes rattaché à aucune église. Contactez un administrateur."
+      />
     );
   }
 
@@ -42,20 +47,19 @@ export default async function ChurchAgendaPage() {
   const canManageEvents = session.user.isSuperAdmin || userPermissions.has("events:manage");
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agenda de l&apos;église</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Calendrier, multi-mois ou liste — au choix.
-          </p>
-        </div>
-        {canManageEvents && (
-          <Link href="/admin/events" className={buttonClasses("primary")}>
-            Gérer les événements
-          </Link>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Agenda de l'église"
+        description="Calendrier, plusieurs mois ou liste, au choix."
+        actions={
+          canManageEvents ? (
+            <Link href="/admin/events" className={buttonClasses("secondary")}>
+              <Settings2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Gérer les événements
+            </Link>
+          ) : undefined
+        }
+      />
       <CalendarClient
         events={events.map((e) => ({
           ...e,

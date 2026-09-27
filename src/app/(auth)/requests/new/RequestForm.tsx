@@ -3,8 +3,22 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  CalendarHeart,
+  ChevronLeft,
+  ChevronRight,
+  Megaphone,
+  Palette,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
 import Input from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
+import { controlClasses, fieldLabelClasses, textareaClasses } from "@/components/ui/field-classes";
+import { REQUEST_TYPE_ICON } from "../request-display";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "@/lib/event-types";
 import { ROLE_LABELS } from "@/lib/roles";
 
@@ -48,13 +62,67 @@ interface Props {
   readonly editData?: EditData;
 }
 
-const DEMAND_TYPES: { key: DemandType; label: string; icon: string }[] = [
-  { key: "AJOUT_EVENEMENT", label: "Ajout événement", icon: "📅" },
-  { key: "MODIFICATION_EVENEMENT", label: "Modification événement", icon: "✏️" },
-  { key: "ANNULATION_EVENEMENT", label: "Annulation événement", icon: "❌" },
-  { key: "MODIFICATION_PLANNING", label: "Modification planning", icon: "📋" },
-  { key: "DEMANDE_ACCES", label: "Demande d'accès", icon: "🔑" },
+const DEMAND_TYPES: { key: DemandType; label: string; icon: LucideIcon }[] = [
+  { key: "AJOUT_EVENEMENT", label: "Ajouter un événement", icon: REQUEST_TYPE_ICON.AJOUT_EVENEMENT },
+  { key: "MODIFICATION_EVENEMENT", label: "Modifier un événement", icon: REQUEST_TYPE_ICON.MODIFICATION_EVENEMENT },
+  { key: "ANNULATION_EVENEMENT", label: "Annuler un événement", icon: REQUEST_TYPE_ICON.ANNULATION_EVENEMENT },
+  { key: "MODIFICATION_PLANNING", label: "Modifier les départements en service", icon: REQUEST_TYPE_ICON.MODIFICATION_PLANNING },
+  { key: "DEMANDE_ACCES", label: "Demander un accès", icon: REQUEST_TYPE_ICON.DEMANDE_ACCES },
 ];
+
+const fieldControl = controlClasses();
+const selectControl = `${controlClasses()} cursor-pointer`;
+const listBox = "flex max-h-64 flex-col gap-0.5 overflow-y-auto rounded-control border border-line p-2";
+const checkRow = "flex min-h-11 cursor-pointer items-center gap-3 rounded-chip px-2 text-[15px] leading-[22px] text-ink hover:bg-surface-sunken";
+
+/** Tuile de choix de l'étape 1 (bouton ou lien), carte entière cliquable. */
+function ChoiceTile({
+  icon: Icon,
+  title,
+  description,
+  onClick,
+  href,
+}: {
+  readonly icon: LucideIcon;
+  readonly title: string;
+  readonly description?: string;
+  readonly onClick?: () => void;
+  readonly href?: string;
+}) {
+  const className =
+    "flex min-h-16 w-full items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 text-left shadow-card transition-colors duration-120 " +
+    "hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  const content = (
+    <>
+      <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
+        <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold leading-[22px] text-ink">{title}</span>
+        {description && <span className="block text-[13px] leading-[18px] text-ink-muted">{description}</span>}
+      </span>
+      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+    </>
+  );
+  return href ? (
+    <Link href={href} className={className}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+}
+
+function ChoiceGroup({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle">{title}</h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+    </section>
+  );
+}
 
 const DEMAND_TYPE_KEYS = DEMAND_TYPES.map((d) => d.key) as string[];
 
@@ -186,6 +254,7 @@ export default function RequestForm({
   editData,
 }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const isEditMode = !!editData;
 
   const init = editData ? initFromEditData(editData) : null;
@@ -422,6 +491,7 @@ export default function RequestForm({
         return;
       }
 
+      toast.success(isEditMode ? "Demande modifiée" : "Demande envoyée");
       router.push("/requests");
     } catch {
       setError("Une erreur est survenue.");
@@ -433,109 +503,63 @@ export default function RequestForm({
   // Step 1: Choose category (skipped in edit mode)
   if (!category) {
     return (
-      <div className="max-w-2xl">
-        <p className="text-sm text-gray-600 mb-6">Que souhaitez-vous faire ?</p>
-
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Communication</h3>
-        <button
-          onClick={() => setCategory("announcement")}
-          className="w-full text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors mb-6"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📢</span>
-            <div>
-              <p className="font-semibold text-gray-900">Diffuser une annonce</p>
-              <p className="text-xs text-gray-500">Demander la diffusion interne et/ou sur les réseaux sociaux</p>
-            </div>
-          </div>
-        </button>
-
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Production média</h3>
-        <button
-          onClick={() => setCategory("visual")}
-          className="w-full text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors mb-6"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎨</span>
-            <div>
-              <p className="font-semibold text-gray-900">Demander un visuel</p>
-              <p className="text-xs text-gray-500">Commande directe à la Production Média, sans lien avec une annonce</p>
-            </div>
-          </div>
-        </button>
+      <div className="flex max-w-3xl flex-col gap-6">
+        <ChoiceGroup title="Communication et médias">
+          <ChoiceTile
+            icon={Megaphone}
+            title="Diffuser une annonce"
+            description="En interne et/ou sur les réseaux sociaux"
+            onClick={() => setCategory("announcement")}
+          />
+          <ChoiceTile
+            icon={Palette}
+            title="Demander un visuel"
+            description="Commande directe à la Production Média"
+            onClick={() => setCategory("visual")}
+          />
+        </ChoiceGroup>
 
         {canSubmitDemands && (
           <>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-              Événements &amp; planning
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ChoiceGroup title="Événements et planning">
               {EVENT_DEMANDS.map((dt) => (
-                <button
+                <ChoiceTile
                   key={dt.key}
+                  icon={dt.icon}
+                  title={dt.label}
                   onClick={() => {
                     setCategory("demand");
                     setDemandType(dt.key);
                   }}
-                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{dt.icon}</span>
-                    <p className="font-medium text-gray-900 text-sm">{dt.label}</p>
-                  </div>
-                </button>
+                />
               ))}
-            </div>
+            </ChoiceGroup>
 
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Accès &amp; habilitations
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ChoiceGroup title="Accès et habilitations">
               {ACCESS_DEMANDS.map((dt) => (
-                <button
+                <ChoiceTile
                   key={dt.key}
+                  icon={dt.icon}
+                  title={dt.label}
                   onClick={() => {
                     setCategory("demand");
                     setDemandType(dt.key);
                   }}
-                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{dt.icon}</span>
-                    <p className="font-medium text-gray-900 text-sm">{dt.label}</p>
-                  </div>
-                </button>
+                />
               ))}
-            </div>
+            </ChoiceGroup>
           </>
         )}
 
         {(showCareTile || showAccountingTile) && (
-          <>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Accompagnement &amp; finances
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {showCareTile && (
-                <Link
-                  href="/care/request?from=requests"
-                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors flex items-center gap-3"
-                >
-                  <span className="text-xl">🗓️</span>
-                  <p className="font-medium text-gray-900 text-sm">Rendez-vous pastoral</p>
-                </Link>
-              )}
-              {showAccountingTile && (
-                <Link
-                  href="/accounting/requests/new?from=requests"
-                  className="text-left bg-white rounded-lg shadow p-4 border-2 border-transparent hover:border-icc-violet/40 transition-colors flex items-center gap-3"
-                >
-                  <span className="text-xl">💶</span>
-                  <p className="font-medium text-gray-900 text-sm">Demande comptable</p>
-                </Link>
-              )}
-            </div>
-          </>
+          <ChoiceGroup title="Accompagnement et finances">
+            {showCareTile && (
+              <ChoiceTile icon={CalendarHeart} title="Rendez-vous pastoral" href="/care/request?from=requests" />
+            )}
+            {showAccountingTile && (
+              <ChoiceTile icon={Wallet} title="Demande comptable" href="/accounting/requests/new?from=requests" />
+            )}
+          </ChoiceGroup>
         )}
       </div>
     );
@@ -543,16 +567,13 @@ export default function RequestForm({
 
   // Step 2: Form
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+    <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-5">
       {/* Retour au choix du type de demande — en édition, il n'y a pas d'étape 1 à regagner */}
       {!isEditMode && (
-        <button
-          type="button"
-          onClick={reset}
-          className="text-sm text-gray-400 hover:text-icc-violet transition-colors"
-        >
-          ← Nouvelle demande
-        </button>
+        <Button type="button" variant="ghost" size="sm" onClick={reset} className="-ml-3 w-fit">
+          <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Changer de type de demande
+        </Button>
       )}
 
       {category === "announcement" && (
@@ -564,70 +585,64 @@ export default function RequestForm({
             required
             placeholder="Ex : Concert de louange"
           />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Contenu</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Contenu</label>
             <textarea
               value={annContent}
               onChange={(e) => setAnnContent(e.target.value)}
               required
               rows={4}
-              placeholder="Texte de l'annonce..."
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              placeholder="Texte de l'annonce…"
+              className={textareaClasses()}
             />
           </div>
           <Input
-            label="Date de l'événement (optionnel)"
+            label="Date de l'événement (facultatif)"
             type="date"
             value={annEventDate}
             onChange={(e) => setAnnEventDate(e.target.value)}
           />
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
+          <div className="flex flex-wrap gap-x-6">
+            <label className={checkRow}>
+              <Checkbox
                 checked={annChannelInterne}
                 onChange={(e) => {
                   setAnnChannelInterne(e.target.checked);
                   if (!e.target.checked) setAnnTargetEventIds([]);
                 }}
-                className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
               />
               Diffusion interne
             </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
+            <label className={checkRow}>
+              <Checkbox
                 checked={annChannelExterne}
                 onChange={(e) => setAnnChannelExterne(e.target.checked)}
-                className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
               />
               Réseaux sociaux
             </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
+            <label className={checkRow}>
+              <Checkbox
                 checked={annIsUrgent}
                 onChange={(e) => setAnnIsUrgent(e.target.checked)}
-                className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
               />
               Urgent
             </label>
           </div>
           {annChannelInterne && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="flex flex-col gap-2">
+              <label className={fieldLabelClasses}>
                 Dimanches de diffusion
                 {annTargetEventIds.length > 0 && (
-                  <span className="ml-2 text-xs font-normal text-icc-violet">
+                  <span className="ml-2 text-xs font-normal text-brand-text">
                     {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
                   </span>
                 )}
               </label>
               {announcementEvents.length === 0 ? (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <Alert tone="warning">
                   Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
-                  <Link href="/admin/events" className="underline">Configurer les événements</Link>
-                </p>
+                  <Link href="/admin/events" className="font-semibold text-brand-text underline">Configurer les événements</Link>
+                </Alert>
               ) : (
                 <>
                   <div className="flex flex-wrap gap-2">
@@ -639,10 +654,11 @@ export default function RequestForm({
                           key={e.id}
                           type="button"
                           onClick={() => toggleEvent(e.id)}
-                          className={`px-3 py-1.5 rounded-full text-sm border-2 transition-colors ${
+                          aria-pressed={selected}
+                          className={`min-h-10 rounded-full border px-3 text-sm font-semibold transition-colors duration-120 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
                             selected
-                              ? "bg-icc-violet text-white border-icc-violet"
-                              : "bg-white text-gray-700 border-gray-300 hover:border-icc-violet/50"
+                              ? "border-brand bg-brand-soft text-brand-text"
+                              : "border-control-line bg-surface text-ink-muted hover:border-brand hover:text-ink"
                           }`}
                         >
                           {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
@@ -652,18 +668,18 @@ export default function RequestForm({
                       );
                     })}
                   </div>
-                  <p className="text-xs text-gray-500">Idéal : 2 à 3 dimanches.</p>
+                  <p className="text-[13px] leading-[18px] text-ink-muted">Idéal : 2 à 3 dimanches.</p>
                 </>
               )}
             </div>
           )}
           {!isEditMode && sourceOptions.length > 1 && (
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Département</label>
+            <div className="flex flex-col gap-1.5">
+              <label className={fieldLabelClasses}>Département</label>
               <select
                 value={annSourceId}
                 onChange={(e) => setAnnSourceId(e.target.value)}
-                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+                className={selectControl}
               >
                 {sourceOptions.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -683,22 +699,22 @@ export default function RequestForm({
             required
             placeholder="Ex : Bannière formation leaders"
           />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Brief</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Brief</label>
             <textarea
               value={visualBrief}
               onChange={(e) => setVisualBrief(e.target.value)}
               rows={4}
-              placeholder="Description du besoin, couleurs, texte à inclure..."
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              placeholder="Description du besoin, couleurs, texte à inclure…"
+              className={textareaClasses()}
             />
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Format</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Format</label>
             <select
               value={visualFormat}
               onChange={(e) => setVisualFormat(e.target.value)}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Sélectionner —</option>
               {VISUAL_FORMATS.map((f) => (
@@ -707,26 +723,23 @@ export default function RequestForm({
             </select>
           </div>
           <Input
-            label="Deadline souhaitée"
+            label="Échéance souhaitée"
             type="date"
             value={visualDeadline}
             onChange={(e) => setVisualDeadline(e.target.value)}
           />
           {visualDeadline && new Date(visualDeadline + "T23:59:59").getTime() < Date.now() + 48 * 60 * 60 * 1000 && (
-            <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-300 rounded-lg text-sm text-amber-800">
-              <span className="shrink-0 mt-0.5">⚠️</span>
-              <span>
-                <strong>Délai inférieur à 48h</strong> — le traitement de cette demande n&apos;est pas garanti et reste à la discrétion de la Production Média.
-              </span>
-            </div>
+            <Alert tone="warning" title="Délai inférieur à 48 h.">
+              Le traitement de cette demande n&apos;est pas garanti et reste à la discrétion de la Production Média.
+            </Alert>
           )}
           {sourceOptions.length > 1 && (
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Département</label>
+            <div className="flex flex-col gap-1.5">
+              <label className={fieldLabelClasses}>Département</label>
               <select
                 value={visualSourceId}
                 onChange={(e) => setVisualSourceId(e.target.value)}
-                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+                className={selectControl}
               >
                 {sourceOptions.map((s) => (
                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -746,12 +759,12 @@ export default function RequestForm({
             required
             placeholder="Ex : Culte de louange"
           />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Type</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Type</label>
             <select
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               {EVENT_TYPES.map((t) => (
                 <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
@@ -771,8 +784,8 @@ export default function RequestForm({
             }}
             required
           />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Délai avant l&apos;événement</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Délai avant l&apos;événement</label>
             <select
               value={deadlineOffset}
               onChange={(e) => {
@@ -784,7 +797,7 @@ export default function RequestForm({
                   setPlanningDeadline("");
                 }
               }}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               {DEADLINE_OFFSETS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -793,27 +806,26 @@ export default function RequestForm({
           </div>
           {!deadlineOffset && (
             <Input
-              label="Deadline planning (optionnel)"
+              label="Échéance du planning (facultatif)"
               type="datetime-local"
               value={planningDeadline}
               onChange={(e) => setPlanningDeadline(e.target.value)}
             />
           )}
           {deadlineOffset && planningDeadline && (
-            <p className="text-xs text-gray-500">
-              Deadline calculée : {new Date(planningDeadline).toLocaleString("fr-FR")}
+            <p className="text-[13px] leading-[18px] text-ink-muted">
+              Échéance calculée : {new Date(planningDeadline).toLocaleString("fr-FR")}
             </p>
           )}
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Départements en service</label>
-            <p className="text-xs text-gray-500 mb-2">
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Départements en service</label>
+            <p className="text-[13px] leading-[18px] text-ink-muted">
               Cochez les départements qui doivent participer à cet événement.
             </p>
-            <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+            <div className={listBox}>
               {departments.map((d) => (
-                <label key={d.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                <label key={d.id} className={checkRow}>
+                  <Checkbox
                     checked={eventDeptIds.includes(d.id)}
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -822,28 +834,27 @@ export default function RequestForm({
                         setEventDeptIds((prev) => prev.filter((id) => id !== d.id));
                       }
                     }}
-                    className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
                   />
                   <span>
                     {d.name}
-                    <span className="text-gray-400 ml-1">({d.ministryName})</span>
+                    <span className="ml-1 text-ink-muted">({d.ministryName})</span>
                   </span>
                 </label>
               ))}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-[13px] leading-[18px] text-ink-muted">
               {eventDeptIds.length} département{eventDeptIds.length !== 1 ? "s" : ""} sélectionné{eventDeptIds.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Récurrence</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Récurrence</label>
             <select
               value={recurrenceRule}
               onChange={(e) => {
                 setRecurrenceRule(e.target.value);
                 if (!e.target.value) setRecurrenceEnd("");
               }}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               {RECURRENCE_RULES.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -864,8 +875,8 @@ export default function RequestForm({
 
       {demandType === "MODIFICATION_EVENEMENT" && (
         <>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Événement à modifier</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Événement à modifier</label>
             <select
               value={selectedEventId}
               onChange={(e) => {
@@ -885,7 +896,7 @@ export default function RequestForm({
                 }
               }}
               required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Sélectionner —</option>
               {events.map((e) => (
@@ -899,14 +910,14 @@ export default function RequestForm({
             label="Nouveau titre (laisser vide si inchangé)"
             value={eventTitle}
             onChange={(e) => setEventTitle(e.target.value)}
-            placeholder="Nouveau titre..."
+            placeholder="Nouveau titre…"
           />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Nouveau type</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Nouveau type</label>
             <select
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
-              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Inchangé —</option>
               {EVENT_TYPES.map((t) => (
@@ -914,22 +925,22 @@ export default function RequestForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Nouvelle date</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Nouvelle date</label>
             <input
               type="datetime-local"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
-              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+              className={fieldControl}
             />
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Deadline planning</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Échéance du planning</label>
             <input
               type="datetime-local"
               value={planningDeadline}
               onChange={(e) => setPlanningDeadline(e.target.value)}
-              className="block w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet"
+              className={fieldControl}
             />
           </div>
         </>
@@ -937,13 +948,13 @@ export default function RequestForm({
 
       {demandType === "ANNULATION_EVENEMENT" && (
         <>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Événement à annuler</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Événement à annuler</label>
             <select
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
               required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Sélectionner —</option>
               {events.map((e) => (
@@ -953,14 +964,14 @@ export default function RequestForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Raison</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Raison</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
               rows={3}
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={textareaClasses()}
             />
           </div>
         </>
@@ -968,8 +979,8 @@ export default function RequestForm({
 
       {demandType === "MODIFICATION_PLANNING" && (
         <>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Événement</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Événement</label>
             <select
               value={selectedEventId}
               onChange={(e) => {
@@ -979,7 +990,7 @@ export default function RequestForm({
                 else setPlanningDeptIds([]);
               }}
               required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Sélectionner —</option>
               {events.map((e) => (
@@ -990,21 +1001,20 @@ export default function RequestForm({
             </select>
           </div>
           {selectedEventId && (
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="flex flex-col gap-1.5">
+              <label className={fieldLabelClasses}>
                 Départements assignés
                 {loadingEventDepts && (
-                  <span className="ml-2 text-xs text-gray-400 font-normal">Chargement...</span>
+                  <span className="ml-2 text-xs font-normal text-ink-muted">Chargement…</span>
                 )}
               </label>
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-[13px] leading-[18px] text-ink-muted">
                 Cochez les départements qui doivent participer à cet événement.
               </p>
-              <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+              <div className={listBox}>
                 {departments.map((d) => (
-                  <label key={d.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
+                  <label key={d.id} className={checkRow}>
+                    <Checkbox
                       checked={planningDeptIds.includes(d.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -1013,16 +1023,15 @@ export default function RequestForm({
                           setPlanningDeptIds((prev) => prev.filter((id) => id !== d.id));
                         }
                       }}
-                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
                     />
                     <span>
                       {d.name}
-                      <span className="text-gray-400 ml-1">({d.ministryName})</span>
+                      <span className="ml-1 text-ink-muted">({d.ministryName})</span>
                     </span>
                   </label>
                 ))}
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-[13px] leading-[18px] text-ink-muted">
                 {planningDeptIds.length} département{planningDeptIds.length !== 1 ? "s" : ""} sélectionné{planningDeptIds.length !== 1 ? "s" : ""}
               </p>
             </div>
@@ -1032,13 +1041,13 @@ export default function RequestForm({
 
       {demandType === "DEMANDE_ACCES" && (
         <>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Utilisateur</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Utilisateur</label>
             <select
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               <option value="">— Sélectionner —</option>
               {users.map((u) => (
@@ -1046,13 +1055,13 @@ export default function RequestForm({
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Rôle</label>
+          <div className="flex flex-col gap-1.5">
+            <label className={fieldLabelClasses}>Rôle</label>
             <select
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
               required
-              className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+              className={selectControl}
             >
               {ROLES_FOR_ACCESS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -1060,13 +1069,13 @@ export default function RequestForm({
             </select>
           </div>
           {targetRole === "MINISTER" && (
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Ministère</label>
+            <div className="flex flex-col gap-1.5">
+              <label className={fieldLabelClasses}>Ministère</label>
               <select
                 value={targetMinistryId}
                 onChange={(e) => setTargetMinistryId(e.target.value)}
                 required
-                className="block w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+                className={selectControl}
               >
                 <option value="">— Sélectionner —</option>
                 {ministries.map((m) => (
@@ -1076,13 +1085,12 @@ export default function RequestForm({
             </div>
           )}
           {targetRole === "DEPARTMENT_HEAD" && (
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Départements</label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border-2 border-gray-200 rounded-lg p-3">
+            <div className="flex flex-col gap-1.5">
+              <label className={fieldLabelClasses}>Départements</label>
+              <div className={`${listBox} max-h-48`}>
                 {departments.map((d) => (
-                  <label key={d.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
+                  <label key={d.id} className={checkRow}>
+                    <Checkbox
                       checked={targetDeptIds.includes(d.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -1091,7 +1099,6 @@ export default function RequestForm({
                           setTargetDeptIds((prev) => prev.filter((id) => id !== d.id));
                         }
                       }}
-                      className="rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
                     />
                     {d.name} ({d.ministryName})
                   </label>
@@ -1102,11 +1109,11 @@ export default function RequestForm({
         </>
       )}
 
-      {error && <p className="text-sm text-icc-rouge">{error}</p>}
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Envoi..." : isEditMode ? "Enregistrer" : "Soumettre"}
+          {submitting ? "Envoi…" : isEditMode ? "Enregistrer" : "Envoyer la demande"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push("/requests") : reset()}>
           Annuler

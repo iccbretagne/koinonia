@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
+import Select from "@/components/ui/Select";
 
 interface Event {
   id: string;
@@ -102,52 +103,32 @@ export default function EventSelector({
 
   if (events.length === 0) {
     return (
-      <p className="text-sm text-gray-400 italic" data-tour="event-selector">
-        Aucun événement disponible
+      <p className="text-[15px] leading-[22px] text-ink-muted" data-tour="event-selector">
+        Aucun événement n&apos;est encore prévu pour ce département.
       </p>
     );
   }
 
   return (
-    <div data-tour="event-selector" className="flex flex-wrap gap-3 items-end">
-      {/* Month select */}
-      <div className="flex-1 min-w-[160px]">
-        <label className="block mb-1 text-sm font-medium text-gray-700">
-          Mois
-        </label>
-        <select
-          value={selectedMonth}
-          onChange={(e) => handleMonthChange(e.target.value)}
-          className="w-full px-3 py-2.5 md:py-2 border-2 border-gray-300 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet capitalize"
-        >
-          <option value="" disabled>Choisir le mois</option>
-          {months.map((ym) => (
-            <option key={ym} value={ym} className="capitalize">
-              {formatMonthLabel(ym)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Event select */}
-      <div className="flex-[2] min-w-[220px]">
-        <label className="block mb-1 text-sm font-medium text-gray-700">
-          Événement
-        </label>
-        <select
-          value={selectedEventId || ""}
-          onChange={(e) => handleEventChange(e.target.value)}
-          disabled={monthEvents.length === 0}
-          className="w-full px-3 py-2.5 md:py-2 border-2 border-gray-300 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <option value="" disabled>Choisir un événement</option>
-          {monthEvents.map((event) => (
-            <option key={event.id} value={event.id}>
-              {formatEventLabel(event)}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div data-tour="event-selector" className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(14rem,2fr)]">
+      <Select
+        label="Mois"
+        value={selectedMonth}
+        onChange={(e) => handleMonthChange(e.target.value)}
+        options={months.map((ym) => ({ value: ym, label: capitalize(formatMonthLabel(ym)) }))}
+      />
+      <Select
+        label="Événement"
+        value={selectedEventId || ""}
+        onChange={(e) => handleEventChange(e.target.value)}
+        disabled={monthEvents.length === 0}
+        placeholder={selectedEventId ? undefined : "Choisir un événement"}
+        options={monthEvents.map((event) => ({ value: event.id, label: formatEventLabel(event) }))}
+      />
     </div>
   );
+}
+
+function capitalize(label: string): string {
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }

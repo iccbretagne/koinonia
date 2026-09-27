@@ -2,54 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Inbox, Pencil, Plus, SearchX } from "lucide-react";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import EmptyState from "@/components/ui/EmptyState";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import StatusChip from "@/components/ui/StatusChip";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { useToast } from "@/components/ui/Toast";
+import { REQUEST_TYPE_LABEL as TYPE_LABEL, requestStatus, requestTypeIcon } from "./request-display";
 import { formatAssignedDepts, type DeptFunction } from "@/lib/department-functions";
 
 const ANNOUNCEMENT_TYPES = ["VISUEL", "DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"];
-
-const TYPE_LABEL: Record<string, string> = {
-  VISUEL: "Visuel",
-  DIFFUSION_INTERNE: "Diffusion interne",
-  RESEAUX_SOCIAUX: "Réseaux sociaux",
-  AJOUT_EVENEMENT: "Ajout événement",
-  MODIFICATION_EVENEMENT: "Modification événement",
-  ANNULATION_EVENEMENT: "Annulation événement",
-  MODIFICATION_PLANNING: "Modification planning",
-  DEMANDE_ACCES: "Demande d'accès",
-};
-
-const TYPE_ICON: Record<string, string> = {
-  VISUEL: "🎨",
-  DIFFUSION_INTERNE: "📢",
-  RESEAUX_SOCIAUX: "📣",
-  AJOUT_EVENEMENT: "📅",
-  MODIFICATION_EVENEMENT: "✏️",
-  ANNULATION_EVENEMENT: "❌",
-  MODIFICATION_PLANNING: "📋",
-  DEMANDE_ACCES: "🔑",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  EN_ATTENTE: "En attente",
-  EN_COURS: "En cours",
-  APPROUVEE: "Approuvée",
-  EXECUTEE: "Exécutée",
-  LIVRE: "Livré",
-  REFUSEE: "Refusée",
-  ANNULE: "Annulé",
-  ERREUR: "Erreur",
-};
-
-const STATUS_COLOR: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-100 text-amber-800",
-  EN_COURS: "bg-blue-100 text-blue-800",
-  APPROUVEE: "bg-green-100 text-green-800",
-  EXECUTEE: "bg-green-100 text-green-800",
-  LIVRE: "bg-green-100 text-green-800",
-  REFUSEE: "bg-red-100 text-red-700",
-  ANNULE: "bg-gray-100 text-gray-500",
-  ERREUR: "bg-red-100 text-red-700",
-};
 
 type FilterCategory = "all" | "announcements" | "demands";
 
@@ -90,8 +56,9 @@ interface Props {
 }
 
 function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly onUpdated: (updated: Partial<RequestItem>) => void }) {
+  const toast = useToast();
   const [cancelling, setCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const announcementContent = req.announcement?.content ?? null;
@@ -100,11 +67,11 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
 
   const source = req.department?.name ?? req.ministry?.name ?? null;
   const isPending = req.status === "EN_ATTENTE";
+  const status = requestStatus(req.status);
+  const TypeIcon = requestTypeIcon(req.type);
 
   async function handleCancel() {
-    if (!confirm("Annuler définitivement cette demande ?")) return;
     setCancelling(true);
-    setCancelError(null);
     try {
       const res = await fetch(`/api/requests/${req.id}`, {
         method: "PATCH",
@@ -113,31 +80,33 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? "Erreur lors de l'annulation");
+        throw new Error(err?.error ?? "Annulation impossible. Réessayez dans un instant.");
       }
       onUpdated({ status: "ANNULE" });
+      setConfirmOpen(false);
+      toast.success("Demande annulée");
     } catch (e) {
       setCancelling(false);
-      setCancelError((e as Error).message);
+      setConfirmOpen(false);
+      toast.error((e as Error).message);
     }
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-5 border border-gray-100">
-      <div className="flex items-start justify-between gap-4 mb-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm">{TYPE_ICON[req.type] ?? "📄"}</span>
-            <span className="text-xs font-medium text-gray-500 uppercase">
-              {TYPE_LABEL[req.type] ?? req.type}
-            </span>
-          </div>
-          <h3 className="font-semibold text-gray-900 mt-1">
+    <li className="flex flex-col gap-2 border-t border-line px-4 py-3 first:border-t-0">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
+          <TypeIcon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.06em] text-ink-subtle">
+            {TYPE_LABEL[req.type] ?? req.type}
+          </p>
+          <h3 className="break-words font-sans text-[15px] font-semibold leading-[22px] text-ink">
             {req.announcement ? req.announcement.title : req.title}
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {source && <>{source} · </>}→{" "}
-            {formatAssignedDepts(req.assignedFunction, req.assignedDepts)} ·{" "}
+          <p className="text-[13px] leading-[18px] text-ink-muted">
+            {source && <>{source} · </>}pour {formatAssignedDepts(req.assignedFunction, req.assignedDepts)} ·{" "}
             {new Date(req.submittedAt).toLocaleDateString("fr-FR", {
               day: "2-digit",
               month: "short",
@@ -145,90 +114,77 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
             })}
           </p>
         </div>
-        <span
-          className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-            STATUS_COLOR[req.status] ?? "bg-gray-100 text-gray-500"
-          }`}
-        >
-          {STATUS_LABEL[req.status] ?? req.status}
-        </span>
+        <StatusChip tone={status.tone} className="shrink-0">{status.label}</StatusChip>
       </div>
 
-      {/* Announcement content */}
-      {announcementContent && (
-        <div className="mt-2">
-          <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
-            {isLong && !expanded
-              ? `${announcementContent.slice(0, PREVIEW_LENGTH).trimEnd()}…`
-              : announcementContent}
-          </p>
-          {isLong && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="mt-1 text-xs text-icc-violet hover:underline"
-            >
-              {expanded ? "Voir moins" : "Voir plus"}
-            </button>
-          )}
-        </div>
-      )}
+      <div className="flex flex-col gap-2 sm:pl-[52px]">
+        {announcementContent && (
+          <div>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-muted">
+              {isLong && !expanded
+                ? `${announcementContent.slice(0, PREVIEW_LENGTH).trimEnd()}…`
+                : announcementContent}
+            </p>
+            {isLong && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+                className="mt-1 text-[13px] font-semibold text-brand-text hover:underline"
+              >
+                {expanded ? "Voir moins" : "Voir plus"}
+              </button>
+            )}
+          </div>
+        )}
 
-      {/* Child requests (visuals under announcements) */}
-      {req.childRequests.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {req.childRequests.map((child) => (
-            <div key={child.id} className="flex items-center gap-2 text-xs text-gray-500">
-              <span
-                className={`inline-block w-2 h-2 rounded-full ${
-                  child.status === "EN_ATTENTE"
-                    ? "bg-amber-400"
-                    : child.status === "EN_COURS"
-                      ? "bg-blue-400"
-                      : child.status === "LIVRE"
-                        ? "bg-green-400"
-                        : "bg-gray-300"
-                }`}
-              />
-              <span>{TYPE_LABEL[child.type] ?? child.type}</span>
-              <span className="text-gray-400">
-                → {formatAssignedDepts(child.assignedFunction, child.assignedDepts)}
-              </span>
-              <span className="text-gray-400">{STATUS_LABEL[child.status] ?? child.status}</span>
-            </div>
-          ))}
-        </div>
-      )}
+        {req.childRequests.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {req.childRequests.map((child) => {
+              const childStatus = requestStatus(child.status);
+              return (
+                <li key={child.id} className="flex flex-wrap items-center gap-2 text-[13px] text-ink-muted">
+                  <StatusChip tone={childStatus.tone}>{childStatus.label}</StatusChip>
+                  <span className="font-semibold text-ink">{TYPE_LABEL[child.type] ?? child.type}</span>
+                  <span>pour {formatAssignedDepts(child.assignedFunction, child.assignedDepts)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      {/* Review notes for refused/error */}
-      {(req.status === "REFUSEE" || req.status === "ERREUR") && req.reviewNotes && (
-        <p className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-          Note : {req.reviewNotes}
-        </p>
-      )}
-      {req.status === "ERREUR" && req.executionError && (
-        <p className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-          Erreur : {req.executionError}
-        </p>
-      )}
+        {(req.status === "REFUSEE" || req.status === "ERREUR") && req.reviewNotes && (
+          <Alert tone="danger" title="Note :">{req.reviewNotes}</Alert>
+        )}
+        {req.status === "ERREUR" && req.executionError && (
+          <Alert tone="danger" title="Erreur :">{req.executionError}</Alert>
+        )}
 
-      {/* Owner actions for pending requests */}
-      {isPending && (
-        <div className="mt-3 flex gap-2">
-          <Link href={`/requests/${req.id}/edit`}>
-            <Button variant="secondary" size="sm">
+        {isPending && (
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/requests/${req.id}/edit`} className={buttonClasses("secondary", "sm")}>
+              <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
               Modifier
+            </Link>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmOpen(true)} disabled={cancelling}>
+              {cancelling ? "Annulation…" : "Annuler la demande"}
             </Button>
-          </Link>
-          <Button variant="danger" size="sm" onClick={handleCancel} disabled={cancelling}>
-            {cancelling ? "Annulation…" : "Annuler la demande"}
-          </Button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {cancelError && (
-        <p className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{cancelError}</p>
-      )}
-    </div>
+      <ConfirmModal
+        open={confirmOpen}
+        title="Annuler cette demande ?"
+        message="La demande sera définitivement annulée : il faudra en créer une nouvelle pour la relancer."
+        confirmLabel="Annuler la demande"
+        confirmingLabel="Annulation…"
+        variant="danger"
+        confirming={cancelling}
+        onConfirm={handleCancel}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </li>
   );
 }
 
@@ -278,94 +234,110 @@ export default function RequestsList({ requests }: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        <p className="text-lg">Aucune demande soumise.</p>
-        <p className="text-sm mt-1">Cliquez sur &quot;+ Nouvelle demande&quot; pour commencer.</p>
+      <div className="rounded-card border border-line bg-surface">
+        <EmptyState
+          icon={Inbox}
+          title="Aucune demande envoyée"
+          description="Annonce, visuel, événement ou accès : faites votre première demande."
+          action={
+            <Link href="/requests/new" className={buttonClasses("primary")}>
+              <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Nouvelle demande
+            </Link>
+          }
+        />
       </div>
     );
   }
 
+  const categories: { value: FilterCategory; label: string }[] = [
+    { value: "all", label: "Tout" },
+    { value: "announcements", label: "Annonces" },
+    { value: "demands", label: "Demandes" },
+  ];
+
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden text-sm">
-          {(["all", "announcements", "demands"] as const).map((cat) => (
+    <section aria-label="Demandes envoyées" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+        <div role="group" aria-label="Catégorie" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+          {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3 py-1.5 font-medium transition-colors ${
-                category === cat
-                  ? "bg-icc-violet text-white"
-                  : "text-gray-600 hover:bg-gray-50"
-              }`}
+              key={cat.value}
+              type="button"
+              aria-pressed={category === cat.value}
+              onClick={() => setCategory(cat.value)}
+              className={`min-h-10 rounded-[7px] px-4 font-display text-sm font-semibold transition-colors duration-120
+                focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
+                  category === cat.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
+                }`}
             >
-              {cat === "all" ? "Tout" : cat === "announcements" ? "Annonces" : "Demandes"}
+              {cat.label}
             </button>
           ))}
         </div>
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
-        >
-          <option value="all">Tous types</option>
-          {types.map((t) => (
-            <option key={t} value={t}>
-              {TYPE_LABEL[t] ?? t}
-            </option>
-          ))}
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
-        >
-          <option value="all">Tous statuts</option>
-          {statuses.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABEL[s] ?? s}
-            </option>
-          ))}
-        </select>
-        <div className="flex-1 min-w-[12rem]">
-          <input
+        <div className="grid grid-cols-2 gap-3 md:contents">
+          <div className="md:w-48">
+            <Select
+              label=""
+              aria-label="Type"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              options={[{ value: "all", label: "Tous types" }, ...types.map((t) => ({ value: t, label: TYPE_LABEL[t] ?? t }))]}
+            />
+          </div>
+          <div className="md:w-44">
+            <Select
+              label=""
+              aria-label="Statut"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[{ value: "all", label: "Tous statuts" }, ...statuses.map((st) => ({ value: st, label: requestStatus(st).label }))]}
+            />
+          </div>
+        </div>
+        <div className="min-w-[12rem] flex-1">
+          <Input
             type="search"
+            aria-label="Rechercher"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un titre, un département..."
-            className="w-full text-sm border-2 border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-icc-violet"
+            placeholder="Rechercher un titre, un département…"
           />
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] text-ink-muted" aria-live="polite">
+          {filtered.length} demande{filtered.length > 1 ? "s" : ""}
+          {hasFilters && ` sur ${items.length}`}
+        </p>
         {hasFilters && (
-          <button
-            onClick={resetFilters}
-            className="text-sm text-gray-400 hover:text-gray-600 whitespace-nowrap"
-          >
-            Réinitialiser
-          </button>
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
+            Effacer les filtres
+          </Button>
         )}
       </div>
 
-      <p className="text-sm text-gray-500 mb-3">
-        {filtered.length} demande{filtered.length > 1 ? "s" : ""}
-        {hasFilters && ` sur ${items.length}`}
-      </p>
-
-      <div className="space-y-4">
-        {filtered.map((req) => (
-          <RequestCard
-            key={req.id}
-            req={req}
-            onUpdated={(patch) => handleUpdated(req.id, patch)}
+      {filtered.length === 0 ? (
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={SearchX}
+            title="Aucune demande pour ces filtres"
+            action={
+              <Button variant="secondary" onClick={resetFilters}>
+                Effacer les filtres
+              </Button>
+            }
+            size="sm"
           />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          <p>Aucune demande ne correspond aux filtres.</p>
         </div>
+      ) : (
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
+          {filtered.map((req) => (
+            <RequestCard key={req.id} req={req} onUpdated={(patch) => handleUpdated(req.id, patch)} />
+          ))}
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

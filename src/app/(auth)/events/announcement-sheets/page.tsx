@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { CalendarX2, ChevronRight, Church, FileCheck2, FileClock } from "lucide-react";
+import DateTile from "@/components/DateTile";
+import PeriodNav from "@/components/PeriodNav";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusChip from "@/components/ui/StatusChip";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canReadAnnouncementSheet } from "@/modules/planning";
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-}
 
 function parseMonth(param: string | undefined): Date {
   if (param && /^\d{4}-\d{2}$/.test(param)) {
@@ -27,7 +29,9 @@ export default async function AnnouncementSheetsPage({
 }) {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  if (!churchId) {
+    return <EmptyState icon={Church} title="Aucune église sélectionnée" description="Choisissez une église dans le menu." />;
+  }
   await requireChurchPermission("planning:view", churchId);
 
   if (!(await canReadAnnouncementSheet(session, churchId))) {
@@ -52,57 +56,42 @@ export default async function AnnouncementSheetsPage({
   });
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Trame des annonces</h1>
-        <p className="text-sm text-gray-500 mt-1">Cultes du mois sélectionné</p>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Trame des annonces" description="La trame déposée pour chaque culte du mois." />
 
-      <div className="flex items-center justify-between mb-4">
-        <Link
-          href={`/events/announcement-sheets?month=${monthKey(prevMonth)}`}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Mois précédent
-        </Link>
-        <span className="text-sm font-semibold text-gray-900 capitalize">
-          {monthStart.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-        </span>
-        <Link
-          href={`/events/announcement-sheets?month=${monthKey(nextMonth)}`}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50"
-        >
-          Mois suivant
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
+      <PeriodNav
+        label={monthStart.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+        prev={{ href: `/events/announcement-sheets?month=${monthKey(prevMonth)}` }}
+        next={{ href: `/events/announcement-sheets?month=${monthKey(nextMonth)}` }}
+        prevLabel="Mois précédent"
+        nextLabel="Mois suivant"
+      />
 
       {events.length === 0 ? (
-        <p className="text-gray-400 italic">Aucun événement ce mois-ci.</p>
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState icon={CalendarX2} title="Aucun événement ce mois-ci" description="Changez de mois pour consulter d'autres cultes." />
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
           {events.map((event) => (
-            <li key={event.id}>
+            <li key={event.id} className="border-t border-line first:border-t-0">
               <Link
                 href={`/events/${event.id}/star-view`}
-                className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
               >
-                <div>
-                  <p className="font-medium text-gray-900">{event.title}</p>
-                  <p className="text-sm text-gray-500 capitalize">{formatDate(event.date)}</p>
+                <DateTile date={event.date} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                  <p className="truncate text-[13px] leading-[18px] text-ink-muted">
+                    {event.announcementSheet ? event.announcementSheet.filename : "Pas encore disponible"}
+                  </p>
                 </div>
                 {event.announcementSheet ? (
-                  <span className="text-sm text-icc-violet font-medium shrink-0">
-                    {event.announcementSheet.filename}
-                  </span>
+                  <StatusChip tone="success" icon={FileCheck2} className="shrink-0">Déposée</StatusChip>
                 ) : (
-                  <span className="text-sm italic text-gray-400 shrink-0">Pas encore disponible</span>
+                  <StatusChip tone="neutral" icon={FileClock} className="shrink-0">En attente</StatusChip>
                 )}
+                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
               </Link>
             </li>
           ))}

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Button from "@/components/ui/Button";
+import { X } from "lucide-react";
+import Alert from "@/components/ui/Alert";
+import { useToast } from "@/components/ui/Toast";
+import { controlClasses } from "@/components/ui/field-classes";
 
 interface Member {
   id: string;
@@ -34,17 +37,42 @@ const SLOT_LABELS: Record<"OPENING" | "CLOSING", string> = {
   CLOSING: "Fermeture",
 };
 
-function SlotList({ label, assignments }: { readonly label: string; readonly assignments: Assignment[] }) {
+function SlotList({
+  label,
+  assignments,
+  onRemove,
+  removingId,
+}: {
+  readonly label: string;
+  readonly assignments: Assignment[];
+  readonly onRemove?: (id: string) => void;
+  readonly removingId?: string | null;
+}) {
   return (
     <div>
-      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</h4>
+      <h4 className="mb-1 font-display text-[11px] font-bold uppercase tracking-[0.08em] text-ink-muted">{label}</h4>
       {assignments.length === 0 ? (
-        <span className="text-sm italic text-gray-400">Non pourvu</span>
+        <span className="text-sm italic text-ink-muted">Non pourvu</span>
       ) : (
-        <ul className="space-y-1">
+        <ul className="flex flex-wrap gap-1.5">
           {assignments.map((a) => (
-            <li key={a.id} className="text-sm text-gray-700">
+            <li
+              key={a.id}
+              className="inline-flex min-h-9 items-center gap-1 rounded-full bg-surface-sunken pl-3 pr-1 text-sm font-medium text-ink"
+            >
               {a.member.firstName} {a.member.lastName}
+              {onRemove && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(a.id)}
+                  disabled={removingId === a.id}
+                  aria-label={`Retirer ${a.member.firstName} ${a.member.lastName}`}
+                  title="Retirer"
+                  className="grid size-7 place-items-center rounded-full text-ink-muted hover:bg-danger-soft hover:text-danger focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-45"
+                >
+                  <X aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -54,6 +82,7 @@ function SlotList({ label, assignments }: { readonly label: string; readonly ass
 }
 
 export default function OpeningClosingManager({ eventId, data, onChange, embedded = false }: Props) {
+  const toast = useToast();
   const [slot, setSlot] = useState<"OPENING" | "CLOSING">("OPENING");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Member[]>([]);
@@ -86,7 +115,7 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
         body: JSON.stringify({ slot, memberId }),
       });
       const body = await res.json();
-      if (!res.ok) { alert(body.error || "Erreur"); return; }
+      if (!res.ok) { toast.error(body.error || "Ajout impossible. Réessayez dans un instant."); return; }
       const assignment = { id: body.assignment.id, member: body.assignment.member };
       onChange({
         ...data,
@@ -95,13 +124,14 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
           assignment,
         ],
       });
+      toast.success(`${assignment.member.firstName} ${assignment.member.lastName} ajouté${slot === "OPENING" ? " à l'ouverture" : " à la fermeture"}`);
       if (body.absenceWarning) {
         setWarning(`Attention : ${assignment.member.firstName} ${assignment.member.lastName} a déclaré une absence à cette date.`);
       }
       setQuery("");
       setResults([]);
     } catch {
-      alert("Erreur");
+      toast.error("Opération impossible. Vérifiez votre connexion.");
     } finally {
       setAdding(false);
     }
@@ -111,75 +141,70 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
     setRemoving(id);
     try {
       const res = await fetch(`/api/events/${eventId}/opening-closing/${id}`, { method: "DELETE" });
-      if (!res.ok) { const body = await res.json(); alert(body.error || "Erreur"); return; }
+      if (!res.ok) { const body = await res.json(); toast.error(body.error || "Retrait impossible. Réessayez dans un instant."); return; }
       const key = currentSlot === "OPENING" ? "opening" : "closing";
       onChange({ ...data, [key]: data[key].filter((a) => a.id !== id) });
+      toast.success("Personne retirée");
     } catch {
-      alert("Erreur");
+      toast.error("Opération impossible. Vérifiez votre connexion.");
     } finally {
       setRemoving(null);
     }
   }
 
   return (
-    <div className={embedded ? "print:hidden" : "mb-6 p-4 bg-white rounded-lg shadow print:hidden"}>
-      <h2 className={embedded ? "text-sm font-semibold text-gray-700 mb-3" : "text-lg font-semibold text-gray-900 mb-3"}>
+    <div className={embedded ? "print:hidden" : "mb-6 rounded-card border border-line bg-surface p-4 print:hidden"}>
+      <h2 className={embedded ? "mb-3 font-display text-sm font-semibold text-ink" : "mb-3 font-display text-lg font-semibold text-ink"}>
         Ouverture / Fermeture
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {(["OPENING", "CLOSING"] as const).map((s) => (
-          <div key={s}>
-            <SlotList label={SLOT_LABELS[s]} assignments={data[s === "OPENING" ? "opening" : "closing"]} />
-            {data.canManage && data[s === "OPENING" ? "opening" : "closing"].map((a) => (
-              <Button
-                key={a.id}
-                variant="danger"
-                size="sm"
-                onClick={() => removeAssignment(a.id, s)}
-                disabled={removing === a.id}
-                className="mt-1"
-              >
-                Retirer {a.member.firstName} {a.member.lastName}
-              </Button>
-            ))}
-          </div>
+          <SlotList
+            key={s}
+            label={SLOT_LABELS[s]}
+            assignments={data[s === "OPENING" ? "opening" : "closing"]}
+            onRemove={data.canManage ? (id) => removeAssignment(id, s) : undefined}
+            removingId={removing}
+          />
         ))}
       </div>
 
       {data.canManage && (
-        <div className="border-t border-gray-100 pt-4">
-          {warning && (
-            <p className="mb-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              {warning}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-3 border-t border-line pt-4">
+          {warning && <Alert tone="warning">{warning}</Alert>}
+          <div className="flex flex-wrap items-start gap-2">
+            <label className="sr-only" htmlFor={`oc-slot-${eventId}`}>Créneau</label>
             <select
+              id={`oc-slot-${eventId}`}
               value={slot}
               onChange={(e) => setSlot(e.target.value as "OPENING" | "CLOSING")}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className={`${controlClasses()} w-auto cursor-pointer`}
             >
               <option value="OPENING">Ouverture</option>
               <option value="CLOSING">Fermeture</option>
             </select>
-            <div className="relative flex-1 min-w-[180px]">
+            <div className="relative min-w-[180px] flex-1">
+              <label className="sr-only" htmlFor={`oc-search-${eventId}`}>Rechercher un membre</label>
               <input
-                type="text"
+                id={`oc-search-${eventId}`}
+                type="search"
                 value={query}
                 onChange={(e) => search(e.target.value)}
-                placeholder="Rechercher un membre..."
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                placeholder="Rechercher un membre…"
+                className={controlClasses()}
                 disabled={adding}
+                autoComplete="off"
               />
               {results.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-control border border-line bg-surface py-1 shadow-float">
                   {results.map((m) => (
                     <li key={m.id}>
                       <button
+                        type="button"
                         onClick={() => addMember(m.id)}
                         disabled={adding}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+                        className="flex min-h-11 w-full items-center px-3 text-left text-[15px] text-ink hover:bg-surface-sunken focus-visible:bg-surface-sunken focus-visible:outline-none disabled:opacity-45"
                       >
                         {m.firstName} {m.lastName}
                       </button>
@@ -188,8 +213,8 @@ export default function OpeningClosingManager({ eventId, data, onChange, embedde
                 </ul>
               )}
             </div>
-            {searching && <span className="text-xs text-gray-400">Recherche...</span>}
           </div>
+          {searching && <span className="text-xs text-ink-muted">Recherche…</span>}
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@ export const NOYAU_ROUTES: NoyauRoutes = {
   // "/admin" (exact) est un simple redirecteur d'atterrissage vers /admin/churches ou
   // /admin/users selon les droits — il ne rend rien de propre à un module, donc noyau. Les
   // sous-sections (/admin/churches, /admin/departments, …) restent déclarées par leur module.
-  pages: ["/", "/no-access", "/module-absent", "/admin"],
+  pages: ["/", "/no-access", "/module-absent", "/admin", "/accueil"],
   api: ["/api/auth", "/api/health", "/api/current-church", "/api/user", "/api/cron"],
 };
 

@@ -1,8 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { CalendarDays, CalendarRange, ChartColumn, ClipboardList, ListChecks, Users, type LucideIcon } from "lucide-react";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
 
+const VIEWS: { view: string; label: string; icon: LucideIcon }[] = [
+  { view: "event", label: "Saisie", icon: ClipboardList },
+  { view: "week", label: "Semaine", icon: CalendarRange },
+  { view: "month", label: "Mois", icon: CalendarDays },
+  { view: "tasks", label: "Tâches", icon: ListChecks },
+  { view: "team", label: "Équipe", icon: Users },
+];
+
+function TabLabel({ icon: Icon, label }: { readonly icon: LucideIcon; readonly label: string }) {
+  return (
+    <>
+      <Icon aria-hidden="true" className="size-4" strokeWidth={1.75} />
+      {label}
+    </>
+  );
+}
+
+/**
+ * Vues du planning d'un département (saisie, semaine, mois, tâches, équipe, statistiques) :
+ * onglets de navigation (`Tabs`), la vue active vit dans l'URL (`?view=`).
+ */
 export default function DashboardActions() {
   const searchParams = useSearchParams();
   const currentView = searchParams.get("view") || "event";
@@ -15,82 +37,22 @@ export default function DashboardActions() {
     return `/dashboard?${params.toString()}`;
   }
 
+  const tabs: TabItem[] = [
+    ...VIEWS.map(({ view, label, icon }) => ({
+      href: buildHref(view),
+      label: <TabLabel icon={icon} label={label} />,
+      active: currentView === view,
+    })),
+    {
+      href: dept ? `/dashboard/stats?dept=${dept}` : "/dashboard/stats",
+      label: <TabLabel icon={ChartColumn} label="Statistiques" />,
+      active: false,
+    },
+  ];
+
   return (
-    <div data-tour="dashboard-actions" className="flex flex-wrap gap-2 md:gap-3">
-      <Link
-        href={buildHref("event")}
-        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
-          currentView === "event"
-            ? "bg-icc-violet text-white border-icc-violet"
-            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-        Saisie
-      </Link>
-      <Link
-        href={buildHref("week")}
-        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
-          currentView === "week"
-            ? "bg-icc-violet text-white border-icc-violet"
-            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Vue semaine
-      </Link>
-      <Link
-        href={buildHref("month")}
-        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
-          currentView === "month"
-            ? "bg-icc-violet text-white border-icc-violet"
-            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Vue mois
-      </Link>
-      <Link
-        href={buildHref("tasks")}
-        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
-          currentView === "tasks"
-            ? "bg-icc-violet text-white border-icc-violet"
-            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-        Tâches
-      </Link>
-      <Link
-        href={buildHref("team")}
-        className={`inline-flex items-center gap-2 px-3 py-2 md:px-4 text-sm font-medium rounded-lg border transition-colors ${
-          currentView === "team"
-            ? "bg-icc-violet text-white border-icc-violet"
-            : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1a4 4 0 10-4-4 4 4 0 004 4zm6-1a4 4 0 10-4-4" />
-        </svg>
-        Équipe
-      </Link>
-      <Link
-        href={dept ? `/dashboard/stats?dept=${dept}` : "/dashboard/stats"}
-        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-colors bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        Statistiques
-      </Link>
+    <div data-tour="dashboard-actions">
+      <Tabs tabs={tabs} ariaLabel="Vues du planning" />
     </div>
   );
 }

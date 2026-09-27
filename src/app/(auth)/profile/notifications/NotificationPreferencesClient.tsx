@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
+import { useToast } from "@/components/ui/Toast";
 
 interface DomainView {
   key: string;
@@ -17,6 +20,7 @@ interface PreferencesView {
 }
 
 export default function NotificationPreferencesClient({ initialView }: { readonly initialView: PreferencesView }) {
+  const toast = useToast();
   const [emailEnabled, setEmailEnabled] = useState(initialView.emailEnabled);
   const [domains, setDomains] = useState(initialView.domains);
   const [saving, setSaving] = useState(false);
@@ -49,63 +53,71 @@ export default function NotificationPreferencesClient({ initialView }: { readonl
         setEmailEnabled(data.emailEnabled);
         setDomains(data.domains);
         setSaved(true);
+        toast.success("Préférences enregistrées");
+      } else {
+        toast.error("Enregistrement impossible. Réessayez dans un instant.");
       }
+    } catch {
+      toast.error("Enregistrement impossible. Vérifiez votre connexion.");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="bg-white rounded-lg border-2 border-gray-200 p-6 mb-6">
-      {!initialView.hasEmail && (
-        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-          Aucune adresse email sur votre compte : ces réglages resteront sans effet tant qu&apos;aucune
-          adresse n&apos;est disponible.
+    <section aria-labelledby="email-prefs-title" className="flex flex-col gap-3">
+      <h2 id="email-prefs-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
+        Emails
+      </h2>
+      <div className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">
+        {!initialView.hasEmail && (
+          <Alert tone="warning">
+            Aucune adresse email sur votre compte : ces réglages resteront sans effet tant qu&apos;aucune
+            adresse n&apos;est disponible.
+          </Alert>
+        )}
+
+        <label className="flex cursor-pointer items-start gap-3 border-b border-line pb-4">
+          <Checkbox
+            className="mt-0.5"
+            checked={emailEnabled}
+            onChange={(e) => toggleGlobal(e.target.checked)}
+          />
+          <span>
+            <span className="block text-[15px] font-semibold leading-[22px] text-ink">Recevoir des emails de Koinonia</span>
+            <span className="block text-[13px] leading-[18px] text-ink-muted">
+              Coupe tous les emails ci-dessous ; les notifications dans l&apos;application continuent.
+            </span>
+          </span>
+        </label>
+
+        <div className="flex flex-col gap-1">
+          {domains.map((domain) => (
+            <label
+              key={domain.key}
+              className={`flex min-h-11 items-start gap-3 rounded-chip py-1.5 ${emailEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-45"}`}
+            >
+              <Checkbox
+                className="mt-0.5"
+                checked={domain.enabled}
+                onChange={(e) => toggleDomain(domain.key, e.target.checked)}
+                disabled={!emailEnabled}
+              />
+              <span>
+                <span className="block text-[15px] font-medium leading-[22px] text-ink">{domain.label}</span>
+                <span className="block text-[13px] leading-[18px] text-ink-muted">{domain.description}</span>
+              </span>
+            </label>
+          ))}
         </div>
-      )}
 
-      <label className="flex items-center gap-3 cursor-pointer mb-5 pb-5 border-b border-gray-100">
-        <input
-          type="checkbox"
-          checked={emailEnabled}
-          onChange={(e) => toggleGlobal(e.target.checked)}
-          className="w-4 h-4 text-icc-violet rounded accent-icc-violet"
-        />
-        <div>
-          <span className="text-sm font-medium text-gray-900">Recevoir des emails de Koinonia</span>
-          <p className="text-xs text-gray-400">
-            Coupe tous les emails ci-dessous ; les notifications dans l&apos;app continuent.
-          </p>
+        <div className="flex items-center gap-3">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+          {saved && <span className="text-sm text-success">Préférences enregistrées.</span>}
         </div>
-      </label>
-
-      <div className="space-y-3 mb-5">
-        {domains.map((domain) => (
-          <label
-            key={domain.key}
-            className={`flex items-center gap-3 ${emailEnabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          >
-            <input
-              type="checkbox"
-              checked={domain.enabled}
-              onChange={(e) => toggleDomain(domain.key, e.target.checked)}
-              disabled={!emailEnabled}
-              className="w-4 h-4 text-icc-violet rounded accent-icc-violet"
-            />
-            <div>
-              <span className="text-sm font-medium text-gray-800">{domain.label}</span>
-              <p className="text-xs text-gray-400">{domain.description}</p>
-            </div>
-          </label>
-        ))}
       </div>
-
-      <div className="flex items-center gap-3">
-        <Button onClick={save} disabled={saving}>
-          {saving ? "Enregistrement…" : "Enregistrer"}
-        </Button>
-        {saved && <span className="text-sm text-green-600">Préférences enregistrées.</span>}
-      </div>
-    </div>
+    </section>
   );
 }
