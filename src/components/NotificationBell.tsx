@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { Bell } from "lucide-react";
+import IconButton from "@/components/ui/IconButton";
+import BottomSheet from "@/components/ui/BottomSheet";
 
 interface NotificationItem {
   id: string;
@@ -13,48 +16,43 @@ interface NotificationItem {
   createdAt: string;
 }
 
-function BellIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-      />
-    </svg>
-  );
+function formatTime(iso: string) {
+  const date = new Date(iso);
+  const diffMin = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `il y a ${diffH} h`;
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
 
-function NotificationRow({ notif, formatTime, onClose }: {
-  readonly notif: NotificationItem;
-  readonly formatTime: (iso: string) => string;
-  readonly onClose: () => void;
-}) {
+function NotificationRow({ notif, onClose }: { readonly notif: NotificationItem; readonly onClose: () => void }) {
   const inner = (
     <div
-      className={`px-4 py-3 border-b last:border-0 hover:bg-gray-50 active:bg-gray-100 ${
-        !notif.read ? "bg-blue-50/50" : ""
+      className={`flex gap-3 border-b border-line px-4 py-3 transition-colors duration-120 last:border-0 hover:bg-surface-sunken ${
+        notif.read ? "" : "bg-brand-soft/60"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-gray-900">
-          {!notif.read && (
-            <span className="inline-block w-2 h-2 rounded-full bg-icc-violet mr-1.5 shrink-0" />
-          )}
-          {notif.title}
-        </p>
-        <span className="text-xs text-gray-400 whitespace-nowrap shrink-0">
-          {formatTime(notif.createdAt)}
-        </span>
+      <span
+        aria-hidden="true"
+        className={`mt-2 size-2 shrink-0 rounded-full ${notif.read ? "bg-transparent" : "bg-brand"}`}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold leading-5 text-ink">
+            {!notif.read && <span className="sr-only">Non lue : </span>}
+            {notif.title}
+          </p>
+          <span className="shrink-0 whitespace-nowrap text-xs leading-5 text-ink-subtle">{formatTime(notif.createdAt)}</span>
+        </div>
+        <p className="mt-0.5 text-[13px] leading-[18px] text-ink-muted">{notif.message}</p>
       </div>
-      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{notif.message}</p>
     </div>
   );
 
   if (notif.link) {
     return (
-      <Link key={notif.id} href={notif.link} onClick={onClose}>
+      <Link href={notif.link} onClick={onClose} className="block focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus">
         {inner}
       </Link>
     );
@@ -62,10 +60,15 @@ function NotificationRow({ notif, formatTime, onClose }: {
   return inner;
 }
 
+/**
+ * Notifications de la barre supérieure : `IconButton` avec compteur (`CountBadge`), menu déroulant
+ * sur desktop, feuille du bas (`BottomSheet`) sous 768px. Sondage toutes les 60 s.
+ */
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [open, setOpen] = useState(false);
+  // `null` fermé ; sinon la présentation choisie à l'ouverture selon la largeur d'écran.
+  const [open, setOpen] = useState<null | "dropdown" | "sheet">(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
@@ -88,25 +91,20 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Close desktop dropdown on outside click
   useEffect(() => {
+    if (open !== "dropdown") return;
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(null);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(null);
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Lock body scroll when mobile sheet is open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   async function markAllRead() {
@@ -123,107 +121,51 @@ export default function NotificationBell() {
     }
   }
 
-  function formatTime(iso: string) {
-    const date = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return "à l'instant";
-    if (diffMin < 60) return `il y a ${diffMin}min`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `il y a ${diffH}h`;
-    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
-  }
+  const close = () => setOpen(null);
 
-  const close = () => setOpen(false);
+  const list =
+    notifications.length === 0 ? (
+      <p className="px-4 py-8 text-center text-sm text-ink-muted">Aucune notification pour le moment.</p>
+    ) : (
+      notifications.map((notif) => <NotificationRow key={notif.id} notif={notif} onClose={close} />)
+    );
+
+  const markAll = unreadCount > 0 && (
+    <button
+      type="button"
+      onClick={markAllRead}
+      className="min-h-9 cursor-pointer rounded-control px-2 font-display text-[13px] font-semibold text-brand-text hover:bg-surface-sunken"
+    >
+      Tout marquer comme lu
+    </button>
+  );
+
+  const label = unreadCount > 0 ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications";
 
   return (
     <div data-tour="header-notifications" className="relative" ref={dropdownRef}>
-      {/* Bell button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-        aria-label="Notifications"
-      >
-        <BellIcon />
-        {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-icc-rouge rounded-full">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </button>
+      <IconButton
+        icon={Bell}
+        aria-label={label}
+        badge={unreadCount}
+        aria-expanded={open !== null}
+        onClick={() => setOpen((o) => (o ? null : window.innerWidth < 768 ? "sheet" : "dropdown"))}
+      />
 
-      {/* ── Desktop dropdown ─────────────────────────────────────────────────── */}
-      {open && (
-        <div className="hidden md:block absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-xs text-icc-violet hover:underline">
-                Tout marquer comme lu
-              </button>
-            )}
+      {open === "dropdown" && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-96 overflow-hidden rounded-card border border-line bg-surface shadow-float">
+          <div className="flex items-center justify-between gap-2 border-b border-line py-2 pl-4 pr-2">
+            <h2 className="font-display text-[15px] font-semibold leading-5 text-ink">Notifications</h2>
+            {markAll}
           </div>
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="p-4 text-sm text-gray-400 text-center">Aucune notification</p>
-            ) : (
-              notifications.map((notif) => (
-                <NotificationRow key={notif.id} notif={notif} formatTime={formatTime} onClose={close} />
-              ))
-            )}
-          </div>
+          <div className="max-h-[min(28rem,70dvh)] overflow-y-auto overscroll-contain">{list}</div>
         </div>
       )}
 
-      {/* ── Mobile bottom sheet ──────────────────────────────────────────────── */}
-      {open && (
-        <div className="md:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/40"
-            onClick={close}
-            aria-hidden="true"
-          />
-          {/* Sheet */}
-          <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-xl flex flex-col max-h-[75dvh]">
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-gray-300" />
-            </div>
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <h3 className="text-base font-semibold text-gray-900">Notifications</h3>
-              <div className="flex items-center gap-3">
-                {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-sm text-icc-violet hover:underline">
-                    Tout marquer comme lu
-                  </button>
-                )}
-                <button
-                  onClick={close}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                  aria-label="Fermer"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            {/* List */}
-            <div className="overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
-              {notifications.length === 0 ? (
-                <p className="p-6 text-sm text-gray-400 text-center">Aucune notification</p>
-              ) : (
-                notifications.map((notif) => (
-                  <NotificationRow key={notif.id} notif={notif} formatTime={formatTime} onClose={close} />
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <BottomSheet open={open === "sheet"} onClose={close} title="Notifications">
+        {markAll && <div className="-mt-1 mb-2 flex justify-end">{markAll}</div>}
+        <div className="-mx-4 border-t border-line">{list}</div>
+      </BottomSheet>
     </div>
   );
 }

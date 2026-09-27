@@ -1,15 +1,13 @@
 import pkg from "@/../package.json";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import Image from "next/image";
 import { auth, signOut, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions, registry } from "@/lib/registry";
 import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
-import ChurchSwitcher from "@/components/ChurchSwitcher";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
-import NotificationBell from "@/components/NotificationBell";
+import { landingHref } from "@/lib/navigation";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
@@ -69,6 +67,10 @@ export default async function AuthLayout({
     // désactive, ou pour un rôle sans planning:department (spec 031/#462), il mènerait à
     // un 404/FORBIDDEN. "/profile" appartient au noyau, toujours disponible.
     redirect(canAccessDashboard ? "/dashboard" : "/profile");
+  }
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/" });
   }
   async function switchToPastoralMode() {
     "use server";
@@ -320,94 +322,14 @@ export default async function AuthLayout({
     }
   }
 
-  const headerContent = (
-    <div className="flex items-center w-full min-w-0">
-      <div className="min-w-0">
-        <h1 className="text-lg md:text-xl font-bold text-current truncate">Koinonia</h1>
-        {currentChurchId && churches.length > 1 ? (
-          <ChurchSwitcher churches={churches} currentChurchId={currentChurchId} />
-        ) : (
-          <p className="text-xs md:text-sm opacity-70 truncate">{churchName}</p>
-        )}
-      </div>
-      <div className="flex items-center gap-2 md:gap-4 ml-auto">
-        {hasBothRoles && (
-          <form action={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}>
-            <button
-              type="submit"
-              title={isInPastoralMode ? "Basculer vers la vue classique" : "Basculer vers la vue pastorale"}
-              className="flex items-center gap-1.5 text-xs border border-current/30 rounded-md px-2 py-1.5 sm:px-3 opacity-80 hover:opacity-100 hover:bg-black/10 transition-all whitespace-nowrap"
-            >
-              {isInPastoralMode ? (
-                <>
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  <span className="sm:hidden">Classique</span>
-                  <span className="hidden sm:inline">Vue classique</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  <span className="sm:hidden">Pastorale</span>
-                  <span className="hidden sm:inline">Vue pastorale</span>
-                </>
-              )}
-            </button>
-          </form>
-        )}
-        <a href="/guide" title="Guide" data-tour="header-guide" className="text-current opacity-80 hover:opacity-100 transition-opacity">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-          </svg>
-        </a>
-        <NotificationBell />
-        <a href="/profile" title="Mon profil" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          {session.user.image ? (
-            <Image
-              src={session.user.image}
-              alt={session.user.name || ""}
-              width={32}
-              height={32}
-              className="rounded-full"
-            />
-          ) : (
-            <svg className="w-6 h-6 text-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          )}
-          <span className="hidden sm:inline text-sm text-current">{session.user.name}</span>
-        </a>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button
-            type="submit"
-            className="px-2 py-1 md:px-3 text-sm opacity-80 border border-current/30 rounded-md hover:opacity-100 hover:bg-black/10 transition-colors"
-          >
-            <span className="hidden sm:inline">Déconnexion</span>
-            <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-
   const footerContent = (
-    <footer className="pt-4 pb-20 md:py-4 text-center text-xs text-gray-400">
+    <footer className="px-4 py-4 text-center text-xs text-ink-subtle print:hidden">
       <span className="inline-flex items-center gap-1">
         <a
           href="https://github.com/iccbretagne/koinonia"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-gray-600 transition-colors"
+          className="rounded-chip transition-colors hover:text-ink-muted"
         >
           Koinonia
         </a>
@@ -418,7 +340,7 @@ export default async function AuthLayout({
           n'est pas celle qu'on teste. `NEXT_PUBLIC_BUILD_VERSION` (inline au build par
           deploy-staging.yml, forme `1.18.0-abc1234`) prend alors le relais.
         */}
-        <span>v{process.env.NEXT_PUBLIC_BUILD_VERSION ?? pkg.version}</span>
+        <span className="tabular-nums">v{process.env.NEXT_PUBLIC_BUILD_VERSION ?? pkg.version}</span>
       </span>
     </footer>
   );
@@ -511,9 +433,16 @@ export default async function AuthLayout({
       showStarEvents={showStarEvents}
       hasAbsences={hasAbsences}
       hasRooms={hasRooms}
+      homeHref={landingHref({ isPastoral: isInPastoralMode, hasPlanningAccess, hasStarPlanning })}
       userRole={currentRole as TourRoleKey}
+      user={{ name: session.user.name ?? null, email: session.user.email ?? null, image: session.user.image ?? null }}
+      churches={churches}
+      currentChurchId={currentChurchId ?? null}
+      churchName={churchName}
       headerColor={churchPrimaryColor}
-      header={headerContent}
+      hasBothRoles={hasBothRoles}
+      switchViewAction={isInPastoralMode ? switchToAdminMode : switchToPastoralMode}
+      signOutAction={signOutAction}
       footer={footerContent}
     >
       {children}

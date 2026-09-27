@@ -2,161 +2,82 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { activeHref } from "@/lib/nav-match";
+import { Ellipsis, type LucideIcon } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { isDestinationActive, type ActiveNav, type BottomDestination } from "@/lib/navigation";
 
 interface BottomNavProps {
-  readonly hasMembersAccess?: boolean;
-  readonly hasMyPlanning?: boolean;
-  readonly showStarEvents?: boolean;
-  readonly isPastoral?: boolean;
-  readonly onMenuOpen?: () => void;
+  readonly destinations: readonly BottomDestination[];
+  readonly active: ActiveNav;
+  /** Compteur de « Plus » : ce qui attend dans un espace hors des destinations. */
+  readonly moreBadge?: number;
+  readonly moreOpen?: boolean;
+  readonly onMoreOpen: () => void;
 }
 
-// Sections that have a dedicated nav item — "Menu" is active for everything else
-const KNOWN_PREFIXES = ["/planning", "/events"];
-const PASTORAL_KNOWN_PREFIXES = ["/pastoral", "/admin/members", "/agenda"];
+const itemClass = `flex h-16 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 font-sans text-[11px] font-semibold leading-4
+  transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-focus`;
 
-function IconPerson({ className }: { readonly className?: string }) {
+function Item({ icon: Icon, label, active, badge }: { readonly icon: LucideIcon; readonly label: string; readonly active: boolean; readonly badge?: number }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
+    <>
+      <span
+        className={`relative grid h-[30px] w-14 place-items-center rounded-full transition-colors duration-200 ${
+          active ? "bg-brand-soft" : ""
+        }`}
+      >
+        <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -top-1 right-2">
+            <Badge count={badge} className="ring-2 ring-surface" />
+          </span>
+        )}
+      </span>
+      <span className="max-w-full truncate px-1">{label}</span>
+    </>
   );
 }
 
-function IconCalendar({ className }: { readonly className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-
-function IconMenu({ className }: { readonly className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-}
-
-function IconHome({ className }: { readonly className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  );
-}
-
-function IconMembers({ className }: { readonly className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-  );
-}
-
-export default function BottomNav({
-  hasMyPlanning = false,
-  showStarEvents = false,
-  isPastoral = false,
-  onMenuOpen,
-}: BottomNavProps) {
+/**
+ * Barre du bas mobile (docs/design-system/components/BottomNav.md) : jusqu'à quatre destinations
+ * adaptées au rôle (`bottomDestinations`), puis « Plus », actif quand la page courante
+ * n'appartient à aucune d'elles.
+ */
+export default function BottomNav({ destinations, active, moreBadge, moreOpen = false, onMoreOpen }: BottomNavProps) {
   const pathname = usePathname();
-
-  // Vue pastorale : accueil pastoral + membres
-  if (isPastoral) {
-    const isOnPastoralKnown = PASTORAL_KNOWN_PREFIXES.some((p) => pathname.startsWith(p));
-    const pastoralLinks = [
-      { href: "/pastoral", label: "Accueil", matchPrefix: "/pastoral", icon: <IconHome className="w-5 h-5" /> },
-      { href: "/admin/members", label: "Mes membres", matchPrefix: "/admin/members", icon: <IconMembers className="w-5 h-5" /> },
-    ];
-    return (
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-200 md:hidden print:hidden">
-        <div className="flex justify-around items-center h-14">
-          {pastoralLinks.map((item) => {
-            const isActive = pathname.startsWith(item.matchPrefix);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                  isActive ? "text-icc-violet" : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                {item.icon}
-                <span className="text-[11px] font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-          <button
-            type="button"
-            onClick={onMenuOpen}
-            className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-              !isOnPastoralKnown ? "text-icc-violet" : "text-gray-400 hover:text-gray-600"
-            }`}
-            aria-label="Ouvrir le menu"
-          >
-            <IconMenu className="w-5 h-5" />
-            <span className="text-[11px] font-medium">Menu</span>
-          </button>
-        </div>
-      </nav>
-    );
-  }
-
-  const isOnKnownRoute = KNOWN_PREFIXES.some((p) => pathname.startsWith(p));
-
-  const links = [
-    hasMyPlanning && {
-      href: "/planning",
-      label: "Mon planning",
-      matchPrefix: "/planning",
-      icon: <IconPerson className="w-5 h-5" />,
-    },
-    {
-      href: showStarEvents ? "/planning/events" : "/events",
-      label: "Agenda",
-      matchPrefix: showStarEvents ? "/planning/events" : "/events",
-      icon: <IconCalendar className="w-5 h-5" />,
-    },
-  ].filter(Boolean) as { href: string; label: string; matchPrefix: string; icon: React.ReactNode }[];
-  // « Mon planning » (/planning) ne doit pas rester allumé sur /planning/events
-  const activeLinkPrefix = activeHref(pathname, links.map((l) => l.matchPrefix));
+  const activeKey = destinations.find((d) => isDestinationActive(d, active, pathname))?.key ?? null;
+  const moreActive = moreOpen || activeKey === null;
 
   return (
     <nav
+      aria-label="Navigation rapide"
       data-tour="bottom-nav"
-      className="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-gray-200 md:hidden print:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden print:hidden"
     >
-      <div className="flex justify-around items-center h-14">
-        {links.map((item) => {
-          const isActive = item.matchPrefix === activeLinkPrefix;
+      <div className="flex">
+        {destinations.map((d) => {
+          const isActive = !moreOpen && d.key === activeKey;
           return (
             <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-                isActive ? "text-icc-violet" : "text-gray-400 hover:text-gray-600"
-              }`}
+              key={d.key}
+              href={d.href}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={d.badge ? `${d.label}, ${d.badge} en attente` : undefined}
+              className={`${itemClass} ${isActive ? "text-brand-text" : "text-ink-subtle hover:text-ink"}`}
             >
-              {item.icon}
-              <span className="text-[11px] font-medium">{item.label}</span>
+              <Item icon={d.icon} label={d.label} active={isActive} badge={d.badge} />
             </Link>
           );
         })}
-
-        {/* Menu — opens sidebar, highlighted when on any section not in the links above */}
         <button
           type="button"
-          onClick={onMenuOpen}
-          className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
-            !isOnKnownRoute ? "text-icc-violet" : "text-gray-400 hover:text-gray-600"
-          }`}
-          aria-label="Ouvrir le menu"
+          onClick={onMoreOpen}
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
+          aria-label={moreBadge ? `Plus, ${moreBadge} nouveauté${moreBadge > 1 ? "s" : ""}` : "Plus"}
+          className={`${itemClass} ${moreActive ? "text-brand-text" : "text-ink-subtle hover:text-ink"}`}
         >
-          <IconMenu className="w-5 h-5" />
-          <span className="text-[11px] font-medium">Menu</span>
+          <Item icon={Ellipsis} label="Plus" active={moreActive} badge={moreBadge} />
         </button>
       </div>
     </nav>
