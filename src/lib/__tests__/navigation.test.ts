@@ -82,10 +82,11 @@ function hrefs(input: NavigationInput): string[] {
 }
 
 describe("landingHref", () => {
-  it("reprend defaultLandingPage : /dashboard, puis /planning, puis /profile", () => {
-    expect(landingHref({ isPastoral: false, hasPlanningAccess: true, hasStarPlanning: true })).toBe("/dashboard");
-    expect(landingHref({ isPastoral: false, hasPlanningAccess: false, hasStarPlanning: true })).toBe("/planning");
-    expect(landingHref({ isPastoral: false, hasPlanningAccess: false, hasStarPlanning: false })).toBe("/profile");
+  it("mène à la page « Aujourd'hui » hors vue pastorale", () => {
+    // Spec 055 : la page « Aujourd'hui » est l'accueil de tous les rôles hors vue pastorale.
+    expect(landingHref({ isPastoral: false, hasPlanningAccess: true, hasStarPlanning: true })).toBe("/accueil");
+    expect(landingHref({ isPastoral: false, hasPlanningAccess: false, hasStarPlanning: true })).toBe("/accueil");
+    expect(landingHref({ isPastoral: false, hasPlanningAccess: false, hasStarPlanning: false })).toBe("/accueil");
   });
 
   it("la vue pastorale a son propre accueil", () => {

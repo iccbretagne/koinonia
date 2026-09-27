@@ -4,25 +4,18 @@ import Link from "next/link";
 import type { Session } from "next-auth";
 import { auth, signIn, getCurrentChurchId, isDevLoginEnabled } from "@/lib/auth";
 import { isAuthCookieName } from "@/lib/auth-cookies";
-import { rolePermissions } from "@/lib/registry";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 
-// /dashboard exige planning:department (spec 031/#462) : un STAR, Reporter, Faiseur de
-// disciples, Comptable ou Référent soins pastoraux ne l'a pas et y crasherait en FORBIDDEN
-// (pas d'error.tsx dans l'app). La redirection post-connexion doit donc tenir compte du
-// rôle plutôt que de pointer vers /dashboard en dur.
+// Spec 055 : la page « Aujourd'hui » (/accueil) est l'accueil commun à tous les rôles d'une
+// église — elle n'affiche que les blocs que le rôle voit déjà ailleurs, sous les mêmes gardes.
+// Sans rôle dans l'église courante (profil pastoral seul, compte en attente), /profile reste
+// la destination, comme avant.
 async function defaultLandingPage(session: Session) {
   const churchId = await getCurrentChurchId(session);
-  const userPermissions = new Set(
-    session.user.churchRoles
-      .filter((r) => r.churchId === churchId)
-      .flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-  if (userPermissions.has("planning:department")) return "/dashboard";
-  if (userPermissions.has("planning:view")) return "/planning";
-  return "/profile";
+  const hasChurchRole = session.user.churchRoles.some((r) => r.churchId === churchId);
+  return hasChurchRole ? "/accueil" : "/profile";
 }
 
 export default async function LoginPage() {

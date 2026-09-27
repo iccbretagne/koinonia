@@ -2,7 +2,7 @@
   "name": "Koinonia",
   "short_name": "Koinonia",
   "description": "Le back-office opérationnel de votre église, en une seule application.",
-  "start_url": "/dashboard",
+  "start_url": "/accueil",
   "display": "standalone",
   "background_color": "#f6f5fa",
   "theme_color": "#ffffff",

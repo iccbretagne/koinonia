@@ -33,7 +33,7 @@ import type { RoleKey } from "./tour-steps";
  * logique que `defaultLandingPage` de `src/app/page.tsx`). La renseigner suffit à basculer
  * sidebar, barre du bas, panneau « Plus » et palette.
  */
-export const TODAY_HREF: string | null = null;
+export const TODAY_HREF: string | null = "/accueil";
 
 export type SpaceKey = "home" | "planning" | "agenda" | "people" | "requests" | "media" | "resources" | "admin";
 
