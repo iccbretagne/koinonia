@@ -28,6 +28,7 @@ import { NextServiceCard } from "../planning/MyPlanningView";
 import { loadMyPlanning } from "../planning/my-planning-data";
 import { loadMyRequests } from "../requests/my-requests-data";
 import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
+import { pickFirstName } from "./first-name";
 
 /**
  * Accueil « Aujourd'hui » (spec 055, lot 4) : assemble, pour le rôle connecté, des données que
@@ -56,11 +57,6 @@ async function can(permission: string, churchId: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-function firstName(name: string | null | undefined): string | null {
-  const first = name?.trim().split(/\s+/)[0];
-  return first ? first : null;
 }
 
 function formatTime(date: Date) {
@@ -137,8 +133,20 @@ export default async function TodayPage() {
     canRequests ? loadMyRequests(session.user.id, churchId) : null,
   ]);
 
+  // Le prénom de la fiche STAR liée fait foi (champ prénom dédié) ; il est lu même sans accès à
+  // « Mon planning », via le même lien compte ↔ fiche que cette page et /profile utilisent déjà.
+  const linkedMember =
+    myPlanning?.member ??
+    (
+      await prisma.memberUserLink.findUnique({
+        where: { userId_churchId: { userId: session.user.id, churchId } },
+        select: { member: { select: { firstName: true } } },
+      })
+    )?.member;
   const name =
-    firstName(myPlanning?.member.firstName) ?? firstName(session.user.displayName) ?? firstName(session.user.name);
+    pickFirstName(linkedMember?.firstName) ??
+    pickFirstName(session.user.displayName) ??
+    pickFirstName(session.user.name);
 
   // Services à venir (même tri et même filtre que « Mon planning »), événements d'équipe inclus.
   const upcomingServices = (myPlanning?.plannings ?? [])
@@ -225,7 +233,7 @@ export default async function TodayPage() {
 
               {agendaRows.length > 0 && (
                 <>
-                  <SectionTitle title="Ensuite" href="/planning" linkLabel="Mon planning" />
+                  <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Mon planning" />
                   <ul className="overflow-hidden rounded-card border border-line bg-surface">
                     {agendaRows.map((row) => (
                       <li key={row.key} className="border-t border-line first:border-t-0">
@@ -258,7 +266,7 @@ export default async function TodayPage() {
             <section aria-labelledby="today-events" className="flex flex-col gap-3">
               <div id="today-events">
                 <SectionTitle
-                  title={canEvents ? "À l'agenda de l'église" : "Cette semaine à l'église"}
+                  title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
                   href={canEvents ? "/events" : "/planning/events"}
                   linkLabel="Tout l'agenda"
                 />
