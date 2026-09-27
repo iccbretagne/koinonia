@@ -130,22 +130,24 @@ koinonia/
 │   │       ├── notifications/
 │   │       └── users/           # CRUD + [userId]/roles POST/PATCH/DELETE
 │   ├── components/
-│   │   ├── Sidebar.tsx          # Sidebar (sections : Planning, Evenements, Membres, Demandes, Medias, Discipolat, Configuration)
-│   │   ├── AuthLayoutShell.tsx  # Shell layout authentifie (sidebar + bottom nav + contenu)
-│   │   ├── BottomNav.tsx        # Navigation mobile fixe en bas
+│   │   ├── AuthLayoutShell.tsx  # Coquille authentifiee : sidebar/rail, TopBar, BottomNav, MoreSheet, palette
+│   │   ├── Sidebar.tsx          # Sidebar/rail desktop (espaces de src/lib/navigation.ts, repliable)
+│   │   ├── TopBar.tsx           # Barre superieure : fil d'Ariane, recherche, notifications, menu compte
+│   │   ├── BottomNav.tsx        # Barre du bas mobile (destinations du role + "Plus")
+│   │   ├── MoreSheet.tsx        # Panneau "Plus" (BottomSheet) : tous les espaces accessibles
+│   │   ├── CommandPalette.tsx   # Recherche ⌘K/Ctrl K (pages, STAR, evenements)
 │   │   ├── NotificationBell.tsx # Cloche de notifications avec badge
 │   │   ├── ChurchSwitcher.tsx   # Selecteur d'eglise (multi-tenant)
 │   │   ├── PlanningGrid.tsx     # Grille planning interactive (auto-save)
 │   │   ├── EventSelector.tsx    # Selecteur d'evenement
 │   │   ├── MonthlyPlanningView.tsx
-│   │   └── ui/                  # Composants UI reutilisables
+│   │   └── ui/                  # Composants UI reutilisables (tokens semantiques uniquement)
 │   │       ├── Button.tsx
-│   │       ├── Input.tsx
-│   │       ├── Select.tsx
-│   │       ├── Modal.tsx
-│   │       ├── DataTable.tsx
-│   │       ├── CheckboxGroup.tsx
-│   │       └── BulkActionBar.tsx
+│   │       ├── Input.tsx / Select.tsx / Textarea.tsx / Field.tsx
+│   │       ├── Modal.tsx / ConfirmModal.tsx / BottomSheet.tsx
+│   │       ├── DataTable.tsx / CheckboxGroup.tsx / BulkActionBar.tsx
+│   │       ├── IconButton.tsx / StatusChip.tsx / Alert.tsx / PageHeader.tsx
+│   │       ├── Skeleton.tsx / EmptyState.tsx / Toast.tsx (useToast) / Tabs.tsx
 │   ├── generated/
 │   │   └── prisma/              # Client Prisma genere (remplace @prisma/client)
 │   ├── lib/
@@ -255,7 +257,12 @@ const data = schema.parse(await request.json());
 
 ### Composants UI
 
-Style cohérent : border-2, rounded-lg, focus:ring-icc-violet. Voir les composants existants dans `src/components/ui/` avant d'en créer de nouveaux.
+Voir les composants existants dans `src/components/ui/` avant d'en créer de nouveaux : `Button`,
+`Field` (Input/Select/Textarea), `Checkbox`/`CheckboxGroup`, `Modal`/`ConfirmModal`, `BottomSheet`,
+`DataTable`, `BulkActionBar`, `Tabs`, ainsi que les ajouts de la refonte design system (spec 055) —
+`IconButton`, `StatusChip`, `Alert`, `PageHeader`, `Skeleton`, `EmptyState`, `Toast`/`useToast`.
+Tous sont écrits sur les tokens sémantiques (voir « Design system » ci-dessous), jamais sur une
+couleur en dur.
 
 ### Notifications et préférences email (spec 053, ADR-0016)
 
@@ -303,15 +310,36 @@ nouvelles offres) : les deux s'appliquent en cumul, sans fusion.
 Page utilisateur : `/profile/notifications` (interrupteur général + une ligne par domaine
 visible) ; API : `GET`/`PUT /api/notifications/preferences`.
 
-## Design tokens
+## Design system (spec 055, ADR-0018)
 
-| Token | Valeur | Usage |
-|---|---|---|
-| `icc-violet` | `#5E17EB` | Couleur principale |
-| `icc-jaune` | `#FFEB05` | Accent |
-| `icc-rouge` | `#FF3131` | Erreurs, suppression |
-| `icc-bleu` | `#38B6FF` | Information |
-| Font | Montserrat | Police principale |
+L'interface passe par des **tokens sémantiques** (rôle, pas teinte) déclarés en variables CSS dans
+`src/app/globals.css` et exposés à Tailwind v4 par `@theme inline` : `bg`, `surface`,
+`surface-sunken`, `line`, `control-line`, `ink`/`ink-muted`/`ink-subtle`, `brand*`, `accent*`,
+`success*`, `warning*`, `danger*`, `info*`, `focus`. Chaque token a une valeur claire et une valeur
+sombre ; le thème suit `prefers-color-scheme`, surchargé par le choix Clair/Sombre/Système de
+l'utilisateur dans « Mon profil » (stocké dans `localStorage` sous `koinonia-theme`, appliqué via
+`data-theme` sur `<html>`, sans flash au chargement). Les quatre couleurs de la charte ICC
+(`icc-violet` `#5E17EB`, `icc-jaune` `#FFEB05`, `icc-rouge` `#FF3131`, `icc-bleu` `#38B6FF`)
+restent disponibles pour l'identité (logo, illustrations) — jamais pour du texte ou un contrôle
+d'interface. Une règle ESLint (`eslint.config.mjs`, `no-restricted-syntax`) refuse les classes de
+palette Tailwind brute (`gray-*`, `red-*`, `white`…) et les couleurs hexadécimales dans les
+`className` de `src/**/*.{ts,tsx}` ; une exception réellement justifiée (graphiques, visionneuses
+toujours sombres, couleur d'église, exports) se documente avec
+`// eslint-disable-next-line no-restricted-syntax -- <raison>` au plus près.
+
+Référence complète : `docs/design-system/` (charte, tokens, composants, tableau de conversion
+`migration.md`) et `docs/adr/0018-tokens-semantiques-design-system.md`.
+
+**Navigation** (`src/lib/navigation.ts`) : une seule définition des espaces (Accueil, Planning,
+Agenda, Personnes, Demandes, Médias, Ressources, Administration), construite à partir des sections
+déjà autorisées par `(auth)/layout.tsx` et partagée par la sidebar, la barre du bas, le panneau
+« Plus », le fil d'Ariane et la palette de recherche (`⌘K`/`Ctrl K`) — ce module ne décide d'aucun
+droit, il ne fait que regrouper ce que le layout a déjà autorisé.
+
+**Accueil** (`/accueil`, `TODAY_HREF` dans `navigation.ts`) : page d'accueil commune à tous les
+rôles (« Aujourd'hui »), qui rassemble prochains services, événements à venir, demandes en attente
+et raccourcis à partir des données et fonctions déjà existantes — aucune nouvelle route ni règle
+métier.
 
 ## Rôles et permissions
 

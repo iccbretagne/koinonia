@@ -129,6 +129,7 @@ export default async function AudioLibraryPage({
                       // Couleur de l'église choisie par chaque église (Church.primaryColor) : aplat
                       // inline volontaire, cf. exceptions de docs/design-system/migration.md.
                       <span
+                        // eslint-disable-next-line no-restricted-syntax -- texte blanc sur un aplat de couleur d'église arbitraire (pas un token)
                         className="text-xs font-medium px-2 py-0.5 rounded-full text-white truncate"
                         style={{ backgroundColor: s.churchPrimaryColor }}
                       >

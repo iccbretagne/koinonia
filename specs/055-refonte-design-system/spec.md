@@ -1,7 +1,7 @@
 # Spec — Refonte du design system
 
 - **Numéro** : 055
-- **Statut** : En cours
+- **Statut** : Implémentée (en recette)
 - **Créée le** : 2026-09-26
 - **Branche** : `feat/design-system`
 
@@ -58,19 +58,19 @@ sections et les mêmes actions qu'avant, présentées autrement.
 
 ## Critères d'acceptation
 
-- [ ] Aucune route d'API, migration Prisma, service métier ou permission n'est ajouté ou modifié
+- [x] Aucune route d'API, migration Prisma, service métier ou permission n'est ajouté ou modifié
       pour les besoins de la refonte.
-- [ ] Les couleurs de l'interface passent par des tokens sémantiques ; plus aucune classe grise,
+- [x] Les couleurs de l'interface passent par des tokens sémantiques ; plus aucune classe grise,
       `bg-white` ou couleur hexadécimale en dur dans `src/` hors exceptions justifiées (garde
       ESLint).
-- [ ] Le thème Clair / Sombre / Système se choisit dans « Mon profil » et s'applique partout.
-- [ ] Les textes atteignent un contraste de 4.5:1 dans les deux thèmes (tokens vérifiés).
-- [ ] Barre du bas adaptée au rôle et panneau « Plus » sur mobile ; sidebar repliable sur desktop.
-- [ ] Recherche accessible au clavier et sur mobile : pages du rôle, et STAR/événements via les
+- [x] Le thème Clair / Sombre / Système se choisit dans « Mon profil » et s'applique partout.
+- [x] Les textes atteignent un contraste de 4.5:1 dans les deux thèmes (tokens vérifiés).
+- [x] Barre du bas adaptée au rôle et panneau « Plus » sur mobile ; sidebar repliable sur desktop.
+- [x] Recherche accessible au clavier et sur mobile : pages du rôle, et STAR/événements via les
       routes existantes uniquement.
-- [ ] Page « Aujourd'hui » construite uniquement à partir de données et fonctions existantes.
-- [ ] Chaque segment de route authentifié a un état de chargement.
-- [ ] Les composants communs (bouton, champ, dialogue, tableau, pastille de statut, message de
+- [x] Page « Aujourd'hui » construite uniquement à partir de données et fonctions existantes.
+- [x] Chaque segment de route authentifié a un état de chargement.
+- [x] Les composants communs (bouton, champ, dialogue, tableau, pastille de statut, message de
       confirmation, état vide) sont réécrits sur les tokens et utilisés par les écrans.
-- [ ] Logo ICC Rennes et icône d'application remplacent l'icône « PC ».
-- [ ] `typecheck`, `lint`, `lint:boundaries` et `test` passent ; recette sur staging.
+- [x] Logo ICC Rennes et icône d'application remplacent l'icône « PC ».
+- [ ] `typecheck`, `lint`, `lint:boundaries` et `test` passent (vérifié) ; recette sur staging (à faire).

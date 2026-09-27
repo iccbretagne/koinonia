@@ -7,7 +7,9 @@ import Select from "@/components/ui/Select";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import { EVENT_TYPE_OPTIONS, getEventTypeLabel, getEventTypeBadge } from "@/lib/event-types";
+import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
+import { eventTypeTone } from "@/components/event-type-tone";
+import StatusChip from "@/components/ui/StatusChip";
 import {
   type AudioServiceRow,
   type QueueCriteria,
@@ -326,9 +328,7 @@ export default function AudioQueueClient({ services }: { readonly services: Audi
           {
             header: "Type",
             accessor: (row) => (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEventTypeBadge(row.type)}`}>
-                {getEventTypeLabel(row.type)}
-              </span>
+              <StatusChip tone={eventTypeTone(row.type)}>{getEventTypeLabel(row.type)}</StatusChip>
             ),
           },
           {

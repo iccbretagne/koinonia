@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -71,7 +72,12 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     if (typeof window !== "undefined") return localStorage.getItem(LS_FILTER_DEPT) ?? "";
     return "";
   });
+  // Recherche initiale : le paramètre d'URL ?q= (palette ⌘K, /admin/members?q=Nom) prime sur la
+  // dernière recherche mémorisée, pour qu'un lien partagé ou ouvert dans un nouvel onglet fonctionne.
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q");
   const [search, setSearch] = useState(() => {
+    if (initialQuery) return initialQuery;
     if (typeof window !== "undefined") return localStorage.getItem(LS_FILTER_SEARCH) ?? "";
     return "";
   });

@@ -490,6 +490,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
   // Visionneuse plein écran toujours sombre : les couleurs fixes (white/black) ci-dessous
   // sont volontaires, indépendantes du thème (cf. docs/design-system/migration.md).
   return (
+    // eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre
     <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" onClick={onClose}>
       {/* Top bar */}
       <div
@@ -500,11 +501,15 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${PHOTO_STATUS_COLORS[photo.status]}`}>
             {PHOTO_STATUS_LABELS[photo.status]}
           </span>
+          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
           <p className="text-sm text-white/70 truncate">{photo.filename}</p>
+          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
           <span className="text-xs text-white/40 shrink-0">{formatSize(photo.size)}</span>
         </div>
         <div className="flex items-center gap-4 shrink-0 ml-4">
+          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
           <span className="text-sm text-white/50">{index + 1} / {photos.length}</span>
+          {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
           <button onClick={onClose} className="text-white/50 hover:text-white transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -518,6 +523,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
         {hasPrev && (
           <button
             onClick={() => go(-1)}
+            // eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre
             className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
           >
             ‹
@@ -539,6 +545,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
         {hasNext && (
           <button
             onClick={() => go(1)}
+            // eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre
             className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-scrim hover:bg-black/70 flex items-center justify-center text-white text-xl font-light transition-colors z-10 backdrop-blur-sm"
           >
             ›
@@ -562,6 +569,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
             🗑 Supprimer
           </button>
         )}
+        {/* eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre */}
         <span className="text-xs text-white/30 hidden sm:block">← → naviguer · Échap fermer</span>
       </div>
     </div>

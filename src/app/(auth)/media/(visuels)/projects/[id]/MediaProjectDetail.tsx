@@ -420,6 +420,7 @@ function VideoPlayer({ src, thumbnail, onExpired }: {
         <button
           onClick={() => { setError(false); onExpired(); }}
           /* Bouton sur aperçu vidéo toujours sombre, indépendant du thème */
+          // eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo toujours sombre
           className="relative z-10 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg transition-colors"
         >
           Recharger
@@ -808,10 +809,12 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
         {/* Preview — height capped on mobile so content below stays reachable */}
         {/* Aperçu média toujours sombre (cadre vidéo/photo), indépendant du thème */}
+        {/* eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo/photo toujours sombre */}
         <div className="shrink-0 bg-black h-44 md:h-56 relative overflow-hidden">
           {file.type === "VIDEO" ? (
             loadingVersions ? (
               <div className="w-full h-full flex items-center justify-center">
+                {/* eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo/photo toujours sombre */}
                 <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               </div>
             ) : versions[0]?.streamUrl ? (
@@ -1356,6 +1359,7 @@ export default function MediaProjectDetail({
                         {/* Badge version */}
                         {/* Scrim toujours sombre : texte blanc fixe, indépendant du thème */}
                         {latestV && (
+                          // eslint-disable-next-line no-restricted-syntax -- scrim toujours sombre sur vignette média
                           <div className="absolute top-2 left-2 bg-scrim text-white text-xs px-1.5 py-0.5 rounded font-mono">
                             v{latestV.versionNumber}
                           </div>
@@ -1363,6 +1367,7 @@ export default function MediaProjectDetail({
                         {/* Dot statut */}
                         <div className="absolute top-2 right-2">
                           {/* Halo blanc fixe pour rester visible sur une vignette de couleur quelconque */}
+                          {/* eslint-disable-next-line no-restricted-syntax -- halo fixe sur vignette média de couleur quelconque */}
                           <span className={`block w-2.5 h-2.5 rounded-full shadow-card border border-white/50 ${FILE_STATUS_DOT[file.status]}`} />
                         </div>
                       </div>

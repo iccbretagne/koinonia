@@ -17,7 +17,7 @@ Regrouper les sections actuelles de la sidebar en espaces stables, dans cet ordr
 | **Ressources** | Salles, Emploi, Guide |
 | **Administration** | Église, accès, ministères, départements, fonctions, journal |
 
-Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, les pages se présentent en onglets (`Tabs`) quand elles sont au même niveau, comme Audio et Médias aujourd'hui.
+Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, les pages se présentent en liste sous l'espace déplié (sidebar, panneau « Plus »). Un sous-espace peut en plus regrouper ses propres pages en onglets (`Tabs`) quand elles sont au même niveau, comme Visuels (Projets / Demandes) au sein de Médias.
 
 ## Desktop (≥ 1024px)
 
@@ -43,9 +43,11 @@ Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, le
   |---|---|
   | STAR | Accueil · Mon planning · Agenda · Demandes · Plus |
   | Resp. département, Ministre | Accueil · Planning · Agenda · Personnes · Plus |
-  | Secrétaire, Admin | Accueil · Agenda · Demandes · Personnes · Plus |
-  | Référent soins pastoraux, vue pastorale | Accueil · Suivi · Personnes · Agenda · Plus |
+  | Secrétaire, Admin, Super Admin | Accueil · Agenda · Demandes · Personnes · Plus |
+  | Référent soins pastoraux | Accueil · Suivi · Personnes · Agenda · Plus |
   | Comptable | Accueil · Comptabilité · Demandes · Plus |
+  | Reporter, Faiseur de disciples (sans priorité dédiée) | Accueil, puis les premières sections réellement accessibles parmi Mon planning, Planning, Agenda, Personnes, Demandes · Plus |
+  | Vue pastorale (tout rôle, bascule de vue) | Accueil · Mes membres · Plus |
 
 - **Plus** ouvre une feuille du bas (`BottomSheet`) listant tous les espaces du rôle en grille de tuiles, puis le profil, le guide et la déconnexion. Elle remplace le menu actuel qui empile des sous-niveaux avec un bouton retour.
 - L'action principale d'une page de liste (« Nouvel événement ») passe dans l'en-tête de page ; dans un formulaire, les boutons Enregistrer / Annuler se placent dans une barre collée au-dessus de la barre du bas.

@@ -5,9 +5,11 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
-import { EVENT_TYPE_OPTIONS, getEventTypeLabel, getEventTypeBadge } from "@/lib/event-types";
+import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
+import { eventTypeTone } from "@/components/event-type-tone";
 import Modal from "@/components/ui/Modal";
 import BulkActionBar from "@/components/ui/BulkActionBar";
+import StatusChip from "@/components/ui/StatusChip";
 
 interface EventItem {
   id: string;
@@ -384,9 +386,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-semibold text-ink text-sm">{ev.title}</span>
                       {isRecurrent && <span className="text-brand-text text-sm" title={`Récurrent${ev.recurrenceRule ? ` — ${RECURRENCE_LABELS[ev.recurrenceRule] ?? ev.recurrenceRule}` : ""}`}>↻</span>}
-                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${getEventTypeBadge(ev.type)}`}>
-                        {getEventTypeLabel(ev.type)}
-                      </span>
+                      <StatusChip tone={eventTypeTone(ev.type)}>{getEventTypeLabel(ev.type)}</StatusChip>
                     </div>
                     <p className="text-xs text-ink-muted mt-0.5">{dateLabel} {timeStr} — {ev.church.name}</p>
                     {ev.eventDepts.length > 0 && (
