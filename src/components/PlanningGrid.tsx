@@ -84,8 +84,9 @@ interface PlanningGridProps {
 }
 
 /**
- * Pictogramme de chaque bouton du contrôle segmenté (maquettes : check, message, x, repeat) —
- * volontairement plus sobre que l'icône cerclée des pastilles, pour tenir dans 40px.
+ * Pictogramme de chaque bouton du contrôle segmenté (maquettes : check, message, x, repeat),
+ * repris aussi par les pastilles de décompte du pied de grille et par la légende ci-dessous —
+ * une seule correspondance icône/statut dans toute la grille.
  */
 const SEGMENT_ICON: Record<ServiceStatus, LucideIcon> = {
   EN_SERVICE: Check,
@@ -123,8 +124,8 @@ function StatusSegments({
             aria-label={label}
             title={active ? `${label} — appuyer à nouveau pour retirer` : label}
             onClick={() => onChange(active ? null : value)}
-            className={`grid h-10 w-10 place-items-center rounded-[7px] transition-[background-color,color,transform] duration-120
-              active:scale-[0.96] motion-reduce:active:scale-100 sm:w-11
+            className={`grid h-11 w-11 place-items-center rounded-[7px] transition-[background-color,color,transform] duration-120
+              active:scale-[0.96] motion-reduce:active:scale-100
               focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
                 active ? statusToneClasses[tone] : "text-ink-subtle hover:bg-surface hover:text-ink"
               }`}
@@ -325,6 +326,24 @@ export default function PlanningGrid({
           <Alert tone="info">Planning à remplir avant le {deadlineLabel}.</Alert>
         ))}
 
+      {/* Légende (docs/design-system/components/PlanningGrid.md) : le contrôle segmenté
+          ci-dessous n'affiche qu'une icône par bouton, illisible sans elle. Lecture seule :
+          chaque ligne affiche déjà son statut en texte (ReadOnlyStatus), pas besoin de légende. */}
+      {!isReadOnly && (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-[13px] leading-[18px] text-ink-muted">
+          {SERVICE_STATUS_ORDER.map((status) => {
+            const Icon = SEGMENT_ICON[status];
+            const { label } = SERVICE_STATUS[status];
+            return (
+              <li key={status} className="inline-flex items-center gap-1.5">
+                <Icon aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                {label}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       <section aria-label="Planning de l'équipe" className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-surface-sunken px-4 py-2.5">
           <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">
@@ -369,10 +388,10 @@ export default function PlanningGrid({
 
         <div className="flex flex-wrap gap-2 border-t border-line bg-surface-sunken px-4 py-3" aria-label="Décompte par statut">
           {counts.filter(({ count }) => count > 0).map(({ status, count }) => {
-            const { tone, icon } = SERVICE_STATUS[status];
+            const { tone } = SERVICE_STATUS[status];
             const [singular, pluralForm] = COUNT_LABELS[status];
             return (
-              <StatusChip key={status} tone={tone} icon={icon}>
+              <StatusChip key={status} tone={tone} icon={SEGMENT_ICON[status]}>
                 {plural(count, singular, pluralForm)}
               </StatusChip>
             );

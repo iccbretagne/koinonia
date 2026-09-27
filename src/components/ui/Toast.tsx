@@ -3,7 +3,9 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -67,15 +69,65 @@ export function ToastProvider({ children }: { readonly children: ReactNode }) {
   const [store] = useState(createToastStore);
   const api = useMemo(() => apiFor(store), [store]);
   const toast = useSyncExternalStore(store.subscribe, store.getSnapshot, getServerSnapshot);
+  const regionRef = useRef<HTMLDivElement>(null);
+
+  // Couche supérieure (docs/design-system/components/Toast.md) : les modales s'ouvrent avec
+  // `<dialog>.showModal()`, qui les place dans la couche supérieure du navigateur, au-dessus de
+  // tout élément positionné normalement (même en `position: fixed` + `z-index` élevé) — un toast
+  // déclenché pendant qu'une modale est ouverte resterait invisible et inerte derrière elle.
+  // `popover="manual"` place cette région dans la même couche ; on la (ré)affiche à chaque
+  // nouveau toast, et on la replace au sommet dès qu'une modale s'ouvre ensuite (la dernière
+  // couche affichée gagne — voir l'observateur ci-dessous).
+  useEffect(() => {
+    const el = regionRef.current;
+    if (!el || typeof el.showPopover !== "function") return;
+    try {
+      if (toast) {
+        if (el.matches(":popover-open")) el.hidePopover();
+        el.showPopover();
+      } else if (el.matches(":popover-open")) {
+        el.hidePopover();
+      }
+    } catch {
+      // API indisponible ou état inattendu : le toast reste simplement affiché en flux normal
+      // (repli couvert par le style ci-dessous, indépendant de l'API Popover).
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const el = regionRef.current;
+    if (!el || typeof el.showPopover !== "function" || typeof MutationObserver === "undefined") return;
+    const observer = new MutationObserver((mutations) => {
+      const dialogOpened = mutations.some((m) => m.target instanceof HTMLDialogElement && m.target.open);
+      if (!dialogOpened || !el.matches(":popover-open")) return;
+      try {
+        el.hidePopover();
+        el.showPopover();
+      } catch {
+        // Sans effet si la région n'est plus affichable pour une raison inattendue.
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["open"], subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <ToastContext.Provider value={api}>
       {children}
       <div
+        ref={regionRef}
+        popover="manual"
         aria-live="polite"
         aria-atomic="true"
-        className="pointer-events-none fixed inset-x-4 bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-[70] flex justify-center
-          md:inset-x-auto md:bottom-6 md:left-[calc(var(--k-sidebar-width,16rem)+1.5rem)] md:justify-start print:hidden"
+        // `display` en style inline : plus prioritaire que n'importe quelle classe, y compris la
+        // feuille de style de l'agent utilisateur associée à `[popover]` — sans quoi la classe
+        // `flex` ci-dessous resterait active même quand le popover n'est pas ouvert.
+        style={toast ? undefined : { display: "none" }}
+        // `[popover]` impose par défaut `inset: 0` (donc `top: 0`) et `width/height: fit-content` :
+        // sans les neutraliser explicitement (`top-auto`, `w-auto`/`md:w-fit`), le conteneur
+        // remonterait collé en haut de l'écran au lieu de suivre `bottom-…` ci-dessous.
+        className="pointer-events-none fixed inset-x-4 top-auto bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] z-[70] m-0 w-auto flex justify-center
+          border-0 bg-transparent p-0 md:inset-x-auto md:bottom-6 md:left-[calc(var(--k-sidebar-width,16rem)+1.5rem)] md:w-fit md:justify-start print:hidden"
       >
         {toast && <ToastView toast={toast} store={store} />}
       </div>

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, CalendarDays, CornerDownLeft, ExternalLink, Search, UserRound, type LucideIcon } from "lucide-react";
 import { useModalDialog } from "@/components/ui/use-modal-dialog";
 import { filterByQuery, normalizeText, type SearchablePage } from "@/lib/navigation";
+import { resetLoadingToIdle, type Remote } from "./command-palette-remote";
 
 /** Clé localStorage des pages récemment ouvertes depuis la palette (confort par personne). */
 const RECENT_KEY = "koinonia-recent-pages";
@@ -55,8 +56,6 @@ interface EventRow {
   title: string;
   date: string;
 }
-
-type Remote<T> = { status: "idle" | "loading" | "unavailable" } | { status: "ready"; rows: T[] };
 
 function readRecent(): string[] {
   try {
@@ -153,7 +152,13 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
     const cid = encodeURIComponent(churchId);
     if (members.status === "idle") load<MemberRow>(`/api/members?churchId=${cid}`, setMembers);
     if (events.status === "idle") load<EventRow>(`/api/events?churchId=${cid}`, setEvents);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      // La requête annulée (repassage sous le seuil pendant le chargement) ne doit pas
+      // laisser la catégorie bloquée sur "loading" (voir resetLoadingToIdle).
+      setMembers(resetLoadingToIdle);
+      setEvents(resetLoadingToIdle);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- un seul chargement par catégorie
   }, [wantsRemote, churchId]);
 

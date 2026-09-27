@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo, type CSSProperties } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
 import MoreSheet from "@/components/MoreSheet";
 import TopBar, { type TopBarUser } from "@/components/TopBar";
-import CommandPalette from "@/components/CommandPalette";
 import GuidedTour from "@/components/GuidedTour";
 import type { ServerAction } from "@/components/AccountActions";
 import { useSidebarPref, useViewport } from "@/components/shell-state";
@@ -49,6 +49,12 @@ interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" |
 const SIDEBAR_WIDTH = { mobile: "0px", rail: "72px", expanded: "256px" } as const;
 
 /**
+ * Chargée à la demande (⌘K/Ctrl K ou loupe, jamais au chargement initial de la page) : son
+ * module n'est récupéré qu'à la première ouverture, pas sur chaque page authentifiée.
+ */
+const CommandPalette = dynamic(() => import("@/components/CommandPalette"), { ssr: false });
+
+/**
  * Coquille de l'espace authentifié (spec 055, lot 3) : sidebar (≥ 768px), barre supérieure,
  * barre du bas et panneau « Plus » (< 768px), palette de recherche. Toutes les entrées de
  * navigation viennent d'une seule définition (`@/lib/navigation`), construite à partir des
@@ -73,6 +79,9 @@ export default function AuthLayoutShell({
   const searchParams = useSearchParams();
   const [moreOpen, setMoreOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Une fois vrai (première ouverture), reste vrai : le module de la palette a été demandé,
+  // inutile de le redemander à chaque fermeture/réouverture.
+  const [paletteLoaded, setPaletteLoaded] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
     // Changement de page : les panneaux se referment.
@@ -137,6 +146,7 @@ export default function AuthLayoutShell({
       if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setMoreOpen(false);
+        setPaletteLoaded(true);
         setSearchOpen((o) => !o);
       }
     }
@@ -182,7 +192,10 @@ export default function AuthLayoutShell({
           currentChurchId={currentChurchId}
           churchName={churchName}
           churchColor={headerColor}
-          onOpenSearch={() => setSearchOpen(true)}
+          onOpenSearch={() => {
+            setPaletteLoaded(true);
+            setSearchOpen(true);
+          }}
           stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"}
           {...accountActions}
         />
@@ -202,14 +215,16 @@ export default function AuthLayoutShell({
 
       <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} spaces={spaces} active={active} {...accountActions} />
 
-      <CommandPalette
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        pages={pages}
-        churchId={currentChurchId}
-        canSearchMembers={!!navInput.hasMembersAccess}
-        canSearchEvents={!!navInput.hasEventsAccess}
-      />
+      {paletteLoaded && (
+        <CommandPalette
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          pages={pages}
+          churchId={currentChurchId}
+          canSearchMembers={!!navInput.hasMembersAccess}
+          canSearchEvents={!!navInput.hasEventsAccess}
+        />
+      )}
 
       {/* Interactive guided tour */}
       <GuidedTour userRole={userRole} />

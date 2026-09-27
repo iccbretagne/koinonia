@@ -43,7 +43,7 @@ const REASON_COLOR: Record<Group["reason"], string> = {
 
 function MemberCard({ member, isSource, label }: { readonly member: MemberSummary; readonly isSource: boolean; readonly label: string }) {
   return (
-    <div className={`border rounded-lg p-4 ${isSource ? "border-danger/30 bg-danger-soft" : "border-success/30 bg-success-soft"}`}>
+    <div className={`min-w-0 border rounded-lg p-4 ${isSource ? "border-danger/30 bg-danger-soft" : "border-success/30 bg-success-soft"}`}>
       <div className="flex items-center justify-between mb-2">
         <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isSource ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>
           {label}
@@ -52,9 +52,9 @@ function MemberCard({ member, isSource, label }: { readonly member: MemberSummar
           <span className="text-xs bg-brand text-on-brand px-2 py-0.5 rounded">Compte lié</span>
         )}
       </div>
-      <p className="font-semibold text-ink">{member.firstName} {member.lastName}</p>
-      {member.email && <p className="text-sm text-ink-muted">{member.email}</p>}
-      {member.phone && <p className="text-sm text-ink-muted">{member.phone}</p>}
+      <p className="truncate font-semibold text-ink" title={`${member.firstName} ${member.lastName}`}>{member.firstName} {member.lastName}</p>
+      {member.email && <p className="truncate text-sm text-ink-muted" title={member.email}>{member.email}</p>}
+      {member.phone && <p className="truncate text-sm text-ink-muted" title={member.phone}>{member.phone}</p>}
       {member.userLink && <p className="text-xs text-ink-muted mt-1">Compte : {member.userLink.name ?? member.userLink.email}</p>}
       <div className="mt-2 space-y-0.5">
         {member.departments.map((d) => (
@@ -191,7 +191,7 @@ function MergeModal({
     <Modal open onClose={onClose} title="Fusionner deux membres">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
         {/* Cartes source/target */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MemberCard member={source} isSource label="Sera supprimé" />
           <MemberCard member={target} isSource={false} label="Sera conservé" />
         </div>
@@ -314,7 +314,7 @@ function MemberPicker({
   const selected = members.find((m) => m.id === selectedId);
 
   return (
-    <div className="border rounded-lg p-3">
+    <div className="min-w-0 border rounded-lg p-3">
       <p className="text-xs font-semibold text-ink-muted mb-2">{label}</p>
       <input
         type="text"
@@ -324,15 +324,15 @@ function MemberPicker({
         className="w-full border rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-focus"
       />
       {selected && !search && (
-        <div className="flex items-center justify-between bg-brand-soft rounded px-2 py-1.5 mb-2">
-          <span className="text-sm font-medium text-brand-text">
+        <div className="flex items-center justify-between gap-2 bg-brand-soft rounded px-2 py-1.5 mb-2">
+          <span className="min-w-0 truncate text-sm font-medium text-brand-text" title={`${selected.firstName} ${selected.lastName}${selected.email ? ` (${selected.email})` : ""}`}>
             {selected.firstName} {selected.lastName}
             {selected.email && <span className="text-xs text-ink-muted ml-1">({selected.email})</span>}
           </span>
           <button
             type="button"
             onClick={() => onSelect("")}
-            className="text-xs text-ink-subtle hover:text-ink-muted ml-2"
+            className="shrink-0 text-xs text-ink-subtle hover:text-ink-muted ml-2"
           >
             ✕
           </button>
@@ -423,7 +423,7 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
         <p className="text-sm text-ink-muted mb-4">
           Sélectionnez deux membres à fusionner, même s&apos;ils ne sont pas détectés automatiquement comme doublons.
         </p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <MemberPicker
             label="Membre à supprimer"
             members={allMembers}
@@ -470,12 +470,15 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
                   Fusionner
                 </Button>
               </div>
-              <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${group.members.length}, minmax(0, 1fr))` }}>
+              {/* Nombre de membres variable par groupe (rarement > 2) : `auto-fit` passe à une
+                  colonne dès que la largeur d'une carte manquerait, sans dépendre d'un point de
+                  rupture fixe qui déborderait à 390px pour un groupe à 3+ membres. */}
+              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
                 {group.members.map((m) => (
-                  <div key={m.id} className="border rounded p-3 bg-surface-sunken">
-                    <p className="font-semibold text-ink">{m.firstName} {m.lastName}</p>
-                    {m.email && <p className="text-sm text-ink-muted">{m.email}</p>}
-                    {m.phone && <p className="text-sm text-ink-muted">{m.phone}</p>}
+                  <div key={m.id} className="min-w-0 border rounded p-3 bg-surface-sunken">
+                    <p className="truncate font-semibold text-ink" title={`${m.firstName} ${m.lastName}`}>{m.firstName} {m.lastName}</p>
+                    {m.email && <p className="truncate text-sm text-ink-muted" title={m.email}>{m.email}</p>}
+                    {m.phone && <p className="truncate text-sm text-ink-muted" title={m.phone}>{m.phone}</p>}
                     {m.userLink && (
                       <p className="text-xs text-brand-text mt-1">Compte : {m.userLink.name ?? m.userLink.email}</p>
                     )}

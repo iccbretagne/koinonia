@@ -9,5 +9,6 @@ export default async function AdminLayout({
   const churchId = await getCurrentChurchId(session);
   if (churchId) await requireChurchAccess(churchId);
 
-  return <div className="p-6">{children}</div>;
+  // Le padding vient de `<main>` (AuthLayoutShell) — un `p-6` ici le doublait.
+  return <>{children}</>;
 }

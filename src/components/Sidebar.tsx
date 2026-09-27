@@ -177,6 +177,8 @@ function RailNav({
 }) {
   const [flyout, setFlyout] = useState<{ key: string; top: number; left: number } | null>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
+  /** Bouton du rail à l'origine du panneau ouvert : reçoit le focus quand Échap le referme. */
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
@@ -192,7 +194,10 @@ function RailNav({
       setFlyout(null);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setFlyout(null);
+      if (e.key === "Escape") {
+        setFlyout(null);
+        triggerRef.current?.focus();
+      }
     }
     document.addEventListener("mousedown", onPointer);
     document.addEventListener("keydown", onKey);
@@ -200,6 +205,16 @@ function RailNav({
       document.removeEventListener("mousedown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
+  }, [flyout]);
+
+  // À l'ouverture du panneau flottant, le focus clavier doit y entrer (sinon il reste sur le
+  // bouton du rail, hors du panneau qui vient d'apparaître à côté).
+  useEffect(() => {
+    if (!flyout) return;
+    const el = flyoutRef.current;
+    if (!el) return;
+    const firstLink = el.querySelector<HTMLElement>("a, button");
+    (firstLink ?? el).focus();
   }, [flyout]);
 
   const openSpace = flyout ? spaces.find((s) => s.key === flyout.key) : null;
@@ -244,6 +259,7 @@ function RailNav({
                   aria-expanded={flyout?.key === s.key}
                   aria-current={isActive ? "true" : undefined}
                   onClick={(e) => {
+                    triggerRef.current = e.currentTarget;
                     const rect = e.currentTarget.getBoundingClientRect();
                     setFlyout((f) =>
                       f?.key === s.key ? null : { key: s.key, top: Math.max(8, rect.top - 8), left: rect.right + 12 }
@@ -265,8 +281,10 @@ function RailNav({
           ref={flyoutRef}
           role="region"
           aria-label={openSpace.label}
+          tabIndex={-1}
           style={{ top: flyout.top, left: flyout.left }}
-          className="fixed z-50 flex max-h-[min(32rem,calc(100dvh-16px))] w-64 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float"
+          className="fixed z-50 flex max-h-[min(32rem,calc(100dvh-16px))] w-64 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-float
+            focus:outline-none"
         >
           <p className={`${overline} px-4 pb-1 pt-3`}>{openSpace.label}</p>
           <div className="overflow-y-auto overscroll-contain px-1.5 pb-2">

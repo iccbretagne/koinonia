@@ -66,6 +66,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
 
   const [pendingDelete, setPendingDelete] = useState<TeamEventItem | null>(null);
   const [scopeStep, setScopeStep] = useState<"edit" | "delete" | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -115,6 +116,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     setModalOpen(false);
     setScopeStep(null);
     setError(null);
+    setDeleteError(null);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -170,6 +172,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
   }
 
   function handleDeleteClick(ev: TeamEventItem) {
+    setDeleteError(null);
     if (ev.seriesId) {
       setEditing(ev);
       setError(null);
@@ -180,12 +183,20 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     setPendingDelete(ev);
   }
 
+  function cancelPendingDelete() {
+    setPendingDelete(null);
+    setDeleteError(null);
+  }
+
   async function doDelete(ev: TeamEventItem, scope: "occurrence" | "following") {
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/team-events/${ev.id}?scope=${scope}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Suppression impossible. Réessayez dans un instant.");
+        // La modale de confirmation/choix de portée reste ouverte : l'erreur y est affichée
+        // (Alert) plutôt que dans un toast, qui resterait masqué derrière elle (spec 055).
+        setDeleteError(data.error || "Suppression impossible. Réessayez dans un instant.");
         return;
       }
       toast.success("Événement d'équipe supprimé");
@@ -195,7 +206,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       setModalOpen(false);
       await fetchEvents();
     } catch {
-      toast.error("Suppression impossible. Vérifiez votre connexion.");
+      setDeleteError("Suppression impossible. Vérifiez votre connexion.");
     }
   }
 
@@ -361,6 +372,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             <p className="mb-6 text-[15px] leading-[22px] text-ink-muted">
               Cet événement fait partie d&apos;une série. Que souhaitez-vous supprimer ?
             </p>
+            {deleteError && <Alert tone="danger" className="mb-4">{deleteError}</Alert>}
             <div className="flex flex-col gap-3">
               <Button onClick={() => doDelete(editing, "occurrence")} variant="secondary">
                 Cette occurrence uniquement
@@ -443,8 +455,10 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
         confirmLabel="Supprimer l'événement"
         variant="danger"
         onConfirm={() => pendingDelete && doDelete(pendingDelete, "occurrence")}
-        onCancel={() => setPendingDelete(null)}
-      />
+        onCancel={cancelPendingDelete}
+      >
+        {deleteError && <Alert tone="danger">{deleteError}</Alert>}
+      </ConfirmModal>
     </section>
   );
 }

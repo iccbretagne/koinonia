@@ -84,17 +84,18 @@ export default async function StarWeeklyEventsPage({
             const isNext = event.id === nextEvent?.id;
             const isPast = event.date < now;
             return (
-              <li key={event.id} className={`border-t border-line first:border-t-0 ${isPast ? "opacity-60" : ""}`}>
+              <li key={event.id} className="border-t border-line first:border-t-0">
                 <Link
                   href={`/events/${event.id}/star-view`}
                   className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                 >
                   <DateTile date={event.date} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                    <p className={`truncate text-[15px] font-semibold leading-[22px] ${isPast ? "text-ink-subtle" : "text-ink"}`}>{event.title}</p>
                     <p className="text-[13px] leading-[18px] text-ink-muted">
                       {formatTime(event.date)}
                       {isNext && <span className="font-semibold text-brand-text"> · Prochain</span>}
+                      {isPast && <span className="text-ink-subtle"> · Passé</span>}
                     </p>
                   </div>
                   <StatusChip tone={eventTypeTone(event.type)} className="shrink-0">

@@ -63,10 +63,10 @@ export default async function AuthLayout({
   async function switchToAdminMode() {
     "use server";
     (await cookies()).set("koinonia-view-mode", "admin", { path: "/", maxAge: 2592000 });
-    // "/dashboard" appartient au module planning (spec 038) : sur une instance qui le
-    // désactive, ou pour un rôle sans planning:department (spec 031/#462), il mènerait à
-    // un 404/FORBIDDEN. "/profile" appartient au noyau, toujours disponible.
-    redirect(canAccessDashboard ? "/dashboard" : "/profile");
+    // Même accueil que l'entrée « Accueil » de la navigation (landingHref) plutôt que
+    // "/dashboard" en dur : sur une instance qui désactive le module planning, ou pour un
+    // rôle sans planning:department (spec 031/#462), ce dernier mènerait à un 404/FORBIDDEN.
+    redirect(landingHref({ isPastoral: false, hasPlanningAccess: canAccessDashboard, hasStarPlanning }));
   }
   async function signOutAction() {
     "use server";

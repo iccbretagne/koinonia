@@ -99,6 +99,8 @@ export default async function TodayPage() {
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
 
   if (!churchId) {
     return (
@@ -119,10 +121,13 @@ export default async function TodayPage() {
   const [myPlanning, churchEvents, myRequests] = await Promise.all([
     canPlanning ? loadMyPlanning(session.user.id, churchId) : null,
     canEvents
-      ? // Même requête que l'agenda de l'église (/events).
+      ? // Même périmètre que l'agenda de l'église (/events, `where: { churchId }`), bornée à
+        // partir d'aujourd'hui et limitée au nombre affiché : la page n'a besoin d'aucun
+        // événement passé, inutile de tous les charger pour n'en montrer que MAX_EVENTS.
         prisma.event.findMany({
-          where: { churchId },
+          where: { churchId, date: { gte: startOfToday } },
           orderBy: { date: "asc" },
+          take: MAX_EVENTS,
           select: { id: true, title: true, type: true, date: true },
         })
       : canPlanning

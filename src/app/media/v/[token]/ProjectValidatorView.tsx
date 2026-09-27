@@ -741,9 +741,9 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
         {/* Stats bar */}
         <div className="px-4 py-1.5 flex items-center justify-center gap-3 shrink-0 text-xs">
           <span className="text-success tabular-nums">{approvedCount} {isPrevalidator ? "pré-validés" : "approuvés"}</span>
-          <span className="text-ink/20">·</span>
-          <span className="text-ink/40 tabular-nums">{actionableCount} en attente</span>
-          <span className="text-ink/20">·</span>
+          <span className="text-ink-subtle">·</span>
+          <span className="text-ink-subtle tabular-nums">{actionableCount} en attente</span>
+          <span className="text-ink-subtle">·</span>
           <span className="text-danger tabular-nums">{rejectedCount} {isPrevalidator ? "écartés" : "rejetés"}</span>
         </div>
 
@@ -802,11 +802,11 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
         {/* Keyboard hints — desktop only */}
         {canAct && (
           <div className="hidden sm:flex px-4 py-1 justify-center gap-4 shrink-0">
-            <span className="text-[10px] text-ink/25">← : {labels.reject}</span>
-            <span className="text-[10px] text-ink/25">R : révision</span>
-            <span className="text-[10px] text-ink/25">→ : {labels.approve}</span>
+            <span className="text-[10px] text-ink-subtle">← : {labels.reject}</span>
+            <span className="text-[10px] text-ink-subtle">R : révision</span>
+            <span className="text-[10px] text-ink-subtle">→ : {labels.approve}</span>
             {currentFile?.mimeType.startsWith("image/") && (
-              <span className="text-[10px] text-ink/25">H : HD</span>
+              <span className="text-[10px] text-ink-subtle">H : HD</span>
             )}
           </div>
         )}

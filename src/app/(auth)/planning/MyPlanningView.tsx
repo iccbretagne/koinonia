@@ -181,12 +181,13 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
               if (row.kind === "team") {
                 const t = row.team;
                 return (
-                  <li key={`team-${t.id}`} className={`flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0 ${isPast ? "opacity-60" : ""}`}>
+                  <li key={`team-${t.id}`} className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0">
                     <DateTile date={t.startsAt} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{t.title}</p>
+                      <p className={`truncate text-[15px] font-semibold leading-[22px] ${isPast ? "text-ink-subtle" : "text-ink"}`}>{t.title}</p>
                       <p className="text-[13px] leading-[18px] text-ink-muted">
                         {formatTimeRange(t.startsAt, t.endsAt)} · {t.department.name}
+                        {isPast && <span className="text-ink-subtle"> · Passé</span>}
                       </p>
                       {t.location && (
                         <p className="inline-flex items-center gap-1 text-[13px] leading-[18px] text-ink-muted">
@@ -207,12 +208,13 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
               const tasks = tasksByEvent[`${event.id}_${dept.id}`] ?? [];
               const descriptor = serviceStatusDescriptor(p.status);
               return (
-                <li key={p.id} className={`flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0 ${isPast ? "opacity-60" : ""}`}>
+                <li key={p.id} className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0">
                   <DateTile date={event.date} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                    <p className={`truncate text-[15px] font-semibold leading-[22px] ${isPast ? "text-ink-subtle" : "text-ink"}`}>{event.title}</p>
                     <p className="text-[13px] leading-[18px] text-ink-muted">
                       {formatTime(event.date)} · {dept.name}
+                      {isPast && <span className="text-ink-subtle"> · Passé</span>}
                     </p>
                     {tasks.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">

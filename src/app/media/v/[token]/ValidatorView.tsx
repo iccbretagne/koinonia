@@ -658,9 +658,9 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         {/* Stats bar */}
         <div className="bg-scrim px-4 py-1.5 flex items-center justify-center gap-4 shrink-0">
           <span className="text-xs text-success tabular-nums">{approvedCount} {labels.approvedPlural}</span>
-          <span className="text-xs text-ink/30" aria-hidden>·</span>
-          <span className="text-xs text-ink/40 tabular-nums">{pendingCount} en attente</span>
-          <span className="text-xs text-ink/30" aria-hidden>·</span>
+          <span className="text-xs text-ink-subtle" aria-hidden>·</span>
+          <span className="text-xs text-ink-subtle tabular-nums">{pendingCount} en attente</span>
+          <span className="text-xs text-ink-subtle" aria-hidden>·</span>
           <span className="text-xs text-danger tabular-nums">{rejectedCount} {labels.rejectedPlural}</span>
         </div>
 
@@ -706,10 +706,10 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
         {/* Keyboard hints */}
         <div className="bg-scrim px-4 py-1 flex justify-center gap-4 shrink-0">
-          <span className="text-[10px] text-ink/30">← X : rejeter</span>
-          <span className="text-[10px] text-ink/30">Espace : passer</span>
-          <span className="text-[10px] text-ink/30">→ V : valider</span>
-          <span className="text-[10px] text-ink/30">H / Entrée : HD</span>
+          <span className="text-[10px] text-ink-subtle">← X : rejeter</span>
+          <span className="text-[10px] text-ink-subtle">Espace : passer</span>
+          <span className="text-[10px] text-ink-subtle">→ V : valider</span>
+          <span className="text-[10px] text-ink-subtle">H / Entrée : HD</span>
         </div>
 
         {/* Undo toast */}

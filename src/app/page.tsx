@@ -45,10 +45,11 @@ export default async function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-soft via-bg to-accent-soft p-4">
       <div className="w-full max-w-md p-8 bg-surface/90 backdrop-blur rounded-2xl shadow-overlay border border-brand/20">
         <div className="flex flex-col items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/icc-rennes-logo-sombre.svg" alt="ICC Rennes" className="dark:hidden h-12 mb-4" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/icc-rennes-logo-blanc.svg" alt="ICC Rennes" className="hidden dark:block h-12 mb-4" />
+          {/* Marque des plumes (commune à toutes les églises ICC) plutôt que le logo complet
+              d'une église précise : cette page de connexion est partagée par toutes les
+              instances multi-églises, l'église n'est pas encore connue à ce stade. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique, pas d'optimisation utile */}
+          <img src="/brand/icc-plumes.svg" alt="" width={48} height={48} className="h-12 w-auto mb-4" />
           <h1 className="mb-2 text-3xl font-bold text-center text-brand-text font-display">
             Koinonia
           </h1>
