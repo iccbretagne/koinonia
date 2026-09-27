@@ -4,6 +4,36 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.26.0] - 2026-09-27
+
+### Ajouté
+
+- **Nouveau design system** (spec 055, #606, ADR-0018) : toute l'interface est redessinée sur la
+  charte ICC Rennes (violet, jaune, rouge, bleu ; Montserrat pour les titres, Source Sans 3 pour
+  le texte), avec des couleurs plus lisibles et des statuts toujours accompagnés d'un mot.
+- **Mode sombre** : chaque utilisateur choisit Clair, Sombre ou Système dans « Mon profil »
+  (réglage propre à son navigateur).
+- **Page « Aujourd'hui »** (`/accueil`), nouvelle page d'arrivée après connexion : prochain
+  service, prochains rendez-vous, événements de l'église, demandes en cours et raccourcis, selon
+  ce que chaque rôle voit déjà ailleurs.
+- **Recherche** (`⌘K` / `Ctrl K`, ou la loupe sur mobile) : accès direct à toute page de son rôle,
+  à un STAR ou à un événement.
+- **Logo ICC Rennes et nouvelle icône d'application** (plumes), à la place de l'icône « PC ».
+
+### Modifié
+
+- **Navigation** : sur mobile, une barre du bas adaptée à chaque rôle (quatre destinations +
+  « Plus », qui ouvre toutes les sections) ; sur ordinateur, une barre latérale regroupée par
+  espaces (Planning, Agenda, Personnes, Demandes, Médias, Ressources, Administration),
+  repliable. La couleur propre à l'église devient un filet sous la barre supérieure.
+- **Grille de planning** : le statut de chaque STAR se choisit en un appui (En service, Debrief,
+  Indisponible, Remplaçant) au lieu d'un menu déroulant, avec légende et décompte par statut.
+- **Mon planning, événements, demandes, profil** : écrans refaits (carte « prochain service »,
+  listes compactes sur mobile, choix du type de demande par tuiles).
+- **Retours visibles** : chaque page affiche une silhouette de chargement, et les actions
+  confirment leur réussite ou expliquent leur échec par un message en bas d'écran.
+- Aucun droit ne change : chaque rôle retrouve exactement les mêmes sections et actions.
+
 ## [v1.25.0] - 2026-09-26
 
 ### Ajouté
