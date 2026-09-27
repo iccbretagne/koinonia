@@ -5,7 +5,7 @@ import RoomsAdminClient from "./RoomsAdminClient";
 export default async function AdminRoomsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("rooms:manage", churchId);
 
   const rooms = await prisma.room.findMany({
@@ -25,7 +25,7 @@ export default async function AdminRoomsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Salles</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Salles</h1>
       <RoomsAdminClient
         churchId={churchId}
         initialRooms={rooms.map((r) => ({

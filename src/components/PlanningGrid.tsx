@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { Check, CircleCheck, CircleDashed, CloudAlert, Lock, MessageSquare, Repeat, TriangleAlert, X, type LucideIcon } from "lucide-react";
+import Alert from "@/components/ui/Alert";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import StatusChip, { statusToneClasses } from "@/components/ui/StatusChip";
+import { SERVICE_STATUS, SERVICE_STATUS_ORDER, serviceStatusDescriptor } from "@/components/ui/status";
+import { useToast } from "@/components/ui/Toast";
+import type { ServiceStatus } from "@/generated/prisma/client";
 import TaskPanel from "./TaskPanel";
 
 interface MemberPlanning {
@@ -42,20 +51,10 @@ function AbsenceBadge({
   readonly activeAbsence: ActiveAbsence;
   readonly canViewAbsences: boolean;
 }) {
-  const className =
-    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 text-xs shrink-0 whitespace-nowrap";
-  const content =
-    activeAbsence.kind === "PERIOD" ? (
-      <>
-        <span aria-hidden="true">⚠</span>
-        Absent · période {formatAbsencePeriodShort(activeAbsence)}
-      </>
-    ) : (
-      <>
-        <span aria-hidden="true">⚠</span>
-        Absent · cet événement
-      </>
-    );
+  const text =
+    activeAbsence.kind === "PERIOD"
+      ? `Absent · période ${formatAbsencePeriodShort(activeAbsence)}`
+      : "Absent · cet événement";
 
   if (canViewAbsences) {
     return (
@@ -63,17 +62,17 @@ function AbsenceBadge({
         href={`/absences?highlightId=${activeAbsence.id}`}
         title={formatAbsencePeriod(activeAbsence)}
         aria-label={`${formatAbsencePeriod(activeAbsence)} — voir le détail`}
-        className={`${className} hover:bg-orange-200`}
+        className="max-w-full rounded-chip hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
-        {content}
+        <StatusChip tone="warning" icon={TriangleAlert}>{text}</StatusChip>
       </Link>
     );
   }
 
   return (
-    <span title={formatAbsencePeriod(activeAbsence)} aria-label={formatAbsencePeriod(activeAbsence)} className={className}>
-      {content}
-    </span>
+    <StatusChip tone="warning" icon={TriangleAlert} title={formatAbsencePeriod(activeAbsence)} aria-label={formatAbsencePeriod(activeAbsence)}>
+      {text}
+    </StatusChip>
   );
 }
 
@@ -84,29 +83,89 @@ interface PlanningGridProps {
   readonly canViewAbsences?: boolean;
 }
 
-const STATUS_OPTIONS = [
-  { value: null, label: "-", color: "bg-gray-100 text-gray-500" },
-  {
-    value: "EN_SERVICE",
-    label: "En service",
-    color: "bg-green-100 text-green-800",
-  },
-  {
-    value: "EN_SERVICE_DEBRIEF",
-    label: "En service + Debrief",
-    color: "bg-icc-violet-light text-icc-violet",
-  },
-  {
-    value: "INDISPONIBLE",
-    label: "Indisponible",
-    color: "bg-red-100 text-red-800",
-  },
-  {
-    value: "REMPLACANT",
-    label: "Remplacant",
-    color: "bg-blue-100 text-blue-800",
-  },
-];
+/**
+ * Pictogramme de chaque bouton du contrôle segmenté (maquettes : check, message, x, repeat),
+ * repris aussi par les pastilles de décompte du pied de grille et par la légende ci-dessous —
+ * une seule correspondance icône/statut dans toute la grille.
+ */
+const SEGMENT_ICON: Record<ServiceStatus, LucideIcon> = {
+  EN_SERVICE: Check,
+  EN_SERVICE_DEBRIEF: MessageSquare,
+  INDISPONIBLE: X,
+  REMPLACANT: Repeat,
+};
+
+/**
+ * Contrôle segmenté de statut (docs/design-system/components/PlanningGrid.md) : un appui au
+ * lieu du menu déroulant. Le bouton actif prend le fond `-soft` et la couleur de son statut ; un
+ * nouvel appui sur le statut actif le remet à « non renseigné », comme l'option « - » de
+ * l'ancien sélecteur.
+ */
+function StatusSegments({
+  memberName,
+  status,
+  onChange,
+}: {
+  readonly memberName: string;
+  readonly status: string | null;
+  readonly onChange: (status: ServiceStatus | null) => void;
+}) {
+  return (
+    <div role="group" aria-label={`Statut de ${memberName}`} className="inline-flex shrink-0 gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+      {SERVICE_STATUS_ORDER.map((value) => {
+        const { tone, label } = SERVICE_STATUS[value];
+        const Icon = SEGMENT_ICON[value];
+        const active = status === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={active}
+            aria-label={label}
+            title={active ? `${label} — appuyer à nouveau pour retirer` : label}
+            onClick={() => onChange(active ? null : value)}
+            className={`grid h-11 w-11 place-items-center rounded-[7px] transition-[background-color,color,transform] duration-120
+              active:scale-[0.96] motion-reduce:active:scale-100
+              focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
+                active ? statusToneClasses[tone] : "text-ink-subtle hover:bg-surface hover:text-ink"
+              }`}
+          >
+            <Icon aria-hidden="true" className="size-[18px]" strokeWidth={active ? 2.25 : 1.75} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Statut en lecture seule : la pastille (mot + icône), ou « Non renseigné ». */
+function ReadOnlyStatus({ status }: { readonly status: string | null }) {
+  const descriptor = serviceStatusDescriptor(status);
+  if (!descriptor) {
+    return (
+      <StatusChip tone="neutral" icon={CircleDashed}>
+        Non renseigné
+      </StatusChip>
+    );
+  }
+  return (
+    <StatusChip tone={descriptor.tone} icon={descriptor.icon}>
+      {descriptor.label}
+    </StatusChip>
+  );
+}
+
+function plural(count: number, singular: string, pluralForm: string) {
+  return `${count} ${count > 1 ? pluralForm : singular}`;
+}
+
+/** Libellés du décompte de pied de grille. */
+const COUNT_LABELS: Record<ServiceStatus, [string, string]> = {
+  EN_SERVICE: ["en service", "en service"],
+  EN_SERVICE_DEBRIEF: ["en service + debrief", "en service + debrief"],
+  INDISPONIBLE: ["indisponible", "indisponibles"],
+  REMPLACANT: ["remplaçant", "remplaçants"],
+};
 
 export default function PlanningGrid({
   eventId,
@@ -114,6 +173,7 @@ export default function PlanningGrid({
   readOnly = false,
   canViewAbsences = false,
 }: PlanningGridProps) {
+  const toast = useToast();
   const [members, setMembers] = useState<MemberPlanning[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -174,11 +234,12 @@ export default function PlanningGrid({
         setSaveError(false);
       } catch {
         setSaveError(true);
+        toast.error("Planning non enregistré. Vérifiez votre connexion, puis modifiez un statut pour réessayer.");
       } finally {
         setSaving(false);
       }
     },
-    [eventId, departmentId]
+    [eventId, departmentId, toast]
   );
 
   const handleStatusChange = (memberId: string, status: string | null) => {
@@ -203,172 +264,145 @@ export default function PlanningGrid({
   };
 
   if (loading) {
-    return (
-      <div className="p-4 text-gray-500">Chargement du planning...</div>
-    );
+    return <SkeletonList rows={6} label="Chargement du planning…" />;
   }
 
   if (fetchError) {
     return (
-      <div className="p-4 text-icc-rouge text-sm">
-        Erreur lors du chargement du planning.{" "}
-        <button onClick={fetchPlanning} className="underline">Réessayer</button>
-      </div>
+      <Alert
+        tone="danger"
+        title="Le planning n'a pas pu être chargé."
+        action={
+          <Button variant="ghost" size="sm" onClick={fetchPlanning}>
+            Réessayer
+          </Button>
+        }
+      >
+        Vérifiez votre connexion.
+      </Alert>
     );
   }
 
   if (members.length === 0) {
     return (
-      <div className="p-4 text-gray-500">
-        Aucun STAR dans ce département.
+      <div className="rounded-card border border-line bg-surface">
+        <EmptyState
+          title="Aucun STAR dans ce département"
+          description="Ajoutez des STAR au département pour pouvoir les planifier."
+          size="sm"
+        />
       </div>
     );
   }
 
+  const counts = SERVICE_STATUS_ORDER.map((status) => ({
+    status,
+    count: members.filter((m) => m.status === status).length,
+  }));
+  const unset = members.filter((m) => !serviceStatusDescriptor(m.status)).length;
   const enService = members.filter(
     (m) => m.status === "EN_SERVICE" || m.status === "EN_SERVICE_DEBRIEF"
   ).length;
-  const indisponible = members.filter(
-    (m) => m.status === "INDISPONIBLE"
-  ).length;
+
+  const deadlineLabel = planningDeadline
+    ? new Date(planningDeadline).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 text-sm">
-        <span className="text-green-700">
-          En service : {enService}/{members.length}
-        </span>
-        <span className="text-red-700">Indisponibles : {indisponible}</span>
-        {isReadOnly && (
-          <span className="text-gray-400 italic">
-            {deadlinePassed ? "Échéance dépassée" : "Lecture seule"}
-          </span>
-        )}
-        {deadlinePassed && canBypassDeadline && (
-          <span className="text-orange-500 italic text-xs">Échéance dépassée — modification autorisée</span>
-        )}
-        {saveError && <span className="text-icc-rouge">Erreur d&apos;enregistrement</span>}
-        {!isReadOnly && saving && <span className="text-blue-500">Enregistrement...</span>}
-        {!isReadOnly && dirty && !saving && (
-          <span className="text-orange-500">
-            Modifications non sauvegardees
-          </span>
-        )}
-        {!isReadOnly && !dirty && !saving && (
-          <span className="text-green-500">Sauvegarde</span>
-        )}
-      </div>
+    <div className="flex flex-col gap-4">
+      {deadlineLabel &&
+        (deadlinePassed ? (
+          <Alert tone={canBypassDeadline && !readOnly ? "warning" : "danger"} title="Échéance dépassée.">
+            Le planning devait être rempli avant le {deadlineLabel}.
+            {canBypassDeadline && !readOnly && " Vous pouvez encore le modifier."}
+          </Alert>
+        ) : (
+          <Alert tone="info">Planning à remplir avant le {deadlineLabel}.</Alert>
+        ))}
 
-      {planningDeadline && (
-        <div
-          className={`mb-3 px-3 py-2 text-xs rounded-lg ${
-            deadlinePassed
-              ? "bg-red-50 text-red-700"
-              : "bg-blue-50 text-blue-700"
-          }`}
-        >
-          {deadlinePassed ? "Échéance dépassée — " : "Échéance : "}
-          {new Date(planningDeadline).toLocaleString("fr-FR", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
+      {/* Légende (docs/design-system/components/PlanningGrid.md) : le contrôle segmenté
+          ci-dessous n'affiche qu'une icône par bouton, illisible sans elle. Lecture seule :
+          chaque ligne affiche déjà son statut en texte (ReadOnlyStatus), pas besoin de légende. */}
+      {!isReadOnly && (
+        <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-[13px] leading-[18px] text-ink-muted">
+          {SERVICE_STATUS_ORDER.map((status) => {
+            const Icon = SEGMENT_ICON[status];
+            const { label } = SERVICE_STATUS[status];
+            return (
+              <li key={status} className="inline-flex items-center gap-1.5">
+                <Icon aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                {label}
+              </li>
+            );
           })}
-        </div>
+        </ul>
       )}
 
-      {/* Mobile: card view */}
-      <div className="md:hidden space-y-2">
-        {members.map((member) => {
-          const current = STATUS_OPTIONS.find((o) => o.value === member.status) || STATUS_OPTIONS[0];
-          return (
-            <div
-              key={member.id}
-              className={`flex flex-col gap-1.5 p-3 rounded-lg border border-gray-200 ${current.color}`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium truncate min-w-0">
-                  {member.firstName} {member.lastName}
-                </span>
-                {isReadOnly ? (
-                  <span className="text-xs font-semibold shrink-0">{current.label}</span>
-                ) : (
-                  <select
-                    value={member.status || ""}
-                    onChange={(e) =>
-                      handleStatusChange(member.id, e.target.value || null)
-                    }
-                    className="text-sm border border-gray-300 rounded-md px-2 py-1.5 bg-white shrink-0"
-                  >
-                    {STATUS_OPTIONS.map((option) => (
-                      <option key={option.value || "none"} value={option.value || ""}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              {member.activeAbsence && (
-                <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <section aria-label="Planning de l'équipe" className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-surface-sunken px-4 py-2.5">
+          <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">
+            {plural(members.length, "STAR", "STAR")} · {enService} en service
+          </p>
+          <SaveState
+            isReadOnly={isReadOnly}
+            deadlinePassed={deadlinePassed}
+            saving={saving}
+            dirty={dirty}
+            saveError={saveError}
+          />
+        </div>
 
-      {/* Desktop: table view */}
-      <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="px-4 py-3 text-sm font-medium text-left text-gray-700">
-                STAR
-              </th>
-              <th className="px-4 py-3 text-sm font-medium text-center text-gray-700">
-                Statut
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {members.map((member) => (
-              <tr key={member.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm text-gray-900">
-                  <span className="flex items-center gap-1.5">
-                    <span>{member.firstName} {member.lastName}</span>
-                    {member.activeAbsence && (
-                      <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
-                    )}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-center gap-1">
-                    {STATUS_OPTIONS.map((option) => (
-                      <button
-                        key={option.value || "none"}
-                        onClick={() =>
-                          !isReadOnly && handleStatusChange(member.id, option.value)
-                        }
-                        disabled={isReadOnly}
-                        className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                          member.status === option.value
-                            ? option.color +
-                              " font-semibold ring-2 ring-offset-1 ring-blue-400"
-                            : isReadOnly
-                              ? "bg-gray-50 text-gray-300 cursor-not-allowed"
-                              : "bg-gray-50 text-gray-400 hover:bg-gray-100"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        <ul className="divide-y divide-line">
+          {members.map((member) => {
+            const name = `${member.firstName} ${member.lastName}`;
+            return (
+              <li
+                key={member.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-sunken/60"
+              >
+                <div className="flex min-w-0 flex-col items-start gap-1">
+                  <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
+                  {member.activeAbsence && (
+                    <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
+                  )}
+                </div>
+                {isReadOnly ? (
+                  <ReadOnlyStatus status={member.status} />
+                ) : (
+                  <StatusSegments
+                    memberName={name}
+                    status={member.status}
+                    onChange={(status) => handleStatusChange(member.id, status)}
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="flex flex-wrap gap-2 border-t border-line bg-surface-sunken px-4 py-3" aria-label="Décompte par statut">
+          {counts.filter(({ count }) => count > 0).map(({ status, count }) => {
+            const { tone } = SERVICE_STATUS[status];
+            const [singular, pluralForm] = COUNT_LABELS[status];
+            return (
+              <StatusChip key={status} tone={tone} icon={SEGMENT_ICON[status]}>
+                {plural(count, singular, pluralForm)}
+              </StatusChip>
+            );
+          })}
+          {unset > 0 && (
+            <StatusChip tone="neutral" icon={CircleDashed}>
+              {plural(unset, "non renseigné", "non renseignés")}
+            </StatusChip>
+          )}
+        </div>
+      </section>
 
       <TaskPanel
         eventId={eventId}
@@ -379,5 +413,40 @@ export default function PlanningGrid({
         readOnly={isReadOnly}
       />
     </div>
+  );
+}
+
+/** État d'enregistrement automatique, annoncé poliment aux lecteurs d'écran. */
+function SaveState({
+  isReadOnly,
+  deadlinePassed,
+  saving,
+  dirty,
+  saveError,
+}: {
+  readonly isReadOnly: boolean;
+  readonly deadlinePassed: boolean;
+  readonly saving: boolean;
+  readonly dirty: boolean;
+  readonly saveError: boolean;
+}) {
+  let content: { icon: LucideIcon; text: string; className: string };
+  if (isReadOnly) {
+    content = { icon: Lock, text: deadlinePassed ? "Échéance dépassée — lecture seule" : "Lecture seule", className: "text-ink-muted" };
+  } else if (saving) {
+    content = { icon: CircleDashed, text: "Enregistrement…", className: "text-ink-muted" };
+  } else if (saveError) {
+    content = { icon: CloudAlert, text: "Non enregistré", className: "text-danger" };
+  } else if (dirty) {
+    content = { icon: CircleDashed, text: "Modifications en attente…", className: "text-ink-muted" };
+  } else {
+    content = { icon: CircleCheck, text: "Enregistré automatiquement", className: "text-success" };
+  }
+  const Icon = content.icon;
+  return (
+    <p aria-live="polite" className={`inline-flex items-center gap-1.5 text-[13px] font-semibold leading-[18px] ${content.className}`}>
+      <Icon aria-hidden="true" className="size-4" strokeWidth={1.75} />
+      {content.text}
+    </p>
   );
 }

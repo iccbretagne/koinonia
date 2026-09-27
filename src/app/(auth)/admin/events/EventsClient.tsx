@@ -5,9 +5,11 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
-import { EVENT_TYPE_OPTIONS, getEventTypeLabel, getEventTypeBadge } from "@/lib/event-types";
+import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
+import { eventTypeTone } from "@/components/event-type-tone";
 import Modal from "@/components/ui/Modal";
 import BulkActionBar from "@/components/ui/BulkActionBar";
+import StatusChip from "@/components/ui/StatusChip";
 
 interface EventItem {
   id: string;
@@ -314,38 +316,38 @@ export default function EventsClient({ initialEvents, churches }: Props) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Button onClick={openCreate}>Nouvel événement</Button>
         <div className="relative w-full sm:w-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
           </svg>
-          <input type="text" value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} placeholder="Rechercher..." className="w-full border-2 border-gray-300 rounded-lg shadow-sm pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-icc-violet focus:border-icc-violet focus:outline-none" />
+          <input type="text" value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} placeholder="Rechercher..." className="w-full border border-control-line rounded-lg shadow-card pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-focus focus:border-brand focus:outline-none" />
         </div>
-        <input type="month" value={monthFilter} onChange={(e) => handleMonthChange(e.target.value)} className="w-full sm:w-auto border-2 border-gray-300 rounded-lg shadow-sm px-3 py-2 text-sm focus:ring-2 focus:ring-icc-violet focus:border-icc-violet focus:outline-none capitalize" />
+        <input type="month" value={monthFilter} onChange={(e) => handleMonthChange(e.target.value)} className="w-full sm:w-auto border border-control-line rounded-lg shadow-card px-3 py-2 text-sm focus:ring-2 focus:ring-focus focus:border-brand focus:outline-none capitalize" />
         {(monthFilter !== defaultMonth() || searchQuery) && (
-          <button type="button" onClick={() => { handleMonthChange(defaultMonth()); handleSearchChange(""); }} className="text-sm text-gray-500 hover:text-gray-700 underline">
+          <button type="button" onClick={() => { handleMonthChange(defaultMonth()); handleSearchChange(""); }} className="text-sm text-ink-muted hover:text-ink-muted underline">
             Réinitialiser
           </button>
         )}
-        <span className="ml-auto text-sm text-gray-400">{filteredEvents.length} événement{filteredEvents.length !== 1 ? "s" : ""}</span>
+        <span className="ml-auto text-sm text-ink-subtle">{filteredEvents.length} événement{filteredEvents.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* Card list */}
       <div className="space-y-2">
         {/* Select all header */}
         {filteredEvents.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-100">
+          <div className="flex items-center gap-2 px-3 py-2 bg-surface rounded-lg border border-line">
             <input
               type="checkbox"
               checked={allSelected}
               ref={(el) => { if (el) el.indeterminate = someSelected; }}
               onChange={toggleSelectAll}
-              className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+              className="h-4 w-4 rounded border-control-line text-brand-text focus:ring-focus"
             />
-            <span className="text-xs text-gray-500">Tout sélectionner</span>
+            <span className="text-xs text-ink-muted">Tout sélectionner</span>
           </div>
         )}
 
         {filteredEvents.length === 0 && (
-          <div className="p-8 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="p-8 text-center text-ink-subtle border border-dashed border-line rounded-lg">
             {monthFilter || searchQuery ? "Aucun événement trouvé." : "Aucun événement."}
           </div>
         )}
@@ -361,20 +363,20 @@ export default function EventsClient({ initialEvents, churches }: Props) {
           const isRecurrent = ev.isRecurrenceParent || !!ev.seriesId;
 
           return (
-            <div key={ev.id} className={`bg-white rounded-lg border-2 transition-colors ${isSelected ? "border-icc-violet/40 bg-icc-violet/5" : "border-gray-100 hover:border-gray-200"}`}>
+            <div key={ev.id} className={`bg-surface rounded-lg border-2 transition-colors ${isSelected ? "border-brand/40 bg-brand-soft" : "border-line hover:border-line"}`}>
               <div className="flex items-start gap-3 p-3">
                 {/* Checkbox */}
                 <input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggleSelect(ev.id)}
-                  className="mt-3.5 h-4 w-4 shrink-0 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                  className="mt-3.5 h-4 w-4 shrink-0 rounded border-control-line text-brand-text focus:ring-focus"
                 />
 
                 {/* Date block */}
-                <div className="bg-icc-violet rounded-lg w-11 shrink-0 flex flex-col items-center justify-center py-2 mt-0.5">
-                  <span className="text-[10px] font-semibold text-white/80 uppercase leading-none">{weekday}</span>
-                  <span className="text-xl font-black text-white leading-none mt-0.5">{dayNum}</span>
+                <div className="bg-brand rounded-lg w-11 shrink-0 flex flex-col items-center justify-center py-2 mt-0.5">
+                  <span className="text-[10px] font-semibold text-on-brand/80 uppercase leading-none">{weekday}</span>
+                  <span className="text-xl font-black text-on-brand leading-none mt-0.5">{dayNum}</span>
                 </div>
 
                 {/* Content + Actions */}
@@ -382,17 +384,15 @@ export default function EventsClient({ initialEvents, churches }: Props) {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-semibold text-gray-900 text-sm">{ev.title}</span>
-                      {isRecurrent && <span className="text-icc-violet text-sm" title={`Récurrent${ev.recurrenceRule ? ` — ${RECURRENCE_LABELS[ev.recurrenceRule] ?? ev.recurrenceRule}` : ""}`}>↻</span>}
-                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-full ${getEventTypeBadge(ev.type)}`}>
-                        {getEventTypeLabel(ev.type)}
-                      </span>
+                      <span className="font-semibold text-ink text-sm">{ev.title}</span>
+                      {isRecurrent && <span className="text-brand-text text-sm" title={`Récurrent${ev.recurrenceRule ? ` — ${RECURRENCE_LABELS[ev.recurrenceRule] ?? ev.recurrenceRule}` : ""}`}>↻</span>}
+                      <StatusChip tone={eventTypeTone(ev.type)}>{getEventTypeLabel(ev.type)}</StatusChip>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{dateLabel} {timeStr} — {ev.church.name}</p>
+                    <p className="text-xs text-ink-muted mt-0.5">{dateLabel} {timeStr} — {ev.church.name}</p>
                     {ev.eventDepts.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {ev.eventDepts.map((ed) => (
-                          <span key={ed.department.id} className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          <span key={ed.department.id} className="text-[11px] bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
                             {ed.department.name}
                           </span>
                         ))}
@@ -445,12 +445,12 @@ export default function EventsClient({ initialEvents, churches }: Props) {
       >
         {seriesStep ? (
           <div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-ink-muted mb-6">
               Cet événement fait partie d&apos;une série de{" "}
               <span className="font-semibold">{seriesCount} événement(s)</span>.
               Que souhaitez-vous modifier ?
             </p>
-            {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+            {error && <p className="text-sm text-danger mb-4">{error}</p>}
             <div className="flex flex-col gap-3">
               <Button onClick={() => doSubmit(false)} disabled={loading} variant="secondary">
                 {loading ? "Enregistrement..." : "Cet événement seul"}
@@ -458,7 +458,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
               <Button onClick={() => doSubmit(true)} disabled={loading}>
                 {loading ? "Enregistrement..." : `Toute la série (${seriesCount} événements)`}
               </Button>
-              <button type="button" onClick={() => setSeriesStep(false)} className="text-sm text-gray-500 hover:text-gray-700 underline mt-1">
+              <button type="button" onClick={() => setSeriesStep(false)} className="text-sm text-ink-muted hover:text-ink-muted underline mt-1">
                 Retour au formulaire
               </button>
             </div>
@@ -518,11 +518,11 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             )}
 
             {editing && (editing.seriesId || editing.isRecurrenceParent) && (
-              <div className="rounded-lg border-2 border-orange-100 bg-orange-50 p-3 space-y-2">
+              <div className="rounded-lg border border-warning/30 bg-warning-soft p-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-orange-700 uppercase tracking-wide">Récurrence</span>
+                  <span className="text-xs font-semibold text-warning uppercase tracking-wide">Récurrence</span>
                   {editing.recurrenceRule && (
-                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-warning-soft text-warning px-2 py-0.5 rounded-full font-medium">
                       {RECURRENCE_LABELS[editing.recurrenceRule] ?? editing.recurrenceRule}
                     </span>
                   )}
@@ -532,9 +532,9 @@ export default function EventsClient({ initialEvents, churches }: Props) {
                     type="checkbox"
                     checked={removeFromSeries}
                     onChange={(e) => setRemoveFromSeries(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-icc-rouge focus:ring-icc-rouge"
+                    className="h-4 w-4 rounded border-control-line text-danger focus:ring-danger"
                   />
-                  <span className="text-sm text-gray-700">Retirer cet événement de la série (le rendre indépendant)</span>
+                  <span className="text-sm text-ink-muted">Retirer cet événement de la série (le rendre indépendant)</span>
                 </label>
               </div>
             )}
@@ -554,7 +554,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
               </div>
             )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>Annuler</Button>
               <Button type="submit" disabled={loading}>{loading ? "Enregistrement..." : "Enregistrer"}</Button>
@@ -565,12 +565,12 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
       {/* Bulk edit modal */}
       <Modal open={bulkModalOpen} onClose={() => setBulkModalOpen(false)} title={`Modifier ${selectedIds.size} événement(s)`}>
-        <p className="text-sm text-gray-500 mb-4">Seuls les champs remplis seront modifiés.</p>
+        <p className="text-sm text-ink-muted mb-4">Seuls les champs remplis seront modifiés.</p>
         <form onSubmit={handleBulkEdit} className="space-y-4">
           <Input label="Titre" value={bulkTitle} onChange={(e) => setBulkTitle(e.target.value)} placeholder="Laisser vide pour ne pas modifier" />
           <Select label="Type" value={bulkType} onChange={(e) => setBulkType(e.target.value)} options={EVENT_TYPE_OPTIONS} placeholder="Laisser vide pour ne pas modifier" />
           <Input label="Date" type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)} />
-          {bulkError && <p className="text-sm text-red-600">{bulkError}</p>}
+          {bulkError && <p className="text-sm text-danger">{bulkError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setBulkModalOpen(false)}>Annuler</Button>
             <Button type="submit" disabled={bulkLoading}>{bulkLoading ? "Enregistrement..." : "Appliquer"}</Button>
@@ -580,7 +580,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
       {/* Duplicate modal */}
       <Modal open={duplicateModalOpen} onClose={() => setDuplicateModalOpen(false)} title="Dupliquer un planning">
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-ink-muted mb-4">
           Copier les affectations de l&apos;événement source vers un événement cible.
           Seuls les départements communs seront dupliqués.
         </p>
@@ -592,7 +592,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             placeholder="Choisir l'événement cible"
             options={events.filter((ev) => ev.id !== duplicateSourceId).map((ev) => ({ value: ev.id, label: `${ev.title} (${formatDate(ev.date)})` }))}
           />
-          {duplicateError && <p className="text-sm text-red-600">{duplicateError}</p>}
+          {duplicateError && <p className="text-sm text-danger">{duplicateError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" type="button" onClick={() => setDuplicateModalOpen(false)}>Annuler</Button>
             <Button type="submit" disabled={duplicateLoading}>{duplicateLoading ? "Duplication..." : "Dupliquer"}</Button>

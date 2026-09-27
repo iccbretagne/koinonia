@@ -17,7 +17,7 @@ export default async function RoleHoldersPage({
 
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("access:manage", churchId);
   const ministryScope = getUserMinistryScope(session, churchId);
 

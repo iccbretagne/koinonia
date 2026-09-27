@@ -1,0 +1,121 @@
+<!-- @dsCard group="Maquettes" height=820 width=1280 page=true subtitle="Responsable de département, planning d'un culte" -->
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Maquette desktop</title>
+<style>
+  .m-app { display: grid; grid-template-columns: var(--sidebar) 1fr; width: 1280px; height: 820px; background: var(--bg); overflow: hidden; }
+  .m-app .k-sidebar { width: auto; height: 100%; }
+  .m-brand { display: flex; align-items: center; gap: 10px; padding: var(--space-1) var(--space-3) var(--space-4); }
+  .m-brand img { width: 44px; height: auto; }
+  .m-brand span { font: 700 19px/24px var(--font-display); letter-spacing: -0.01em; }
+  .m-main { display: flex; flex-direction: column; min-width: 0; }
+  .m-topbar { display: flex; align-items: center; gap: var(--space-2); height: var(--topbar); padding: 0 var(--space-4) 0 var(--space-6); background: var(--surface); border-bottom: 1px solid var(--line); position: relative; }
+  .m-crumbs { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-muted); flex: 1; min-width: 0; }
+  .m-crumbs b { color: var(--ink); font-weight: 600; }
+  .m-crumbs .k-icon { width: 14px; height: 14px; color: var(--ink-subtle); }
+  .m-content { flex: 1; overflow: hidden; padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+  .m-cols { display: grid; grid-template-columns: 1fr 300px; gap: var(--space-6); align-items: start; }
+  .m-section { display: flex; flex-direction: column; gap: var(--space-3); }
+  .m-section__head { display: flex; align-items: baseline; justify-content: space-between; }
+  .m-section__head h2 { margin: 0; font: 600 17px/24px var(--font-display); }
+  .m-plan2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  .m-side { display: flex; flex-direction: column; gap: var(--space-4); }
+  .m-side .k-card { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+  .m-side h3 { margin: 0; font: 600 15px/20px var(--font-display); display: flex; align-items: center; justify-content: space-between; }
+  .m-list { display: flex; flex-direction: column; }
+  .m-li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+  .m-li:first-child { border-top: 0; }
+  .m-li__main { flex: 1; min-width: 0; }
+  .m-li__t { font-weight: 600; font-size: 14px; line-height: 20px; }
+  .m-li__m { font-size: 13px; line-height: 18px; color: var(--ink-muted); }
+  .m-date { width: 44px; flex: none; text-align: center; border-radius: var(--radius-md); background: var(--surface-sunken); padding: 4px 0; }
+  .m-date small { display: block; font: 700 10px/12px var(--font-display); letter-spacing: 0.08em; color: var(--ink-subtle); }
+  .m-date strong { display: block; font: 700 18px/22px var(--font-display); font-variant-numeric: tabular-nums; }
+  .m-plan2 .k-seg button { min-width: 34px; }
+  .m-toast { position: absolute; left: calc(var(--sidebar) + var(--space-6)); bottom: var(--space-6); }
+</style>
+</head>
+<body>
+<div class="m-app" style="position:relative">
+  <nav class="k-sidebar" aria-label="Navigation principale">
+    <div class="m-brand"><img src="/_blob/12f9d57fc5dd154a67545dcc7bf21d98" alt=""><span>Koinonia</span></div>
+    <button class="k-topbar__church" style="padding:var(--space-2) var(--space-3)"><span class="k-churchdot" style="background:var(--icc-violet)"></span>ICC Rennes<span data-i="chevron-down" data-c="k-icon--sm"></span></button>
+    <div class="k-eyebrow k-sidebar__group">Mon service</div>
+    <a class="k-nav-item" href="#"><span data-i="house"></span>Aujourd'hui</a>
+    <a class="k-nav-item" href="#" aria-current="page"><span data-i="grid"></span>Planning</a>
+    <div class="k-nav-sub"><a href="#">Mon planning</a><a href="#" aria-current="page">Louange</a><a href="#">Accueil</a><a href="#">Absences</a></div>
+    <a class="k-nav-item" href="#"><span data-i="calendar"></span>Agenda</a>
+    <a class="k-nav-item" href="#"><span data-i="users"></span>Personnes</a>
+    <a class="k-nav-item" href="#"><span data-i="inbox"></span>Demandes<span class="k-count">4</span></a>
+    <div class="k-eyebrow k-sidebar__group">Église</div>
+    <a class="k-nav-item" href="#"><span data-i="image"></span>Médias</a>
+    <a class="k-nav-item" href="#"><span data-i="box"></span>Ressources</a>
+    <a class="k-nav-item" href="#" style="margin-top:auto"><span data-i="panel"></span>Réduire le menu</a>
+  </nav>
+  <div class="m-main">
+    <header class="m-topbar">
+      <div class="m-crumbs">Planning<span data-i="chevron-right"></span>Louange<span data-i="chevron-right"></span><b>Culte du dimanche 4 octobre</b></div>
+      <div class="k-search"><span data-i="search" data-c="k-icon--sm"></span>Rechercher un STAR, une page…<span class="k-kbd">⌘K</span></div>
+      <button class="k-iconbtn" aria-label="Notifications, 3 non lues"><span data-i="bell"></span><span class="k-count">3</span></button>
+      <span class="k-avatar" style="width:36px;height:36px">PA</span>
+      <span class="k-topbar__stripe" style="background:var(--icc-violet)"></span>
+    </header>
+    <div class="m-content">
+      <div class="k-stack" style="gap:var(--space-4)">
+        <div class="k-pagehead">
+          <div><div class="k-eyebrow">Louange · Dimanche 4 octobre · 10h00</div><h1>Culte du dimanche 4 octobre</h1><p>Grande salle. Arrivée 8h30 pour la balance, tenue noire.</p></div>
+          <div class="k-row"><button class="k-btn k-btn--secondary"><span data-i="calendar" data-c="k-icon--sm"></span>Exporter en PDF</button><button class="k-btn k-btn--primary">Publier le planning</button></div>
+        </div>
+        <nav class="k-tabs" aria-label="Événement"><a class="k-tab" href="#" aria-current="page">Équipe</a><a class="k-tab" href="#">Tâches <span class="k-count">2</span></a><a class="k-tab" href="#">Consignes</a><a class="k-tab" href="#">Debrief</a></nav>
+      </div>
+      <div class="m-cols">
+        <div class="m-section">
+          <div class="m-section__head"><h2>Qui sert ce dimanche ?</h2><span class="k-muted" style="font-size:13px">Enregistré automatiquement</span></div>
+          <div class="m-plan2">
+            <div class="k-plan">
+              <div class="k-plan__row" style="background:var(--surface-sunken)"><div class="k-eyebrow" style="color:var(--ink-muted)">Choristes</div><span class="k-muted" style="font-size:13px">6 STAR</span></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Marie Kouassi</div><div class="k-plan__fn">Soprano</div></div><div class="k-seg"><button class="is-service" aria-pressed="true" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Esther Diallo</div><div class="k-plan__fn">Alto</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="true" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Grâce Mbemba</div><div class="k-plan__fn">Alto</div></div><div class="k-seg"><button class="is-service" aria-pressed="true" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Samuel Tano</div><div class="k-plan__fn">Ténor</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="true" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__summary"><span class="k-chip k-chip--success">3 en service</span><span class="k-chip k-chip--danger">1 indisponible</span><span class="k-chip">2 non renseignés</span></div>
+            </div>
+            <div class="k-plan">
+              <div class="k-plan__row" style="background:var(--surface-sunken)"><div class="k-eyebrow" style="color:var(--ink-muted)">Musiciens</div><span class="k-muted" style="font-size:13px">4 STAR</span></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Jonathan Bamba</div><div class="k-plan__fn">Clavier</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="true" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">David Koffi</div><div class="k-plan__fn">Clavier</div></div><div class="k-seg"><button class="is-service" aria-pressed="false" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="true" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Ruth Adjoua</div><div class="k-plan__fn">Basse</div></div><div class="k-seg"><button class="is-service" aria-pressed="true" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__row"><div style="min-width:0"><div class="k-plan__name">Paul Yao</div><div class="k-plan__fn">Batterie</div></div><div class="k-seg"><button class="is-service" aria-pressed="true" aria-label="En service"><span data-i="check"></span></button><button class="is-debrief" aria-pressed="false" aria-label="Debrief"><span data-i="message"></span></button><button class="is-indispo" aria-pressed="false" aria-label="Indisponible"><span data-i="x"></span></button><button class="is-remplacant" aria-pressed="false" aria-label="Remplaçant"><span data-i="repeat"></span></button></div></div>
+              <div class="k-plan__summary"><span class="k-chip k-chip--success">2 en service</span><span class="k-chip k-chip--info">1 remplaçant</span><span class="k-chip k-chip--danger">1 indisponible</span></div>
+            </div>
+          </div>
+        </div>
+        <aside class="m-side">
+          <div class="k-alert"><span data-i="alert"></span><div><strong>Clavier non couvert.</strong> Jonathan est indisponible et David ne fait que remplacer. <a href="#" style="color:var(--brand-text);font-weight:600">Trouver un STAR</a></div></div>
+          <div class="k-card">
+            <h3>À traiter <span class="k-count">4</span></h3>
+            <div class="m-list">
+              <div class="m-li"><span class="k-avatar">ED</span><div class="m-li__main"><div class="m-li__t">Absence d'Esther Diallo</div><div class="m-li__m">du 11 au 18 octobre</div></div><span class="k-chip k-chip--warning">En attente</span></div>
+              <div class="m-li"><span class="k-avatar">NK</span><div class="m-li__main"><div class="m-li__t">Nadia Koné veut rejoindre</div><div class="m-li__m">Choristes · il y a 2 h</div></div><span class="k-chip k-chip--accent">Nouveau</span></div>
+<span class="k-chip k-chip--success">Livré</span></div>
+            </div>
+          </div>
+          <div class="k-card">
+            <h3>Prochains services</h3>
+            <div class="m-list">
+              <div class="m-li"><div class="m-date"><small>JEU</small><strong>8</strong></div><div class="m-li__main"><div class="m-li__t">Répétition générale</div><div class="m-li__m">19h00 · Salle 2 · événement d'équipe</div></div></div>
+              <div class="m-li"><div class="m-date"><small>DIM</small><strong>11</strong></div><div class="m-li__main"><div class="m-li__t">Culte du dimanche</div><div class="m-li__m">7 STAR sur 10 renseignés</div></div></div>
+</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  <div class="k-toast m-toast" role="status"><span data-i="circle-check" data-c="k-toast__icon--success"></span><span class="k-toast__msg">David Koffi placé en remplaçant</span><button class="k-btn k-btn--ghost k-btn--sm">Annuler</button></div>
+</div>
+<script>Koinonia.hydrate();</script>
+</body>
+</html>

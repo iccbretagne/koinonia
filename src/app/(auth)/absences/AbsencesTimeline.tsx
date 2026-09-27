@@ -35,7 +35,7 @@ export default function AbsencesTimeline({ absences, onSelect }: AbsencesTimelin
     .filter((r): r is { a: TimelineAbsence; range: { start: number; end: number } } => r.range !== null);
 
   if (withRange.length === 0) {
-    return <p className="text-gray-500 text-sm py-6 text-center">Aucune absence à afficher.</p>;
+    return <p className="text-ink-muted text-sm py-6 text-center">Aucune absence à afficher.</p>;
   }
 
   const rangeStart = Math.min(...withRange.map((r) => r.range.start));
@@ -53,25 +53,25 @@ export default function AbsencesTimeline({ absences, onSelect }: AbsencesTimelin
   const rows = Array.from(byMember.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
+    <div className="border border-line rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <div className="min-w-[560px]">
-          <div className="flex justify-between px-3 py-1.5 text-xs text-gray-400 border-b border-gray-100">
+          <div className="flex justify-between px-3 py-1.5 text-xs text-ink-subtle border-b border-line">
             <span>{fmt.format(new Date(rangeStart))}</span>
             <span>{fmt.format(new Date(rangeEnd))}</span>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-line">
             {rows.map((row) => (
               <div key={row.name} className="flex items-center gap-3 px-3 py-2">
-                <div className="w-32 shrink-0 text-sm text-gray-700 truncate">{row.name}</div>
-                <div className="relative flex-1 h-6 bg-gray-50 rounded">
+                <div className="w-32 shrink-0 text-sm text-ink-muted truncate">{row.name}</div>
+                <div className="relative flex-1 h-6 bg-surface-sunken rounded">
                   {row.items.map(({ a, range }) => {
                     const color =
                       a.status === "CANCELLED"
-                        ? "bg-gray-300"
+                        ? "bg-control-line"
                         : a.hasConflict
-                          ? "bg-orange-400"
-                          : "bg-icc-violet";
+                          ? "bg-warning"
+                          : "bg-brand";
                     const title = `${fmt.format(new Date(range.start))} → ${fmt.format(new Date(range.end))}`;
 
                     if (a.kind === "PERIOD") {

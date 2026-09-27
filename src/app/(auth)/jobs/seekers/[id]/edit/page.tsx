@@ -23,11 +23,11 @@ export default async function EditSeekerPage({
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-2 mb-4">
-        <Link href={`/jobs/seekers/${id}`} className="text-sm text-gray-400 hover:text-gray-600">
+        <Link href={`/jobs/seekers/${id}`} className="text-sm text-ink-subtle hover:text-ink-muted">
           ← Retour
         </Link>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Modifier le profil</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Modifier le profil</h1>
       <SeekerFormClient
         initial={{
           id:             seeker.id,

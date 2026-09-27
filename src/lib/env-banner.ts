@@ -9,7 +9,15 @@ export const STAGING_BUILD_VERSION = process.env.NEXT_PUBLIC_BUILD_VERSION ?? nu
 // de classes littéraux — une classe reconstruite par concaténation/`replace()` à l'exécution ne
 // serait pas détectée et son CSS ne serait jamais généré). Les trois valeurs ci-dessous doivent
 // rester cohérentes (2.25rem) : `h-*` pour le bandeau, `pt-*` pour <body>, `top-*` pour le header
-// sticky de AuthLayoutShell qui doit se décaler sous le bandeau plutôt que de passer dessous.
+// sticky de AuthLayoutShell (barre supérieure) qui doit se décaler sous le bandeau plutôt que de
+// passer dessous, et STAGING_BANNER_SIDEBAR_CLASS ci-dessous.
 export const STAGING_BANNER_HEIGHT_CLASS = "h-9";
 export const STAGING_BANNER_BODY_PADDING_CLASS = "pt-9";
 export const STAGING_BANNER_HEADER_OFFSET_CLASS = "top-9";
+
+// Sidebar desktop collante sur toute la hauteur visible : sous le bandeau, elle perd ses 2.25rem.
+export const STAGING_BANNER_SIDEBAR_CLASS = "top-9 h-[calc(100dvh-2.25rem)]";
+
+// Hauteur de la barre supérieure (56px, token `topbar`) + bandeau éventuel : position collante
+// des éléments placés sous elle (onglets d'espace), exposée en variable CSS `--k-sticky-top`.
+export const STICKY_TOP_OFFSET = STAGING_BUILD_VERSION ? "calc(56px + 2.25rem)" : "56px";

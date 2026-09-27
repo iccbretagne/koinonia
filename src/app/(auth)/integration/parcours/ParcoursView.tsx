@@ -33,10 +33,10 @@ export type Journey = {
 };
 
 const MILESTONES = [
-  { key: "integratedInFamily", label: "Famille", color: "bg-blue-100 text-blue-800" },
-  { key: "followsPcnc", label: "PCNC", color: "bg-purple-100 text-purple-800" },
-  { key: "isStar", label: "Service", color: "bg-green-100 text-green-800" },
-  { key: "inDiscipleship", label: "Discipolat", color: "bg-orange-100 text-orange-800" },
+  { key: "integratedInFamily", label: "Famille", color: "bg-info-soft text-info" },
+  { key: "followsPcnc", label: "PCNC", color: "bg-brand-soft text-brand-text" },
+  { key: "isStar", label: "Service", color: "bg-success-soft text-success" },
+  { key: "inDiscipleship", label: "Discipolat", color: "bg-warning-soft text-warning" },
 ] as const;
 
 type MilestoneKey = (typeof MILESTONES)[number]["key"];
@@ -52,7 +52,7 @@ function JourneyMilestoneBadges({ journey }: { readonly journey: Journey }) {
         <span
           key={m.key}
           className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            journey[m.key] ? m.color : "bg-gray-100 text-gray-400"
+            journey[m.key] ? m.color : "bg-surface-sunken text-ink-subtle"
           }`}
         >
           {m.label}
@@ -156,8 +156,8 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Parcours</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink">Parcours</h1>
+          <p className="text-sm text-ink-muted mt-0.5">
             Suivi des jalons d&apos;intégration pour chaque personne
           </p>
         </div>
@@ -170,8 +170,8 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
           onClick={() => setFilter("ALL")}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${
             filter === "ALL"
-              ? "border-icc-violet bg-icc-violet text-white"
-              : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+              ? "border-brand bg-brand text-on-brand"
+              : "border-line bg-surface text-ink-muted hover:border-control-line"
           }`}
         >
           Tous ({filterCounts.ALL})
@@ -182,8 +182,8 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
             onClick={() => setFilter(m.key)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium border-2 transition-colors ${
               filter === m.key
-                ? "border-icc-violet bg-icc-violet text-white"
-                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                ? "border-brand bg-brand text-on-brand"
+                : "border-line bg-surface text-ink-muted hover:border-control-line"
             }`}
           >
             Sans {m.label} ({filterCounts[m.key]})
@@ -202,24 +202,24 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
 
       {/* Liste */}
       {filtered.length === 0 ? (
-        <p className="text-gray-400 text-center py-12">Aucun dossier trouvé.</p>
+        <p className="text-ink-subtle text-center py-12">Aucun dossier trouvé.</p>
       ) : (
         <div className="space-y-2">
           {filtered.map((j) => (
             <button
               key={j.id}
               onClick={() => setSelected(j)}
-              className="w-full text-left bg-white border-2 border-gray-100 rounded-lg px-4 py-3 hover:border-icc-violet transition-colors"
+              className="w-full text-left bg-surface border border-line rounded-lg px-4 py-3 hover:border-brand transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">
+                  <p className="font-semibold text-ink truncate">
                     {j.firstName} {j.lastName}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-ink-subtle mt-0.5">
                     {j.phone ?? j.email ?? "Aucun contact"}
                     {j.sourceRequest?.assignedFamilyName && (
-                      <span className="ml-2 text-blue-600">
+                      <span className="ml-2 text-info">
                         · {j.sourceRequest.assignedFamilyName}
                       </span>
                     )}
@@ -230,9 +230,9 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                 </div>
               </div>
               <div className="mt-2">
-                <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-gray-100">
+                <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-surface-sunken">
                   {[...Array(milestoneCount(j))].map((_, i) => (
-                    <div key={i} className="flex-1 bg-icc-violet" />
+                    <div key={i} className="flex-1 bg-brand" />
                   ))}
                   {[...Array(4 - milestoneCount(j))].map((_, i) => (
                     <div key={i} className="flex-1" />
@@ -249,11 +249,11 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
         <Modal open onClose={() => setSelected(null)} title={`${selected.firstName} ${selected.lastName}`}>
           <div className="p-6 space-y-6 min-w-[320px]">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-ink">
                 {selected.firstName} {selected.lastName}
               </h2>
               {(selected.phone || selected.email) && (
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-ink-muted mt-0.5">
                   {[selected.phone, selected.email].filter(Boolean).join(" · ")}
                 </p>
               )}
@@ -268,7 +268,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Jalons</h3>
+              <h3 className="text-sm font-semibold text-ink-muted mb-3">Jalons</h3>
               <div className="space-y-2">
                 {MILESTONES.map((m) => {
                   const reached = selected[m.key];
@@ -282,19 +282,19 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                   return (
                     <div
                       key={m.key}
-                      className="flex items-center justify-between gap-4 p-3 rounded-lg bg-gray-50"
+                      className="flex items-center justify-between gap-4 p-3 rounded-lg bg-surface-sunken"
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                             reached
-                              ? "bg-icc-violet border-icc-violet"
-                              : "border-gray-300 bg-white"
+                              ? "bg-brand border-brand"
+                              : "border-control-line bg-surface"
                           }`}
                         >
                           {reached && (
                             <svg
-                              className="w-3 h-3 text-white"
+                              className="w-3 h-3 text-on-brand"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -309,9 +309,9 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{m.label}</p>
+                          <p className="text-sm font-medium text-ink">{m.label}</p>
                           {reached && dateVal && (
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-ink-subtle">
                               {new Date(dateVal).toLocaleDateString("fr-FR")}
                             </p>
                           )}
@@ -321,8 +321,8 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
                         onClick={() => toggleMilestone(selected, m.key)}
                         className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
                           reached
-                            ? "border-red-200 text-red-600 hover:bg-red-50"
-                            : "border-icc-violet text-icc-violet hover:bg-purple-50"
+                            ? "border-danger/30 text-danger hover:bg-danger-soft"
+                            : "border-brand text-brand-text hover:bg-brand-soft"
                         }`}
                       >
                         {reached ? "Retirer" : "Atteint"}
@@ -335,12 +335,12 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
 
             {selected.notes && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-1">Notes</h3>
-                <p className="text-sm text-gray-600 whitespace-pre-wrap">{selected.notes}</p>
+                <h3 className="text-sm font-semibold text-ink-muted mb-1">Notes</h3>
+                <p className="text-sm text-ink-muted whitespace-pre-wrap">{selected.notes}</p>
               </div>
             )}
 
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-ink-subtle">
               Dossier créé le {new Date(selected.createdAt).toLocaleDateString("fr-FR")}
             </div>
           </div>
@@ -350,9 +350,9 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
       {/* Modale création */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Nouveau dossier parcours">
         <div className="p-6 space-y-4 min-w-[320px]">
-          <h2 className="text-xl font-bold text-gray-900">Nouveau dossier parcours</h2>
+          <h2 className="text-xl font-bold text-ink">Nouveau dossier parcours</h2>
           {createError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+            <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg p-2">
               {createError}
             </p>
           )}
@@ -384,7 +384,7 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={3}
-            className="w-full border-2 border-gray-200 rounded-lg p-3 text-sm focus:border-icc-violet focus:outline-none resize-none"
+            className="w-full border border-control-line rounded-lg p-3 text-sm focus:border-brand focus:outline-none resize-none"
           />
           <div className="flex gap-3 justify-end">
             <Button onClick={() => setShowCreate(false)} disabled={saving}>

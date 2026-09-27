@@ -1,13 +1,140 @@
 @import "tailwindcss";
 
-/* overflow-x sur <body>, jamais <html> : sur mobile, une valeur d'overflow sur
-   <html> transforme son containing block et les éléments position:fixed (menu,
-   bottom nav) défilent alors avec la page au lieu de rester ancrés au viewport. */
-body {
-  overflow-x: hidden;
+/* Design system Koinonia — spec 055, ADR-0018. Référence : docs/design-system/.
+   Les couleurs d'interface sont des tokens sémantiques (clair par défaut, sombre selon
+   prefers-color-scheme ou [data-theme="dark"]). Ne jamais écrire de couleur en dur dans un
+   composant : utiliser bg-surface, text-ink-muted, border-line, bg-brand… */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f5fa;
+  --surface: #ffffff;
+  --surface-sunken: #efedf5;
+  --line: #e2dfeb;
+  --control-line: #8a839c;
+  --ink: #1b1530;
+  --ink-muted: #58526d;
+  --ink-subtle: #6b6580;
+  --brand: #5e17eb;
+  --brand-hover: #4a0fc4;
+  --brand-text: #5e17eb;
+  --brand-soft: #efe8ff;
+  --on-brand: #ffffff;
+  --accent: #ffeb05;
+  --accent-soft: #fff7b8;
+  --on-accent: #1b1530;
+  --danger: #c81e1e;
+  --danger-soft: #fdecec;
+  --on-danger: #ffffff;
+  --success: #0b7a6b;
+  --success-soft: #e2f4f0;
+  --warning: #8a5a00;
+  --warning-soft: #fff3d6;
+  --info: #0b6fb0;
+  --info-soft: #e5f3fc;
+  --focus: #5e17eb;
+  --scrim: rgba(16, 12, 27, 0.48);
+  --plume-rouge: #ca4e40;
+  --plume-bleu: #459fc7;
+  --plume-vert: #8cb049;
+  --plume-violet: #653c81;
+  --plume-jaune: #f9d039;
+  --on-success: #ffffff;
+  --on-warning: #ffffff;
+  --on-info: #ffffff;
+  --shadow-1: 0 1px 2px rgba(27, 21, 48, 0.06), 0 1px 3px rgba(27, 21, 48, 0.04);
+  --shadow-2: 0 4px 12px rgba(27, 21, 48, 0.08), 0 1px 3px rgba(27, 21, 48, 0.06);
+  --shadow-3: 0 16px 40px rgba(27, 21, 48, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #100c1b;
+    --surface: #191427;
+    --surface-sunken: #0b0813;
+    --line: #2d2640;
+    --control-line: #716a8a;
+    --ink: #f1eef8;
+    --ink-muted: #bdb6cf;
+    --ink-subtle: #9a92b0;
+    --brand: #7c4dff;
+    --brand-hover: #6a36f5;
+    --brand-text: #b9a0ff;
+    --brand-soft: #2a1f4d;
+    --accent-soft: #39340a;
+    --danger: #ff7070;
+    --danger-soft: #3b1519;
+    --on-danger: #1b1530;
+    --success: #4fd1b8;
+    --success-soft: #0f2e29;
+    --warning: #f2c14e;
+    --warning-soft: #33280b;
+    --info: #7cc9ff;
+    --info-soft: #0e2638;
+    --focus: #b9a0ff;
+    --scrim: rgba(0, 0, 0, 0.64);
+    --on-success: #1b1530;
+    --on-warning: #1b1530;
+    --on-info: #1b1530;
+    --shadow-1: none;
+    --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #100c1b;
+  --surface: #191427;
+  --surface-sunken: #0b0813;
+  --line: #2d2640;
+  --control-line: #716a8a;
+  --ink: #f1eef8;
+  --ink-muted: #bdb6cf;
+  --ink-subtle: #9a92b0;
+  --brand: #7c4dff;
+  --brand-hover: #6a36f5;
+  --brand-text: #b9a0ff;
+  --brand-soft: #2a1f4d;
+  --accent-soft: #39340a;
+  --danger: #ff7070;
+  --danger-soft: #3b1519;
+  --on-danger: #1b1530;
+  --success: #4fd1b8;
+  --success-soft: #0f2e29;
+  --warning: #f2c14e;
+  --warning-soft: #33280b;
+  --info: #7cc9ff;
+  --info-soft: #0e2638;
+  --focus: #b9a0ff;
+  --scrim: rgba(0, 0, 0, 0.64);
+  --on-success: #1b1530;
+  --on-warning: #1b1530;
+  --on-info: #1b1530;
+  --shadow-1: none;
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Variante `dark:` alignée sur le thème effectif (choix explicite data-theme, sinon réglage
+   système). À réserver aux rares cas qu'un token ne couvre pas (ex. logo à lettres blanches
+   ou sombres) : les couleurs d'interface passent par les tokens, qui basculent seuls. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
 }
 
 @theme {
+  /* Couleurs d'identité de la charte ICC : logo, illustrations, graphiques. Jamais pour du
+     texte d'interface (voir tokens danger/info/brand-text). */
   --color-icc-violet: #5E17EB;
   --color-icc-violet-dark: #4a12bb;
   --color-icc-violet-light: #f3edff;
@@ -15,15 +142,101 @@ body {
   --color-icc-jaune-dark: #d4c504;
   --color-icc-rouge: #FF3131;
   --color-icc-bleu: #38B6FF;
-  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --color-plume-rouge: #ca4e40;
+  --color-plume-bleu: #459fc7;
+  --color-plume-vert: #8cb049;
+  --color-plume-violet: #653c81;
+  --color-plume-jaune: #f9d039;
+
+  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-chip: 6px;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-control-line: var(--control-line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-text: var(--brand-text);
+  --color-brand-soft: var(--brand-soft);
+  --color-on-brand: var(--on-brand);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-on-danger: var(--on-danger);
+  --color-on-success: var(--on-success);
+  --color-on-warning: var(--on-warning);
+  --color-on-info: var(--on-info);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-focus: var(--focus);
+  --color-plume-rouge: var(--plume-rouge);
+  --color-plume-bleu: var(--plume-bleu);
+  --color-plume-vert: var(--plume-vert);
+  --color-plume-violet: var(--plume-violet);
+  --color-plume-jaune: var(--plume-jaune);
+  --color-scrim: var(--scrim);
+  --shadow-card: var(--shadow-1);
+  --shadow-float: var(--shadow-2);
+  --shadow-overlay: var(--shadow-3);
+}
+
+@layer base {
+  html {
+    background-color: var(--bg);
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  ::placeholder {
+    color: var(--ink-subtle);
+  }
+  /* Les bordures par défaut de Tailwind v4 (currentColor) suivent le token de filet. */
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--line);
+  }
+}
+
+/* overflow-x sur <body>, jamais <html> : sur mobile, une valeur d'overflow sur
+   <html> transforme son containing block et les éléments position:fixed (menu,
+   bottom nav) défilent alors avec la page au lieu de rester ancrés au viewport. */
+body {
+  overflow-x: hidden;
 }
 
 /* Date/month/datetime-local picker styling */
 input[type="date"],
 input[type="month"],
 input[type="datetime-local"] {
-  accent-color: #5E17EB;
-  color-scheme: light;
+  accent-color: var(--brand);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator,
@@ -46,6 +259,39 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator,
 input[type="month"]:focus::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]:focus::-webkit-calendar-picker-indicator {
   opacity: 1;
+}
+
+/* Squelette de chargement : reflet qui balaye (coupé sous prefers-reduced-motion). */
+@keyframes k-shimmer {
+  to { transform: translateX(100%); }
+}
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: k-shimmer 1.4s var(--ease-out-soft) infinite;
+}
+[data-theme="dark"] .skeleton-shimmer::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .skeleton-shimmer::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }
 
 @media print {

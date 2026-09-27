@@ -5,7 +5,7 @@ import MinistriesClient from "./MinistriesClient";
 export default async function MinistriesPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("departments:manage", churchId);
 
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
@@ -27,7 +27,7 @@ export default async function MinistriesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Ministères</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Ministères</h1>
       <MinistriesClient
         initialMinistries={ministries}
         churches={church ? [{ id: church.id, name: church.name }] : []}

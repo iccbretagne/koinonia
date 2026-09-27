@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Check } from "lucide-react";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 
 interface MemberRef {
   id: string;
@@ -28,6 +31,7 @@ export default function TaskPanel({
   eligibleMembers,
   readOnly = false,
 }: TaskPanelProps) {
+  const toast = useToast();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
@@ -78,16 +82,18 @@ export default function TaskPanel({
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? updatedTask : t))
         );
+      } else {
+        toast.error("Tâche non attribuée. Réessayez dans un instant.");
       }
     } catch {
-      // ignore
+      toast.error("Tâche non attribuée. Vérifiez votre connexion.");
     } finally {
       setSavingTaskId(null);
     }
   }
 
   if (loading) {
-    return <div className="text-sm text-gray-400">Chargement des tâches...</div>;
+    return <SkeletonList rows={2} label="Chargement des tâches…" />;
   }
 
   if (tasks.length === 0) {
@@ -95,45 +101,60 @@ export default function TaskPanel({
   }
 
   return (
-    <div className="mt-6 border-t pt-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">Tâches</h3>
+    <section aria-labelledby="task-panel-title" className="flex flex-col gap-3">
+      <div>
+        <h3 id="task-panel-title" className="font-display text-[17px] font-semibold leading-6 text-ink">
+          Tâches
+        </h3>
+        <p className="text-[13px] leading-[18px] text-ink-muted">
+          {eligibleMembers.length > 0
+            ? "Seuls les STAR en service peuvent recevoir une tâche."
+            : "Placez des STAR en service pour leur attribuer une tâche."}
+        </p>
+      </div>
 
-      <div className="space-y-2">
+      <ul className="overflow-hidden rounded-card border border-line bg-surface">
         {tasks.map((task) => {
           const assignedIds = new Set(task.assignments.map((a) => a.member.id));
+          const isSaving = savingTaskId === task.id;
           return (
-            <div key={task.id} className="bg-gray-50 rounded-lg p-3">
-              <p className="text-sm font-medium text-gray-800">{task.name}</p>
-              {task.description && (
-                <p className="text-xs text-gray-500 mt-0.5">{task.description}</p>
-              )}
+            <li key={task.id} className="flex flex-col gap-2 border-t border-line px-4 py-3 first:border-t-0">
+              <div>
+                <p className="text-[15px] font-semibold leading-[22px] text-ink">{task.name}</p>
+                {task.description && (
+                  <p className="text-[13px] leading-[18px] text-ink-muted">{task.description}</p>
+                )}
+              </div>
 
               {eligibleMembers.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {eligibleMembers.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      disabled={readOnly || savingTaskId === task.id}
-                      onClick={() => handleToggleMember(task.id, m.id)}
-                      className={`px-2 py-0.5 text-xs rounded-full border transition-colors ${
-                        assignedIds.has(m.id)
-                          ? "bg-icc-violet text-white border-icc-violet"
-                          : readOnly
-                            ? "bg-white text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "bg-white text-gray-600 border-gray-300 hover:border-icc-violet"
-                      } ${savingTaskId === task.id ? "opacity-50" : ""}`}
-                    >
-                      {assignedIds.has(m.id) ? "\u2611 " : "\u2610 "}
-                      {m.firstName} {m.lastName}
-                    </button>
-                  ))}
+                <div role="group" aria-label={`Attribuer « ${task.name} »`} className="flex flex-wrap gap-1.5" aria-busy={isSaving || undefined}>
+                  {eligibleMembers.map((m) => {
+                    const assigned = assignedIds.has(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        aria-pressed={assigned}
+                        disabled={readOnly || isSaving}
+                        onClick={() => handleToggleMember(task.id, m.id)}
+                        className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold leading-[18px] transition-colors duration-120
+                          focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed ${
+                            assigned
+                              ? "border-brand bg-brand-soft text-brand-text"
+                              : "border-control-line bg-surface text-ink-muted hover:border-brand hover:text-ink"
+                          } ${isSaving ? "opacity-60" : ""} ${readOnly && !assigned ? "opacity-60" : ""}`}
+                      >
+                        {assigned && <Check aria-hidden="true" className="size-3.5" strokeWidth={2.5} />}
+                        {m.firstName} {m.lastName}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

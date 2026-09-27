@@ -91,19 +91,19 @@ export default function FreelanceProfileDetailClient({
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs?tab=freelance" className="text-sm text-gray-400 hover:text-gray-600">
+        <Link href="/jobs?tab=freelance" className="text-sm text-ink-subtle hover:text-ink-muted">
           ← Freelance
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+      <div className="bg-surface rounded-lg border border-line p-6">
         {isUnavailable && (
-          <div className="mb-4 px-4 py-3 bg-yellow-50 text-yellow-700 text-sm rounded-lg border border-yellow-200">
+          <div className="mb-4 px-4 py-3 bg-warning-soft text-warning text-sm rounded-lg border border-warning/30">
             Ce freelance n&apos;est plus disponible pour le moment.
           </div>
         )}
         {isArchived && (
-          <div className="mb-4 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
+          <div className="mb-4 px-4 py-2 bg-surface-sunken text-ink-muted text-sm rounded-lg">
             Ce profil a été archivé par un modérateur.
           </div>
         )}
@@ -111,15 +111,15 @@ export default function FreelanceProfileDetailClient({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <div className="flex flex-wrap gap-2 mb-2">
-              <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-surface-sunken text-ink-muted px-2.5 py-0.5 rounded-full font-medium">
                 {profile.domain}
               </span>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-info-soft text-info px-2.5 py-0.5 rounded-full font-medium">
                 {MODALITY_LABEL[profile.modality]}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">{profile.title}</h1>
-            <p className="text-gray-600 mt-0.5">{authorName}</p>
+            <h1 className="text-xl font-bold text-ink">{profile.title}</h1>
+            <p className="text-ink-muted mt-0.5">{authorName}</p>
           </div>
 
           {(canManage || isAuthor) && (
@@ -127,7 +127,7 @@ export default function FreelanceProfileDetailClient({
               {isAuthor && !isUnavailable && !isArchived && (
                 <Link
                   href={`/jobs/freelance/profiles/${profile.id}/edit`}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken transition-colors"
                 >
                   Modifier
                 </Link>
@@ -136,7 +136,7 @@ export default function FreelanceProfileDetailClient({
                 <button
                   onClick={markUnavailable}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-warning/30 text-warning rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "Plus disponible"}
                 </button>
@@ -145,7 +145,7 @@ export default function FreelanceProfileDetailClient({
                 <button
                   onClick={toggleArchive}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : isArchived ? "Republier" : "Archiver"}
                 </button>
@@ -154,7 +154,7 @@ export default function FreelanceProfileDetailClient({
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-icc-rouge/30 text-icc-rouge rounded-lg hover:bg-icc-rouge/5 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-danger/30 text-danger rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors"
                 >
                   {loading ? "…" : "Supprimer"}
                 </button>
@@ -163,45 +163,45 @@ export default function FreelanceProfileDetailClient({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500 mb-5 py-3 border-y border-gray-100">
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-muted mb-5 py-3 border-y border-line">
           {availableDate && (
             <span>
               Disponible le{" "}
-              <strong className="text-gray-700">
+              <strong className="text-ink-muted">
                 {availableDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
               </strong>
             </span>
           )}
-          {!availableDate && <span><strong className="text-gray-700">Disponible dès maintenant</strong></span>}
+          {!availableDate && <span><strong className="text-ink-muted">Disponible dès maintenant</strong></span>}
           {profile.location && profile.modality !== "REMOTE" && (
-            <span>Localisation : <strong className="text-gray-700">{profile.location}</strong></span>
+            <span>Localisation : <strong className="text-ink-muted">{profile.location}</strong></span>
           )}
           {profile.dailyRate && (
-            <span>TJM : <strong className="text-gray-700">{profile.dailyRate}</strong></span>
+            <span>TJM : <strong className="text-ink-muted">{profile.dailyRate}</strong></span>
           )}
           {profile.hourlyRate && (
-            <span>Taux horaire : <strong className="text-gray-700">{profile.hourlyRate}</strong></span>
+            <span>Taux horaire : <strong className="text-ink-muted">{profile.hourlyRate}</strong></span>
           )}
           <span>
             Publié le{" "}
-            <strong className="text-gray-700">
+            <strong className="text-ink-muted">
               {new Date(profile.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
             </strong>
           </span>
         </div>
 
         <div className="prose prose-sm max-w-none">
-          <p className="text-gray-700 whitespace-pre-wrap">{profile.description}</p>
+          <p className="text-ink-muted whitespace-pre-wrap">{profile.description}</p>
         </div>
 
         {(profile.contactEmail || profile.contactUrl) && (
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Contact</p>
+          <div className="mt-6 pt-5 border-t border-line">
+            <p className="text-sm font-semibold text-ink-muted mb-3">Contact</p>
             <div className="flex flex-wrap gap-3">
               {profile.contactEmail && (
                 <a
                   href={`mailto:${profile.contactEmail}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
                 >
                   Envoyer un email →
                 </a>
@@ -211,7 +211,7 @@ export default function FreelanceProfileDetailClient({
                   href={profile.contactUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 border-2 border-icc-violet text-icc-violet text-sm font-semibold rounded-lg hover:bg-icc-violet/5 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-brand text-brand-text text-sm font-semibold rounded-lg hover:bg-brand-soft transition-colors"
                 >
                   Voir le profil ↗
                 </a>

@@ -49,10 +49,10 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-100 text-amber-800",
-  EN_COURS: "bg-blue-100 text-blue-800",
-  LIVRE: "bg-green-100 text-green-800",
-  ANNULE: "bg-gray-100 text-gray-500",
+  EN_ATTENTE: "bg-warning-soft text-warning",
+  EN_COURS: "bg-info-soft text-info",
+  LIVRE: "bg-success-soft text-success",
+  ANNULE: "bg-surface-sunken text-ink-muted",
 };
 
 const PARENT_TYPE_LABEL: Record<string, string> = {
@@ -197,28 +197,28 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
     const urgent = isUrgent(deadline);
 
     return (
-      <div key={req.id} className={`bg-white rounded-lg shadow p-5 border ${urgent && req.status !== "LIVRE" && req.status !== "ANNULE" ? "border-icc-rouge/40" : "border-gray-100"}`}>
+      <div key={req.id} className={`bg-surface rounded-lg shadow-card p-5 border ${urgent && req.status !== "LIVRE" && req.status !== "ANNULE" ? "border-danger/40" : "border-line"}`}>
         <div className="flex items-start justify-between gap-4 mb-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-gray-900">{req.title}</h3>
+              <h3 className="font-semibold text-ink">{req.title}</h3>
               {urgent && req.status !== "LIVRE" && req.status !== "ANNULE" && (
-                <span className="text-xs font-semibold bg-icc-rouge text-white px-2 py-0.5 rounded-full">
+                <span className="text-xs font-semibold bg-danger text-on-danger px-2 py-0.5 rounded-full">
                   ⚡ Urgent
                 </span>
               )}
               {format && (
-                <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full">
                   {format}
                 </span>
               )}
               {!req.announcement && (
-                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">
                   Standalone
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-ink-muted mt-0.5">
               {source} · {author}
               {deadline && (
                 <>
@@ -239,7 +239,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
         </div>
 
         {req.announcement && (
-          <p className="text-xs text-gray-500 mb-2">
+          <p className="text-xs text-ink-muted mb-2">
             {req.parentRequest ? (
               <>Pour canal : <strong>{PARENT_TYPE_LABEL[req.parentRequest.type]}</strong></>
             ) : null}
@@ -256,7 +256,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
           const isExpanded = expandedContent.has(req.id);
           return (
             <div className="mb-3">
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+              <p className="text-sm text-ink-muted whitespace-pre-wrap">
                 {isLong && !isExpanded ? `${brief.slice(0, PREVIEW).trimEnd()}…` : brief}
               </p>
               {isLong && (
@@ -266,7 +266,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                     if (isExpanded) next.delete(req.id); else next.add(req.id);
                     return next;
                   })}
-                  className="mt-1 text-xs text-icc-violet hover:underline"
+                  className="mt-1 text-xs text-brand-text hover:underline"
                 >
                   {isExpanded ? "Voir moins" : "Voir plus"}
                 </button>
@@ -296,7 +296,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                   href={shareUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full hover:bg-icc-violet/20"
+                  className="inline-flex items-center gap-1 text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full hover:bg-brand-soft"
                 >
                   ↓ Télécharger
                 </a>
@@ -310,17 +310,17 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
             href={deliveryLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-icc-violet underline mb-3"
+            className="inline-flex items-center gap-1 text-sm text-brand-text underline mb-3"
           >
             Voir le visuel livré →
           </a>
         )}
 
         {(req.status === "EN_ATTENTE" || req.status === "EN_COURS") && (
-          <div className="border-t border-gray-100 pt-3 space-y-2">
+          <div className="border-t border-line pt-3 space-y-2">
             {req.status === "EN_ATTENTE" && takingCharge === req.id ? (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700">Lier à un projet média</p>
+                <p className="text-sm font-medium text-ink-muted">Lier à un projet média</p>
                 <div className="flex gap-4 text-sm">
                   {projects.length > 0 && (
                     <label className="flex items-center gap-1.5 cursor-pointer">
@@ -337,7 +337,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                   <select
                     value={selectedProjectId}
                     onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="block w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+                    className="block w-full px-3 py-2 border border-control-line rounded-lg text-sm focus:outline-none focus:border-brand"
                   >
                     {projects.map((pr) => (
                       <option key={pr.id} value={pr.id}>{pr.name}</option>
@@ -350,7 +350,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     placeholder="Nom du projet"
-                    className="block w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+                    className="block w-full px-3 py-2 border border-control-line rounded-lg text-sm focus:outline-none focus:border-brand"
                     autoFocus
                   />
                 )}
@@ -371,7 +371,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                     value={deliveryLinks[req.id] ?? ""}
                     onChange={(e) => setDeliveryLinks((prev) => ({ ...prev, [req.id]: e.target.value }))}
                     placeholder="Lien de livraison (Canva, Drive...)"
-                    className="block w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-xs focus:outline-none focus:border-icc-violet"
+                    className="block w-full px-3 py-2 border border-control-line rounded-lg text-xs focus:outline-none focus:border-brand"
                   />
                 )}
                 <div className="flex flex-wrap gap-2">
@@ -415,9 +415,9 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
     <div className="space-y-8">
       {pending.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
             En attente
-            <span className="bg-icc-violet text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-brand text-on-brand text-xs font-bold px-2 py-0.5 rounded-full">
               {pending.length}
             </span>
           </h2>
@@ -426,18 +426,18 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
       )}
       {inProgress.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">En cours</h2>
+          <h2 className="text-lg font-semibold text-ink mb-3">En cours</h2>
           <div className="space-y-4">{inProgress.map(renderRequest)}</div>
         </section>
       )}
       {done.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Terminés</h2>
+          <h2 className="text-lg font-semibold text-ink mb-3">Terminés</h2>
           <div className="space-y-4">{done.map(renderRequest)}</div>
         </section>
       )}
       {requests.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-ink-subtle">
           <p className="text-lg">Aucune demande de visuel.</p>
         </div>
       )}

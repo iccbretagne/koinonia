@@ -52,7 +52,7 @@ function Avatar({ person }: { readonly person: { name: string; image: string | n
     return <Image src={person.image} alt={person.name} width={48} height={48} className="rounded-full shrink-0" />;
   }
   return (
-    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-base font-semibold text-gray-500 shrink-0">
+    <div className="w-12 h-12 rounded-full bg-surface-sunken flex items-center justify-center text-base font-semibold text-ink-muted shrink-0">
       {person.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -245,35 +245,35 @@ export default function PersonAccessClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/admin/access" className="text-sm text-icc-violet hover:underline">← Retour</Link>
+      <Link href="/admin/access" className="text-sm text-brand-text hover:underline">← Retour</Link>
 
-      <div className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <div className="flex items-center gap-4 bg-surface rounded-xl border border-line shadow-card p-5">
         <Avatar person={person} />
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-gray-900 truncate">{person.name}</h1>
-          <p className="text-sm text-gray-400 truncate">{person.email}</p>
+          <h1 className="text-lg font-semibold text-ink truncate">{person.name}</h1>
+          <p className="text-sm text-ink-subtle truncate">{person.email}</p>
           {memberLink ? (
-            <p className={`text-xs mt-0.5 ${memberLink.validated ? "text-green-600" : "text-amber-600"}`}>
+            <p className={`text-xs mt-0.5 ${memberLink.validated ? "text-success" : "text-warning"}`}>
               {memberLink.validated ? "✓ Lié à " : "⏳ En attente — "}{memberLink.memberName} (fiche STAR)
             </p>
           ) : (
-            <p className="text-xs text-gray-400 mt-0.5 italic">Aucune fiche STAR liée</p>
+            <p className="text-xs text-ink-subtle mt-0.5 italic">Aucune fiche STAR liée</p>
           )}
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {/* Rôles d'église */}
       <div>
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Rôles d&apos;église</h2>
+        <h2 className="text-sm font-semibold text-ink-muted mb-3">Rôles d&apos;église</h2>
         <div className="space-y-4">
           {CATEGORY_ORDER.map((category) => {
             const categoryRoles = assignableRoles.filter((r) => ROLE_CATEGORY[r] === category);
             if (categoryRoles.length === 0) return null;
             return (
               <div key={category}>
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">
+                <p className="text-xs font-medium text-ink-subtle uppercase tracking-wide mb-1.5">
                   {ROLE_CATEGORY_LABELS[category]}
                 </p>
                 <div className="space-y-1.5">
@@ -284,7 +284,7 @@ export default function PersonAccessClient({
                     return (
                       <label
                         key={role}
-                        className="flex items-start gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 cursor-pointer"
+                        className="flex items-start gap-3 bg-surface rounded-lg border border-line shadow-card px-4 py-3 cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -315,11 +315,11 @@ export default function PersonAccessClient({
                               simpleToggle(role);
                             }
                           }}
-                          className="mt-0.5 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                          className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{ROLE_LABELS[role]}</p>
-                          <p className="text-xs text-gray-500">{ROLE_DESCRIPTIONS[role]}</p>
+                          <p className="text-sm font-medium text-ink">{ROLE_LABELS[role]}</p>
+                          <p className="text-xs text-ink-muted">{ROLE_DESCRIPTIONS[role]}</p>
                         </div>
                       </label>
                     );
@@ -334,24 +334,24 @@ export default function PersonAccessClient({
       {/* Responsabilités */}
       {hasResponsibilities && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Responsabilités</h2>
+          <h2 className="text-sm font-semibold text-ink-muted mb-3">Responsabilités</h2>
           <div className="space-y-3">
             {ministerRole && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3">
+              <div className="bg-surface rounded-lg border border-line shadow-card px-4 py-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs text-gray-400">Ministère</p>
-                  <p className="text-sm font-medium text-gray-900">{ministerRole.ministryName ?? "—"}</p>
+                  <p className="text-xs text-ink-subtle">Ministère</p>
+                  <p className="text-sm font-medium text-ink">{ministerRole.ministryName ?? "—"}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => setModal({ mode: "minister" })}
-                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-line text-ink-muted hover:bg-surface-sunken"
                   >
                     Changer
                   </button>
                   <button
                     onClick={removeMinister}
-                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-red-200 text-red-600 hover:bg-red-50"
+                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-danger/30 text-danger hover:bg-danger-soft"
                   >
                     Retirer
                   </button>
@@ -359,22 +359,22 @@ export default function PersonAccessClient({
               </div>
             )}
             {deptHeadRole && (
-              <div className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3">
-                <p className="text-xs text-gray-400 mb-2">Départements</p>
+              <div className="bg-surface rounded-lg border border-line shadow-card px-4 py-3">
+                <p className="text-xs text-ink-subtle mb-2">Départements</p>
                 <div className="flex flex-wrap gap-2">
                   {deptHeadRole.departments.map((d) => (
                     <span
                       key={d.id}
-                      className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium border bg-gray-100 text-gray-700 border-gray-200"
+                      className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium border bg-surface-sunken text-ink-muted border-line"
                     >
                       {d.name}
                       {d.isDeputy && <span className="opacity-60 font-normal">· adj.</span>}
-                      <button onClick={() => removeDeptHead(d.id)} className="ml-0.5 opacity-60 hover:opacity-100 hover:text-red-600" title="Retirer">×</button>
+                      <button onClick={() => removeDeptHead(d.id)} className="ml-0.5 opacity-60 hover:opacity-100 hover:text-danger" title="Retirer">×</button>
                     </span>
                   ))}
                   <button
                     onClick={() => setModal({ mode: "department-head" })}
-                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    className="text-xs px-2.5 py-1 rounded-md font-medium border border-line text-ink-muted hover:bg-surface-sunken"
                   >
                     + Ajouter
                   </button>
@@ -388,15 +388,15 @@ export default function PersonAccessClient({
       {/* Accès hérités */}
       {inheritedAccess.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Accès hérités</h2>
-          <p className="text-xs text-gray-400 mb-2">
+          <h2 className="text-sm font-semibold text-ink-muted mb-3">Accès hérités</h2>
+          <p className="text-xs text-ink-subtle mb-2">
             Ces accès ne viennent pas d&apos;un rôle attribué ci-dessus — lecture seule.
           </p>
           <div className="space-y-2">
             {inheritedAccess.map((access, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-3">
-                <p className="text-sm font-medium text-gray-800">{access.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{access.origin}</p>
+              <div key={i} className="bg-surface-sunken rounded-lg border border-line px-4 py-3">
+                <p className="text-sm font-medium text-ink">{access.label}</p>
+                <p className="text-xs text-ink-muted mt-0.5">{access.origin}</p>
               </div>
             ))}
           </div>

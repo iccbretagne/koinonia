@@ -72,16 +72,16 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => router.push(`/agenda?week=${toLocalISO(prevWeek)}`)}
-          className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
         >
           ← Semaine précédente
         </button>
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-ink-muted">
           {fmtDate(days[0])} — {fmtDate(days[6])}
         </span>
         <button
           onClick={() => router.push(`/agenda?week=${toLocalISO(nextWeek)}`)}
-          className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
         >
           Semaine suivante →
         </button>
@@ -90,24 +90,24 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
       {/* Grille par profil */}
       <div className="space-y-6">
         {profiles.map((profile) => (
-          <div key={profile.id} className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 bg-icc-violet/5 border-b border-gray-100 flex items-center justify-between">
+          <div key={profile.id} className="bg-surface rounded-lg shadow border border-line overflow-hidden">
+            <div className="px-4 py-3 bg-brand-soft border-b border-line flex items-center justify-between">
               <div>
-                <span className="font-semibold text-gray-900">{profile.name}</span>
-                <span className="ml-2 text-xs text-gray-500">{ROLE_LABELS[profile.role] ?? profile.role}</span>
+                <span className="font-semibold text-ink">{profile.name}</span>
+                <span className="ml-2 text-xs text-ink-muted">{ROLE_LABELS[profile.role] ?? profile.role}</span>
               </div>
               <a href={`/agenda/${profile.id}`} className={buttonClasses("ghost", "sm")}>
                 Voir l&apos;agenda →
               </a>
             </div>
-            <div className="grid grid-cols-7 divide-x divide-gray-100">
+            <div className="grid grid-cols-7 divide-x divide-line">
               {days.map((day, i) => {
                 const dayEntries = entriesForProfileDay(profile.id, day);
                 const isToday =
                   day.toDateString() === new Date().toDateString();
                 return (
-                  <div key={i} className={`p-2 min-h-[80px] ${isToday ? "bg-icc-violet/5" : ""}`}>
-                    <p className={`text-xs font-medium mb-1 ${isToday ? "text-icc-violet" : "text-gray-500"}`}>
+                  <div key={i} className={`p-2 min-h-[80px] ${isToday ? "bg-brand-soft" : ""}`}>
+                    <p className={`text-xs font-medium mb-1 ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
                       {DAYS[i]} {day.getDate()}
                     </p>
                     {dayEntries.map((e) => (
@@ -115,8 +115,8 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                         key={e.id}
                         className={`text-xs rounded px-1 py-0.5 mb-1 truncate ${
                           e.type === "APPOINTMENT"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-info-soft text-info"
+                            : "bg-surface-sunken text-ink-muted"
                         }`}
                         title={`${e.title}${e.location ? ` — ${e.location}` : ""}`}
                       >

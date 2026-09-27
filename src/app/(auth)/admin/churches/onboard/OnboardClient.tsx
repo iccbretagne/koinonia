@@ -55,11 +55,11 @@ export default function OnboardClient() {
   if (success) {
     return (
       <div className="max-w-md">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-green-800 mb-2">
+        <div className="bg-success-soft border border-success/30 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-success mb-2">
             Église créée avec succès
           </h2>
-          <p className="text-sm text-green-700 mb-4">
+          <p className="text-sm text-success mb-4">
             L&apos;église <strong>{name}</strong> a été créée.
             {adminEmail && (
               <>
@@ -78,7 +78,7 @@ export default function OnboardClient() {
 
   return (
     <div className="max-w-md">
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-ink-muted mb-6">
         Créez une nouvelle église et assignez un administrateur.
       </p>
 
@@ -104,12 +104,12 @@ export default function OnboardClient() {
           onChange={(e) => setAdminEmail(e.target.value)}
           placeholder="admin@example.com"
         />
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-subtle">
           L&apos;administrateur recevra automatiquement le rôle ADMIN pour cette
           église lors de sa prochaine connexion Google.
         </p>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>

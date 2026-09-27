@@ -64,21 +64,21 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(prevWeek)}`)}
-          className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
         >
           ← Semaine précédente
         </button>
-        <span className="text-sm font-medium text-gray-700">{fromLabel} — {toLabel}</span>
+        <span className="text-sm font-medium text-ink-muted">{fromLabel} — {toLabel}</span>
         <button
           onClick={() => router.push(`/agenda/${profile.id}?week=${toLocalISO(nextWeek)}`)}
-          className="px-3 py-1 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+          className="px-3 py-1 text-sm border border-line rounded-lg hover:bg-surface-sunken"
         >
           Semaine suivante →
         </button>
       </div>
 
       {!hasEntries ? (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-ink-subtle">
           <p>Aucune entrée cette semaine.</p>
         </div>
       ) : (
@@ -88,43 +88,43 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
             if (dayEntries.length === 0) return null;
             const isToday = day.toDateString() === new Date().toDateString();
             return (
-              <div key={i} className="bg-white rounded-lg shadow border border-gray-100 overflow-hidden">
-                <div className={`px-4 py-2 border-b border-gray-100 ${isToday ? "bg-icc-violet/5" : "bg-gray-50"}`}>
-                  <p className={`text-sm font-semibold capitalize ${isToday ? "text-icc-violet" : "text-gray-700"}`}>
+              <div key={i} className="bg-surface rounded-lg shadow border border-line overflow-hidden">
+                <div className={`px-4 py-2 border-b border-line ${isToday ? "bg-brand-soft" : "bg-surface-sunken"}`}>
+                  <p className={`text-sm font-semibold capitalize ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
                     {fmtDate(day)}
                   </p>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-line">
                   {dayEntries.map((entry) => (
                     <div key={entry.id} className="px-4 py-3 flex items-start gap-3">
                       <div className="flex-shrink-0 text-right min-w-[48px]">
-                        <p className="text-xs font-medium text-gray-700">{fmtTime(entry.startsAt)}</p>
+                        <p className="text-xs font-medium text-ink-muted">{fmtTime(entry.startsAt)}</p>
                         {entry.endsAt && (
-                          <p className="text-xs text-gray-400">{fmtTime(entry.endsAt)}</p>
+                          <p className="text-xs text-ink-subtle">{fmtTime(entry.endsAt)}</p>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                             entry.type === "APPOINTMENT"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-600"
+                              ? "bg-info-soft text-info"
+                              : "bg-surface-sunken text-ink-muted"
                           }`}>
                             {entry.type === "APPOINTMENT" ? "RDV" : "Activité"}
                           </span>
-                          <p className="font-medium text-gray-900 text-sm truncate">{entry.title}</p>
+                          <p className="font-medium text-ink text-sm truncate">{entry.title}</p>
                         </div>
                         {entry.location && (
-                          <p className="text-xs text-gray-500 mt-0.5">📍 {entry.location}</p>
+                          <p className="text-xs text-ink-muted mt-0.5">📍 {entry.location}</p>
                         )}
                         {entry.request && (
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="text-xs text-ink-muted mt-0.5">
                             {entry.request.firstName} {entry.request.lastName}
                             {entry.request.qualificationNote && ` · ${entry.request.qualificationNote}`}
                           </p>
                         )}
                         {entry.description && (
-                          <p className="text-xs text-gray-600 mt-1">{entry.description}</p>
+                          <p className="text-xs text-ink-muted mt-1">{entry.description}</p>
                         )}
                       </div>
                     </div>

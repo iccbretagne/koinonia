@@ -1,109 +1,99 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useMemo, type CSSProperties } from "react";
+import dynamic from "next/dynamic";
+import { usePathname, useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import BottomNav from "@/components/BottomNav";
-import MobileNavSheet from "@/components/MobileNavSheet";
-import Breadcrumb from "@/components/Breadcrumb";
+import MoreSheet from "@/components/MoreSheet";
+import TopBar, { type TopBarUser } from "@/components/TopBar";
 import GuidedTour from "@/components/GuidedTour";
-import { STAGING_BUILD_VERSION, STAGING_BANNER_HEADER_OFFSET_CLASS } from "@/lib/env-banner";
+import type { ServerAction } from "@/components/AccountActions";
+import { useSidebarPref, useViewport } from "@/components/shell-state";
+import {
+  STAGING_BUILD_VERSION,
+  STAGING_BANNER_HEADER_OFFSET_CLASS,
+  STAGING_BANNER_SIDEBAR_CLASS,
+  STICKY_TOP_OFFSET,
+} from "@/lib/env-banner";
+import {
+  bottomDestinations,
+  buildSpaces,
+  resolveActive,
+  searchablePages,
+  type NavigationInput,
+} from "@/lib/navigation";
 
 // Type importe plutot que recopie : les copies locales avaient derive et
 // omettaient PASTORAL_CARE_REFERENT, privant ce role des etapes de tour ciblees.
 import type { RoleKey } from "@/lib/tour-steps";
 
-function hexToLuminance(hex: string): number {
-  const clean = hex.replace("#", "");
-  const r = parseInt(clean.slice(0, 2), 16) / 255;
-  const g = parseInt(clean.slice(2, 4), 16) / 255;
-  const b = parseInt(clean.slice(4, 6), 16) / 255;
-  const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-}
-
-interface AuthLayoutShellProps {
-  readonly departments: { id: string; name: string; ministryName?: string }[];
-  readonly configLinks: { href: string; label: string }[];
-  readonly requestLinks: { href: string; label: string }[];
-  readonly mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[];
-  readonly agendaLinks?: { href: string; label: string }[];
-  readonly integrationLinks?: { href: string; label: string }[];
-  readonly famillesUrl?: string | null;
-  readonly hasDiscipleship: boolean;
-  readonly hasEventsAccess: boolean;
-  readonly hasEventsManage: boolean;
-  readonly hasPlanningAccess: boolean;
-  readonly hasMembersAccess: boolean;
-  readonly hasReports: boolean;
-  readonly hasMyPlanning?: boolean;
-  readonly showStarEvents?: boolean;
-  readonly hasAbsences?: boolean;
-  readonly hasRooms?: boolean;
-  readonly hasAccounting?: boolean;
-  readonly hasJobs?: boolean;
+interface AuthLayoutShellProps extends Omit<NavigationInput, "jobsUnseenCount" | "isPastoral"> {
+  /** Vue pastorale active. */
   readonly isPastoral?: boolean;
-  readonly headerColor?: string;
   readonly userRole: RoleKey;
-  readonly header: React.ReactNode;
+  readonly user: TopBarUser;
+  readonly churches: { id: string; name: string }[];
+  readonly currentChurchId: string | null;
+  readonly churchName: string;
+  /** `Church.primaryColor` : filet sous la barre supérieure et pastille du sélecteur d'église. */
+  readonly headerColor?: string;
+  readonly hasBothRoles?: boolean;
+  readonly switchViewAction?: ServerAction;
+  readonly signOutAction: ServerAction;
   readonly children: React.ReactNode;
   readonly footer: React.ReactNode;
 }
 
-function IconMenu({ className }: { readonly className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-}
+/** Largeur réservée à la sidebar, lue par le `Toast` (`--k-sidebar-width`) pour se placer à côté. */
+const SIDEBAR_WIDTH = { mobile: "0px", rail: "72px", expanded: "256px" } as const;
 
+/**
+ * Chargée à la demande (⌘K/Ctrl K ou loupe, jamais au chargement initial de la page) : son
+ * module n'est récupéré qu'à la première ouverture, pas sur chaque page authentifiée.
+ */
+const CommandPalette = dynamic(() => import("@/components/CommandPalette"), { ssr: false });
 
+/**
+ * Coquille de l'espace authentifié (spec 055, lot 3) : sidebar (≥ 768px), barre supérieure,
+ * barre du bas et panneau « Plus » (< 768px), palette de recherche. Toutes les entrées de
+ * navigation viennent d'une seule définition (`@/lib/navigation`), construite à partir des
+ * sections calculées par `(auth)/layout.tsx`.
+ */
 export default function AuthLayoutShell({
-  departments,
-  configLinks,
-  requestLinks,
-  mediaLinks,
-  agendaLinks = [],
-  integrationLinks = [],
-  famillesUrl = null,
-  hasDiscipleship,
-  hasEventsAccess,
-  hasEventsManage,
-  hasPlanningAccess,
-  hasMembersAccess,
-  hasReports,
-  hasMyPlanning = false,
-  showStarEvents = false,
-  hasAbsences = false,
-  hasRooms = false,
-  hasAccounting = false,
-  hasJobs = false,
   isPastoral = false,
-  headerColor = "#5E17EB",
   userRole,
-  header,
+  user,
+  churches,
+  currentChurchId,
+  churchName,
+  headerColor = "#5E17EB", // Church.primaryColor par défaut : donnée, style inline (exception de migration.md)
+  hasBothRoles = false,
+  switchViewAction,
+  signOutAction,
   children,
   footer,
+  ...navInput
 }: AuthLayoutShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-
-  const isLightHeader = hexToLuminance(headerColor) > 0.4;
-  const headerTextColor = isLightHeader ? "#1f2937" : "#ffffff";
-  const headerBorderColor = isLightHeader ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.25)";
-
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
-
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+  const searchParams = useSearchParams();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  // Une fois vrai (première ouverture), reste vrai : le module de la palette a été demandé,
+  // inutile de le redemander à chaque fermeture/réouverture.
+  const [paletteLoaded, setPaletteLoaded] = useState(false);
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    // Changement de page : les panneaux se referment.
+    setLastPath(pathname);
+    setMoreOpen(false);
+    setSearchOpen(false);
+  }
 
   // ── Pastille "nouvelles offres" (spec 042) ──────────────────────────────
-  // Centralisé ici plutôt que dans Sidebar/MobileNavSheet : les deux sont montés
-  // simultanément (responsive), un seul sondage réseau évite les doublons et les
-  // remises à zéro incohérentes entre eux.
+  // Centralisé ici : sidebar, barre du bas et panneau « Plus » la reçoivent par la navigation,
+  // un seul sondage réseau évite les doublons et les remises à zéro incohérentes.
+  const { hasJobs = false } = navInput;
   const [jobsUnseenCount, setJobsUnseenCount] = useState(0);
 
   useEffect(() => {
@@ -136,102 +126,105 @@ export default function AuthLayoutShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, hasJobs]);
 
+  // ── Navigation (une seule définition) ───────────────────────────────────
+  const spaces = useMemo(
+    () => buildSpaces({ ...navInput, isPastoral, jobsUnseenCount }),
+    // navInput est recréé à chaque rendu mais ses valeurs viennent du layout serveur.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(navInput), isPastoral, jobsUnseenCount]
+  );
+  const active = resolveActive(spaces, pathname, searchParams.get("dept"));
+  const destinations = useMemo(() => bottomDestinations(spaces, { role: userRole, isPastoral }), [spaces, userRole, isPastoral]);
+  const pages = useMemo(() => searchablePages(spaces), [spaces]);
+  const moreBadge = spaces
+    .filter((s) => !destinations.some((d) => d.space === s.key))
+    .reduce((sum, s) => sum + (s.badge ?? 0), 0);
+
+  // ── Raccourci ⌘K / Ctrl K ───────────────────────────────────────────────
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setMoreOpen(false);
+        setPaletteLoaded(true);
+        setSearchOpen((o) => !o);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // ── Largeur de la sidebar pour le Toast (monté hors de la coquille) ─────
+  const [pref] = useSidebarPref();
+  const viewport = useViewport();
+  useEffect(() => {
+    if (!viewport) return;
+    const width =
+      viewport === "mobile" ? SIDEBAR_WIDTH.mobile : viewport === "tablet" || pref === "rail" ? SIDEBAR_WIDTH.rail : SIDEBAR_WIDTH.expanded;
+    const root = document.documentElement;
+    root.style.setProperty("--k-sidebar-width", width);
+    return () => {
+      root.style.removeProperty("--k-sidebar-width");
+    };
+  }, [viewport, pref]);
+
+  const accountActions = { hasBothRoles, isInPastoralMode: isPastoral, switchViewAction, signOutAction };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header — décalé sous le bandeau de recette (fixe, hors flux) plutôt que de passer
-          dessous, sinon le haut du header (icône menu, nom de l'église) serait recouvert dès
-          que ce sticky atteint le haut du viewport au scroll. */}
-      <header
-        className={`sticky ${STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"} z-50 border-b-2`}
-        style={{ backgroundColor: headerColor, borderColor: headerBorderColor, color: headerTextColor }}
-      >
-        <div className="flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 mx-auto max-w-7xl">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-1.5 -ml-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-            aria-label="Ouvrir le menu"
-          >
-            <IconMenu className="w-6 h-6" />
-          </button>
-          {header}
-        </div>
-      </header>
+    <div className="min-h-dvh bg-bg md:flex" style={{ "--k-sticky-top": STICKY_TOP_OFFSET } as CSSProperties}>
+      <Sidebar
+        spaces={spaces}
+        active={active}
+        churches={churches}
+        currentChurchId={currentChurchId}
+        churchName={churchName}
+        churchColor={headerColor}
+        stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_SIDEBAR_CLASS : "top-0 h-dvh"}
+      />
 
-      {/* Body: sidebar + main */}
-      <div className="flex flex-col md:flex-row mx-auto max-w-7xl">
-        {/* Sidebar — desktop uniquement */}
-        <div className="hidden md:block print:hidden shrink-0">
-          <Sidebar
-            departments={departments}
-            configLinks={configLinks}
-            requestLinks={requestLinks}
-            mediaLinks={mediaLinks}
-            agendaLinks={agendaLinks}
-            integrationLinks={integrationLinks}
-            famillesUrl={famillesUrl}
-            hasDiscipleship={hasDiscipleship}
-            hasEventsAccess={hasEventsAccess}
-            hasEventsManage={hasEventsManage}
-            hasPlanningAccess={hasPlanningAccess}
-            hasMembersAccess={hasMembersAccess}
-            hasReports={hasReports}
-            hasMyPlanning={hasMyPlanning}
-            showStarEvents={showStarEvents}
-            hasAbsences={hasAbsences}
-            hasRooms={hasRooms}
-            hasAccounting={hasAccounting}
-            hasJobs={hasJobs}
-            jobsUnseenCount={jobsUnseenCount}
-            isPastoral={isPastoral}
-            onClose={closeSidebar}
-          />
-        </div>
-
-        {/* Bottom sheet — mobile uniquement */}
-        <MobileNavSheet
-          departments={departments}
-          configLinks={configLinks}
-          requestLinks={requestLinks}
-          mediaLinks={mediaLinks}
-          agendaLinks={agendaLinks}
-          integrationLinks={integrationLinks}
-          famillesUrl={famillesUrl}
-          hasDiscipleship={hasDiscipleship}
-          hasEventsAccess={hasEventsAccess}
-          hasEventsManage={hasEventsManage}
-          hasPlanningAccess={hasPlanningAccess}
-          hasMembersAccess={hasMembersAccess}
-          hasReports={hasReports}
-          hasMyPlanning={hasMyPlanning}
-          showStarEvents={showStarEvents}
-          hasAbsences={hasAbsences}
-          hasRooms={hasRooms}
-          hasAccounting={hasAccounting}
-          hasJobs={hasJobs}
-          jobsUnseenCount={jobsUnseenCount}
-          isPastoral={isPastoral}
-          open={sidebarOpen}
-          onClose={closeSidebar}
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
+        {/* Barre supérieure — décalée sous le bandeau de recette (fixe, hors flux) plutôt que de
+            passer dessous au défilement. */}
+        <TopBar
+          spaces={spaces}
+          user={user}
+          churches={churches}
+          currentChurchId={currentChurchId}
+          churchName={churchName}
+          churchColor={headerColor}
+          onOpenSearch={() => {
+            setPaletteLoaded(true);
+            setSearchOpen(true);
+          }}
+          stickyClassName={STAGING_BUILD_VERSION ? STAGING_BANNER_HEADER_OFFSET_CLASS : "top-0"}
+          {...accountActions}
         />
 
-        {/* Main content */}
-        <main className="flex-1 min-w-0 p-4 pb-16 md:p-6 md:pb-6">
-          <Breadcrumb departments={departments} />
-          {children}
-        </main>
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 pb-6 pt-4 md:px-6 md:pt-6">{children}</main>
+
+        <div className="pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">{footer}</div>
       </div>
 
-      {footer}
-
-      {/* Bottom navigation (mobile only) */}
       <BottomNav
-        hasMembersAccess={hasMembersAccess}
-        hasMyPlanning={hasMyPlanning}
-        showStarEvents={showStarEvents}
-        isPastoral={isPastoral}
-        onMenuOpen={() => setSidebarOpen(true)}
+        destinations={destinations}
+        active={active}
+        moreBadge={moreBadge > 0 ? moreBadge : undefined}
+        moreOpen={moreOpen}
+        onMoreOpen={() => setMoreOpen(true)}
       />
+
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} spaces={spaces} active={active} {...accountActions} />
+
+      {paletteLoaded && (
+        <CommandPalette
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          pages={pages}
+          churchId={currentChurchId}
+          canSearchMembers={!!navInput.hasMembersAccess}
+          canSearchEvents={!!navInput.hasEventsAccess}
+        />
+      )}
 
       {/* Interactive guided tour */}
       <GuidedTour userRole={userRole} />

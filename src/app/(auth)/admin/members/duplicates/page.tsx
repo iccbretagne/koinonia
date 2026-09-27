@@ -8,7 +8,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 export default async function DuplicatesPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("members:manage", churchId);
 
   // Filtré au périmètre de l'appelant — un Resp. département ne voyait jusqu'ici les emails de
@@ -117,7 +117,7 @@ export default async function DuplicatesPage() {
         <Link href="/admin/members" className={buttonClasses("secondary", "sm")}>
           ← Retour
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Doublons potentiels</h1>
+        <h1 className="text-2xl font-bold text-ink">Doublons potentiels</h1>
       </div>
       <DuplicatesView
         groups={serialized}

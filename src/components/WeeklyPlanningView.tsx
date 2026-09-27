@@ -1,7 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getEventTypeBadge, getEventTypeLabel } from "@/lib/event-types";
+import { CalendarX2, MessageSquare, NotebookPen, Pencil, Plus, Trash2 } from "lucide-react";
+import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import StatusChip from "@/components/ui/StatusChip";
+import Textarea from "@/components/ui/Textarea";
+import { useToast } from "@/components/ui/Toast";
+import { getEventTypeLabel } from "@/lib/event-types";
+import { eventTypeTone } from "./event-type-tone";
+import ExportBar from "./ExportBar";
+import { ghostDangerClasses } from "./ghost-danger";
+import PeriodNav from "./PeriodNav";
 
 interface Member {
   id: string;
@@ -77,6 +89,7 @@ export default function WeeklyPlanningView({
   churchName,
   canEdit,
 }: WeeklyPlanningViewProps) {
+  const toast = useToast();
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
   const [events, setEvents] = useState<WeekEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +97,7 @@ export default function WeeklyPlanningView({
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [pendingNoticeDelete, setPendingNoticeDelete] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +139,6 @@ export default function WeeklyPlanningView({
   }
 
   async function deleteNotice(eventId: string) {
-    if (!confirm("Supprimer cette note ?")) return;
     setSaving(true);
     setSaveError(null);
     try {
@@ -137,9 +150,14 @@ export default function WeeklyPlanningView({
         const err = await res.json();
         throw new Error(err.error ?? "Erreur lors de la suppression");
       }
+      toast.success("Notice supprimée");
+      setPendingNoticeDelete(null);
       await fetchWeek();
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : "Erreur");
+      const message = e instanceof Error ? e.message : "Erreur";
+      setSaveError(message);
+      toast.error(message);
+      setPendingNoticeDelete(null);
     } finally {
       setSaving(false);
     }
@@ -159,6 +177,7 @@ export default function WeeklyPlanningView({
         throw new Error(err.error ?? "Erreur lors de la sauvegarde");
       }
       setEditingEventId(null);
+      toast.success("Notice enregistrée");
       await fetchWeek();
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Erreur");
@@ -174,11 +193,14 @@ export default function WeeklyPlanningView({
     const el = printRef.current;
     const savedWidth = el.style.width;
     el.style.width = "672px";
+    // L'image partagée reste en thème clair, quel que soit le thème affiché.
+    el.dataset.theme = "light";
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
       return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
     } finally {
       el.style.width = savedWidth;
+      delete el.dataset.theme;
     }
   }
 
@@ -193,12 +215,14 @@ export default function WeeklyPlanningView({
           canvas.toBlob((b: Blob | null) => { if (b) resolve(b); else reject(new Error("failed")); }, "image/png");
         });
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        alert("Image copiée dans le presse-papier");
+        toast.success("Image copiée dans le presse-papiers");
       } catch {
         const w = window.open();
         if (w) { w.document.write(`<img src="${canvas.toDataURL("image/png")}" />`); }
       }
-    } catch { /* ignore */ } finally { setExporting(null); }
+    } catch {
+      toast.error("Export impossible. Réessayez dans un instant.");
+    } finally { setExporting(null); }
   }
 
   async function downloadImage() {
@@ -211,7 +235,9 @@ export default function WeeklyPlanningView({
       link.download = `${getExportFileName(departmentName, weekStart)}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
-    } catch { /* ignore */ } finally { setExporting(null); }
+    } catch {
+      toast.error("Export impossible. Réessayez dans un instant.");
+    } finally { setExporting(null); }
   }
 
   async function exportPdf() {
@@ -231,207 +257,188 @@ export default function WeeklyPlanningView({
       if (renderHeight > pdfHeight) { renderHeight = pdfHeight; renderWidth = pdfHeight / imgRatio; }
       pdf.addImage(imgData, "PNG", (pdfWidth - renderWidth) / 2, 0, renderWidth, renderHeight);
       pdf.save(`${getExportFileName(departmentName, weekStart)}.pdf`);
-    } catch { /* ignore */ } finally { setExporting(null); }
+    } catch {
+      toast.error("Export impossible. Réessayez dans un instant.");
+    } finally { setExporting(null); }
   }
 
   const hasContent = events.length > 0;
 
   return (
-    <div>
-      {/* Navigation */}
-      <div className="flex items-center justify-center gap-2 mb-6">
-        <button
-          onClick={prevWeek}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <span className="px-4 py-2 text-lg font-semibold text-icc-violet bg-icc-violet-light border-2 border-icc-violet/20 rounded-lg capitalize">
-          {formatWeekLabel(weekStart)}
-        </span>
-        <button
-          onClick={nextWeek}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PeriodNav
+        prev={{ onClick: prevWeek }}
+        next={{ onClick: nextWeek }}
+        prevLabel="Semaine précédente"
+        nextLabel="Semaine suivante"
+        label={formatWeekLabel(weekStart)}
+        className="mx-auto w-full max-w-md"
+      />
 
-      {/* Export buttons */}
       {!loading && hasContent && (
-        <div className="flex flex-wrap justify-end gap-2 mb-4">
-          <button onClick={copyImage} disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-            {exporting === "copy" ? "Copie..." : "Copier image"}
-          </button>
-          <button onClick={downloadImage} disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting === "image" ? "Export..." : "Télécharger PNG"}
-          </button>
-          <button onClick={exportPdf} disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            {exporting === "pdf" ? "Export..." : "Export PDF"}
-          </button>
-        </div>
+        <ExportBar exporting={exporting} onCopy={copyImage} onDownload={downloadImage} onPdf={exportPdf} />
       )}
 
-      {/* Printable card */}
-      <div ref={printRef} className="max-w-2xl mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
-        {loading ? (
-          <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
-        ) : !hasContent ? (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-xl">
-            Aucun service cette semaine
+      {loading ? (
+        <SkeletonList rows={3} label="Chargement du planning de la semaine…" className="mx-auto w-full max-w-2xl" />
+      ) : !hasContent ? (
+        <div className="mx-auto w-full max-w-2xl rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarX2}
+            title="Aucun service cette semaine"
+            description="Changez de semaine pour consulter un autre planning."
+            size="sm"
+          />
+        </div>
+      ) : (
+        /* Zone exportée (image, PDF) : passée en thème clair le temps de la capture. */
+        <div
+          ref={printRef}
+          className="mx-auto w-full max-w-2xl overflow-hidden rounded-card border border-line bg-bg text-ink shadow-float"
+        >
+          <div className="bg-brand px-6 py-4 text-on-brand">
+            <p className="font-display text-lg font-bold leading-tight">{churchName ?? "ICC"}</p>
+            <p className="mt-0.5 text-sm text-on-brand/85">
+              {departmentName ? `${departmentName} — ` : ""}
+              {formatWeekLabel(weekStart)}
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Header */}
-            <div className="bg-icc-violet px-6 py-4">
-              <p className="text-lg font-bold text-white leading-tight">{churchName ?? "ICC"}</p>
-              <p className="text-sm text-white/80 mt-0.5">
-                {departmentName ? `${departmentName} — ` : ""}
-                <span className="capitalize">{formatWeekLabel(weekStart)}</span>
-              </p>
-            </div>
 
-            {/* Events */}
-            <div className="bg-gray-50 px-5 py-4 space-y-3">
-              {events.map((event) => {
-                const { day, weekday } = formatDayShort(event.date);
-                const isEditing = editingEventId === event.id;
+          <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
+            {events.map((event) => {
+              const { day, weekday } = formatDayShort(event.date);
+              const isEditing = editingEventId === event.id;
+              const hasNotice = !!event.notice?.content;
 
-                return (
-                  <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
-                    {/* Event header row + members */}
-                    <div className="flex">
-                      <div className="bg-icc-violet w-16 shrink-0 flex flex-col items-center justify-center py-3">
-                        <span className="text-xs font-semibold text-white/80 uppercase leading-none">{weekday}</span>
-                        <span className="text-2xl font-black text-white leading-none mt-0.5">{day}</span>
-                      </div>
-                      <div className="flex-1 px-4 py-3 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <p className="font-bold text-icc-violet text-xs uppercase tracking-wide">{event.title}</p>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${getEventTypeBadge(event.type)}`}>
-                            {getEventTypeLabel(event.type)}
-                          </span>
-                        </div>
-                        {event.members.length === 0 ? (
-                          <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {event.members.map((m) => (
-                              <div key={m.id} className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-sm text-gray-900 font-bold">
-                                  {m.firstName} {m.lastName}
-                                </span>
-                                {m.tasks.map((task) => (
-                                  <span key={task} className="text-[11px] font-medium border border-icc-violet/40 text-icc-violet px-2 py-0.5 rounded-full">
-                                    {task}
-                                  </span>
-                                ))}
-                                {m.status === "EN_SERVICE_DEBRIEF" && (
-                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
-                                    Debrief
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Notice — dans le flex, séparée par un trait */}
-                        {(event.notice?.content || isEditing) && (
-                          <div className={`mt-3 pt-2 border-t rounded-lg ${event.notice?.content && !isEditing ? "border-icc-violet/20 bg-icc-violet/5 px-2 pb-2" : "border-gray-100"}`}>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`text-[11px] font-semibold uppercase tracking-wide ${event.notice?.content && !isEditing ? "text-icc-violet/70" : "text-gray-400"}`}>
-                                ⚠️ Notice de service
+              return (
+                <div key={event.id} className="flex overflow-hidden rounded-control border border-line bg-surface">
+                  <div className="flex w-16 shrink-0 flex-col items-center justify-center bg-brand py-3 text-on-brand">
+                    <span className="font-display text-xs font-semibold uppercase leading-none text-on-brand/80">{weekday}</span>
+                    <span className="mt-0.5 font-display text-2xl font-extrabold leading-none tabular-nums">{day}</span>
+                  </div>
+                  <div className="min-w-0 flex-1 px-4 py-3">
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      <p className="font-display text-xs font-bold uppercase tracking-wide text-brand-text">{event.title}</p>
+                      <StatusChip tone={eventTypeTone(event.type)}>{getEventTypeLabel(event.type)}</StatusChip>
+                    </div>
+                    {event.members.length === 0 ? (
+                      <p className="text-[13px] italic text-ink-muted">Aucun STAR en service</p>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        {event.members.map((m) => (
+                          <div key={m.id} className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-semibold text-ink">
+                              {m.firstName} {m.lastName}
+                            </span>
+                            {m.tasks.map((task) => (
+                              <span
+                                key={task}
+                                className="rounded-full border border-brand/40 px-2 py-0.5 text-[11px] font-semibold leading-4 text-brand-text"
+                              >
+                                {task}
                               </span>
-                              {canEdit && !isEditing && (
-                                <div data-html2canvas-ignore="true" className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => startEdit(event.id, event.notice?.content ?? "")}
-                                    className="text-[11px] text-icc-violet hover:underline"
-                                  >
-                                    Modifier
-                                  </button>
-                                  <button
-                                    onClick={() => deleteNotice(event.id)}
-                                    disabled={saving}
-                                    className="text-[11px] text-icc-rouge hover:underline disabled:opacity-50"
-                                  >
-                                    Supprimer
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            {isEditing ? (
-                              <div className="space-y-2">
-                                <textarea
-                                  value={editContent}
-                                  onChange={(e) => setEditContent(e.target.value)}
-                                  rows={3}
-                                  maxLength={2000}
-                                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet resize-none"
-                                  placeholder="Instructions, rappels, informations pour ce service…"
-                                  autoFocus
-                                />
-                                {saveError && <p className="text-xs text-icc-rouge">{saveError}</p>}
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => saveNotice(event.id)}
-                                    disabled={saving}
-                                    className="px-3 py-1.5 text-xs font-medium bg-icc-violet text-white rounded-lg hover:opacity-90 disabled:opacity-50"
-                                  >
-                                    {saving ? "Enregistrement…" : "Enregistrer"}
-                                  </button>
-                                  <button
-                                    onClick={cancelEdit}
-                                    disabled={saving}
-                                    className="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                                  >
-                                    Annuler
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <p className={`text-sm whitespace-pre-wrap leading-relaxed ${event.notice?.content ? "text-icc-violet/80" : "text-gray-400 italic"}`}>
-                                {event.notice!.content}
-                              </p>
+                            ))}
+                            {m.status === "EN_SERVICE_DEBRIEF" && (
+                              <StatusChip tone="brand" icon={MessageSquare}>
+                                Debrief
+                              </StatusChip>
                             )}
                           </div>
-                        )}
+                        ))}
+                      </div>
+                    )}
 
-                        {canEdit && !event.notice && !isEditing && (
-                          <button
-                            data-html2canvas-ignore="true"
-                            onClick={() => startEdit(event.id, "")}
-                            className="mt-2 text-[11px] text-icc-violet hover:underline"
-                          >
-                            + Ajouter une notice
-                          </button>
+                    {/* Notice de service — dans la carte, séparée par un filet */}
+                    {(hasNotice || isEditing) && (
+                      <div
+                        className={`mt-3 rounded-control border-t pt-2 ${
+                          hasNotice && !isEditing ? "border-brand/20 bg-brand-soft px-3 pb-2" : "border-line"
+                        }`}
+                      >
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.06em] text-brand-text">
+                            <NotebookPen aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+                            Notice de service
+                          </span>
+                          {canEdit && !isEditing && (
+                            <div data-html2canvas-ignore="true" className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => startEdit(event.id, event.notice?.content ?? "")}
+                              >
+                                <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                                Modifier
+                              </Button>
+                              <button
+                                type="button"
+                                onClick={() => setPendingNoticeDelete(event.id)}
+                                disabled={saving}
+                                className={ghostDangerClasses}
+                              >
+                                <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                                Supprimer
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div className="flex flex-col gap-2" data-html2canvas-ignore="true">
+                            <Textarea
+                              aria-label="Notice de service"
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              rows={3}
+                              maxLength={2000}
+                              placeholder="Instructions, rappels, informations pour ce service…"
+                              error={saveError ?? undefined}
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => saveNotice(event.id)} disabled={saving}>
+                                {saving ? "Enregistrement…" : "Enregistrer"}
+                              </Button>
+                              <Button variant="secondary" size="sm" onClick={cancelEdit} disabled={saving}>
+                                Annuler
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{event.notice!.content}</p>
                         )}
                       </div>
-                    </div>
+                    )}
+
+                    {canEdit && !event.notice && !isEditing && (
+                      <Button
+                        data-html2canvas-ignore="true"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEdit(event.id, "")}
+                        className="-ml-3 mt-2"
+                      >
+                        <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                        Ajouter une notice
+                      </Button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <ConfirmModal
+        open={pendingNoticeDelete !== null}
+        title="Supprimer cette notice ?"
+        message="Les STAR ne la verront plus dans le planning de la semaine."
+        confirmLabel="Supprimer la notice"
+        confirmingLabel="Suppression…"
+        variant="danger"
+        confirming={saving}
+        onConfirm={() => pendingNoticeDelete && deleteNotice(pendingNoticeDelete)}
+        onCancel={() => setPendingNoticeDelete(null)}
+      />
     </div>
   );
 }

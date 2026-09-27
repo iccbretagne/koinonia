@@ -57,7 +57,7 @@ export default async function MediaProjectsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Visuels</h1>
+        <h1 className="text-2xl font-bold text-ink">Visuels</h1>
         {canUpload && (
           <Link href="/media/projects/new">
             <Button>+ Nouveau projet visuel</Button>

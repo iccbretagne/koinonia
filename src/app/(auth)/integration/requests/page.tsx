@@ -7,7 +7,7 @@ import PublicFormBanner from "@/components/PublicFormBanner";
 export default async function IntegrationRequestsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const { scope } = await requireIntegrationAccess(churchId);
 
@@ -35,9 +35,9 @@ export default async function IntegrationRequestsPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Demandes d&apos;intégration</h1>
+        <h1 className="text-2xl font-bold text-ink">Demandes d&apos;intégration</h1>
         {pending > 0 && (
-          <span className="bg-icc-violet text-white text-sm font-bold px-2.5 py-1 rounded-full">
+          <span className="bg-brand text-on-brand text-sm font-bold px-2.5 py-1 rounded-full">
             {pending}
           </span>
         )}

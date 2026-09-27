@@ -65,31 +65,31 @@ export default async function CareFollowupDetailPage({
 
   return (
     <div className="max-w-xl mx-auto">
-      <Link href="/care" className="text-sm text-gray-400 hover:text-icc-violet transition-colors mb-4 inline-block">
+      <Link href="/care" className="text-sm text-ink-subtle hover:text-brand-text transition-colors mb-4 inline-block">
         ← Suivi pastoral
       </Link>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">{name || "—"}</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-1">{name || "—"}</h1>
+      <p className="text-sm text-ink-muted mb-6">
         {STATUS_LABEL[followUp.status] ?? followUp.status}
         {wasHandedBack && (
-          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+          <span className="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-warning-soft text-warning">
             Rendu par le référent
           </span>
         )}
       </p>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3 mb-4">
+      <div className="bg-surface rounded-xl border border-line p-5 space-y-3 mb-4">
         {followUp.assignedConseillerMsdp && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Référent : <strong>{followUp.assignedConseillerMsdp.name ?? followUp.assignedConseillerMsdp.email}</strong>
           </p>
         )}
         {followUp.assignedProfile && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Référent : <strong>{followUp.assignedProfile.name}</strong>
           </p>
         )}
-        {followUp.notes && <p className="text-sm text-gray-600 whitespace-pre-line">{followUp.notes}</p>}
+        {followUp.notes && <p className="text-sm text-ink-muted whitespace-pre-line">{followUp.notes}</p>}
       </div>
 
       <FollowupActions
@@ -102,14 +102,14 @@ export default async function CareFollowupDetailPage({
       />
 
       {related.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Autres demandes de la personne</h2>
+        <div className="bg-surface rounded-xl border border-line p-5 mt-4">
+          <h2 className="text-sm font-semibold text-ink-muted mb-2">Autres demandes de la personne</h2>
           <ul className="space-y-1.5">
             {related.map((r) => (
               <li key={`${r.kind}-${r.id}`}>
                 <Link
                   href={r.kind === "request" ? `/care/requests/${r.id}` : `/care/followups/${r.id}`}
-                  className="text-sm text-icc-violet hover:underline"
+                  className="text-sm text-brand-text hover:underline"
                 >
                   {r.kind === "request" ? "Rendez-vous pastoral" : "Suivi de nouveau converti"} —{" "}
                   {RELATED_STATUS_LABEL[r.status] ?? r.status}

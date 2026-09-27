@@ -35,8 +35,8 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Nom du projet <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-ink-muted mb-1">
+          Nom du projet <span className="text-danger">*</span>
         </label>
         <Input
           value={name}
@@ -47,20 +47,20 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Description <span className="text-gray-400">(optionnel)</span>
+        <label className="block text-sm font-medium text-ink-muted mb-1">
+          Description <span className="text-ink-subtle">(optionnel)</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
           placeholder="Contexte, objectifs…"
-          className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+          className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">
           {error}
         </p>
       )}

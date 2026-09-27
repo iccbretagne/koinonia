@@ -3,7 +3,15 @@
 import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import html2canvas from "html2canvas-pro";
-import { getEventTypeColors, EVENT_TYPE_COLORS } from "@/lib/event-types";
+import { CalendarX2, ChevronRight } from "lucide-react";
+import DateTile from "@/components/DateTile";
+import ExportBar from "@/components/ExportBar";
+import PeriodNav from "@/components/PeriodNav";
+import { eventTypeDot, eventTypeTone } from "@/components/event-type-tone";
+import EmptyState from "@/components/ui/EmptyState";
+import StatusChip, { statusToneClasses } from "@/components/ui/StatusChip";
+import { useToast } from "@/components/ui/Toast";
+import { EVENT_TYPES, getEventTypeLabel } from "@/lib/event-types";
 
 interface CalendarEvent {
   id: string;
@@ -58,6 +66,119 @@ function buildMonthDays(year: number, month: number) {
   return days;
 }
 
+const WEEKDAY_HEADERS = DAYS_FR;
+
+/**
+ * Grille d'un mois. Sous 768px, les cellules ne portent que des points colorés (le titre ne tient
+ * pas dans 50px) : la liste du mois, sous la grille, donne le détail.
+ */
+function DaysGrid({
+  days,
+  eventsByDate,
+  todayStr,
+}: {
+  readonly days: { date: number; inMonth: boolean; dateStr: string }[];
+  readonly eventsByDate: Map<string, CalendarEvent[]>;
+  readonly todayStr: string;
+}) {
+  return (
+    <>
+      <div className="grid grid-cols-7 border-b border-line bg-surface-sunken">
+        {WEEKDAY_HEADERS.map((day) => (
+          <div
+            key={day}
+            className="px-1 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.06em] text-ink-muted"
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {days.map((day, idx) => {
+          const dayEvents = eventsByDate.get(day.dateStr) || [];
+          const isToday = day.dateStr === todayStr;
+          return (
+            <div
+              key={idx}
+              className={`min-h-14 border-b border-r border-line p-1 md:min-h-[110px] md:p-1.5 ${
+                idx % 7 === 6 ? "border-r-0" : ""
+              } ${day.inMonth ? (isToday ? "bg-brand-soft" : "bg-surface") : "bg-surface-sunken/60"}`}
+            >
+              <div className="flex items-start justify-between">
+                <span
+                  aria-current={isToday ? "date" : undefined}
+                  className={`mb-1 inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
+                    isToday ? "bg-brand text-on-brand" : day.inMonth ? "text-ink" : "text-ink-subtle"
+                  }`}
+                >
+                  {day.date}
+                </span>
+              </div>
+              {dayEvents.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 px-1 md:hidden" aria-hidden="true">
+                  {dayEvents.slice(0, 3).map((ev) => (
+                    <span key={ev.id} className={`size-1.5 rounded-full ${eventTypeDot(ev.type)}`} />
+                  ))}
+                </div>
+              )}
+              <div className="hidden flex-col gap-1 md:flex">
+                {dayEvents.map((ev) => (
+                  <Link
+                    key={ev.id}
+                    href={`/events/${ev.id}/star-view`}
+                    className={`block truncate rounded-chip px-1.5 py-1 text-xs font-semibold transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${statusToneClasses[eventTypeTone(ev.type)]}`}
+                    title={`${ev.title} (${getEventTypeLabel(ev.type)})`}
+                  >
+                    {ev.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/** Événements d'un mois en lignes compactes : vue liste, et détail sous la grille sur mobile. */
+function EventRows({ events }: { readonly events: CalendarEvent[] }) {
+  if (events.length === 0) {
+    return (
+      <div className="rounded-card border border-line bg-surface">
+        <EmptyState icon={CalendarX2} title="Aucun événement ce mois-ci" size="sm" />
+      </div>
+    );
+  }
+  return (
+    <ul className="overflow-hidden rounded-card border border-line bg-surface">
+      {events.map((ev) => {
+        const d = new Date(ev.date);
+        return (
+          <li key={ev.id} className="border-t border-line first:border-t-0">
+            <Link
+              href={`/events/${ev.id}/star-view`}
+              className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+            >
+              <DateTile date={d} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{ev.title}</p>
+                <p className="text-[13px] leading-[18px] text-ink-muted">
+                  {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h")}
+                </p>
+              </div>
+              <StatusChip tone={eventTypeTone(ev.type)} className="shrink-0">
+                {getEventTypeLabel(ev.type)}
+              </StatusChip>
+              <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function MonthGrid({
   year,
   month,
@@ -72,84 +193,17 @@ function MonthGrid({
   const days = useMemo(() => buildMonthDays(year, month), [year, month]);
 
   return (
-    <div className="bg-white rounded-xl shadow-md border-2 border-gray-100 overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-        <h2 className="text-base font-semibold text-gray-800">
-          {MONTHS_FR[month - 1]} {year}
-        </h2>
-      </div>
-      <div className="grid grid-cols-7 bg-icc-violet">
-        {DAYS_FR.map((day) => (
-          <div
-            key={day}
-            className="px-2 py-3 text-xs font-bold text-white text-center uppercase tracking-wider"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7">
-        {days.map((day, idx) => {
-          const dayEvents = eventsByDate.get(day.dateStr) || [];
-          const isToday = day.dateStr === todayStr;
-          return (
-            <div
-              key={idx}
-              className={`min-h-[80px] md:min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${
-                day.inMonth
-                  ? isToday
-                    ? "bg-icc-violet-light/50"
-                    : "bg-white hover:bg-gray-50"
-                  : "bg-gray-50/50"
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <span
-                  className={`inline-flex items-center justify-center text-xs font-semibold mb-1 ${
-                    isToday
-                      ? "bg-icc-violet text-white w-7 h-7 rounded-full shadow-sm"
-                      : day.inMonth
-                        ? "text-gray-700 w-7 h-7"
-                        : "text-gray-300 w-7 h-7"
-                  }`}
-                >
-                  {day.date}
-                </span>
-                {dayEvents.length > 0 && !isToday && (
-                  <div className="flex gap-0.5 mt-1">
-                    {dayEvents.slice(0, 3).map((ev) => (
-                      <span
-                        key={ev.id}
-                        className={`w-2 h-2 rounded-full ${getEventTypeColors(ev.type).dot}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1">
-                {dayEvents.map((ev) => {
-                  const colors = getEventTypeColors(ev.type);
-                  return (
-                    <Link
-                      key={ev.id}
-                      href={`/events/${ev.id}/star-view`}
-                      className={`block px-1.5 py-1 text-xs font-medium rounded-md ${colors.bg} ${colors.text} ${colors.hover} hover:text-white transition-colors truncate`}
-                      title={`${ev.title} (${ev.type})`}
-                    >
-                      {ev.title}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+      <h2 className="border-b border-line px-4 py-3 font-display text-[15px] font-semibold text-ink">
+        {MONTHS_FR[month - 1]} {year}
+      </h2>
+      <DaysGrid days={days} eventsByDate={eventsByDate} todayStr={todayStr} />
+    </section>
   );
 }
 
 export default function CalendarClient({ events }: Props) {
+  const toast = useToast();
   const now = new Date();
   const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -208,7 +262,7 @@ export default function CalendarClient({ events }: Props) {
 
   // Événements du mois courant, pour la vue liste
   const monthEvents = useMemo(() => {
-    if (mode !== "list") return [];
+    if (mode === "multi") return [];
     const prefix = `${year}-${String(month).padStart(2, "0")}`;
     return events
       .filter((ev) => ev.date.slice(0, 7) === prefix)
@@ -226,11 +280,21 @@ export default function CalendarClient({ events }: Props) {
 
   async function captureCanvas() {
     if (!captureRef.current) return null;
-    return html2canvas(captureRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#f9fafb",
-    });
+    // L'image exportée reste en thème clair, quel que soit le thème affiché (partage, impression).
+    const el = captureRef.current;
+    el.dataset.theme = "light";
+    el.dataset.capturing = "true";
+    try {
+      return await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        // Exception documentée (migration.md) : couleur d'export, `bg` du thème clair.
+        backgroundColor: "#f6f5fa",
+      });
+    } finally {
+      delete el.dataset.theme;
+      delete el.dataset.capturing;
+    }
   }
 
   async function handleDownloadPng() {
@@ -242,6 +306,8 @@ export default function CalendarClient({ events }: Props) {
       link.download = `calendrier-${printTitle.replace(/\s/g, "-").replace(/—/g, "-")}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
+    } catch {
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -258,8 +324,10 @@ export default function CalendarClient({ events }: Props) {
           await navigator.clipboard.write([
             new ClipboardItem({ "image/png": blob }),
           ]);
+          toast.success("Image copiée dans le presse-papiers");
         } catch {
-          // Clipboard API non supportée (Firefox sans flag) — fallback silencieux
+          // Clipboard API non supportée (Firefox sans flag)
+          toast.error("Copie impossible dans ce navigateur. Téléchargez l'image en PNG.");
         }
       }, "image/png");
     } finally {
@@ -268,303 +336,148 @@ export default function CalendarClient({ events }: Props) {
   }
 
   const legend = (
-    <div className="mt-4 flex flex-wrap gap-3 justify-center">
-      {Object.entries(EVENT_TYPE_COLORS).map(([type, colors]) => (
-        <div key={type} className="flex items-center gap-1.5">
-          <span className={`w-3 h-3 rounded-full ${colors.dot}`} />
-          <span className="text-xs text-gray-600">{colors.label}</span>
-        </div>
+    <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2" aria-label="Légende des types d'événement">
+      {EVENT_TYPES.map((type) => (
+        <li key={type} className="flex items-center gap-1.5">
+          <span aria-hidden="true" className={`size-2.5 rounded-full ${eventTypeDot(type)}`} />
+          <span className="text-xs text-ink-muted">{getEventTypeLabel(type)}</span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 
+  const modes = [
+    { value: "single" as const, label: "Mois" },
+    { value: "multi" as const, label: "Plusieurs mois" },
+    { value: "list" as const, label: "Liste" },
+  ];
+  const monthInputClasses =
+    "min-h-11 cursor-pointer rounded-control border border-control-line bg-surface px-3 text-center font-display text-base font-semibold text-ink focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus";
+
   return (
-    <div>
-      {/* Controls — hidden on print */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 print:hidden">
-        {/* Mode toggle */}
-        <div className="flex rounded-lg border-2 border-icc-violet/20 overflow-hidden">
-          <button
-            onClick={() => setMode("single")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              mode === "single"
-                ? "bg-icc-violet text-white"
-                : "bg-white text-icc-violet hover:bg-icc-violet-light"
-            }`}
-          >
-            Vue mensuelle
-          </button>
-          <button
-            onClick={() => setMode("multi")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              mode === "multi"
-                ? "bg-icc-violet text-white"
-                : "bg-white text-icc-violet hover:bg-icc-violet-light"
-            }`}
-          >
-            Vue multi-mois
-          </button>
-          <button
-            onClick={() => setMode("list")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              mode === "list"
-                ? "bg-icc-violet text-white"
-                : "bg-white text-icc-violet hover:bg-icc-violet-light"
-            }`}
-          >
-            Vue liste
-          </button>
+    <div className="flex flex-col gap-4">
+      {/* Contrôles — masqués à l'impression */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+        <div role="group" aria-label="Affichage" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+          {modes.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              aria-pressed={mode === m.value}
+              onClick={() => setMode(m.value)}
+              className={`min-h-10 rounded-[7px] px-3 font-display text-sm font-semibold transition-colors duration-120 sm:px-4
+                focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${
+                  mode === m.value ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink"
+                }`}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
 
-        {/* Export buttons — les exports capturent la grille, sans objet en vue liste */}
+        {/* Exports — ils capturent la grille, sans objet en vue liste */}
         {mode !== "list" && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => window.print()}
-            disabled={exporting !== null}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-icc-violet bg-white border-2 border-icc-violet/30 rounded-lg hover:bg-icc-violet-light transition-colors disabled:opacity-50"
-            title="Exporter en PDF"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            PDF
-          </button>
-          <button
-            onClick={handleDownloadPng}
-            disabled={exporting !== null}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-icc-violet bg-white border-2 border-icc-violet/30 rounded-lg hover:bg-icc-violet-light transition-colors disabled:opacity-50"
-            title="Télécharger en PNG"
-          >
-            {exporting === "png" ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            )}
-            PNG
-          </button>
-          <button
-            onClick={handleCopyPng}
-            disabled={exporting !== null}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors disabled:opacity-50"
-            title="Copier l'image dans le presse-papiers"
-          >
-            {exporting === "copy" ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            )}
-            Copier
-          </button>
-        </div>
+          <ExportBar
+            exporting={exporting}
+            onCopy={handleCopyPng}
+            onDownload={handleDownloadPng}
+            onPdf={() => window.print()}
+            pdfLabel="Imprimer / PDF"
+            className="hidden sm:flex"
+          />
         )}
       </div>
 
       {/* Navigation mensuelle — partagée par la vue mensuelle et la vue liste */}
       {mode !== "multi" && (
-        <div className="flex items-center justify-center gap-2 mb-6 print:hidden">
-          <button
-            onClick={() => navigateMonth(-1)}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+        <PeriodNav
+          prev={{ onClick: () => navigateMonth(-1) }}
+          next={{ onClick: () => navigateMonth(1) }}
+          prevLabel="Mois précédent"
+          nextLabel="Mois suivant"
+          className="mx-auto w-full max-w-md print:hidden"
+        >
+          <label className="sr-only" htmlFor="calendar-month">
+            Mois affiché
+          </label>
           <input
+            id="calendar-month"
             type="month"
             value={currentMonth}
             onChange={(e) => { if (e.target.value) setCurrentMonth(e.target.value); }}
-            className="px-4 py-2 text-lg font-semibold text-icc-violet bg-icc-violet-light border-2 border-icc-violet/20 rounded-lg cursor-pointer text-center capitalize focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+            className={`${monthInputClasses} w-full max-w-60`}
           />
-          <button
-            onClick={() => navigateMonth(1)}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+        </PeriodNav>
       )}
 
-      {/* Multi-month period selector */}
+      {/* Sélecteur de période multi-mois */}
       {mode === "multi" && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6 print:hidden">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Du</label>
+        <div className="flex flex-wrap items-end justify-center gap-4 print:hidden">
+          <label className="flex flex-col gap-1.5 font-display text-[13px] font-semibold text-ink">
+            Du
             <input
               type="month"
               value={startMonth}
               max={endMonth}
               onChange={(e) => { if (e.target.value) setStartMonth(e.target.value); }}
-              className="px-3 py-2 text-sm font-semibold text-icc-violet bg-icc-violet-light border-2 border-icc-violet/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className={monthInputClasses}
             />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Au</label>
+          </label>
+          <label className="flex flex-col gap-1.5 font-display text-[13px] font-semibold text-ink">
+            Au
             <input
               type="month"
               value={endMonth}
               min={startMonth}
               onChange={(e) => { if (e.target.value) setEndMonth(e.target.value); }}
-              className="px-3 py-2 text-sm font-semibold text-icc-violet bg-icc-violet-light border-2 border-icc-violet/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className={monthInputClasses}
             />
-          </div>
+          </label>
           {months.length > 0 && (
-            <span className="text-sm text-gray-500">
+            <span className="pb-3 text-sm text-ink-muted">
               {months.length} mois affiché{months.length > 1 ? "s" : ""}
             </span>
           )}
         </div>
       )}
 
-      {/* Capture zone */}
-      <div ref={captureRef} className="bg-gray-50 rounded-xl p-4">
+      {/* Zone capturée (PNG, impression) */}
+      <div ref={captureRef} className="group rounded-card bg-bg data-[capturing]:p-4">
+        {/* Titre de période — visible à l'impression et dans l'image */}
+        <p className="mb-4 hidden font-display text-base font-semibold text-ink group-data-[capturing]:block print:mb-6 print:block">Calendrier — {printTitle}</p>
 
-      {/* Period title — visible on print and PNG capture */}
-      <div className="mb-4 print:mb-6">
-        <p className="text-base font-semibold text-gray-700">Calendrier — {printTitle}</p>
-      </div>
-
-      {/* Calendar content */}
-      {mode === "list" ? (
-        <div className="space-y-2">
-          {monthEvents.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg bg-white">
-              Aucun événement ce mois-ci.
-            </div>
-          ) : (
-            monthEvents.map((ev) => {
-              const colors = getEventTypeColors(ev.type);
-              const d = new Date(ev.date);
-              return (
-                <Link
-                  key={ev.id}
-                  href={`/events/${ev.id}/star-view`}
-                  className="flex items-center gap-4 bg-white rounded-xl border-2 border-gray-100 px-4 py-3 hover:border-icc-violet/40 transition-colors"
-                >
-                  <div className="w-12 shrink-0 text-center">
-                    <p className="text-[11px] uppercase text-gray-400">
-                      {d.toLocaleDateString("fr-FR", { weekday: "short" })}
-                    </p>
-                    <p className="text-xl font-bold text-gray-800 leading-none">{d.getDate()}</p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-900 truncate">{ev.title}</p>
-                    <p className="text-xs text-gray-400">
-                      {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                  <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
-                    {colors.label}
-                  </span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      ) : mode === "single" ? (
-        <>
-          <div className="bg-white rounded-xl shadow-md border-2 border-gray-100 overflow-hidden">
-            <div className="grid grid-cols-7 bg-icc-violet">
-              {DAYS_FR.map((day) => (
-                <div
-                  key={day}
-                  className="px-2 py-3 text-xs font-bold text-white text-center uppercase tracking-wider"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7">
-              {calendarDays.map((day, idx) => {
-                const dayEvents = eventsByDate.get(day.dateStr) || [];
-                const isToday = day.dateStr === todayStr;
-                return (
-                  <div
-                    key={idx}
-                    className={`min-h-[80px] md:min-h-[110px] border-b border-r border-gray-100 p-1.5 transition-colors ${
-                      day.inMonth
-                        ? isToday
-                          ? "bg-icc-violet-light/50"
-                          : "bg-white hover:bg-gray-50"
-                        : "bg-gray-50/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <span
-                        className={`inline-flex items-center justify-center text-xs font-semibold mb-1 ${
-                          isToday
-                            ? "bg-icc-violet text-white w-7 h-7 rounded-full shadow-sm"
-                            : day.inMonth
-                              ? "text-gray-700 w-7 h-7"
-                              : "text-gray-300 w-7 h-7"
-                        }`}
-                      >
-                        {day.date}
-                      </span>
-                      {dayEvents.length > 0 && !isToday && (
-                        <div className="flex gap-0.5 mt-1">
-                          {dayEvents.slice(0, 3).map((ev) => (
-                            <span
-                              key={ev.id}
-                              className={`w-2 h-2 rounded-full ${getEventTypeColors(ev.type).dot}`}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {dayEvents.map((ev) => {
-                        const colors = getEventTypeColors(ev.type);
-                        return (
-                          <Link
-                            key={ev.id}
-                            href={`/events/${ev.id}/star-view`}
-                            className={`block px-1.5 py-1 text-xs font-medium rounded-md ${colors.bg} ${colors.text} ${colors.hover} hover:text-white transition-colors truncate`}
-                            title={`${ev.title} (${ev.type})`}
-                          >
-                            {ev.title}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+        {mode === "list" ? (
+          <EventRows events={monthEvents} />
+        ) : mode === "single" ? (
+          <div className="flex flex-col gap-4">
+            <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={printTitle}>
+              <DaysGrid days={calendarDays} eventsByDate={eventsByDate} todayStr={todayStr} />
+            </section>
+            <div className="md:hidden" data-html2canvas-ignore="true">
+              <EventRows events={monthEvents} />
             </div>
           </div>
-        </>
-      ) : (
-        <div className="space-y-8">
-          {months.map(({ year: y, month: m }) => (
-            <MonthGrid
-              key={`${y}-${m}`}
-              year={y}
-              month={m}
-              eventsByDate={eventsByDate}
-              todayStr={todayStr}
-            />
-          ))}
-          {months.length === 0 && (
-            <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-              Sélectionnez une période valide.
-            </div>
-          )}
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col gap-8">
+            {months.map(({ year: y, month: m }) => (
+              <MonthGrid
+                key={`${y}-${m}`}
+                year={y}
+                month={m}
+                eventsByDate={eventsByDate}
+                todayStr={todayStr}
+              />
+            ))}
+            {months.length === 0 && (
+              <div className="rounded-card border border-line bg-surface">
+                <EmptyState title="Période invalide" description="Choisissez un mois de début antérieur au mois de fin." size="sm" />
+              </div>
+            )}
+          </div>
+        )}
 
-      {legend}
-      </div>{/* end capture zone */}
+        {mode !== "list" && legend}
+      </div>
     </div>
   );
 }

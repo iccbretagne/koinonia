@@ -22,11 +22,11 @@ const STATUS_LABELS: Record<string, string> = {
   CANCELLED: "Annulée",
 };
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED: "bg-amber-400",
-  PROCESSING: "bg-blue-400",
-  APPROVED: "bg-emerald-500",
-  REJECTED: "bg-red-400",
-  CANCELLED: "bg-gray-300",
+  SUBMITTED: "bg-warning",
+  PROCESSING: "bg-info",
+  APPROVED: "bg-success",
+  REJECTED: "bg-danger",
+  CANCELLED: "bg-control-line",
 };
 
 type Period = "month" | "quarter" | "year";
@@ -72,31 +72,31 @@ function KpiCard({
 }) {
   return (
     <div
-      className={`bg-white rounded-xl border p-4 sm:p-5 ${
+      className={`bg-surface rounded-xl border p-4 sm:p-5 ${
         accent
-          ? "border-icc-violet/30 bg-icc-violet/5"
+          ? "border-brand/30 bg-brand-soft"
           : warning
-          ? "border-amber-200 bg-amber-50"
-          : "border-gray-200"
+          ? "border-warning/30 bg-warning-soft"
+          : "border-line"
       }`}
     >
-      <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
+      <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
       <p
         className={`text-2xl font-bold ${
-          accent ? "text-icc-violet" : warning ? "text-amber-700" : "text-gray-900"
+          accent ? "text-brand-text" : warning ? "text-warning" : "text-ink"
         }`}
       >
         {value}
       </p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      {sub && <p className="text-xs text-ink-subtle mt-1">{sub}</p>}
     </div>
   );
 }
 
 function Section({ title, children }: { readonly title: string; readonly children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h2 className="text-sm font-semibold text-gray-700 mb-4">{title}</h2>
+    <div className="bg-surface rounded-xl border border-line p-5">
+      <h2 className="text-sm font-semibold text-ink-muted mb-4">{title}</h2>
       {children}
     </div>
   );
@@ -106,11 +106,11 @@ function HBar({ label, value, max, sub }: { readonly label: string; readonly val
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-gray-600 w-28 shrink-0 truncate" title={label}>{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-2">
-        <div className="bg-icc-violet rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
+      <span className="text-xs text-ink-muted w-28 shrink-0 truncate" title={label}>{label}</span>
+      <div className="flex-1 bg-surface-sunken rounded-full h-2">
+        <div className="bg-brand rounded-full h-2 transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-medium text-gray-800 w-20 text-right shrink-0">{sub ?? fmt(value)}</span>
+      <span className="text-xs font-medium text-ink w-20 text-right shrink-0">{sub ?? fmt(value)}</span>
     </div>
   );
 }
@@ -185,13 +185,13 @@ export default function AccountingStats({
     <div className={`space-y-6 transition-opacity ${loading ? "opacity-60 pointer-events-none" : ""}`}>
       {/* Sélecteur de période */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-surface-sunken rounded-lg p-1 w-fit">
         {(["month", "quarter", "year"] as Period[]).map((p) => (
           <button
             key={p}
             onClick={() => handlePeriod(p)}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              period === p ? "bg-white text-icc-violet shadow-sm" : "text-gray-500 hover:text-gray-700"
+              period === p ? "bg-surface text-brand-text shadow-card" : "text-ink-muted hover:text-ink-muted"
             }`}
           >
             {PERIOD_LABELS[p]}
@@ -199,7 +199,7 @@ export default function AccountingStats({
         ))}
       </div>
       {dateLabel && (
-        <span className="text-xs text-gray-400">{dateLabel}</span>
+        <span className="text-xs text-ink-subtle">{dateLabel}</span>
       )}
       </div>
 
@@ -229,7 +229,7 @@ export default function AccountingStats({
         {/* Par statut */}
         <Section title="Répartition par statut">
           {byStatus.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune donnée sur la période</p>
+            <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
           ) : (
             <div className="space-y-3">
               {byStatus
@@ -237,23 +237,23 @@ export default function AccountingStats({
                 .map((s) => (
                   <div key={s.status} className="flex items-center gap-3">
                     <div
-                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_COLORS[s.status] ?? "bg-gray-300"}`}
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_COLORS[s.status] ?? "bg-control-line"}`}
                     />
-                    <span className="text-xs text-gray-600 w-24 shrink-0">
+                    <span className="text-xs text-ink-muted w-24 shrink-0">
                       {STATUS_LABELS[s.status] ?? s.status}
                     </span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-2">
+                    <div className="flex-1 bg-surface-sunken rounded-full h-2">
                       <div
-                        className={`${STATUS_COLORS[s.status] ?? "bg-gray-300"} rounded-full h-2 transition-all`}
+                        className={`${STATUS_COLORS[s.status] ?? "bg-control-line"} rounded-full h-2 transition-all`}
                         style={{
                           width: `${Math.round((s.count / overview.totalRequests) * 100)}%`,
                         }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-gray-800 w-6 text-right shrink-0">
+                    <span className="text-xs font-medium text-ink w-6 text-right shrink-0">
                       {s.count}
                     </span>
-                    <span className="text-xs text-gray-400 w-20 text-right shrink-0">{fmt(s.amount)}</span>
+                    <span className="text-xs text-ink-subtle w-20 text-right shrink-0">{fmt(s.amount)}</span>
                   </div>
                 ))}
             </div>
@@ -263,22 +263,22 @@ export default function AccountingStats({
         {/* Par type */}
         <Section title="Type de demande">
           {byType.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune donnée sur la période</p>
+            <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
           ) : (
             <div className="space-y-4">
               {byType.map((t) => (
                 <div key={t.type} className="space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className="font-medium text-gray-700">
+                    <span className="font-medium text-ink-muted">
                       {t.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"}
                     </span>
-                    <span className="text-gray-500">
+                    <span className="text-ink-muted">
                       {t.count} demande{t.count > 1 ? "s" : ""} · {fmt(t.amount)}
                     </span>
                   </div>
-                  <div className="bg-gray-100 rounded-full h-2">
+                  <div className="bg-surface-sunken rounded-full h-2">
                     <div
-                      className={`rounded-full h-2 ${t.type === "EXPENSE_REPORT" ? "bg-icc-violet" : "bg-icc-bleu"}`}
+                      className={`rounded-full h-2 ${t.type === "EXPENSE_REPORT" ? "bg-brand" : "bg-info"}`}
                       style={{
                         width: `${Math.round((t.count / overview.totalRequests) * 100)}%`,
                       }}
@@ -294,7 +294,7 @@ export default function AccountingStats({
       {/* Tendance mensuelle */}
       <Section title={`Tendance — montants soumis vs versés (€) · ${PERIOD_LABELS[period].toLowerCase()}`}>
         {chartData.every((d) => d.submitted === 0 && d.released === 0) ? (
-          <p className="text-sm text-gray-400">Aucune donnée sur les 12 derniers mois</p>
+          <p className="text-sm text-ink-subtle">Aucune donnée sur les 12 derniers mois</p>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -321,14 +321,14 @@ export default function AccountingStats({
       {/* Par département */}
       <Section title="Par département — montant soumis vs versé">
         {byDepartment.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune donnée sur la période</p>
+          <p className="text-sm text-ink-subtle">Aucune donnée sur la période</p>
         ) : (
           <div className="space-y-4">
             {byDepartment.map((d) => (
               <div key={d.name} className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="font-medium text-gray-700">{d.name}</span>
-                  <span className="text-gray-400">{d.count} demande{d.count > 1 ? "s" : ""}</span>
+                  <span className="font-medium text-ink-muted">{d.name}</span>
+                  <span className="text-ink-subtle">{d.count} demande{d.count > 1 ? "s" : ""}</span>
                 </div>
                 <HBar label="Soumis" value={d.amount} max={maxDeptAmount} />
                 <HBar label="Versé" value={d.released} max={maxDeptAmount} />
@@ -349,16 +349,16 @@ export default function AccountingStats({
               return (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-line last:border-0"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{p.requestLabel}</p>
-                    <p className="text-xs text-red-500">
+                    <p className="text-sm font-medium text-ink">{p.requestLabel}</p>
+                    <p className="text-xs text-danger">
                       Prévu le {new Date(p.scheduledDate).toLocaleDateString("fr-FR")} · {daysLate}j
                       de retard
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{fmt(p.amount)}</span>
+                  <span className="text-sm font-semibold text-ink">{fmt(p.amount)}</span>
                 </div>
               );
             })}

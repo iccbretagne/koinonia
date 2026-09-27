@@ -53,7 +53,7 @@ export default async function AgendaPage({
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Agenda pastoral</h1>
+        <h1 className="text-2xl font-bold text-ink">Agenda pastoral</h1>
         <div className="flex gap-2">
           <Link href="/agenda/schedule">
             <Button size="sm" variant="info">Planifier RDV</Button>
@@ -65,7 +65,7 @@ export default async function AgendaPage({
       </div>
       {church?.slug && <PublicUrlBanner slug={church.slug} />}
       {profiles.length === 0 ? (
-        <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+        <div className="p-6 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
           Aucun profil pastoral configuré.{" "}
           <a href="/admin/pastoral-profiles" className="underline">Configurer maintenant →</a>
         </div>

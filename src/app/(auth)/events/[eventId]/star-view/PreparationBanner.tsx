@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronRight, FileCheck2, FileWarning } from "lucide-react";
+import StatusChip from "@/components/ui/StatusChip";
 import OpeningClosingManager, { type OpeningClosingData } from "./OpeningClosingManager";
 import AnnouncementSheetManager, { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 
@@ -30,30 +32,22 @@ export default function PreparationBanner({
   if (!showOpeningClosing && !showAnnouncementSheet) return null;
 
   return (
-    <details className="group mb-6 bg-white rounded-lg shadow print:hidden">
-      <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none min-h-[44px] list-none [&::-webkit-details-marker]:hidden">
-        <svg
-          className="w-4 h-4 text-gray-400 shrink-0 transition-transform group-open:rotate-90"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <span className="text-sm font-semibold text-gray-900 flex-1">Préparation du culte</span>
-        {showAnnouncementSheet && (
-          <span
-            className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
-              announcementSheet.filename
-                ? "bg-green-50 text-green-700"
-                : "bg-amber-50 text-amber-700"
-            }`}
-          >
-            {announcementSheet.filename ? "Trame déposée" : "Trame non déposée"}
-          </span>
-        )}
+    <details className="group rounded-card border border-line bg-surface print:hidden">
+      <summary className="flex min-h-11 cursor-pointer select-none list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <ChevronRight
+          aria-hidden="true"
+          className="size-4 shrink-0 text-ink-subtle transition-transform group-open:rotate-90 motion-reduce:transition-none"
+          strokeWidth={1.75}
+        />
+        <span className="flex-1 font-display text-[15px] font-semibold text-ink">Préparation du culte</span>
+        {showAnnouncementSheet &&
+          (announcementSheet.filename ? (
+            <StatusChip tone="success" icon={FileCheck2}>Trame déposée</StatusChip>
+          ) : (
+            <StatusChip tone="warning" icon={FileWarning}>Trame non déposée</StatusChip>
+          ))}
       </summary>
-      <div className="divide-y divide-gray-100 border-t border-gray-100 px-4 pb-4">
+      <div className="divide-y divide-line border-t border-line px-4 pb-4">
         {showAnnouncementSheet && (
           <div className="pt-4">
             <AnnouncementSheetManager

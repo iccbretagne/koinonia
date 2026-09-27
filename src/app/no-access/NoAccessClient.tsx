@@ -262,7 +262,7 @@ export default function NoAccessClient({
   if (bootLoading) {
     return (
       <div className="flex items-center justify-center py-6">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-icc-violet border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     );
   }
@@ -272,8 +272,8 @@ export default function NoAccessClient({
     return (
       <div className="space-y-4">
         <div>
-          <p className="text-sm font-medium text-gray-700">Cette fiche vous correspond-elle ?</p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="text-sm font-medium text-ink-muted">Cette fiche vous correspond-elle ?</p>
+          <p className="mt-1 text-xs text-ink-muted">
             Une fiche enregistrée avec votre adresse email a été trouvée. Confirmez pour lier votre
             compte directement.
           </p>
@@ -283,18 +283,18 @@ export default function NoAccessClient({
           {candidates.map((c) => (
             <div
               key={`${c.memberId}-${c.churchId}`}
-              className="rounded-lg border-2 border-gray-200 px-4 py-3"
+              className="rounded-lg border border-line px-4 py-3"
             >
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-ink">
                 {c.firstName} {c.lastName}
               </p>
-              <p className="mt-0.5 text-xs text-gray-500">
+              <p className="mt-0.5 text-xs text-ink-muted">
                 {c.churchName} · {c.department}
               </p>
               <button
                 onClick={() => confirmCandidate(c)}
                 disabled={linking}
-                className="mt-3 w-full rounded-lg bg-icc-violet px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-icc-violet/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 w-full rounded-lg bg-brand px-4 py-2 text-sm font-medium text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {linking ? "Liaison en cours..." : "Confirmer, c'est moi"}
               </button>
@@ -302,12 +302,12 @@ export default function NoAccessClient({
           ))}
         </div>
 
-        {linkError && <p className="text-sm text-icc-rouge">{linkError}</p>}
+        {linkError && <p className="text-sm text-danger">{linkError}</p>}
 
         <button
           onClick={skipReconcile}
           disabled={linking}
-          className="text-sm text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+          className="text-sm text-ink-subtle transition-colors hover:text-ink-muted disabled:opacity-50"
         >
           Aucune de ces fiches ne me correspond →
         </button>
@@ -318,16 +318,16 @@ export default function NoAccessClient({
   if (step === "pending") {
     return (
       <div className="text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 bg-success-soft rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Demande envoyée</h2>
-        <p className="text-gray-600 text-sm">
+        <h2 className="text-lg font-bold text-ink mb-2">Demande envoyée</h2>
+        <p className="text-ink-muted text-sm">
           Un administrateur va examiner votre demande. Vous recevrez une confirmation dès qu&apos;elle sera traitée.
         </p>
-        <p className="text-gray-400 text-xs mt-4">
+        <p className="text-ink-subtle text-xs mt-4">
           Vous pouvez fermer cette page ou vous déconnecter.
         </p>
       </div>
@@ -339,11 +339,11 @@ export default function NoAccessClient({
       {/* Sélecteur d'église (si plusieurs) */}
       {churches.length > 1 && (
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Église</label>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Église</label>
           <select
             value={churchId}
             onChange={(e) => { setChurchId(e.target.value); setSelectedMember(null); setResults([]); }}
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
           >
             {churches.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -355,36 +355,36 @@ export default function NoAccessClient({
       {/* ── Étape 1 : Identité ─────────────────────────────────────────────────── */}
       {step === "identity" && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-ink-muted">
             Renseignez votre prénom et nom pour que nous puissions vous identifier dans notre base.
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Prénom</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
               <input
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Jean"
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Nom</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
               <input
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Dupont"
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
           </div>
-          {searching && <p className="text-xs text-gray-400">Recherche en cours...</p>}
+          {searching && <p className="text-xs text-ink-subtle">Recherche en cours...</p>}
           <button
             onClick={goToMatch}
             disabled={!firstName.trim() || !lastName.trim()}
-            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Continuer →
           </button>
@@ -394,13 +394,13 @@ export default function NoAccessClient({
       {/* ── Étape 2 : Correspondance ───────────────────────────────────────────── */}
       {step === "match" && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-700 font-medium">
+          <p className="text-sm text-ink-muted font-medium">
             Êtes-vous déjà enregistré dans notre base ?
           </p>
 
           {results.length > 0 ? (
             <>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-muted">
                 Nous avons trouvé {results.length} fiche{results.length > 1 ? "s" : ""} à votre nom. Laquelle est la vôtre ?
               </p>
               <div className="space-y-2">
@@ -408,22 +408,22 @@ export default function NoAccessClient({
                   <button
                     key={m.id}
                     onClick={() => selectExisting(m)}
-                    className="w-full text-left px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
+                    className="w-full text-left px-4 py-3 rounded-lg border border-line hover:border-brand hover:bg-brand-soft transition-colors"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
+                      <p className="text-sm font-semibold text-ink">{m.firstName} {m.lastName}</p>
                       {m.matchStrength === "strong" ? (
-                        <span className="shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                        <span className="shrink-0 rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success">
                           Forte correspondance
                         </span>
                       ) : (
-                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-500">
+                        <span className="shrink-0 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-medium text-ink-muted">
                           Correspondance possible
                         </span>
                       )}
                     </div>
                     {m.departments[0] && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-ink-muted mt-0.5">
                         {m.departments[0].department.ministry.name} / {m.departments[0].department.name}
                       </p>
                     )}
@@ -434,28 +434,28 @@ export default function NoAccessClient({
               {noMatchStage === "hidden" && (
                 <button
                   onClick={() => setNoMatchStage("confirming")}
-                  className="text-xs text-gray-400 underline decoration-dotted underline-offset-2 hover:text-gray-600 transition-colors"
+                  className="text-xs text-ink-subtle underline decoration-dotted underline-offset-2 hover:text-ink-muted transition-colors"
                 >
                   Aucune de ces fiches n&apos;est la mienne
                 </button>
               )}
 
               {noMatchStage === "confirming" && (
-                <div className="rounded-lg border-2 border-icc-jaune bg-icc-jaune/10 p-4 space-y-3">
-                  <p className="text-xs text-gray-700">
+                <div className="rounded-lg border border-accent bg-accent-soft p-4 space-y-3">
+                  <p className="text-xs text-ink-muted">
                     <span aria-hidden="true">⚠ </span>
                     Avez-vous bien vérifié les {results.length} fiche{results.length > 1 ? "s" : ""} ci-dessus ? Si l&apos;une d&apos;elles est la vôtre, en créer une nouvelle créerait un doublon.
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setNoMatchStage("hidden")}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors"
                     >
                       Revoir les fiches
                     </button>
                     <button
                       onClick={() => setNoMatchStage("options")}
-                      className="flex-1 px-3 py-2 text-xs font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors"
+                      className="flex-1 px-3 py-2 text-xs font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover transition-colors"
                     >
                       Oui, aucune n&apos;est la mienne
                     </button>
@@ -464,16 +464,16 @@ export default function NoAccessClient({
               )}
 
               {noMatchStage === "options" && (
-                <div className="border-t border-gray-100 pt-3 flex gap-2">
+                <div className="border-t border-line pt-3 flex gap-2">
                   <button
                     onClick={selectNewStar}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
+                    className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:border-brand hover:bg-brand-soft transition-colors"
                   >
                     Je suis un STAR non enregistré
                   </button>
                   <button
                     onClick={selectNoStar}
-                    className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 border-2 border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-3 py-2 text-xs font-medium text-ink-muted border border-line rounded-lg hover:border-control-line hover:bg-surface-sunken transition-colors"
                   >
                     Je souhaite accéder à l&apos;application dans un autre rôle
                   </button>
@@ -482,29 +482,29 @@ export default function NoAccessClient({
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-ink-muted">
                 Aucune fiche trouvée pour <strong>{firstName} {lastName}</strong>.
               </p>
               <div className="space-y-2">
                 <button
                   onClick={selectNewStar}
-                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border-2 border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5 transition-colors"
+                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border border-line hover:border-brand hover:bg-brand-soft transition-colors"
                 >
-                  <span className="font-semibold text-icc-violet">Je suis un STAR</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Je sers dans l&apos;église mais ma fiche n&apos;est pas encore créée</p>
+                  <span className="font-semibold text-brand-text">Je suis un STAR</span>
+                  <p className="text-xs text-ink-muted mt-0.5">Je sers dans l&apos;église mais ma fiche n&apos;est pas encore créée</p>
                 </button>
                 <button
                   onClick={selectNoStar}
-                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                  className="w-full px-4 py-3 text-sm font-medium text-left rounded-lg border border-line hover:border-control-line hover:bg-surface-sunken transition-colors"
                 >
-                  <span className="font-semibold text-gray-700">Je souhaite accéder à l&apos;application dans un autre rôle</span>
-                  <p className="text-xs text-gray-500 mt-0.5">Faiseur de disciples, Reporter...</p>
+                  <span className="font-semibold text-ink-muted">Je souhaite accéder à l&apos;application dans un autre rôle</span>
+                  <p className="text-xs text-ink-muted mt-0.5">Faiseur de disciples, Reporter...</p>
                 </button>
               </div>
             </>
           )}
 
-          <button onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={() => { setNoMatchStage("hidden"); setStep("identity"); }} className="text-sm text-ink-subtle hover:text-ink-muted transition-colors">
             ← Modifier mon nom
           </button>
         </div>
@@ -513,45 +513,45 @@ export default function NoAccessClient({
       {/* ── Étape 3 : Département ──────────────────────────────────────────────── */}
       {step === "department" && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-700 font-medium">Votre département principal</p>
+          <p className="text-sm text-ink-muted font-medium">Votre département principal</p>
           {isNewStar && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Prénom</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
                 <input
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Nom</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
                 <input
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Téléphone (optionnel)</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Téléphone (optionnel)</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Ministère</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Ministère</label>
             <select
               value={selectedMinistryId}
               onChange={(e) => { setSelectedMinistryId(e.target.value); setSelectedDeptId(""); }}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             >
               <option value="">-- Choisir un ministère --</option>
               {churchMinistries.map((m) => (
@@ -562,11 +562,11 @@ export default function NoAccessClient({
 
           {selectedMinistry && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Département</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Département</label>
               <select
                 value={selectedDeptId}
                 onChange={(e) => setSelectedDeptId(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               >
                 <option value="">-- Choisir un département --</option>
                 {selectedMinistry.departments.map((d) => (
@@ -577,13 +577,13 @@ export default function NoAccessClient({
           )}
 
           <div className="flex gap-3">
-            <button onClick={() => setStep("match")} className="px-4 py-2 text-sm text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <button onClick={() => setStep("match")} className="px-4 py-2 text-sm text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors">
               ← Retour
             </button>
             <button
               onClick={goToRole}
               disabled={!selectedDeptId}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Continuer →
             </button>
@@ -594,7 +594,7 @@ export default function NoAccessClient({
       {/* ── Étape 4 : Rôle ────────────────────────────────────────────────────── */}
       {step === "role" && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-700 font-medium">Quel rôle souhaitez-vous ?</p>
+          <p className="text-sm text-ink-muted font-medium">Quel rôle souhaitez-vous ?</p>
 
           {/* Rôle STAR standard */}
           {(selectedMember || isNewStar) && (
@@ -602,12 +602,12 @@ export default function NoAccessClient({
               onClick={() => { setRequestedRole(null); goToConfirm(); }}
               className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
                 requestedRole === null
-                  ? "border-icc-violet bg-icc-violet/5"
-                  : "border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5"
+                  ? "border-brand bg-brand-soft"
+                  : "border-line hover:border-brand hover:bg-brand-soft"
               }`}
             >
-              <span className="text-sm font-semibold text-gray-900">Membre du département</span>
-              <p className="text-xs text-gray-500 mt-0.5">Accès au planning de mon département</p>
+              <span className="text-sm font-semibold text-ink">Membre du département</span>
+              <p className="text-xs text-ink-muted mt-0.5">Accès au planning de mon département</p>
             </button>
           )}
 
@@ -627,14 +627,14 @@ export default function NoAccessClient({
                   }}
                   className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
                     requestedRole === role
-                      ? "border-icc-violet bg-icc-violet/5"
-                      : "border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5"
+                      ? "border-brand bg-brand-soft"
+                      : "border-line hover:border-brand hover:bg-brand-soft"
                   }`}
                 >
-                  <span className="text-sm font-semibold text-gray-900">{ROLE_LABELS[role]}</span>
+                  <span className="text-sm font-semibold text-ink">{ROLE_LABELS[role]}</span>
                 </button>
               ))}
-              <div className="border-t border-gray-100 pt-1" />
+              <div className="border-t border-line pt-1" />
             </>
           )}
 
@@ -645,23 +645,23 @@ export default function NoAccessClient({
               onClick={() => { setRequestedRole(role); goToConfirm(); }}
               className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
                 requestedRole === role
-                  ? "border-icc-violet bg-icc-violet/5"
-                  : "border-gray-200 hover:border-icc-violet hover:bg-icc-violet/5"
+                  ? "border-brand bg-brand-soft"
+                  : "border-line hover:border-brand hover:bg-brand-soft"
               }`}
             >
-              <span className="text-sm font-semibold text-gray-900">{ROLE_LABELS[role]}</span>
+              <span className="text-sm font-semibold text-ink">{ROLE_LABELS[role]}</span>
               {role === "DISCIPLE_MAKER" && (
-                <p className="text-xs text-gray-500 mt-0.5">Suivi des disciples, accès discipolat</p>
+                <p className="text-xs text-ink-muted mt-0.5">Suivi des disciples, accès discipolat</p>
               )}
               {role === "REPORTER" && (
-                <p className="text-xs text-gray-500 mt-0.5">Consultation des comptes rendus et statistiques</p>
+                <p className="text-xs text-ink-muted mt-0.5">Consultation des comptes rendus et statistiques</p>
               )}
             </button>
           ))}
 
           <button
             onClick={() => setStep(isNewStar ? "department" : "match")}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-sm text-ink-subtle hover:text-ink-muted transition-colors"
           >
             ← Retour
           </button>
@@ -671,12 +671,12 @@ export default function NoAccessClient({
       {/* ── Étape 5 : Confirmation ─────────────────────────────────────────────── */}
       {step === "confirm" && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-700 font-medium">Récapitulatif de votre demande</p>
+          <p className="text-sm text-ink-muted font-medium">Récapitulatif de votre demande</p>
 
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+          <div className="bg-surface-sunken rounded-lg p-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Nom</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-ink-muted">Nom</span>
+              <span className="font-medium text-ink">
                 {selectedMember
                   ? `${selectedMember.firstName} ${selectedMember.lastName}`
                   : `${firstName} ${lastName}`}
@@ -684,35 +684,35 @@ export default function NoAccessClient({
             </div>
             {selectedMember && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Fiche STAR</span>
-                <span className="text-green-600 font-medium">Existante</span>
+                <span className="text-ink-muted">Fiche STAR</span>
+                <span className="text-success font-medium">Existante</span>
               </div>
             )}
             {isNewStar && selectedDeptId && selectedMinistry && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Département</span>
-                <span className="font-medium text-gray-900">
+                <span className="text-ink-muted">Département</span>
+                <span className="font-medium text-ink">
                   {selectedMinistry.name} / {selectedMinistry.departments.find((d) => d.id === selectedDeptId)?.name}
                 </span>
               </div>
             )}
             {requestedRole && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Rôle demandé</span>
-                <span className="font-medium text-icc-violet">{ROLE_LABELS[requestedRole]}</span>
+                <span className="text-ink-muted">Rôle demandé</span>
+                <span className="font-medium text-brand-text">{ROLE_LABELS[requestedRole]}</span>
               </div>
             )}
             {!requestedRole && (selectedMember || isNewStar) && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Rôle demandé</span>
-                <span className="font-medium text-gray-900">Membre du département</span>
+                <span className="text-ink-muted">Rôle demandé</span>
+                <span className="font-medium text-ink">Membre du département</span>
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Remarques pour l&apos;administrateur <span className="text-gray-400">(optionnel)</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Remarques pour l&apos;administrateur <span className="text-ink-subtle">(optionnel)</span>
             </label>
             <textarea
               value={notes}
@@ -720,23 +720,23 @@ export default function NoAccessClient({
               rows={3}
               maxLength={1000}
               placeholder="Ex : je sers aussi dans le département Son, je remplace Marie Dupont..."
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
             />
           </div>
 
-          {error && <p className="text-sm text-icc-rouge">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex gap-3">
             <button
               onClick={() => setStep("role")}
-              className="px-4 py-2 text-sm text-gray-600 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm text-ink-muted border border-line rounded-lg hover:bg-surface-sunken transition-colors"
             >
               ← Retour
             </button>
             <button
               onClick={submit}
               disabled={submitting}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? "Envoi..." : "Envoyer la demande"}
             </button>

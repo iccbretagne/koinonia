@@ -3,7 +3,22 @@ import nextTypescript from "eslint-config-next/typescript";
 import reactHooks from "eslint-plugin-react-hooks";
 import react from "eslint-plugin-react";
 
-const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
+// Garde du design system (spec 055, ADR-0018) : aucune couleur de palette brute ni hex dans les
+// classes. Voir docs/design-system/migration.md pour les équivalents en tokens.
+const RAW_COLOR =
+  "(^|[\\s:'\"`])(!?)(bg|text|border|divide|ring|ring-offset|from|to|via|fill|stroke|outline|placeholder|accent|decoration|caret|shadow)-(gray|slate|zinc|neutral|stone|red|rose|pink|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia)-[0-9]{2,3}\\b|(^|[\\s:'\"`])(bg|text|border|ring|divide)-(white|black)\\b|(bg|text|border|ring|fill|stroke)-\\[#[0-9a-fA-F]{3,8}\\]";
+const designSystemGuard = {
+  files: ["src/**/*.{ts,tsx}"],
+  ignores: ["src/**/__tests__/**", "src/generated/**", "src/lib/email*.ts", "src/lib/report-export.ts"],
+  rules: {
+    "no-restricted-syntax": ["error",
+      { selector: `Literal[value=/${RAW_COLOR}/]`, message: "Couleur en dur : utiliser les tokens du design system (docs/design-system/migration.md)." },
+      { selector: `TemplateElement[value.raw=/${RAW_COLOR}/]`, message: "Couleur en dur : utiliser les tokens du design system (docs/design-system/migration.md)." },
+    ],
+  },
+};
+
+const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, designSystemGuard, {
   plugins: { "react-hooks": reactHooks, react },
   settings: { react: { version: "19.2.8" } },
   rules: {

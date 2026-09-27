@@ -122,12 +122,12 @@ export default async function NewAccountingRequestPage({
       <div className="flex items-center gap-2">
         <Link
           href={fromRequests ? "/requests/new" : "/accounting/requests"}
-          className="text-sm text-gray-400 hover:text-icc-violet transition-colors"
+          className="text-sm text-ink-subtle hover:text-brand-text transition-colors"
         >
           ← {fromRequests ? "Nouvelle demande" : "Demandes"}
         </Link>
-        <span className="text-gray-300">/</span>
-        <span className="text-sm text-gray-600 font-medium">
+        <span className="text-ink-subtle">/</span>
+        <span className="text-sm text-ink-muted font-medium">
           {correction ? "Correction" : "Nouvelle demande"}
         </span>
       </div>

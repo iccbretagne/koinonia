@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, FileText, Headphones, MessageSquare, Repeat } from "lucide-react";
+import ExportBar from "@/components/ExportBar";
+import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import { PageSkeleton } from "@/components/ui/Skeleton";
+import StatusChip from "@/components/ui/StatusChip";
+import { buttonClasses } from "@/components/ui/button-classes";
+import { useToast } from "@/components/ui/Toast";
 import { type OpeningClosingData } from "./OpeningClosingManager";
 import { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 import PreparationBanner from "./PreparationBanner";
@@ -43,6 +51,7 @@ interface Props {
 
 export default function StarViewClient({ eventId }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const [data, setData] = useState<StarViewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
@@ -78,11 +87,14 @@ export default function StarViewClient({ eventId }: Props) {
     const el = printRef.current;
     const savedWidth = el.style.width;
     el.style.width = "1122px";
+    // L'image partagée reste en thème clair, quel que soit le thème affiché.
+    el.dataset.theme = "light";
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
       return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
     } finally {
       el.style.width = savedWidth;
+      delete el.dataset.theme;
     }
   }
 
@@ -104,7 +116,7 @@ export default function StarViewClient({ eventId }: Props) {
         await navigator.clipboard.write([
           new ClipboardItem({ "image/png": blob }),
         ]);
-        alert("Image copiée dans le presse-papier");
+        toast.success("Image copiée dans le presse-papiers");
       } catch {
         const dataUrl = canvas.toDataURL("image/png");
         const w = window.open();
@@ -112,11 +124,11 @@ export default function StarViewClient({ eventId }: Props) {
           w.document.write(`<img src="${dataUrl}" />`);
           w.document.title = "STAR - copier l'image";
         } else {
-          alert("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
+          toast.error("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
         }
       }
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -135,7 +147,7 @@ export default function StarViewClient({ eventId }: Props) {
       link.href = dataUrl;
       link.click();
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -167,7 +179,7 @@ export default function StarViewClient({ eventId }: Props) {
       pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
       pdf.save(`${getExportFileName()}.pdf`);
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -180,12 +192,12 @@ export default function StarViewClient({ eventId }: Props) {
       const res = await fetch(`/api/events/${eventId}/announcement-sheet`);
       const body = await res.json();
       if (!res.ok || !body.downloadUrl) {
-        alert(body.error || "Feuille introuvable");
+        toast.error(body.error || "Trame introuvable.");
         return;
       }
       window.location.href = body.downloadUrl;
     } catch {
-      alert("Erreur");
+      toast.error("Téléchargement impossible. Réessayez dans un instant.");
     } finally {
       setDownloadingSheet(false);
     }
@@ -201,84 +213,59 @@ export default function StarViewClient({ eventId }: Props) {
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-400">Chargement...</div>;
+    return <PageSkeleton rows={4} label="Chargement de l'équipe…" />;
   }
 
   if (!data) {
     return (
-      <div className="p-8 text-center text-red-500">
-        Impossible de charger les donnees
-      </div>
+      <Alert
+        tone="danger"
+        title="Cet événement n'a pas pu être chargé."
+        action={
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            Revenir en arrière
+          </Button>
+        }
+      >
+        Il a peut-être été supprimé, ou vous n&apos;y avez pas accès.
+      </Alert>
     );
   }
 
-  return (
-    <div>
-      {/* Action bar - hidden on print */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 md:gap-3 print:hidden">
-        <button
-          onClick={() => router.back()}
-          className="p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
-          title="Retour"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button
-          onClick={copyImage}
-          disabled={!!exporting}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-          </svg>
-          {exporting === "copy" ? "Copie..." : "Copier image"}
-        </button>
-        <button
-          onClick={downloadImage}
-          disabled={!!exporting}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          {exporting === "image" ? "Export..." : "Télécharger PNG"}
-        </button>
-        <button
-          onClick={exportPdf}
-          disabled={!!exporting}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          {exporting === "pdf" ? "Export..." : "Export PDF"}
-        </button>
-        {data.announcementSheet.filename && data.announcementSheet.canRead && (
-          <button
-            onClick={downloadAnnouncementSheet}
-            disabled={downloadingSheet}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {downloadingSheet ? "Préparation..." : "Télécharger la trame"}
-          </button>
-        )}
-      </div>
+  const activeDepartments = data.departments.filter((d) => d.members.length > 0);
+  const idleDepartments = data.departments.filter((d) => d.members.length === 0);
 
-      {data.audioLink && (
-        <a href={data.audioLink.url} target="_blank" rel="noopener noreferrer" className="mb-6 inline-block print:hidden">
-          <Button variant="secondary" size="sm" className="flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-            </svg>
-            Écouter l&apos;enregistrement audio de ce culte
-          </Button>
-        </a>
-      )}
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Barre d'actions — masquée à l'impression */}
+      <div className="flex flex-wrap items-center gap-2 print:hidden">
+        <IconButton icon={ArrowLeft} aria-label="Retour" onClick={() => router.back()} />
+        <ExportBar
+          exporting={exporting}
+          onCopy={copyImage}
+          onDownload={downloadImage}
+          onPdf={exportPdf}
+          className="flex-1 justify-end"
+        >
+          {data.announcementSheet.filename && data.announcementSheet.canRead && (
+            <Button variant="secondary" size="sm" onClick={downloadAnnouncementSheet} disabled={downloadingSheet}>
+              <FileText aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              {downloadingSheet ? "Préparation…" : "Télécharger la trame"}
+            </Button>
+          )}
+          {data.audioLink && (
+            <a
+              href={data.audioLink.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClasses("secondary", "sm")}
+            >
+              <Headphones aria-hidden="true" className="size-4" strokeWidth={1.75} />
+              Écouter le culte
+            </a>
+          )}
+        </ExportBar>
+      </div>
 
       <PreparationBanner
         eventId={eventId}
@@ -290,57 +277,42 @@ export default function StarViewClient({ eventId }: Props) {
         }
       />
 
-      {/* Printable zone */}
-      <div ref={printRef} className="rounded-2xl overflow-hidden shadow-xl">
-        {/* Header */}
-        <div className="bg-indigo-900 px-8 py-5">
-          <p className="text-white/50 text-xs font-semibold tracking-wide mb-1">
-            {data.event.church.name}
-          </p>
-          <h1 className="text-white text-2xl font-bold uppercase tracking-wide leading-tight">
-            {data.event.title}
-          </h1>
-          <div className="flex items-center gap-3 mt-2">
-            <p className="text-white/50 text-sm capitalize">
-              {formatDate(data.event.date)}
-            </p>
-            <span className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              {data.totalStars} Star en service
+      {/* Zone exportée (image, PDF) */}
+      <div ref={printRef} className="overflow-hidden rounded-card border border-line bg-bg shadow-float">
+        <div className="bg-brand px-5 py-5 text-on-brand sm:px-8">
+          <p className="mb-1 text-xs font-semibold tracking-wide text-on-brand/70">{data.event.church.name}</p>
+          <h1 className="font-display text-2xl font-bold uppercase leading-tight tracking-wide">{data.event.title}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <p className="text-sm text-on-brand/80 first-letter:uppercase">{formatDate(data.event.date)}</p>
+            <span className="rounded-full bg-on-brand/20 px-3 py-1 text-xs font-semibold">
+              {data.totalStars} STAR en service
             </span>
           </div>
           {data.event.welcomeDutyEnabled && (
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
-              <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">
-                Accueil :
-              </span>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-on-brand/70">Accueil :</span>
               {data.welcomeFamilies.length === 0 ? (
-                <span className="text-white/30 text-xs italic">Non affecté</span>
+                <span className="text-xs italic text-on-brand/60">Non affecté</span>
               ) : (
                 data.welcomeFamilies.map((name) => (
-                  <span
-                    key={name}
-                    className="bg-icc-jaune/20 text-icc-jaune text-xs font-semibold px-3 py-1 rounded-full"
-                  >
+                  <span key={name} className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-on-accent">
                     {name}
                   </span>
                 ))
               )}
             </div>
           )}
-          <div className="flex items-start gap-4 mt-3 flex-wrap">
+          <div className="mt-3 flex flex-wrap items-start gap-4">
             {(["opening", "closing"] as const).map((key) => (
-              <div key={key} className="flex items-center gap-2 flex-wrap">
-                <span className="text-white/50 text-xs font-semibold uppercase tracking-wide">
+              <div key={key} className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-on-brand/70">
                   {key === "opening" ? "Ouverture" : "Fermeture"} :
                 </span>
                 {data.openingClosing[key].length === 0 ? (
-                  <span className="text-white/30 text-xs italic">Non pourvu</span>
+                  <span className="text-xs italic text-on-brand/60">Non pourvu</span>
                 ) : (
                   data.openingClosing[key].map((a) => (
-                    <span
-                      key={a.id}
-                      className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full"
-                    >
+                    <span key={a.id} className="rounded-full bg-on-brand/20 px-3 py-1 text-xs font-semibold">
                       {a.member.firstName} {a.member.lastName}
                     </span>
                   ))
@@ -350,49 +322,43 @@ export default function StarViewClient({ eventId }: Props) {
           </div>
         </div>
 
-        {/* Body */}
-        <div className="bg-gray-50 px-5 py-5">
-          {/* Active departments */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {data.departments.filter((d) => d.members.length > 0).map((dept) => (
-              <div
-                key={dept.id}
-                className="bg-white rounded-lg shadow-sm border-l-[3px] border-icc-violet px-4 py-3"
-              >
-                <h3 className="text-xs font-semibold text-icc-violet mb-2 truncate capitalize">
-                  {dept.name}
-                </h3>
-                <ul className="space-y-1">
-                  {dept.members.map((member) => (
-                    <li key={member.id} className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-gray-700 font-medium truncate">
-                        {member.firstName} {member.lastName}
-                      </span>
-                      {member.status === "EN_SERVICE_DEBRIEF" && (
-                        <span className="text-[11px] bg-icc-violet-light text-icc-violet px-2 py-0.5 rounded-full font-semibold shrink-0">
-                          Debrief
+        <div className="px-4 py-5 sm:px-5">
+          {activeDepartments.length === 0 ? (
+            <p className="py-6 text-center text-[15px] text-ink-muted">Aucun STAR n&apos;est encore en service pour cet événement.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {activeDepartments.map((dept) => (
+                <div key={dept.id} className="rounded-control border border-line border-l-[3px] border-l-brand bg-surface px-4 py-3">
+                  <h3 className="mb-2 truncate text-xs font-semibold text-brand-text first-letter:uppercase">{dept.name}</h3>
+                  <ul className="flex flex-col gap-1">
+                    {dept.members.map((member) => (
+                      <li key={member.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                        <span className="min-w-0 break-words text-sm font-medium text-ink">
+                          {member.firstName} {member.lastName}
                         </span>
-                      )}
-                      {member.status === "REMPLACANT" && (
-                        <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium shrink-0">
-                          Remplaçant
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Inactive departments — compact line */}
-          {data.departments.some((d) => d.members.length === 0) && (
-            <div className="mt-4 pt-3 border-t border-gray-200">
-              <p className="text-xs text-gray-400">
-                <span className="font-medium text-gray-500">Non mobilisés : </span>
-                {data.departments.filter((d) => d.members.length === 0).map((d) => d.name).join(", ")}
-              </p>
+                        {member.status === "EN_SERVICE_DEBRIEF" && (
+                          <StatusChip tone="brand" icon={MessageSquare} className="shrink-0">
+                            Debrief
+                          </StatusChip>
+                        )}
+                        {member.status === "REMPLACANT" && (
+                          <StatusChip tone="info" icon={Repeat} className="shrink-0">
+                            Remplaçant
+                          </StatusChip>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
+          )}
+
+          {idleDepartments.length > 0 && (
+            <p className="mt-4 border-t border-line pt-3 text-xs text-ink-muted">
+              <span className="font-semibold">Non mobilisés : </span>
+              {idleDepartments.map((d) => d.name).join(", ")}
+            </p>
           )}
         </div>
       </div>

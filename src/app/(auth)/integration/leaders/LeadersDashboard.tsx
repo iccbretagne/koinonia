@@ -36,8 +36,8 @@ const ROLE_LABELS: Record<"BERGER" | "CO_BERGER", string> = {
 };
 
 const ROLE_COLORS: Record<"BERGER" | "CO_BERGER", string> = {
-  BERGER: "bg-icc-violet/10 text-icc-violet border-icc-violet/20",
-  CO_BERGER: "bg-blue-50 text-blue-700 border-blue-200",
+  BERGER: "bg-brand-soft text-brand-text border-brand/20",
+  CO_BERGER: "bg-info-soft text-info border-info/30",
 };
 
 function Avatar({ user, size = 8 }: { readonly user: UserRef; readonly size?: number }) {
@@ -51,7 +51,7 @@ function Avatar({ user, size = 8 }: { readonly user: UserRef; readonly size?: nu
   if (user.image) {
     return <Image src={user.image} alt={user.name ?? ""} width={size * 4} height={size * 4} className={`${cls} object-cover`} />;
   }
-  return <div className={`${cls} bg-icc-violet/10 text-icc-violet`}>{initials}</div>;
+  return <div className={`${cls} bg-brand-soft text-brand-text`}>{initials}</div>;
 }
 
 export default function LeadersDashboard({ churchId, initialAssignments, users }: Props) {
@@ -123,7 +123,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
     }
   }
 
-  const inputCls = "w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet";
+  const inputCls = "w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand";
 
   return (
     <div className="space-y-6">
@@ -131,7 +131,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
       <div className="flex justify-end">
         <button
           onClick={() => { setShowForm(true); setError(null); }}
-          className="flex items-center gap-2 bg-icc-violet text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 bg-brand text-on-brand px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -142,10 +142,10 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
       {/* Formulaire d'ajout */}
       {showForm && (
-        <div className="bg-white border-2 border-icc-violet/20 rounded-xl p-5 space-y-4">
+        <div className="bg-surface border border-brand/20 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Nouvelle affectation</h2>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+            <h2 className="font-semibold text-ink">Nouvelle affectation</h2>
+            <button onClick={() => setShowForm(false)} className="text-ink-subtle hover:text-ink-muted">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -154,8 +154,8 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Utilisateur <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-ink-muted mb-1">
+                Utilisateur <span className="text-danger">*</span>
               </label>
               <select
                 required
@@ -173,11 +173,11 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Famille <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-ink-muted mb-1">
+                Famille <span className="text-danger">*</span>
               </label>
               {familiesLoading ? (
-                <p className="text-sm text-gray-400">Chargement…</p>
+                <p className="text-sm text-ink-subtle">Chargement…</p>
               ) : (
                 <select
                   required
@@ -196,15 +196,15 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Rôle</label>
+              <label className="block text-sm font-medium text-ink-muted mb-1">Rôle</label>
               <div className="flex gap-2">
                 {(["BERGER", "CO_BERGER"] as const).map((r) => (
                   <label
                     key={r}
                     className={`flex items-center gap-2 px-3 py-2 rounded-full border text-sm cursor-pointer transition-colors ${
                       form.role === r
-                        ? "bg-icc-violet text-white border-icc-violet"
-                        : "border-gray-200 text-gray-700 hover:border-icc-violet"
+                        ? "bg-brand text-on-brand border-brand"
+                        : "border-line text-ink-muted hover:border-brand"
                     }`}
                   >
                     <input
@@ -221,20 +221,20 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
               </div>
             </div>
 
-            {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+            {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
 
             <div className="flex gap-2 justify-end pt-1">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-600 hover:bg-gray-50"
+                className="px-4 py-2 rounded-lg text-sm border border-line text-ink-muted hover:bg-surface-sunken"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 rounded-lg text-sm bg-icc-violet text-white font-medium hover:opacity-90 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg text-sm bg-brand text-on-brand font-medium hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Enregistrement…" : "Affecter"}
               </button>
@@ -245,28 +245,28 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
       {/* Liste par famille */}
       {familyGroups.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-400">
+        <div className="bg-surface rounded-xl border border-line p-8 text-center text-sm text-ink-subtle">
           Aucune affectation configurée. Commencez par affecter un berger à une famille.
         </div>
       ) : (
         <div className="space-y-4">
           {familyGroups.map(([familyId, group]) => (
-            <div key={familyId} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-                <svg className="w-4 h-4 text-icc-violet shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div key={familyId} className="bg-surface rounded-xl border border-line overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3 border-b border-line bg-surface-sunken/50">
+                <svg className="w-4 h-4 text-brand-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="font-semibold text-gray-900 text-sm">{group.name}</span>
-                <span className="text-xs text-gray-400 ml-auto">{group.items.length} responsable{group.items.length > 1 ? "s" : ""}</span>
+                <span className="font-semibold text-ink text-sm">{group.name}</span>
+                <span className="text-xs text-ink-subtle ml-auto">{group.items.length} responsable{group.items.length > 1 ? "s" : ""}</span>
               </div>
 
-              <ul className="divide-y divide-gray-100">
+              <ul className="divide-y divide-line">
                 {group.items.map((a) => (
                   <li key={a.id} className="flex items-center gap-3 px-5 py-3">
                     <Avatar user={a.user} size={8} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{a.user.name ?? a.user.email}</p>
-                      <p className="text-xs text-gray-400 truncate">{a.user.email}</p>
+                      <p className="text-sm font-medium text-ink truncate">{a.user.name ?? a.user.email}</p>
+                      <p className="text-xs text-ink-subtle truncate">{a.user.email}</p>
                     </div>
                     <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full border font-medium ${ROLE_COLORS[a.role]}`}>
                       {ROLE_LABELS[a.role]}
@@ -274,7 +274,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
                     <button
                       onClick={() => handleDelete(a.id)}
                       disabled={deletingId === a.id}
-                      className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
+                      className="shrink-0 p-1.5 rounded-lg text-ink-subtle hover:text-danger hover:bg-danger-soft transition-colors disabled:opacity-40"
                       title="Retirer"
                     >
                       {deletingId === a.id ? (

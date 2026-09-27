@@ -61,11 +61,11 @@ const CHECKLIST_LABELS: Record<Reservation["checklistStatus"], string> = {
 };
 
 const CHECKLIST_BADGE: Record<Reservation["checklistStatus"], string> = {
-  PENDING: "bg-gray-100 text-gray-600",
-  OPENED: "bg-blue-100 text-blue-700",
-  CLOSED_DECLARED: "bg-yellow-100 text-yellow-700",
-  VALIDATED: "bg-green-100 text-green-700",
-  ISSUE_REPORTED: "bg-red-100 text-red-700",
+  PENDING: "bg-surface-sunken text-ink-muted",
+  OPENED: "bg-info-soft text-info",
+  CLOSED_DECLARED: "bg-warning-soft text-warning",
+  VALIDATED: "bg-success-soft text-success",
+  ISSUE_REPORTED: "bg-danger-soft text-danger",
 };
 
 function formatDateTime(iso: string): string {
@@ -166,13 +166,13 @@ function KeyPersonField({
         autoComplete="off"
       />
       {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full bg-white border-2 border-gray-200 rounded-lg shadow-md max-h-48 overflow-y-auto text-sm">
+        <ul className="absolute z-10 mt-1 w-full bg-surface border border-line rounded-lg shadow-card max-h-48 overflow-y-auto text-sm">
           {results.map((u) => (
             <li key={u.id}>
               <button
                 type="button"
                 onClick={() => selectHolder(u)}
-                className="w-full text-left px-3 py-2 hover:bg-icc-violet-light"
+                className="w-full text-left px-3 py-2 hover:bg-brand-soft"
               >
                 {u.displayName || u.name}
               </button>
@@ -204,8 +204,8 @@ function ReservationChip({
       title={`${reservation.room.name} — ${reservation.title} — ${formatTime(reservation.startAt)} à ${formatTime(reservation.endAt)}`}
       className={`w-full text-left px-1.5 py-1 text-xs font-medium rounded-md truncate transition-colors ${
         mine
-          ? "bg-icc-violet text-white hover:bg-icc-violet/90"
-          : "bg-icc-violet/10 text-icc-violet hover:bg-icc-violet/20"
+          ? "bg-brand text-on-brand hover:bg-brand-hover"
+          : "bg-brand-soft text-brand-text hover:bg-brand-hover/20"
       }`}
     >
       {formatTime(reservation.startAt)} {showRoom ? `· ${reservation.room.name} · ` : ""}
@@ -291,19 +291,19 @@ function RoomCalendarView({
           <button
             onClick={() => onNavigate(-1)}
             aria-label="Période précédente"
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="px-3 py-2 text-base font-semibold text-icc-violet capitalize min-w-[14rem] text-center">
+          <span className="px-3 py-2 text-base font-semibold text-brand-text capitalize min-w-[14rem] text-center">
             {label}
           </span>
           <button
             onClick={() => onNavigate(1)}
             aria-label="Période suivante"
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-brand-text hover:bg-brand-soft transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -313,49 +313,51 @@ function RoomCalendarView({
       </div>
 
       {rooms.length === 0 ? (
-        <p className="text-sm text-gray-500">Aucune salle disponible.</p>
+        <p className="text-sm text-ink-muted">Aucune salle disponible.</p>
       ) : view === "week" ? (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-md border-2 border-gray-100">
+        <div className="overflow-x-auto bg-surface rounded-xl shadow-card border border-line">
           <div className="min-w-[760px]">
-            <div className="grid bg-icc-violet" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
-              <div className="sticky left-0 z-20 bg-icc-violet px-3 py-3 text-xs font-bold text-white uppercase tracking-wider">
+            <div className="grid bg-brand" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
+              <div className="sticky left-0 z-20 bg-brand px-3 py-3 text-xs font-bold text-on-brand uppercase tracking-wider">
                 Salle
               </div>
               {days.map((day) => (
                 <div
                   key={day.dateStr}
-                  className={`px-2 py-3 text-xs font-bold text-center uppercase tracking-wider ${
-                    day.dateStr === todayStr ? "text-icc-jaune" : "text-white"
-                  }`}
+                  className="px-2 py-3 text-xs font-bold text-center uppercase tracking-wider text-on-brand"
                 >
-                  {day.weekday} {day.dayNum}
+                  {day.dateStr === todayStr ? (
+                    <span className="bg-accent text-on-accent rounded px-1.5 py-0.5">{day.weekday} {day.dayNum}</span>
+                  ) : (
+                    <>{day.weekday} {day.dayNum}</>
+                  )}
                 </div>
               ))}
             </div>
 
             {displayedRooms.length === 0 ? (
-              <p className="px-3 py-6 text-sm text-gray-500">Aucune salle à afficher pour ce filtre.</p>
+              <p className="px-3 py-6 text-sm text-ink-muted">Aucune salle à afficher pour ce filtre.</p>
             ) : (
               displayedRooms.map((room) => (
                 <div
                   key={room.id}
-                  className="grid border-t border-gray-100"
+                  className="grid border-t border-line"
                   style={{ gridTemplateColumns: WEEK_GRID_COLS }}
                 >
-                  <div className="sticky left-0 z-10 bg-white border-r border-gray-100 px-3 py-2">
-                    <span className="text-sm font-medium text-gray-900">{room.name}</span>
+                  <div className="sticky left-0 z-10 bg-surface border-r border-line px-3 py-2">
+                    <span className="text-sm font-medium text-ink">{room.name}</span>
                     {!room.isOwner && (
-                      <span className="block text-[10px] text-gray-400">{room.ownerChurch.name}</span>
+                      <span className="block text-[10px] text-ink-subtle">{room.ownerChurch.name}</span>
                     )}
-                    {!room.isActive && <span className="block text-[10px] text-icc-rouge">désactivée</span>}
+                    {!room.isActive && <span className="block text-[10px] text-danger">désactivée</span>}
                   </div>
                   {days.map((day) => {
                     const cell = grouped.get(cellKey(room.id, day.dateStr)) ?? [];
                     return (
                       <div
                         key={day.dateStr}
-                        className={`min-h-[64px] border-r border-gray-100 p-1 space-y-1 ${
-                          day.dateStr === todayStr ? "bg-icc-violet-light/40" : ""
+                        className={`min-h-[64px] border-r border-line p-1 space-y-1 ${
+                          day.dateStr === todayStr ? "bg-brand-soft" : ""
                         }`}
                       >
                         {cell.map((r) => (
@@ -375,10 +377,10 @@ function RoomCalendarView({
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl shadow-md border-2 border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-7 bg-icc-violet">
+        <div className="bg-surface rounded-xl shadow-card border border-line overflow-hidden">
+          <div className="grid grid-cols-7 bg-brand">
             {DAYS_FR.map((day) => (
-              <div key={day} className="px-2 py-3 text-xs font-bold text-white text-center uppercase tracking-wider">
+              <div key={day} className="px-2 py-3 text-xs font-bold text-on-brand text-center uppercase tracking-wider">
                 {day}
               </div>
             ))}
@@ -392,17 +394,17 @@ function RoomCalendarView({
               return (
                 <div
                   key={day.dateStr}
-                  className={`min-h-[90px] md:min-h-[110px] border-b border-r border-gray-100 p-1.5 ${
-                    day.inMonth ? (isToday ? "bg-icc-violet-light/50" : "bg-white") : "bg-gray-50/50"
+                  className={`min-h-[90px] md:min-h-[110px] border-b border-r border-line p-1.5 ${
+                    day.inMonth ? (isToday ? "bg-brand-soft" : "bg-surface") : "bg-surface-sunken/50"
                   }`}
                 >
                   <span
                     className={`inline-flex items-center justify-center text-xs font-semibold mb-1 w-7 h-7 ${
                       isToday
-                        ? "bg-icc-violet text-white rounded-full shadow-sm"
+                        ? "bg-brand text-on-brand rounded-full shadow-card"
                         : day.inMonth
-                          ? "text-gray-700"
-                          : "text-gray-300"
+                          ? "text-ink-muted"
+                          : "text-ink-subtle"
                     }`}
                   >
                     {day.dayNum}
@@ -457,23 +459,23 @@ function ReservationDetailModal({
         <div className="space-y-4">
           <dl className="text-sm space-y-1.5">
             <div className="flex justify-between gap-2">
-              <dt className="font-medium text-gray-500">Salle</dt>
-              <dd className="text-gray-900">{reservation.room.name}</dd>
+              <dt className="font-medium text-ink-muted">Salle</dt>
+              <dd className="text-ink">{reservation.room.name}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="font-medium text-gray-500">Début</dt>
-              <dd className="text-gray-900">{formatDateTime(reservation.startAt)}</dd>
+              <dt className="font-medium text-ink-muted">Début</dt>
+              <dd className="text-ink">{formatDateTime(reservation.startAt)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="font-medium text-gray-500">Fin</dt>
-              <dd className="text-gray-900">{formatDateTime(reservation.endAt)}</dd>
+              <dt className="font-medium text-ink-muted">Fin</dt>
+              <dd className="text-ink">{formatDateTime(reservation.endAt)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="font-medium text-gray-500">Réservé par</dt>
-              <dd className="text-gray-900">{reservation.createdBy.name ?? "—"}</dd>
+              <dt className="font-medium text-ink-muted">Réservé par</dt>
+              <dd className="text-ink">{reservation.createdBy.name ?? "—"}</dd>
             </div>
             <div className="flex justify-between items-center gap-2">
-              <dt className="font-medium text-gray-500">Main courante</dt>
+              <dt className="font-medium text-ink-muted">Main courante</dt>
               <dd>
                 <span
                   className={`text-xs font-medium px-2 py-0.5 rounded-full ${CHECKLIST_BADGE[reservation.checklistStatus]}`}
@@ -487,7 +489,7 @@ function ReservationDetailModal({
           <ChecklistDetail checklist={reservation.checklist} />
 
           {(actions.canDeclareOpen || actions.canDeclareClose || actions.canCancelOccurrence) && (
-            <div className="flex gap-2 justify-end flex-wrap pt-3 border-t border-gray-100">
+            <div className="flex gap-2 justify-end flex-wrap pt-3 border-t border-line">
               {actions.canDeclareOpen && (
                 <Button size="sm" variant="primary" onClick={() => onDeclareOpen(reservation)}>
                   Déclarer l&apos;ouverture
@@ -760,12 +762,12 @@ export default function RoomsBookingClient({
   return (
     <div>
       {myUpcoming.length > 0 && (
-        <div className="mb-4 rounded-xl border-2 border-icc-violet/20 bg-white overflow-hidden">
+        <div className="mb-4 rounded-xl border border-brand/20 bg-surface overflow-hidden">
           <button
             type="button"
             onClick={() => setMyResaOpen((o) => !o)}
             aria-expanded={myResaOpen}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-icc-violet hover:bg-icc-violet-light transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-brand-text hover:bg-brand-soft transition-colors"
           >
             <span>Mes réservations ({myUpcoming.length})</span>
             <svg
@@ -779,14 +781,14 @@ export default function RoomsBookingClient({
             </svg>
           </button>
           {myResaOpen && (
-            <div className="border-t border-gray-100 divide-y divide-gray-100">
+            <div className="border-t border-line divide-y divide-line">
               {myUpcoming.slice(0, 4).map((r) => {
                 const actions = getAvailableActions(r, { currentUserId, canManage });
                 return (
                   <div key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-ink truncate">{r.title}</p>
+                      <p className="text-xs text-ink-muted">
                         {formatDateTime(r.startAt)} · {r.room.name}
                       </p>
                     </div>
@@ -822,7 +824,7 @@ export default function RoomsBookingClient({
                     setFilterRoomId("");
                     setFilterChecklistStatus("");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-icc-violet hover:bg-icc-violet-light transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-xs font-medium text-brand-text hover:bg-brand-soft transition-colors"
                 >
                   Voir mes {myUpcoming.length} réservations →
                 </button>
@@ -833,7 +835,7 @@ export default function RoomsBookingClient({
       )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <div className="flex rounded-lg border-2 border-icc-violet/20 overflow-hidden">
+        <div className="flex rounded-lg border border-brand/20 overflow-hidden">
           {(
             [
               ["week", "Semaine"],
@@ -845,7 +847,7 @@ export default function RoomsBookingClient({
               key={value}
               onClick={() => setView(value)}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
-                view === value ? "bg-icc-violet text-white" : "bg-white text-icc-violet hover:bg-icc-violet-light"
+                view === value ? "bg-brand text-on-brand" : "bg-surface text-brand-text hover:bg-brand-soft"
               }`}
             >
               {labelText}
@@ -860,7 +862,7 @@ export default function RoomsBookingClient({
       </div>
 
       {!loading && rooms.length === 0 && (
-        <p className="text-sm text-gray-500 mb-4">Aucune salle disponible pour votre église pour le moment.</p>
+        <p className="text-sm text-ink-muted mb-4">Aucune salle disponible pour votre église pour le moment.</p>
       )}
 
       {view === "list" ? (
@@ -895,7 +897,7 @@ export default function RoomsBookingClient({
                 options={Object.entries(CHECKLIST_LABELS).map(([value, label]) => ({ value, label }))}
               />
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 sm:self-end sm:pb-2.5">
+            <label className="flex items-center gap-2 text-sm text-ink-muted sm:self-end sm:pb-2.5">
               <input type="checkbox" checked={filterMine} onChange={(e) => setFilterMine(e.target.checked)} />
               Mes réservations uniquement
             </label>
@@ -1014,10 +1016,10 @@ export default function RoomsBookingClient({
               onChange={(e) => setRecurrenceEnd(e.target.value)}
             />
           )}
-          {formError && <p className="text-xs text-red-600">{formError}</p>}
-          {conflictNotice && <p className="text-xs text-yellow-700">{conflictNotice}</p>}
+          {formError && <p className="text-xs text-danger">{formError}</p>}
+          {conflictNotice && <p className="text-xs text-warning">{conflictNotice}</p>}
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setFormOpen(false)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
+            <button onClick={() => setFormOpen(false)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
               Annuler
             </button>
             <Button
@@ -1068,7 +1070,7 @@ export default function RoomsBookingClient({
             />
             <Textarea label="Notes (optionnel)" value={checklistNotes} onChange={(e) => setChecklistNotes(e.target.value)} />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setChecklistTarget(null)} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5">
+              <button onClick={() => setChecklistTarget(null)} className="text-sm text-ink-muted hover:text-ink-muted px-3 py-1.5">
                 Annuler
               </button>
               <Button onClick={submitChecklist}>Confirmer</Button>

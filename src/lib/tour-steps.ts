@@ -25,7 +25,7 @@ const ALL_STEPS: TourStep[] = [
     target: "center",
     title: "Bienvenue dans Koinonia !",
     content:
-      "Ce tour vous guide à travers les principales fonctionnalités. Vous pouvez le relancer à tout moment depuis le guide en haut de page.",
+      "Ce tour vous guide à travers les principales fonctionnalités. Vous pouvez le relancer à tout moment depuis le guide, dans le menu de votre compte.",
   },
   {
     target: '[data-tour="sidebar-planning"]',
@@ -37,42 +37,42 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     target: '[data-tour="sidebar-events"]',
-    title: "Événements",
+    title: "Agenda",
     content:
-      "Accédez à la liste et au calendrier des événements. Le sous-menu Comptes rendus permet de saisir les statistiques de présence et d'exporter les données en Excel.",
+      "La liste et le calendrier des événements de l'église, l'agenda pastoral, et les comptes rendus (statistiques de présence, export Excel) pour ceux qui les saisissent.",
     viewport: "desktop",
   },
   {
     target: '[data-tour="sidebar-members"]',
-    title: "Communauté",
+    title: "Personnes",
     content:
-      "Les membres actifs (STAR) de vos départements — coordonnées, affectations, statuts — mais aussi le discipolat, l'intégration des nouvelles familles et les bergers de famille, regroupés ici.",
+      "Les membres actifs (STAR) de vos départements — coordonnées, affectations, statuts — mais aussi le discipolat, l'intégration des nouvelles familles, le suivi pastoral et les bergers de famille, regroupés ici.",
     viewport: "desktop",
     roles: MEMBERS_ROLES,
   },
   {
     target: '[data-tour="sidebar-service"]',
-    title: "Opérations",
+    title: "Demandes",
     content:
       "Retrouvez toutes vos demandes (annonce, visuel, RDV pastoral, demande comptable...) dans « Mes demandes ». L'espace « Communication & Production » regroupe les activités Photos, Visuels et Réseaux sociaux, avec un bouton « Partages » pour gérer vos liens actifs, sur le modèle de l'espace Audio. La Comptabilité (notes de frais, avances de budget) reste accessible séparément pour son équipe.",
     viewport: "desktop",
     roles: SERVICE_ROLES,
   },
   {
-    // Le discipolat n'a plus de section propre : il vit dans « Communauté ».
+    // Le discipolat n'a plus de section propre : il vit dans « Personnes ».
     // L'étape reste, ancrée sur cette section, car les FD n'y voient qu'elle.
     target: '[data-tour="sidebar-members"]',
     title: "Discipolat",
     content:
-      "Dans Communauté, gérez les relations Faiseur de Disciples ↔ disciple, enregistrez l'appel de présence et consultez les statistiques. Les FD ne voient que leurs propres disciples.",
+      "Dans Personnes, gérez les relations Faiseur de Disciples ↔ disciple, enregistrez l'appel de présence et consultez les statistiques. Les FD ne voient que leurs propres disciples.",
     viewport: "desktop",
     roles: DISCIPLESHIP_ROLES,
   },
   {
     target: '[data-tour="sidebar-pastoral"]',
-    title: "Gestion pastorale",
+    title: "Suivi pastoral",
     content:
-      "Les demandes de rendez-vous pastoral déposées depuis le formulaire public : qualification, assignation au bon profil, puis planification dans l'agenda.",
+      "Les demandes de rendez-vous pastoral et les suivis de nouveaux convertis, déposés depuis le formulaire public : qualification, affectation au bon profil, puis planification — dans Personnes ou Agenda selon votre organisation.",
     viewport: "desktop",
     roles: PASTORAL_ROLES,
   },
@@ -85,7 +85,7 @@ const ALL_STEPS: TourStep[] = [
   },
   {
     target: '[data-tour="sidebar-config"]',
-    title: "Configuration",
+    title: "Administration",
     content:
       "Gérez les ministères, départements, accès et rôles, paramètres de l'église et journaux d'audit.",
     viewport: "desktop",
@@ -95,7 +95,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="sidebar-reports"]',
     title: "Comptes rendus",
     content:
-      "Saisissez les comptes rendus de culte (orateur, titre du message, statistiques de présence par département) et exportez les données sur une période.",
+      "Dans Agenda, saisissez les comptes rendus de culte (orateur, titre du message, statistiques de présence par département) et exportez les données sur une période.",
     viewport: "desktop",
     roles: REPORT_ROLES,
   },
@@ -103,7 +103,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="bottom-nav"]',
     title: "Navigation",
     content:
-      "Naviguez rapidement entre le planning, les événements, les membres et le guide depuis cette barre.",
+      "Naviguez rapidement entre les sections prioritaires de votre rôle depuis cette barre ; « Plus » ouvre la liste complète des sections accessibles.",
     viewport: "mobile",
   },
   {
@@ -130,7 +130,7 @@ const ALL_STEPS: TourStep[] = [
     target: '[data-tour="header-guide"]',
     title: "Guide utilisateur",
     content:
-      "Retrouvez le guide complet des fonctionnalités à tout moment ici, avec les captures d'écran et les droits par rôle.",
+      "Le menu de votre compte (votre avatar) contient le guide complet des fonctionnalités, avec les captures d'écran et les droits par rôle.",
   },
 ];
 

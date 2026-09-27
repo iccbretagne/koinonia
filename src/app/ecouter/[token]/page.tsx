@@ -58,14 +58,14 @@ export default async function PublicAudioPage({ params }: Props) {
           ? "Ce lien a été révoqué."
           : "Ce culte n'est plus disponible.";
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <p className="text-gray-600 text-center max-w-sm">{message}</p>
+      <div className="min-h-screen flex items-center justify-center p-6 bg-surface-sunken">
+        <p className="text-ink-muted text-center max-w-sm">{message}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-sunken">
       <div className="max-w-2xl mx-auto p-4 md:p-8">
         <PublicAudioPlayer
           token={token}

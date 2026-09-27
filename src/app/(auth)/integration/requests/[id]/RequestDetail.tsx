@@ -24,14 +24,14 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:      "bg-amber-100 text-amber-800",
-  WAITING_RECONTACT: "bg-orange-100 text-orange-800",
-  WAITING_MISSION:   "bg-orange-100 text-orange-800",
-  ASSIGNED:       "bg-blue-100 text-blue-800",
-  CONTACTED:      "bg-indigo-100 text-indigo-800",
-  WHATSAPP_ADDED: "bg-green-100 text-green-700",
-  INTEGRATED:     "bg-emerald-100 text-emerald-800",
-  ABANDONED:      "bg-red-100 text-red-600",
+  SUBMITTED:      "bg-warning-soft text-warning",
+  WAITING_RECONTACT: "bg-warning-soft text-warning",
+  WAITING_MISSION:   "bg-warning-soft text-warning",
+  ASSIGNED:       "bg-info-soft text-info",
+  CONTACTED:      "bg-info-soft text-info",
+  WHATSAPP_ADDED: "bg-success-soft text-success",
+  INTEGRATED:     "bg-success-soft text-success",
+  ABANDONED:      "bg-danger-soft text-danger",
 };
 
 // Motifs d'abandon (spec 051) — miroir client de ABANDON_REASON_LABELS du module intégration.
@@ -70,12 +70,12 @@ const MSDP_STATUS_LABELS: Record<string, string> = {
 };
 
 const MSDP_STATUS_COLORS: Record<string, string> = {
-  SUBMITTED:    "bg-amber-100 text-amber-800",
-  ASSIGNED:     "bg-blue-100 text-blue-800",
-  CONTACTED:    "bg-indigo-100 text-indigo-800",
-  IN_FORMATION: "bg-purple-100 text-purple-800",
-  COMPLETED:    "bg-emerald-100 text-emerald-800",
-  ABANDONED:    "bg-red-100 text-red-600",
+  SUBMITTED:    "bg-warning-soft text-warning",
+  ASSIGNED:     "bg-info-soft text-info",
+  CONTACTED:    "bg-info-soft text-info",
+  IN_FORMATION: "bg-brand-soft text-brand-text",
+  COMPLETED:    "bg-success-soft text-success",
+  ABANDONED:    "bg-danger-soft text-danger",
 };
 
 
@@ -200,24 +200,24 @@ interface StepData {
 
 const TRACK_THEME = {
   violet: {
-    circleCurrent: "bg-icc-violet text-white ring-2 ring-icc-violet/20",
-    circleDone:    "bg-icc-violet/15 text-icc-violet",
-    circlePending: "bg-gray-100 text-gray-400",
-    lineActive:    "bg-icc-violet",
-    linePending:   "bg-gray-200",
-    dotActive:     "bg-icc-violet",
-    dotDone:       "bg-icc-violet/35",
-    dotPending:    "bg-gray-200",
+    circleCurrent: "bg-brand text-on-brand ring-2 ring-focus/20",
+    circleDone:    "bg-brand/15 text-brand-text",
+    circlePending: "bg-surface-sunken text-ink-subtle",
+    lineActive:    "bg-brand",
+    linePending:   "bg-surface-sunken",
+    dotActive:     "bg-brand",
+    dotDone:       "bg-brand/35",
+    dotPending:    "bg-surface-sunken",
   },
   purple: {
-    circleCurrent: "bg-purple-600 text-white ring-2 ring-purple-200",
-    circleDone:    "bg-purple-100 text-purple-700",
-    circlePending: "bg-gray-100 text-gray-400",
-    lineActive:    "bg-purple-500",
-    linePending:   "bg-gray-200",
-    dotActive:     "bg-purple-600",
-    dotDone:       "bg-purple-200",
-    dotPending:    "bg-gray-200",
+    circleCurrent: "bg-brand text-on-brand ring-2 ring-focus",
+    circleDone:    "bg-brand-soft text-brand-text",
+    circlePending: "bg-surface-sunken text-ink-subtle",
+    lineActive:    "bg-brand",
+    linePending:   "bg-surface-sunken",
+    dotActive:     "bg-brand",
+    dotDone:       "bg-brand/35",
+    dotPending:    "bg-surface-sunken",
   },
 } as const;
 
@@ -246,13 +246,13 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
               </div>
               <p
                 className={`text-[11px] text-center mt-1 leading-snug max-w-[52px] ${
-                  step.done ? "text-gray-700 font-medium" : "text-gray-400"
+                  step.done ? "text-ink-muted font-medium" : "text-ink-subtle"
                 }`}
               >
                 {step.label}
               </p>
               {step.ts && (
-                <p className="text-[10px] text-gray-400 mt-0.5 text-center">{fmtShort(step.ts)}</p>
+                <p className="text-[10px] text-ink-subtle mt-0.5 text-center">{fmtShort(step.ts)}</p>
               )}
             </div>
           </Fragment>
@@ -271,7 +271,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
             />
           ))}
         </div>
-        <span className="text-xs text-gray-600">
+        <span className="text-xs text-ink-muted">
           {steps.find((s) => s.current)?.label ??
             (steps.every((s) => s.done)
               ? "Terminé ✓"
@@ -299,7 +299,7 @@ function MilestoneChips({
         {MILESTONES.map((m) => (
           <span
             key={m.key}
-            className="px-3 py-1.5 rounded-full border border-dashed border-gray-200 text-xs text-gray-300"
+            className="px-3 py-1.5 rounded-full border border-dashed border-line text-xs text-ink-subtle"
           >
             {m.label}
           </span>
@@ -314,13 +314,13 @@ function MilestoneChips({
         const done = journey[m.key];
         const ts = journey[m.tsKey];
         const base = done
-          ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-          : "bg-gray-50 text-gray-400 border-gray-200";
+          ? "bg-success-soft text-success border-success/30"
+          : "bg-surface-sunken text-ink-subtle border-line";
         const interactive =
           canToggle && !done
-            ? "hover:border-icc-violet hover:text-icc-violet cursor-pointer"
+            ? "hover:border-brand hover:text-brand-text cursor-pointer"
             : canToggle && done
-            ? "hover:bg-emerald-200 cursor-pointer"
+            ? "hover:bg-success/20 cursor-pointer"
             : "cursor-default";
 
         return (
@@ -342,7 +342,7 @@ function MilestoneChips({
             )}
             {m.label}
             {done && ts && (
-              <span className="font-normal text-emerald-600 ml-0.5">{fmtShort(ts)}</span>
+              <span className="font-normal text-success ml-0.5">{fmtShort(ts)}</span>
             )}
           </button>
         );
@@ -373,7 +373,7 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
   if (!followUp) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-gray-500">Aucun suivi MSDP démarré.</p>
+        <p className="text-sm text-ink-muted">Aucun suivi MSDP démarré.</p>
         {canAct && (
           <button
             onClick={async () => {
@@ -391,12 +391,12 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
               finally { setLoading(false); }
             }}
             disabled={loading}
-            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? "Création…" : "Démarrer le suivi MSDP"}
           </button>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
       </div>
     );
   }
@@ -408,25 +408,25 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
     <div className="space-y-3">
       {!hideStatus && (
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${MSDP_STATUS_COLORS[followUp.status] ?? "bg-gray-100 text-gray-600"}`}>
+          <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${MSDP_STATUS_COLORS[followUp.status] ?? "bg-surface-sunken text-ink-muted"}`}>
             {MSDP_STATUS_LABELS[followUp.status] ?? followUp.status}
           </span>
           {assigneeName && (
-            <span className="text-sm text-gray-600">Référent : <strong>{assigneeName}</strong></span>
+            <span className="text-sm text-ink-muted">Référent : <strong>{assigneeName}</strong></span>
           )}
         </div>
       )}
       {hideStatus && assigneeName && (
-        <p className="text-xs text-gray-500">
-          Référent : <strong className="text-gray-700">{assigneeName}</strong>
+        <p className="text-xs text-ink-muted">
+          Référent : <strong className="text-ink-muted">{assigneeName}</strong>
         </p>
       )}
       {followUp.notes && (
-        <p className="text-sm text-gray-600 whitespace-pre-line">{followUp.notes}</p>
+        <p className="text-sm text-ink-muted whitespace-pre-line">{followUp.notes}</p>
       )}
       <a
         href={`/care/followups/${followUp.id}`}
-        className="inline-block text-sm font-medium text-icc-violet hover:underline"
+        className="inline-block text-sm font-medium text-brand-text hover:underline"
       >
         Voir et gérer le suivi →
       </a>
@@ -730,24 +730,24 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     <div className="space-y-4 max-w-3xl">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-white rounded-xl border border-gray-200 p-4 md:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-surface rounded-xl border border-line p-4 md:p-5">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-gray-900">{req.firstName} {req.lastName}</h1>
-          <p className="text-sm text-gray-400">{fmt(req.submittedAt)}</p>
+          <h1 className="text-xl font-bold text-ink">{req.firstName} {req.lastName}</h1>
+          <p className="text-sm text-ink-subtle">{fmt(req.submittedAt)}</p>
           <div className="flex flex-wrap gap-1.5 mt-1">
             {req.salvationCall && (
-              <span className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+              <span className="text-xs text-brand-text bg-brand-soft px-2 py-0.5 rounded-full border border-brand/30">
                 Appel au salut
               </span>
             )}
             {req.pastoralCareRequested && (
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+              <span className="text-xs text-warning bg-warning-soft px-2 py-0.5 rounded-full border border-warning/30">
                 Soin pastoral
               </span>
             )}
           </div>
           {journey && (
-            <a href="/integration/parcours" className="inline-flex items-center gap-1 text-xs text-icc-violet hover:underline mt-1">
+            <a href="/integration/parcours" className="inline-flex items-center gap-1 text-xs text-brand-text hover:underline mt-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -766,7 +766,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 });
                 setEditOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -778,31 +778,31 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+        <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{error}</p>
       )}
 
       {/* ── Card 1 : Intégration famille ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 space-y-4">
+      <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Intégration famille</h2>
-          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[req.status] ?? "bg-gray-100 text-gray-600"}`}>
+          <h2 className="text-sm font-semibold text-ink-muted">Intégration famille</h2>
+          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[req.status] ?? "bg-surface-sunken text-ink-muted"}`}>
             {STATUS_LABELS[req.status] ?? req.status}
           </span>
         </div>
 
         {isAbandoned ? (
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-red-600">
-              <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold">✕</span>
+            <div className="flex items-center gap-2 text-sm text-danger">
+              <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
               Abandonné{req.abandonedAt ? ` le ${fmt(req.abandonedAt)}` : ""}
             </div>
             {req.abandonReasonCode && (
-              <p className="text-xs text-gray-600 pl-7">
+              <p className="text-xs text-ink-muted pl-7">
                 Motif&nbsp;: {ABANDON_REASON_LABELS[req.abandonReasonCode] ?? req.abandonReasonCode}
               </p>
             )}
             {req.abandonReason && (
-              <p className="text-xs text-gray-400 pl-7">{req.abandonReason}</p>
+              <p className="text-xs text-ink-subtle pl-7">{req.abandonReason}</p>
             )}
           </div>
         ) : (
@@ -810,18 +810,18 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         )}
 
         {isWaiting && (
-          <div className="text-xs bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 space-y-0.5">
-            <p className="text-orange-800 font-medium">
+          <div className="text-xs bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 space-y-0.5">
+            <p className="text-warning font-medium">
               {req.status === "WAITING_MISSION"
                 ? "En attente de la décision du département mission"
                 : "En attente de recontact"}
               {req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}
             </p>
             {req.lastRelanceAt && (
-              <p className="text-orange-700">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
+              <p className="text-warning">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
             )}
             {relanceDue && (
-              <p className="text-orange-900 font-semibold">
+              <p className="text-warning font-semibold">
                 À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}
               </p>
             )}
@@ -829,12 +829,12 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         )}
 
         {(req.assignedFamilyName || req.assignedBerger?.name) && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 pt-2 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted pt-2 border-t border-line">
             {req.assignedFamilyName && (
-              <span>Famille&nbsp;: <strong className="text-gray-700">{req.assignedFamilyName}</strong></span>
+              <span>Famille&nbsp;: <strong className="text-ink-muted">{req.assignedFamilyName}</strong></span>
             )}
             {req.assignedBerger?.name && (
-              <span>Berger&nbsp;: <strong className="text-gray-700">{req.assignedBerger.name}</strong></span>
+              <span>Berger&nbsp;: <strong className="text-ink-muted">{req.assignedBerger.name}</strong></span>
             )}
           </div>
         )}
@@ -842,7 +842,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         {canActAsBerger && (
           <div className="space-y-2 pt-1">
             {isAssignedBerger && !isIntegrationMember && (
-              <div className="flex items-center gap-2 text-xs text-icc-violet bg-icc-violet/5 border border-icc-violet/20 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-2 text-xs text-brand-text bg-brand-soft border border-brand/20 rounded-lg px-3 py-2">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -852,7 +852,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <div className="flex flex-wrap gap-2">
               {isIntegrationMember && (req.status === "SUBMITTED" || req.status === "ASSIGNED") && (
                 <button onClick={openAssignModal} disabled={loading}
-                  className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
                   {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
                 </button>
               )}
@@ -860,7 +860,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 <button
                   onClick={() => setReopenOpen(true)}
                   disabled={loading}
-                  className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Rouvrir
                 </button>
@@ -873,7 +873,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                     description: `Confirmer que ${req.firstName} ${req.lastName} a été contacté·e ?`,
                   })}
                   disabled={loading}
-                  className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Marquer contacté
                 </button>
@@ -886,7 +886,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                     description: `Confirmer que ${req.firstName} ${req.lastName} a été ajouté·e dans le groupe WhatsApp famille ?`,
                   })}
                   disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Ajouté dans le groupe WhatsApp
                 </button>
@@ -899,7 +899,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                     description: `Confirmer l'intégration de ${req.firstName} ${req.lastName} dans la famille ? Cette étape est définitive.`,
                   })}
                   disabled={loading}
-                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Marquer intégré ✓
                 </button>
@@ -908,7 +908,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 <button
                   onClick={() => setRelanceOpen(true)}
                   disabled={loading}
-                  className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   J&apos;ai relancé
                 </button>
@@ -927,32 +927,32 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                     }`,
                   })}
                   disabled={loading}
-                  className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Reprendre le suivi
                 </button>
               )}
               {canWaitRecontact && (
                 <button onClick={() => { setWaitKind("RECONTACT"); setWaitOpen(true); }} disabled={loading}
-                  className="px-4 py-2 bg-white text-orange-700 border border-orange-200 text-sm font-medium rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors">
+                  className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
                   À recontacter plus tard
                 </button>
               )}
               {canSendToMission && (
                 <button onClick={() => { setWaitKind("MISSION"); setWaitOpen(true); }} disabled={loading}
-                  className="px-4 py-2 bg-white text-orange-700 border border-orange-200 text-sm font-medium rounded-lg hover:bg-orange-50 disabled:opacity-50 transition-colors">
+                  className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
                   Transmettre au département mission
                 </button>
               )}
               {canHandback && (
                 <button onClick={() => setHandbackOpen(true)} disabled={loading}
-                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                  className="px-4 py-2 bg-surface text-ink-muted border border-control-line text-sm font-medium rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors">
                   Renvoyer à l&apos;intégration
                 </button>
               )}
               {canActAsBerger && req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
                 <button onClick={() => setAbandonOpen(true)} disabled={loading}
-                  className="px-4 py-2 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
+                  className="px-4 py-2 bg-surface text-danger border border-danger/30 text-sm font-medium rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors">
                   Abandonner
                 </button>
               )}
@@ -970,14 +970,14 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       />
 
       {/* ── Card 2 : Suivi MSDP — démarrable même sans appel au salut (#550) ── */}
-      <div className="bg-white rounded-xl border border-purple-100 p-4 md:p-5 space-y-4">
+      <div className="bg-surface rounded-xl border border-brand/30 p-4 md:p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-            <h2 className="text-sm font-semibold text-gray-700">{req.salvationCall ? "Appel au salut — MSDP" : "Suivi MSDP"}</h2>
+            <span className="w-2 h-2 rounded-full bg-brand shrink-0" />
+            <h2 className="text-sm font-semibold text-ink-muted">{req.salvationCall ? "Appel au salut — MSDP" : "Suivi MSDP"}</h2>
           </div>
           {msdpFollowUp && (
-            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${MSDP_STATUS_COLORS[msdpFollowUp.status] ?? "bg-gray-100 text-gray-600"}`}>
+            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${MSDP_STATUS_COLORS[msdpFollowUp.status] ?? "bg-surface-sunken text-ink-muted"}`}>
               {MSDP_STATUS_LABELS[msdpFollowUp.status] ?? msdpFollowUp.status}
             </span>
           )}
@@ -985,8 +985,8 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
 
         {msdpSteps && (
           msdpFollowUp?.status === "ABANDONED" ? (
-            <div className="flex items-center gap-2 text-sm text-red-500">
-              <span className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-xs font-bold">✕</span>
+            <div className="flex items-center gap-2 text-sm text-danger">
+              <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
               Abandonné{msdpFollowUp.abandonedAt ? ` le ${fmt(msdpFollowUp.abandonedAt)}` : ""}
             </div>
           ) : (
@@ -1005,11 +1005,11 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       </div>
 
       {/* ── Card 3 : Étapes clés du parcours ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 space-y-3">
+      <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Étapes clés du parcours</h2>
+          <h2 className="text-sm font-semibold text-ink-muted">Étapes clés du parcours</h2>
           {journey && (
-            <a href="/integration/parcours" className="text-xs text-icc-violet hover:underline">
+            <a href="/integration/parcours" className="text-xs text-brand-text hover:underline">
               Dossier complet →
             </a>
           )}
@@ -1027,27 +1027,27 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <button
               onClick={createJourney}
               disabled={journeyLoading}
-              className="text-xs text-icc-violet hover:underline disabled:opacity-50"
+              className="text-xs text-brand-text hover:underline disabled:opacity-50"
             >
               {journeyLoading ? "Création…" : "+ Créer le dossier parcours"}
             </button>
-            {journeyError && <span className="text-xs text-red-500">{journeyError}</span>}
+            {journeyError && <span className="text-xs text-danger">{journeyError}</span>}
           </div>
         )}
       </div>
 
       {/* ── Onglets ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-surface rounded-xl border border-line overflow-hidden">
         {/* Tab bar */}
-        <div className="flex border-b border-gray-100 overflow-x-auto">
+        <div className="flex border-b border-line overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                 activeTab === tab.id
-                  ? "border-icc-violet text-icc-violet"
-                  : "border-transparent text-gray-500 hover:text-gray-800"
+                  ? "border-brand text-brand-text"
+                  : "border-transparent text-ink-muted hover:text-ink"
               }`}
             >
               {tab.label}
@@ -1063,30 +1063,30 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <div className="space-y-3">
               {req.phone ? (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Téléphone</span>
-                  <a href={`tel:${req.phone}`} className="text-sm text-icc-violet hover:underline">{req.phone}</a>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Téléphone</span>
+                  <a href={`tel:${req.phone}`} className="text-sm text-brand-text hover:underline">{req.phone}</a>
                 </div>
               ) : null}
               {req.email ? (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Email</span>
-                  <a href={`mailto:${req.email}`} className="text-sm text-icc-violet hover:underline">{req.email}</a>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Email</span>
+                  <a href={`mailto:${req.email}`} className="text-sm text-brand-text hover:underline">{req.email}</a>
                 </div>
               ) : null}
               {req.address && (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Adresse</span>
-                  <span className="text-sm text-gray-800">{req.address}</span>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Adresse</span>
+                  <span className="text-sm text-ink">{req.address}</span>
                 </div>
               )}
               {req.member && (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Membre Koinonia</span>
-                  <span className="text-sm text-gray-800">{req.member.firstName} {req.member.lastName}</span>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Membre Koinonia</span>
+                  <span className="text-sm text-ink">{req.member.firstName} {req.member.lastName}</span>
                 </div>
               )}
               {!req.phone && !req.email && !req.address && !req.member && (
-                <p className="text-sm text-gray-400 italic">Aucune information de contact renseignée.</p>
+                <p className="text-sm text-ink-subtle italic">Aucune information de contact renseignée.</p>
               )}
             </div>
           )}
@@ -1095,32 +1095,32 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           {activeTab === "profil" && (
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Tranche d&apos;âge</span>
-                <span className="text-sm text-gray-800">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Tranche d&apos;âge</span>
+                <span className="text-sm text-ink">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Situation</span>
-                <span className="text-sm text-gray-800">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</span>
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Situation</span>
+                <span className="text-sm text-ink">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Appel au salut</span>
-                <span className="text-sm text-gray-800">
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Appel au salut</span>
+                <span className="text-sm text-ink">
                   {req.salvationCall ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />Oui
+                      <span className="w-2 h-2 rounded-full bg-brand shrink-0" />Oui
                     </span>
                   ) : "Non"}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Soin pastoral</span>
-                <span className="text-sm text-gray-800">
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Soin pastoral</span>
+                <span className="text-sm text-ink">
                   {req.pastoralCareRequested ? (
                     <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
                       Demandé
                       {appointmentRequest && (
-                        <span className="text-xs text-gray-400 ml-1">({appointmentRequest.status})</span>
+                        <span className="text-xs text-ink-subtle ml-1">({appointmentRequest.status})</span>
                       )}
                     </span>
                   ) : "Non"}
@@ -1134,33 +1134,33 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             <div className="space-y-3">
               {req.suggestedFamilyName && (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Suggestion géo</span>
-                  <span className="text-sm text-gray-500 italic">{req.suggestedFamilyName}</span>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Suggestion géo</span>
+                  <span className="text-sm text-ink-muted italic">{req.suggestedFamilyName}</span>
                 </div>
               )}
               {req.lat && req.lng && (
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-gray-400 sm:w-28 shrink-0">Carte familles</span>
+                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Carte familles</span>
                   <a
                     href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? `${req.lat}, ${req.lng}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-icc-violet hover:underline"
+                    className="text-sm text-brand-text hover:underline"
                   >
                     Voir sur la carte familles ↗
                   </a>
                 </div>
               )}
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Famille assignée</span>
-                <span className="text-sm font-medium text-icc-violet">
-                  {req.assignedFamilyName ?? <span className="text-gray-300 font-normal">—</span>}
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Famille assignée</span>
+                <span className="text-sm font-medium text-brand-text">
+                  {req.assignedFamilyName ?? <span className="text-ink-subtle font-normal">—</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-gray-400 sm:w-28 shrink-0">Berger</span>
-                <span className="text-sm text-gray-800">
-                  {req.assignedBerger?.name ?? <span className="text-gray-300">—</span>}
+                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Berger</span>
+                <span className="text-sm text-ink">
+                  {req.assignedBerger?.name ?? <span className="text-ink-subtle">—</span>}
                 </span>
               </div>
             </div>
@@ -1176,17 +1176,17 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                     onChange={(e) => setNotes(e.target.value)}
                     rows={5}
                     placeholder="Notes visibles uniquement par l'équipe intégration…"
-                    className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+                    className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
                   />
                   <div className="flex justify-end">
                     <button onClick={saveNotes} disabled={notesLoading}
-                      className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
+                      className="px-4 py-1.5 bg-surface-sunken hover:bg-surface-sunken text-ink-muted text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
                       {notesLoading ? "Sauvegarde…" : "Enregistrer les notes"}
                     </button>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-gray-500">{req.notes || <span className="italic text-gray-300">Aucune note</span>}</p>
+                <p className="text-sm text-ink-muted">{req.notes || <span className="italic text-ink-subtle">Aucune note</span>}</p>
               )}
             </div>
           )}
@@ -1203,11 +1203,11 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         title={pendingTransition?.label ?? ""}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{pendingTransition?.description}</p>
+          <p className="text-sm text-ink-muted">{pendingTransition?.description}</p>
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setPendingTransition(null)}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              className="px-4 py-2 text-sm text-ink-muted hover:text-ink"
             >
               Annuler
             </button>
@@ -1220,8 +1220,8 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 setPendingTransition(null);
               }}
               disabled={transitionLoading}
-              className={`px-4 py-2 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-                pendingTransition?.variant === "danger" ? "bg-red-600" : "bg-icc-violet"
+              className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
+                pendingTransition?.variant === "danger" ? "bg-danger text-on-danger" : "bg-brand text-on-brand"
               }`}
             >
               {transitionLoading ? "Enregistrement…" : "Confirmer"}
@@ -1237,20 +1237,22 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         title={milestoneModal?.currentValue ? "Désactiver le jalon" : "Activer le jalon"}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             {milestoneModal?.currentValue
               ? `Désactiver le jalon "${milestoneModal.label}" pour ${req.firstName} ${req.lastName} ?`
               : `Activer le jalon "${milestoneModal?.label}" pour ${req.firstName} ${req.lastName} ?`}
           </p>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setMilestoneModal(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+            <button onClick={() => setMilestoneModal(null)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">
               Annuler
             </button>
             <button
               onClick={confirmMilestoneToggle}
               disabled={milestoneLoading}
-              className={`px-4 py-2 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-                milestoneModal?.currentValue ? "bg-gray-500" : "bg-emerald-600"
+              className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
+                milestoneModal?.currentValue
+                  ? "border border-control-line text-ink hover:bg-surface-sunken"
+                  : "bg-brand text-on-brand"
               }`}
             >
               {milestoneLoading ? "Enregistrement…" : "Confirmer"}
@@ -1262,29 +1264,29 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* Assigner famille/berger */}
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Assigner la demande">
         {modalLoading ? (
-          <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
+          <p className="text-sm text-ink-subtle text-center py-6">Chargement…</p>
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Famille</label>
+              <label className="block text-sm font-medium text-ink-muted mb-1">Famille</label>
               <select
                 value={assignFamilyId}
                 onChange={(e) => { setAssignFamilyId(e.target.value); setAssignBergerId(""); }}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
+                className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
               >
                 <option value="">Choisir une famille…</option>
                 {families.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
               {req.suggestedFamilyName && (
-                <p className="text-xs text-gray-400 mt-1">Suggestion géo : {req.suggestedFamilyName}</p>
+                <p className="text-xs text-ink-subtle mt-1">Suggestion géo : {req.suggestedFamilyName}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Berger / co-berger</label>
+              <label className="block text-sm font-medium text-ink-muted mb-1">Berger / co-berger</label>
               <select
                 value={assignBergerId}
                 onChange={(e) => setAssignBergerId(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-icc-violet"
+                className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
                 disabled={!assignFamilyId}
               >
                 <option value="">Choisir un berger…</option>
@@ -1295,18 +1297,18 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 ))}
               </select>
               {assignFamilyId && filteredLeaders.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-warning mt-1">
                   Aucun berger configuré pour cette famille.{" "}
                   <a href="/integration/leaders" className="underline">Configurer →</a>
                 </p>
               )}
             </div>
             <div className="flex gap-2 justify-end pt-2">
-              <button onClick={() => setAssignOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+              <button onClick={() => setAssignOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
               <button
                 onClick={submitAssign}
                 disabled={assignLoading || !assignFamilyId || !assignBergerId}
-                className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {assignLoading ? "Enregistrement…" : "Assigner"}
               </button>
@@ -1320,41 +1322,41 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Prénom</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
               <input type="text" value={editForm.firstName}
                 onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet" />
+                className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Nom</label>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
               <input type="text" value={editForm.lastName}
                 onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))}
-                className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet" />
+                className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Téléphone</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Téléphone</label>
             <input type="tel" value={editForm.phone}
               onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet" />
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Email</label>
             <input type="email" value={editForm.email}
               onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet" />
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Adresse</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Adresse</label>
             <input type="text" value={editForm.address}
               onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet" />
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2">Tranche d&apos;âge</label>
+            <label className="block text-xs font-medium text-ink-muted mb-2">Tranche d&apos;âge</label>
             <div className="flex flex-wrap gap-2">
               {(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"] as const).map((v) => (
-                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.ageRange === v ? "bg-icc-violet text-white border-icc-violet" : "border-gray-200 text-gray-700 hover:border-icc-violet"}`}>
+                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.ageRange === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
                   <input type="radio" name="editAgeRange" value={v} checked={editForm.ageRange === v} onChange={() => setEditForm((f) => ({ ...f, ageRange: v }))} className="sr-only" />
                   {AGE_LABELS[v]}
                 </label>
@@ -1362,10 +1364,10 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-2">Situation à l&apos;église</label>
+            <label className="block text-xs font-medium text-ink-muted mb-2">Situation à l&apos;église</label>
             <div className="flex flex-wrap gap-2">
               {(["VISITOR", "REGULAR", "ENGAGED"] as const).map((v) => (
-                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.churchStatus === v ? "bg-icc-violet text-white border-icc-violet" : "border-gray-200 text-gray-700 hover:border-icc-violet"}`}>
+                <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.churchStatus === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
                   <input type="radio" name="editChurchStatus" value={v} checked={editForm.churchStatus === v} onChange={() => setEditForm((f) => ({ ...f, churchStatus: v }))} className="sr-only" />
                   {CHURCH_STATUS_LABELS[v]}
                 </label>
@@ -1373,9 +1375,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             </div>
           </div>
           <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitEdit} disabled={editLoading || !editForm.firstName || !editForm.lastName}
-              className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {editLoading ? "Enregistrement…" : "Enregistrer"}
             </button>
           </div>
@@ -1385,41 +1387,41 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* Abandonner */}
       <Modal open={abandonOpen} onClose={() => setAbandonOpen(false)} title="Abandonner la demande">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Cette demande sera marquée comme abandonnée. Elle pourra être rouverte si nécessaire.
           </p>
           <fieldset className="space-y-1.5">
-            <legend className="block text-sm font-medium text-gray-700 mb-1">
-              Motif <span className="text-red-500">*</span>
+            <legend className="block text-sm font-medium text-ink-muted mb-1">
+              Motif <span className="text-danger">*</span>
             </legend>
             {ABANDON_REASON_OPTIONS.map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <label key={value} className="flex items-center gap-2 text-sm text-ink-muted cursor-pointer">
                 <input
                   type="radio"
                   name="abandonReasonCode"
                   value={value}
                   checked={abandonReasonCode === value}
                   onChange={() => setAbandonReasonCode(value)}
-                  className="accent-icc-violet"
+                  className="accent-brand"
                 />
                 {label}
               </label>
             ))}
           </fieldset>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
               value={abandonReason}
               onChange={(e) => setAbandonReason(e.target.value)}
               rows={3}
               placeholder="Ex : sans nouvelles après 3 relances…"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setAbandonOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setAbandonOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitAbandon} disabled={abandonLoading || !abandonReasonCode}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              className="px-4 py-2 bg-danger text-on-danger text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {abandonLoading ? "Abandon…" : "Confirmer l'abandon"}
             </button>
           </div>
@@ -1433,7 +1435,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         title={waitKind === "MISSION" ? "Transmettre au département mission" : "À recontacter plus tard"}
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             {waitKind === "MISSION"
               ? "L'adresse ne correspond à aucune famille d'impact : la décision revient au département mission."
               : `${req.firstName} ${req.lastName} souhaite être recontacté·e plus tard, ou n'a pas pu être joint·e pour l'instant.`}{" "}
@@ -1441,19 +1443,19 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             intégration une fois le délai écoulé.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
               value={waitNote}
               onChange={(e) => setWaitNote(e.target.value)}
               rows={2}
               maxLength={1000}
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setWaitOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setWaitOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitWait} disabled={dialogLoading}
-              className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {dialogLoading ? "Enregistrement…" : "Confirmer"}
             </button>
           </div>
@@ -1463,14 +1465,14 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* Renvoyer à l'intégration (spec 051, amendement de recette) */}
       <Modal open={handbackOpen} onClose={() => setHandbackOpen(false)} title="Renvoyer à l'équipe intégration">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Vous ne pouvez pas suivre {req.firstName} {req.lastName} ? La demande vous sera retirée,
             ainsi qu&apos;à votre famille, et redeviendra une demande reçue à traiter par l&apos;équipe
             intégration, qui sera prévenue.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Raison <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-ink-muted mb-1">
+              Raison <span className="text-danger">*</span>
             </label>
             <textarea
               value={handbackReason}
@@ -1478,13 +1480,13 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
               rows={3}
               maxLength={500}
               placeholder="Ex : habite hors de notre secteur, plus proche d'une autre famille…"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setHandbackOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setHandbackOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitHandback} disabled={dialogLoading || !handbackReason.trim()}
-              className="px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {dialogLoading ? "Envoi…" : "Renvoyer à l'intégration"}
             </button>
           </div>
@@ -1494,27 +1496,27 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* J'ai relancé (spec 051) */}
       <Modal open={relanceOpen} onClose={() => setRelanceOpen(false)} title="J'ai relancé">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             {req.status === "WAITING_MISSION"
               ? "Vous avez relancé le département mission."
               : `Vous avez recontacté ${req.firstName} ${req.lastName}.`}{" "}
             La demande reste en attente et le délai avant la prochaine alerte repart de zéro.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire (facultatif)</label>
+            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
               value={relanceNote}
               onChange={(e) => setRelanceNote(e.target.value)}
               rows={3}
               maxLength={1000}
               placeholder="Ex : message laissé sur répondeur…"
-              className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2 justify-end">
-            <button onClick={() => setRelanceOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setRelanceOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitRelance} disabled={dialogLoading}
-              className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
               {dialogLoading ? "Enregistrement…" : "Consigner la relance"}
             </button>
           </div>
@@ -1524,29 +1526,29 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* Rouvrir (spec 051) */}
       <Modal open={reopenOpen} onClose={() => setReopenOpen(false)} title="Rouvrir la demande">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Comment reprendre la demande de {req.firstName} {req.lastName} ?</p>
+          <p className="text-sm text-ink-muted">Comment reprendre la demande de {req.firstName} {req.lastName} ?</p>
           <div className="space-y-2">
             <button
               onClick={() => submitReopen("resume")}
               disabled={dialogLoading}
-              className="w-full text-left border-2 border-gray-200 hover:border-icc-violet rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+              className="w-full text-left border border-line hover:border-brand rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
             >
-              <span className="block text-sm font-medium text-gray-800">Reprendre où elle en était</span>
-              <span className="block text-xs text-gray-500">La demande retrouve l&apos;état qui précédait son abandon.</span>
+              <span className="block text-sm font-medium text-ink">Reprendre où elle en était</span>
+              <span className="block text-xs text-ink-muted">La demande retrouve l&apos;état qui précédait son abandon.</span>
             </button>
             <button
               onClick={() => submitReopen("restart")}
               disabled={dialogLoading}
-              className="w-full text-left border-2 border-gray-200 hover:border-icc-violet rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
+              className="w-full text-left border border-line hover:border-brand rounded-lg px-3 py-2 disabled:opacity-50 transition-colors"
             >
-              <span className="block text-sm font-medium text-gray-800">Reprendre de zéro</span>
-              <span className="block text-xs text-gray-500">
+              <span className="block text-sm font-medium text-ink">Reprendre de zéro</span>
+              <span className="block text-xs text-ink-muted">
                 La famille et le berger affectés sont retirés{req.assignedBerger?.name ? ` (${req.assignedBerger.name} en sera informé)` : ""}.
               </span>
             </button>
           </div>
           <div className="flex justify-end">
-            <button onClick={() => setReopenOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button onClick={() => setReopenOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
           </div>
         </div>
       </Modal>

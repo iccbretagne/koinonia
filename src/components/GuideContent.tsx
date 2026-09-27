@@ -1,5 +1,8 @@
 "use client";
 
+import { Ban, CirclePlay, Eye, Pencil } from "lucide-react";
+import StatusChip from "@/components/ui/StatusChip";
+import { buttonClasses } from "@/components/ui/button-classes";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
@@ -486,11 +489,11 @@ const ROLES: readonly RoleKey[] = ALL_ROLES;
 function AccessBadge({ level }: { readonly level: AccessLevel }) {
   switch (level) {
     case "edit":
-      return <span className="inline-flex items-center text-sm text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✓ Édition</span>;
+      return <StatusChip tone="success" icon={Pencil}>Édition</StatusChip>;
     case "read":
-      return <span className="inline-flex items-center text-sm text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">👁 Lecture</span>;
+      return <StatusChip tone="info" icon={Eye}>Lecture</StatusChip>;
     case "none":
-      return <span className="inline-flex items-center text-sm text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full">✗ Pas d&apos;accès</span>;
+      return <StatusChip tone="neutral" icon={Ban}>Pas d&apos;accès</StatusChip>;
   }
 }
 
@@ -516,8 +519,8 @@ function Screenshot({
 
   if (failed) {
     return (
-      <div className="w-full aspect-video bg-gray-50 rounded-lg border border-dashed border-gray-200 flex items-center justify-center">
-        <span className="text-xs text-gray-400">Capture a venir</span>
+      <div className="w-full aspect-video bg-surface-sunken rounded-lg border border-dashed border-line flex items-center justify-center">
+        <span className="text-xs text-ink-subtle">Capture à venir</span>
       </div>
     );
   }
@@ -526,7 +529,7 @@ function Screenshot({
     <button
       type="button"
       onClick={() => onZoom({ src, alt: title })}
-      className="w-full aspect-video bg-gray-50 rounded-lg border border-gray-200 overflow-hidden cursor-zoom-in group"
+      className="w-full aspect-video bg-surface-sunken rounded-lg border border-line overflow-hidden cursor-zoom-in group"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -551,35 +554,35 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
   return (
     <div>
       {/* Bouton tour guide interactif */}
-      <div className="mb-6 flex items-center gap-3 p-4 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-card bg-brand-soft p-4">
         <div className="flex-1">
-          <h2 className="text-sm font-semibold text-gray-800">Decouvrir l&apos;interface</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Lancez un tour guide interactif pour decouvrir les fonctionnalites principales.
+          <h2 className="text-sm font-semibold text-ink">Découvrir l&apos;interface</h2>
+          <p className="text-xs text-ink-muted mt-0.5">
+            Lancez une visite guidée pour découvrir les fonctionnalités principales.
           </p>
         </div>
         <button
           onClick={() => router.push("/dashboard?tour=1")}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:bg-icc-violet/90 transition-colors"
+          type="button"
+          className={`${buttonClasses("primary")} shrink-0`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Lancer le tour guide
+          <CirclePlay aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          Lancer la visite guidée
         </button>
       </div>
 
       {/* Onglets par rôle */}
-      <div className="flex overflow-x-auto gap-1 border-b border-gray-200 mb-6 pb-px -mx-1 px-1">
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none]">
         {ROLES.map((role) => (
           <button
             key={role}
             onClick={() => setActiveRole(role)}
-            className={`whitespace-nowrap px-3 py-2 text-sm font-medium rounded-t-lg transition-colors shrink-0 ${
+            type="button"
+            aria-pressed={activeRole === role}
+            className={`-mb-px inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 font-display text-sm font-semibold transition-colors ${
               activeRole === role
-                ? "bg-icc-violet text-white"
-                : "text-gray-600 hover:text-icc-violet hover:bg-gray-50"
+                ? "border-brand text-brand-text"
+                : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
             {ROLE_LABELS[role]}
@@ -588,16 +591,16 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       </div>
 
       {/* Description du rôle */}
-      <div className="mb-6 p-4 bg-icc-violet/5 border border-icc-violet/20 rounded-lg">
-        <h2 className="text-lg font-semibold text-icc-violet">{ROLE_LABELS[activeRole]}</h2>
-        <p className="text-sm text-gray-600 mt-1">{ROLE_DESCRIPTIONS[activeRole]}</p>
+      <div className="mb-6 rounded-card border border-line bg-surface p-4">
+        <h2 className="text-lg font-semibold text-brand-text">{ROLE_LABELS[activeRole]}</h2>
+        <p className="text-sm text-ink-muted mt-1">{ROLE_DESCRIPTIONS[activeRole]}</p>
         {activeRole === "MINISTER" && (
-          <p className="text-xs text-gray-500 mt-2 italic">
+          <p className="text-xs text-ink-muted mt-2 italic">
             * Le ministre a accès uniquement aux départements de son ministère assigné.
           </p>
         )}
         {activeRole === "SUPER_ADMIN" && (
-          <p className="text-xs text-gray-500 mt-2 italic">
+          <p className="text-xs text-ink-muted mt-2 italic">
             * Les dashboards Secrétariat, Demandes visuels et Demandes réseaux sociaux sont visibles selon l&apos;appartenance au département concerné (fonction système) — ces deux derniers regroupés sous le menu « Communication & Production ».
           </p>
         )}
@@ -607,15 +610,15 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       <div className="space-y-8">
         {categories.map((category) => (
           <section key={category}>
-            <h3 className="text-base font-semibold text-gray-800 mb-4 border-b pb-2">{category}</h3>
+            <h3 className="text-base font-semibold text-ink mb-4 border-b pb-2">{category}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               {visibleFeatures.filter((f) => f.category === category).map((feature) => (
                 <div key={feature.name} className="border rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-medium text-gray-700">{feature.name}</h4>
+                    <h4 className="text-sm font-medium text-ink-muted">{feature.name}</h4>
                     <AccessBadge level={feature.access[activeRole]} />
                   </div>
-                  <p className="text-xs text-gray-500">{feature.description}</p>
+                  <p className="text-xs text-ink-muted">{feature.description}</p>
                   <Screenshot
                     file={feature.screenshotFile}
                     title={feature.screenshotTitle}
@@ -631,13 +634,13 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       {/* Modale zoom image */}
       {zoomedImage && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 cursor-zoom-out p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim cursor-zoom-out p-4"
           onClick={() => setZoomedImage(null)}
         >
           <button
             type="button"
             onClick={() => setZoomedImage(null)}
-            className="absolute top-4 right-4 text-white bg-black/50 hover:bg-black/70 rounded-full p-2 transition-colors"
+            className="absolute top-4 right-4 text-ink bg-surface/90 hover:bg-surface rounded-full shadow-float p-2 transition-colors"
             aria-label="Fermer"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,7 +651,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
           <img
             src={zoomedImage.src}
             alt={zoomedImage.alt}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-overlay"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

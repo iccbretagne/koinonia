@@ -37,14 +37,14 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-100 text-amber-800",
-  EN_COURS: "bg-blue-100 text-blue-800",
-  APPROUVEE: "bg-green-100 text-green-800",
-  EXECUTEE: "bg-green-100 text-green-800",
-  LIVRE: "bg-green-100 text-green-800",
-  REFUSEE: "bg-red-100 text-red-700",
-  ANNULE: "bg-gray-100 text-gray-500",
-  ERREUR: "bg-red-100 text-red-700",
+  EN_ATTENTE: "bg-warning-soft text-warning",
+  EN_COURS: "bg-info-soft text-info",
+  APPROUVEE: "bg-success-soft text-success",
+  EXECUTEE: "bg-success-soft text-success",
+  LIVRE: "bg-success-soft text-success",
+  REFUSEE: "bg-danger-soft text-danger",
+  ANNULE: "bg-surface-sunken text-ink-muted",
+  ERREUR: "bg-danger-soft text-danger",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -210,29 +210,29 @@ export default function RequestsDashboard({ requests: initial, canManage = false
     const payloadSummary = renderPayloadSummary(req);
 
     return (
-      <div key={req.id} className="bg-white rounded-lg shadow p-5 border border-gray-100">
+      <div key={req.id} className="bg-surface rounded-lg shadow p-5 border border-line">
         <div className="flex items-start justify-between gap-4 mb-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm">{TYPE_ICON[req.type] ?? "📄"}</span>
-              <span className="text-xs font-medium text-gray-500 uppercase">
+              <span className="text-xs font-medium text-ink-muted uppercase">
                 {TYPE_LABEL[req.type] ?? req.type}
               </span>
               {req.announcement?.isSaveTheDate && (
-                <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full">
                   Save the Date
                 </span>
               )}
               {req.announcement?.isUrgent && (
-                <span className="text-xs bg-icc-rouge/10 text-icc-rouge px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-danger-soft text-danger px-2 py-0.5 rounded-full">
                   Urgent
                 </span>
               )}
             </div>
-            <h3 className="font-semibold text-gray-900 mt-1">
+            <h3 className="font-semibold text-ink mt-1">
               {req.announcement ? req.announcement.title : req.title}
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-ink-muted mt-0.5">
               par {author}
               {source && <> · {source}</>}
               {" · "}
@@ -244,7 +244,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
           </div>
           <span
             className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
-              STATUS_COLOR[req.status] ?? "bg-gray-100 text-gray-500"
+              STATUS_COLOR[req.status] ?? "bg-surface-sunken text-ink-muted"
             }`}
           >
             {STATUS_LABEL[req.status] ?? req.status}
@@ -259,7 +259,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
           const isExpanded = expandedContent.has(req.id);
           return (
             <div className="mb-3">
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              <p className="text-sm text-ink-muted whitespace-pre-wrap">
                 {isLong && !isExpanded ? `${content.slice(0, PREVIEW).trimEnd()}…` : content}
               </p>
               {isLong && (
@@ -269,7 +269,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
                     if (isExpanded) next.delete(req.id); else next.add(req.id);
                     return next;
                   })}
-                  className="mt-1 text-xs text-icc-violet hover:underline"
+                  className="mt-1 text-xs text-brand-text hover:underline"
                 >
                   {isExpanded ? "Voir moins" : "Voir plus"}
                 </button>
@@ -280,27 +280,27 @@ export default function RequestsDashboard({ requests: initial, canManage = false
 
         {/* Demand payload summary */}
         {isDemand && payloadSummary && (
-          <p className="text-sm text-gray-600 mb-3">{payloadSummary}</p>
+          <p className="text-sm text-ink-muted mb-3">{payloadSummary}</p>
         )}
 
         {/* Child request statuses */}
         {req.childRequests.length > 0 && (
           <div className="mb-3 space-y-1">
             {req.childRequests.map((child) => (
-              <div key={child.id} className="flex items-center gap-2 text-xs text-gray-500">
+              <div key={child.id} className="flex items-center gap-2 text-xs text-ink-muted">
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
                     child.status === "EN_ATTENTE"
-                      ? "bg-amber-400"
+                      ? "bg-warning"
                       : child.status === "EN_COURS"
-                        ? "bg-blue-400"
+                        ? "bg-info"
                         : child.status === "LIVRE"
-                          ? "bg-green-400"
-                          : "bg-gray-300"
+                          ? "bg-success"
+                          : "bg-control-line"
                   }`}
                 />
                 <span>{TYPE_LABEL[child.type] ?? child.type}</span>
-                <span className="text-gray-400">{STATUS_LABEL[child.status] ?? child.status}</span>
+                <span className="text-ink-subtle">{STATUS_LABEL[child.status] ?? child.status}</span>
               </div>
             ))}
           </div>
@@ -308,19 +308,19 @@ export default function RequestsDashboard({ requests: initial, canManage = false
 
         {/* Execution error */}
         {req.status === "ERREUR" && req.executionError && (
-          <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-3">
+          <p className="text-xs text-danger bg-danger-soft px-3 py-2 rounded-lg mb-3">
             Erreur : {req.executionError}
           </p>
         )}
 
         {/* Review notes */}
         {req.reviewNotes && req.status !== "EN_ATTENTE" && (
-          <p className="text-xs text-gray-500 italic mb-3">Note : {req.reviewNotes}</p>
+          <p className="text-xs text-ink-muted italic mb-3">Note : {req.reviewNotes}</p>
         )}
 
         {/* Delete button for managers on processed requests */}
         {canManage && req.status !== "EN_ATTENTE" && (
-          <div className="border-t border-gray-100 pt-3 flex justify-end">
+          <div className="border-t border-line pt-3 flex justify-end">
             <Button
               size="sm"
               variant="danger"
@@ -334,13 +334,13 @@ export default function RequestsDashboard({ requests: initial, canManage = false
 
         {/* Actions for pending requests */}
         {req.status === "EN_ATTENTE" && (
-          <div className="border-t border-gray-100 pt-3 space-y-3">
+          <div className="border-t border-line pt-3 space-y-3">
             <textarea
               value={notes[req.id] ?? ""}
               onChange={(e) => setNotes((prev) => ({ ...prev, [req.id]: e.target.value }))}
               placeholder={isDemand ? "Note (optionnelle pour approbation, obligatoire pour refus)" : "Note (optionnelle)"}
               rows={2}
-              className="block w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-xs focus:outline-none focus:border-icc-violet"
+              className="block w-full px-3 py-2 border border-line rounded-lg text-xs focus:outline-none focus:border-brand"
             />
             <div className="flex flex-wrap gap-2">
               {isDemand ? (
@@ -404,26 +404,26 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden text-sm">
+        <div className="flex rounded-lg border border-line overflow-hidden text-sm">
           {(["all", "announcements", "demands"] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
               className={`px-3 py-1.5 font-medium transition-colors ${
                 category === cat
-                  ? "bg-icc-violet text-white"
-                  : "text-gray-600 hover:bg-gray-50"
+                  ? "bg-brand text-on-brand"
+                  : "text-ink-muted hover:bg-surface-sunken"
               }`}
             >
               {cat === "all" ? "Tout" : cat === "announcements" ? "Annonces" : "Demandes"}
             </button>
           ))}
         </div>
-        <div className="flex rounded-lg border-2 border-gray-200 overflow-hidden text-sm">
+        <div className="flex rounded-lg border border-line overflow-hidden text-sm">
           <button
             onClick={() => setShowProcessed(false)}
             className={`px-3 py-1.5 font-medium transition-colors ${
-              !showProcessed ? "bg-icc-violet text-white" : "text-gray-600 hover:bg-gray-50"
+              !showProcessed ? "bg-brand text-on-brand" : "text-ink-muted hover:bg-surface-sunken"
             }`}
           >
             En attente ({pending.length})
@@ -431,7 +431,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
           <button
             onClick={() => setShowProcessed(true)}
             className={`px-3 py-1.5 font-medium transition-colors ${
-              showProcessed ? "bg-icc-violet text-white" : "text-gray-600 hover:bg-gray-50"
+              showProcessed ? "bg-brand text-on-brand" : "text-ink-muted hover:bg-surface-sunken"
             }`}
           >
             Traitées
@@ -444,7 +444,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
       </div>
 
       {(showProcessed ? processed : pending).length === 0 && (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-ink-subtle">
           <p className="text-lg">
             {showProcessed ? "Aucune demande traitée." : "Aucune demande en attente."}
           </p>

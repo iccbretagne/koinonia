@@ -1,5 +1,6 @@
 "use client";
 
+import { Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import H5AudioPlayer from "react-h5-audio-player";
@@ -173,16 +174,16 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       <div className="flex items-center gap-4 mb-6">
         {service.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={service.coverUrl} alt="" className="w-20 h-20 rounded-lg object-cover shadow shrink-0" />
+          <img src={service.coverUrl} alt="" className="w-20 h-20 rounded-control object-cover shadow-card shrink-0" />
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-gray-900 truncate">{service.title || "Enregistrement du culte"}</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="truncate font-display text-[22px] font-bold leading-7 text-ink">{service.title || "Enregistrement du culte"}</h1>
+          <p className="text-sm text-ink-muted">
             {new Date(service.serviceDate).toLocaleDateString("fr-FR")}
             {service.speaker && ` · ${service.speaker}`}
           </p>
           {service.churchName && (
-            <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-icc-violet/10 text-icc-violet">
+            <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-brand-soft text-brand-text">
               {service.churchName}
             </span>
           )}
@@ -194,29 +195,30 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
         )}
       </div>
 
-      <ul className="bg-white rounded-xl shadow divide-y divide-gray-100 border-2 border-gray-100 overflow-hidden mb-4">
+      <ul className="bg-surface rounded-card shadow-card divide-y divide-line border border-line overflow-hidden mb-4">
         {segments.map((seg) => (
           <li key={seg.id} className="flex items-center">
             <button
               onClick={() => setCurrentId(seg.id)}
               aria-current={seg.id === currentId ? "true" : undefined}
-              className={`flex-1 flex items-center justify-between px-4 py-3 text-left text-sm hover:bg-gray-50 min-h-[44px] ${
-                seg.id === currentId ? "bg-icc-violet/5 font-medium text-icc-violet" : "text-gray-700"
+              className={`flex-1 flex items-center justify-between px-4 py-3 text-left text-sm hover:bg-surface-sunken min-h-[44px] ${
+                seg.id === currentId ? "bg-brand-soft font-medium text-brand-text" : "text-ink-muted"
               }`}
             >
               <span className="truncate pr-2">
                 {seg.order + 1}. {seg.title}
               </span>
-              <span className="text-gray-400 shrink-0">{formatDuration(seg.durationMs)}</span>
+              <span className="text-ink-subtle shrink-0">{formatDuration(seg.durationMs)}</span>
             </button>
             {onShare && (
               <button
                 type="button"
                 onClick={() => onShare(seg.id)}
                 aria-label={`Partager la séquence ${seg.title}`}
-                className="px-3 text-gray-400 hover:text-icc-violet min-h-[44px]"
+                title="Partager cette séquence"
+                className="grid min-h-11 w-11 place-items-center text-ink-subtle hover:text-brand-text focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
               >
-                ↗
+                <Share2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </button>
             )}
           </li>
@@ -224,21 +226,21 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
       </ul>
 
       {current && (
-        <div className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-white border-t-2 md:border-2 border-gray-100 md:rounded-xl shadow-lg md:shadow p-3 md:p-4 z-20">
+        <div className="fixed bottom-14 md:bottom-auto inset-x-0 md:static bg-surface border-t md:border border-line md:rounded-card shadow-float md:shadow-card p-3 md:p-4 z-20">
           <div className="flex items-center justify-between mb-1">
-            <p className="font-medium text-gray-900 text-sm truncate pr-2">{current.title}</p>
+            <p className="font-medium text-ink text-sm truncate pr-2">{current.title}</p>
             <select
               aria-label="Vitesse de lecture"
               value={playbackRate}
               onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
-              className="text-xs border border-gray-300 rounded px-1.5 py-1 text-gray-600 shrink-0"
+              className="min-h-9 shrink-0 cursor-pointer rounded-control border border-control-line bg-surface px-2 text-sm text-ink"
             >
               {speedOptions}
             </select>
           </div>
 
           {resumeOffer !== null && (
-            <div className="flex items-center gap-2 mb-2 text-xs bg-icc-violet-light text-icc-violet rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 mb-2 text-xs bg-brand-soft text-brand-text rounded-control px-3 py-2">
               <span className="flex-1">Reprendre à {formatDuration(resumeOffer * 1000)} ?</span>
               <button onClick={acceptResume} className="font-semibold underline">
                 Reprendre
@@ -250,7 +252,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
           )}
 
           {loadError ? (
-            <div className="flex items-center gap-2 text-sm text-icc-rouge py-2">
+            <div className="flex items-center gap-2 text-sm text-danger py-2">
               <span className="flex-1">Impossible de charger l&apos;audio.</span>
               <Button variant="secondary" size="sm" onClick={retry}>
                 Réessayer

@@ -29,11 +29,11 @@ const STATUS_LABELS: Record<Checklist["status"], string> = {
 };
 
 const STATUS_BADGE: Record<Checklist["status"], string> = {
-  PENDING: "bg-gray-100 text-gray-600",
-  OPENED: "bg-blue-100 text-blue-700",
-  CLOSED_DECLARED: "bg-yellow-100 text-yellow-700",
-  VALIDATED: "bg-green-100 text-green-700",
-  ISSUE_REPORTED: "bg-red-100 text-red-700",
+  PENDING: "bg-surface-sunken text-ink-muted",
+  OPENED: "bg-info-soft text-info",
+  CLOSED_DECLARED: "bg-warning-soft text-warning",
+  VALIDATED: "bg-success-soft text-success",
+  ISSUE_REPORTED: "bg-danger-soft text-danger",
 };
 
 function formatDateTime(iso: string): string {

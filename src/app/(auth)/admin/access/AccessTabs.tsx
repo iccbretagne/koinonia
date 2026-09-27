@@ -22,20 +22,20 @@ export default function AccessTabs({ peopleTab, rolesTab, requestsTab, requestCo
 
   return (
     <div>
-      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="flex gap-1 mb-6 border-b border-line overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         {(["people", "roles", "requests"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors relative whitespace-nowrap shrink-0 ${
               tab === t
-                ? "border-icc-violet text-icc-violet"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-brand text-brand-text"
+                : "border-transparent text-ink-muted hover:text-ink-muted"
             }`}
           >
             {TAB_LABELS[t]}
             {t === "requests" && requestCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-icc-violet rounded-full">
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-on-brand bg-brand rounded-full">
                 {requestCount}
               </span>
             )}

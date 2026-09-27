@@ -45,7 +45,7 @@ export default function ResumeBanner({ services }: { readonly services: ServiceR
   return (
     <Link
       href={`/audio/ecouter/${resume.service.id}`}
-      className="flex items-center gap-3 bg-icc-violet-light text-icc-violet rounded-xl px-4 py-3 mb-4 hover:bg-icc-violet/15 transition-colors"
+      className="flex items-center gap-3 bg-brand-soft text-brand-text rounded-xl px-4 py-3 mb-4 hover:bg-brand/15 transition-colors"
     >
       <span className="text-xl shrink-0">▶</span>
       <span className="flex-1 min-w-0">

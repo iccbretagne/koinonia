@@ -5,7 +5,7 @@ import DepartmentsClient from "./DepartmentsClient";
 export default async function DepartmentsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("departments:manage", churchId);
 
   const scope = getUserDepartmentScope(session, churchId);
@@ -41,7 +41,7 @@ export default async function DepartmentsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Départements</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Départements</h1>
       <DepartmentsClient
         initialDepartments={departments}
         ministries={ministries.map((m) => ({

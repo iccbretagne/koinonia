@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getTourSteps, type TourStep, type RoleKey } from "@/lib/tour-steps";
+import Button from "@/components/ui/Button";
 
 interface GuidedTourProps {
   readonly userRole: RoleKey;
@@ -150,7 +151,7 @@ function TourOverlay({
           y="0"
           width="100%"
           height="100%"
-          fill="rgba(0,0,0,0.5)"
+          fill="var(--scrim)"
           mask="url(#tour-mask)"
           style={{ pointerEvents: "auto" }}
           onClick={(e) => e.stopPropagation()}
@@ -167,7 +168,7 @@ function TourOverlay({
             width: targetRect.width + padding * 2,
             height: targetRect.height + padding * 2,
             borderRadius: 8,
-            boxShadow: "0 0 0 3px #5E17EB",
+            boxShadow: "0 0 0 3px var(--brand)",
             pointerEvents: "none",
             transition: "all 0.3s ease",
           }}
@@ -264,95 +265,33 @@ const TooltipCard = forwardRef<
   }
 >(function TooltipCard({ step, stepIndex, totalSteps, isLast, onNext, onBack, onSkip }, ref) {
   return (
-    <div
-      ref={ref}
-      style={{
-        background: "white",
-        borderRadius: 12,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-        fontFamily: "Montserrat, sans-serif",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <div style={{ padding: "16px 20px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#1f2937" }}>
-            {step.title}
-          </h3>
-          <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+    <div ref={ref} className="overflow-hidden rounded-card border border-line bg-surface text-ink shadow-overlay" role="dialog" aria-label={step.title}>
+      <div className="px-5 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-display text-base font-semibold leading-6 text-ink">{step.title}</h3>
+          <span className="shrink-0 text-xs tabular-nums text-ink-subtle">
             {stepIndex + 1}/{totalSteps}
           </span>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ padding: "8px 20px 16px" }}>
-        <p style={{ margin: 0, fontSize: "0.875rem", color: "#4b5563", lineHeight: 1.5 }}>
-          {step.content}
-        </p>
+      <div className="px-5 pb-4 pt-2">
+        <p className="text-[15px] leading-[22px] text-ink-muted">{step.content}</p>
       </div>
 
-      {/* Footer */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "12px 20px",
-          borderTop: "1px solid #f3f4f6",
-          gap: 8,
-        }}
-      >
-        <button
-          onClick={onSkip}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "0.875rem",
-            color: "#9ca3af",
-            fontFamily: "inherit",
-            padding: "6px 0",
-          }}
-        >
+      <div className="flex items-center justify-between gap-2 border-t border-line px-5 py-3">
+        <Button variant="ghost" size="sm" onClick={onSkip}>
           Passer
-        </button>
-
-        <div style={{ display: "flex", gap: 8 }}>
+        </Button>
+        <div className="flex gap-2">
           {stepIndex > 0 && (
-            <button
-              onClick={onBack}
-              style={{
-                background: "white",
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: "0.875rem",
-                color: "#374151",
-                fontFamily: "inherit",
-                padding: "6px 16px",
-              }}
-            >
+            <Button variant="secondary" size="sm" onClick={onBack}>
               Retour
-            </button>
+            </Button>
           )}
-          <button
-            onClick={onNext}
-            style={{
-              background: "#5E17EB",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontSize: "0.875rem",
-              color: "white",
-              fontFamily: "inherit",
-              fontWeight: 500,
-              padding: "6px 16px",
-            }}
-          >
+          <Button size="sm" onClick={onNext}>
             {isLast ? "Terminer" : "Suivant"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

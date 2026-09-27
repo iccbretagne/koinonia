@@ -60,7 +60,7 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
 
   if (requests.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-ink-subtle">
         <p className="text-lg">Aucune demande à planifier.</p>
       </div>
     );
@@ -72,60 +72,60 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
         const f = getForm(req.id);
         const profile = req.assignedTo;
         return (
-          <div key={req.id} className="bg-white rounded-lg shadow border border-gray-100 p-5">
+          <div key={req.id} className="bg-surface rounded-lg shadow border border-line p-5">
             <div className="mb-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900">{req.firstName} {req.lastName}</p>
-                  {req.email && <p className="text-xs text-gray-500">{req.email}</p>}
-                  <p className="text-sm font-medium text-gray-700 mt-1">{req.subject}</p>
+                  <p className="font-semibold text-ink">{req.firstName} {req.lastName}</p>
+                  {req.email && <p className="text-xs text-ink-muted">{req.email}</p>}
+                  <p className="text-sm font-medium text-ink-muted mt-1">{req.subject}</p>
                 </div>
                 {profile && (
-                  <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-1 rounded-full shrink-0">
+                  <span className="text-xs bg-brand-soft text-brand-text px-2 py-1 rounded-full shrink-0">
                     {profile.name} · {ROLE_LABELS[profile.role] ?? profile.role}
                   </span>
                 )}
               </div>
               {req.qualificationNote && (
-                <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                <div className="mt-2 p-2 bg-info-soft rounded text-xs text-info">
                   <span className="font-medium">Note Qualificateur :</span> {req.qualificationNote}
                 </div>
               )}
             </div>
 
-            <div className="border-t border-gray-100 pt-4 space-y-3">
+            <div className="border-t border-line pt-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Date et heure de début <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">
+                    Date et heure de début <span className="text-danger">*</span>
                   </label>
                   <input
                     type="datetime-local"
                     value={f.startsAt}
                     onChange={(e) => setField(req.id, "startsAt", e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+                    className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-ink-muted mb-1">
                     Heure de fin (optionnel)
                   </label>
                   <input
                     type="datetime-local"
                     value={f.endsAt}
                     onChange={(e) => setField(req.id, "endsAt", e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+                    className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Lieu (optionnel)</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Lieu (optionnel)</label>
                 <input
                   type="text"
                   value={f.location}
                   onChange={(e) => setField(req.id, "location", e.target.value)}
                   placeholder="Salle, adresse..."
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+                  className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
                 />
               </div>
               <Button size="sm" onClick={() => schedule(req.id)} disabled={processing === req.id}>

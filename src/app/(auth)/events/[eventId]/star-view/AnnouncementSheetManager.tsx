@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useToast } from "@/components/ui/Toast";
 
 export interface AnnouncementSheetData {
   filename: string | null;
@@ -30,8 +32,10 @@ function formatDate(iso: string) {
 }
 
 export default function AnnouncementSheetManager({ eventId, data, onChange, embedded = false }: Props) {
+  const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!data.canDeposit && !data.canRead) return null;
@@ -50,7 +54,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
       });
       const signBody = await signRes.json();
       if (!signRes.ok) {
-        alert(signBody.error || "Erreur");
+        toast.error(signBody.error || "Dépôt impossible. Réessayez dans un instant.");
         return;
       }
 
@@ -60,7 +64,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
         body: file,
       });
       if (!putRes.ok) {
-        alert("Échec du dépôt sur le stockage");
+        toast.error("Échec du dépôt sur le stockage. Réessayez dans un instant.");
         return;
       }
 
@@ -71,7 +75,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
       });
       const confirmBody = await confirmRes.json();
       if (!confirmRes.ok) {
-        alert(confirmBody.error || "Erreur");
+        toast.error(confirmBody.error || "Dépôt impossible. Réessayez dans un instant.");
         return;
       }
 
@@ -80,42 +84,44 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
         filename: confirmBody.sheet.filename,
         uploadedAt: confirmBody.sheet.uploadedAt,
       });
+      toast.success("Trame déposée");
     } catch {
-      alert("Erreur");
+      toast.error("Opération impossible. Vérifiez votre connexion.");
     } finally {
       setUploading(false);
     }
   }
 
   async function handleRemove() {
-    if (!confirm("Retirer la trame des annonces déposée ?")) return;
     setRemoving(true);
     try {
       const res = await fetch(`/api/events/${eventId}/announcement-sheet`, { method: "DELETE" });
       if (!res.ok) {
         const body = await res.json();
-        alert(body.error || "Erreur");
+        toast.error(body.error || "Retrait impossible. Réessayez dans un instant.");
         return;
       }
       onChange({ ...data, filename: null, uploadedAt: null });
+      toast.success("Trame retirée");
     } catch {
-      alert("Erreur");
+      toast.error("Opération impossible. Vérifiez votre connexion.");
     } finally {
       setRemoving(false);
+      setConfirmRemove(false);
     }
   }
 
   return (
-    <div className={embedded ? "print:hidden" : "mb-6 p-4 bg-white rounded-lg shadow print:hidden"}>
-      <h2 className={embedded ? "text-sm font-semibold text-gray-700 mb-3" : "text-lg font-semibold text-gray-900 mb-3"}>
+    <div className={embedded ? "print:hidden" : "mb-6 rounded-card border border-line bg-surface p-4 print:hidden"}>
+      <h2 className={embedded ? "mb-3 font-display text-sm font-semibold text-ink" : "mb-3 font-display text-lg font-semibold text-ink"}>
         Trame des annonces
       </h2>
 
       {data.filename ? (
         <div className="flex flex-wrap items-center gap-3">
           <div>
-            <p className="text-sm font-medium text-gray-700">{data.filename}</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm font-medium text-ink">{data.filename}</p>
+            <p className="text-xs text-ink-muted">
               Déposée le {data.uploadedAt ? formatDate(data.uploadedAt) : ""}
             </p>
           </div>
@@ -127,17 +133,17 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
               >
-                {uploading ? "Dépôt..." : "Remplacer"}
+                {uploading ? "Dépôt…" : "Remplacer"}
               </Button>
-              <Button variant="danger" size="sm" onClick={handleRemove} disabled={removing}>
-                {removing ? "Retrait..." : "Retirer"}
+              <Button variant="danger" size="sm" onClick={() => setConfirmRemove(true)} disabled={removing}>
+                {removing ? "Retrait…" : "Retirer"}
               </Button>
             </>
           )}
         </div>
       ) : (
         <div className="flex items-center gap-3">
-          <span className="text-sm italic text-gray-400">Pas encore disponible</span>
+          <span className="text-sm italic text-ink-muted">Pas encore disponible</span>
           {data.canDeposit && (
             <Button
               variant="secondary"
@@ -145,7 +151,7 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
             >
-              {uploading ? "Dépôt..." : "Déposer"}
+              {uploading ? "Dépôt…" : "Déposer"}
             </Button>
           )}
         </div>
@@ -160,6 +166,17 @@ export default function AnnouncementSheetManager({ eventId, data, onChange, embe
           className="hidden"
         />
       )}
+      <ConfirmModal
+        open={confirmRemove}
+        title="Retirer la trame des annonces ?"
+        message="Le fichier déposé ne sera plus téléchargeable pour ce culte."
+        confirmLabel="Retirer la trame"
+        confirmingLabel="Retrait…"
+        variant="danger"
+        confirming={removing}
+        onConfirm={handleRemove}
+        onCancel={() => setConfirmRemove(false)}
+      />
     </div>
   );
 }

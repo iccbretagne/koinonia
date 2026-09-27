@@ -6,11 +6,11 @@ import ParcoursView, { type Journey } from "./ParcoursView";
 export default async function ParcoursPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const { scope } = await requireIntegrationAccess(churchId);
   if (scope.scoped) {
-    return <p className="p-4 text-gray-500">Accès non autorisé aux parcours.</p>;
+    return <p className="p-4 text-ink-muted">Accès non autorisé aux parcours.</p>;
   }
 
   const journeys = await prisma.personJourney.findMany({

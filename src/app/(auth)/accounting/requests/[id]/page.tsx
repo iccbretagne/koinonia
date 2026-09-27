@@ -13,13 +13,13 @@ export default async function AccountingRequestDetailPage({
   const { id } = await params;
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
   if (!perms.includes("accounting:view") && !isPastoral) {
-    return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
+    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
   const req = await prisma.financialRequest.findUnique({
@@ -75,11 +75,11 @@ export default async function AccountingRequestDetailPage({
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
-        <Link href="/accounting/requests" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+        <Link href="/accounting/requests" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
           ← Demandes
         </Link>
-        <span className="text-gray-300">/</span>
-        <span className="text-sm text-gray-600 font-medium truncate">{req.label}</span>
+        <span className="text-ink-subtle">/</span>
+        <span className="text-sm text-ink-muted font-medium truncate">{req.label}</span>
       </div>
       <RequestDetail
         request={serialized}

@@ -10,6 +10,26 @@ import MonthlyPlanningView from "@/components/MonthlyPlanningView";
 import DepartmentTasksView from "@/components/DepartmentTasksView";
 import WeeklyPlanningView from "@/components/WeeklyPlanningView";
 import TeamEventsView from "@/components/TeamEventsView";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import { CalendarSearch, Church, LayoutGrid } from "lucide-react";
+
+/** État vide commun : aucun département ou aucun événement sélectionné. */
+function SelectPrompt({ needsDepartment }: { readonly needsDepartment: boolean }) {
+  return (
+    <div className="rounded-card border border-line bg-surface">
+      <EmptyState
+        icon={needsDepartment ? LayoutGrid : CalendarSearch}
+        title={needsDepartment ? "Choisissez un département" : "Choisissez un événement"}
+        description={
+          needsDepartment
+            ? "Sélectionnez un département dans le menu pour afficher son planning."
+            : "Sélectionnez un mois et un événement ci-dessus pour saisir le planning."
+        }
+      />
+    </div>
+  );
+}
 
 interface DashboardProps {
   readonly searchParams: Promise<{ dept?: string; event?: string; view?: string; tour?: string }>;
@@ -38,9 +58,11 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
   if (!currentChurchId) {
     return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        Vous n&apos;êtes assigné à aucune église.
-      </div>
+      <EmptyState
+        icon={Church}
+        title="Aucune église"
+        description="Vous n'êtes rattaché à aucune église. Contactez un administrateur."
+      />
     );
   }
 
@@ -146,25 +168,29 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         })
       : [];
 
+  // Nom du département : déjà chargé pour les vues semaine/mois/tâches/équipe, et porté par les
+  // événements (eventDepts.department) pour la vue saisie — sans requête supplémentaire.
+  const departmentName =
+    selectedDepartment?.name ??
+    events.flatMap((e) => e.eventDepts).find((ed) => ed.departmentId === selectedDeptId)?.department.name;
+
   return (
-    <div>
-      <div className="mb-4 md:mb-6">
+    <div className="flex flex-col gap-6">
+      <PageHeader eyebrow="Planning du département" title={departmentName ?? "Planning"}>
         <DashboardActions />
-      </div>
+      </PageHeader>
 
       {view === "event" && (
-        <div className="mb-4 md:mb-6">
-          <EventSelector
-            events={events.map((e) => ({
-              id: e.id,
-              title: e.title,
-              type: e.type,
-              date: e.date.toISOString(),
-            }))}
-            selectedEventId={selectedEventId || null}
-            selectedDeptId={selectedDeptId || null}
-          />
-        </div>
+        <EventSelector
+          events={events.map((e) => ({
+            id: e.id,
+            title: e.title,
+            type: e.type,
+            date: e.date.toISOString(),
+          }))}
+          selectedEventId={selectedEventId || null}
+          selectedDeptId={selectedDeptId || null}
+        />
       )}
 
       {view === "week" ? (
@@ -177,9 +203,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             canEdit={canEditPlanning}
           />
         ) : (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-            Sélectionnez un département dans le menu
-          </div>
+          <SelectPrompt needsDepartment />
         )
       ) : view === "tasks" ? (
         selectedDeptId ? (
@@ -189,17 +213,13 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             readOnly={!canEditPlanning}
           />
         ) : (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-            Sélectionnez un département dans le menu
-          </div>
+          <SelectPrompt needsDepartment />
         )
       ) : view === "month" ? (
         selectedDeptId ? (
           <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
         ) : (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-            Sélectionnez un département dans le menu
-          </div>
+          <SelectPrompt needsDepartment />
         )
       ) : view === "team" ? (
         selectedDeptId ? (
@@ -209,9 +229,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
             canEdit={canEditPlanning}
           />
         ) : (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-            Sélectionnez un département dans le menu
-          </div>
+          <SelectPrompt needsDepartment />
         )
       ) : selectedEventId && selectedDeptId ? (
         <PlanningGrid
@@ -221,11 +239,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
           canViewAbsences={canViewAbsences}
         />
       ) : (
-        <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-          {!selectedDeptId
-            ? "Sélectionnez un département dans le menu"
-            : "Sélectionnez un événement ci-dessus"}
-        </div>
+        <SelectPrompt needsDepartment={!selectedDeptId} />
       )}
     </div>
   );

@@ -217,15 +217,15 @@ export default function ReportsClient({ events, churchId }: Props) {
   return (
     <div>
       {/* Onglets */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
+      <div className="flex gap-1 mb-6 border-b border-line">
         {(["list", "stats"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-3 sm:py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === t
-                ? "border-icc-violet text-icc-violet"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-brand text-brand-text"
+                : "border-transparent text-ink-muted hover:text-ink-muted"
             }`}
           >
             {t === "list" ? "Liste des CRs" : "Statistiques"}
@@ -239,7 +239,7 @@ export default function ReportsClient({ events, churchId }: Props) {
           {/* Filtres */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-xs">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -247,13 +247,13 @@ export default function ReportsClient({ events, churchId }: Props) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher un événement..."
-                className="w-full pl-9 pr-3 py-1.5 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent"
+                className="w-full pl-9 pr-3 py-1.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
             <select
               value={listMonthFilter}
               onChange={(e) => setListMonthFilter(e.target.value)}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
             >
               <option value="all">Tous les mois</option>
               {availableMonths.map((m) => (
@@ -265,7 +265,7 @@ export default function ReportsClient({ events, churchId }: Props) {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
             >
               <option value="all">Tous les types</option>
               {availableTypes.map((t) => (
@@ -275,14 +275,14 @@ export default function ReportsClient({ events, churchId }: Props) {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
             >
               <option value="all">Tous les statuts</option>
               <option value="done">Complété</option>
               <option value="empty">Vide</option>
               <option value="none">Aucun CR</option>
             </select>
-            <span className="text-xs text-gray-400 ml-auto">
+            <span className="text-xs text-ink-subtle ml-auto">
               {filteredListEvents.length}/{events.length} événement{events.length > 1 ? "s" : ""}
             </span>
           </div>
@@ -299,38 +299,38 @@ export default function ReportsClient({ events, churchId }: Props) {
               const accueil = event.report ? getAccueilStats(event.report.sections) : null;
 
               return (
-                <div key={event.id} className="bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4 flex-wrap">
+                <div key={event.id} className="bg-surface rounded-lg border border-line shadow-card px-5 py-4 flex items-center gap-4 flex-wrap">
                   {/* Statut */}
-                  <span className={`shrink-0 w-2 h-2 rounded-full ${status === "done" ? "bg-green-500" : status === "empty" ? "bg-amber-400" : "bg-gray-200"}`} />
+                  <span className={`shrink-0 w-2 h-2 rounded-full ${status === "done" ? "bg-success-soft0" : status === "empty" ? "bg-warning" : "bg-surface-sunken"}`} />
 
                   {/* Infos événement */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{event.title}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm font-semibold text-ink truncate">{event.title}</p>
+                    <p className="text-xs text-ink-subtle">
                       {fmtDate(event.date)} · {event.type}
                       {event.report && (
-                        <span className="ml-2 text-gray-300">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
+                        <span className="ml-2 text-ink-subtle">· Modifié {fmtDateTime(event.report.updatedAt)}</span>
                       )}
                     </p>
                   </div>
 
                   {/* Mini stats Accueil si disponibles */}
                   {accueil && (
-                    <div className="flex gap-3 text-xs text-gray-500 shrink-0">
-                      <span className="text-blue-600 font-medium">{accueil.hommes}H</span>
-                      <span className="text-pink-600 font-medium">{accueil.femmes}F</span>
-                      <span className="font-semibold text-gray-700">{accueil.total} total</span>
+                    <div className="flex gap-3 text-xs text-ink-muted shrink-0">
+                      <span className="text-info font-medium">{accueil.hommes}H</span>
+                      <span className="text-danger font-medium">{accueil.femmes}F</span>
+                      <span className="font-semibold text-ink-muted">{accueil.total} total</span>
                     </div>
                   )}
 
                   {/* Badge + action */}
                   <div className="flex items-center gap-2 shrink-0">
-                    {status === "done" && <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">Complété</span>}
-                    {status === "empty" && <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">Vide</span>}
-                    {status === "none" && <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-medium">Aucun CR</span>}
+                    {status === "done" && <span className="text-xs bg-success-soft text-success border border-success/30 px-2 py-0.5 rounded-full font-medium">Complété</span>}
+                    {status === "empty" && <span className="text-xs bg-warning-soft text-warning border border-warning/30 px-2 py-0.5 rounded-full font-medium">Vide</span>}
+                    {status === "none" && <span className="text-xs bg-surface-sunken text-ink-muted border border-line px-2 py-0.5 rounded-full font-medium">Aucun CR</span>}
                     <Link
                       href={`/admin/events/${event.id}/report`}
-                      className="text-xs font-medium text-icc-violet hover:underline"
+                      className="text-xs font-medium text-brand-text hover:underline"
                     >
                       {status === "none" ? "Saisir →" : "Voir / Modifier →"}
                     </Link>
@@ -339,7 +339,7 @@ export default function ReportsClient({ events, churchId }: Props) {
               );
             })}
             {filteredListEvents.length === 0 && (
-              <p className="text-center text-gray-400 py-12">
+              <p className="text-center text-ink-subtle py-12">
                 {events.length === 0
                   ? "Aucun événement avec compte rendu activé."
                   : "Aucun événement ne correspond aux filtres sélectionnés."}
@@ -354,11 +354,11 @@ export default function ReportsClient({ events, churchId }: Props) {
         <div className="space-y-6">
           {/* Filtre période */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Période :</label>
+            <label className="text-sm font-medium text-ink-muted">Période :</label>
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              className="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+              className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
             >
               <option value="all">Toute la période</option>
               {availableMonths.map((m) => (
@@ -367,30 +367,30 @@ export default function ReportsClient({ events, churchId }: Props) {
                 </option>
               ))}
             </select>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-ink-subtle">
               {withReport}/{totalEvents} événements avec CR · {pending} en attente
             </span>
           </div>
 
           {/* Export Excel */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 bg-white rounded-lg border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 bg-surface rounded-lg border border-line shadow-card px-5 py-4">
             <div className="flex gap-3 flex-1">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Du</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Du</label>
                 <input
                   type="date"
                   value={exportFrom}
                   onChange={(e) => setExportFrom(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Au</label>
+                <label className="block text-xs font-medium text-ink-muted mb-1">Au</label>
                 <input
                   type="date"
                   value={exportTo}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet"
+                  className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
                 />
               </div>
             </div>
@@ -415,7 +415,7 @@ export default function ReportsClient({ events, churchId }: Props) {
                   setExporting(false);
                 }
               }}
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-icc-violet text-white px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-brand text-on-brand px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -426,113 +426,113 @@ export default function ReportsClient({ events, churchId }: Props) {
 
           {/* Bloc Présence (Accueil) */}
           {accueilAgg ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-blue-50 border-b border-blue-100">
-                <h3 className="text-sm font-semibold text-blue-800">Présence au culte (Accueil)</h3>
-                <p className="text-xs text-blue-600 mt-0.5">{accueilAgg.count} culte{accueilAgg.count > 1 ? "s" : ""} avec statistiques</p>
+            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+              <div className="px-5 py-3 bg-info-soft border-b border-info/30">
+                <h3 className="text-sm font-semibold text-info">Présence au culte (Accueil)</h3>
+                <p className="text-xs text-info mt-0.5">{accueilAgg.count} culte{accueilAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
               <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Hommes (total)",   value: accueilAgg.hommes,    sub: `moy. ${Math.round(accueilAgg.hommes / accueilAgg.count)}/culte`,   color: "text-blue-600" },
-                  { label: "Femmes (total)",    value: accueilAgg.femmes,    sub: `moy. ${Math.round(accueilAgg.femmes / accueilAgg.count)}/culte`,   color: "text-pink-600" },
-                  { label: "Adultes (total)",   value: accueilAgg.adultes,   sub: `moy. ${accueilAgg.avgAdultes}/culte`,   color: "text-icc-violet" },
-                  { label: "Général (total)",   value: accueilAgg.total,     sub: `moy. ${accueilAgg.avgTotal}/culte`,     color: "text-gray-700" },
+                  { label: "Hommes (total)",   value: accueilAgg.hommes,    sub: `moy. ${Math.round(accueilAgg.hommes / accueilAgg.count)}/culte`,   color: "text-info" },
+                  { label: "Femmes (total)",    value: accueilAgg.femmes,    sub: `moy. ${Math.round(accueilAgg.femmes / accueilAgg.count)}/culte`,   color: "text-danger" },
+                  { label: "Adultes (total)",   value: accueilAgg.adultes,   sub: `moy. ${accueilAgg.avgAdultes}/culte`,   color: "text-brand-text" },
+                  { label: "Général (total)",   value: accueilAgg.total,     sub: `moy. ${accueilAgg.avgTotal}/culte`,     color: "text-ink-muted" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
-                    <div className="text-xs text-gray-400">{s.sub}</div>
+                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
+                    <div className="text-xs text-ink-subtle">{s.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">Aucune donnée Accueil sur cette période.</p>
+            <p className="text-sm text-ink-subtle italic">Aucune donnée Accueil sur cette période.</p>
           )}
 
           {/* Bloc Intégration */}
           {integrationAgg ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-green-50 border-b border-green-100">
-                <h3 className="text-sm font-semibold text-green-800">Intégration</h3>
+            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+              <div className="px-5 py-3 bg-success-soft border-b border-success/30">
+                <h3 className="text-sm font-semibold text-success">Intégration</h3>
               </div>
               <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                 {[
-                  { label: "Nouveaux (H)", value: integrationAgg.hommes,    color: "text-blue-600" },
-                  { label: "Nouveaux (F)", value: integrationAgg.femmes,    color: "text-pink-600" },
-                  { label: "De passage",   value: integrationAgg.passage,   color: "text-gray-600" },
-                  { label: "Convertis",    value: integrationAgg.convertis, color: "text-green-600" },
-                  { label: "Renouvellement vœux", value: integrationAgg.voeux, color: "text-icc-violet" },
+                  { label: "Nouveaux (H)", value: integrationAgg.hommes,    color: "text-info" },
+                  { label: "Nouveaux (F)", value: integrationAgg.femmes,    color: "text-danger" },
+                  { label: "De passage",   value: integrationAgg.passage,   color: "text-ink-muted" },
+                  { label: "Convertis",    value: integrationAgg.convertis, color: "text-success" },
+                  { label: "Renouvellement vœux", value: integrationAgg.voeux, color: "text-brand-text" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">Aucune donnée Intégration sur cette période.</p>
+            <p className="text-sm text-ink-subtle italic">Aucune donnée Intégration sur cette période.</p>
           )}
 
           {/* Bloc Sainte Cène */}
           {sainteCeneAgg ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-amber-50 border-b border-amber-100">
-                <h3 className="text-sm font-semibold text-amber-800">Sainte Cène</h3>
+            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+              <div className="px-5 py-3 bg-warning-soft border-b border-warning/30">
+                <h3 className="text-sm font-semibold text-warning">Sainte Cène</h3>
               </div>
               <div className="p-5 grid grid-cols-2 gap-4 max-w-xs">
                 {[
-                  { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises, color: "text-amber-700" },
-                  { label: "Supports restants",  value: sainteCeneAgg.supportsRestants, color: "text-gray-600" },
+                  { label: "Supports utilisés", value: sainteCeneAgg.supportsUtilises, color: "text-warning" },
+                  { label: "Supports restants",  value: sainteCeneAgg.supportsRestants, color: "text-ink-muted" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">Aucune donnée Sainte Cène sur cette période.</p>
+            <p className="text-sm text-ink-subtle italic">Aucune donnée Sainte Cène sur cette période.</p>
           )}
 
           {/* Bloc Navette */}
           {navetteAgg ? (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-sky-50 border-b border-sky-100">
-                <h3 className="text-sm font-semibold text-sky-800">Navette</h3>
-                <p className="text-xs text-sky-600 mt-0.5">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
+            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+              <div className="px-5 py-3 bg-info-soft border-b border-info/30">
+                <h3 className="text-sm font-semibold text-info">Navette</h3>
+                <p className="text-xs text-info mt-0.5">{navetteAgg.count} culte{navetteAgg.count > 1 ? "s" : ""} avec statistiques</p>
               </div>
               <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte`,  color: "text-blue-600" },
-                  { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte`,  color: "text-pink-600" },
-                  { label: "Enfants (total)", value: navetteAgg.enfants,   sub: `moy. ${Math.round(navetteAgg.enfants / navetteAgg.count)}/culte`, color: "text-yellow-600" },
-                  { label: "Total général",   value: navetteAgg.total,     sub: `moy. ${navetteAgg.avgTotal}/culte`,                               color: "text-sky-700" },
+                  { label: "Hommes (total)",  value: navetteAgg.hommes,    sub: `moy. ${Math.round(navetteAgg.hommes / navetteAgg.count)}/culte`,  color: "text-info" },
+                  { label: "Femmes (total)",  value: navetteAgg.femmes,    sub: `moy. ${Math.round(navetteAgg.femmes / navetteAgg.count)}/culte`,  color: "text-danger" },
+                  { label: "Enfants (total)", value: navetteAgg.enfants,   sub: `moy. ${Math.round(navetteAgg.enfants / navetteAgg.count)}/culte`, color: "text-warning" },
+                  { label: "Total général",   value: navetteAgg.total,     sub: `moy. ${navetteAgg.avgTotal}/culte`,                               color: "text-info" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-                    <div className="text-xs text-gray-500 mt-1">{s.label}</div>
-                    <div className="text-xs text-gray-400">{s.sub}</div>
+                    <div className="text-xs text-ink-muted mt-1">{s.label}</div>
+                    <div className="text-xs text-ink-subtle">{s.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">Aucune donnée Navette sur cette période.</p>
+            <p className="text-sm text-ink-subtle italic">Aucune donnée Navette sur cette période.</p>
           )}
 
           {/* Détail par événement */}
           {withReport > 0 && (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700">Détail par événement</h3>
+            <div className="bg-surface rounded-xl border border-line shadow-card overflow-hidden">
+              <div className="px-5 py-3 border-b border-line">
+                <h3 className="text-sm font-semibold text-ink-muted">Détail par événement</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
-                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr className="bg-surface-sunken text-xs text-ink-muted uppercase">
                       <th className="px-4 py-2 text-left font-medium">Événement</th>
                       <th className="px-4 py-2 text-center font-medium">H</th>
                       <th className="px-4 py-2 text-center font-medium">F</th>
@@ -541,22 +541,22 @@ export default function ReportsClient({ events, churchId }: Props) {
                       <th className="px-4 py-2 text-center font-medium">Total général</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-line">
                     {filteredEvents.filter((e) => e.report?.hasContent).map((e) => {
                       const acc = getAccueilStats(e.report!.sections);
                       return (
-                        <tr key={e.id} className="hover:bg-gray-50">
+                        <tr key={e.id} className="hover:bg-surface-sunken">
                           <td className="px-4 py-2">
-                            <Link href={`/admin/events/${e.id}/report`} className="text-icc-violet hover:underline font-medium">
+                            <Link href={`/admin/events/${e.id}/report`} className="text-brand-text hover:underline font-medium">
                               {e.title}
                             </Link>
-                            <span className="text-gray-400 ml-2">{fmtDate(e.date)}</span>
+                            <span className="text-ink-subtle ml-2">{fmtDate(e.date)}</span>
                           </td>
-                          <td className="px-4 py-2 text-center text-blue-600 font-medium">{acc?.hommes ?? "—"}</td>
-                          <td className="px-4 py-2 text-center text-pink-600 font-medium">{acc?.femmes ?? "—"}</td>
+                          <td className="px-4 py-2 text-center text-info font-medium">{acc?.hommes ?? "—"}</td>
+                          <td className="px-4 py-2 text-center text-danger font-medium">{acc?.femmes ?? "—"}</td>
                           <td className="px-4 py-2 text-center">{acc?.enfants ?? "—"}</td>
                           <td className="px-4 py-2 text-center font-semibold">{acc?.adultes ?? "—"}</td>
-                          <td className="px-4 py-2 text-center font-semibold text-gray-700">{acc?.total ?? "—"}</td>
+                          <td className="px-4 py-2 text-center font-semibold text-ink-muted">{acc?.total ?? "—"}</td>
                         </tr>
                       );
                     })}

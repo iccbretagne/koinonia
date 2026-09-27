@@ -162,11 +162,11 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
 
       {/* Modale de confirmation série */}
       {pendingAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Modifier la série</h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Vous souhaitez <span className="font-medium text-gray-700">{actionLabel(pendingAction)}</span>. Appliquer à :
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim">
+          <div className="bg-surface rounded-xl shadow-overlay p-6 w-full max-w-sm mx-4">
+            <h3 className="text-base font-semibold text-ink mb-1">Modifier la série</h3>
+            <p className="text-sm text-ink-muted mb-4">
+              Vous souhaitez <span className="font-medium text-ink-muted">{actionLabel(pendingAction)}</span>. Appliquer à :
             </p>
             <div className="space-y-3 mb-5">
               <label className="flex items-center gap-3 cursor-pointer">
@@ -176,9 +176,9 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
                   value="single"
                   checked={seriesScope === "single"}
                   onChange={() => setSeriesScope("single")}
-                  className="h-4 w-4 text-icc-violet border-gray-300 focus:ring-icc-violet"
+                  className="h-4 w-4 text-brand-text border-control-line focus:ring-focus"
                 />
-                <span className="text-sm text-gray-700">Cet événement uniquement</span>
+                <span className="text-sm text-ink-muted">Cet événement uniquement</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -187,9 +187,9 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
                   value="future"
                   checked={seriesScope === "future"}
                   onChange={() => setSeriesScope("future")}
-                  className="h-4 w-4 text-icc-violet border-gray-300 focus:ring-icc-violet"
+                  className="h-4 w-4 text-brand-text border-control-line focus:ring-focus"
                 />
-                <span className="text-sm text-gray-700">Cet événement et les suivants de la série</span>
+                <span className="text-sm text-ink-muted">Cet événement et les suivants de la série</span>
               </label>
             </div>
             <div className="flex gap-3 justify-end">
@@ -200,8 +200,8 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         </div>
       )}
 
-      <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
+        <h2 className="text-lg font-semibold text-ink mb-3">
           Annonces
         </h2>
         <label className="flex items-center gap-3 cursor-pointer">
@@ -210,33 +210,33 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
             aria-checked={allowAnnouncements}
             onClick={() => requestAction({ type: "allowAnnouncements" })}
             disabled={savingAnnouncements}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
-              allowAnnouncements ? "bg-icc-violet" : "bg-gray-200"
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${
+              allowAnnouncements ? "bg-brand" : "bg-surface-sunken"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                 allowAnnouncements ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-ink-muted">
             Accepter les demandes d&apos;annonces
           </span>
           {allowAnnouncements && (
-            <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
               Actif
             </span>
           )}
         </label>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-ink-muted">
           Si activé, cet événement apparaîtra dans le sélecteur lors de la
           soumission d&apos;une annonce.
         </p>
       </div>
 
-      <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
+        <h2 className="text-lg font-semibold text-ink mb-3">
           Discipolat
         </h2>
         <label className="flex items-center gap-3 cursor-pointer">
@@ -245,33 +245,33 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
             aria-checked={trackedForDiscipleship}
             onClick={() => requestAction({ type: "trackedForDiscipleship" })}
             disabled={savingDiscipleship}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${
-              trackedForDiscipleship ? "bg-icc-violet" : "bg-gray-200"
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${
+              trackedForDiscipleship ? "bg-brand" : "bg-surface-sunken"
             }`}
           >
             <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${
                 trackedForDiscipleship ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-ink-muted">
             Suivre les présences pour le discipolat
           </span>
           {trackedForDiscipleship && (
-            <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">
               Actif
             </span>
           )}
         </label>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-ink-muted">
           Si activé, cet événement apparaîtra dans le module discipolat pour
           l&apos;enregistrement des présences des disciples.
         </p>
       </div>
 
-      <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Compte rendu</h2>
+      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
+        <h2 className="text-lg font-semibold text-ink mb-3">Compte rendu</h2>
         <div className="space-y-3">
           <label className="flex items-center gap-3 cursor-pointer">
             <button
@@ -279,12 +279,12 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
               aria-checked={reportEnabled}
               onClick={() => requestAction({ type: "reportEnabled" })}
               disabled={savingReport}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${reportEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${reportEnabled ? "bg-brand" : "bg-surface-sunken"}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reportEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${reportEnabled ? "translate-x-6" : "translate-x-1"}`} />
             </button>
-            <span className="text-sm font-medium text-gray-700">Activer le compte rendu</span>
-            {reportEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+            <span className="text-sm font-medium text-ink-muted">Activer le compte rendu</span>
+            {reportEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <button
@@ -292,19 +292,19 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
               aria-checked={statsEnabled}
               onClick={() => requestAction({ type: "statsEnabled" })}
               disabled={savingStats}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${statsEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${statsEnabled ? "bg-brand" : "bg-surface-sunken"}`}
             >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${statsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${statsEnabled ? "translate-x-6" : "translate-x-1"}`} />
             </button>
-            <span className="text-sm font-medium text-gray-700">Activer les statistiques</span>
-            {statsEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+            <span className="text-sm font-medium text-ink-muted">Activer les statistiques</span>
+            {statsEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
           </label>
         </div>
         {reportEnabled && (
           <div className="mt-4">
             <Link
               href={`/admin/events/${eventId}/report`}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-on-brand bg-brand rounded-lg hover:bg-brand-hover transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -315,29 +315,29 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         )}
       </div>
 
-      <div className="mb-6 p-4 bg-white rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Service d&apos;accueil</h2>
+      <div className="mb-6 p-4 bg-surface rounded-lg shadow-card">
+        <h2 className="text-lg font-semibold text-ink mb-3">Service d&apos;accueil</h2>
         <label className="flex items-center gap-3 cursor-pointer">
           <button
             role="switch"
             aria-checked={welcomeDutyEnabled}
             onClick={() => requestAction({ type: "welcomeDutyEnabled" })}
             disabled={savingWelcomeDuty}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-icc-violet focus:ring-offset-2 disabled:opacity-50 ${welcomeDutyEnabled ? "bg-icc-violet" : "bg-gray-200"}`}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 ${welcomeDutyEnabled ? "bg-brand" : "bg-surface-sunken"}`}
           >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${welcomeDutyEnabled ? "translate-x-6" : "translate-x-1"}`} />
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-surface transition-transform ${welcomeDutyEnabled ? "translate-x-6" : "translate-x-1"}`} />
           </button>
-          <span className="text-sm font-medium text-gray-700">Familles de service attendues</span>
-          {welcomeDutyEnabled && <span className="text-xs bg-icc-violet/10 text-icc-violet px-2 py-0.5 rounded-full font-medium">Actif</span>}
+          <span className="text-sm font-medium text-ink-muted">Familles de service attendues</span>
+          {welcomeDutyEnabled && <span className="text-xs bg-brand-soft text-brand-text px-2 py-0.5 rounded-full font-medium">Actif</span>}
         </label>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-ink-muted">
           Si activé, cet événement apparaît dans le planning d&apos;accueil pour l&apos;affectation des familles.
         </p>
         {welcomeDutyEnabled && (
           <div className="mt-3">
             <Link
               href="/admin/welcome-duty"
-              className="inline-flex items-center gap-1.5 text-xs text-icc-violet hover:text-icc-violet/80"
+              className="inline-flex items-center gap-1.5 text-xs text-brand-text hover:text-brand-text"
             >
               Gérer les affectations →
             </Link>
@@ -345,14 +345,14 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
         )}
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <h2 className="text-lg font-semibold text-ink mb-4">
         Départements associés
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(grouped).map(([ministry, deps]) => (
-          <div key={ministry} className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">
+          <div key={ministry} className="bg-surface rounded-lg shadow-card p-4">
+            <h3 className="text-sm font-semibold text-ink-muted uppercase mb-3">
               {ministry}
             </h3>
             <div className="space-y-2">
@@ -366,12 +366,12 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
                     checked={d.linked}
                     onChange={() => requestAction({ type: "department", dept: d })}
                     disabled={loading === d.id}
-                    className="h-4 w-4 rounded border-gray-300 text-icc-violet focus:ring-icc-violet"
+                    className="h-4 w-4 rounded border-control-line text-brand-text focus:ring-focus"
                   />
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-ink-muted">
                     {d.name}
                     {loading === d.id && (
-                      <span className="ml-2 text-gray-400">...</span>
+                      <span className="ml-2 text-ink-subtle">...</span>
                     )}
                   </span>
                 </label>

@@ -31,9 +31,9 @@ const TYPE_LABELS: Record<JobType, string> = {
 };
 
 const TYPE_COLORS: Record<JobType, string> = {
-  EMPLOI:     "bg-icc-violet/10 text-icc-violet",
-  STAGE:      "bg-icc-bleu/10 text-icc-bleu",
-  ALTERNANCE: "bg-icc-jaune/20 text-amber-700",
+  EMPLOI:     "bg-brand-soft text-brand-text",
+  STAGE:      "bg-info-soft text-info",
+  ALTERNANCE: "bg-accent-soft text-warning",
 };
 
 export default function JobDetailClient({
@@ -109,18 +109,18 @@ export default function JobDetailClient({
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs" className="text-sm text-gray-400 hover:text-gray-600">← Toutes les offres</Link>
+        <Link href="/jobs" className="text-sm text-ink-subtle hover:text-ink-muted">← Toutes les offres</Link>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+      <div className="bg-surface rounded-lg border border-line p-6">
         {isArchived && (
-          <div className="mb-4 px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
+          <div className="mb-4 px-4 py-2 bg-surface-sunken text-ink-muted text-sm rounded-lg">
             Cette offre est archivée et n&apos;est plus visible dans la liste.
           </div>
         )}
 
         {showRenewalBanner && (
-          <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="mb-4 px-4 py-3 bg-warning-soft border border-warning/30 text-warning text-sm rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
             <span className="flex-1">
               Sans confirmation, cette offre sera archivée automatiquement le{" "}
               <strong>{archiveDate!.toLocaleDateString("fr-FR")}</strong>.
@@ -128,7 +128,7 @@ export default function JobDetailClient({
             <button
               onClick={confirmStillActive}
               disabled={confirming}
-              className="shrink-0 px-3 py-1.5 text-xs font-semibold bg-icc-violet text-white rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+              className="shrink-0 px-3 py-1.5 text-xs font-semibold bg-brand text-on-brand rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
             >
               {confirming ? "…" : "Toujours d'actualité"}
             </button>
@@ -140,9 +140,9 @@ export default function JobDetailClient({
             <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mb-2 ${TYPE_COLORS[job.type]}`}>
               {TYPE_LABELS[job.type]}
             </span>
-            <h1 className="text-xl font-bold text-gray-900">{job.title}</h1>
-            <p className="text-gray-600 mt-0.5">{job.company}</p>
-            {job.location && <p className="text-sm text-gray-400 mt-0.5">{job.location}</p>}
+            <h1 className="text-xl font-bold text-ink">{job.title}</h1>
+            <p className="text-ink-muted mt-0.5">{job.company}</p>
+            {job.location && <p className="text-sm text-ink-subtle mt-0.5">{job.location}</p>}
           </div>
 
           {(canManage || isAuthor) && (
@@ -150,7 +150,7 @@ export default function JobDetailClient({
               {isAuthor && !isArchived && (
                 <Link
                   href={`/jobs/${job.id}/edit`}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken transition-colors"
                 >
                   Modifier
                 </Link>
@@ -159,7 +159,7 @@ export default function JobDetailClient({
                 <button
                   onClick={toggleArchive}
                   disabled={archiving}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
                   {archiving ? "…" : isArchived ? "Republier" : "Archiver"}
                 </button>
@@ -168,7 +168,7 @@ export default function JobDetailClient({
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="px-3 py-1.5 text-xs font-semibold border-2 border-icc-rouge/30 text-icc-rouge rounded-lg hover:bg-icc-rouge/5 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold border border-danger/30 text-danger rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors"
                 >
                   {deleting ? "…" : "Supprimer"}
                 </button>
@@ -178,31 +178,31 @@ export default function JobDetailClient({
         </div>
 
         {/* Metadata */}
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500 mb-5 py-3 border-y border-gray-100">
-          {job.duration && <span>Durée : <strong className="text-gray-700">{job.duration}</strong></span>}
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-muted mb-5 py-3 border-y border-line">
+          {job.duration && <span>Durée : <strong className="text-ink-muted">{job.duration}</strong></span>}
           {deadlineDate && (
             <span>
-              Date limite : <strong className="text-gray-700">{deadlineDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong>
+              Date limite : <strong className="text-ink-muted">{deadlineDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong>
             </span>
           )}
           <span>
-            Publié par <strong className="text-gray-700">{authorName}</strong> le {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+            Publié par <strong className="text-ink-muted">{authorName}</strong> le {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
           </span>
         </div>
 
         {/* Description */}
         <div className="prose prose-sm max-w-none">
-          <p className="text-gray-700 whitespace-pre-wrap">{job.description}</p>
+          <p className="text-ink-muted whitespace-pre-wrap">{job.description}</p>
         </div>
 
         {/* Contact */}
         {(job.contactEmail || job.contactUrl) && (
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 mb-2">Candidature</p>
+          <div className="mt-6 pt-5 border-t border-line">
+            <p className="text-sm font-semibold text-ink-muted mb-2">Candidature</p>
             {job.contactEmail && (
               <a
                 href={`mailto:${job.contactEmail}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
               >
                 Envoyer un email →
               </a>
@@ -212,7 +212,7 @@ export default function JobDetailClient({
                 href={job.contactUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
               >
                 Postuler en ligne ↗
               </a>

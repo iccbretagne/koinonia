@@ -2,105 +2,46 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { ChevronRight } from "lucide-react";
+import { buildBreadcrumb, type NavSpace } from "@/lib/navigation";
 
 interface BreadcrumbProps {
-  readonly departments?: { id: string; name: string }[];
+  readonly spaces: readonly NavSpace[];
+  readonly className?: string;
 }
 
-interface BreadcrumbSegment {
-  label: string;
-  href?: string;
-}
-
-function buildBreadcrumb(pathname: string, deptName?: string): BreadcrumbSegment[] {
-  // Static route mappings
-  if (pathname === "/dashboard" || pathname.startsWith("/dashboard?")) {
-    const segments: BreadcrumbSegment[] = [{ label: "Départements", href: deptName ? "/dashboard" : undefined }];
-    if (deptName) {
-      segments.push({ label: deptName });
-    }
-    return segments;
-  }
-
-  if (pathname === "/events") {
-    return [{ label: "Événements" }];
-  }
-
-  // /events/[id]/star-view
-  if (/^\/events\/[^/]+\/star-view$/.test(pathname)) {
-    return [
-      { label: "Événements", href: "/events" },
-      { label: "Planning des STAR" },
-    ];
-  }
-
-  // /events/[id] (event detail)
-  if (/^\/events\/[^/]+$/.test(pathname)) {
-    return [
-      { label: "Événements", href: "/events" },
-      { label: "Détail" },
-    ];
-  }
-
-  // Admin routes
-  if (pathname.startsWith("/admin")) {
-    const segments: BreadcrumbSegment[] = [{ label: "Administration", href: "/admin/members" }];
-
-    if (pathname === "/admin/members") {
-      segments.push({ label: "STAR" });
-    } else if (pathname === "/admin/events") {
-      segments.push({ label: "Événements" });
-    } else if (/^\/admin\/events\/[^/]+$/.test(pathname)) {
-      segments.push({ label: "Événements", href: "/admin/events" });
-      segments.push({ label: "Détail" });
-    } else if (pathname === "/admin/churches") {
-      segments.push({ label: "Églises" });
-    } else if (/^\/admin\/churches\/[^/]+$/.test(pathname)) {
-      segments.push({ label: "Églises", href: "/admin/churches" });
-      segments.push({ label: "Détail" });
-    } else if (pathname === "/admin/users") {
-      segments.push({ label: "Utilisateurs" });
-    } else if (pathname === "/admin/ministries") {
-      segments.push({ label: "Ministères" });
-    } else if (pathname === "/admin/departments") {
-      segments.push({ label: "Départements" });
-    }
-
-    return segments;
-  }
-
-  return [];
-}
-
-function ChevronSeparator() {
-  return (
-    <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  );
-}
-
-export default function Breadcrumb({ departments = [] }: BreadcrumbProps) {
+/**
+ * Fil d'Ariane de la barre supérieure desktop (docs/design-system/guidelines/10-navigation.md) :
+ * espace › page › sous-page, déduit de la navigation du rôle. dernier segment en `ink`, les
+ * autres en `ink-muted` cliquables.
+ */
+export default function Breadcrumb({ spaces, className = "" }: BreadcrumbProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const deptId = searchParams.get("dept");
-  const deptName = deptId ? departments.find((d) => d.id === deptId)?.name : undefined;
-  const segments = buildBreadcrumb(pathname, deptName);
+  const segments = buildBreadcrumb(spaces, pathname, searchParams.get("dept"));
 
-  if (segments.length === 0) return null;
+  if (segments.length === 0) return <div className={className} />;
 
   return (
-    <nav aria-label="Fil d'Ariane" className="mb-3 md:mb-4">
-      <ol className="flex items-center gap-1.5 text-xs md:text-sm">
+    <nav aria-label="Fil d'Ariane" className={`min-w-0 ${className}`}>
+      <ol className="flex min-w-0 items-center gap-1.5 text-sm leading-5">
         {segments.map((segment, index) => {
           const isLast = index === segments.length - 1;
           return (
-            <li key={`${segment.label}-${index}`} className="flex items-center gap-1.5">
-              {index > 0 && <ChevronSeparator />}
+            <li key={`${segment.label}-${index}`} className={`flex items-center gap-1.5 ${isLast ? "min-w-0" : "shrink-0"}`}>
+              {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 text-ink-subtle" strokeWidth={1.75} />}
               {isLast || !segment.href ? (
-                <span className="text-gray-700 font-medium">{segment.label}</span>
+                <span
+                  aria-current={isLast ? "page" : undefined}
+                  className={`truncate ${isLast ? "font-semibold text-ink" : "text-ink-muted"}`}
+                >
+                  {segment.label}
+                </span>
               ) : (
-                <Link href={segment.href} className="text-icc-violet hover:underline">
+                <Link
+                  href={segment.href}
+                  className="rounded-chip text-ink-muted transition-colors duration-120 hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                >
                   {segment.label}
                 </Link>
               )}

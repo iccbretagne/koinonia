@@ -30,11 +30,11 @@ type ValidationData = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  PENDING:      "bg-gray-700 text-gray-200",
-  APPROVED:     "bg-green-600 text-white",
-  REJECTED:     "bg-red-600 text-white",
-  PREVALIDATED: "bg-blue-600 text-white",
-  PREREJECTED:  "bg-orange-600 text-white",
+  PENDING:      "bg-control-line text-ink-subtle",
+  APPROVED:     "bg-success text-surface",
+  REJECTED:     "bg-danger text-on-danger",
+  PREVALIDATED: "bg-info text-surface",
+  PREREJECTED:  "bg-warning text-surface",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -113,17 +113,17 @@ function HdLightbox({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="text-white/70 hover:text-white transition-colors" aria-label="Fermer">
+        <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors" aria-label="Fermer">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-white/60 text-xs truncate">{photo.filename}</span>
-          <span className="text-white/40 text-xs shrink-0">{formatSize(photo.size)}</span>
+          <span className="text-on-brand/60 text-xs truncate">{photo.filename}</span>
+          <span className="text-on-brand/40 text-xs shrink-0">{formatSize(photo.size)}</span>
         </div>
         {hdUrl && (
           <a
@@ -131,7 +131,7 @@ function HdLightbox({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-xs text-white/50 hover:text-white underline shrink-0 transition-colors"
+            className="text-xs text-on-brand/50 hover:text-on-brand underline shrink-0 transition-colors"
           >
             Ouvrir ↗
           </a>
@@ -148,21 +148,21 @@ function HdLightbox({
           <img
             src={hdUrl ?? photo.thumbnailUrl}
             alt={photo.filename}
-            className="max-w-full max-h-[78vh] object-contain rounded shadow-2xl"
+            className="max-w-full max-h-[78vh] object-contain rounded shadow-overlay"
             style={{ filter: hdLoading && !hdUrl ? "blur(3px)" : "none", transition: "filter 300ms" }}
           />
           {hdLoading && !hdUrl && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-on-brand/20 border-t-on-brand rounded-full animate-spin" />
             </div>
           )}
           {hdUrl && !hdLoading && (
-            <div className="absolute top-2 right-2 text-[10px] text-white/40 bg-black/40 rounded px-1.5 py-0.5">HD</div>
+            <div className="absolute top-2 right-2 text-[10px] text-on-brand/40 bg-scrim rounded px-1.5 py-0.5">HD</div>
           )}
           {/* Status badge */}
           {photo.status !== "PENDING" && (
             <div className="absolute top-2 left-2">
-              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_BADGE[photo.status] ?? "bg-gray-700 text-white"}`}>
+              <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${STATUS_BADGE[photo.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
                 {STATUS_LABELS[photo.status] ?? photo.status}
               </span>
             </div>
@@ -179,14 +179,14 @@ function HdLightbox({
           <button
             onClick={() => void handleAction(rejectStatus)}
             disabled={actionLoading}
-            className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-danger text-on-danger px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-danger/90 disabled:opacity-50 transition-colors"
           >
             ✗ {labels.rejected}
           </button>
           <button
             onClick={() => void handleAction(approveStatus)}
             disabled={actionLoading}
-            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-success text-surface px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-success/90 disabled:opacity-50 transition-colors"
           >
             ✓ {labels.approved}
           </button>
@@ -214,9 +214,9 @@ function ProgressBar({
 
   return (
     <div className="h-1 w-full flex shrink-0 overflow-hidden">
-      <div className="bg-green-500 transition-all duration-300" style={{ width: `${approvedPct}%` }} />
-      <div className="bg-red-500 transition-all duration-300"   style={{ width: `${rejectedPct}%` }} />
-      <div className="bg-white/10"                              style={{ width: `${pendingPct}%` }} />
+      <div className="bg-success transition-all duration-300" style={{ width: `${approvedPct}%` }} />
+      <div className="bg-danger transition-all duration-300"   style={{ width: `${rejectedPct}%` }} />
+      <div className="bg-ink/10"                              style={{ width: `${pendingPct}%` }} />
     </div>
   );
 }
@@ -376,16 +376,16 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <p className="text-gray-600">Aucun événement associé à ce lien.</p>
+      <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
+        <p className="text-ink-muted">Aucun événement associé à ce lien.</p>
       </div>
     );
   }
 
   if (totalPhotos === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <p className="text-gray-500">Aucune photo à valider.</p>
+      <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
+        <p className="text-ink-muted">Aucune photo à valider.</p>
       </div>
     );
   }
@@ -402,19 +402,19 @@ export default function ValidatorView({ token, data }: { readonly token: string;
     const dk = summaryDark;
 
     const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
-      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-white/20 text-white border-transparent"           : "bg-gray-200 text-gray-800 border-transparent",        dot: "" },
-      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, activeClass: dk ? "bg-green-500/30 text-green-300 border-transparent"   : "bg-green-100 text-green-800 border-transparent", dot: "bg-green-500" },
-      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, activeClass: dk ? "bg-red-500/30 text-red-300 border-transparent"       : "bg-red-100 text-red-800 border-transparent",     dot: "bg-red-500" },
-      { key: "PENDING",  label: "En attente",                             count: pendingCount,  activeClass: dk ? "bg-yellow-500/20 text-yellow-300 border-transparent" : "bg-yellow-100 text-yellow-800 border-transparent", dot: "bg-yellow-500" },
+      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-ink/20 text-ink border-transparent"           : "bg-surface-sunken text-ink border-transparent",        dot: "" },
+      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, activeClass: dk ? "bg-success/30 text-success border-transparent"   : "bg-success-soft text-success border-transparent", dot: "bg-success" },
+      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, activeClass: dk ? "bg-danger/30 text-danger border-transparent"       : "bg-danger-soft text-danger border-transparent",     dot: "bg-danger" },
+      { key: "PENDING",  label: "En attente",                             count: pendingCount,  activeClass: dk ? "bg-warning/20 text-warning border-transparent" : "bg-warning-soft text-warning border-transparent", dot: "bg-warning" },
     ];
 
     return (
-      <div className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-black" : "bg-gray-50"}`}>
+      <div data-theme={dk ? "dark" : undefined} className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-bg text-ink" : "bg-surface-sunken"}`}>
         {/* Progress bar */}
         <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
 
         {/* Header */}
-        <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-black/95" : "bg-white border-b border-gray-200"}`}>
+        <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-bg/95" : "bg-surface border-b border-line"}`}>
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => {
@@ -423,17 +423,17 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                 setShowSummary(false);
                 setSummaryFilter("ALL");
               }}
-              className={`text-sm transition-colors ${dk ? "text-white/70 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}
+              className={`text-sm transition-colors ${dk ? "text-ink/70 hover:text-ink" : "text-ink-muted hover:text-ink"}`}
             >
               ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
             </button>
-            <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-white/80" : "text-gray-800"}`}>{event.name}</span>
+            <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-ink/80" : "text-ink"}`}>{event.name}</span>
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`text-sm tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{totalPhotos} photos</span>
+              <span className={`text-sm tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{totalPhotos} photos</span>
               {/* Theme toggle */}
               <button
                 onClick={() => setSummaryDark((v) => !v)}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dk ? "bg-white/10 hover:bg-white/20 text-white/70" : "bg-gray-100 hover:bg-gray-200 text-gray-500"}`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dk ? "bg-ink/10 hover:bg-ink/20 text-ink/70" : "bg-surface-sunken hover:bg-surface-sunken text-ink-muted"}`}
                 aria-label="Basculer le thème"
               >
                 {dk ? (
@@ -451,17 +451,17 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
           {/* Stats cards */}
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-green-500/15 border-green-500/30" : "bg-green-50 border-green-200"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-green-400" : "text-green-600"}`}>{approvedCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-green-400/70" : "text-green-500"}`}>{labels.approvedPlural}</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-success" : "text-success"}`}>{approvedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-success/70" : "text-success"}`}>{labels.approvedPlural}</p>
             </div>
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-white/50" : "text-gray-400"}`}>{pendingCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-white/30" : "text-gray-400"}`}>en attente</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{pendingCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-ink/30" : "text-ink-subtle"}`}>en attente</p>
             </div>
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-red-500/15 border-red-500/30" : "bg-red-50 border-red-200"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-red-400" : "text-red-600"}`}>{rejectedCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-red-400/70" : "text-red-500"}`}>{labels.rejectedPlural}</p>
+            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
+              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-danger" : "text-danger"}`}>{rejectedCount}</p>
+              <p className={`text-xs mt-0.5 ${dk ? "text-danger/70" : "text-danger"}`}>{labels.rejectedPlural}</p>
             </div>
           </div>
 
@@ -475,8 +475,8 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                   summaryFilter === key
                     ? activeClass
                     : dk
-                      ? "bg-transparent text-white/40 border-white/10 hover:text-white/60 hover:border-white/20"
-                      : "bg-transparent text-gray-400 border-gray-200 hover:text-gray-600 hover:border-gray-300"
+                      ? "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60 hover:border-ink/20"
+                      : "bg-transparent text-ink-subtle border-line hover:text-ink-muted hover:border-control-line"
                 }`}
               >
                 {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
@@ -488,7 +488,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         </header>
 
         {/* Grid */}
-        <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-gray-100"}`}>
+        <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-surface-sunken"}`}>
           {filteredPhotos.map((photo) => {
             const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
             const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
@@ -496,23 +496,23 @@ export default function ValidatorView({ token, data }: { readonly token: string;
               <button
                 key={photo.id}
                 onClick={() => void toggleDecision(photo.id)}
-                className={`relative aspect-square overflow-hidden rounded-sm ${dk ? "bg-gray-900" : "bg-gray-200"}`}
+                className="relative aspect-square overflow-hidden rounded-sm bg-surface-sunken"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
                 {/* Corner badge */}
                 {isApproved && (
-                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-md">
-                    <span className="text-white text-[10px] font-bold leading-none">✓</span>
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center shadow-float">
+                    <span className="text-surface text-[10px] font-bold leading-none">✓</span>
                   </div>
                 )}
                 {isRejected && (
-                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
-                    <span className="text-white text-[10px] font-bold leading-none">✗</span>
+                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-danger flex items-center justify-center shadow-float">
+                    <span className="text-on-danger text-[10px] font-bold leading-none">✗</span>
                   </div>
                 )}
                 {photo.status === "PENDING" && (
-                  <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-md" />
+                  <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-warning shadow-float" />
                 )}
               </button>
             );
@@ -524,7 +524,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
   // ── Card-swipe view ───────────────────────────────────────────────────────────
   return (
-    <>
+    <div data-theme="dark" className="contents">
       {/* HD Lightbox */}
       {showHdLightbox && currentPhoto && (
         <HdLightbox
@@ -549,20 +549,20 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         />
       )}
 
-      <div className="min-h-screen bg-black flex flex-col select-none overflow-hidden">
+      <div className="min-h-screen bg-bg text-ink flex flex-col select-none overflow-hidden">
         {/* Progress bar */}
         <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
 
         {/* Header */}
-        <header className="bg-black/80 text-white px-4 py-3 flex items-center justify-between shrink-0">
-          <div className="text-sm truncate max-w-[35%] text-white/80">{event.name}</div>
+        <header className="bg-scrim/80 text-on-brand px-4 py-3 flex items-center justify-between shrink-0">
+          <div className="text-sm truncate max-w-[35%] text-on-brand/80">{event.name}</div>
 
           <div className="flex items-center gap-2">
             {/* Jump to next pending */}
             {!allDecided && currentPhoto?.status !== "PENDING" && anyPendingIndex >= 0 && (
               <button
                 onClick={() => setCurrentIndex(anyPendingIndex)}
-                className="text-xs text-yellow-400 hover:text-yellow-300 bg-yellow-900/40 border border-yellow-700/50 rounded-full px-2.5 py-0.5 transition-colors"
+                className="text-xs text-warning hover:text-warning bg-warning/40 border border-warning/50 rounded-full px-2.5 py-0.5 transition-colors"
               >
                 {pendingCount} en attente →
               </button>
@@ -570,23 +570,23 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             <button
               onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
               disabled={currentIndex === 0}
-              className="text-white disabled:opacity-30 text-xl px-1"
+              className="text-on-brand disabled:opacity-30 text-xl px-1"
               aria-label="Photo précédente"
             >
               ‹
             </button>
-            <span className="text-sm tabular-nums text-white/90">{currentIndex + 1}/{totalPhotos}</span>
+            <span className="text-sm tabular-nums text-on-brand/90">{currentIndex + 1}/{totalPhotos}</span>
             <button
               onClick={() => setCurrentIndex((i) => Math.min(totalPhotos - 1, i + 1))}
               disabled={currentIndex === totalPhotos - 1}
-              className="text-white disabled:opacity-30 text-xl px-1"
+              className="text-on-brand disabled:opacity-30 text-xl px-1"
               aria-label="Photo suivante"
             >
               ›
             </button>
           </div>
 
-          <button onClick={() => setShowSummary(true)} className="text-sm text-white/70 hover:text-white">
+          <button onClick={() => setShowSummary(true)} className="text-sm text-on-brand/70 hover:text-on-brand">
             Récap
           </button>
         </header>
@@ -623,8 +623,8 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                   style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}
                 >
                   <div
-                    className={`m-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-white ${
-                      dragX > 0 ? "bg-green-500" : "bg-red-500"
+                    className={`m-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-on-danger ${
+                      dragX > 0 ? "bg-success" : "bg-danger"
                     }`}
                   >
                     {dragX > 0 ? "✓" : "✗"}
@@ -635,7 +635,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
               {/* Decision badge */}
               {dragX === 0 && currentPhoto.status !== "PENDING" && (
                 <div className="absolute top-3 left-3">
-                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGE[currentPhoto.status] ?? "bg-gray-700 text-white"}`}>
+                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGE[currentPhoto.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
                     {STATUS_LABELS[currentPhoto.status] ?? currentPhoto.status}
                   </span>
                 </div>
@@ -644,7 +644,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
               {/* HD button — tap opens lightbox */}
               <button
                 onClick={() => setShowHdLightbox(true)}
-                className="absolute bottom-3 right-3 text-xs text-white/60 hover:text-white bg-black/50 hover:bg-black/70 rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+                className="absolute bottom-3 right-3 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
@@ -656,17 +656,17 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         </div>
 
         {/* Stats bar */}
-        <div className="bg-black/60 px-4 py-1.5 flex items-center justify-center gap-4 shrink-0">
-          <span className="text-xs text-green-400 tabular-nums">{approvedCount} {labels.approvedPlural}</span>
-          <span className="text-xs text-white/30" aria-hidden>·</span>
-          <span className="text-xs text-white/40 tabular-nums">{pendingCount} en attente</span>
-          <span className="text-xs text-white/30" aria-hidden>·</span>
-          <span className="text-xs text-red-400 tabular-nums">{rejectedCount} {labels.rejectedPlural}</span>
+        <div className="bg-scrim px-4 py-1.5 flex items-center justify-center gap-4 shrink-0">
+          <span className="text-xs text-success tabular-nums">{approvedCount} {labels.approvedPlural}</span>
+          <span className="text-xs text-ink-subtle" aria-hidden>·</span>
+          <span className="text-xs text-ink-subtle tabular-nums">{pendingCount} en attente</span>
+          <span className="text-xs text-ink-subtle" aria-hidden>·</span>
+          <span className="text-xs text-danger tabular-nums">{rejectedCount} {labels.rejectedPlural}</span>
         </div>
 
         {/* "All decided" banner */}
         {allDecided && (
-          <div className="bg-green-700 text-white text-sm px-4 py-2 text-center shrink-0">
+          <div className="bg-success text-surface text-sm px-4 py-2 text-center shrink-0">
             Tout est traité.{" "}
             <button onClick={() => setShowSummary(true)} className="font-bold underline">
               Voir le récap
@@ -676,20 +676,20 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
         {/* Action buttons */}
         <div
-          className="bg-black/80 px-4 pt-4 flex items-center justify-center gap-5 shrink-0"
+          className="bg-scrim/80 px-4 pt-4 flex items-center justify-center gap-5 shrink-0"
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
           <button
             onClick={() => void makeDecision(rejectStatus)}
             disabled={!!saving[currentPhoto?.id ?? ""]}
-            className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center text-2xl hover:bg-red-600 active:scale-95 transition-all disabled:opacity-50 shadow-lg"
+            className="w-16 h-16 rounded-full bg-danger text-on-danger flex items-center justify-center text-2xl hover:bg-danger/90 active:scale-95 transition-all disabled:opacity-50 shadow-float"
             aria-label="Rejeter"
           >
             ✗
           </button>
           <button
             onClick={skipPhoto}
-            className="w-12 h-12 rounded-full bg-gray-600 text-white flex items-center justify-center text-xs hover:bg-gray-500 active:scale-95 transition-all"
+            className="w-12 h-12 rounded-full bg-surface text-ink flex items-center justify-center text-xs hover:bg-surface-sunken active:scale-95 transition-all"
             aria-label="Passer"
           >
             Passer
@@ -697,7 +697,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
           <button
             onClick={() => void makeDecision(approveStatus)}
             disabled={!!saving[currentPhoto?.id ?? ""]}
-            className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center text-2xl hover:bg-green-600 active:scale-95 transition-all disabled:opacity-50 shadow-lg"
+            className="w-16 h-16 rounded-full bg-success text-surface flex items-center justify-center text-2xl hover:bg-success/90 active:scale-95 transition-all disabled:opacity-50 shadow-float"
             aria-label="Valider"
           >
             ✓
@@ -705,17 +705,17 @@ export default function ValidatorView({ token, data }: { readonly token: string;
         </div>
 
         {/* Keyboard hints */}
-        <div className="bg-black/60 px-4 py-1 flex justify-center gap-4 shrink-0">
-          <span className="text-[10px] text-white/30">← X : rejeter</span>
-          <span className="text-[10px] text-white/30">Espace : passer</span>
-          <span className="text-[10px] text-white/30">→ V : valider</span>
-          <span className="text-[10px] text-white/30">H / Entrée : HD</span>
+        <div className="bg-scrim px-4 py-1 flex justify-center gap-4 shrink-0">
+          <span className="text-[10px] text-ink-subtle">← X : rejeter</span>
+          <span className="text-[10px] text-ink-subtle">Espace : passer</span>
+          <span className="text-[10px] text-ink-subtle">→ V : valider</span>
+          <span className="text-[10px] text-ink-subtle">H / Entrée : HD</span>
         </div>
 
         {/* Undo toast */}
         {undoAction && (
           <div
-            className="fixed left-4 right-4 bg-gray-800 text-white rounded-xl px-4 py-3 flex items-center justify-between z-50 shadow-xl"
+            className="fixed left-4 right-4 bg-surface text-ink rounded-xl px-4 py-3 flex items-center justify-between z-50 shadow-overlay"
             style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }}
           >
             <span className="text-sm">
@@ -727,12 +727,12 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                 return "Annulé";
               })()}
             </span>
-            <button onClick={undo} className="text-icc-violet font-bold text-sm ml-4">
+            <button onClick={undo} className="text-brand-text font-bold text-sm ml-4">
               ANNULER
             </button>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

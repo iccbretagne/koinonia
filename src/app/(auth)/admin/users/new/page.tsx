@@ -5,7 +5,7 @@ import CreateUserClient from "./CreateUserClient";
 export default async function CreateUserPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("users:manage", churchId);
 
   // Fiches STAR de cette église sans compte lié dans cette église (spec 037 : le lien est
@@ -27,7 +27,7 @@ export default async function CreateUserPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Créer un utilisateur</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Créer un utilisateur</h1>
       <CreateUserClient
         churchId={churchId}
         availableMembers={availableMembers}

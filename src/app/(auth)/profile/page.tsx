@@ -4,6 +4,32 @@ import { redirect } from "next/navigation";
 import { excludeChurchesAlreadyReached } from "@/lib/onboarding";
 import Link from "next/link";
 import ProfileClient from "./ProfileClient";
+import ThemeSelector from "@/components/ThemeSelector";
+import Alert from "@/components/ui/Alert";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusChip from "@/components/ui/StatusChip";
+import { Bell, ChevronRight, Clock, Link2 } from "lucide-react";
+
+/** Section de la page profil : titre `title-md` puis contenu sur une carte. */
+function ProfileSection({
+  title,
+  description,
+  children,
+}: {
+  readonly title: string;
+  readonly description?: React.ReactNode;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="font-display text-[17px] font-semibold leading-6 text-ink">{title}</h2>
+        {description && <p className="text-[13px] leading-[18px] text-ink-muted">{description}</p>}
+      </div>
+      <div className="rounded-card border border-line bg-surface p-4 shadow-card sm:p-5">{children}</div>
+    </section>
+  );
+}
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -73,93 +99,108 @@ export default async function ProfilePage() {
     orderBy: { name: "asc" },
   });
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Mon profil</h1>
+  const displayName = session.user.displayName ?? session.user.name ?? session.user.email ?? "";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
 
-      {/* Infos compte */}
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Compte</h2>
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <PageHeader title="Mon profil" />
+
+      <ProfileSection title="Compte">
         <div className="flex items-center gap-4">
-          {session.user.image && (
+          {session.user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={session.user.image} alt="" className="w-16 h-16 rounded-full" />
+            <img src={session.user.image} alt="" className="size-14 shrink-0 rounded-full" />
+          ) : (
+            <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-brand-soft font-display text-lg font-bold text-brand-text">
+              {initials}
+            </span>
           )}
-          <div>
-            <p className="font-semibold text-gray-900">{session.user.displayName ?? session.user.name}</p>
+          <div className="min-w-0">
+            <p className="truncate text-[17px] font-semibold leading-6 text-ink">{displayName}</p>
             {session.user.displayName && session.user.name && session.user.displayName !== session.user.name && (
-              <p className="text-sm text-gray-500">Compte Google : {session.user.name}</p>
+              <p className="truncate text-[13px] leading-[18px] text-ink-muted">Compte Google : {session.user.name}</p>
             )}
-            <p className="text-sm text-gray-500">{session.user.email}</p>
+            <p className="truncate text-[13px] leading-[18px] text-ink-muted">{session.user.email}</p>
           </div>
         </div>
         <Link
           href="/profile/notifications"
-          className="inline-block mt-4 text-sm font-medium text-icc-violet hover:underline"
+          className="-mx-2 mt-4 flex min-h-11 items-center gap-3 rounded-control border-t border-line px-2 pt-3 text-[15px] font-semibold text-ink transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-focus"
         >
-          Mes notifications →
+          <Bell aria-hidden="true" className="size-5 text-ink-subtle" strokeWidth={1.75} />
+          <span className="flex-1">Mes notifications</span>
+          <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" strokeWidth={1.75} />
         </Link>
-      </div>
+      </ProfileSection>
 
-      {/* Liens STAR */}
-      <div className="bg-white rounded-lg border-2 border-gray-200 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Fiche STAR liée</h2>
+      {/* Apparence (spec 055) — préférence stockée dans le navigateur */}
+      <ProfileSection
+        title="Apparence"
+        description="Le thème « Système » suit le réglage de votre téléphone ou de votre ordinateur."
+      >
+        <ThemeSelector />
+      </ProfileSection>
+
+      <ProfileSection title="Fiche STAR liée">
         {links.length === 0 && pendingRequests.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune fiche STAR liée.</p>
+          <div className="flex items-center gap-3 text-[15px] text-ink-muted">
+            <Link2 aria-hidden="true" className="size-5 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+            Aucune fiche STAR n&apos;est liée à votre compte.
+          </div>
         ) : (
-          <div className="space-y-3">
+          <ul className="-my-2 divide-y divide-line">
             {links.map((l) => (
-              <div key={l.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <div>
-                  <p className="font-medium text-gray-900">{l.member.firstName} {l.member.lastName}</p>
-                  <p className="text-xs text-gray-500">
+              <li key={l.id} className="flex items-start justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-semibold leading-[22px] text-ink">
+                    {l.member.firstName} {l.member.lastName}
+                  </p>
+                  <p className="text-[13px] leading-[18px] text-ink-muted">
                     {l.member.departments[0]?.department.ministry.name} / {l.member.departments[0]?.department.name}
                   </p>
                   {l.member.departments[0]?.department.name === "Sans département" && (
-                    <p className="text-xs text-amber-600 mt-0.5">
-                      Profil incomplet — contactez un administrateur pour être rattaché à un département.
-                    </p>
+                    <Alert tone="warning" className="mt-2">
+                      Profil incomplet : contactez un administrateur pour être rattaché à un département.
+                    </Alert>
                   )}
                 </div>
-                <span className="text-xs text-gray-400">{l.church.name}</span>
-              </div>
+                <span className="shrink-0 text-[13px] text-ink-muted">{l.church.name}</span>
+              </li>
             ))}
             {pendingRequests.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-yellow-400" />
-                  <p className="text-sm text-gray-600">Demande en cours de traitement</p>
-                </div>
-                <span className="text-xs text-gray-400">{r.church.name}</span>
-              </div>
+              <li key={r.id} className="flex items-center justify-between gap-3 py-3">
+                <StatusChip tone="warning" icon={Clock}>Demande en cours de traitement</StatusChip>
+                <span className="shrink-0 text-[13px] text-ink-muted">{r.church.name}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </ProfileSection>
 
-      {/* Demandes rejetées */}
       {rejectedRequests.length > 0 && (
-        <div className="bg-white rounded-lg border-2 border-gray-200 p-6 mb-6">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Demandes rejetées</h2>
-          <div className="space-y-3">
+        <ProfileSection title="Demandes refusées">
+          <ul className="-my-2 divide-y divide-line">
             {rejectedRequests.map((r) => (
-              <div key={r.id} className="py-2 border-b border-gray-100 last:border-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{r.church.name}</span>
-                  <span className="text-xs text-gray-400">
+              <li key={r.id} className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[15px] font-semibold text-ink">{r.church.name}</span>
+                  <span className="text-[13px] text-ink-muted">
                     {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString("fr-FR") : ""}
                   </span>
                 </div>
-                {r.rejectReason && (
-                  <p className="text-xs text-gray-500 mt-1">Motif : {r.rejectReason}</p>
-                )}
-              </div>
+                {r.rejectReason && <p className="mt-1 text-[13px] text-ink-muted">Motif : {r.rejectReason}</p>}
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </ProfileSection>
       )}
 
-      {/* Nouvelle demande */}
       {unlinkableChurches.length > 0 && (
         <ProfileClient churches={unlinkableChurches} ministries={ministries} />
       )}

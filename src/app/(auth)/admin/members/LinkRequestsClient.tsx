@@ -71,7 +71,7 @@ export default function LinkRequestsClient({
 
   if (requests.length === 0 && rejected.length === 0) {
     return (
-      <p className="text-sm text-gray-400 py-4">Aucune demande en attente.</p>
+      <p className="text-sm text-ink-subtle py-4">Aucune demande en attente.</p>
     );
   }
 
@@ -138,7 +138,7 @@ export default function LinkRequestsClient({
     <>
       <div className="space-y-3">
         {requests.map((req) => (
-          <div key={req.id} className="border-2 border-gray-200 rounded-lg p-4">
+          <div key={req.id} className="border border-line rounded-lg p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 {req.user.image ? (
@@ -150,48 +150,48 @@ export default function LinkRequestsClient({
                     className="rounded-full shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-icc-violet/10 flex items-center justify-center shrink-0">
-                    <span className="text-icc-violet font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center shrink-0">
+                    <span className="text-brand-text font-semibold text-sm">
                       {(req.user.name ?? req.user.email)[0].toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">
+                  <p className="font-medium text-ink text-sm truncate">
                     {req.user.name ?? req.user.email}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{req.user.email}</p>
+                  <p className="text-xs text-ink-muted truncate">{req.user.email}</p>
                 </div>
               </div>
-              <span className="text-xs text-gray-400 shrink-0">
+              <span className="text-xs text-ink-subtle shrink-0">
                 {new Date(req.createdAt).toLocaleDateString("fr-FR")}
               </span>
             </div>
 
             <div className="mt-3 text-sm">
               {req.member ? (
-                <p className="text-gray-600">
+                <p className="text-ink-muted">
                   Revendique la fiche :{" "}
                   <strong>{req.member.firstName} {req.member.lastName}</strong>
-                  {(() => { const pd = req.member.departments.find((d) => d.isPrimary) ?? req.member.departments[0]; return pd ? <span className="text-gray-400"> · {pd.department.ministry.name} / {pd.department.name}</span> : null; })()}
+                  {(() => { const pd = req.member.departments.find((d) => d.isPrimary) ?? req.member.departments[0]; return pd ? <span className="text-ink-subtle"> · {pd.department.ministry.name} / {pd.department.name}</span> : null; })()}
                 </p>
               ) : (
-                <p className="text-gray-600">
+                <p className="text-ink-muted">
                   Création d&apos;un nouveau STAR :{" "}
                   <strong>{req.firstName} {req.lastName}</strong>
-                  {req.phone && <span className="text-gray-400"> · {req.phone}</span>}
+                  {req.phone && <span className="text-ink-subtle"> · {req.phone}</span>}
                 </p>
               )}
-              <p className="text-gray-400 text-xs mt-0.5">Église : {req.church.name}</p>
+              <p className="text-ink-subtle text-xs mt-0.5">Église : {req.church.name}</p>
               {req.requestedRole && (
                 <p className="text-xs mt-1">
-                  <span className="inline-block bg-icc-violet/10 text-icc-violet px-1.5 py-0.5 rounded font-medium">
+                  <span className="inline-block bg-brand-soft text-brand-text px-1.5 py-0.5 rounded font-medium">
                     {ROLE_LABELS[req.requestedRole]}
                   </span>
                 </p>
               )}
               {req.notes && (
-                <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{req.notes}&rdquo;</p>
+                <p className="text-xs text-ink-muted mt-1 italic">&ldquo;{req.notes}&rdquo;</p>
               )}
             </div>
 
@@ -216,14 +216,14 @@ export default function LinkRequestsClient({
         ))}
       </div>
 
-      {error && <p className="mt-2 text-sm text-icc-rouge">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
       {/* Demandes refusées */}
       {rejected.length > 0 && (
         <div className="mt-4">
           <button
             onClick={() => setShowRejected((v) => !v)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink-muted transition-colors"
           >
             <svg
               className={`w-4 h-4 transition-transform ${showRejected ? "rotate-90" : ""}`}
@@ -241,33 +241,33 @@ export default function LinkRequestsClient({
                   ? `${r.member.firstName} ${r.member.lastName}`
                   : `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
                 return (
-                  <div key={r.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                  <div key={r.id} className="border border-line rounded-lg p-3 bg-surface-sunken">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-700 truncate">
+                        <p className="text-sm font-medium text-ink-muted truncate">
                           {r.user.name ?? r.user.email}
                         </p>
                         {name && (
-                          <p className="text-xs text-gray-500 truncate">{r.member ? "STAR : " : "Nouveau : "}{name}</p>
+                          <p className="text-xs text-ink-muted truncate">{r.member ? "STAR : " : "Nouveau : "}{name}</p>
                         )}
                         {r.requestedRole && (
-                          <span className="inline-block mt-1 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                          <span className="inline-block mt-1 text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded">
                             {ROLE_LABELS[r.requestedRole]}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400 shrink-0">
+                      <span className="text-xs text-ink-subtle shrink-0">
                         {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString("fr-FR") : "—"}
                       </span>
                     </div>
                     {r.rejectReason && (
-                      <p className="mt-1.5 text-xs text-gray-500 italic">&ldquo;{r.rejectReason}&rdquo;</p>
+                      <p className="mt-1.5 text-xs text-ink-muted italic">&ldquo;{r.rejectReason}&rdquo;</p>
                     )}
                     <div className="mt-2">
                       <button
                         onClick={() => reconsider(r)}
                         disabled={processing === r.id}
-                        className="text-xs text-icc-violet border border-icc-violet/30 rounded-lg px-2.5 py-1 hover:bg-icc-violet/5 disabled:opacity-50 transition-colors"
+                        className="text-xs text-brand-text border border-brand/30 rounded-lg px-2.5 py-1 hover:bg-brand-soft disabled:opacity-50 transition-colors"
                       >
                         {processing === r.id ? "En cours…" : "↩ Reconsidérer"}
                       </button>
@@ -287,7 +287,7 @@ export default function LinkRequestsClient({
         title="Approuver la demande"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Lier le compte de{" "}
             <strong>{approveModal?.user.name ?? approveModal?.user.email}</strong>
             {" "}à{" "}
@@ -316,7 +316,7 @@ export default function LinkRequestsClient({
             );
           })()}
 
-          {error && <p className="text-sm text-icc-rouge">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" onClick={() => setApproveModal(null)}>
@@ -345,7 +345,7 @@ export default function LinkRequestsClient({
         title="Rejeter la demande"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Motif du rejet (optionnel)
           </p>
           <textarea
@@ -353,9 +353,9 @@ export default function LinkRequestsClient({
             onChange={(e) => setRejectReason(e.target.value)}
             rows={3}
             placeholder="Ex : fiche introuvable, doublon..."
-            className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-transparent resize-none"
+            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
           />
-          {error && <p className="text-sm text-icc-rouge">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" onClick={() => setRejectModal(null)}>
               Annuler

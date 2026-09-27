@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { getEventTypeBadge, getEventTypeLabel } from "@/lib/event-types";
+import { CalendarX2, MessageSquare } from "lucide-react";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonList } from "@/components/ui/Skeleton";
+import StatusChip from "@/components/ui/StatusChip";
+import { useToast } from "@/components/ui/Toast";
+import { getEventTypeLabel } from "@/lib/event-types";
+import { eventTypeTone } from "./event-type-tone";
+import PeriodNav from "./PeriodNav";
+import ExportBar from "./ExportBar";
 
 interface MemberItem {
   id: string;
@@ -26,6 +34,7 @@ interface Props {
 }
 
 export default function MonthlyPlanningView({ departmentId, departmentName, churchName }: Props) {
+  const toast = useToast();
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
@@ -83,11 +92,14 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
     const el = printRef.current;
     const savedWidth = el.style.width;
     el.style.width = "672px";
+    // L'image partagée reste en thème clair, quel que soit le thème affiché.
+    el.dataset.theme = "light";
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
       return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
     } finally {
       el.style.width = savedWidth;
+      delete el.dataset.theme;
     }
   }
 
@@ -109,7 +121,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
         await navigator.clipboard.write([
           new ClipboardItem({ "image/png": blob }),
         ]);
-        alert("Image copiée dans le presse-papier");
+        toast.success("Image copiée dans le presse-papiers");
       } catch {
         const dataUrl = canvas.toDataURL("image/png");
         const w = window.open();
@@ -117,11 +129,11 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
           w.document.write(`<img src="${dataUrl}" />`);
           w.document.title = "Planning - copier l'image";
         } else {
-          alert("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
+          toast.error("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
         }
       }
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -140,7 +152,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
       link.href = dataUrl;
       link.click();
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
@@ -172,176 +184,132 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
       pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
       pdf.save(`${getExportFileName()}.pdf`);
     } catch {
-      // ignore export errors
+      toast.error("Export impossible. Réessayez dans un instant.");
     } finally {
       setExporting(null);
     }
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-center gap-2 mb-6">
-        <button
-          onClick={() => navigateMonth(-1)}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+    <div className="flex flex-col gap-4">
+      <PeriodNav
+        prev={{ onClick: () => navigateMonth(-1) }}
+        next={{ onClick: () => navigateMonth(1) }}
+        prevLabel="Mois précédent"
+        nextLabel="Mois suivant"
+        className="mx-auto w-full max-w-md"
+      >
+        <label className="sr-only" htmlFor="monthly-planning-month">
+          Mois affiché
+        </label>
         <input
+          id="monthly-planning-month"
           type="month"
           value={currentMonth}
           onChange={(e) => {
             if (e.target.value) setCurrentMonth(e.target.value);
           }}
-          className="px-4 py-2 text-lg font-semibold text-icc-violet bg-icc-violet-light border-2 border-icc-violet/20 rounded-lg cursor-pointer text-center capitalize focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+          className="min-h-11 w-full max-w-60 cursor-pointer rounded-control border border-control-line bg-surface px-3 text-center font-display text-base font-semibold text-ink
+            focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus"
         />
-        <button
-          onClick={() => navigateMonth(1)}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-icc-violet hover:bg-icc-violet-light transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+      </PeriodNav>
 
       {!loading && events.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-2 mb-4">
-          <button
-            onClick={copyImage}
-            disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-icc-violet rounded-lg hover:bg-icc-violet/90 disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-            {exporting === "copy" ? "Copie..." : "Copier image"}
-          </button>
-          <button
-            onClick={downloadImage}
-            disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {exporting === "image" ? "Export..." : "Télécharger PNG"}
-          </button>
-          <button
-            onClick={exportPdf}
-            disabled={!!exporting}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-icc-violet border-2 border-icc-violet rounded-lg hover:bg-icc-violet/10 disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            {exporting === "pdf" ? "Export..." : "Export PDF"}
-          </button>
-        </div>
+        <ExportBar exporting={exporting} onCopy={copyImage} onDownload={downloadImage} onPdf={exportPdf} />
       )}
 
-      <div ref={printRef} className="max-w-2xl mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100">
-        {loading ? (
-          <div className="p-8 text-center text-gray-400 bg-white">Chargement...</div>
-        ) : events.length === 0 ? (
-          <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-            Aucun evenement ce mois
+      {loading ? (
+        <SkeletonList rows={4} label="Chargement du planning du mois…" className="mx-auto w-full max-w-2xl" />
+      ) : events.length === 0 ? (
+        <div className="mx-auto w-full max-w-2xl rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarX2}
+            title="Aucun événement ce mois-ci"
+            description="Changez de mois pour consulter un autre planning."
+            size="sm"
+          />
+        </div>
+      ) : (
+        /* Zone exportée (image, PDF) : passée en thème clair le temps de la capture. */
+        <div
+          ref={printRef}
+          className="mx-auto w-full max-w-2xl overflow-hidden rounded-card border border-line bg-bg text-ink shadow-float"
+        >
+          <div className="bg-brand px-6 py-4 text-on-brand">
+            <p className="font-display text-lg font-bold leading-tight">{churchName ?? "ICC"}</p>
+            <p className="mt-0.5 text-sm text-on-brand/85 first-letter:uppercase">
+              {departmentName ? `${departmentName} — ` : ""}
+              {formatMonthLabel(currentMonth)}
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Header */}
-            <div className="bg-icc-violet px-6 py-4">
-              <p className="text-lg font-bold text-white leading-tight">
-                {churchName ?? "ICC"}
-              </p>
-              <p className="text-sm text-white/80 mt-0.5 capitalize">
-                {departmentName ? `${departmentName} — ` : ""}{formatMonthLabel(currentMonth)}
-              </p>
-            </div>
 
-            {/* Events */}
-            <div className="bg-gray-50 px-5 py-4 space-y-4">
-              {events.map((event) => {
-                const withTasks = event.members.filter((m) => m.tasks.length > 0);
-                const withoutTasks = event.members.filter((m) => m.tasks.length === 0);
-                const d = new Date(event.date);
-                const dayNum = d.getDate();
-                const dayName = d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+          <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
+            {events.map((event) => {
+              const withTasks = event.members.filter((m) => m.tasks.length > 0);
+              const withoutTasks = event.members.filter((m) => m.tasks.length === 0);
+              const d = new Date(event.date);
+              const dayNum = d.getDate();
+              const dayName = d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
 
-                return (
-                  <div key={event.id} className="bg-white rounded-lg overflow-hidden shadow-sm">
-                    {/* Event row: date block + title + members */}
-                    <div className="flex">
-                      {/* Date block */}
-                      <div className="bg-icc-violet w-16 shrink-0 flex flex-col items-center justify-center py-3">
-                        <span className="text-xs font-semibold text-white/80 uppercase leading-none">{dayName}</span>
-                        <span className="text-2xl font-black text-white leading-none mt-0.5">{dayNum}</span>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 px-4 py-3 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <p className="font-bold text-icc-violet text-xs uppercase tracking-wide">{event.title}</p>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${getEventTypeBadge(event.type)}`}>
-                            {getEventTypeLabel(event.type)}
-                          </span>
-                        </div>
-
-                        {event.members.length === 0 ? (
-                          <p className="text-xs text-gray-400 italic">(aucun STAR en service)</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {/* Members with tasks */}
-                            {withTasks.map((member) => (
-                              <div key={member.id} className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-sm text-gray-900 font-semibold">
-                                  {member.firstName} {member.lastName}
-                                </span>
-                                {member.tasks.map((task) => (
-                                  <span key={task} className="text-[11px] font-medium border border-icc-violet/40 text-icc-violet px-2 py-0.5 rounded-full">
-                                    {task}
-                                  </span>
-                                ))}
-                                {member.status === "EN_SERVICE_DEBRIEF" && (
-                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
-                                    Debrief
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-
-                            {/* Separator */}
-                            {withTasks.length > 0 && withoutTasks.length > 0 && (
-                              <div className="h-px bg-gray-100" />
-                            )}
-
-                            {/* Members without tasks */}
-                            {withoutTasks.map((member) => (
-                              <div key={member.id} className="flex flex-wrap items-center gap-1.5">
-                                <span className="text-sm text-gray-600 font-medium">
-                                  {member.firstName} {member.lastName}
-                                </span>
-                                {member.status === "EN_SERVICE_DEBRIEF" && (
-                                  <span className="text-[11px] font-semibold text-white bg-icc-violet px-2 py-0.5 rounded-full">
-                                    Debrief
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              return (
+                <div key={event.id} className="flex overflow-hidden rounded-control border border-line bg-surface">
+                  <div className="flex w-16 shrink-0 flex-col items-center justify-center bg-brand py-3 text-on-brand">
+                    <span className="font-display text-xs font-semibold uppercase leading-none text-on-brand/80">{dayName}</span>
+                    <span className="mt-0.5 font-display text-2xl font-extrabold leading-none tabular-nums">{dayNum}</span>
                   </div>
-                );
-              })}
-            </div>
 
-          </>
-        )}
-      </div>
+                  <div className="min-w-0 flex-1 px-4 py-3">
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      <p className="font-display text-xs font-bold uppercase tracking-wide text-brand-text">{event.title}</p>
+                      <StatusChip tone={eventTypeTone(event.type)}>
+                        {getEventTypeLabel(event.type)}
+                      </StatusChip>
+                    </div>
+
+                    {event.members.length === 0 ? (
+                      <p className="text-[13px] italic text-ink-muted">Aucun STAR en service</p>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        {withTasks.map((member) => (
+                          <MemberLine key={member.id} member={member} strong />
+                        ))}
+                        {withTasks.length > 0 && withoutTasks.length > 0 && <div className="h-px bg-line" />}
+                        {withoutTasks.map((member) => (
+                          <MemberLine key={member.id} member={member} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Un STAR en service : nom, tâches et mention « Debrief » (mot + icône, jamais la couleur seule). */
+function MemberLine({ member, strong = false }: { readonly member: MemberItem; readonly strong?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className={`text-sm ${strong ? "font-semibold text-ink" : "font-medium text-ink-muted"}`}>
+        {member.firstName} {member.lastName}
+      </span>
+      {member.tasks.map((task) => (
+        <span
+          key={task}
+          className="rounded-full border border-brand/40 px-2 py-0.5 text-[11px] font-semibold leading-4 text-brand-text"
+        >
+          {task}
+        </span>
+      ))}
+      {member.status === "EN_SERVICE_DEBRIEF" && (
+        <StatusChip tone="brand" icon={MessageSquare}>
+          Debrief
+        </StatusChip>
+      )}
     </div>
   );
 }

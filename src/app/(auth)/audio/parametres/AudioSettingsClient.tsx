@@ -114,14 +114,14 @@ export default function AudioSettingsClient({
   return (
     <div className="max-w-xl space-y-4">
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Couverture par défaut</label>
+        <label className="block text-sm font-medium text-ink-muted">Couverture par défaut</label>
         {coverPreview && (
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={coverPreview}
               alt="Couverture par défaut"
-              className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
+              className="w-20 h-20 object-cover rounded-lg border border-line"
             />
             <Button type="button" variant="danger" size="sm" onClick={removeCover}>
               Retirer
@@ -133,30 +133,30 @@ export default function AudioSettingsClient({
           accept={ALLOWED_COVER_MIME_TYPES.join(",")}
           onChange={(e) => handleCoverSelected(e.target.files)}
           disabled={uploadingCover}
-          className="block text-sm text-gray-600"
+          className="block text-sm text-ink-muted"
         />
-        {uploadingCover && <p className="text-xs text-gray-500">Envoi en cours...</p>}
-        {coverError && <p className="text-sm text-icc-rouge">{coverError}</p>}
-        <p className="text-xs text-gray-500">
+        {uploadingCover && <p className="text-xs text-ink-muted">Envoi en cours...</p>}
+        {coverError && <p className="text-sm text-danger">{coverError}</p>}
+        <p className="text-xs text-ink-muted">
           Utilisée pour les cultes publiés sans couverture propre. JPEG, PNG ou WebP, 10MB max.
         </p>
       </div>
 
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-ink-muted">
           Template de noms de séquences (un par ligne)
         </label>
         <textarea
           value={templateText}
           onChange={(e) => setTemplateText(e.target.value)}
           rows={5}
-          className="block w-full px-3 py-2.5 md:py-2 border-2 border-gray-300 rounded-lg shadow-sm text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-icc-violet focus:border-icc-violet"
+          className="block w-full px-3 py-2.5 md:py-2 border border-control-line rounded-lg shadow-card text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-brand"
           placeholder={"Louange\nPrédication\nPrière"}
         />
       </div>
 
-      {message && <p className="text-sm text-green-700">{message}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {message && <p className="text-sm text-success">{message}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <Button onClick={save} disabled={saving}>
         {saving ? "Enregistrement..." : "Enregistrer"}

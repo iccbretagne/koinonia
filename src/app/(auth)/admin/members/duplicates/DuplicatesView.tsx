@@ -36,34 +36,34 @@ const REASON_LABEL: Record<Group["reason"], string> = {
 };
 
 const REASON_COLOR: Record<Group["reason"], string> = {
-  same_name: "bg-yellow-100 text-yellow-800",
-  same_email: "bg-orange-100 text-orange-800",
-  both: "bg-red-100 text-red-800",
+  same_name: "bg-warning-soft text-warning",
+  same_email: "bg-warning-soft text-warning",
+  both: "bg-danger-soft text-danger",
 };
 
 function MemberCard({ member, isSource, label }: { readonly member: MemberSummary; readonly isSource: boolean; readonly label: string }) {
   return (
-    <div className={`border-2 rounded-lg p-4 ${isSource ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
+    <div className={`min-w-0 border rounded-lg p-4 ${isSource ? "border-danger/30 bg-danger-soft" : "border-success/30 bg-success-soft"}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isSource ? "bg-red-200 text-red-800" : "bg-green-200 text-green-800"}`}>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded ${isSource ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>
           {label}
         </span>
         {member.userLink && (
-          <span className="text-xs bg-icc-violet text-white px-2 py-0.5 rounded">Compte lié</span>
+          <span className="text-xs bg-brand text-on-brand px-2 py-0.5 rounded">Compte lié</span>
         )}
       </div>
-      <p className="font-semibold text-gray-900">{member.firstName} {member.lastName}</p>
-      {member.email && <p className="text-sm text-gray-600">{member.email}</p>}
-      {member.phone && <p className="text-sm text-gray-600">{member.phone}</p>}
-      {member.userLink && <p className="text-xs text-gray-500 mt-1">Compte : {member.userLink.name ?? member.userLink.email}</p>}
+      <p className="truncate font-semibold text-ink" title={`${member.firstName} ${member.lastName}`}>{member.firstName} {member.lastName}</p>
+      {member.email && <p className="truncate text-sm text-ink-muted" title={member.email}>{member.email}</p>}
+      {member.phone && <p className="truncate text-sm text-ink-muted" title={member.phone}>{member.phone}</p>}
+      {member.userLink && <p className="text-xs text-ink-muted mt-1">Compte : {member.userLink.name ?? member.userLink.email}</p>}
       <div className="mt-2 space-y-0.5">
         {member.departments.map((d) => (
-          <span key={d.id} className={`inline-block text-xs px-2 py-0.5 rounded mr-1 ${d.isPrimary ? "bg-icc-violet text-white" : "bg-gray-200 text-gray-700"}`}>
+          <span key={d.id} className={`inline-block text-xs px-2 py-0.5 rounded mr-1 ${d.isPrimary ? "bg-brand text-on-brand" : "bg-surface-sunken text-ink-muted"}`}>
             {d.ministryName} › {d.name}
           </span>
         ))}
       </div>
-      <div className="mt-2 flex gap-3 text-xs text-gray-500">
+      <div className="mt-2 flex gap-3 text-xs text-ink-muted">
         <span>{member.counts.plannings} planning(s)</span>
         <span>{member.counts.disciples} discipolat(s)</span>
         <span>{member.counts.disciplesMade} disciple(s)</span>
@@ -90,21 +90,21 @@ function FieldPicker<T extends string | null>({
   const same = sourceValue === targetValue;
   if (same) {
     return (
-      <div className="text-sm text-gray-700">
-        <span className="font-medium text-gray-500">{label} :</span> {sourceValue ?? <em className="text-gray-400">vide</em>}
+      <div className="text-sm text-ink-muted">
+        <span className="font-medium text-ink-muted">{label} :</span> {sourceValue ?? <em className="text-ink-subtle">vide</em>}
       </div>
     );
   }
   return (
-    <div className="border rounded p-2 bg-white">
-      <p className="text-xs font-semibold text-gray-500 mb-1">{label}</p>
+    <div className="border rounded p-2 bg-surface">
+      <p className="text-xs font-semibold text-ink-muted mb-1">{label}</p>
       <label className="flex items-center gap-2 cursor-pointer mb-1">
         <input type="radio" checked={choice.from === "source"} onChange={() => onChange({ value: sourceValue, from: "source" })} />
-        <span className="text-sm text-red-700">{sourceValue ?? <em className="text-gray-400">vide</em>} <span className="text-xs text-gray-400">(à supprimer)</span></span>
+        <span className="text-sm text-danger">{sourceValue ?? <em className="text-ink-subtle">vide</em>} <span className="text-xs text-ink-subtle">(à supprimer)</span></span>
       </label>
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="radio" checked={choice.from === "target"} onChange={() => onChange({ value: targetValue, from: "target" })} />
-        <span className="text-sm text-green-700">{targetValue ?? <em className="text-gray-400">vide</em>} <span className="text-xs text-gray-400">(à conserver)</span></span>
+        <span className="text-sm text-success">{targetValue ?? <em className="text-ink-subtle">vide</em>} <span className="text-xs text-ink-subtle">(à conserver)</span></span>
       </label>
     </div>
   );
@@ -191,7 +191,7 @@ function MergeModal({
     <Modal open onClose={onClose} title="Fusionner deux membres">
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
         {/* Cartes source/target */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <MemberCard member={source} isSource label="Sera supprimé" />
           <MemberCard member={target} isSource={false} label="Sera conservé" />
         </div>
@@ -199,14 +199,14 @@ function MergeModal({
         <button
           type="button"
           onClick={swap}
-          className="text-xs text-icc-violet hover:underline"
+          className="text-xs text-brand-text hover:underline"
         >
           ⇄ Inverser source et cible
         </button>
 
         {/* Résolution des champs */}
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-gray-700">Champs à conserver</p>
+          <p className="text-sm font-semibold text-ink-muted">Champs à conserver</p>
           <FieldPicker
             label="Prénom"
             sourceValue={source.firstName}
@@ -239,15 +239,15 @@ function MergeModal({
 
         {/* Conflit de compte lié */}
         {bothHaveLink && (
-          <div className="border rounded p-3 bg-yellow-50">
-            <p className="text-sm font-semibold text-yellow-800 mb-2">Les deux ont un compte Google lié — lequel conserver ?</p>
+          <div className="border rounded p-3 bg-warning-soft">
+            <p className="text-sm font-semibold text-warning mb-2">Les deux ont un compte Google lié — lequel conserver ?</p>
             <label className="flex items-center gap-2 cursor-pointer mb-1">
               <input
                 type="radio"
                 checked={keepUserId === source.userLink!.userId}
                 onChange={() => setKeepUserId(source.userLink!.userId)}
               />
-              <span className="text-sm text-red-700">{source.userLink!.name ?? source.userLink!.email} <span className="text-xs text-gray-400">(source)</span></span>
+              <span className="text-sm text-danger">{source.userLink!.name ?? source.userLink!.email} <span className="text-xs text-ink-subtle">(source)</span></span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -255,26 +255,26 @@ function MergeModal({
                 checked={keepUserId === target.userLink!.userId}
                 onChange={() => setKeepUserId(target.userLink!.userId)}
               />
-              <span className="text-sm text-green-700">{target.userLink!.name ?? target.userLink!.email} <span className="text-xs text-gray-400">(cible)</span></span>
+              <span className="text-sm text-success">{target.userLink!.name ?? target.userLink!.email} <span className="text-xs text-ink-subtle">(cible)</span></span>
             </label>
           </div>
         )}
 
         {/* Départements fusionnés */}
-        <div className="bg-gray-50 rounded p-3">
-          <p className="text-xs font-semibold text-gray-500 mb-1">Départements après fusion (union)</p>
+        <div className="bg-surface-sunken rounded p-3">
+          <p className="text-xs font-semibold text-ink-muted mb-1">Départements après fusion (union)</p>
           {[
             ...new Map(
               [...source.departments, ...target.departments].map((d) => [d.id, d])
             ).values(),
           ].map((d) => (
-            <span key={d.id} className="inline-block text-xs px-2 py-0.5 rounded mr-1 mb-1 bg-gray-200 text-gray-700">
+            <span key={d.id} className="inline-block text-xs px-2 py-0.5 rounded mr-1 mb-1 bg-surface-sunken text-ink-muted">
               {d.ministryName} › {d.name}
             </span>
           ))}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
       </div>
 
       <div className="flex justify-end gap-3 mt-4 pt-3 border-t">
@@ -314,25 +314,25 @@ function MemberPicker({
   const selected = members.find((m) => m.id === selectedId);
 
   return (
-    <div className="border-2 rounded-lg p-3">
-      <p className="text-xs font-semibold text-gray-500 mb-2">{label}</p>
+    <div className="min-w-0 border rounded-lg p-3">
+      <p className="text-xs font-semibold text-ink-muted mb-2">{label}</p>
       <input
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Rechercher par nom ou email…"
-        className="w-full border rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-icc-violet"
+        className="w-full border rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-focus"
       />
       {selected && !search && (
-        <div className="flex items-center justify-between bg-icc-violet/10 rounded px-2 py-1.5 mb-2">
-          <span className="text-sm font-medium text-icc-violet">
+        <div className="flex items-center justify-between gap-2 bg-brand-soft rounded px-2 py-1.5 mb-2">
+          <span className="min-w-0 truncate text-sm font-medium text-brand-text" title={`${selected.firstName} ${selected.lastName}${selected.email ? ` (${selected.email})` : ""}`}>
             {selected.firstName} {selected.lastName}
-            {selected.email && <span className="text-xs text-gray-500 ml-1">({selected.email})</span>}
+            {selected.email && <span className="text-xs text-ink-muted ml-1">({selected.email})</span>}
           </span>
           <button
             type="button"
             onClick={() => onSelect("")}
-            className="text-xs text-gray-400 hover:text-gray-600 ml-2"
+            className="shrink-0 text-xs text-ink-subtle hover:text-ink-muted ml-2"
           >
             ✕
           </button>
@@ -341,18 +341,18 @@ function MemberPicker({
       {(search || !selectedId) && (
         <ul className="max-h-40 overflow-y-auto divide-y border rounded">
           {filtered.length === 0 && (
-            <li className="px-2 py-2 text-sm text-gray-400">Aucun résultat</li>
+            <li className="px-2 py-2 text-sm text-ink-subtle">Aucun résultat</li>
           )}
           {filtered.map((m) => (
             <li key={m.id}>
               <button
                 type="button"
                 onClick={() => { onSelect(m.id); setSearch(""); }}
-                className={`w-full text-left px-2 py-2 text-sm hover:bg-gray-50 ${m.id === selectedId ? "bg-icc-violet/10 font-medium" : ""}`}
+                className={`w-full text-left px-2 py-2 text-sm hover:bg-surface-sunken ${m.id === selectedId ? "bg-brand-soft font-medium" : ""}`}
               >
                 {m.firstName} {m.lastName}
-                {m.email && <span className="text-xs text-gray-400 ml-1">· {m.email}</span>}
-                {m.userLink && <span className="text-xs text-icc-violet ml-1">· compte lié</span>}
+                {m.email && <span className="text-xs text-ink-subtle ml-1">· {m.email}</span>}
+                {m.userLink && <span className="text-xs text-brand-text ml-1">· compte lié</span>}
               </button>
             </li>
           ))}
@@ -397,11 +397,11 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
     <div className="space-y-6">
       {/* Bulk STAR assign */}
       {canAssignStarRoles && (
-      <div className="border-2 rounded-lg p-4 bg-icc-violet/5 border-icc-violet/20">
+      <div className="border rounded-lg p-4 bg-brand-soft border-brand/20">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className="font-semibold text-gray-800">Assigner le rôle STAR aux membres liés sans accès</p>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="font-semibold text-ink">Assigner le rôle STAR aux membres liés sans accès</p>
+            <p className="text-sm text-ink-muted mt-0.5">
               Attribue automatiquement le rôle STAR (accès planning en lecture) à tous les membres avec un compte Google lié mais aucun rôle.
             </p>
           </div>
@@ -410,7 +410,7 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
           </Button>
         </div>
         {assignResult && (
-          <p className="text-sm text-green-700 mt-2">
+          <p className="text-sm text-success mt-2">
             {assignResult.assigned} rôle(s) STAR assigné(s) sur {assignResult.total} compte(s) lié(s).
           </p>
         )}
@@ -418,12 +418,12 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
       )}
 
       {/* Fusion manuelle */}
-      <div className="border-2 rounded-lg p-4">
-        <p className="font-semibold text-gray-800 mb-1">Fusion manuelle</p>
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="border rounded-lg p-4">
+        <p className="font-semibold text-ink mb-1">Fusion manuelle</p>
+        <p className="text-sm text-ink-muted mb-4">
           Sélectionnez deux membres à fusionner, même s&apos;ils ne sont pas détectés automatiquement comme doublons.
         </p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <MemberPicker
             label="Membre à supprimer"
             members={allMembers}
@@ -450,15 +450,15 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
 
       {/* Liste doublons */}
       {groups.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-ink-muted">
           <p className="text-lg">Aucun doublon détecté</p>
           <p className="text-sm mt-1">Tous les membres ont des noms et emails uniques.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{groups.length} groupe(s) de doublons potentiels détecté(s)</p>
+          <p className="text-sm text-ink-muted">{groups.length} groupe(s) de doublons potentiels détecté(s)</p>
           {groups.map((group, i) => (
-            <div key={i} className="border-2 rounded-lg p-4">
+            <div key={i} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs font-semibold px-2 py-1 rounded ${REASON_COLOR[group.reason]}`}>
                   {REASON_LABEL[group.reason]}
@@ -470,23 +470,26 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
                   Fusionner
                 </Button>
               </div>
-              <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${group.members.length}, minmax(0, 1fr))` }}>
+              {/* Nombre de membres variable par groupe (rarement > 2) : `auto-fit` passe à une
+                  colonne dès que la largeur d'une carte manquerait, sans dépendre d'un point de
+                  rupture fixe qui déborderait à 390px pour un groupe à 3+ membres. */}
+              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
                 {group.members.map((m) => (
-                  <div key={m.id} className="border rounded p-3 bg-gray-50">
-                    <p className="font-semibold text-gray-900">{m.firstName} {m.lastName}</p>
-                    {m.email && <p className="text-sm text-gray-600">{m.email}</p>}
-                    {m.phone && <p className="text-sm text-gray-600">{m.phone}</p>}
+                  <div key={m.id} className="min-w-0 border rounded p-3 bg-surface-sunken">
+                    <p className="truncate font-semibold text-ink" title={`${m.firstName} ${m.lastName}`}>{m.firstName} {m.lastName}</p>
+                    {m.email && <p className="truncate text-sm text-ink-muted" title={m.email}>{m.email}</p>}
+                    {m.phone && <p className="truncate text-sm text-ink-muted" title={m.phone}>{m.phone}</p>}
                     {m.userLink && (
-                      <p className="text-xs text-icc-violet mt-1">Compte : {m.userLink.name ?? m.userLink.email}</p>
+                      <p className="text-xs text-brand-text mt-1">Compte : {m.userLink.name ?? m.userLink.email}</p>
                     )}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {m.departments.map((d) => (
-                        <span key={d.id} className={`text-xs px-1.5 py-0.5 rounded ${d.isPrimary ? "bg-icc-violet text-white" : "bg-gray-200 text-gray-600"}`}>
+                        <span key={d.id} className={`text-xs px-1.5 py-0.5 rounded ${d.isPrimary ? "bg-brand text-on-brand" : "bg-surface-sunken text-ink-muted"}`}>
                           {d.name}
                         </span>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-ink-subtle mt-1">
                       {m.counts.plannings} planning · {m.counts.disciples + m.counts.disciplesMade} discipolat
                     </p>
                   </div>

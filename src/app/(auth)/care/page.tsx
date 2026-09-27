@@ -22,12 +22,12 @@ import PublicFormBanner from "@/components/PublicFormBanner";
 export default async function CarePage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const access = await getCareAccess(session, churchId);
   if (!access.canOverview && access.ownProfileIds.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-12 text-gray-400">
+      <div className="max-w-2xl mx-auto text-center py-12 text-ink-subtle">
         <p className="text-lg">Aucun accès à l&apos;espace suivi pastoral.</p>
       </div>
     );
@@ -96,21 +96,21 @@ export default async function CarePage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-start justify-between gap-3 mb-2">
-        <h1 className="text-2xl font-bold text-gray-900">Suivi pastoral</h1>
+        <h1 className="text-2xl font-bold text-ink">Suivi pastoral</h1>
         <div className="flex items-center gap-3 shrink-0">
           {access.canOverview && (
-            <Link href="/care/stats" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+            <Link href="/care/stats" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
               Statistiques
             </Link>
           )}
           {access.canQualify && (
-            <Link href="/care/parametres" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+            <Link href="/care/parametres" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
               Paramètres
             </Link>
           )}
         </div>
       </div>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-ink-muted mb-4">
         Demandes de rendez-vous pastoral et suivi des nouveaux convertis.
       </p>
       {church?.slug && (
@@ -122,7 +122,7 @@ export default async function CarePage() {
         </div>
       )}
       {relances.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4 text-sm text-orange-800">
+        <div className="bg-warning-soft border border-warning/30 rounded-lg px-4 py-3 mb-4 text-sm text-warning">
           À relancer : {relances.join(" · ")}
         </div>
       )}

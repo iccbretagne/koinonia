@@ -122,8 +122,8 @@ export default function RequestActions({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+    <div className="bg-surface rounded-xl border border-line p-5 space-y-4">
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {mode === "none" && (
         <div className="flex flex-wrap gap-2">
@@ -143,20 +143,20 @@ export default function RequestActions({
       {mode === "validate" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Référent <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Référent <span className="text-danger">*</span>
             </label>
             <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-ink-muted mb-1">
               Note transmise au référent (optionnel)
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2">
@@ -169,13 +169,13 @@ export default function RequestActions({
       {mode === "reject" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Motif de refus <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Motif de refus <span className="text-danger">*</span>
             </label>
             <select
               value={reasonCode}
               onChange={(e) => setReasonCode(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             >
               <option value="">— Sélectionner —</option>
               {REJECT_REASON_OPTIONS.map(([code, label]) => (
@@ -184,12 +184,12 @@ export default function RequestActions({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Commentaire (optionnel)</label>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2">
@@ -202,8 +202,8 @@ export default function RequestActions({
       {mode === "reassign" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Nouveau référent <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Nouveau référent <span className="text-danger">*</span>
             </label>
             <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
@@ -217,14 +217,14 @@ export default function RequestActions({
       {mode === "set_date" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Date et heure du rendez-vous <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Date et heure du rendez-vous <span className="text-danger">*</span>
             </label>
             <input
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             />
           </div>
           <div className="flex gap-2">
@@ -237,13 +237,13 @@ export default function RequestActions({
       {mode === "outcome" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Compte rendu du rendez-vous <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Compte rendu du rendez-vous <span className="text-danger">*</span>
             </label>
             <select
               value={outcomeKind}
               onChange={(e) => setOutcomeKind(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
             >
               <option value="">— Sélectionner —</option>
               {OUTCOME_OPTIONS.map(([code, label]) => (
@@ -261,14 +261,14 @@ export default function RequestActions({
       {mode === "handback" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Motif du retour <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-ink-muted mb-1">
+              Motif du retour <span className="text-danger">*</span>
             </label>
             <textarea
               value={handbackReason}
               onChange={(e) => setHandbackReason(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:outline-none focus:border-icc-violet resize-none"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand resize-none"
             />
           </div>
           <div className="flex gap-2">

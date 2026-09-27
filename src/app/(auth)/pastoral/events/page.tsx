@@ -105,26 +105,26 @@ export default async function PastoralEventsPage() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-2 mb-2">
-        <Link href="/pastoral" className="text-sm text-gray-400 hover:text-icc-violet transition-colors">
+        <Link href="/pastoral" className="text-sm text-ink-subtle hover:text-brand-text transition-colors">
           ← Accueil pastoral
         </Link>
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Événements</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{church?.name}</p>
+        <h1 className="text-2xl font-bold text-ink">Événements</h1>
+        <p className="text-sm text-ink-muted mt-0.5">{church?.name}</p>
       </div>
 
       {/* Stats année */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center col-span-2 md:col-span-1">
-          <p className="text-2xl font-bold text-icc-violet">{totalThisYear}</p>
-          <p className="text-xs text-gray-500 mt-1">Événements {now.getFullYear()}</p>
+        <div className="bg-surface border border-line rounded-xl p-4 text-center col-span-2 md:col-span-1">
+          <p className="text-2xl font-bold text-brand-text">{totalThisYear}</p>
+          <p className="text-xs text-ink-muted mt-1">Événements {now.getFullYear()}</p>
         </div>
         {yearStats.sort((a, b) => b._count - a._count).slice(0, 3).map((g) => (
-          <div key={g.type} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-gray-800">{g._count}</p>
-            <p className="text-xs text-gray-500 mt-1">{EVENT_TYPE_LABELS[g.type] ?? g.type}</p>
+          <div key={g.type} className="bg-surface border border-line rounded-xl p-4 text-center">
+            <p className="text-2xl font-bold text-ink">{g._count}</p>
+            <p className="text-xs text-ink-muted mt-1">{EVENT_TYPE_LABELS[g.type] ?? g.type}</p>
           </div>
         ))}
       </div>
@@ -133,39 +133,39 @@ export default async function PastoralEventsPage() {
         {/* Prochains événements */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-700">À venir</h2>
+            <h2 className="text-base font-semibold text-ink-muted">À venir</h2>
             <Link href="/events" className={buttonClasses("ghost", "sm")}>Agenda de l&apos;église →</Link>
           </div>
           {upcoming.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Aucun événement planifié.</p>
+            <p className="text-sm text-ink-subtle italic">Aucun événement planifié.</p>
           ) : (
             <div className="space-y-2">
               {upcoming.map((e) => {
                 const progress = planningProgress(e);
                 return (
-                  <div key={e.id} className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 space-y-1.5">
+                  <div key={e.id} className="bg-surface border border-line rounded-lg px-3 py-2.5 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{e.title}</p>
-                        <p className="text-xs text-gray-400">{fmt(e.date)} · {EVENT_TYPE_LABELS[e.type] ?? e.type}</p>
+                        <p className="text-sm font-medium text-ink truncate">{e.title}</p>
+                        <p className="text-xs text-ink-subtle">{fmt(e.date)} · {EVENT_TYPE_LABELS[e.type] ?? e.type}</p>
                       </div>
                     </div>
                     {progress !== null && (
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className={`text-xs font-medium ${
-                            progress.pct === 100 ? "text-emerald-600" : progress.pct > 50 ? "text-icc-violet" : "text-amber-600"
+                            progress.pct === 100 ? "text-success" : progress.pct > 50 ? "text-brand-text" : "text-warning"
                           }`}>
                             {progress.deptsWithStar} / {progress.totalDepts} département{progress.totalDepts > 1 ? "s" : ""} prêt{progress.totalDepts > 1 ? "s" : ""}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-ink-subtle">
                             {progress.totalStars} STAR en service
                           </span>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1">
+                        <div className="w-full bg-surface-sunken rounded-full h-1">
                           <div
                             className={`h-1 rounded-full transition-all ${
-                              progress.pct === 100 ? "bg-emerald-500" : progress.pct > 50 ? "bg-icc-violet" : "bg-amber-400"
+                              progress.pct === 100 ? "bg-success" : progress.pct > 50 ? "bg-brand" : "bg-warning"
                             }`}
                             style={{ width: `${progress.pct}%` }}
                           />
@@ -173,7 +173,7 @@ export default async function PastoralEventsPage() {
                       </div>
                     )}
                     {e.planningDeadline && e.planningDeadline > now && (
-                      <p className="text-xs text-gray-400">Deadline planning : {fmtFull(e.planningDeadline)}</p>
+                      <p className="text-xs text-ink-subtle">Deadline planning : {fmtFull(e.planningDeadline)}</p>
                     )}
                   </div>
                 );
@@ -185,25 +185,25 @@ export default async function PastoralEventsPage() {
         {/* Événements récents */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-700">30 derniers jours</h2>
+            <h2 className="text-base font-semibold text-ink-muted">30 derniers jours</h2>
             <Link href="/pastoral/reports" className={buttonClasses("ghost", "sm")}>CRs →</Link>
           </div>
           {recent.length === 0 ? (
-            <p className="text-sm text-gray-400 italic">Aucun événement sur les 30 derniers jours.</p>
+            <p className="text-sm text-ink-subtle italic">Aucun événement sur les 30 derniers jours.</p>
           ) : (
             <div className="space-y-2">
               {recent.map((e) => (
-                <div key={e.id} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="w-12 shrink-0 text-xs text-gray-400">{fmt(e.date)}</div>
+                <div key={e.id} className="flex items-center gap-3 bg-surface border border-line rounded-lg px-3 py-2.5">
+                  <div className="w-12 shrink-0 text-xs text-ink-subtle">{fmt(e.date)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{e.title}</p>
+                    <p className="text-sm font-medium text-ink truncate">{e.title}</p>
                     {e.report?.speaker && (
-                      <p className="text-xs text-gray-400 truncate">{e.report.speaker}</p>
+                      <p className="text-xs text-ink-subtle truncate">{e.report.speaker}</p>
                     )}
                   </div>
                   {e.reportEnabled && (
                     <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
-                      e.report ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
+                      e.report ? "text-success bg-success-soft" : "text-warning bg-warning-soft"
                     }`}>
                       {e.report ? "CR ✓" : "CR manquant"}
                     </span>

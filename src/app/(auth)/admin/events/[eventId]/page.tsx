@@ -46,8 +46,8 @@ export default async function EventDetailPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-2">{event.title}</h1>
+      <p className="text-sm text-ink-muted mb-6">
         {event.type} &mdash;{" "}
         {new Date(event.date).toLocaleDateString("fr-FR", {
           day: "2-digit",
@@ -58,8 +58,8 @@ export default async function EventDetailPage({
       </p>
 
       {audioService && (
-        <div className="mb-6 border-2 border-gray-200 rounded-lg p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">Enregistrement audio</h2>
+        <div className="mb-6 border border-line rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-ink mb-1">Enregistrement audio</h2>
           {audioService.status === "PUBLISHED" ? (
             <a
               href={buildPublicAudioUrl(

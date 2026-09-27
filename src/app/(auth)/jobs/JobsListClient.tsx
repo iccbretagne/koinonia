@@ -39,9 +39,9 @@ const TYPE_LABELS: Record<JobType, string> = {
 };
 
 const TYPE_COLORS: Record<JobType, string> = {
-  EMPLOI:     "bg-icc-violet/10 text-icc-violet",
-  STAGE:      "bg-icc-bleu/10 text-icc-bleu",
-  ALTERNANCE: "bg-icc-jaune/20 text-amber-700",
+  EMPLOI:     "bg-brand-soft text-brand-text",
+  STAGE:      "bg-info-soft text-info",
+  ALTERNANCE: "bg-accent-soft text-warning",
 };
 
 export default function JobsListClient({
@@ -84,7 +84,7 @@ export default function JobsListClient({
   return (
     <div>
       {/* Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 border-b border-line">
         <div className="flex gap-1 overflow-x-auto">
           {(["ALL", "EMPLOI", "STAGE", "ALTERNANCE"] as const).map((t) => {
             const count = t === "ALL" ? jobs.length : jobs.filter((j) => j.type === t).length;
@@ -94,12 +94,12 @@ export default function JobsListClient({
                 onClick={() => setFilter(t)}
                 className={`shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
                   filter === t
-                    ? "border-icc-violet text-icc-violet"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    ? "border-brand text-brand-text"
+                    : "border-transparent text-ink-muted hover:text-ink-muted"
                 }`}
               >
                 {t === "ALL" ? "Tout" : TYPE_LABELS[t]}
-                <span className="ml-1.5 text-xs text-gray-400">({count})</span>
+                <span className="ml-1.5 text-xs text-ink-subtle">({count})</span>
               </button>
             );
           })}
@@ -107,7 +107,7 @@ export default function JobsListClient({
         {filtered.length > 0 && (
           <button
             onClick={copyRecap}
-            className="self-start shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 mb-1 rounded-lg border border-icc-violet/30 text-icc-violet hover:bg-icc-violet/10 transition-colors font-medium"
+            className="self-start shrink-0 flex items-center gap-1.5 text-xs px-3 py-1.5 mb-1 rounded-lg border border-brand/30 text-brand-text hover:bg-brand-soft transition-colors font-medium"
           >
             {copied ? (
               <>
@@ -136,8 +136,8 @@ export default function JobsListClient({
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1 text-xs font-semibold rounded-full border-2 transition-colors ${
                 statusFilter === s
-                  ? "border-icc-violet text-icc-violet bg-icc-violet/5"
-                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  ? "border-brand text-brand-text bg-brand-soft"
+                  : "border-line text-ink-muted hover:bg-surface-sunken"
               }`}
             >
               {STATUS_FILTER_LABELS[s]}
@@ -151,7 +151,7 @@ export default function JobsListClient({
         onClose={() => setFallbackText(null)}
         title="Copier le message"
       >
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="text-sm text-ink-muted mb-3">
           La copie automatique n&apos;a pas fonctionné. Sélectionnez le texte ci-dessous et
           copiez-le manuellement.
         </p>
@@ -161,7 +161,7 @@ export default function JobsListClient({
           onFocus={(e) => e.currentTarget.select()}
           value={fallbackText ?? ""}
           rows={12}
-          className="w-full text-xs font-mono border-2 border-gray-200 rounded-lg p-2 focus:ring-icc-violet focus:border-icc-violet"
+          className="w-full text-xs font-mono border border-line rounded-lg p-2 focus:ring-focus focus:border-brand"
         />
         <div className="mt-4 flex justify-end">
           <Button variant="secondary" onClick={() => setFallbackText(null)}>
@@ -171,10 +171,10 @@ export default function JobsListClient({
       </Modal>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-ink-subtle">
           <p className="text-lg font-medium">Aucune offre pour le moment</p>
           <p className="text-sm mt-1">Soyez le premier à publier !</p>
-          <Link href="/jobs/new" className="inline-block mt-4 px-4 py-2 bg-icc-violet text-white text-sm font-semibold rounded-lg hover:bg-icc-violet/90 transition-colors">
+          <Link href="/jobs/new" className="inline-block mt-4 px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors">
             Publier une offre
           </Link>
         </div>
@@ -236,7 +236,7 @@ function JobCard({
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className={`block bg-white rounded-lg border-2 p-5 hover:border-icc-violet/30 hover:shadow-sm transition-all ${isArchived ? "border-gray-100 opacity-60" : "border-gray-100"}`}
+      className={`block bg-surface rounded-lg border-2 p-5 hover:border-brand/30 hover:shadow-card transition-all ${isArchived ? "border-line opacity-60" : "border-line"}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -245,36 +245,36 @@ function JobCard({
               {TYPE_LABELS[job.type]}
             </span>
             {isOwn && (
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Ma publication</span>
+              <span className="text-xs text-ink-subtle bg-surface-sunken px-2 py-0.5 rounded-full">Ma publication</span>
             )}
             {canManage && isArchived && (
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Retirée</span>
+              <span className="text-xs bg-surface-sunken text-ink-muted px-2 py-0.5 rounded-full">Retirée</span>
             )}
           </div>
-          <h3 className="font-semibold text-gray-900 text-base leading-snug">{job.title}</h3>
-          <p className="text-sm text-gray-600 mt-0.5">{job.company}</p>
+          <h3 className="font-semibold text-ink text-base leading-snug">{job.title}</h3>
+          <p className="text-sm text-ink-muted mt-0.5">{job.company}</p>
           {job.location && (
-            <p className="text-xs text-gray-400 mt-0.5">{job.location}</p>
+            <p className="text-xs text-ink-subtle mt-0.5">{job.location}</p>
           )}
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-ink-subtle">
             {createdDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
           </p>
           {deadlineDate && (
-            <p className={`text-xs mt-0.5 ${isExpiringSoon ? "text-icc-rouge font-medium" : "text-gray-400"}`}>
+            <p className={`text-xs mt-0.5 ${isExpiringSoon ? "text-danger font-medium" : "text-ink-subtle"}`}>
               Expire le {deadlineDate.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
             </p>
           )}
         </div>
       </div>
-      <p className="text-sm text-gray-500 mt-2 line-clamp-2">{job.description}</p>
+      <p className="text-sm text-ink-muted mt-2 line-clamp-2">{job.description}</p>
       {canManage && (
         <div className="mt-3 flex justify-end">
           <button
             onClick={toggleStatus}
             disabled={loading}
-            className="px-3 py-1.5 text-xs font-semibold border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
             {loading ? "…" : isArchived ? "Republier" : "Retirer"}
           </button>

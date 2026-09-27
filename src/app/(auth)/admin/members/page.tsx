@@ -10,7 +10,7 @@ import LinkRequestsClient from "./LinkRequestsClient";
 export default async function MembersPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("members:view", churchId);
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const userPermissions = new Set(
@@ -108,7 +108,7 @@ export default async function MembersPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">STAR</h1>
+        <h1 className="text-2xl font-bold text-ink">STAR</h1>
         {canManage && (
           <Link href="/admin/members/duplicates" className={buttonClasses("secondary", "sm")}>
             Doublons potentiels →
@@ -118,10 +118,10 @@ export default async function MembersPage() {
 
       {(pendingRequests.length > 0 || rejectedRequests.length > 0) && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
             Demandes d&apos;accès
             {pendingRequests.length > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-icc-violet rounded-full">
+              <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-on-brand bg-brand rounded-full">
                 {pendingRequests.length}
               </span>
             )}

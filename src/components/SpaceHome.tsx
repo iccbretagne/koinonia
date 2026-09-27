@@ -1,10 +1,48 @@
 import Link from "next/link";
+import {
+  AudioLines,
+  Camera,
+  Headphones,
+  Image as ImageIcon,
+  LayoutGrid,
+  Megaphone,
+  SlidersHorizontal,
+  type LucideIcon,
+} from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusChip, { type StatusTone } from "@/components/ui/StatusChip";
 import type { SpaceCard } from "@/lib/media-space";
+
+/** Icône d'une carte, d'après sa destination (les cartes sont décrites par `@/lib/media-space`). */
+const CARD_ICONS: { prefix: string; icon: LucideIcon }[] = [
+  { prefix: "/media/events", icon: Camera },
+  { prefix: "/media/projects", icon: ImageIcon },
+  { prefix: "/media/requests", icon: ImageIcon },
+  { prefix: "/communication", icon: Megaphone },
+  { prefix: "/audio/ecouter", icon: Headphones },
+  { prefix: "/audio/production", icon: AudioLines },
+  { prefix: "/audio/parametres", icon: SlidersHorizontal },
+];
+
+export function cardIcon(href: string): LucideIcon {
+  return CARD_ICONS.find((c) => href === c.prefix || href.startsWith(`${c.prefix}/`))?.icon ?? LayoutGrid;
+}
+
+/**
+ * Tonalité d'un compteur : `warning` pour ce qui attend (« 3 en attente »), neutre sinon ou à zéro.
+ */
+export function statTone(stat: string): StatusTone {
+  const count = Number.parseInt(stat, 10);
+  if (count === 0) return "neutral";
+  if (/attente|à traiter|a traiter/i.test(stat)) return "warning";
+  return "neutral";
+}
 
 /**
  * Accueil à cartes générique pour un espace à droits distincts (Communication & Production,
- * Audio — spec 049) : une carte par activité accessible, grille responsive (1 colonne mobile,
- * 2 colonnes desktop). L'appelant décide de la redirection directe si une seule carte.
+ * Audio — spec 049), en `SpaceCard` (docs/design-system/components/SpaceCard.md) : une carte par
+ * activité accessible ; une colonne sous 640px, deux au-delà, trois à partir de 1200px.
+ * L'appelant décide de la redirection directe si une seule carte.
  */
 export default function SpaceHome({
   title,
@@ -16,34 +54,37 @@ export default function SpaceHome({
   readonly cards: SpaceCard[];
 }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {headerAction}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {cards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="border-2 border-gray-200 rounded-lg p-5 hover:border-icc-violet transition-colors flex flex-col gap-2"
-          >
-            <span className="text-lg font-semibold text-gray-900">{card.title}</span>
-            {card.team && <span className="text-sm text-gray-500">{card.team}</span>}
-            {card.stats && card.stats.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-1">
-                {card.stats.map((stat) => (
-                  <span
-                    key={stat}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-icc-jaune/30 text-gray-800"
-                  >
-                    {stat}
-                  </span>
-                ))}
-              </div>
-            )}
-          </Link>
-        ))}
+    <div className="flex flex-col gap-6">
+      <PageHeader title={title} actions={headerAction} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 min-[1200px]:grid-cols-3">
+        {cards.map((card) => {
+          const Icon = cardIcon(card.href);
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="group flex flex-col gap-3 rounded-card border border-line bg-surface p-5 shadow-card transition-colors duration-120
+                hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              <span className="grid size-11 place-items-center rounded-control bg-brand-soft text-brand-text">
+                <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <span className="font-display text-[17px] font-semibold leading-6 text-ink">{card.title}</span>
+                {card.team && <span className="text-sm text-ink-muted">{card.team}</span>}
+              </span>
+              {card.stats && card.stats.length > 0 && (
+                <span className="flex flex-wrap gap-2">
+                  {card.stats.map((stat) => (
+                    <StatusChip key={stat} tone={statTone(stat)}>
+                      {stat}
+                    </StatusChip>
+                  ))}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

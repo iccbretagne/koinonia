@@ -6,11 +6,11 @@ import StatsView from "./StatsView";
 export default async function IntegrationStatsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const { scope } = await requireIntegrationAccess(churchId);
   if (scope.scoped) {
-    return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
+    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
   const scopeFilter = {};
@@ -118,8 +118,8 @@ export default async function IntegrationStatsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Statistiques d&apos;intégration</h1>
-        <p className="text-sm text-gray-500 mt-1">Vue d&apos;ensemble des demandes et de leur progression.</p>
+        <h1 className="text-2xl font-bold text-ink">Statistiques d&apos;intégration</h1>
+        <p className="text-sm text-ink-muted mt-1">Vue d&apos;ensemble des demandes et de leur progression.</p>
       </div>
       <StatsView
         total={total}

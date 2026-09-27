@@ -176,7 +176,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
         <Button onClick={openCreate}>Nouvelle église</Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-surface rounded-lg shadow-card">
         <DataTable
           columns={[
             { header: "Nom", accessor: "name" },
@@ -241,7 +241,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
             required
             placeholder="généré automatiquement"
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"
@@ -262,7 +262,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
         onClose={() => setBulkModalOpen(false)}
         title={`Modifier ${selectedIds.size} église(s)`}
       >
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-ink-muted mb-4">
           Seuls les champs remplis seront modifiés.
         </p>
         <form onSubmit={handleBulkEdit} className="space-y-4">
@@ -278,7 +278,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
             onChange={(e) => setBulkSlug(e.target.value)}
             placeholder="Laisser vide pour ne pas modifier"
           />
-          {bulkError && <p className="text-sm text-red-600">{bulkError}</p>}
+          {bulkError && <p className="text-sm text-danger">{bulkError}</p>}
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"

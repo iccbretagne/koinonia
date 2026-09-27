@@ -294,14 +294,14 @@ export default function AudioServiceClient({
       </Link>
 
       {service.shareUrl && (
-        <section className="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-          <h2 className="font-semibold text-gray-900 mb-2">Lien d&apos;écoute</h2>
+        <section className="border border-success/30 bg-success-soft rounded-lg p-4">
+          <h2 className="font-semibold text-ink mb-2">Lien d&apos;écoute</h2>
           <div className="flex flex-wrap items-center gap-2">
             <input
               readOnly
               value={service.shareUrl}
               onFocus={(e) => e.target.select()}
-              className="flex-1 min-w-0 text-sm text-gray-700 bg-white border border-gray-200 rounded px-2 py-1.5"
+              className="flex-1 min-w-0 text-sm text-ink-muted bg-surface border border-line rounded px-2 py-1.5"
             />
             <Button variant="secondary" onClick={copyShareUrl}>
               {copied ? "Copié !" : "Copier le lien"}
@@ -314,20 +314,20 @@ export default function AudioServiceClient({
       )}
 
       {hasFailedRenders && (
-        <section className="border-2 border-icc-rouge bg-red-50 rounded-lg p-4">
-          <p className="text-sm text-gray-900 font-medium">
+        <section className="border border-danger bg-danger-soft rounded-lg p-4">
+          <p className="text-sm text-ink font-medium">
             Le rendu a échoué pour {service.failedRenders.length} séquence
             {service.failedRenders.length > 1 ? "s" : ""} — la publication est interrompue.
           </p>
           <ul className="mt-2 space-y-1">
             {service.failedRenders.map((j) => (
-              <li key={j.id} className="text-xs text-gray-700">
+              <li key={j.id} className="text-xs text-ink-muted">
                 <span className="font-medium">{titleForSegment(j.segmentId)}</span>
                 {j.error && <span> — {j.error}</span>}
               </li>
             ))}
           </ul>
-          <p className="text-xs text-gray-600 mt-2">
+          <p className="text-xs text-ink-muted mt-2">
             « The specified key does not exist » signifie que le fichier n&apos;est pas arrivé jusqu&apos;au
             stockage : son dépôt a été interrompu. Supprimez la séquence concernée ci-dessous et redéposez-la,
             puis relancez la publication.
@@ -336,12 +336,12 @@ export default function AudioServiceClient({
       )}
 
       {rendering && (
-        <section className="border-2 border-icc-bleu bg-blue-50 rounded-lg p-4">
-          <p className="text-sm text-gray-800 font-medium">
+        <section className="border border-info bg-info-soft rounded-lg p-4">
+          <p className="text-sm text-ink font-medium">
             Rendu en cours : {renderedCount}/{service.segments.length} séquence
             {service.segments.length > 1 ? "s" : ""} prête{service.segments.length > 1 ? "s" : ""}.
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-ink-muted mt-1">
             Le niveau sonore de chaque séquence est normalisé par un traitement en arrière-plan — cette page se
             met à jour automatiquement. Le culte sera publié dès que toutes les séquences seront prêtes.
           </p>
@@ -349,22 +349,22 @@ export default function AudioServiceClient({
       )}
 
       {canDeposit && (
-        <section className="border-2 border-gray-200 rounded-lg p-4">
-          <h2 className="font-semibold text-gray-900 mb-2">Dépôt des séquences</h2>
+        <section className="border border-line rounded-lg p-4">
+          <h2 className="font-semibold text-ink mb-2">Dépôt des séquences</h2>
           <input
             ref={fileInputRef}
             type="file"
             accept="audio/*"
             multiple
             onChange={(e) => handleFilesSelected(e.target.files)}
-            className="block text-sm text-gray-600"
+            className="block text-sm text-ink-muted"
           />
 
           {interrupted.length > 0 && (
             <ul className="mt-3 space-y-1">
               {interrupted.map((r) => (
                 <li key={r.sourceId} className="text-sm flex items-center gap-2">
-                  <span className="text-amber-700">Upload interrompu : {r.filename} — redéposez ce fichier.</span>
+                  <span className="text-warning">Upload interrompu : {r.filename} — redéposez ce fichier.</span>
                   <Button
                     variant="danger"
                     size="sm"
@@ -385,8 +385,8 @@ export default function AudioServiceClient({
               {visibleUploads.map((u) => (
                 <li key={u.key} className="text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-700">{u.filename}</span>
-                    <span className="text-gray-500">
+                    <span className="text-ink-muted">{u.filename}</span>
+                    <span className="text-ink-muted">
                       {u.status === "done"
                         ? "Terminé"
                         : u.status === "error"
@@ -397,14 +397,14 @@ export default function AudioServiceClient({
                     </span>
                   </div>
                   {u.totalParts > 0 && u.status === "uploading" && (
-                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-1">
+                    <div className="h-1.5 bg-surface-sunken rounded-full overflow-hidden mt-1">
                       <div
-                        className="h-full bg-icc-violet"
+                        className="h-full bg-brand"
                         style={{ width: `${(100 * u.uploadedParts) / u.totalParts}%` }}
                       />
                     </div>
                   )}
-                  {u.error && <p className="text-icc-rouge text-xs mt-1">{u.error}</p>}
+                  {u.error && <p className="text-danger text-xs mt-1">{u.error}</p>}
                 </li>
               ))}
             </ul>
@@ -412,8 +412,8 @@ export default function AudioServiceClient({
         </section>
       )}
 
-      <section className="border-2 border-gray-200 rounded-lg p-4">
-        <h2 className="font-semibold text-gray-900 mb-3">Nommer et ordonner les séquences</h2>
+      <section className="border border-line rounded-lg p-4">
+        <h2 className="font-semibold text-ink mb-3">Nommer et ordonner les séquences</h2>
         <SequenceListEditor
           serviceId={service.id}
           sources={service.sources.filter((s) => s.kind === "SEQUENCE")}
@@ -441,7 +441,7 @@ export default function AudioServiceClient({
               un clic ne produit aucune requête ni retour visible, ce qui a été rapporté comme
               « rien ne se passe » alors que le formulaire de nommage n'avait pas été enregistré. */}
           {!rendering && service.segments.length === 0 && (
-            <p className="text-xs text-amber-700">
+            <p className="text-xs text-warning">
               Cliquez d&apos;abord sur « Enregistrer l&apos;ordre et les noms » ci-dessus pour pouvoir publier.
             </p>
           )}
@@ -450,14 +450,14 @@ export default function AudioServiceClient({
 
       {/* Actions destructrices/irréversibles regroupées à part — pas au même niveau visuel que
           Publier, pour ne pas pouvoir les déclencher par inadvertance (spec 020). */}
-      <section className="border-2 border-icc-rouge/30 rounded-lg p-4 space-y-2">
-        <h2 className="text-sm font-semibold text-icc-rouge">Zone de danger</h2>
+      <section className="border border-danger/30 rounded-lg p-4 space-y-2">
+        <h2 className="text-sm font-semibold text-danger">Zone de danger</h2>
         {service.status === "PUBLISHED" ? (
           <div className="space-y-1">
             <Button variant="danger" onClick={() => setPublishModal("unpublish")}>
               Dépublier
             </Button>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-ink-muted">
               Le lien d&apos;écoute ci-dessus cessera de fonctionner pour toute personne qui l&apos;a déjà reçu.
             </p>
           </div>
@@ -480,11 +480,11 @@ export default function AudioServiceClient({
 
       <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Supprimer ce culte">
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-ink-muted">
             Le dépôt, les séquences nommées et les rendus déjà calculés seront définitivement supprimés. Cette
             action est irréversible.
           </p>
-          {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+          {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setDeleteModalOpen(false)} disabled={deleting}>
               Annuler

@@ -55,8 +55,8 @@ export default async function EventReportPage({
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Compte rendu</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-ink">Compte rendu</h1>
+        <p className="text-sm text-ink-muted mt-1">
           {event.title} &mdash;{" "}
           {new Date(event.date).toLocaleDateString("fr-FR", {
             day: "2-digit",

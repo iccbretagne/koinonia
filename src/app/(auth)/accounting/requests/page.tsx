@@ -8,13 +8,13 @@ import AccountingNav from "../AccountingNav";
 export default async function AccountingRequestsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="p-4 text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
   if (!perms.includes("accounting:view") && !isPastoral) {
-    return <p className="p-4 text-gray-500">Accès non autorisé.</p>;
+    return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
   const canManage = perms.includes("accounting:manage");
@@ -84,15 +84,15 @@ export default async function AccountingRequestsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Comptabilité</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink">Comptabilité</h1>
+          <p className="text-sm text-ink-muted mt-0.5">
             {canManage ? "Gestion des demandes financières" : "Mes demandes financières"}
           </p>
         </div>
         {canSubmit && (
           <Link
             href="/accounting/requests/new"
-            className="flex items-center gap-2 px-4 py-2 bg-icc-violet text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

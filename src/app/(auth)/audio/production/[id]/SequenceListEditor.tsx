@@ -184,13 +184,13 @@ export default function SequenceListEditor({
   }
 
   if (rows.length === 0) {
-    return <p className="text-sm text-gray-500">Aucune séquence déposée pour le moment.</p>;
+    return <p className="text-sm text-ink-muted">Aucune séquence déposée pour le moment.</p>;
   }
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
+      {deleteError && <p className="text-sm text-danger">{deleteError}</p>}
       <ul className="space-y-2">
         {rows.map((row, index) => (
           <li
@@ -202,20 +202,20 @@ export default function SequenceListEditor({
               if (dragIndex !== null && dragIndex !== index) move(dragIndex, index);
               setDragIndex(null);
             }}
-            className={`flex flex-wrap items-center gap-2 p-3 border-2 rounded-lg bg-white ${
-              row.discarded ? "opacity-60 border-gray-200" : "border-gray-300"
+            className={`flex flex-wrap items-center gap-2 p-3 border rounded-lg bg-surface ${
+              row.discarded ? "opacity-60 border-line" : "border-control-line"
             }`}
           >
-            <span className="cursor-grab text-gray-400 select-none" title="Glisser pour réordonner">
+            <span className="cursor-grab text-ink-subtle select-none" title="Glisser pour réordonner">
               ⠿
             </span>
-            <span className="w-8 text-center text-sm font-semibold text-gray-500">{index + 1}</span>
+            <span className="w-8 text-center text-sm font-semibold text-ink-muted">{index + 1}</span>
             <div className="flex-1 min-w-[220px] space-y-1">
-              <p className="text-xs text-gray-500 truncate" title={row.filename}>
+              <p className="text-xs text-ink-muted truncate" title={row.filename}>
                 {row.filename}
                 {row.sizeBytes != null && <span> · {formatSize(row.sizeBytes)}</span>}
                 {row.incomplete && (
-                  <span className="text-icc-rouge font-medium">
+                  <span className="text-danger font-medium">
                     {" "}
                     · dépôt non terminé — à supprimer et redéposer
                   </span>
@@ -243,8 +243,8 @@ export default function SequenceListEditor({
                 </div>
               </div>
             </div>
-            <span className="text-sm text-gray-500 w-14 text-right">{formatDuration(row.durationMs)}</span>
-            <label className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span className="text-sm text-ink-muted w-14 text-right">{formatDuration(row.durationMs)}</span>
+            <label className="flex items-center gap-1.5 text-xs text-ink-muted">
               <input
                 type="checkbox"
                 checked={row.discarded}
@@ -257,7 +257,7 @@ export default function SequenceListEditor({
               onClick={() => removeRow(row.sourceId)}
               disabled={deletingId === row.sourceId}
               title="Supprimer cette séquence"
-              className="text-icc-rouge hover:opacity-70 disabled:opacity-40 text-sm px-1"
+              className="text-danger hover:opacity-70 disabled:opacity-40 text-sm px-1"
             >
               ✕
             </button>

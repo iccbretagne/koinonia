@@ -113,40 +113,40 @@ export default function WelcomeDutyPoolClient() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-muted">
           {active.length} famille{active.length !== 1 ? "s" : ""} dans le pool de rotation
         </p>
         <Button onClick={openPicker}>+ Ajouter une famille</Button>
       </div>
 
       {loadingPool ? (
-        <p className="text-sm text-gray-400">Chargement…</p>
+        <p className="text-sm text-ink-subtle">Chargement…</p>
       ) : active.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-200">
-          <p className="text-gray-400 text-sm">Aucune famille dans le pool.</p>
-          <p className="text-gray-400 text-xs mt-1">Ajoutez des familles pour commencer la rotation.</p>
+        <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-line">
+          <p className="text-ink-subtle text-sm">Aucune famille dans le pool.</p>
+          <p className="text-ink-subtle text-xs mt-1">Ajoutez des familles pour commencer la rotation.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-surface rounded-lg shadow-card overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-surface-sunken border-b border-line">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Famille</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Dernier service</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-ink-muted uppercase">Famille</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-ink-muted uppercase">Dernier service</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line">
               {active.map((f) => (
-                <tr key={f.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">{f.familyName}</td>
-                  <td className="px-4 py-3 text-gray-500">{lastServed(f)}</td>
+                <tr key={f.id} className="hover:bg-surface-sunken">
+                  <td className="px-4 py-3 font-medium text-ink">{f.familyName}</td>
+                  <td className="px-4 py-3 text-ink-muted">{lastServed(f)}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => removeFamily(f)}
                       disabled={removing === f.id}
-                      className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
+                      className="text-xs text-danger hover:text-danger disabled:opacity-50"
                     >
                       Retirer
                     </button>
@@ -161,27 +161,27 @@ export default function WelcomeDutyPoolClient() {
 
       {inactive.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">Familles désactivées</h3>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <h3 className="text-sm font-semibold text-ink-muted mb-3">Familles désactivées</h3>
+          <div className="bg-surface rounded-lg shadow-card overflow-hidden">
             <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-line">
                 {inactive.map((f) => (
                   <tr key={f.id} className="opacity-50 hover:opacity-80">
-                    <td className="px-4 py-3 font-medium text-gray-800">{f.familyName}</td>
-                    <td className="px-4 py-3 text-gray-500">{lastServed(f)}</td>
+                    <td className="px-4 py-3 font-medium text-ink">{f.familyName}</td>
+                    <td className="px-4 py-3 text-ink-muted">{lastServed(f)}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => toggleActive(f)}
                         disabled={removing === f.id}
-                        className="text-xs text-icc-violet hover:text-icc-violet/80 disabled:opacity-50 mr-3"
+                        className="text-xs text-brand-text hover:text-brand-text disabled:opacity-50 mr-3"
                       >
                         Réactiver
                       </button>
                       <button
                         onClick={() => removeFamily(f)}
                         disabled={removing === f.id}
-                        className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
+                        className="text-xs text-danger hover:text-danger disabled:opacity-50"
                       >
                         Supprimer
                       </button>
@@ -197,41 +197,41 @@ export default function WelcomeDutyPoolClient() {
 
       {/* Picker modal */}
       {showPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-gray-900">Ajouter une famille au pool</h3>
-              <button onClick={() => setShowPicker(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4">
+          <div className="bg-surface rounded-xl shadow-overlay w-full max-w-md flex flex-col max-h-[80vh]">
+            <div className="px-5 py-4 border-b border-line flex items-center justify-between">
+              <h3 className="text-base font-semibold text-ink">Ajouter une famille au pool</h3>
+              <button onClick={() => setShowPicker(false)} className="text-ink-subtle hover:text-ink-muted">✕</button>
             </div>
-            <div className="px-5 py-3 border-b border-gray-100">
+            <div className="px-5 py-3 border-b border-line">
               <input
                 type="text"
                 placeholder="Rechercher…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-icc-violet"
+                className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand"
               />
             </div>
             <div className="flex-1 overflow-y-auto px-2 py-2">
               {loadingAvailable ? (
-                <p className="text-center text-sm text-gray-400 py-8">Chargement…</p>
+                <p className="text-center text-sm text-ink-subtle py-8">Chargement…</p>
               ) : filtered.length === 0 ? (
-                <p className="text-center text-sm text-gray-400 py-8">Aucune famille disponible</p>
+                <p className="text-center text-sm text-ink-subtle py-8">Aucune famille disponible</p>
               ) : (
                 filtered.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => addFamily(f)}
                     disabled={adding === f.id}
-                    className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-icc-violet/5 disabled:opacity-50 flex items-center justify-between"
+                    className="w-full text-left px-3 py-2 rounded-lg text-sm text-ink-muted hover:bg-brand-soft disabled:opacity-50 flex items-center justify-between"
                   >
                     <span>{f.name}</span>
-                    {adding === f.id && <span className="text-xs text-gray-400">Ajout…</span>}
+                    {adding === f.id && <span className="text-xs text-ink-subtle">Ajout…</span>}
                   </button>
                 ))
               )}
             </div>
-            <div className="px-5 py-3 border-t border-gray-100">
+            <div className="px-5 py-3 border-t border-line">
               <Button variant="secondary" onClick={() => setShowPicker(false)} className="w-full">
                 Fermer
               </Button>

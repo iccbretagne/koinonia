@@ -9,7 +9,7 @@ import { buttonClasses } from "@/components/ui/button-classes";
 export default async function RoomChecklistsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
   const permissions = new Set(roles.flatMap((r) => rolePermissions[r] ?? []));
@@ -45,7 +45,7 @@ export default async function RoomChecklistsPage() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Contrôle des mains courantes</h1>
+        <h1 className="text-2xl font-bold text-ink">Contrôle des mains courantes</h1>
         <Link href="/rooms" className={buttonClasses("secondary", "sm")}>
           ← Réservation des salles
         </Link>

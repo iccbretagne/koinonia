@@ -141,13 +141,13 @@ export default function DeptFunctionsClient({ departments }: Props) {
             return (
               <div
                 key={fn.key}
-                className="bg-white rounded-lg shadow p-5 border-2 border-transparent hover:border-icc-violet/20 transition-colors"
+                className="bg-surface rounded-lg shadow-card p-5 border border-transparent hover:border-brand/20 transition-colors"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xl">{fn.icon}</span>
-                  <h3 className="font-semibold text-gray-900">{fn.label}</h3>
+                  <h3 className="font-semibold text-ink">{fn.label}</h3>
                 </div>
-                <p className="text-xs text-gray-500 mb-4">{fn.description}</p>
+                <p className="text-xs text-ink-muted mb-4">{fn.description}</p>
 
                 <CheckboxGroup
                   label="Départements assignés"
@@ -159,14 +159,14 @@ export default function DeptFunctionsClient({ departments }: Props) {
                       value: d.id,
                       label: (
                         <span className="block">
-                          <span className="block font-medium text-gray-800">
+                          <span className="block font-medium text-ink">
                             {d.name}
                           </span>
-                          <span className="block text-xs text-gray-400">
+                          <span className="block text-xs text-ink-subtle">
                             {d.ministryName}
                           </span>
                           {carriesOtherFunction && (
-                            <span className="mt-0.5 inline-block text-xs text-amber-600">
+                            <span className="mt-0.5 inline-block text-xs text-warning">
                               déjà {DEPT_FN_LABEL[d.function as DeptFunction] ?? d.function}
                             </span>
                           )}
@@ -178,17 +178,17 @@ export default function DeptFunctionsClient({ departments }: Props) {
                 />
 
                 {assignedNames.length > 0 ? (
-                  <p className="mt-2 text-xs text-icc-violet font-medium">
+                  <p className="mt-2 text-xs text-brand-text font-medium">
                     ✓ {assignedNames.join(", ")}
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-amber-600">
+                  <p className="mt-2 text-xs text-warning">
                     ⚠ Aucun département configuré — les demandes ne seront pas assignées automatiquement
                   </p>
                 )}
 
                 {isSaving && (
-                  <p className="mt-1 text-xs text-gray-400">Enregistrement...</p>
+                  <p className="mt-1 text-xs text-ink-subtle">Enregistrement...</p>
                 )}
               </div>
             );

@@ -3,32 +3,51 @@
  * `buttonClasses` inappelable depuis un composant serveur (« Attempted to call buttonClasses()
  * from the server but buttonClasses is on the client »). Ce module reste neutre : il est importable
  * des deux côtés.
+ *
+ * Spec 055 (docs/design-system/components/Button.md) : quatre variantes sur les tokens
+ * sémantiques. `edit` (identique à primary) et `info` (bleu clair sur blanc, 2.2:1) restent
+ * acceptées pour ne pas casser les écrans existants, mais rendent respectivement `primary` et
+ * `secondary`.
  */
 
 export type Variant = "primary" | "secondary" | "danger" | "ghost" | "info" | "edit";
 export type Size = "sm" | "md";
 
+/** `md` = 44px (cible tactile minimale), `sm` = 36px (actions de ligne d'un tableau desktop). */
 export const sizeClasses: Record<Size, string> = {
-  sm: "px-2 py-1.5 md:px-2.5 md:py-1.5 min-h-[36px] text-xs",
-  md: "px-3 py-2.5 md:px-4 md:py-2 min-h-[44px] text-sm",
+  sm: "min-h-9 px-3 py-1.5 text-[13px] leading-[18px]",
+  md: "min-h-11 px-4 py-2 text-sm leading-5",
 };
 
+const primary = "border-transparent bg-brand text-on-brand hover:bg-brand-hover";
+const secondary = "border-control-line bg-surface text-ink hover:bg-surface-sunken";
+
 export const variantClasses: Record<Variant, string> = {
-  primary:
-    "bg-icc-violet text-white hover:bg-icc-jaune hover:text-icc-violet focus:ring-icc-violet",
-  secondary:
-    "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-300",
-  danger:
-    "bg-icc-rouge text-white hover:bg-red-700 focus:ring-red-500",
-  ghost:
-    "bg-transparent text-icc-violet hover:bg-icc-violet-light focus:ring-icc-violet",
-  info:
-    "bg-icc-bleu text-white hover:bg-sky-600 focus:ring-icc-bleu",
-  edit:
-    "bg-icc-violet text-white hover:bg-icc-jaune hover:text-icc-violet focus:ring-icc-violet",
+  primary,
+  secondary,
+  ghost: "border-transparent bg-transparent text-brand-text hover:bg-brand-soft",
+  danger: "border-transparent bg-danger text-on-danger hover:bg-danger/90",
+  /** @deprecated Variante retirée du design system : rendu `secondary`. */
+  info: secondary,
+  /** @deprecated Identique à `primary`. */
+  edit: primary,
 };
+
+/**
+ * Socle commun à toutes les variantes : forme, typographie, états focus/appui/désactivé. La
+ * couleur de bordure appartient à chaque variante (deux utilitaires de couleur de bordure sur un
+ * même élément se départagent par l'ordre de la feuille générée, pas par celui de la chaîne).
+ */
+export const buttonBaseClasses =
+  "inline-flex items-center justify-center gap-2 text-center font-display font-semibold tracking-[0.005em] " +
+  "rounded-control border cursor-pointer select-none " +
+  "transition-[background-color,border-color,color,transform] duration-120 ease-out active:scale-[0.98] " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus " +
+  "disabled:opacity-45 disabled:cursor-not-allowed disabled:active:scale-100 " +
+  "aria-disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:active:scale-100 " +
+  "motion-reduce:active:scale-100";
 
 /** Classes du bouton, réutilisables sur un `<Link>`/`<a>` pour qu'un lien d'action ait l'apparence d'un bouton. */
 export function buttonClasses(variant: Variant = "primary", size: Size = "md"): string {
-  return `inline-flex items-center justify-center gap-1.5 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${sizeClasses[size]} ${variantClasses[variant]}`;
+  return `${buttonBaseClasses} ${sizeClasses[size]} ${variantClasses[variant]}`;
 }

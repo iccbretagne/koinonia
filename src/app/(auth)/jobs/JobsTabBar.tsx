@@ -28,18 +28,18 @@ export default function JobsTabBar({
   ];
 
   return (
-    <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+    <div className="flex gap-1 mb-6 border-b border-line overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => switchTab(tab.id)}
           className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
             activeTab === tab.id
-              ? "border-icc-violet text-icc-violet"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-brand text-brand-text"
+              : "border-transparent text-ink-muted hover:text-ink-muted"
           }`}
         >
-          {tab.label} <span className="ml-1.5 text-xs text-gray-400">({tab.count})</span>
+          {tab.label} <span className="ml-1.5 text-xs text-ink-subtle">({tab.count})</span>
         </button>
       ))}
     </div>

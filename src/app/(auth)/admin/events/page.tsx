@@ -5,7 +5,7 @@ import EventsClient from "./EventsClient";
 export default async function EventsPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
-  if (!churchId) return <p className="text-gray-500">Aucune église sélectionnée.</p>;
+  if (!churchId) return <p className="text-ink-muted">Aucune église sélectionnée.</p>;
   await requireChurchPermission("events:manage", churchId);
 
   const church = await prisma.church.findUnique({
@@ -26,7 +26,7 @@ export default async function EventsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Evenements</h1>
+      <h1 className="text-2xl font-bold text-ink mb-6">Evenements</h1>
       <EventsClient
         initialEvents={events.map((e) => ({
           ...e,

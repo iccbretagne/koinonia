@@ -2,6 +2,9 @@ import { auth, getCurrentChurchId, requireChurchPermission, getUserDepartmentSco
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import StatsClient from "./StatsClient";
+import EmptyState from "@/components/ui/EmptyState";
+import PageHeader from "@/components/ui/PageHeader";
+import { Church } from "lucide-react";
 
 interface StatsPageProps {
   readonly searchParams: Promise<{ dept?: string }>;
@@ -16,9 +19,7 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
   const currentChurchId = await getCurrentChurchId(session);
   if (!currentChurchId) {
     return (
-      <div className="p-8 text-center text-gray-400 border-2 border-gray-200 border-dashed rounded-lg">
-        Vous n&apos;êtes assigné à aucune église.
-      </div>
+      <EmptyState icon={Church} title="Aucune église" description="Vous n'êtes rattaché à aucune église. Contactez un administrateur." />
     );
   }
 
@@ -39,8 +40,8 @@ export default async function StatsPage({ searchParams }: StatsPageProps) {
   });
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Statistiques</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader eyebrow="Planning du département" title="Statistiques" description="Présence en service et répartition des tâches, par STAR." />
       <StatsClient
         departments={departments.map((d) => ({
           id: d.id,

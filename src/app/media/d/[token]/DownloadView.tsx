@@ -88,7 +88,7 @@ function Lightbox({
   }, [onClose, onPrev, onNext]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-4 py-3 shrink-0"
@@ -97,21 +97,21 @@ function Lightbox({
         <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={onClose}
-            className="text-white/70 hover:text-white transition-colors shrink-0"
+            className="text-on-brand/70 hover:text-on-brand transition-colors shrink-0"
             aria-label="Fermer"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <span className="text-white/80 text-sm truncate">{photo.filename}</span>
+          <span className="text-on-brand/80 text-sm truncate">{photo.filename}</span>
           {isMediaAll && photo.status !== "APPROVED" && (
-            <span className="shrink-0 text-xs text-yellow-300 bg-yellow-900/60 border border-yellow-700/50 rounded-full px-2 py-0.5">
+            <span className="shrink-0 text-xs text-warning bg-warning/60 border border-warning/50 rounded-full px-2 py-0.5">
               Non validée
             </span>
           )}
         </div>
-        <span className="text-white/50 text-sm tabular-nums shrink-0">{index + 1}/{total}</span>
+        <span className="text-on-brand/50 text-sm tabular-nums shrink-0">{index + 1}/{total}</span>
       </div>
 
       {/* Image */}
@@ -123,7 +123,7 @@ function Lightbox({
         <button
           onClick={onPrev}
           disabled={index === 0}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
           aria-label="Photo précédente"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ function Lightbox({
         <button
           onClick={onNext}
           disabled={index === total - 1}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10"
           aria-label="Photo suivante"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,12 +148,12 @@ function Lightbox({
           <img
             src={hdUrl ?? photo.thumbnailUrl}
             alt={photo.filename}
-            className="max-w-full max-h-[75vh] object-contain rounded shadow-2xl"
+            className="max-w-full max-h-[75vh] object-contain rounded shadow-overlay"
             style={{ filter: hdLoading && !hdUrl ? "blur(2px)" : "none", transition: "filter 200ms" }}
           />
           {hdLoading && !hdUrl && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-on-brand/20 border-t-on-brand rounded-full animate-spin" />
             </div>
           )}
         </div>
@@ -164,7 +164,7 @@ function Lightbox({
         className="flex items-center justify-between px-4 py-3 gap-3 shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 text-white/50 text-sm min-w-0">
+        <div className="flex items-center gap-2 text-on-brand/50 text-sm min-w-0">
           <span className="shrink-0">{formatSize(photo.size)}</span>
           {photo.width && photo.height && (
             <span className="shrink-0">{photo.width}×{photo.height}</span>
@@ -177,8 +177,8 @@ function Lightbox({
             onClick={onToggleSelect}
             className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors font-medium ${
               isSelected
-                ? "bg-icc-violet text-white border-icc-violet"
-                : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
+                ? "bg-brand text-on-brand border-brand"
+                : "bg-on-brand/10 text-on-brand/80 border-on-brand/20 hover:bg-on-brand/20"
             }`}
           >
             {isSelected ? (
@@ -195,10 +195,10 @@ function Lightbox({
           <button
             onClick={onDownload}
             disabled={downloading}
-            className="flex items-center gap-1.5 text-sm bg-icc-violet text-white px-3 py-1.5 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-3 py-1.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
           >
             {downloading ? (
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -294,17 +294,17 @@ export default function DownloadView({ token, data }: { readonly token: string; 
         />
       )}
 
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200 px-4 py-5">
+      <div className="min-h-screen bg-surface-sunken">
+        <header className="bg-surface border-b border-line px-4 py-5">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-xl font-bold text-gray-900">{event?.name ?? "Téléchargement"}</h1>
-            {event && <p className="text-sm text-gray-500 mt-1">{formatDate(event.date)}</p>}
-            {data.token.label && <p className="text-xs text-gray-400 mt-0.5">{data.token.label}</p>}
+            <h1 className="text-xl font-bold text-ink">{event?.name ?? "Téléchargement"}</h1>
+            {event && <p className="text-sm text-ink-muted mt-1">{formatDate(event.date)}</p>}
+            {data.token.label && <p className="text-xs text-ink-subtle mt-0.5">{data.token.label}</p>}
             <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-ink-muted">
                 {photos.length} photo{photos.length !== 1 ? "s" : ""}
                 {isMediaAll && photos.some((p) => p.status !== "APPROVED") && (
-                  <span className="ml-1.5 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full px-2 py-0.5">
+                  <span className="ml-1.5 text-xs text-warning bg-warning-soft border border-warning/30 rounded-full px-2 py-0.5">
                     dont {photos.filter((p) => p.status !== "APPROVED").length} non validée{photos.filter((p) => p.status !== "APPROVED").length > 1 ? "s" : ""}
                   </span>
                 )}
@@ -314,11 +314,11 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                 <button
                   onClick={() => downloadZip()}
                   disabled={zipping}
-                  className="flex items-center gap-1.5 text-sm bg-icc-violet text-white px-4 py-2 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors font-medium"
+                  className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-4 py-2 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
                 >
                   {zipping ? (
                     <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
                       Préparation…
                     </>
                   ) : (
@@ -338,7 +338,7 @@ export default function DownloadView({ token, data }: { readonly token: string; 
         <main className="max-w-4xl mx-auto p-4 space-y-4">
           {/* Select all / bulk actions */}
           {photos.length > 0 && (
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+            <div className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-line">
               <input
                 type="checkbox"
                 checked={selected.size === photos.length && photos.length > 0}
@@ -346,9 +346,9 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                   if (selected.size === photos.length) setSelected(new Set());
                   else setSelected(new Set(photos.map((p) => p.id)));
                 }}
-                className="w-4 h-4 rounded border-gray-300"
+                className="w-4 h-4 rounded border-control-line"
               />
-              <span className="text-sm text-gray-600 flex-1">
+              <span className="text-sm text-ink-muted flex-1">
                 {selected.size > 0
                   ? `${selected.size} sélectionnée${selected.size > 1 ? "s" : ""} (${formatSize(selectedSize)})`
                   : "Tout sélectionner"}
@@ -357,7 +357,7 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                 <button
                   onClick={() => downloadZip(Array.from(selected))}
                   disabled={zipping}
-                  className="flex items-center gap-1.5 text-sm bg-icc-violet text-white px-3 py-1.5 rounded-lg hover:bg-icc-violet/90 disabled:opacity-50 transition-colors font-medium"
+                  className="flex items-center gap-1.5 text-sm bg-brand text-on-brand px-3 py-1.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors font-medium"
                 >
                   {zipping ? "Préparation…" : `Télécharger (${selected.size})`}
                 </button>
@@ -366,19 +366,19 @@ export default function DownloadView({ token, data }: { readonly token: string; 
           )}
 
           {photos.length === 0 ? (
-            <p className="text-center text-gray-500 py-16">Aucune photo disponible.</p>
+            <p className="text-center text-ink-muted py-16">Aucune photo disponible.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {photos.map((photo, idx) => (
                 <div
                   key={photo.id}
-                  className={`group rounded-lg overflow-hidden border-2 bg-white transition-colors ${
-                    selected.has(photo.id) ? "border-icc-violet" : "border-gray-200"
+                  className={`group rounded-lg overflow-hidden border-2 bg-surface transition-colors ${
+                    selected.has(photo.id) ? "border-brand" : "border-line"
                   }`}
                 >
                   {/* Thumbnail — click opens lightbox */}
                   <div
-                    className="aspect-square bg-gray-100 relative cursor-pointer overflow-hidden"
+                    className="aspect-square bg-surface-sunken relative cursor-pointer overflow-hidden"
                     onClick={() => setLightboxIdx(idx)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -388,8 +388,8 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                     {/* Zoom hint overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors flex items-center justify-center">
-                      <svg className="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="absolute inset-0 bg-scrim/0 group-hover:bg-scrim/25 transition-colors flex items-center justify-center">
+                      <svg className="w-7 h-7 text-on-brand opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                       </svg>
                     </div>
@@ -399,23 +399,23 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                       checked={selected.has(photo.id)}
                       onChange={() => toggleSelect(photo.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute top-2 left-2 w-4 h-4 rounded border-gray-300 accent-icc-violet opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-2 left-2 w-4 h-4 rounded border-control-line accent-brand opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       style={selected.has(photo.id) ? { opacity: 1 } : {}}
                     />
                   </div>
 
                   <div className="p-1.5">
                     {isMediaAll && photo.status !== "APPROVED" && (
-                      <span className="inline-block text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full px-1.5 py-0.5 mb-0.5">
+                      <span className="inline-block text-xs text-warning bg-warning-soft border border-warning/30 rounded-full px-1.5 py-0.5 mb-0.5">
                         Non validée
                       </span>
                     )}
-                    <p className="text-xs text-gray-500 truncate">{photo.filename}</p>
-                    <p className="text-xs text-gray-400">{formatSize(photo.size)}</p>
+                    <p className="text-xs text-ink-muted truncate">{photo.filename}</p>
+                    <p className="text-xs text-ink-subtle">{formatSize(photo.size)}</p>
                     <button
                       onClick={() => downloadPhoto(photo.id, photo.filename)}
                       disabled={downloading[photo.id]}
-                      className="mt-1 w-full text-xs bg-icc-violet text-white py-1 rounded hover:bg-icc-violet/90 disabled:opacity-50 transition-colors"
+                      className="mt-1 w-full text-xs bg-brand text-on-brand py-1 rounded hover:bg-brand-hover disabled:opacity-50 transition-colors"
                     >
                       {downloading[photo.id] ? "…" : "Télécharger"}
                     </button>

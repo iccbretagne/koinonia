@@ -4,25 +4,18 @@ import Link from "next/link";
 import type { Session } from "next-auth";
 import { auth, signIn, getCurrentChurchId, isDevLoginEnabled } from "@/lib/auth";
 import { isAuthCookieName } from "@/lib/auth-cookies";
-import { rolePermissions } from "@/lib/registry";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { DEV_USERS } from "../../prisma/fixtures/dev-users";
 
-// /dashboard exige planning:department (spec 031/#462) : un STAR, Reporter, Faiseur de
-// disciples, Comptable ou Référent soins pastoraux ne l'a pas et y crasherait en FORBIDDEN
-// (pas d'error.tsx dans l'app). La redirection post-connexion doit donc tenir compte du
-// rôle plutôt que de pointer vers /dashboard en dur.
+// Spec 055 : la page « Aujourd'hui » (/accueil) est l'accueil commun à tous les rôles d'une
+// église — elle n'affiche que les blocs que le rôle voit déjà ailleurs, sous les mêmes gardes.
+// Sans rôle dans l'église courante (profil pastoral seul, compte en attente), /profile reste
+// la destination, comme avant.
 async function defaultLandingPage(session: Session) {
   const churchId = await getCurrentChurchId(session);
-  const userPermissions = new Set(
-    session.user.churchRoles
-      .filter((r) => r.churchId === churchId)
-      .flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-  if (userPermissions.has("planning:department")) return "/dashboard";
-  if (userPermissions.has("planning:view")) return "/planning";
-  return "/profile";
+  const hasChurchRole = session.user.churchRoles.some((r) => r.churchId === churchId);
+  return hasChurchRole ? "/accueil" : "/profile";
 }
 
 export default async function LoginPage() {
@@ -49,13 +42,20 @@ export default async function LoginPage() {
   const devLoginEnabled = isDevLoginEnabled(process.env);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-icc-violet/35 via-white to-icc-jaune/30">
-      <div className="w-full max-w-md p-8 bg-white/90 backdrop-blur rounded-2xl shadow-xl border-2 border-icc-violet/20">
-        <h1 className="mb-2 text-3xl font-bold text-center text-icc-violet">
-          Koinonia
-        </h1>
-        <p className="mb-8 text-center text-gray-500">
-          Gestion des plannings de service
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-soft via-bg to-accent-soft p-4">
+      <div className="w-full max-w-md p-8 bg-surface/90 backdrop-blur rounded-2xl shadow-overlay border border-brand/20">
+        <div className="flex flex-col items-center">
+          {/* Marque des plumes (commune à toutes les églises ICC) plutôt que le logo complet
+              d'une église précise : cette page de connexion est partagée par toutes les
+              instances multi-églises, l'église n'est pas encore connue à ce stade. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- SVG statique, pas d'optimisation utile */}
+          <img src="/brand/icc-plumes.svg" alt="" width={48} height={48} className="h-12 w-auto mb-4" />
+          <h1 className="mb-2 text-3xl font-bold text-center text-brand-text font-display">
+            Koinonia
+          </h1>
+        </div>
+        <p className="mb-8 text-center text-ink-muted">
+          Le back-office opérationnel de votre église, en une seule application.
         </p>
         <form
           action={async () => {
@@ -68,7 +68,7 @@ export default async function LoginPage() {
         >
           <button
             type="submit"
-            className="flex items-center justify-center w-full gap-3 px-4 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center w-full gap-3 px-4 py-3 text-ink-muted bg-surface border border-control-line rounded-lg hover:bg-surface-sunken transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -101,15 +101,15 @@ export default async function LoginPage() {
           <Link
             href="/api/auth/reset"
             prefetch={false}
-            className="inline-block px-4 py-3 text-xs text-gray-400 underline hover:text-icc-violet"
+            className="inline-block px-4 py-3 text-xs text-ink-subtle underline hover:text-brand-text"
           >
             Problème de connexion ?
           </Link>
         </p>
 
         {devLoginEnabled && (
-          <div className="pt-6 mt-6 border-t border-dashed border-gray-300">
-            <p className="mb-3 text-xs text-center text-gray-400">
+          <div className="pt-6 mt-6 border-t border-dashed border-control-line">
+            <p className="mb-3 text-xs text-center text-ink-subtle">
               Développement uniquement
             </p>
             <form action="/api/auth/dev-login" method="POST" className="space-y-3">
