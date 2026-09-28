@@ -17,7 +17,7 @@ Regrouper les sections actuelles de la sidebar en espaces stables, dans cet ordr
 | **Ressources** | Salles, Emploi, Guide |
 | **Administration** | Église, accès, ministères, départements, fonctions, journal |
 
-Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, les pages se présentent en liste sous l'espace déplié (sidebar, panneau « Plus »). Un sous-espace peut en plus regrouper ses propres pages en onglets (`Tabs`) quand elles sont au même niveau, comme Visuels (Projets / Demandes) au sein de Médias.
+Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, les pages se présentent en liste sous l'espace déplié (sidebar) ou au second niveau du panneau « Plus ». Un sous-espace peut en plus regrouper ses propres pages en onglets (`Tabs`) quand elles sont au même niveau, comme Visuels (Projets / Demandes) au sein de Médias.
 
 ## Desktop (≥ 1024px)
 
@@ -49,7 +49,7 @@ Un espace n'apparaît que si le rôle y a au moins une page. À l'intérieur, le
   | Reporter, Faiseur de disciples (sans priorité dédiée) | Accueil, puis les premières sections réellement accessibles parmi Mon planning, Planning, Agenda, Personnes, Demandes · Plus |
   | Vue pastorale (tout rôle, bascule de vue) | Accueil · Mes membres · Plus |
 
-- **Plus** ouvre une feuille du bas (`BottomSheet`) listant tous les espaces du rôle en grille de tuiles, puis le profil, le guide et la déconnexion. Elle remplace le menu actuel qui empile des sous-niveaux avec un bouton retour.
+- **Plus** ouvre une feuille du bas (`BottomSheet`) en deux niveaux : la liste des espaces du rôle (icône, nom, nombre de pages, compteur ; l'espace courant en `brand-soft`), puis le profil, le guide et la déconnexion. Toucher un espace fait glisser vers ses pages, « ‹ Espaces » revient à la liste ; un espace à une seule destination y mène directement (flèche au lieu du chevron). Échap remonte d'un niveau avant de fermer. Un seul modèle d'interaction : pas de tuiles d'un côté et d'accordéon de l'autre.
 - L'action principale d'une page de liste (« Nouvel événement ») passe dans l'en-tête de page ; dans un formulaire, les boutons Enregistrer / Annuler se placent dans une barre collée au-dessus de la barre du bas.
 - Les onglets d'espace défilent horizontalement et collent sous la barre supérieure.
 
