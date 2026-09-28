@@ -4,6 +4,15 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.26.1] - 2026-09-28
+
+### Modifié
+
+- **Panneau « Plus » sur mobile** (#608) : une seule liste d'espaces remplace les tuiles suivies
+  d'un accordéon. Chaque espace indique son nombre de pages et ses compteurs ; le toucher fait
+  glisser vers ses pages, « ‹ Espaces » revient à la liste. Un espace à une seule page (Accueil,
+  Audio…) s'ouvre directement. Mêmes espaces et mêmes droits qu'avant.
+
 ## [v1.26.0] - 2026-09-27
 
 ### Ajouté
