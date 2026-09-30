@@ -43,15 +43,19 @@ Aucune ne peut être supprimée. Conséquences :
 
 ### Scénarios alternatifs / cas limites
 
-- **Une demande d'intégration a donné naissance à un suivi de nouveau converti** : la suppression
-  est refusée. Le message indique qu'il faut d'abord supprimer le suivi lié.
+- **Une demande d'intégration a donné naissance à un suivi de nouveau converti ou à une demande
+  de rendez-vous pastoral** : la suppression est refusée. Le message indique qu'il faut d'abord
+  supprimer le suivi ou le rendez-vous lié.
 - **Un rendez-vous pastoral a été orienté vers un suivi** : même règle, suppression refusée tant
   que le suivi existe.
 - **Un suivi** peut toujours être supprimé (rien n'en dépend) ; la demande d'origine, elle, reste.
 - **La demande est confiée à un accompagnant** : la suppression reste possible ; l'accompagnant
   n'y a simplement plus accès. Il n'est pas notifié.
-- **Notifications déjà envoyées** qui pointent vers la demande : leur lien mène à un message
+- **Notifications déjà envoyées** à propos de la demande : elles sont supprimées avec elle (leur
+  texte cite la personne). Un lien encore ouvert ailleurs (onglet, favori) mène à un message
   « Cette demande n'existe plus », sans erreur.
+- **Rendez-vous déjà planifié** : son entrée dans l'agenda est supprimée avec la demande ; la
+  confirmation le signale.
 - **Deux Admins suppriment en même temps** : le second reçoit « demande introuvable », sans erreur.
 - **Multi-église** : un Admin d'une église ne peut jamais supprimer une demande d'une autre église.
 
@@ -61,10 +65,11 @@ Aucune ne peut être supprimée. Conséquences :
 - [ ] Aucun autre rôle ne voit l'action, et une tentative directe est refusée.
 - [ ] La suppression est précédée d'une confirmation explicite.
 - [ ] Une demande supprimée n'apparaît plus nulle part (listes, relances, statistiques, exports).
-- [ ] La suppression d'une demande d'intégration ou d'un rendez-vous ayant un suivi lié est
-      refusée avec un message indiquant la marche à suivre.
+- [ ] La suppression d'une demande d'intégration ayant un suivi ou un rendez-vous lié, ou d'un
+      rendez-vous ayant un suivi lié, est refusée avec un message indiquant la marche à suivre.
 - [ ] L'historique des modifications trace la suppression sans aucune donnée personnelle.
-- [ ] Un lien de notification vers une demande supprimée affiche un message clair.
+- [ ] Les notifications à propos d'une demande supprimée disparaissent ; un lien vers une
+      demande supprimée affiche un message clair.
 - [ ] Un Admin ne peut pas supprimer une demande d'une autre église.
 - [ ] L'action est utilisable sur mobile.
 
@@ -80,4 +85,5 @@ Aucune ne peut être supprimée. Conséquences :
 
 - Aucune bloquante. Décisions prises avec le porteur (2026-10-01) : suppression refusée tant qu'un
   suivi lié existe (option B) ; droit porté par des permissions dédiées, réservées à Admin et Super
-  Admin.
+  Admin. Complément (plan, 2026-10-01) : même refus pour une demande d'intégration ayant créé un
+  rendez-vous ; l'entrée d'agenda et les notifications de la demande sont supprimées avec elle.

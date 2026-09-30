@@ -1,7 +1,7 @@
 # Plan technique — Suppression des demandes du suivi pastoral et de l'intégration
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé (décisions arbitrées avec le porteur le 2026-10-01)
 - **Mis à jour le** : 2026-10-01
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -19,7 +19,8 @@
       déclarées dans les manifestes, matrice figée `permissions.test.ts` mise à jour
 - [x] **Validation** Zod : les trois routes `DELETE` n'ont pas de corps ; l'identifiant vient de
       `await params` — aucune mutation à corps n'est ajoutée
-- [x] **Migration** Prisma : aucun changement de schéma (voir « Modèle de données »)
+- [x] **Migration** Prisma : une migration additive (`Notification.entityType`/`entityId`,
+      nullables + index) — voir « Modèle de données »
 - [x] **Enums** importés depuis `@/generated/prisma/client` (aucun nouvel enum)
 - [x] **UI** : `Button` (variant `danger`), `ConfirmModal`, `EmptyState`, `useToast` réutilisés
 
@@ -32,7 +33,8 @@ deux du module `care` — et demande d'intégration (`FamilyIntegrationRequest`,
 
 1. vérifie l'existence et l'église de l'objet ;
 2. refuse (`409`) si un suivi lié existe (règle « option B » de la spec) ;
-3. efface ce qui n'existe que par la demande (entrée d'agenda du rendez-vous, historique) ;
+3. efface ce qui n'existe que par la demande (entrée d'agenda du rendez-vous, historique,
+   notifications in-app qui s'y rapportent) ;
 4. supprime la ligne.
 
 Puis, une fois la transaction validée, une **seule** ligne de journal `DELETE` est écrite, sans
@@ -41,7 +43,41 @@ direct, une ligne supprimée disparaît partout sans code supplémentaire.
 
 ## Modèle de données
 
-**Aucun changement de schéma.** Les contraintes existantes suffisent et ont été vérifiées :
+### Rattachement des notifications (seul changement de schéma)
+
+Décision du porteur : les notifications in-app d'une demande supprimée sont **supprimées**, car
+leur texte cite presque toujours la personne. Le lien seul ne permet pas de les retrouver
+toutes : trois notifications nominatives pointent vers une page générique (« Nouvelle demande
+de RDV » → `/care`, « Accompagnement réaffecté » → `/care`, « Demande RDV à planifier » →
+`/agenda/schedule`), et celles du demandeur vers `/requests`. On ajoute donc un rattachement
+explicite :
+
+```prisma
+model Notification {
+  // …
+  /// Objet métier dont parle la notification (spec 057) — permet de l'effacer avec lui.
+  /// Nullable : notifications antérieures et notifications sans objet précis.
+  entityType String? @db.VarChar(50)
+  entityId   String?
+
+  @@index([entityType, entityId])
+}
+```
+
+Migration `add_notification_entity` : deux colonnes nullables et un index, **sans reprise de
+données**. `NotificationInput` (`src/lib/notifications.ts`) reçoit `entityType?`/`entityId?`,
+transmis tels quels par `createNotification`/`notifyUsers`/`notifyUsersWithRole`/
+`notifyDeptMembers`. Toutes les notifications émises par `care` et `integration` à propos d'une
+demande ou d'un suivi les renseignent (`AppointmentRequest` | `MsdpFollowUp` |
+`FamilyIntegrationRequest`, mêmes valeurs que `audit_logs.entityType`).
+
+À la suppression : `notification.deleteMany({ where: { OR: [{ entityType, entityId }, { link:
+{ in: liensDeLaDemande } }] } })`. Le second critère rattrape les notifications **antérieures**
+au déploiement qui pointent vers la demande (`/care/requests/{id}`, `/care/followups/{id}`,
+`/integration/requests/{id}` et l'ancien `/admin/integration/requests/{id}`). Reste non
+effaçable : une notification antérieure au déploiement à lien générique (voir risques).
+
+### Contraintes existantes (vérifiées, inchangées)
 
 | Lien | Contrainte actuelle | Effet de la suppression |
 |---|---|---|
@@ -92,8 +128,8 @@ noms d'accompagnants : ces lignes sont supprimées avec la demande (exigence de 
   - `deleteAppointmentRequest({ id, churchId, actorId })` — transaction : charge
     `{ id, msdpFollowUp: { select: { id } } }` ; `409` si suivi ; `agendaEntry.deleteMany({ where:
     { requestId: id } })` ; `auditLog.deleteMany({ where: { entityType: "AppointmentRequest",
-    entityId: id } })` ; `appointmentRequest.deleteMany({ where: { id, churchId } })` (`404` si
-    `count === 0`). Après validation : `logAudit({ action: "DELETE", entityType:
+    entityId: id } })` ; `deleteItemNotifications(tx, "AppointmentRequest", id, [liens])` ;
+    `appointmentRequest.deleteMany({ where: { id, churchId } })` (`404` si `count === 0`). Après validation : `logAudit({ action: "DELETE", entityType:
     "AppointmentRequest", entityId: id, churchId, userId: actorId })` sans `details`.
   - `deleteMsdpFollowUp({ id, churchId, actorId })` — même schéma, sans contrôle de dépendance
     (rien ne dépend d'un suivi) ; la demande d'origine n'est pas touchée (son lien passe à `NULL`
@@ -102,7 +138,18 @@ noms d'accompagnants : ces lignes sont supprimées avec la demande (exigence de 
     (`sourceIntegrationRequestId`) et le suivi (`requestId`) issus d'une demande d'intégration ;
     prend le client de transaction en paramètre (même convention que
     `handleIntegrationSubmitted`) pour que le contrôle et la suppression soient atomiques.
+- `services/notifications.ts`, `appointments.ts`, `followups.ts`, `relances.ts` : chaque
+  notification émise à propos d'une demande ou d'un suivi renseigne `entityType`/`entityId`
+  (création, affectation, réaffectation, retour au référent, à planifier, planifié, non retenu,
+  relances).
 - `index.ts` : exporte les trois fonctions et `requireCareDelete`.
+
+### Noyau (`src/lib/notifications.ts`)
+
+- `NotificationInput` : `entityType?`, `entityId?` (transmis à `create`/`createMany`).
+- `deleteItemNotifications(tx, entityType, entityId, links)` : `deleteMany` sur
+  `{ entityType, entityId }` **ou** `link ∈ links`. Vit dans le noyau parce que les deux
+  modules en ont besoin et qu'ils ne peuvent pas partager de code entre eux (ADR-0001).
 
 ### Module `integration`
 
@@ -111,8 +158,17 @@ noms d'accompagnants : ces lignes sont supprimées avec la demande (exigence de 
   churchId)` (booléen pour la page, via `rolePermissions`). Ni l'équipe Intégration/MSDP ni les
   bergers n'y ont accès : la délégation de `requireIntegrationAccess` ne s'applique pas ici.
 - `services/deletion.ts` (nouveau) : `deleteIntegrationRequest(tx, { id, churchId })` —
-  `auditLog.deleteMany` (`entityType: "FamilyIntegrationRequest"`) puis
-  `familyIntegrationRequest.deleteMany({ where: { id, churchId } })` (`404` si `count === 0`).
+  `auditLog.deleteMany` (`entityType: "FamilyIntegrationRequest"`),
+  `deleteItemNotifications` (liens `/integration/requests/{id}` et
+  `/admin/integration/requests/{id}`), puis `familyIntegrationRequest.deleteMany({ where: { id,
+  churchId } })` (`404` si `count === 0`).
+- `services/family-service.ts` : les notifications d'affectation au berger et de renvoi à
+  l'équipe renseignent `entityType`/`entityId`.
+
+### Route agenda
+
+- `src/app/api/agenda/requests/[id]/schedule/route.ts` émet « Rendez-vous pastoral confirmé »
+  au demandeur : elle renseigne aussi `entityType: "AppointmentRequest"`/`entityId`.
   N'écrit pas le journal lui-même : c'est le handler qui le fait après la transaction, faute de
   pouvoir partager la transaction avec `logAudit`.
 
@@ -138,8 +194,8 @@ modules qui ne peuvent pas s'importer (ADR-0001).
 - **Intégration** (`src/app/(auth)/integration/requests/[id]/`) : `page.tsx` passe `canDelete` et
   la présence d'un rendez-vous/suivi lié à `RequestDetail.tsx`.
 - **Confirmation** : `ConfirmModal` (`variant="danger"`), titre « Supprimer définitivement cette
-  demande ? », message : « Les coordonnées, le message et l'historique de la demande seront
-  effacés. Cette action est irréversible. » (+ « Le rendez-vous planifié dans l'agenda sera
+  demande ? », message : « Les coordonnées, le message, l'historique et les notifications de la
+  demande seront effacés. Cette action est irréversible. » (+ « Le rendez-vous planifié dans l'agenda sera
   aussi supprimé. » si une entrée d'agenda existe).
 - **Suppression bloquée** connue à l'affichage : le clic ouvre une `ConfirmModal` sans
   confirmation possible, qui explique la marche à suivre et donne le lien vers le suivi (ou le
@@ -147,7 +203,8 @@ modules qui ne peuvent pas s'importer (ADR-0001).
   entre-temps).
 - Après succès : `toast.success("Demande supprimée.")` puis `router.push` vers la liste
   (`/care` ou `/integration`).
-- **Lien de notification périmé** : ajout d'un `not-found.tsx` dans chacun des trois segments
+- **Lien de notification périmé** (cas résiduel — notification déjà affichée dans un onglet
+  ouvert, lien copié, favori) : ajout d'un `not-found.tsx` dans chacun des trois segments
   `[id]`, affichant un `EmptyState` « Cette demande n'existe plus » (« …ou vous n'y avez pas
   accès ») avec un retour à la liste. Les pages appellent déjà `notFound()` quand l'objet est
   absent **ou** inaccessible : le même message pour les deux cas n'apprend rien sur l'existence
@@ -176,11 +233,18 @@ modules qui ne peuvent pas s'importer (ADR-0001).
   pastoral** (case « soin pastoral ») est refusée comme celle qui a donné un suivi —
   *Pourquoi* : même situation que le cas prévu par la spec (un élément `care` issu de la
   demande), et la colonne `sourceIntegrationRequestId` sans clé étrangère resterait sinon
-  pendante. **Extension de la règle de la spec, à valider.**
-- **Choix** : les notifications in-app déjà envoyées sont conservées ; leur lien mène au
-  `not-found.tsx` — *Pourquoi* : comportement décrit par la spec. **Point d'attention** : leur
-  texte contient souvent le nom de la personne (« On vous a confié la demande de X ») ; une
-  demande d'effacement complète impliquerait de les supprimer aussi (par `link`), à arbitrer.
+  pendante. **Validé par le porteur (2026-10-01).**
+- **Choix** : les notifications in-app de la demande sont **supprimées** avec elle — *Pourquoi* :
+  décision du porteur (2026-10-01), leur texte cite la personne. Remplace le scénario de la spec
+  « le lien mène à un message » pour le cas général ; `not-found.tsx` reste pour les cas
+  résiduels. La spec est mise à jour en conséquence.
+- **Choix** : rattachement explicite `Notification.entityType`/`entityId` + rattrapage par lien
+  — *Pourquoi* : seul moyen fiable de retrouver les notifications à lien générique.
+- **Écarté** : rechercher le nom de la personne dans `message` — *Raison* : homonymes,
+  faux positifs sur d'autres demandes, et fragile au moindre changement de libellé.
+- **Écarté** : remplacer les liens génériques par le lien de la demande — *Raison* : casse le
+  parcours du Protocole (`/agenda/schedule`) et enverrait l'ancien accompagnant, qui n'a plus
+  accès, vers une page introuvable.
 - **Choix** : contrôle de dépendance dans la même transaction que la suppression —
   *Pourquoi* : aucun suivi ne peut être créé entre le contrôle et la suppression.
 - **Écarté** : `onDelete: Restrict` sur les liens vers le suivi (migration) pour que la base
@@ -201,6 +265,12 @@ modules qui ne peuvent pas s'importer (ADR-0001).
   cette vue ; seule la ligne `DELETE` reste. Conforme à la spec, à mentionner dans l'ADR.
 - **Autres traces de la personne** hors demande (dossier parcours, fiche membre, e-mails déjà
   envoyés) : hors périmètre (spec), non effacées.
+- **Notifications antérieures au déploiement à lien générique** (« Nouvelle demande de RDV »,
+  « Accompagnement réaffecté », « Demande RDV à planifier », notifications du demandeur) : sans
+  rattachement, elles ne peuvent pas être retrouvées sans ambiguïté et restent. Le résidu
+  diminue naturellement ; à mentionner dans l'ADR et le CHANGELOG.
+- **Oubli de rattachement** sur une future notification : un test vérifie que chaque émission
+  `care`/`integration` liée à un objet renseigne `entityType`/`entityId`.
 - **Lien mort préexistant** : `family-service.ts:166` produit `/admin/integration/requests/{id}`,
   route qui n'existe plus. Sans rapport avec la suppression, non corrigé ici (à signaler en
   issue).
@@ -218,9 +288,14 @@ modules qui ne peuvent pas s'importer (ADR-0001).
     la transaction, sans `details`.
   - `deleteMsdpFollowUp` : suppression sans contrôle de dépendance, historique effacé.
   - `countCareItemsFromIntegrationRequest` : 0 / rendez-vous seul / suivi seul / les deux.
-  - `deleteIntegrationRequest` : historique puis demande ; `404`.
+  - `deleteIntegrationRequest` : historique, notifications puis demande ; `404`.
+  - `deleteItemNotifications` : filtre `OR` (rattachement **ou** lien) ; aucun lien ⇒ seul le
+    rattachement.
+  - Émissions de notifications `care`/`integration` : `entityType`/`entityId` présents
+    (tests existants de `notifications.ts`, `relances.ts`, `family-service.ts` complétés).
 - **Routes** (auth mockée, comme `src/app/api/care/companions/__tests__/route.test.ts`) :
   Admin → `200` ; Secrétaire, Référent soins pastoraux, membre de l'équipe Intégration → `403` ;
   Admin d'une autre église → `403` ; id inconnu → `404` ; dépendance → `409`.
-- **Manuel** (dev) : les trois suppressions, la suppression bloquée, un lien de notification
-  vers une demande supprimée, et le rendu à 390 px.
+- **Manuel** (dev) : les trois suppressions, la suppression bloquée, disparition des
+  notifications de la cloche, ouverture d'un lien vers une demande supprimée, rendu à 390 px.
+- **CI** : job `migrations` (rejeu sur MariaDB vierge) pour la nouvelle migration.
