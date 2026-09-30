@@ -4,6 +4,17 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.26.3] - 2026-10-01
+
+### Corrigé
+
+- **Suivi pastoral : « Membre MSDP invalide ou hors périmètre » en confiant une demande** (#616) :
+  tout STAR du MSDP proposé dans la liste des accompagnants peut désormais être choisi (seuls
+  les responsables de département MSDP étaient acceptés).
+- **Widget anti-robots absent sur les formulaires publics** (#616) : un commentaire en fin de
+  ligne dans `shared/.env` était lu comme faisant partie de la clé Turnstile ; il est désormais
+  ignoré.
+
 ## [v1.26.2] - 2026-09-30
 
 ### Corrigé
