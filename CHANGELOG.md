@@ -4,6 +4,16 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Ajouté
+
+- **Accompagnants déclarés du suivi pastoral** (spec 056) : sur `/care/parametres`, le
+  Référent soins pastoraux peut désormais écarter un membre du MSDP de la liste des
+  accompagnants possibles, ou ajouter nominativement un STAR d'un autre département. Un STAR
+  qui rejoint le MSDP devient automatiquement accompagnant possible, sans action manuelle.
+  Écarter ou retirer quelqu'un n'annule aucune demande déjà confiée.
+
 ## [v1.26.3] - 2026-10-01
 
 ### Corrigé

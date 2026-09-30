@@ -249,41 +249,6 @@ export async function applyFollowupTransition(params: {
   return updated;
 }
 
-/**
- * Membres du MSDP assignables comme accompagnants (T18, `GET /api/care/companions`) — vivier
- * d'appartenance (`Member.departments`, ADR-0013), pas de responsabilité (`user_departments`) :
- * reprise à l'identique de l'ancien `integration/msdp/counselors`. Le vivier profils pastoraux
- * s'y ajoute au lot 2.
- */
-export async function listMsdpCounselors(churchId: string) {
-  const msdpMembers = await prisma.member.findMany({
-    where: {
-      departments: {
-        some: { department: { function: DEPT_FN.MSDP, ministry: { churchId } } },
-      },
-    },
-    select: {
-      userLinks: {
-        where: { churchId, validatedAt: { not: null } },
-        select: { user: { select: { id: true, name: true, email: true, image: true } } },
-      },
-    },
-  });
-
-  const seenIds = new Set<string>();
-  const counselors: { id: string; name: string | null; email: string | null; image: string | null }[] = [];
-  for (const m of msdpMembers) {
-    for (const link of m.userLinks) {
-      if (!seenIds.has(link.user.id)) {
-        seenIds.add(link.user.id);
-        counselors.push(link.user);
-      }
-    }
-  }
-  counselors.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
-  return counselors;
-}
-
 // ─── Notifications ───────────────────────────────────────────────────────────
 
 export function buildMsdpCounselorNotifEmail(params: {
