@@ -10,6 +10,8 @@ interface BottomSheetProps {
   readonly onClose: () => void;
   /** Titre visible ; sans titre, `aria-label` nomme la feuille (défaut « Menu »). */
   readonly title?: ReactNode;
+  /** Contenu du début de l'en-tête quand il n'y a pas de titre (ex. bouton retour d'un sous-niveau). */
+  readonly headerStart?: ReactNode;
   readonly "aria-label"?: string;
   readonly children: ReactNode;
   readonly className?: string;
@@ -28,6 +30,7 @@ export default function BottomSheet({
   open,
   onClose,
   title,
+  headerStart,
   "aria-label": ariaLabel,
   children,
   className = "",
@@ -87,7 +90,7 @@ export default function BottomSheet({
               {title}
             </h2>
           ) : (
-            <span />
+            (headerStart ?? <span />)
           )}
           <IconButton
             icon={X}

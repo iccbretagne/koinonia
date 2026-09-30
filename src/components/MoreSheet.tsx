@@ -6,8 +6,9 @@ import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink } from "lucide-reac
 import BottomSheet from "@/components/ui/BottomSheet";
 import { Badge } from "@/components/ui/Badge";
 import NavPageList from "@/components/NavPageList";
+import { sheetGroup, sheetOverline } from "@/components/nav-styles";
 import AccountActions, { type AccountActionsProps } from "@/components/AccountActions";
-import type { ActiveNav, NavSpace, SpaceKey } from "@/lib/navigation";
+import { SECTION_LABELS, type ActiveNav, type NavSpace, type SpaceKey } from "@/lib/navigation";
 
 interface MoreSheetProps extends AccountActionsProps {
   readonly open: boolean;
@@ -16,10 +17,23 @@ interface MoreSheetProps extends AccountActionsProps {
   readonly active: ActiveNav;
 }
 
-const overline = "font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle";
 
-const rowClass = `flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-control px-3 py-2 text-left
+const rowClass = `flex min-h-15 w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left
   transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`;
+
+/** Tuile d'icône : ce qui distingue un espace d'une page (les pages n'en ont pas). */
+function SpaceTile({ icon: Icon, active, large = false }: { readonly icon: NavSpace["icon"]; readonly active: boolean; readonly large?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`grid shrink-0 place-items-center rounded-control ${large ? "size-10" : "size-9"} ${
+        active ? "bg-brand text-on-brand" : "bg-surface text-ink-muted"
+      }`}
+    >
+      <Icon className="size-5" strokeWidth={1.75} />
+    </span>
+  );
+}
 
 /**
  * Un espace s'ouvre en second niveau quand il a plusieurs pages (ou un message d'absence de
@@ -39,9 +53,10 @@ function hintFor(space: NavSpace): string | null {
 
 /**
  * Panneau « Plus » de la barre du bas (docs/design-system/components/BottomSheet.md), en deux
- * niveaux : la liste des espaces du rôle (l'espace courant en `brand-soft`) suivie du compte ;
- * toucher un espace fait glisser vers ses pages, « Espaces » ramène à la liste. Un espace à une
- * seule destination y mène directement (flèche au lieu du chevron). Échap remonte d'un niveau
+ * niveaux. Niveau 1 : les espaces du rôle rangés sous les sections de la sidebar (« Mon service »,
+ * « Église »), en listes groupées avec tuile d'icône (l'espace courant en `brand-soft`), puis le
+ * compte. Toucher un espace fait glisser vers ses pages, « Menu » ramène à la liste. Un espace à
+ * une seule destination y mène directement (flèche au lieu du chevron). Échap remonte d'un niveau
  * avant de fermer.
  */
 export default function MoreSheet({ open, onClose, spaces, active, ...account }: MoreSheetProps) {
@@ -62,6 +77,9 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
   }
 
   const opened = spaces.find((s) => s.key === openedKey) ?? null;
+  const sections = (["service", "church"] as const)
+    .map((section) => ({ section, list: spaces.filter((s) => s.section === section) }))
+    .filter(({ list }) => list.length > 0);
 
   // Focus sur « Espaces » à l'entrée d'un espace, puis sur la ligne quittée au retour.
   useEffect(() => {
@@ -86,7 +104,7 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
     setOpenedKey(null);
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+  function onKeyDown(e: KeyboardEvent<HTMLElement>) {
     if (e.key !== "Escape" || !opened) return;
     // Empêche le <dialog> de se fermer : Échap remonte d'abord à la liste des espaces.
     e.preventDefault();
@@ -94,8 +112,29 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
     back();
   }
 
+  const backButton = (
+    <button
+      ref={backRef}
+      type="button"
+      onClick={back}
+      onKeyDown={onKeyDown}
+      onPointerDown={(e) => e.stopPropagation()}
+      className="-ml-2 inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-control px-2 font-display text-sm font-semibold text-brand-text
+        transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+    >
+      <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={2} />
+      Menu
+    </button>
+  );
+
   return (
-    <BottomSheet open={open} onClose={close} aria-label="Plus">
+    <BottomSheet
+      open={open}
+      onClose={close}
+      title={opened ? undefined : "Menu"}
+      headerStart={opened ? backButton : undefined}
+      aria-label="Menu"
+    >
       <div onKeyDown={onKeyDown}>
         {opened ? (
           <div
@@ -103,20 +142,15 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
             style={{ minHeight: listHeight }}
             className="transition-[translate,opacity] duration-200 ease-out starting:translate-x-6 starting:opacity-0"
           >
-            <button
-              ref={backRef}
-              type="button"
-              onClick={back}
-              className="-ml-1 mb-1 inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-control px-2 font-display text-sm font-semibold text-brand-text
-                transition-colors duration-120 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
-            >
-              <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={2} />
-              Espaces
-            </button>
-            <h3 className="flex items-center gap-2.5 px-3 pb-2 font-display text-lg font-semibold leading-6 text-ink">
-              <opened.icon aria-hidden="true" className="size-5 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-              {opened.label}
-            </h3>
+            <div className="mb-1 flex items-center gap-3 border-b border-line px-1 pb-3.5 pt-1">
+              <SpaceTile icon={opened.icon} active large />
+              <div className="min-w-0">
+                <h3 className="truncate font-display text-xl font-bold leading-6 text-ink">{opened.label}</h3>
+                {opened.pages.length > 1 && (
+                  <p className="text-[13px] leading-[18px] text-ink-subtle">{opened.pages.length} pages</p>
+                )}
+              </div>
+            </div>
             {opened.pages.length === 0 ? (
               <p className="px-3 py-2 text-sm text-ink-subtle">{opened.emptyMessage}</p>
             ) : (
@@ -128,77 +162,79 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
             ref={listRef}
             className="transition-[translate,opacity] duration-200 ease-out starting:-translate-x-6 starting:opacity-0"
           >
-            <p className={`${overline} mb-1 px-3`}>Espaces</p>
-            <ul className="flex flex-col gap-px">
-              {spaces.map((s) => {
-                const isActive = active.space === s.key;
-                const target = directTarget(s);
-                const hint = hintFor(s);
-                const className = `${rowClass} ${isActive ? "bg-brand-soft text-brand-text" : "text-ink hover:bg-surface-sunken"}`;
-                const content = (
-                  <>
-                    <s.icon
-                      aria-hidden="true"
-                      className={`size-5 shrink-0 ${isActive ? "" : "text-ink-subtle"}`}
-                      strokeWidth={1.75}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-[15px] font-semibold leading-5">{s.label}</span>
-                      {hint && (
-                        <span className={`block truncate text-[13px] leading-[18px] ${isActive ? "" : "text-ink-subtle"}`}>
-                          {hint}
+            {sections.map(({ section, list }) => (
+              <section key={section} className="mt-4 first:mt-1">
+                <p className={sheetOverline}>{SECTION_LABELS[section]}</p>
+                <ul className={sheetGroup}>
+                  {list.map((s, i) => {
+                    const isActive = active.space === s.key;
+                    const target = directTarget(s);
+                    const hint = hintFor(s);
+                    const className = `${rowClass} ${isActive ? "bg-brand-soft" : "text-ink hover:bg-surface"}`;
+                    const content = (
+                      <>
+                        <SpaceTile icon={s.icon} active={isActive} />
+                        <span className="min-w-0 flex-1">
+                          <span
+                            className={`block truncate font-display text-base font-semibold leading-5 ${isActive ? "text-brand-text" : ""}`}
+                          >
+                            {s.label}
+                          </span>
+                          {hint && <span className="block truncate text-[13px] leading-[18px] text-ink-subtle">{hint}</span>}
                         </span>
-                      )}
-                    </span>
-                    {s.badge !== undefined && <Badge count={s.badge} />}
-                    {target?.external ? (
-                      <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                    ) : target ? (
-                      <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                    ) : (
-                      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                    )}
-                  </>
-                );
-                return (
-                  <li key={s.key}>
-                    {!target ? (
-                      <button
-                        ref={(el) => {
-                          if (el) rowRefs.current.set(s.key, el);
-                          else rowRefs.current.delete(s.key);
-                        }}
-                        type="button"
-                        onClick={() => enter(s.key)}
-                        className={className}
-                        aria-current={isActive ? "true" : undefined}
-                      >
-                        {content}
-                      </button>
-                    ) : target.external ? (
-                      <a href={target.href} target="_blank" rel="noopener noreferrer" className={className} onClick={close}>
-                        {content}
-                        <span className="sr-only">(nouvel onglet)</span>
-                      </a>
-                    ) : (
-                      <Link
-                        href={target.href}
-                        aria-current={isActive ? "page" : undefined}
-                        className={className}
-                        onClick={close}
-                      >
-                        {content}
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+                        {s.badge !== undefined && <Badge count={s.badge} />}
+                        {target?.external ? (
+                          <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                        ) : target ? (
+                          <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                        ) : (
+                          <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+                        )}
+                      </>
+                    );
+                    return (
+                      <li key={s.key} className="relative">
+                        {/* Filet entre deux espaces, aligné sur le libellé (après la tuile). */}
+                        {i > 0 && <span aria-hidden="true" className="absolute left-[60px] right-0 top-0 border-t border-line" />}
+                        {!target ? (
+                          <button
+                            ref={(el) => {
+                              if (el) rowRefs.current.set(s.key, el);
+                              else rowRefs.current.delete(s.key);
+                            }}
+                            type="button"
+                            onClick={() => enter(s.key)}
+                            className={className}
+                            aria-current={isActive ? "true" : undefined}
+                          >
+                            {content}
+                          </button>
+                        ) : target.external ? (
+                          <a href={target.href} target="_blank" rel="noopener noreferrer" className={className} onClick={close}>
+                            {content}
+                            <span className="sr-only">(nouvel onglet)</span>
+                          </a>
+                        ) : (
+                          <Link
+                            href={target.href}
+                            aria-current={isActive ? "page" : undefined}
+                            className={className}
+                            onClick={close}
+                          >
+                            {content}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
 
-            <div className="mt-3 border-t border-line pt-3">
-              <p className={`${overline} mb-1 px-3`}>Compte</p>
-              <AccountActions {...account} onNavigate={close} />
-            </div>
+            <section className="mt-4">
+              <p className={sheetOverline}>Compte</p>
+              <AccountActions {...account} variant="sheet" onNavigate={close} />
+            </section>
           </div>
         )}
       </div>
