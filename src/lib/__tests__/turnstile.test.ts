@@ -7,7 +7,7 @@
  * protection en production selon la configuration).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { verifyTurnstile } from "../turnstile";
+import { getTurnstileSiteKey, verifyTurnstile } from "../turnstile";
 
 const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
@@ -62,5 +62,53 @@ describe("verifyTurnstile", () => {
     expect(params.get("secret")).toBe("secret-test");
     expect(params.get("response")).toBe("tok-abc");
     expect(params.get("remoteip")).toBe("203.0.113.9");
+  });
+});
+
+describe("getTurnstileSiteKey", () => {
+  const LEGACY = "NEXT_PUBLIC_TURNSTILE_SITE_KEY";
+  const saved = {
+    site: process.env.TURNSTILE_SITE_KEY,
+    legacy: process.env[LEGACY],
+    secret: process.env.TURNSTILE_SECRET_KEY,
+  };
+
+  function restore(name: string, value: string | undefined) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
+
+  beforeEach(() => {
+    delete process.env.TURNSTILE_SITE_KEY;
+    delete process.env[LEGACY];
+    delete process.env.TURNSTILE_SECRET_KEY;
+  });
+
+  afterEach(() => {
+    restore("TURNSTILE_SITE_KEY", saved.site);
+    restore(LEGACY, saved.legacy);
+    restore("TURNSTILE_SECRET_KEY", saved.secret);
+  });
+
+  it("retourne la clé publique quand les deux clés sont configurées", () => {
+    process.env.TURNSTILE_SITE_KEY = "site-test";
+    process.env.TURNSTILE_SECRET_KEY = "secret-test";
+    expect(getTurnstileSiteKey()).toBe("site-test");
+  });
+
+  it("accepte encore l'ancien nom NEXT_PUBLIC_TURNSTILE_SITE_KEY, lu au runtime", () => {
+    process.env[LEGACY] = "site-legacy";
+    process.env.TURNSTILE_SECRET_KEY = "secret-test";
+    expect(getTurnstileSiteKey()).toBe("site-legacy");
+  });
+
+  it("formulaire indisponible (null) sans clé publique", () => {
+    process.env.TURNSTILE_SECRET_KEY = "secret-test";
+    expect(getTurnstileSiteKey()).toBeNull();
+  });
+
+  it("formulaire indisponible (null) sans clé secrète : la soumission serait refusée de toute façon", () => {
+    process.env.TURNSTILE_SITE_KEY = "site-test";
+    expect(getTurnstileSiteKey()).toBeNull();
   });
 });

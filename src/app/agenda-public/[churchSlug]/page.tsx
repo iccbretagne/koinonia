@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { getTurnstileSiteKey } from "@/lib/turnstile";
+import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import PublicRequestForm from "./PublicRequestForm";
 
 export default async function PublicAgendaRequestPage({
@@ -16,7 +19,9 @@ export default async function PublicAgendaRequestPage({
 
   if (!church) return notFound();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+  // Rendu dynamique : la clé Turnstile est lue dans l'environnement du serveur, pas au build.
+  await connection();
+  const siteKey = getTurnstileSiteKey();
 
   return (
     <div className="min-h-screen bg-surface-sunken flex flex-col">
@@ -28,7 +33,11 @@ export default async function PublicAgendaRequestPage({
         </div>
       </header>
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8">
-        <PublicRequestForm churchSlug={church.slug} churchName={church.name} turnstileSiteKey={siteKey} />
+        {siteKey ? (
+          <PublicRequestForm churchSlug={church.slug} churchName={church.name} turnstileSiteKey={siteKey} />
+        ) : (
+          <PublicFormUnavailable churchName={church.name} />
+        )}
       </main>
       <footer className="text-center text-xs text-ink-subtle py-4">
         Propulsé par <span className="font-medium text-ink-muted">Koinonia</span>

@@ -23,7 +23,7 @@ const submitSchema = z.object({
   department: z.string().nullable().optional(),
   motifs: z.array(z.enum(MOTIFS)).min(1, "Veuillez sélectionner au moins un motif"),
   details: z.string().trim().max(2000, "2000 caractères maximum").optional(),
-  turnstileToken: z.string().min(1, "Vérification CAPTCHA manquante"),
+  turnstileToken: z.string().min(1, "Vérification anti-robots manquante"),
 });
 
 export async function POST(request: Request) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const data = submitSchema.parse(body);
 
     const valid = await verifyTurnstile(data.turnstileToken, ip);
-    if (!valid) throw new ApiError(400, "Vérification CAPTCHA échouée. Veuillez réessayer.");
+    if (!valid) throw new ApiError(400, "Vérification anti-robots échouée. Veuillez réessayer.");
 
     const church = await prisma.church.findUnique({
       where: { slug: data.churchSlug },

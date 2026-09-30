@@ -70,7 +70,7 @@ describe("POST /api/care/requests/public — CAPTCHA", () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.error).toContain("Vérification CAPTCHA échouée");
+    expect(json.error).toContain("Vérification anti-robots échouée");
     expect(prismaMock.appointmentRequest.create).not.toHaveBeenCalled();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
