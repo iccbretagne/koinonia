@@ -4,6 +4,30 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [v1.26.2] - 2026-09-30
+
+### Corrigé
+
+- **Formulaires publics bloqués par la vérification anti-robots** (#614) : sur la demande de
+  rendez-vous pastoral (`/agenda-public`), le message « Veuillez compléter la vérification
+  CAPTCHA » s'affichait sans widget, rendant l'envoi impossible. Les clés Turnstile sont
+  désormais lues au démarrage du serveur (`TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` dans
+  `shared/.env`, l'ancien nom `NEXT_PUBLIC_TURNSTILE_SITE_KEY` reste accepté) ; si elles
+  manquent, le formulaire affiche « Formulaire temporairement indisponible » au lieu d'être
+  inutilisable.
+
+### Sécurité
+
+- **Vérification anti-robots rétablie sur `/rejoindre`** (#614), contrôlée avant tout
+  enregistrement.
+- **Dépendances** (#611) : passage à nodemailer 10 et correctifs `npm audit`.
+
+### Modifié
+
+- **Panneau « Plus » sur mobile** (#613) : sections et pages mieux distinguées (groupes titrés
+  « Mon service » / « Église », pastilles d'icône, en-tête de l'espace ouvert, retour « ‹ Menu »,
+  compte et déconnexion regroupés en bas).
+
 ## [v1.26.1] - 2026-09-28
 
 ### Modifié
