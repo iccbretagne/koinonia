@@ -5,12 +5,13 @@ import Link from "next/link";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import type { NavPage } from "@/lib/navigation";
+import { sheetGroup, sheetOverline } from "@/components/nav-styles";
 
 interface NavPageListProps {
   readonly pages: readonly NavPage[];
   /** `href` de la page active (voir `resolveActive`). */
   readonly activePage: string | null;
-  /** `compact` : sous-liste de la sidebar (rangée 36px) ; `touch` : feuille du bas (44px). */
+  /** `compact` : sous-liste de la sidebar (rangée 36px) ; `touch` : blocs groupés du panneau « Plus » (48px). */
   readonly size?: "compact" | "touch";
   /** Départements groupés par ministère repliables (sidebar dépliée) plutôt qu'à plat. */
   readonly collapsibleGroups?: boolean;
@@ -49,10 +50,17 @@ function PageLink({
   readonly withTour: boolean;
   readonly onNavigate?: () => void;
 }) {
-  const className = `flex w-full items-center gap-2 rounded-chip px-3 text-left transition-colors duration-120
+  // `touch` : ligne d'un bloc groupé du panneau « Plus » (page active en `brand-soft`, trait à gauche).
+  const className =
+    size === "touch"
+      ? `flex min-h-12 w-full items-center gap-2 px-3.5 text-left text-base transition-colors duration-120
     focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-      size === "touch" ? "min-h-11 text-[15px]" : "min-h-9 text-sm"
-    } ${active ? "font-semibold text-brand-text" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"}`;
+      active ? "bg-brand-soft font-semibold text-brand-text shadow-[inset_3px_0_0_var(--color-brand)]" : "text-ink hover:bg-surface"
+    }`
+      : `flex min-h-9 w-full items-center gap-2 rounded-chip px-3 text-left text-sm transition-colors duration-120
+    focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+      active ? "font-semibold text-brand-text" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
+    }`;
   const tour = withTour ? page.dataTour : undefined;
 
   if (page.external) {
@@ -74,6 +82,9 @@ function PageLink({
     >
       <span className="min-w-0 flex-1 truncate">{page.label}</span>
       {page.badge !== undefined && <Badge count={page.badge} />}
+      {size === "touch" && page.badge === undefined && !active && (
+        <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+      )}
     </Link>
   );
 }
@@ -132,7 +143,8 @@ function CollapsibleGroup({
 
 /**
  * Sous-pages d'un espace (sidebar, panneau flottant du rail, panneau « Plus ») : page active en
- * `brand-text` gras, sous-groupes (ministère, « Agenda pastoral ») intitulés.
+ * `brand-text` gras, sous-groupes (ministère, « Agenda pastoral ») intitulés. En taille `touch`
+ * (panneau « Plus »), chaque sous-groupe devient un bloc groupé.
  */
 export default function NavPageList({
   pages,
@@ -145,6 +157,35 @@ export default function NavPageList({
   const groups = groupPages(pages, collapsibleGroups);
   const anyActiveGroup = groups.some((g) => g.collapsible && g.pages.some((p) => p.href === activePage));
   const firstCollapsible = groups.findIndex((g) => g.collapsible);
+
+  if (size === "touch") {
+    // Panneau « Plus » : un bloc groupé par sous-groupe (ministère…), intitulé au-dessus.
+    return (
+      <div className="flex flex-col">
+        {groups.map((group, gi) => (
+          <section key={`${group.name ?? "_"}-${gi}`} className="mt-4">
+            {group.name && (
+              <p className={`${sheetOverline} flex items-baseline justify-between gap-2`}>
+                <span className="min-w-0 truncate">{group.name}</span>
+                {group.pages.some((p) => p.deptId) && (
+                  <span className="shrink-0 font-semibold normal-case tracking-normal text-ink-subtle">
+                    {group.pages.length} département{group.pages.length > 1 ? "s" : ""}
+                  </span>
+                )}
+              </p>
+            )}
+            <ul className={`${sheetGroup} divide-y divide-line`}>
+              {group.pages.map((page) => (
+                <li key={page.href}>
+                  <PageLink page={page} active={page.href === activePage} size={size} withTour={withTour} onNavigate={onNavigate} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <ul className="flex flex-col gap-px">
