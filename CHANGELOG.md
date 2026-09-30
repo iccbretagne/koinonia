@@ -162,9 +162,25 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   départements et/ou à des événements précis, plutôt qu'obligatoirement une période sur tous ses
   départements. Une absence déjà déclarée reste affichée à l'identique (valeurs par défaut
   rétrocompatibles).
+- **Fonction de département « Photos »** (spec 049, issue #556) : la gestion des photos
+  d'événements peut être confiée à un département distinct de Production Média, qui garde les
+  visuels et les demandes de visuels. Une église qui n'attribue pas cette fonction conserve le
+  fonctionnement actuel (Production Média gère les photos).
 
 ### Modifié
 
+- **Refonte de l'espace Communication & Production** (spec 049, issues #555/#556) : les onglets
+  laissent place à une page d'accueil à cartes filtrées selon les droits — **Photos**
+  (ex-Événements médias), **Visuels** (ex-Projets et demandes de visuels), **Réseaux sociaux** —
+  avec ce qui attend sur chaque carte ; accès direct au contenu lorsqu'une seule activité est
+  accessible. L'espace Audio suit la même mécanique.
+- **Partages centralisés** (spec 049) : l'écran « Collections » disparaît au profit d'une action
+  « Partager une sélection » dans Photos et Visuels, et d'un bouton « Partages » sur l'accueil
+  (nombre de liens actifs, consultation, copie, révocation). L'étiquette d'un lien de partage est
+  désormais obligatoire pour distinguer les liens dans cette liste. Anciens liens internes et
+  liens de partage déjà émis inchangés.
+- **Multi-sélecteur de départements** : libellés longs (ministère, fonction) lisibles dans la
+  configuration des fonctions de département.
 - **Visibilité des absences pour un responsable au périmètre restreint** (spec 050) : un
   responsable de département/ministre ne voit plus une absence ciblée uniquement sur des
   départements hors de son périmètre, même si elle porte sur un STAR qu'il gère par ailleurs.
