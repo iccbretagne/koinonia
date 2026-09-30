@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.27.0] - 2026-10-01
+
 ### Ajouté
 
 - **Accompagnants déclarés du suivi pastoral** (spec 056) : sur `/care/parametres`, le
