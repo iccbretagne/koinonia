@@ -44,22 +44,40 @@ export async function resolveAssignee(
     };
   }
 
+  // Même vivier que `listMsdpCounselors` (appartenance : compte lié et validé à une fiche STAR
+  // d'un département MSDP, ADR-0013), plus les responsables d'un département MSDP
+  // (`user_departments`). Ne contrôler que la responsabilité refusait tout STAR du MSDP pourtant
+  // proposé dans le sélecteur (« Membre MSDP invalide ou hors périmètre »).
   const msdpDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.MSDP);
-  const membership = await prisma.userChurchRole.findFirst({
+  const user = await prisma.user.findFirst({
     where: {
-      churchId,
-      userId: selection.id,
-      departments: { some: { departmentId: { in: msdpDeptIds } } },
+      id: selection.id,
+      OR: [
+        {
+          memberLinks: {
+            some: {
+              churchId,
+              validatedAt: { not: null },
+              member: { departments: { some: { departmentId: { in: msdpDeptIds } } } },
+            },
+          },
+        },
+        {
+          churchRoles: {
+            some: { churchId, departments: { some: { departmentId: { in: msdpDeptIds } } } },
+          },
+        },
+      ],
     },
-    select: { user: { select: { id: true, name: true, email: true } } },
+    select: { id: true, name: true, email: true },
   });
-  if (!membership) throw new ApiError(400, "Membre MSDP invalide ou hors périmètre");
+  if (!user) throw new ApiError(400, "Membre MSDP invalide ou hors périmètre");
   return {
     kind: "MEMBER",
-    id: membership.user.id,
-    userId: membership.user.id,
-    name: membership.user.name,
-    email: membership.user.email,
+    id: user.id,
+    userId: user.id,
+    name: user.name,
+    email: user.email,
   };
 }
 

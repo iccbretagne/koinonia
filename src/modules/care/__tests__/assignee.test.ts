@@ -67,8 +67,10 @@ describe("resolveAssignee", () => {
 
   it("MEMBER : renvoie le membre du MSDP", async () => {
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
-    prismaMock.userChurchRole.findFirst.mockResolvedValue({
-      user: { id: "user-2", name: "Alice Martin", email: "alice@example.org" },
+    prismaMock.user.findFirst.mockResolvedValue({
+      id: "user-2",
+      name: "Alice Martin",
+      email: "alice@example.org",
     } as never);
 
     const assignee = await resolveAssignee("church-1", { kind: "MEMBER", id: "user-2" });
@@ -84,10 +86,44 @@ describe("resolveAssignee", () => {
 
   it("MEMBER : rejette un utilisateur qui n'appartient pas à un département MSDP", async () => {
     prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
-    prismaMock.userChurchRole.findFirst.mockResolvedValue(null);
+    prismaMock.user.findFirst.mockResolvedValue(null);
 
     await expect(resolveAssignee("church-1", { kind: "MEMBER", id: "user-x" })).rejects.toThrow(
       "Membre MSDP invalide ou hors périmètre"
+    );
+  });
+
+  it("MEMBER : accepte le vivier du sélecteur (fiche STAR MSDP liée) comme les responsables MSDP", async () => {
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
+    prismaMock.user.findFirst.mockResolvedValue({ id: "user-4", name: "Star Msdp", email: null } as never);
+
+    await resolveAssignee("church-1", { kind: "MEMBER", id: "user-4" });
+
+    expect(prismaMock.user.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: "user-4",
+          OR: [
+            {
+              memberLinks: {
+                some: {
+                  churchId: "church-1",
+                  validatedAt: { not: null },
+                  member: { departments: { some: { departmentId: { in: ["dept-msdp"] } } } },
+                },
+              },
+            },
+            {
+              churchRoles: {
+                some: {
+                  churchId: "church-1",
+                  departments: { some: { departmentId: { in: ["dept-msdp"] } } },
+                },
+              },
+            },
+          ],
+        },
+      })
     );
   });
 });
