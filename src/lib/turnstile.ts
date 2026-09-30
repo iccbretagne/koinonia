@@ -25,13 +25,23 @@ import { logger } from "@/lib/logger";
 const LEGACY_SITE_KEY_VAR = ["NEXT", "PUBLIC", "TURNSTILE", "SITE", "KEY"].join("_");
 
 /**
+ * Valeur d'une clé Turnstile nettoyée. `EnvironmentFile` (systemd) ne retire pas un commentaire
+ * en fin de ligne : `TURNSTILE_SITE_KEY=0x4AAA…  # clé publique` donnait la clé suivie du
+ * commentaire, refusée par Cloudflare (incident v1.26.2). Une clé ne contient ni espace ni `#` :
+ * on retire le commentaire puis on n'en garde que le premier mot.
+ */
+function readKey(name: string): string {
+  return (process.env[name] ?? "").replace(/(^|\s)#.*$/, "").trim().split(/\s/)[0];
+}
+
+/**
  * Clé publique Turnstile si le formulaire public peut fonctionner (clé publique ET clé secrète
  * configurées), sinon `null` — la page affiche alors « formulaire indisponible ». À appeler
  * pendant un rendu dynamique (`await connection()`) pour lire l'environnement du serveur.
  */
 export function getTurnstileSiteKey(): string | null {
-  const siteKey = process.env.TURNSTILE_SITE_KEY || process.env[LEGACY_SITE_KEY_VAR] || "";
-  const hasSecret = !!process.env.TURNSTILE_SECRET_KEY;
+  const siteKey = readKey("TURNSTILE_SITE_KEY") || readKey(LEGACY_SITE_KEY_VAR);
+  const hasSecret = !!readKey("TURNSTILE_SECRET_KEY");
   if (siteKey && hasSecret) return siteKey;
   logger.error(
     { hasSiteKey: !!siteKey, hasSecret },
@@ -41,7 +51,7 @@ export function getTurnstileSiteKey(): string | null {
 }
 
 export async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  const secret = readKey("TURNSTILE_SECRET_KEY");
   if (!secret) return false;
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",

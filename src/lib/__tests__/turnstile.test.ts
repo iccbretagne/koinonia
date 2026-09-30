@@ -63,6 +63,16 @@ describe("verifyTurnstile", () => {
     expect(params.get("response")).toBe("tok-abc");
     expect(params.get("remoteip")).toBe("203.0.113.9");
   });
+
+  it("ignore un commentaire en fin de ligne dans la clé secrète (EnvironmentFile systemd)", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "secret-test           # clé secrète Turnstile";
+    mockFetch.mockResolvedValue({ json: async () => ({ success: true }) });
+
+    await verifyTurnstile("tok-abc", "203.0.113.9");
+
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(new URLSearchParams(init.body as string).get("secret")).toBe("secret-test");
+  });
 });
 
 describe("getTurnstileSiteKey", () => {
@@ -100,6 +110,18 @@ describe("getTurnstileSiteKey", () => {
     process.env[LEGACY] = "site-legacy";
     process.env.TURNSTILE_SECRET_KEY = "secret-test";
     expect(getTurnstileSiteKey()).toBe("site-legacy");
+  });
+
+  it("ignore un commentaire en fin de ligne (EnvironmentFile systemd ne le retire pas)", () => {
+    process.env.TURNSTILE_SITE_KEY = "site-test           # clé publique Turnstile (affichée dans le widget)";
+    process.env.TURNSTILE_SECRET_KEY = "secret-test  # clé secrète";
+    expect(getTurnstileSiteKey()).toBe("site-test");
+  });
+
+  it("un commentaire seul ne vaut pas une clé", () => {
+    process.env.TURNSTILE_SITE_KEY = "   # à renseigner";
+    process.env.TURNSTILE_SECRET_KEY = "secret-test";
+    expect(getTurnstileSiteKey()).toBeNull();
   });
 
   it("formulaire indisponible (null) sans clé publique", () => {
