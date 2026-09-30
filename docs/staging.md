@@ -57,6 +57,8 @@ PORT=3001
 GOOGLE_CLIENT_ID=votre-google-client-id
 GOOGLE_CLIENT_SECRET=votre-google-client-secret
 SUPER_ADMIN_EMAILS=admin-test@votre-eglise.com
+TURNSTILE_SITE_KEY=cle-publique-turnstile
+TURNSTILE_SECRET_KEY=cle-secrete-turnstile
 ```
 
 Points d'attention :

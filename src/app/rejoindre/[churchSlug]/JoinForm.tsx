@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface AddressSuggestion {
   label: string;
@@ -77,6 +78,8 @@ interface Props {
   readonly churchName: string;
   /** Case « soin pastoral » — affichée seulement si `care` est actif (spec 052). */
   readonly showPastoralCare: boolean;
+  /** Clé publique Turnstile lue côté serveur (spec 030). */
+  readonly turnstileSiteKey: string;
 }
 
 type FieldErrors = Partial<Record<string, string>>;
@@ -160,7 +163,7 @@ const CONTACT_CONSENT_OPTIONS = [
   { value: "LATER", label: "Être recontacté·e plus tard" },
 ];
 
-export default function JoinForm({ churchId, churchName, showPastoralCare }: Props) {
+export default function JoinForm({ churchId, churchName, showPastoralCare, turnstileSiteKey }: Props) {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -178,6 +181,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
   const [success, setSuccess] = useState<SuccessData | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const { suggestions: addressSuggestions, clear: clearSuggestions } = useAddressSuggestions(form.address);
   const familySuggestion = useFamilySuggestion(churchId);
 
@@ -188,6 +193,10 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!turnstileToken) {
+      setGlobalError("Merci de compléter la vérification anti-robots ci-dessus.");
+      return;
+    }
     setSubmitting(true);
     setGlobalError(null);
     setFieldErrors({});
@@ -202,6 +211,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
           address: form.address || undefined,
           pastoralMessage: form.pastoralMessage || undefined,
           churchId,
+          turnstileToken,
         }),
       });
 
@@ -218,6 +228,8 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
         } else {
           setGlobalError(json.error ?? "Une erreur est survenue. Veuillez réessayer.");
         }
+        // Jeton à usage unique : un nouveau défi est nécessaire pour réessayer.
+        setTurnstileReset((n) => n + 1);
       } else {
         setSuccess({
           suggestedFamilyName: json.suggestedFamilyName ?? null,
@@ -574,6 +586,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
       </div>
       )}
 
+      <div>
+        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} resetSignal={turnstileReset} />
+        {!turnstileToken && <p className="text-xs text-ink-subtle mt-1">Vérification anti-robots requise.</p>}
+      </div>
+
       {globalError && (
         <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">
           {globalError}
@@ -582,7 +599,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare }: Pro
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || !turnstileToken}
         className="w-full bg-brand text-on-brand py-3 rounded-lg font-medium text-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}

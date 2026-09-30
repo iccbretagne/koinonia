@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
+import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface Props {
   readonly churchSlug: string;
@@ -63,29 +64,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!turnstileSiteKey) return;
-    function init() {
-      if (!widgetRef.current || widgetId.current) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      widgetId.current = (window as any).turnstile?.render(widgetRef.current, {
-        sitekey: turnstileSiteKey,
-        callback: (token: string) => setTurnstileToken(token),
-        "expired-callback": () => setTurnstileToken(null),
-        "error-callback": () => setTurnstileToken(null),
-      });
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).turnstile) { init(); } else {
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true; script.defer = true; script.onload = init;
-      document.head.appendChild(script);
-    }
-  }, [turnstileSiteKey]);
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -102,7 +81,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!turnstileToken) { setGlobalError("Veuillez compléter la vérification CAPTCHA."); return; }
+    if (!turnstileToken) { setGlobalError("Veuillez compléter la vérification anti-robots ci-dessus."); return; }
     setSubmitting(true); setGlobalError(null); setFieldErrors({});
 
     try {
@@ -128,9 +107,8 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
         } else {
           setGlobalError(json.error ?? "Une erreur est survenue. Veuillez réessayer.");
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (widgetId.current) (window as any).turnstile?.reset(widgetId.current);
-        setTurnstileToken(null);
+        // Jeton à usage unique : un nouveau défi est nécessaire pour réessayer.
+        setTurnstileReset((n) => n + 1);
       } else {
         setSuccess(true);
       }
@@ -276,19 +254,17 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
       </div>
 
       {/* Turnstile */}
-      {turnstileSiteKey && (
-        <div>
-          <div ref={widgetRef} />
-          {!turnstileToken && <p className="text-xs text-ink-subtle mt-1">Vérification anti-spam requise.</p>}
-        </div>
-      )}
+      <div>
+        <TurnstileWidget siteKey={turnstileSiteKey} onToken={setTurnstileToken} resetSignal={turnstileReset} />
+        {!turnstileToken && <p className="text-xs text-ink-subtle mt-1">Vérification anti-robots requise.</p>}
+      </div>
 
       {globalError && (
         <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{globalError}</p>
       )}
 
       <button type="submit"
-        disabled={submitting || (!!turnstileSiteKey && !turnstileToken)}
+        disabled={submitting || !turnstileToken}
         className="w-full bg-brand text-on-brand py-3 rounded-lg font-medium text-sm hover:bg-accent hover:text-brand-text focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {submitting ? "Envoi en cours…" : "Envoyer ma demande"}

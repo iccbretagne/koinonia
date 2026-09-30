@@ -52,7 +52,15 @@ GOOGLE_CLIENT_ID=votre-google-client-id
 GOOGLE_CLIENT_SECRET=votre-google-client-secret
 SUPER_ADMIN_EMAILS=admin@votre-eglise.com
 ENABLED_MODULES=
+TURNSTILE_SITE_KEY=cle-publique-turnstile
+TURNSTILE_SECRET_KEY=cle-secrete-turnstile
 ```
+
+`TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` (Cloudflare → Turnstile, widget déclarant le
+domaine de l'instance) protègent les formulaires publics `/agenda-public` et `/rejoindre`
+(spec 030). Elles sont lues au démarrage de chaque requête, pas au build : un changement prend
+effet au redémarrage du service. Sans les deux, ces formulaires affichent « Formulaire
+temporairement indisponible » et une erreur `Turnstile non configuré` est journalisée.
 
 Générer le secret NextAuth :
 

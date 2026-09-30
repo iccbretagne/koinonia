@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { registry } from "@/lib/registry";
+import { getTurnstileSiteKey } from "@/lib/turnstile";
+import PublicFormUnavailable from "@/components/PublicFormUnavailable";
 import JoinForm from "./JoinForm";
 
 export default async function RejoindrePublicPage({
@@ -17,6 +20,10 @@ export default async function RejoindrePublicPage({
 
   if (!church) return notFound();
 
+  // Rendu dynamique : la clé Turnstile est lue dans l'environnement du serveur, pas au build.
+  await connection();
+  const turnstileSiteKey = getTurnstileSiteKey();
+
   return (
     <div className="min-h-screen bg-surface-sunken flex flex-col">
       <header className="bg-brand px-4 py-6">
@@ -32,7 +39,16 @@ export default async function RejoindrePublicPage({
       </header>
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8">
-        <JoinForm churchId={church.id} churchName={church.name} showPastoralCare={registry.has("care")} />
+        {turnstileSiteKey ? (
+          <JoinForm
+            churchId={church.id}
+            churchName={church.name}
+            showPastoralCare={registry.has("care")}
+            turnstileSiteKey={turnstileSiteKey}
+          />
+        ) : (
+          <PublicFormUnavailable churchName={church.name} />
+        )}
       </main>
 
       <footer className="text-center text-xs text-ink-subtle py-5 border-t border-line">

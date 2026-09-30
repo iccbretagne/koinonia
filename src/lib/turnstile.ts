@@ -1,18 +1,45 @@
+import { logger } from "@/lib/logger";
+
 /**
- * Verification Cloudflare Turnstile — preuve d'humanite sur le formulaire public de demande
- * de RDV (`/agenda-public`).
+ * Verification Cloudflare Turnstile — preuve d'humanite sur les formulaires publics
+ * (`/agenda-public`, `/rejoindre`, spec 030).
  *
- * Desactivee sur le formulaire d'integration famille (`/rejoindre`) : la dependance a
- * `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (inlinee au build, pas au runtime) rendait ce formulaire
- * indisponible en production faute d'etre passee au pipeline de build — voir
- * specs/030-captcha-formulaire-integration/. Ce formulaire reste protege par le rate-limit
- * IP de `POST /api/integration/requests`.
+ * CLÉS LUES AU RUNTIME : la clé publique (`TURNSTILE_SITE_KEY`) est lue par le serveur à chaque
+ * requête et passée en prop au widget, comme la clé secrète — jamais inlinée au build. Une
+ * variable `NEXT_PUBLIC_*` est figée dans l'artefact par `next build` : construit en CI sans
+ * elle, l'artefact déployé ne portait aucune clé, le widget ne s'affichait pas et toute
+ * soumission restait bloquée (incident v1.21.1 sur `/rejoindre`, puis `/agenda-public`).
  *
- * FAIL-CLOSED VOLONTAIRE : sans `TURNSTILE_SECRET_KEY`, la fonction retourne `false`, donc
+ * FAIL-CLOSED VOLONTAIRE : sans `TURNSTILE_SECRET_KEY`, `verifyTurnstile` retourne `false`, donc
  * toute soumission est refusee. Ce n'est pas un oubli : un repli permissif serait un
- * interrupteur silencieux desactivant la protection selon la configuration. Consequence a
- * connaitre — un environnement sans cette variable rend `/agenda-public` inutilisable.
+ * interrupteur silencieux desactivant la protection selon la configuration. En contrepartie,
+ * `getTurnstileSiteKey` permet aux pages d'annoncer clairement un formulaire indisponible au
+ * lieu d'un CAPTCHA invisible.
  */
+
+/**
+ * Ancien nom de la clé publique, encore accepté au runtime pour ne pas casser un `shared/.env`
+ * qui la renseigne déjà. Lu par clé calculée : `process.env.NEXT_PUBLIC_…` écrit en toutes
+ * lettres serait remplacé par sa valeur (vide) au build.
+ */
+const LEGACY_SITE_KEY_VAR = ["NEXT", "PUBLIC", "TURNSTILE", "SITE", "KEY"].join("_");
+
+/**
+ * Clé publique Turnstile si le formulaire public peut fonctionner (clé publique ET clé secrète
+ * configurées), sinon `null` — la page affiche alors « formulaire indisponible ». À appeler
+ * pendant un rendu dynamique (`await connection()`) pour lire l'environnement du serveur.
+ */
+export function getTurnstileSiteKey(): string | null {
+  const siteKey = process.env.TURNSTILE_SITE_KEY || process.env[LEGACY_SITE_KEY_VAR] || "";
+  const hasSecret = !!process.env.TURNSTILE_SECRET_KEY;
+  if (siteKey && hasSecret) return siteKey;
+  logger.error(
+    { hasSiteKey: !!siteKey, hasSecret },
+    "Turnstile non configuré (TURNSTILE_SITE_KEY / TURNSTILE_SECRET_KEY) : formulaires publics indisponibles",
+  );
+  return null;
+}
+
 export async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) return false;
