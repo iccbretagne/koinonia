@@ -34,6 +34,8 @@ export const careModule = defineModule({
     "care:qualify": ["SUPER_ADMIN", "ADMIN", "PASTORAL_CARE_REFERENT"],
     // Vue d'ensemble sans droit de qualifier — Secrétaire en plus des détenteurs ci-dessus.
     "care:view": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "PASTORAL_CARE_REFERENT"],
+    // Suppression définitive d'une demande ou d'un suivi (spec 057) — Admin/Super Admin seuls.
+    "care:delete": ["SUPER_ADMIN", "ADMIN"],
   },
 
   // Domaine de notification (spec 053) : envoie déjà des emails (personne désignée, relances,

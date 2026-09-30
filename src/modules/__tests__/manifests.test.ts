@@ -58,6 +58,7 @@ const PERMISSION_OWNER: Record<string, string> = {
   "church:manage": "core",
   "users:manage": "core",
   "integration:manage": "integration",
+  "integration:delete": "integration",
   "absences:manage": "planning",
   "absences:view": "planning",
   "departments:manage": "planning",
@@ -86,6 +87,7 @@ const PERMISSION_OWNER: Record<string, string> = {
   "agenda:manage": "agenda",
   "agenda:view": "agenda",
   "care:qualify": "care",
+  "care:delete": "care",
   "care:view": "care",
   "rooms:manage": "rooms",
   "rooms:reserve": "rooms",
@@ -202,13 +204,14 @@ describe("Manifestes des modules", () => {
     expect(Object.keys(storageModule.permissions ?? {})).toEqual([]);
   });
 
-  it("integration déclare integration:manage (spec 054/#583)", () => {
-    expect(Object.keys(integrationModule.permissions ?? {})).toEqual(["integration:manage"]);
+  it("integration déclare integration:manage (spec 054/#583) et integration:delete (spec 057)", () => {
+    expect(Object.keys(integrationModule.permissions ?? {})).toEqual(["integration:manage", "integration:delete"]);
     expect(integrationModule.permissions?.["integration:manage"]).toEqual([
       "SUPER_ADMIN",
       "ADMIN",
       "SECRETARY",
     ]);
+    expect(integrationModule.permissions?.["integration:delete"]).toEqual(["SUPER_ADMIN", "ADMIN"]);
   });
 
   it("core ne déclare que des permissions globales", () => {

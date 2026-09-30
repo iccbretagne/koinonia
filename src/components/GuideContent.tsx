@@ -331,6 +331,14 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "none" },
   },
   {
+    name: "Supprimer une demande",
+    description: "Sur la fiche d'une demande de rendez-vous pastoral, d'un suivi de nouveau converti ou d'une demande d'intégration, le bouton « Supprimer » efface définitivement la demande, son historique et ses notifications (par exemple un doublon, un test, ou à la demande de la personne). Une demande dont est issu un suivi ou un rendez-vous ne peut être supprimée qu'après eux : la fiche indique lesquels.",
+    category: "Suivi pastoral",
+    screenshotTitle: "Supprimer une demande",
+    screenshotFile: "guide-care-suppression.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Statistiques du suivi pastoral",
     description: "Visualisez depuis /care/stats les volumes de demandes de RDV par état, par référent et les motifs de rejet, ainsi que les statistiques du suivi MSDP (entonnoir, délais, jalons de parcours).",
     category: "Suivi pastoral",

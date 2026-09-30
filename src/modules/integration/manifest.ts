@@ -36,6 +36,8 @@ export const integrationModule = defineModule({
     // L'équipe (fonction INTEGRATION/MSDP) et les bergers gardent leur accès via une garde dédiée
     // (requireIntegrationAccess), indépendante de cette permission.
     "integration:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
+    // Suppression définitive d'une demande d'intégration (spec 057) — Admin/Super Admin seuls.
+    "integration:delete": ["SUPER_ADMIN", "ADMIN"],
   },
 
   // Domaine de notification (spec 053) : envoie déjà des emails (berger affecté) — activé par

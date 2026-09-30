@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getMsdpFollowUpById, getCareAccess, getCareHistory, listRelatedItems } from "@/modules/care";
 import FollowupActions from "./FollowupActions";
+import DeleteItemButton from "@/components/DeleteItemButton";
 import HistoryTimeline from "@/components/HistoryTimeline";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -100,6 +101,12 @@ export default async function CareFollowupDetailPage({
         isCurrentAssignee={isCurrentAssignee}
         notes={followUp.notes ?? ""}
       />
+
+      {access.canDelete && (
+        <div className="mt-4 flex justify-end">
+          <DeleteItemButton endpoint={`/api/care/followups/${id}`} redirectTo="/care" />
+        </div>
+      )}
 
       {related.length > 0 && (
         <div className="bg-surface rounded-xl border border-line p-5 mt-4">

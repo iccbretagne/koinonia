@@ -366,6 +366,7 @@ Compt = Comptable.
 | `church:manage` | x | | | | | | | | | |
 | `users:manage` | x | x | | | | | | | | |
 | `integration:manage` | x | x | x | | | | | | | |
+| `integration:delete` | x | x | | | | | | | | |
 | `discipleship:view` | x | x | x | x | x | x | | | | |
 | `discipleship:manage` | x | x | x | | | x | | | | |
 | `discipleship:export` | x | x | x | | | | | | | |
@@ -388,6 +389,7 @@ Compt = Comptable.
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
 | `care:view` | x | x | x | | | | | | x | |
+| `care:delete` | x | x | | | | | | | | |
 | `rooms:view` | x | x | x | x | x | | | | | |
 | `rooms:reserve` | x | x | x | x | x | | | | | |
 | `rooms:manage` | x | x | | | | | | | | |

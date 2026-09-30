@@ -7,6 +7,8 @@ import {
   applyAppointmentTransition,
   resolveRequestReaderAccess,
   projectRequest,
+  requireCareDelete,
+  deleteAppointmentRequest,
 } from "@/modules/care";
 
 export async function GET(
@@ -65,6 +67,25 @@ export async function PATCH(
     });
 
     return successResponse(updated);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/** Suppression définitive (spec 057) — `care:delete`, dans l'église de la demande. */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireAuth();
+    const { id } = await params;
+    const churchId = await resolveChurchId("appointmentRequest", id);
+    const session = await requireCareDelete(churchId);
+
+    await deleteAppointmentRequest({ id, churchId, actorId: session.user.id! });
+
+    return successResponse({ id });
   } catch (error) {
     return errorResponse(error);
   }

@@ -8,8 +8,10 @@ import {
   projectRequest,
   getCareHistory,
   listRelatedItems,
+  getAppointmentDeletionInfo,
 } from "@/modules/care";
 import RequestActions from "./RequestActions";
+import DeleteItemButton from "@/components/DeleteItemButton";
 import HistoryTimeline from "@/components/HistoryTimeline";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -45,7 +47,9 @@ export default async function CareRequestDetailPage({
   readonly params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const churchId = await resolveChurchId("appointmentRequest", id);
+  // Demande supprimée (spec 057) : `resolveChurchId` lève un 404 — on affiche `not-found.tsx`.
+  const churchId = await resolveChurchId("appointmentRequest", id).catch(() => null);
+  if (!churchId) return notFound();
   const session = await requireAuth();
   const access = await getCareAccess(session, churchId);
 
@@ -67,11 +71,12 @@ export default async function CareRequestDetailPage({
   const isMemberAssignee = !!item.assignedMemberId;
   const canActAsAssigneeProxy = access.canQualify && !!item.assignedTo && !item.assignedTo.userId;
 
-  const [history, related] = await Promise.all([
+  const [history, related, deletionInfo] = await Promise.all([
     getCareHistory("requests", id),
     item.personJourneyId && readerAccess.canReadContent
       ? listRelatedItems(item.personJourneyId, { kind: "request", id })
       : Promise.resolve([]),
+    access.canDelete ? getAppointmentDeletionInfo(id) : Promise.resolve(null),
   ]);
   const wasHandedBack = item.status === "PENDING" && history.at(-1)?.action === "handback";
 
@@ -128,6 +133,23 @@ export default async function CareRequestDetailPage({
           canActAsAssigneeProxy={canActAsAssigneeProxy}
         />
       </div>
+
+      {deletionInfo && (
+        <div className="mt-4 flex justify-end">
+          <DeleteItemButton
+            endpoint={`/api/care/requests/${id}`}
+            redirectTo="/care"
+            extraMessage={
+              deletionInfo.hasAgendaEntry ? "Le rendez-vous planifié dans l'agenda sera aussi supprimé." : undefined
+            }
+            blockedBy={
+              deletionInfo.followUpId
+                ? [{ label: "Suivi de nouveau converti lié", href: `/care/followups/${deletionInfo.followUpId}` }]
+                : []
+            }
+          />
+        </div>
+      )}
 
       {related.length > 0 && (
         <div className="bg-surface rounded-xl border border-line p-5 mt-4">

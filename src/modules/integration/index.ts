@@ -7,7 +7,10 @@ export {
   requireIntegrationSettingsAccess,
   isIntegrationMember,
   isMsdpMember,
+  requireIntegrationDelete,
+  canDeleteIntegrationRequest,
 } from "./auth";
+export { deleteIntegrationRequest } from "./services/deletion";
 export type { IntegrationScope } from "./auth";
 export {
   EXPORT_COLUMNS,

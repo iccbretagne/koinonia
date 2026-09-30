@@ -119,6 +119,8 @@ export async function PATCH(
           title: "Rendez-vous pastoral confirmé",
           message: `Votre demande « ${existing.subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
           link: "/requests",
+          entityType: "AppointmentRequest",
+          entityId: id,
         },
         emailContent ? { email: emailContent } : undefined
       ).catch(() => {});

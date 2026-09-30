@@ -11,12 +11,19 @@ export async function requireCareQualify(churchId: string) {
   return requireChurchPermission("care:qualify", churchId);
 }
 
+/** Suppression définitive d'une demande ou d'un suivi — `care:delete` (spec 057). */
+export async function requireCareDelete(churchId: string) {
+  return requireChurchPermission("care:delete", churchId);
+}
+
 export interface CareAccess {
   session: Session;
   /** `care:qualify` : qualifie, affecte, rejette, règle les paramètres du module. */
   canQualify: boolean;
   /** `care:view` (inclut `canQualify`) : vue d'ensemble sans droit d'agir. */
   canOverview: boolean;
+  /** `care:delete` : suppression définitive (spec 057). */
+  canDelete: boolean;
   userId: string;
   /** Profils pastoraux de l'église rattachés au compte connecté (pour `isCurrentAssignee`). */
   ownProfileIds: string[];
@@ -33,10 +40,12 @@ export async function getCareAccess(session: Session, churchId: string): Promise
 
   let canQualify = false;
   let canOverview = false;
+  let canDelete = false;
 
   if (session.user.isSuperAdmin) {
     canQualify = true;
     canOverview = true;
+    canDelete = true;
   } else {
     const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
     // Import dynamique : registry.ts importe tous les modules (dont care), un import statique
@@ -45,6 +54,7 @@ export async function getCareAccess(session: Session, churchId: string): Promise
     const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
     canQualify = userPerms.has("care:qualify");
     canOverview = canQualify || userPerms.has("care:view");
+    canDelete = userPerms.has("care:delete");
   }
 
   const profiles = await prisma.pastoralProfile.findMany({
@@ -56,6 +66,7 @@ export async function getCareAccess(session: Session, churchId: string): Promise
     session,
     canQualify,
     canOverview,
+    canDelete,
     userId,
     ownProfileIds: (profiles ?? []).map((p) => p.id),
   };

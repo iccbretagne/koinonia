@@ -28,6 +28,11 @@ function itemLink(kind: CareItemKind, id: string): string {
   return `/care/${kind}/${id}`;
 }
 
+/** Rattachement de la notification à son objet, pour l'effacer avec lui (spec 057, ADR-0019). */
+export function itemEntity(kind: CareItemKind, id: string): { entityType: string; entityId: string } {
+  return { entityType: kind === "requests" ? "AppointmentRequest" : "MsdpFollowUp", entityId: id };
+}
+
 /** « la demande de rendez-vous pastoral de » / « le suivi de », suivi du nom de la personne. */
 function itemLabel(kind: CareItemKind): string {
   return kind === "requests" ? "la demande de rendez-vous pastoral de" : "le suivi de";
@@ -63,6 +68,7 @@ export async function notifyAssigneeAssigned(params: {
         title: "Nouvel accompagnement confié",
         message: `On vous a confié ${itemLabel(kind)} ${personName}.`,
         link,
+        ...itemEntity(kind, itemId),
       },
       email ? { email } : undefined
     ).catch(() => {});
@@ -84,6 +90,7 @@ export async function notifyAssigneeAssigned(params: {
 export async function notifyAssigneeUnassigned(params: {
   userId: string | null;
   kind: CareItemKind;
+  itemId: string;
   personName: string;
 }): Promise<void> {
   if (!params.userId) return;
@@ -94,6 +101,7 @@ export async function notifyAssigneeUnassigned(params: {
     title: "Accompagnement réaffecté",
     message: `Vous n'êtes plus en charge de ${itemLabel(params.kind)} ${params.personName}.`,
     link: "/care",
+    ...itemEntity(params.kind, params.itemId),
   }).catch(() => {});
 }
 
@@ -121,12 +129,14 @@ export async function notifyReferentsHandback(params: {
     title: "Demande rendue pour réaffectation",
     message: `${personName} — motif : ${reason}`,
     link: itemLink(kind, itemId),
+    ...itemEntity(kind, itemId),
   });
 }
 
 /** Confié à un profil pastoral (validate/reassign) : le Protocole doit le planifier. */
 export async function notifyProtocoleToSchedule(params: {
   churchId: string;
+  requestId: string;
   personName: string;
 }): Promise<void> {
   await notifyDeptMembers(params.churchId, DEPT_FN.PROTOCOLE, {
@@ -135,11 +145,13 @@ export async function notifyProtocoleToSchedule(params: {
     title: "Demande RDV à planifier",
     message: `La demande de ${params.personName} est prête à être planifiée.`,
     link: "/agenda/schedule",
+    ...itemEntity("requests", params.requestId),
   }).catch(() => {});
 }
 
 /** Date fixée par un membre du MSDP (set_date) : le demandeur est prévenu, comme pour une planification par le protocole. */
 export async function notifyRequesterScheduled(params: {
+  requestId: string;
   userId: string | null;
   email: string | null;
   firstName: string;
@@ -176,6 +188,7 @@ export async function notifyRequesterScheduled(params: {
         title: "Rendez-vous pastoral confirmé",
         message: `Votre demande « ${subject} » a été planifiée le ${dateStr} à ${timeStr}.`,
         link: "/requests",
+        ...itemEntity("requests", params.requestId),
       },
       emailContent ? { email: emailContent } : undefined
     ).catch(() => {});
@@ -201,6 +214,7 @@ export async function notifyRequesterScheduled(params: {
 
 /** Rejet, avec le motif qualifié en clair (T42). */
 export async function notifyRequesterRejected(params: {
+  requestId: string;
   userId: string | null;
   email: string | null;
   firstName: string;
@@ -237,6 +251,7 @@ export async function notifyRequesterRejected(params: {
         title: "Demande de RDV non retenue",
         message: `Votre demande de rendez-vous pastoral n'a pas pu être retenue. Motif : ${fullReason}`,
         link: "/requests",
+        ...itemEntity("requests", params.requestId),
       },
       emailContent ? { email: emailContent } : undefined
     ).catch(() => {});

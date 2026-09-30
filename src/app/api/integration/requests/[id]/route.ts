@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { countCareItemsFromIntegrationRequest } from "@/modules/care";
 import {
   requireIntegrationAccess,
   notifyBergerAssigned,
@@ -12,6 +15,8 @@ import {
   recordStatusChange,
   getRequestHistory,
   ABANDON_REASON_LABELS,
+  requireIntegrationDelete,
+  deleteIntegrationRequest,
 } from "@/modules/integration";
 import type { FamilyPatchBody } from "@/modules/integration";
 
@@ -145,6 +150,7 @@ export async function PATCH(
     if (transition.notifyUnassignedBergerId) {
       await notifyBergerUnassigned({
         bergerId: transition.notifyUnassignedBergerId,
+        requestId: id,
         firstName: req.firstName,
         lastName: req.lastName,
       });
@@ -164,6 +170,50 @@ export async function PATCH(
     }
 
     return successResponse(updated);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/**
+ * Suppression définitive (spec 057) — `integration:delete`, dans l'église de la demande.
+ * Refusée tant qu'un rendez-vous ou un suivi `care` en est issu : `care` et `integration` ne
+ * s'importent pas (ADR-0001), le contrôle et la suppression sont donc composés ici, dans une
+ * même transaction.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireAuth();
+    const { id } = await params;
+    const req = await prisma.familyIntegrationRequest.findUnique({
+      where: { id },
+      select: { churchId: true },
+    });
+    if (!req) throw new ApiError(404, "Demande introuvable");
+    const session = await requireIntegrationDelete(req.churchId);
+
+    await prisma.$transaction(async (tx) => {
+      if ((await countCareItemsFromIntegrationRequest(tx, id)) > 0) {
+        throw new ApiError(
+          409,
+          "Cette demande a donné lieu à une demande de rendez-vous pastoral et/ou à un suivi de nouveau converti : supprimez-les d'abord."
+        );
+      }
+      await deleteIntegrationRequest(tx, { id, churchId: req.churchId });
+    });
+
+    await logAudit({
+      userId: session.user.id!,
+      churchId: req.churchId,
+      action: "DELETE",
+      entityType: "FamilyIntegrationRequest",
+      entityId: id,
+    });
+
+    return successResponse({ id });
   } catch (error) {
     return errorResponse(error);
   }

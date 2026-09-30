@@ -234,7 +234,7 @@ export async function applyFollowupTransition(params: {
     await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "followups", itemId: id, personName });
   }
   if (result.notifyPreviousAssignee && currentAssigneeUserId) {
-    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "followups", personName });
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "followups", itemId: id, personName });
   }
   if (result.notifyReferents) {
     await notifyReferentsHandback({
@@ -310,6 +310,8 @@ export async function notifyMsdpCounselorAssigned(params: {
       title: "Nouveau suivi MSDP assigné",
       message: `Vous êtes désigné comme référent pour le suivi de ${personName}.`,
       link: `/care/followups/${followUpId}`,
+      entityType: "MsdpFollowUp",
+      entityId: followUpId,
     },
     counselor?.email
       ? {
@@ -456,7 +458,7 @@ export async function runMsdpInactivityNotifications(
     // gouverné par la préférence du domaine "care" (spec 053), via le helper partagé.
     if (followUp.assignedConseillerMsdp) {
       await createNotification(
-        { userId: followUp.assignedConseillerMsdp.id, domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
+        { userId: followUp.assignedConseillerMsdp.id, domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link, entityType: "MsdpFollowUp", entityId: followUp.id },
         followUp.assignedConseillerMsdp.email
           ? {
               email: {
@@ -472,7 +474,7 @@ export async function runMsdpInactivityNotifications(
       if (managers.length > 0) {
         await notifyUsers(
           managers.map((m) => m.id),
-          { domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link },
+          { domain: "care", type: MSDP_INACTIVITY_NOTIF_TYPE, title, message, link, entityType: "MsdpFollowUp", entityId: followUp.id },
           {
             email: {
               subject: `${followUp.church.name} — ${title}`,
