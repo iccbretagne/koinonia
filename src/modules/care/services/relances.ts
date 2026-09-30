@@ -74,6 +74,10 @@ function linkOf(item: RelanceItem): string {
   return `/care/${item.kind}/${item.id}`;
 }
 
+function entityOf(item: RelanceItem): { entityType: string; entityId: string } {
+  return { entityType: item.kind === "requests" ? "AppointmentRequest" : "MsdpFollowUp", entityId: item.id };
+}
+
 export async function runCareRelances(): Promise<{
   unassignedNotified: number;
   unscheduledNotified: number;
@@ -242,6 +246,7 @@ export async function runCareRelances(): Promise<{
         title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
         message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
         link: linkOf(r),
+        ...entityOf(r),
       });
       unassignedNotified++;
     }
@@ -260,6 +265,7 @@ export async function runCareRelances(): Promise<{
         isRequest ? "toujours sans date" : "toujours sans premier contact"
       }.`,
       link,
+      ...entityOf(r),
     };
     // Qui relancer : le membre du MSDP en charge ; pour un RDV confié à un profil pastoral, le
     // protocole qui le planifie ; pour un suivi confié à un profil pastoral, son compte s'il en a un.

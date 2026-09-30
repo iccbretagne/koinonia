@@ -1,10 +1,16 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
-import { requireIntegrationAccess, getIntegrationSettings, isRelanceDue } from "@/modules/integration";
+import {
+  requireIntegrationAccess,
+  getIntegrationSettings,
+  isRelanceDue,
+  canDeleteIntegrationRequest,
+} from "@/modules/integration";
 import { registry } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import RequestDetail from "./RequestDetail";
+import DeleteItemButton from "@/components/DeleteItemButton";
 
 export default async function IntegrationRequestDetailPage({
   params,
@@ -54,6 +60,13 @@ export default async function IntegrationRequestDetailPage({
     return notFound();
 
   const relanceDue = isRelanceDue(req, await getIntegrationSettings(churchId), new Date());
+  const canDelete = await canDeleteIntegrationRequest(session, churchId);
+  const blockedBy = [
+    ...(appointmentRequest
+      ? [{ label: "Demande de rendez-vous pastoral liée", href: `/care/requests/${appointmentRequest.id}` }]
+      : []),
+    ...(msdpFollowUp ? [{ label: "Suivi de nouveau converti lié", href: `/care/followups/${msdpFollowUp.id}` }] : []),
+  ];
 
   return (
     <div>
@@ -73,6 +86,15 @@ export default async function IntegrationRequestDetailPage({
         currentUserId={session.user.id!}
         relanceDue={relanceDue}
       />
+      {canDelete && (
+        <div className="mt-6 flex justify-end">
+          <DeleteItemButton
+            endpoint={`/api/integration/requests/${id}`}
+            redirectTo="/integration/requests"
+            blockedBy={blockedBy}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,14 @@
 export { careModule } from "./manifest";
 
-export { requireCareQualify, getCareAccess } from "./auth";
+export { requireCareQualify, requireCareDelete, getCareAccess } from "./auth";
 export type { CareAccess } from "./auth";
+
+export {
+  deleteAppointmentRequest,
+  deleteMsdpFollowUp,
+  countCareItemsFromIntegrationRequest,
+  getAppointmentDeletionInfo,
+} from "./services/deletion";
 
 export {
   appointmentSubmitSchema,

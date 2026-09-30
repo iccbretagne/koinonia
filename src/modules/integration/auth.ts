@@ -1,6 +1,6 @@
 import type { Session } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireChurchPermission } from "@/lib/auth";
 
 export type IntegrationScope =
   | { scoped: false }
@@ -117,4 +117,21 @@ export async function requireIntegrationSettingsAccess(
   }
 
   throw new Error("FORBIDDEN");
+}
+
+/**
+ * Suppression définitive d'une demande d'intégration (spec 057) — `integration:delete`
+ * uniquement (Admin/Super Admin). La délégation équipe/berger de `requireIntegrationAccess` ne
+ * s'applique pas : supprimer engage bien plus que traiter.
+ */
+export async function requireIntegrationDelete(churchId: string) {
+  return requireChurchPermission("integration:delete", churchId);
+}
+
+/** Même règle que `requireIntegrationDelete`, sans lever — pour afficher ou non l'action. */
+export async function canDeleteIntegrationRequest(session: Session, churchId: string): Promise<boolean> {
+  if (session.user.isSuperAdmin) return true;
+  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
+  const { rolePermissions } = await import("@/lib/registry");
+  return roles.some((r) => (rolePermissions[r.role] ?? []).includes("integration:delete"));
 }

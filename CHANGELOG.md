@@ -13,6 +13,15 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   accompagnants possibles, ou ajouter nominativement un STAR d'un autre département. Un STAR
   qui rejoint le MSDP devient automatiquement accompagnant possible, sans action manuelle.
   Écarter ou retirer quelqu'un n'annule aucune demande déjà confiée.
+- **Suppression des demandes du suivi pastoral et de l'intégration** (spec 057) : l'Admin et le
+  Super Admin peuvent supprimer définitivement une demande de rendez-vous pastoral, un suivi de
+  nouveau converti ou une demande d'intégration (doublon, test, demande d'effacement de la
+  personne). L'historique, les notifications et, pour un rendez-vous planifié, l'entrée d'agenda
+  sont effacés avec elle ; seule reste une trace de la suppression, sans donnée personnelle. Une
+  demande dont est issu un suivi ou un rendez-vous ne peut être supprimée qu'après eux. Les
+  notifications envoyées avant cette version et qui ne pointent pas vers la demande elle-même
+  (« Nouvelle demande de RDV », « Accompagnement réaffecté », « Demande RDV à planifier ») ne
+  peuvent pas lui être rattachées et restent affichées.
 
 ## [v1.26.3] - 2026-10-01
 

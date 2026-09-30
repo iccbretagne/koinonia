@@ -5,6 +5,8 @@ import {
   getMsdpFollowUpById,
   applyFollowupTransition,
   msdpPatchSchema,
+  requireCareDelete,
+  deleteMsdpFollowUp,
 } from "@/modules/care";
 
 export async function GET(
@@ -57,6 +59,26 @@ export async function PATCH(
     });
 
     return successResponse(updated);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/** Suppression définitive (spec 057) — `care:delete`, dans l'église du suivi. */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireAuth();
+    const { id } = await params;
+    const followUp = await getMsdpFollowUpById(id);
+    if (!followUp) throw new ApiError(404, "Suivi MSDP introuvable");
+    const session = await requireCareDelete(followUp.churchId);
+
+    await deleteMsdpFollowUp({ id, churchId: followUp.churchId, actorId: session.user.id! });
+
+    return successResponse({ id });
   } catch (error) {
     return errorResponse(error);
   }

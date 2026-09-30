@@ -39,6 +39,9 @@ interface NotificationInput {
   title: string;
   message: string;
   link?: string;
+  /** Objet dont parle la notification, pour l'effacer avec lui (spec 057, ADR-0019). */
+  entityType?: string;
+  entityId?: string;
 }
 
 async function dispatchIfNoTx(userIds: string[], notification: NotificationInput, options?: NotificationOptions): Promise<void> {
@@ -53,8 +56,10 @@ export async function createNotification(
   options?: NotificationOptions
 ): Promise<void> {
   const client: PrismaOrTx = options?.tx ?? prisma;
-  const { userId, domain, type, title, message, link } = params;
-  await client.notification.create({ data: { userId, domain, type, title, message, link } });
+  const { userId, domain, type, title, message, link, entityType, entityId } = params;
+  await client.notification.create({
+    data: { userId, domain, type, title, message, link, entityType, entityId },
+  });
   await dispatchIfNoTx([userId], params, options);
 }
 
@@ -120,6 +125,23 @@ export async function notifyDeptMembers(
     skipDuplicates: true,
   });
   await dispatchIfNoTx(userIds, notification, options);
+}
+
+/**
+ * Efface les notifications d'un objet supprimé (spec 057, ADR-0019) : celles qui lui sont
+ * rattachées, et celles, antérieures au rattachement, dont le lien pointe vers lui.
+ */
+export async function deleteItemNotifications(
+  client: PrismaOrTx,
+  entityType: string,
+  entityId: string,
+  links: string[]
+): Promise<void> {
+  await client.notification.deleteMany({
+    where: {
+      OR: [{ entityType, entityId }, ...(links.length > 0 ? [{ link: { in: links } }] : [])],
+    },
+  });
 }
 
 /**

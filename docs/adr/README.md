@@ -45,6 +45,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0016](0016-preferences-notifications-email.md) | Un domaine par notification, email décidé centralement par préférence utilisateur | Accepté |
 | [0017](0017-permission-n-approxime-pas-un-role.md) | Une permission n'approxime jamais un rôle administratif | Accepté |
 | [0018](0018-tokens-semantiques-design-system.md) | L'interface passe par des tokens sémantiques (thèmes clair/sombre) | Accepté |
+| [0019](0019-effacement-demande-supprimee.md) | Supprimer une demande efface son historique et ses notifications | Accepté |
 
 ## Note sur les ADR 0001–0003
 

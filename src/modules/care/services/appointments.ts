@@ -74,6 +74,8 @@ export async function submitAppointmentRequest(
     title: "Nouvelle demande de RDV",
     message: `${data.firstName} ${data.lastName} a soumis une demande : « ${data.subject} ».`,
     link: "/care",
+    entityType: "AppointmentRequest",
+    entityId: request.id,
   }).catch(() => {});
 
   // Confirmation de dépôt au demandeur : aucune notification in-app n'existait déjà pour lui à
@@ -220,7 +222,7 @@ export async function applyAppointmentTransition(params: {
     await notifyAssigneeAssigned({ assignee: result.notifyAssigned, kind: "requests", itemId: id, personName });
   }
   if (result.notifyPreviousAssignee && currentAssigneeUserId) {
-    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "requests", personName });
+    await notifyAssigneeUnassigned({ userId: currentAssigneeUserId, kind: "requests", itemId: id, personName });
   }
   if (result.notifyReferents) {
     await notifyReferentsHandback({
@@ -232,10 +234,11 @@ export async function applyAppointmentTransition(params: {
     });
   }
   if (result.notifyProtocole) {
-    await notifyProtocoleToSchedule({ churchId, personName });
+    await notifyProtocoleToSchedule({ churchId, requestId: id, personName });
   }
   if (body.action === "set_date") {
     await notifyRequesterScheduled({
+      requestId: id,
       userId: existing.userId,
       email: existing.email,
       firstName: existing.firstName,
@@ -247,6 +250,7 @@ export async function applyAppointmentTransition(params: {
   }
   if (body.action === "reject") {
     await notifyRequesterRejected({
+      requestId: id,
       userId: existing.userId,
       email: existing.email,
       firstName: existing.firstName,

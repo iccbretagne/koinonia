@@ -1002,6 +1002,20 @@ accompagnant possible. Voir `src/modules/care/services/companions.ts`.
 | `createdById` | String? | Ref vers `users`, qui a déclaré l'exception (`SetNull`) |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
+### Notifications
+
+#### `notifications` — rattachement à un objet (spec 057)
+
+Deux colonnes nullables rattachent une notification in-app à l'objet métier dont elle parle,
+pour pouvoir l'effacer avec lui (ADR-0019). Renseignées par les notifications `care` et
+`integration` émises à propos d'une demande ou d'un suivi ; vides pour les notifications
+antérieures et celles sans objet précis. Index `[entityType, entityId]`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `entityType` | String? (50) | `AppointmentRequest`, `MsdpFollowUp` ou `FamilyIntegrationRequest` (mêmes valeurs que `audit_logs.entityType`) |
+| `entityId` | String? | Identifiant de l'objet |
+
 ## Seed (données initiales)
 
 Le script `prisma/seed.ts` crée :

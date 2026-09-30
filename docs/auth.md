@@ -333,6 +333,7 @@ absorbe la qualification des demandes de RDV (ex-`agenda`) et le suivi des nouve
 |---|---|---|---|---|---|---|---|---|---|---|
 | `care:qualify` | x | x | | | | | | | x | |
 | `care:view` | x | x | x | | | | | | x | |
+| `care:delete` | x | x | | | | | | | | |
 
 `requireCareQualify()`/`getCareAccess()` (`src/modules/care/auth.ts`) résolvent ces deux
 permissions **uniquement** via `rolePermissions` — à la différence de `requireIntegrationAccess()`
@@ -366,6 +367,13 @@ proposée (`GET /api/care/companions`) et pour la vérification à l'affectation
 volontairement la même fonction des deux côtés (#616 : ces deux usages avaient divergé). Réglage
 dans `/care/parametres` (`PUT /api/care/companions`), réservé à `care:qualify`.
 
+`care:delete` (spec 057, Admin/Super Admin seuls) permet de supprimer définitivement une demande
+de rendez-vous pastoral ou un suivi de nouveau converti (`DELETE /api/care/requests/[id]`,
+`DELETE /api/care/followups/[id]`, garde `requireCareDelete(churchId)` évaluée dans l'église de
+l'objet). Le Référent soins pastoraux ne l'a pas : il rejette ou clôture. La suppression efface
+aussi l'historique et les notifications de l'objet (ADR-0019), et est refusée pour un rendez-vous
+dont est issu un suivi.
+
 #### Module `rooms` (salles)
 
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
@@ -392,6 +400,12 @@ réservée à Admin/Secrétaire :
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `integration:manage` | x | x | x | | | | | | | |
+| `integration:delete` | x | x | | | | | | | | |
+
+`integration:delete` (spec 057, Admin/Super Admin seuls) : suppression définitive d'une demande
+d'intégration (`DELETE /api/integration/requests/[id]`, `requireIntegrationDelete(churchId)`),
+refusée tant qu'un rendez-vous ou un suivi `care` en est issu. Ni l'équipe
+`INTEGRATION`/`MSDP` ni les bergers n'y ont accès, contrairement à la consultation.
 
 Accès complet aux dossiers d'accueil et aux « parcours » (coordonnées personnelles, export),
 résolu par `requireIntegrationAccess()`/`requireIntegrationFullAccess()`

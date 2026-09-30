@@ -18,6 +18,7 @@ const {
   notifyUsersWithRole,
   notifyDeptMembers,
   dispatchUserEmails,
+  deleteItemNotifications,
 } = await import("../notifications");
 
 describe("dispatchUserEmails", () => {
@@ -232,5 +233,44 @@ describe("bout en bout — activer un domaine désactivé par défaut déclenche
     expect(prismaMock.notification.create).toHaveBeenCalled();
     expect(mockSendEmail).toHaveBeenCalledTimes(1);
     expect(mockSendEmail).toHaveBeenCalledWith({ to: "a@example.com", subject: "s", html: expect.stringContaining("<!--footer:") });
+  });
+});
+
+describe("rattachement à un objet (spec 057)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.user.findMany.mockResolvedValue([]);
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+  });
+
+  const entity = { entityType: "AppointmentRequest", entityId: "req-1" };
+  const base = { domain: "care", type: "T", title: "t", message: "m", ...entity };
+
+  it("createNotification transmet entityType/entityId", async () => {
+    await createNotification({ userId: "u1", ...base });
+    expect(prismaMock.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: "u1", ...entity }),
+    });
+  });
+
+  it("notifyUsers transmet entityType/entityId à chaque ligne", async () => {
+    await notifyUsers(["u1", "u2"], base);
+    const { data } = prismaMock.notification.createMany.mock.calls[0][0] as { data: Record<string, unknown>[] };
+    expect(data).toHaveLength(2);
+    for (const row of data) expect(row).toMatchObject(entity);
+  });
+
+  it("deleteItemNotifications : rattachement OU lien", async () => {
+    await deleteItemNotifications(prismaMock as never, "AppointmentRequest", "req-1", ["/care/requests/req-1"]);
+    expect(prismaMock.notification.deleteMany).toHaveBeenCalledWith({
+      where: { OR: [entity, { link: { in: ["/care/requests/req-1"] } }] },
+    });
+  });
+
+  it("deleteItemNotifications sans lien : rattachement seul", async () => {
+    await deleteItemNotifications(prismaMock as never, "MsdpFollowUp", "f-1", []);
+    expect(prismaMock.notification.deleteMany).toHaveBeenCalledWith({
+      where: { OR: [{ entityType: "MsdpFollowUp", entityId: "f-1" }] },
+    });
   });
 });

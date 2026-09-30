@@ -3,6 +3,9 @@ import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
 import { createNotification, notifyUsers, dispatchUserEmails } from "@/lib/notifications";
 
+/** Rattachement des notifications à la demande, pour les effacer avec elle (spec 057, ADR-0019). */
+const REQUEST_ENTITY = "FamilyIntegrationRequest";
+
 // ─── Emails ──────────────────────────────────────────────────────────────────
 
 export function buildConfirmationEmail(params: {
@@ -164,6 +167,8 @@ export async function notifyBergerAssigned(params: {
       title: "Nouvelle demande d'intégration",
       message: `${firstName} ${lastName} vous a été affecté${familyName ? ` (${familyName})` : ""}.`,
       link: `/admin/integration/requests/${requestId}`,
+      entityType: REQUEST_ENTITY,
+      entityId: requestId,
     },
     berger.email
       ? {
@@ -270,7 +275,7 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
       const managers = await getManagers(req.churchId);
       if (managers.length > 0) {
         const managerIds = managers.map((m) => m.id);
-        await notifyUsers(managerIds, { domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link });
+        await notifyUsers(managerIds, { domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id });
         notified += managers.length;
         const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
         await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
@@ -278,7 +283,7 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
     } else if (req.assignedBerger) {
       const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
       await createNotification(
-        { userId: req.assignedBerger.id, domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link },
+        { userId: req.assignedBerger.id, domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id },
         req.assignedBerger.email ? { email: { subject: `${req.church.name} — ${title}`, html } } : undefined
       ).catch(() => {});
       notified++;
@@ -293,6 +298,7 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
 /** Informe un berger qu'une demande ne lui est plus confiée (réaffectation, reprise de zéro). */
 export async function notifyBergerUnassigned(params: {
   bergerId: string;
+  requestId: string;
   firstName: string;
   lastName: string;
 }): Promise<void> {
@@ -304,6 +310,8 @@ export async function notifyBergerUnassigned(params: {
     title: "Demande d'intégration retirée",
     message: `La demande de ${firstName} ${lastName} ne vous est plus confiée.`,
     // Pas de lien vers la fiche : le berger n'y a plus accès.
+    entityType: REQUEST_ENTITY,
+    entityId: params.requestId,
   }).catch(() => {});
 }
 
@@ -474,7 +482,7 @@ export async function runWaitingRelanceNotifications(
     const managers = await getManagers(req.churchId);
     if (managers.length > 0) {
       const managerIds = managers.map((m) => m.id);
-      await notifyUsers(managerIds, { domain: "integration", type: RELANCE_NOTIF_TYPE, title, message, link });
+      await notifyUsers(managerIds, { domain: "integration", type: RELANCE_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id });
       notified += managers.length;
       const html = buildRelanceEmail({ churchName: req.church.name, personName, status: req.status, link, appUrl });
       await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
@@ -507,6 +515,8 @@ export async function notifyIntegrationTeamHandback(params: {
       title: "Demande renvoyée à l'intégration",
       message,
       link: `/integration/requests/${requestId}`,
+      entityType: REQUEST_ENTITY,
+      entityId: requestId,
     }
   ).catch(() => {});
 }

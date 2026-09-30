@@ -111,19 +111,21 @@ describe("notifyAssigneeUnassigned", () => {
   });
 
   it("notifie l'ancien accompagnant s'il a un compte", async () => {
-    await notifyAssigneeUnassigned({ userId: "u1", kind: "requests", personName: "Marie Curie" });
+    await notifyAssigneeUnassigned({ userId: "u1", kind: "requests", itemId: "req-1", personName: "Marie Curie" });
 
     expect(mockCreateNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "u1",
         type: "CARE_UNASSIGNED",
         message: "Vous n'êtes plus en charge de la demande de rendez-vous pastoral de Marie Curie.",
+        entityType: "AppointmentRequest",
+        entityId: "req-1",
       })
     );
   });
 
   it("ne fait rien si l'ancien accompagnant n'a pas de compte", async () => {
-    await notifyAssigneeUnassigned({ userId: null, kind: "followups", personName: "Marie Curie" });
+    await notifyAssigneeUnassigned({ userId: null, kind: "followups", itemId: "f1", personName: "Marie Curie" });
 
     expect(mockCreateNotification).not.toHaveBeenCalled();
   });
@@ -151,7 +153,7 @@ describe("notifyReferentsHandback", () => {
 
     expect(mockNotifyUsers).toHaveBeenCalledWith(
       ["admin-1", "referent-1"],
-      expect.objectContaining({ domain: "care", type: "CARE_HANDBACK" })
+      expect.objectContaining({ domain: "care", type: "CARE_HANDBACK", entityType: "AppointmentRequest", entityId: "req-1" })
     );
   });
 
@@ -177,13 +179,13 @@ describe("notifyProtocoleToSchedule", () => {
   });
 
   it("confié à un profil pastoral : le protocole est prévenu", async () => {
-    await notifyProtocoleToSchedule({ churchId: "church-1", personName: "Marie Curie" });
+    await notifyProtocoleToSchedule({ churchId: "church-1", requestId: "req-1", personName: "Marie Curie" });
 
     expect(mockNotifyDeptMembers).toHaveBeenCalledTimes(1);
     expect(mockNotifyDeptMembers).toHaveBeenCalledWith(
       "church-1",
       "PROTOCOLE",
-      expect.objectContaining({ type: "CARE_APPOINTMENT_VALIDATED" })
+      expect.objectContaining({ type: "CARE_APPOINTMENT_VALIDATED", entityType: "AppointmentRequest", entityId: "req-1" })
     );
   });
 });
@@ -197,6 +199,7 @@ describe("notifyRequesterScheduled", () => {
   });
 
   const base = {
+    requestId: "req-1",
     firstName: "Marie",
     lastName: "Curie",
     subject: "Besoin d'accompagnement",
@@ -208,7 +211,7 @@ describe("notifyRequesterScheduled", () => {
     await notifyRequesterScheduled({ ...base, userId: "requester-1", email: null });
 
     const [params, options] = mockCreateNotification.mock.calls[0];
-    expect(params).toEqual(expect.objectContaining({ userId: "requester-1", domain: "care", type: "CARE_APPOINTMENT_SCHEDULED" }));
+    expect(params).toEqual(expect.objectContaining({ userId: "requester-1", domain: "care", type: "CARE_APPOINTMENT_SCHEDULED", entityType: "AppointmentRequest", entityId: "req-1" }));
     expect(options).toBeUndefined();
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
@@ -239,6 +242,7 @@ describe("notifyRequesterRejected", () => {
   });
 
   const base = {
+    requestId: "req-1",
     firstName: "Marie",
     lastName: "Curie",
     subject: "Besoin d'accompagnement",
@@ -254,6 +258,8 @@ describe("notifyRequesterRejected", () => {
     expect(params).toEqual(
       expect.objectContaining({
         type: "CARE_APPOINTMENT_REJECTED",
+        entityType: "AppointmentRequest",
+        entityId: "req-1",
         message: expect.stringContaining("Hors du champ pastoral"),
       })
     );

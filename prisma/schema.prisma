@@ -691,23 +691,28 @@ model AuditLog {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String // PLANNING_REMINDER, PLANNING_UPDATED, etc.
-  title     String
-  message   String   @db.Text
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  type       String // PLANNING_REMINDER, PLANNING_UPDATED, etc.
+  title      String
+  message    String   @db.Text
+  read       Boolean  @default(false)
+  link       String?
+  createdAt  DateTime @default(now())
   /// Domaine de la notification (spec 053) — déclaré par le manifeste du module émetteur,
   /// utilisé par la préférence email de l'utilisateur. Nullable : les notifications
   /// antérieures à la spec 053 sont rattachées par la migration (historique d'affichage
   /// uniquement), les modules qui ne le renseignent pas encore laissent la colonne vide.
-  domain    String?
-  user      User     @relation(fields: [userId], references: [id])
+  domain     String?
+  /// Objet métier dont parle la notification (spec 057, ADR-0019) — permet de l'effacer avec
+  /// lui. Nullable : notifications antérieures et notifications sans objet précis.
+  entityType String?  @db.VarChar(50)
+  entityId   String?
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt])
   @@index([userId, domain])
+  @@index([entityType, entityId])
   @@map("notifications")
 }
 

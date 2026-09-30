@@ -1,7 +1,7 @@
 # Spec — Suppression des demandes du suivi pastoral et de l'intégration
 
 - **Numéro** : 057
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-01
 - **Branche suggérée** : `feat/suppression-demandes`
 
@@ -61,17 +61,17 @@ Aucune ne peut être supprimée. Conséquences :
 
 ## Critères d'acceptation
 
-- [ ] Admin et Super Admin peuvent supprimer chacun des trois types de demande de leur église.
-- [ ] Aucun autre rôle ne voit l'action, et une tentative directe est refusée.
-- [ ] La suppression est précédée d'une confirmation explicite.
-- [ ] Une demande supprimée n'apparaît plus nulle part (listes, relances, statistiques, exports).
-- [ ] La suppression d'une demande d'intégration ayant un suivi ou un rendez-vous lié, ou d'un
+- [x] Admin et Super Admin peuvent supprimer chacun des trois types de demande de leur église.
+- [x] Aucun autre rôle ne voit l'action, et une tentative directe est refusée.
+- [x] La suppression est précédée d'une confirmation explicite.
+- [x] Une demande supprimée n'apparaît plus nulle part (listes, relances, statistiques, exports).
+- [x] La suppression d'une demande d'intégration ayant un suivi ou un rendez-vous lié, ou d'un
       rendez-vous ayant un suivi lié, est refusée avec un message indiquant la marche à suivre.
-- [ ] L'historique des modifications trace la suppression sans aucune donnée personnelle.
-- [ ] Les notifications à propos d'une demande supprimée disparaissent ; un lien vers une
+- [x] L'historique des modifications trace la suppression sans aucune donnée personnelle.
+- [x] Les notifications à propos d'une demande supprimée disparaissent ; un lien vers une
       demande supprimée affiche un message clair.
-- [ ] Un Admin ne peut pas supprimer une demande d'une autre église.
-- [ ] L'action est utilisable sur mobile.
+- [x] Un Admin ne peut pas supprimer une demande d'une autre église.
+- [x] L'action est utilisable sur mobile.
 
 ## Hors périmètre
 
