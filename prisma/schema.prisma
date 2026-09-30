@@ -88,6 +88,7 @@ model Church {
   familyLeaderAssignments   FamilyLeaderAssignment[]
   msdpFollowUps             MsdpFollowUp[]
   personJourneys            PersonJourney[]
+  careCompanions            CareCompanion[]
   // Module comptabilité
   financialSeries           FinancialSeries[]
   financialRequests         FinancialRequest[]
@@ -182,6 +183,8 @@ model User {
   familyLeaderAssignments           FamilyLeaderAssignment[]
   familyIntegrationRequestsAssigned FamilyIntegrationRequest[]   @relation("IntegrationAssignedBerger")
   msdpFollowUpsAssigned             MsdpFollowUp[]               @relation("MsdpAssignedConseiller")
+  careCompanions                    CareCompanion[]              @relation("CareCompanionUser")
+  careCompanionsCreated             CareCompanion[]              @relation("CareCompanionCreatedBy")
   personJourneysCreated             PersonJourney[]              @relation("PersonJourneyCreator")
   // Module comptabilité
   financialSeriesSubmitted          FinancialSeries[]            @relation("FinancialSeriesSubmitter")
@@ -1507,6 +1510,34 @@ model MsdpFollowUp {
   @@index([assignedProfileId])
   @@index([personJourneyId])
   @@map("msdp_follow_ups")
+}
+
+/// Exception déclarée au vivier calculé des accompagnants STAR (spec 056). Sans ligne pour un
+/// utilisateur, la règle par défaut s'applique (membre d'un département MSDP = accompagnant
+/// possible). ADDED ajoute un STAR hors MSDP (ou le garde après son départ du MSDP) ; EXCLUDED
+/// écarte un membre du MSDP. Une seule ligne par (église, utilisateur) : les deux états
+/// s'excluent (services/companions.ts).
+enum CareCompanionMode {
+  ADDED
+  EXCLUDED
+}
+
+model CareCompanion {
+  id          String            @id @default(cuid())
+  churchId    String
+  userId      String
+  mode        CareCompanionMode
+  createdById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  church    Church @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  user      User   @relation("CareCompanionUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation("CareCompanionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([churchId, userId])
+  @@index([churchId])
+  @@map("care_companions")
 }
 
 /// Réglages du module care, par église (spec 052) — même forme qu'IntegrationSettings.

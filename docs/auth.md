@@ -349,13 +349,22 @@ Admin, Super Admin, ou l'accompagnant en charge ; libellé neutre « Rendez-vous
 tous les autres lecteurs (Secrétaire, Protocole, équipe intégration, accompagnant dessaisi).
 
 Depuis la spec 052 lot 2, l'affectation choisit entre deux populations d'accompagnants — un
-profil pastoral ou un membre d'un département de fonction `MSDP` (`AssigneeSelection`,
+profil pastoral ou un STAR accompagnant (`AssigneeSelection`,
 `src/modules/care/services/assignee.ts`) — réservée à `care:qualify` (validation, réaffectation).
 Les étapes de suivi (fixer la date, renseigner le compte rendu, rendre au référent) sont réservées à
 l'accompagnant **en charge**, pas à toute l'équipe. `GET/PUT /api/care/settings`
 (`/care/parametres`) et `GET /api/care/stats` (`/care/stats`), ajoutés au lot 3, réutilisent ces
 deux mêmes permissions sans en introduire de nouvelle : réglages des délais de relance réservés à
 `care:qualify`, statistiques ouvertes à `care:view`.
+
+Le STAR accompagnant (spec 056, `src/modules/care/services/companions.ts`) est un vivier
+**calculé** — membre d'un département de fonction `MSDP` (appartenance de fiche STAR ou
+responsabilité de département) — auquel `care:qualify` peut déclarer des exceptions par église
+(`CareCompanion`) : `EXCLUDED` écarte un membre du MSDP, `ADDED` ajoute un STAR hors MSDP (ou le
+garde après son départ). `isEligibleCompanion()` applique cette règle à la fois pour la liste
+proposée (`GET /api/care/companions`) et pour la vérification à l'affectation (`resolveAssignee`),
+volontairement la même fonction des deux côtés (#616 : ces deux usages avaient divergé). Réglage
+dans `/care/parametres` (`PUT /api/care/companions`), réservé à `care:qualify`.
 
 #### Module `rooms` (salles)
 

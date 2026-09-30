@@ -5,6 +5,7 @@ import { createAdminSession, createSecretarySession } from "@/__mocks__/auth";
 const mockAuth = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("next-auth", () => ({
   default: () => ({ auth: mockAuth, handlers: {}, signIn: vi.fn(), signOut: vi.fn() }),
 }));
@@ -13,37 +14,38 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return { ...original, auth: () => mockAuth() };
 });
 
-const { GET } = await import("../route");
+const { GET, PUT } = await import("../route");
 
 const churchId = "church-1";
+
+function resetCandidateMocks() {
+  prismaMock.pastoralProfile.findMany.mockResolvedValue([] as never);
+  prismaMock.department.findMany.mockResolvedValue([] as never);
+  prismaMock.memberUserLink.findMany.mockResolvedValue([] as never);
+  prismaMock.userChurchRole.findMany.mockResolvedValue([] as never);
+  prismaMock.careCompanion.findMany.mockResolvedValue([] as never);
+  prismaMock.appointmentRequest.groupBy.mockResolvedValue([] as never);
+  prismaMock.msdpFollowUp.groupBy.mockResolvedValue([] as never);
+}
 
 describe("GET /api/care/companions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue(createAdminSession(churchId));
+    resetCandidateMocks();
   });
 
-  it("réunit les membres de plusieurs départements MSDP sans doublon (spec 046)", async () => {
-    prismaMock.member.findMany.mockResolvedValue([
-      { userLinks: [{ user: { id: "u1", name: "Jean Dupont", email: "jean@example.com", image: null } }] },
-      {
-        userLinks: [
-          { user: { id: "u1", name: "Jean Dupont", email: "jean@example.com", image: null } },
-          { user: { id: "u2", name: "Alice Martin", email: "alice@example.com", image: null } },
-        ],
-      },
+  it("renvoie profils et STAR accompagnants (vivier calculé, spec 056)", async () => {
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
+    prismaMock.memberUserLink.findMany.mockResolvedValue([
+      { user: { id: "u1", name: "Alice", email: "alice@example.com" }, member: { departments: [] } },
     ] as never);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([{ userId: "u1" }] as never);
 
     const res = await GET(new Request(`https://koinonia.test/api/care/companions?churchId=${churchId}`));
     const body = await res.json();
 
-    expect(prismaMock.member.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { departments: { some: { department: { function: "MSDP", ministry: { churchId } } } } },
-      })
-    );
-    expect(body.msdpMembers).toHaveLength(2);
-    expect(body.msdpMembers.map((c: { id: string }) => c.id).sort()).toEqual(["u1", "u2"]);
+    expect(body.members.map((c: { id: string }) => c.id)).toEqual(["u1"]);
   });
 
   it("refuse un lecteur sans care:qualify (Secrétaire, care:view seul)", async () => {
@@ -57,5 +59,53 @@ describe("GET /api/care/companions", () => {
   it("400 quand churchId est manquant", async () => {
     const res = await GET(new Request("https://koinonia.test/api/care/companions"));
     expect(res.status).toBe(400);
+  });
+});
+
+describe("PUT /api/care/companions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuth.mockResolvedValue(createAdminSession(churchId));
+    resetCandidateMocks();
+  });
+
+  function putRequest(body: unknown) {
+    return new Request("https://koinonia.test/api/care/companions", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("ajoute un STAR hors MSDP", async () => {
+    prismaMock.memberUserLink.findMany.mockResolvedValue([
+      { user: { id: "u1", name: "Alice", email: null }, member: { departments: [] } },
+    ] as never);
+    prismaMock.careCompanion.upsert.mockResolvedValue({} as never);
+
+    const res = await PUT(putRequest({ churchId, userId: "u1", state: "ADDED" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.state).toBe("ADDED");
+    expect(prismaMock.careCompanion.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ churchId, userId: "u1", mode: "ADDED" }),
+      })
+    );
+  });
+
+  it("400 sur un state invalide", async () => {
+    const res = await PUT(putRequest({ churchId, userId: "u1", state: "AUTRE" }));
+    expect(res.status).toBe(400);
+    expect(prismaMock.careCompanion.upsert).not.toHaveBeenCalled();
+  });
+
+  it("refuse un lecteur sans care:qualify (Secrétaire)", async () => {
+    mockAuth.mockResolvedValue(createSecretarySession(churchId));
+
+    const res = await PUT(putRequest({ churchId, userId: "u1", state: "ADDED" }));
+
+    expect(res.status).toBe(403);
+    expect(prismaMock.careCompanion.upsert).not.toHaveBeenCalled();
   });
 });

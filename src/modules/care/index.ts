@@ -36,7 +36,6 @@ export {
   applyFollowupTransition,
   createFollowUpFromAppointmentOrientation,
   startMsdpFollowUpFromIntegrationRequest,
-  listMsdpCounselors,
   runMsdpInactivityNotifications,
 } from "./services/followups";
 export type { MsdpPatchBody } from "./services/followups";
@@ -48,6 +47,16 @@ export {
   listAssignableProfiles,
 } from "./services/assignee";
 export type { AssigneeSelection, ResolvedAssignee } from "./services/assignee";
+
+export {
+  listCompanionCandidates,
+  isCompanionEligible,
+  listEligibleCompanions,
+  isEligibleCompanion,
+  getCompanionSettings,
+  setCompanionState,
+} from "./services/companions";
+export type { CompanionCandidate, CompanionState } from "./services/companions";
 
 export {
   NEUTRAL_REQUEST_LABEL,

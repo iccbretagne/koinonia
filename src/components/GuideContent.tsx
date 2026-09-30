@@ -284,7 +284,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Qualification et affectation des demandes",
-    description: "Depuis /care, confiez chaque demande de RDV en attente à un profil pastoral ou à un membre du département MSDP (indicateur « prévenu par email seulement » si le profil n'a pas de compte), avec une note optionnelle — ou rejetez-la avec un motif qualifié (liste fixe + commentaire libre). Une demande déjà confiée peut être réaffectée à un autre référent.",
+    description: "Depuis /care, confiez chaque demande de RDV en attente à un profil pastoral ou à un STAR accompagnant (membres du MSDP par défaut, plus les STAR ajoutés nominativement — voir « Accompagnants » ci-dessous ; indicateur « prévenu par email seulement » si le profil pastoral n'a pas de compte), avec une note optionnelle — ou rejetez-la avec un motif qualifié (liste fixe + commentaire libre). Une demande déjà confiée peut être réaffectée à un autre référent.",
     category: "Suivi pastoral",
     screenshotTitle: "Qualification et affectation des demandes de RDV",
     screenshotFile: "guide-care-qualification.png",
@@ -320,6 +320,14 @@ const FEATURES: Feature[] = [
     category: "Suivi pastoral",
     screenshotTitle: "Paramètres du suivi pastoral",
     screenshotFile: "guide-care-parametres.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Accompagnants du suivi pastoral",
+    description: "Depuis /care/parametres, section « Accompagnants » : tout membre du MSDP est accompagnant par défaut (décochez pour en écarter un, sans retirer les demandes déjà en cours) ; ajoutez aussi un STAR d'un autre département qui accompagne effectivement (il peut être retiré de la même façon). Un STAR qui rejoint le MSDP devient accompagnant automatiquement.",
+    category: "Suivi pastoral",
+    screenshotTitle: "Accompagnants du suivi pastoral",
+    screenshotFile: "guide-care-accompagnants.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "none" },
   },
   {

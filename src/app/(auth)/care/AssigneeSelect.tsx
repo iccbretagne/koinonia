@@ -8,7 +8,7 @@ export interface AssigneeValue {
 }
 
 interface Profile { id: string; name: string; role: string; userId: string | null }
-interface MsdpMember { id: string; name: string | null; email: string | null }
+interface Companion { id: string; name: string | null; email: string | null }
 
 const ROLE_LABELS: Record<string, string> = {
   PASTEUR: "Pasteur",
@@ -17,8 +17,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 /**
- * Sélecteur d'accompagnant à deux groupes — profils pastoraux et membres du MSDP (spec 052,
- * T50). Un profil sans compte porte la mention « pas de compte : prévenu par email seulement ».
+ * Sélecteur d'accompagnant à deux groupes — profils pastoraux et STAR accompagnants (spec 052,
+ * T50 ; spec 056, vivier MSDP + exceptions déclarées). Un profil sans compte porte la mention
+ * « pas de compte : prévenu par email seulement ».
  */
 export default function AssigneeSelect({ churchId, value, onChange }: {
   readonly churchId: string;
@@ -26,7 +27,7 @@ export default function AssigneeSelect({ churchId, value, onChange }: {
   readonly onChange: (value: AssigneeValue | null) => void;
 }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [msdpMembers, setMsdpMembers] = useState<MsdpMember[]>([]);
+  const [companions, setCompanions] = useState<Companion[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function AssigneeSelect({ churchId, value, onChange }: {
       .then((data) => {
         if (cancelled) return;
         setProfiles(data?.profiles ?? []);
-        setMsdpMembers(data?.msdpMembers ?? []);
+        setCompanions(data?.members ?? []);
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -65,10 +66,14 @@ export default function AssigneeSelect({ churchId, value, onChange }: {
           </option>
         ))}
       </optgroup>
-      <optgroup label="Membres du MSDP">
-        {msdpMembers.map((m) => (
-          <option key={m.id} value={`MEMBER:${m.id}`}>{m.name ?? m.email}</option>
-        ))}
+      <optgroup label="STAR accompagnants">
+        {companions.length === 0 ? (
+          <option disabled value="">Aucun STAR accompagnant — voir Paramètres</option>
+        ) : (
+          companions.map((m) => (
+            <option key={m.id} value={`MEMBER:${m.id}`}>{m.name ?? m.email}</option>
+          ))
+        )}
       </optgroup>
     </select>
   );

@@ -984,6 +984,24 @@ DONE    # Termine
 FAILED  # Echec apres 3 tentatives
 ```
 
+### Module Suivi pastoral (`care`)
+
+#### `care_companions`
+
+Exception déclarée au vivier calculé des accompagnants STAR des demandes de rendez-vous pastoral
+et des suivis de nouveaux convertis (spec 056). Sans ligne pour un utilisateur, la règle par
+défaut s'applique : membre d'un département MSDP (par fiche STAR ou par responsabilité) =
+accompagnant possible. Voir `src/modules/care/services/companions.ts`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` (cascade delete) |
+| `userId` | String | Ref vers `users` (cascade delete) — unique par église (`@@unique([churchId, userId])`) |
+| `mode` | CareCompanionMode | `ADDED` (ajouté hors MSDP, ou gardé après départ) ou `EXCLUDED` (membre MSDP écarté) |
+| `createdById` | String? | Ref vers `users`, qui a déclaré l'exception (`SetNull`) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
 ## Seed (données initiales)
 
 Le script `prisma/seed.ts` crée :
