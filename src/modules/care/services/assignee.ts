@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/api-utils";
-import { DEPT_FN } from "@/lib/department-functions";
-import { getFunctionDepartmentIds } from "@/lib/function-departments";
+import { isEligibleCompanion } from "./companions";
 
 /**
  * Un accompagnant est soit un profil pastoral, soit un membre d'un département de fonction
@@ -44,34 +43,19 @@ export async function resolveAssignee(
     };
   }
 
-  // Même vivier que `listMsdpCounselors` (appartenance : compte lié et validé à une fiche STAR
-  // d'un département MSDP, ADR-0013), plus les responsables d'un département MSDP
-  // (`user_departments`). Ne contrôler que la responsabilité refusait tout STAR du MSDP pourtant
-  // proposé dans le sélecteur (« Membre MSDP invalide ou hors périmètre »).
-  const msdpDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.MSDP);
-  const user = await prisma.user.findFirst({
-    where: {
-      id: selection.id,
-      OR: [
-        {
-          memberLinks: {
-            some: {
-              churchId,
-              validatedAt: { not: null },
-              member: { departments: { some: { departmentId: { in: msdpDeptIds } } } },
-            },
-          },
-        },
-        {
-          churchRoles: {
-            some: { churchId, departments: { some: { departmentId: { in: msdpDeptIds } } } },
-          },
-        },
-      ],
-    },
+  // Accompagnant possible (spec 056) : même règle que la liste proposée
+  // (`listEligibleCompanions`/`GET /api/care/companions`) — vivier MSDP calculé (appartenance ou
+  // responsabilité, ADR-0013) plus les exceptions déclarées (`CareCompanion`). Une seule fonction
+  // pour les deux usages : l'écart entre liste et vérification (#616, « Membre MSDP invalide ou
+  // hors périmètre » pour un STAR pourtant proposé) ne peut plus se reproduire.
+  if (!(await isEligibleCompanion(churchId, selection.id))) {
+    throw new ApiError(400, "Cette personne n'est pas un accompagnant possible de l'église");
+  }
+  const user = await prisma.user.findUnique({
+    where: { id: selection.id },
     select: { id: true, name: true, email: true },
   });
-  if (!user) throw new ApiError(400, "Membre MSDP invalide ou hors périmètre");
+  if (!user) throw new ApiError(400, "Cette personne n'est pas un accompagnant possible de l'église");
   return {
     kind: "MEMBER",
     id: user.id,

@@ -3,6 +3,9 @@ import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
+const mockIsEligibleCompanion = vi.fn();
+vi.mock("../services/companions", () => ({ isEligibleCompanion: mockIsEligibleCompanion }));
+
 const { resolveAssignee, assertExclusiveAssignment, isCurrentAssignee } = await import(
   "../services/assignee"
 );
@@ -65,9 +68,9 @@ describe("resolveAssignee", () => {
     expect(assignee.email).toBe("marc@example.org");
   });
 
-  it("MEMBER : renvoie le membre du MSDP", async () => {
-    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
-    prismaMock.user.findFirst.mockResolvedValue({
+  it("MEMBER : renvoie l'accompagnant possible", async () => {
+    mockIsEligibleCompanion.mockResolvedValue(true);
+    prismaMock.user.findUnique.mockResolvedValue({
       id: "user-2",
       name: "Alice Martin",
       email: "alice@example.org",
@@ -82,49 +85,25 @@ describe("resolveAssignee", () => {
       name: "Alice Martin",
       email: "alice@example.org",
     });
+    expect(mockIsEligibleCompanion).toHaveBeenCalledWith("church-1", "user-2");
   });
 
-  it("MEMBER : rejette un utilisateur qui n'appartient pas à un département MSDP", async () => {
-    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
-    prismaMock.user.findFirst.mockResolvedValue(null);
+  it("MEMBER : rejette un utilisateur qui n'est pas un accompagnant possible (spec 056)", async () => {
+    mockIsEligibleCompanion.mockResolvedValue(false);
 
     await expect(resolveAssignee("church-1", { kind: "MEMBER", id: "user-x" })).rejects.toThrow(
-      "Membre MSDP invalide ou hors périmètre"
+      "Cette personne n'est pas un accompagnant possible de l'église"
     );
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
   });
 
-  it("MEMBER : accepte le vivier du sélecteur (fiche STAR MSDP liée) comme les responsables MSDP", async () => {
-    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-msdp" }] as never);
-    prismaMock.user.findFirst.mockResolvedValue({ id: "user-4", name: "Star Msdp", email: null } as never);
+  it("MEMBER : accepte un STAR hors MSDP déclaré accompagnant (spec 056, ADDED)", async () => {
+    mockIsEligibleCompanion.mockResolvedValue(true);
+    prismaMock.user.findUnique.mockResolvedValue({ id: "user-4", name: "Star Hors MSDP", email: null } as never);
 
-    await resolveAssignee("church-1", { kind: "MEMBER", id: "user-4" });
+    const assignee = await resolveAssignee("church-1", { kind: "MEMBER", id: "user-4" });
 
-    expect(prismaMock.user.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          id: "user-4",
-          OR: [
-            {
-              memberLinks: {
-                some: {
-                  churchId: "church-1",
-                  validatedAt: { not: null },
-                  member: { departments: { some: { departmentId: { in: ["dept-msdp"] } } } },
-                },
-              },
-            },
-            {
-              churchRoles: {
-                some: {
-                  churchId: "church-1",
-                  departments: { some: { departmentId: { in: ["dept-msdp"] } } },
-                },
-              },
-            },
-          ],
-        },
-      })
-    );
+    expect(assignee.id).toBe("user-4");
   });
 });
 

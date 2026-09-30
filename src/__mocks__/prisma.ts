@@ -59,6 +59,7 @@ export const prismaMock = {
   mediaSettings: createModelMock(),
   msdpFollowUp: createModelMock(),
   careSettings: createModelMock(),
+  careCompanion: createModelMock(),
   // Module agenda
   pastoralProfile: createModelMock(),
   appointmentRequest: createModelMock(),

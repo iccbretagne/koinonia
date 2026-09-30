@@ -1,9 +1,16 @@
+import { z } from "zod";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireCareQualify, listMsdpCounselors, listAssignableProfiles } from "@/modules/care";
+import {
+  requireCareQualify,
+  listAssignableProfiles,
+  listEligibleCompanions,
+  setCompanionState,
+} from "@/modules/care";
 
 /**
- * Vivier d'accompagnants assignables (spec 052, T48) : deux groupes — profils pastoraux
- * (`userId: null` = sans compte, prévenu par email seulement) et membres du MSDP.
+ * Vivier d'accompagnants assignables (spec 052, T48 ; spec 056) : deux groupes — profils
+ * pastoraux (`userId: null` = sans compte, prévenu par email seulement) et STAR accompagnants
+ * (`members`, vivier calculé du MSDP + exceptions déclarées, `listEligibleCompanions`).
  */
 export async function GET(request: Request) {
   try {
@@ -13,12 +20,35 @@ export async function GET(request: Request) {
 
     await requireCareQualify(churchId);
 
-    const [profiles, msdpMembers] = await Promise.all([
+    const [profiles, members] = await Promise.all([
       listAssignableProfiles(churchId),
-      listMsdpCounselors(churchId),
+      listEligibleCompanions(churchId),
     ]);
 
-    return successResponse({ profiles, msdpMembers });
+    return successResponse({ profiles, members });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+const putSchema = z.object({
+  churchId: z.string().min(1),
+  userId: z.string().min(1),
+  state: z.enum(["ADDED", "EXCLUDED", "DEFAULT"]),
+});
+
+/**
+ * Déclare une exception au vivier calculé (spec 056) : ajoute un STAR hors MSDP, exclut un
+ * membre du MSDP, ou revient au calcul par défaut.
+ */
+export async function PUT(request: Request) {
+  try {
+    const { churchId, userId, state } = putSchema.parse(await request.json());
+    const session = await requireCareQualify(churchId);
+
+    const result = await setCompanionState({ churchId, userId, state, actorId: session.user.id! });
+
+    return successResponse(result);
   } catch (error) {
     return errorResponse(error);
   }
