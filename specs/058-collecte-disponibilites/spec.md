@@ -1,7 +1,7 @@
 # Spec — Collecte des disponibilités et disponibilités dans la grille
 
 - **Numéro** : 058
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-02
 - **Branche suggérée** : `feat/collecte-disponibilites`
 - **Origine** : issue #612, lot 1 (lots 2 et 3 : notifications regroupées, « Je ne peux plus »)

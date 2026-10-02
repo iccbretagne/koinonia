@@ -212,7 +212,7 @@
   des réponses couvertes), `absence-targeting.test.ts`, `permissions.test.ts`,
   `manifests.test.ts`, `navigation.test.ts`, `star-navigation.test.ts`, `cron-modules.test.ts`,
   `route-exhaustiveness.test.ts`.
-- [ ] **T46** — Vérification manuelle en dev (390 px et bureau) : rejeu de la migration sur un jeu
+- [x] **T46** — Vérification manuelle en dev (390 px et bureau) : rejeu de la migration sur un jeu
   contenant absences `EVENTS` et plannings `INDISPONIBLE` (comptes avant/après) ; collecte ouverte
   par appel du cron ; réponse ciblée ; période ; grille (pastilles, tri, compteur, avertissement,
   « De service en … ») ; interroger / relancer ; « Je ne peux pas » ; réglages. Base de dev
@@ -220,13 +220,13 @@
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test`
-- [ ] `npm run build` (frontière client/serveur des écrans modifiés)
-- [ ] Migration rejouée sur une copie de la base de recette (reprise vérifiée) avant la production
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits
-- [ ] CHANGELOG (section non publiée) mis à jour
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test`
+- [x] `npm run build` (frontière client/serveur des écrans modifiés)
+- [x] Migration rejouée sur une copie de la base de recette (reprise vérifiée) avant la production *(appliquée en recette par « Deploy Staging », recette validée le 2026-10-02)*
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits
+- [x] CHANGELOG (section non publiée) mis à jour
 - [ ] PR finale `feat/collecte-disponibilites` → `main` ; annonce aux églises préparée (ouverture
   simultanée de plusieurs collectes au déploiement)
