@@ -1,6 +1,6 @@
 # ADR-0020 — La disponibilité d'un STAR est dérivée ; « absence » et statut `INDISPONIBLE` fusionnent
 
-- **Statut** : Proposé
+- **Statut** : Accepté
 - **Date** : 2026-10-02
 
 ## Contexte

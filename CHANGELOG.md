@@ -6,6 +6,16 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- **Collecte des disponibilités** (spec 058, issue #612) : chaque mois, tous les STAR indiquent leur disponibilité (Disponible / Si besoin / Pas disponible) par événement depuis « Disponibilités » ; ouverture, clôture et relance automatiques et réglables (`availability:settings`), demandes ciblées à l'ajout ou au déplacement d'un événement, « Répondre pour… » par un responsable.
+- Grille de planning : disponibilité de chaque STAR, tri, compteur, avertissement en cas de placement d'un indisponible, « Interroger l'équipe » et « Relancer les sans-réponse ».
+
+### Modifié
+
+- « Absences » devient « Indisponibilités » : périodes uniquement (plus d'absence « sur certains événements »), plus les réponses « Pas disponible » à venir.
+- Le statut de service `INDISPONIBLE` n'est plus posable dans la grille : la disponibilité est dérivée (ADR-0020). Migration : les anciennes absences par événements et plannings `INDISPONIBLE` deviennent des réponses « Pas disponible ».
+
 ## [v1.27.0] - 2026-10-01
 
 ### Ajouté

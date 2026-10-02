@@ -49,6 +49,7 @@ const validBody = {
 describe("GET /api/absences", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.availabilityResponse.findMany.mockResolvedValue([] as never);
   });
 
   it("returns 400 without churchId", async () => {
@@ -111,6 +112,41 @@ describe("GET /api/absences", () => {
       { id: "backup-1", type: "STAR", targetId: "member-2", name: "Marie Martin", role: undefined },
       { id: "backup-2", type: "RESPONSIBLE", targetId: "role-1", name: "Paul Petit", role: "MINISTER" },
     ]);
+  });
+
+  it("scope=all joint les réponses « Pas disponible » à venir, bornées au périmètre", async () => {
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockGetUserDepartmentScope.mockReturnValue({ scoped: true, departmentIds: ["dept-1"] });
+    prismaMock.absence.findMany.mockResolvedValue([] as never);
+    prismaMock.availabilityResponse.findMany.mockResolvedValue([
+      {
+        id: "resp-1",
+        member: { id: "member-1", firstName: "Jean", lastName: "Dupont", departments: [] },
+        event: { id: "ev-1", title: "Culte", date: new Date("2099-01-01") },
+        department: { id: "dept-1", name: "Accueil" },
+        enteredBy: { name: "Paul Petit", displayName: null },
+      },
+    ] as never);
+
+    const res = await GET(new Request("http://localhost/api/absences?churchId=church-1&scope=all"));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.responses).toHaveLength(1);
+    expect(data.responses[0]).toMatchObject({ id: "resp-1", enteredBy: "Paul Petit", department: { id: "dept-1" } });
+    const where = prismaMock.availabilityResponse.findMany.mock.calls[0][0]!.where as Record<string, unknown>;
+    expect(where.answer).toBe("UNAVAILABLE");
+    expect(where.departmentId).toEqual({ in: ["dept-1"] });
+  });
+
+  it("scope=self ne renvoie aucune réponse « Pas disponible » de l'équipe", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+
+    const res = await GET(new Request("http://localhost/api/absences?churchId=church-1&scope=self"));
+
+    expect((await res.json()).responses ?? []).toEqual([]);
+    expect(prismaMock.availabilityResponse.findMany).not.toHaveBeenCalled();
   });
 
   it("scope=all requires absences:view and returns 403 when missing", async () => {

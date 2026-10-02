@@ -5,7 +5,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const notifyUsers = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/lib/notifications", () => ({ notifyUsers: (...a: unknown[]) => notifyUsers(...a) }));
 
-const { runAvailabilityTasks } = await import("../collection");
+const { runAvailabilityTasks, openCollectionNow } = await import("../collection");
 
 const now = new Date("2026-10-10T10:00:00Z");
 const day = 24 * 3600 * 1000;
@@ -172,5 +172,40 @@ describe("runAvailabilityTasks", () => {
 
     const res = await runAvailabilityTasks(now);
     expect(res.relances).toBe(0);
+  });
+});
+
+describe("openCollectionNow", () => {
+  const event = { id: "evt-1", title: "Culte", date: new Date("2026-12-06T09:00:00Z"), eventDepts: [{ departmentId: "dept-1" }] };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetEmpty();
+  });
+
+  it("ouvre un mois en avance, ferme à J-7 du premier événement et notifie aussitôt", async () => {
+    prismaMock.event.findMany.mockResolvedValue([event] as never);
+    prismaMock.availabilityCollection.create.mockResolvedValue({ id: "c-1" } as never);
+    prismaMock.availabilityCollection.findMany.mockResolvedValue([
+      { id: "c-1", churchId: "church-1", month: new Date("2026-12-01T00:00:00Z"), closesAt: new Date(event.date.getTime() - 7 * day) },
+    ] as never);
+    prismaMock.memberDepartment.findMany.mockResolvedValue([{ member: { userLinks: [{ userId: "u-1" }] } }] as never);
+
+    const res = await openCollectionNow("church-1", new Date("2026-12-01T00:00:00Z"), now);
+
+    expect(res.closesAt.toISOString()).toBe(new Date(event.date.getTime() - 7 * day).toISOString());
+    expect(res.notified).toBe(1);
+    expect(prismaMock.availabilityCollection.findMany.mock.calls[0][0]).toMatchObject({ where: { notifiedAt: null, id: "c-1" } });
+  });
+
+  it("refuse un mois déjà ouvert (409)", async () => {
+    prismaMock.availabilityCollection.findUnique.mockResolvedValue({ id: "c-1" } as never);
+    await expect(openCollectionNow("church-1", new Date("2026-12-01T00:00:00Z"), now)).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  it("refuse un mois passé et un mois sans événement (400)", async () => {
+    await expect(openCollectionNow("church-1", new Date("2026-09-01T00:00:00Z"), now)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(openCollectionNow("church-1", new Date("2026-12-01T00:00:00Z"), now)).rejects.toMatchObject({ statusCode: 400 });
+    expect(prismaMock.availabilityCollection.create).not.toHaveBeenCalled();
   });
 });

@@ -18,6 +18,7 @@ vi.mock("@/modules/planning", () => ({
   listMemberAvailability: (...a: unknown[]) => mockList(...a),
   saveResponses: (...a: unknown[]) => mockSave(...a),
   getMemberScope: (...a: unknown[]) => mockMemberScope(...a),
+  listLinkedMemberIds: async () => (await prismaMock.memberUserLink.findMany()).map((l: { memberId: string }) => l.memberId),
 }));
 
 const { GET, PUT } = await import("../route");

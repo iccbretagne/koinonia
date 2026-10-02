@@ -112,6 +112,7 @@ export async function GET(request: Request) {
 
     let memberIdFilter: string[] | undefined;
     let visibilityWhere: ReturnType<typeof absenceVisibilityWhere> | undefined;
+    let deptScopeIds: string[] | null = null;
 
     if (scope === "self") {
       const session = await requireAuth();
@@ -125,7 +126,8 @@ export async function GET(request: Request) {
       const session = await requireChurchPermission("absences:view", churchId);
       const deptScope = getUserDepartmentScope(session, churchId);
       if (deptScope.scoped) {
-        if (deptScope.departmentIds.length === 0) return successResponse({ absences: [] });
+        if (deptScope.departmentIds.length === 0) return successResponse({ absences: [], responses: [] });
+        deptScopeIds = deptScope.departmentIds;
         // Une absence « tous départements » d'un membre du périmètre, ou une absence ciblée
         // touchant au moins un des départements du périmètre — jamais une absence ciblée
         // uniquement hors périmètre (spec 050 : changement volontaire par rapport à avant).
@@ -233,10 +235,64 @@ export async function GET(request: Request) {
       })
     );
 
-    return successResponse({ absences: enriched });
+    // Vue d'ensemble : les réponses « Pas disponible » à venir s'affichent avec les périodes (spec 058).
+    const responses = scope === "all" ? await listUnavailableResponses({ churchId, deptScopeIds, departmentId, ministryId }) : [];
+
+    return successResponse({ absences: enriched, responses });
   } catch (error) {
     return errorResponse(error);
   }
+}
+
+/** Réponses « Pas disponible » d'événements à venir, bornées au périmètre de l'appelant. */
+async function listUnavailableResponses({
+  churchId,
+  deptScopeIds,
+  departmentId,
+  ministryId,
+}: {
+  churchId: string;
+  deptScopeIds: string[] | null;
+  departmentId: string | null;
+  ministryId: string | null;
+}) {
+  const rows = await prisma.availabilityResponse.findMany({
+    where: {
+      churchId,
+      answer: "UNAVAILABLE",
+      event: { date: { gte: new Date() } },
+      ...(deptScopeIds ? { departmentId: { in: deptScopeIds } } : {}),
+      ...(departmentId ? { departmentId } : {}),
+      ...(ministryId ? { department: { ministryId } } : {}),
+    },
+    include: {
+      member: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          departments: { select: { department: { select: { id: true, name: true, ministry: { select: { id: true, name: true } } } } } },
+        },
+      },
+      event: { select: { id: true, title: true, date: true } },
+      department: { select: { id: true, name: true } },
+      enteredBy: { select: { name: true, displayName: true } },
+    },
+    orderBy: { event: { date: "asc" } },
+    take: 1000,
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    member: {
+      id: r.member.id,
+      firstName: r.member.firstName,
+      lastName: r.member.lastName,
+      departments: r.member.departments.map((d) => d.department),
+    },
+    event: r.event,
+    department: r.department,
+    enteredBy: r.enteredBy ? (r.enteredBy.displayName ?? r.enteredBy.name) : null,
+  }));
 }
 
 /**

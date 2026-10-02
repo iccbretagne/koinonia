@@ -1,7 +1,6 @@
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { askTeam, manualRelance } from "@/modules/planning";
+import { successResponse, errorResponse } from "@/lib/api-utils";
+import { askTeam, assertEventDepartment, manualRelance } from "@/modules/planning";
 import { z } from "zod";
 
 const schema = z.object({ action: z.enum(["ask", "relance"]) });
@@ -16,11 +15,7 @@ export async function POST(
     const churchId = await resolveChurchId("event", eventId);
     const session = await requireChurchPermission("planning:edit", churchId);
     requireDepartmentAccess(session, churchId, departmentId);
-    const linked = await prisma.eventDepartment.findUnique({
-      where: { eventId_departmentId: { eventId, departmentId } },
-      select: { id: true },
-    });
-    if (!linked) throw new ApiError(404, "Ce département ne participe pas à cet événement");
+    await assertEventDepartment(eventId, departmentId);
     const { action } = schema.parse(await request.json());
 
     const result =

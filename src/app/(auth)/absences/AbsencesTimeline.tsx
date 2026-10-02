@@ -11,8 +11,16 @@ interface TimelineAbsence {
   hasConflict: boolean;
 }
 
+interface TimelineResponse {
+  id: string;
+  member: { id: string; firstName: string; lastName: string };
+  event: { title: string; date: string };
+}
+
 interface AbsencesTimelineProps {
   readonly absences: TimelineAbsence[];
+  /** Réponses « Pas disponible » (spec 058) : un repère par événement. */
+  readonly responses?: TimelineResponse[];
   readonly onSelect?: (id: string) => void;
 }
 
@@ -29,26 +37,37 @@ function displayRange(a: TimelineAbsence): { start: number; end: number } | null
   return { start: Math.min(...live), end: Math.max(...live) };
 }
 
-export default function AbsencesTimeline({ absences, onSelect }: AbsencesTimelineProps) {
+export default function AbsencesTimeline({ absences, responses = [], onSelect }: AbsencesTimelineProps) {
   const withRange = absences
     .map((a) => ({ a, range: displayRange(a) }))
     .filter((r): r is { a: TimelineAbsence; range: { start: number; end: number } } => r.range !== null);
 
-  if (withRange.length === 0) {
-    return <p className="text-ink-muted text-sm py-6 text-center">Aucune absence à afficher.</p>;
+  if (withRange.length === 0 && responses.length === 0) {
+    return <p className="text-ink-muted text-sm py-6 text-center">Aucune indisponibilité à afficher.</p>;
   }
 
-  const rangeStart = Math.min(...withRange.map((r) => r.range.start));
-  const rangeEnd = Math.max(...withRange.map((r) => r.range.end));
+  const allStarts = [...withRange.map((r) => r.range.start), ...responses.map((r) => new Date(r.event.date).getTime())];
+  const allEnds = [...withRange.map((r) => r.range.end), ...responses.map((r) => new Date(r.event.date).getTime())];
+  const rangeStart = Math.min(...allStarts);
+  const rangeEnd = Math.max(...allEnds);
   const rangeSpan = Math.max(rangeEnd - rangeStart, 1);
 
-  const byMember = new Map<string, { name: string; items: { a: TimelineAbsence; range: { start: number; end: number } }[] }>();
+  const byMember = new Map<
+    string,
+    { name: string; items: { a: TimelineAbsence; range: { start: number; end: number } }[]; responses: TimelineResponse[] }
+  >();
   for (const item of withRange) {
     const { a } = item;
     if (!byMember.has(a.member.id)) {
-      byMember.set(a.member.id, { name: `${a.member.firstName} ${a.member.lastName}`, items: [] });
+      byMember.set(a.member.id, { name: `${a.member.firstName} ${a.member.lastName}`, items: [], responses: [] });
     }
     byMember.get(a.member.id)!.items.push(item);
+  }
+  for (const r of responses) {
+    if (!byMember.has(r.member.id)) {
+      byMember.set(r.member.id, { name: `${r.member.firstName} ${r.member.lastName}`, items: [], responses: [] });
+    }
+    byMember.get(r.member.id)!.responses.push(r);
   }
   const rows = Array.from(byMember.values()).sort((a, b) => a.name.localeCompare(b.name));
 
@@ -109,6 +128,14 @@ export default function AbsencesTimeline({ absences, onSelect }: AbsencesTimelin
                       </span>
                     );
                   })}
+                  {row.responses.map((r) => (
+                    <span
+                      key={r.id}
+                      title={`${r.event.title} — ${fmt.format(new Date(r.event.date))}`}
+                      className="absolute top-0.5 h-5 w-2 rounded-full bg-danger"
+                      style={{ left: `${((new Date(r.event.date).getTime() - rangeStart) / rangeSpan) * 100}%` }}
+                    />
+                  ))}
                 </div>
               </div>
             ))}

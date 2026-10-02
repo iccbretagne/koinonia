@@ -61,10 +61,11 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
     expect(shellProps(element).showStarEvents).toBe(true);
   });
 
-  it("un STAR lié à un membre conserve hasAbsences (auto-déclaration)", async () => {
+  it("un STAR lié à un membre a « Disponibilités » mais pas « Indisponibilités »", async () => {
     mockAuth.mockResolvedValue(createStarSession("church-1"));
     const element = await AuthLayout({ children: null as never });
-    expect(shellProps(element).hasAbsences).toBe(true);
+    expect(shellProps(element).hasAvailability).toBe(true);
+    expect(shellProps(element).hasAbsences).toBe(false);
   });
 
   it("un Admin conserve hasPlanningAccess (planning:department accordé)", async () => {
