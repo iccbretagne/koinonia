@@ -9,16 +9,22 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Ajouté
 
 - **Collecte des disponibilités** (spec 058, issue #612) : chaque mois, tous les STAR indiquent leur disponibilité (Disponible / Si besoin / Pas disponible) par événement depuis « Disponibilités » ; ouverture, clôture et relance automatiques et réglables (`availability:settings`), demandes ciblées à l'ajout ou au déplacement d'un événement, « Répondre pour… » par un responsable.
+- Une nouvelle demande d'intégration reçue par le formulaire public notifie l'équipe intégration (application + email).
 - Grille de planning : disponibilité de chaque STAR, tri, compteur, avertissement en cas de placement d'un indisponible, « Interroger l'équipe » et « Relancer les sans-réponse ».
 
 ### Modifié
 
 - « Absences » devient « Indisponibilités » : périodes uniquement (plus d'absence « sur certains événements »), plus les réponses « Pas disponible » à venir.
+- Les anomalies constatées sur une salle réservée (checklist) envoient désormais un email par défaut (domaine « Salles », désactivable dans « Mon profil ») ; jusque-là, aucun email ne partait, même préférence activée.
 - Le statut de service `INDISPONIBLE` n'est plus posable dans la grille : la disponibilité est dérivée (ADR-0020). Migration : les anciennes absences par événements et plannings `INDISPONIBLE` deviennent des réponses « Pas disponible ».
 
 ### Corrigé
 
 - Notifications : un seul email par événement — le gabarit détaillé remplace l'email générique pour la comptabilité (nouvelle demande, fonds remis, changement de statut), les relances d'intégration et la relance d'offre d'emploi ; une nouvelle offre n'envoie plus d'email à un abonné qui ne l'a pas demandé (audit notifications).
+
+### Documentation
+
+- Roadmap : le rappel de suivi aux faiseurs de disciples, coché à tort, repasse « à faire ».
 
 ## [v1.27.0] - 2026-10-01
 

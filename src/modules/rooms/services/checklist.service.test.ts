@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+const mockSendEmail = vi.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/email", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/email")>("@/lib/email")),
+  sendEmail: (...a: unknown[]) => mockSendEmail(...a),
+}));
 
 const {
   declareOpening,
@@ -14,6 +19,8 @@ const {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+  prismaMock.user.findMany.mockResolvedValue([{ id: "user-owner", email: "owner@example.com" }] as never);
 });
 
 describe("declareOpening", () => {
@@ -145,6 +152,7 @@ describe("validateChecklist", () => {
       expect.objectContaining({ data: expect.objectContaining({ status: "VALIDATED" }) })
     );
     expect(prismaMock.notification.create).not.toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
   it("passe à ISSUE_REPORTED et notifie le créateur en cas d'écart", async () => {
@@ -170,6 +178,9 @@ describe("validateChecklist", () => {
     expect(prismaMock.notification.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ userId: "user-owner", type: "ROOM_CHECKLIST_ISSUE" }) })
     );
+    // Email envoyé après la transaction (domaine « Salles », activé par défaut) — audit notifications.
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: "owner@example.com", subject: "Écart constaté sur une salle" }));
   });
 
   it("passe à ISSUE_REPORTED en cas d'écart uniquement sur l'état du matériel", async () => {

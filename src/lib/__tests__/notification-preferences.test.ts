@@ -94,14 +94,14 @@ describe("getPreferencesView", () => {
   it("une préférence explicite enregistrée l'emporte sur defaultEmail du domaine", async () => {
     prismaMock.user.findUnique.mockResolvedValue({ email: "a@example.com" });
     prismaMock.userChurchRole.findMany.mockResolvedValue([{ role: "SUPER_ADMIN" }]);
-    // "rooms" a defaultEmail: false — on l'active explicitement.
+    // "media" a defaultEmail: false — on l'active explicitement.
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([
-      { userId: "u1", domain: "rooms", enabled: true },
+      { userId: "u1", domain: "media", enabled: true },
     ]);
 
     const view = await getPreferencesView("u1");
-    const rooms = view.domains.find((d) => d.key === "rooms");
-    expect(rooms?.enabled).toBe(true);
+    const media = view.domains.find((d) => d.key === "media");
+    expect(media?.enabled).toBe(true);
   });
 });
 

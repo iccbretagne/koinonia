@@ -30,16 +30,16 @@ export const roomsModule = defineModule({
     "rooms:manage":  ["SUPER_ADMIN", "ADMIN"],
   },
 
-  // Domaine de notification (spec 053) : aucun email aujourd'hui (l'écart de contrôle n'est
-  // que dans l'application) — désactivé par défaut. `visibleWith` inclut `rooms:reserve` : le
-  // destinataire de la notification est le créateur de la réservation, pas seulement un
-  // détenteur de `rooms:manage`.
+  // Domaine de notification (spec 053) : un écart constaté au contrôle de la main courante, à
+  // traiter par le créateur de la réservation — email activé par défaut (audit notifications).
+  // `visibleWith` inclut `rooms:reserve` : le destinataire est le créateur de la réservation,
+  // pas seulement un détenteur de `rooms:manage`.
   notificationDomains: [
     {
       key: "rooms",
       label: "Salles",
-      description: "Problème signalé sur une salle.",
-      defaultEmail: false,
+      description: "Écart constaté sur une salle que vous avez réservée.",
+      defaultEmail: true,
       visibleWith: ["rooms:reserve", "rooms:manage"],
     },
   ],

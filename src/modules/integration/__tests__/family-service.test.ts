@@ -18,6 +18,7 @@ const {
   relanceDueAt,
   isRelanceDue,
   getIntegrationSettings,
+  notifyIntegrationTeamNewRequest,
 } = await import("../services/family-service");
 
 function makeRequest(overrides: Record<string, unknown> = {}) {
@@ -188,5 +189,34 @@ describe("runWaitingRelanceNotifications", () => {
 
     expect(mockNotifyUsers).not.toHaveBeenCalled();
     expect(result.total).toBe(0);
+  });
+});
+
+describe("notifyIntegrationTeamNewRequest (audit notifications)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockNotifyUsers.mockResolvedValue(undefined);
+  });
+
+  it("prévient l'équipe intégration (domaine integration, lien vers la demande)", async () => {
+    prismaMock.department.findMany.mockResolvedValue([{ id: "dept-int" }] as never);
+    prismaMock.userDepartment.findMany.mockResolvedValue([
+      { userChurchRole: { userId: "manager-1", user: { id: "manager-1", email: "m@example.com" } } },
+    ] as never);
+
+    await notifyIntegrationTeamNewRequest({ churchId: "church-1", requestId: "req-1", firstName: "Marie", lastName: "Curie" });
+
+    expect(mockNotifyUsers).toHaveBeenCalledWith(
+      ["manager-1"],
+      expect.objectContaining({ domain: "integration", type: "INTEGRATION_NEW_REQUEST", link: "/integration/requests/req-1" })
+    );
+  });
+
+  it("sans département de fonction INTEGRATION : aucune notification", async () => {
+    prismaMock.department.findMany.mockResolvedValue([] as never);
+
+    await notifyIntegrationTeamNewRequest({ churchId: "church-1", requestId: "req-1", firstName: "Marie", lastName: "Curie" });
+
+    expect(mockNotifyUsers).not.toHaveBeenCalled();
   });
 });
