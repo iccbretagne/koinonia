@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DEPT_FN } from "@/lib/department-functions";
 import { getFunctionDepartmentIds } from "@/lib/function-departments";
-import { createNotification, notifyUsers, dispatchUserEmails } from "@/lib/notifications";
+import { createNotification, notifyUsers } from "@/lib/notifications";
 
 /** Rattachement des notifications à la demande, pour les effacer avec elle (spec 057, ADR-0019). */
 const REQUEST_ENTITY = "FamilyIntegrationRequest";
@@ -275,10 +275,13 @@ export async function runInactivityNotifications(appUrl: string): Promise<{ noti
       const managers = await getManagers(req.churchId);
       if (managers.length > 0) {
         const managerIds = managers.map((m) => m.id);
-        await notifyUsers(managerIds, { domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id });
-        notified += managers.length;
         const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
-        await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
+        await notifyUsers(
+          managerIds,
+          { domain: "integration", type: INACTIVITY_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id },
+          { email: { subject: `${req.church.name} — ${title}`, html } }
+        );
+        notified += managers.length;
       }
     } else if (req.assignedBerger) {
       const html = buildInactivityEmail({ churchName: req.church.name, personName, status: req.status, daysSince, link, appUrl });
@@ -482,10 +485,13 @@ export async function runWaitingRelanceNotifications(
     const managers = await getManagers(req.churchId);
     if (managers.length > 0) {
       const managerIds = managers.map((m) => m.id);
-      await notifyUsers(managerIds, { domain: "integration", type: RELANCE_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id });
-      notified += managers.length;
       const html = buildRelanceEmail({ churchName: req.church.name, personName, status: req.status, link, appUrl });
-      await dispatchUserEmails(managerIds, "integration", { subject: `${req.church.name} — ${title}`, html }).catch(() => {});
+      await notifyUsers(
+        managerIds,
+        { domain: "integration", type: RELANCE_NOTIF_TYPE, title, message, link, entityType: REQUEST_ENTITY, entityId: req.id },
+        { email: { subject: `${req.church.name} — ${title}`, html } }
+      );
+      notified += managers.length;
     }
   }
 

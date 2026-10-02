@@ -274,3 +274,30 @@ describe("rattachement à un objet (spec 057)", () => {
     });
   });
 });
+
+describe("un seul email par notification (audit notifications)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSendEmail.mockResolvedValue(undefined);
+    prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
+    prismaMock.notification.create.mockResolvedValue({} as never);
+    prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "u1@icc.fr" }] as never);
+  });
+
+  it("gabarit fourni : il remplace le générique, un seul envoi", async () => {
+    await createNotification(
+      { userId: "u1", domain: "accounting", type: "T", title: "générique", message: "m" },
+      { email: { subject: "détaillé", html: "<p>détail</p>" } }
+    );
+
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail).toHaveBeenCalledWith(expect.objectContaining({ subject: "détaillé" }));
+  });
+
+  it("email: false : notification in-app écrite, aucun email", async () => {
+    await createNotification({ userId: "u1", domain: "jobs", type: "T", title: "t", message: "m" }, { email: false });
+
+    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(mockSendEmail).not.toHaveBeenCalled();
+  });
+});

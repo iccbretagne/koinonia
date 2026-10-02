@@ -84,14 +84,18 @@ export async function runJobOffersLifecycle(appUrl: string): Promise<JobOffersLi
 
     // Notification in-app : toujours, même sans email exploitable.
     try {
-      await createNotification({
-        userId: offer.authorId,
-        domain: "jobs",
-        type: RENEWAL_NOTIF_TYPE,
-        title: "Votre offre d'emploi est-elle toujours d'actualité ?",
-        message,
-        link: `/jobs/${offer.id}`,
-      });
+      // Email envoyé ci-dessous (gabarit détaillé + décompte des échecs) : pas d'email générique ici.
+      await createNotification(
+        {
+          userId: offer.authorId,
+          domain: "jobs",
+          type: RENEWAL_NOTIF_TYPE,
+          title: "Votre offre d'emploi est-elle toujours d'actualité ?",
+          message,
+          link: `/jobs/${offer.id}`,
+        },
+        { email: false }
+      );
     } catch (err) {
       console.error("Échec de création de notification de relance d'offre (offre redacted):", err instanceof Error ? err.message : err);
     }

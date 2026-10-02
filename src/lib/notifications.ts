@@ -29,8 +29,14 @@ export interface NotificationOptions {
    * `link` de la notification (spec 053, lot 2) : l'absence de gabarit dédié n'empêche jamais
    * l'email de partir si la préférence de l'utilisateur l'autorise. Ignoré si `tx` est fourni
    * (voir ci-dessus).
+   *
+   * `false` : notification in-app seule — l'appelant envoie lui-même l'email par
+   * `dispatchUserEmails` parce qu'il obéit à une condition supplémentaire (ex.
+   * `JobNotificationSubscription.email`) ou qu'il exploite le résultat de l'envoi. Sans ce
+   * `false`, un `dispatchUserEmails` après coup fait recevoir deux emails au destinataire : le
+   * générique, puis le détaillé.
    */
-  email?: NotificationEmailContent;
+  email?: NotificationEmailContent | false;
 }
 
 interface NotificationInput {
@@ -45,7 +51,7 @@ interface NotificationInput {
 }
 
 async function dispatchIfNoTx(userIds: string[], notification: NotificationInput, options?: NotificationOptions): Promise<void> {
-  if (options?.tx) return;
+  if (options?.tx || options?.email === false) return;
   const email = options?.email ?? buildGenericNotificationEmail(notification);
   await dispatchUserEmails(userIds, notification.domain, email);
 }

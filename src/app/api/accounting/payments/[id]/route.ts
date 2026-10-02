@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingPaymentEmail } from "@/lib/email";
-import { createNotification, dispatchUserEmails } from "@/lib/notifications";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const releaseSchema = z.object({
@@ -71,44 +71,43 @@ export async function PATCH(
       return { updated, residual };
     });
 
-    // Notif demandeur (in-app)
+    // Notif demandeur : in-app + email détaillé (un seul), selon sa préférence du domaine
+    // "accounting" (spec 053).
     const partialMsg = isPartial
       ? ` (partiel : ${released} € sur ${planned} €, solde de ${remainder} € reporté)`
       : "";
-    await createNotification({
-      userId:  payment.request.submittedById,
-      domain:  "accounting",
-      type:    "ACCOUNTING_PAYMENT_RELEASED",
-      title:   "Fonds remis",
-      message: `Un paiement pour "${payment.request.label}" a été confirmé remis${partialMsg}.`,
-      link:    `/accounting/requests/${payment.requestId}`,
-    });
-
-    // Email — fire-and-forget, gouverné par la préférence du domaine "accounting" (spec 053)
     // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
     const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const trancheNumber = await prisma.financialPayment.count({
-      where: { requestId: payment.requestId, scheduledDate: { lte: payment.scheduledDate } },
+    const [trancheNumber, user, church] = await Promise.all([
+      prisma.financialPayment.count({
+        where: { requestId: payment.requestId, scheduledDate: { lte: payment.scheduledDate } },
+      }),
+      prisma.user.findUnique({ where: { id: payment.request.submittedById }, select: { name: true, email: true } }),
+      prisma.church.findUnique({ where: { id: churchId }, select: { name: true } }),
+    ]);
+    const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+    const email = buildAccountingPaymentEmail({
+      userName:       user?.name ?? user?.email ?? "",
+      requestLabel:   payment.request.label,
+      trancheNumber,
+      releasedAmount: fmt(released),
+      plannedAmount:  fmt(planned),
+      isPartial,
+      residualAmount: isPartial ? fmt(remainder) : undefined,
+      churchName:     church?.name ?? "Koinonia",
+      requestUrl:     `${appUrl}/accounting/requests/${payment.requestId}`,
     });
-    prisma.user.findUnique({ where: { id: payment.request.submittedById }, select: { name: true, email: true } })
-      .then(async (user) => {
-        if (!user?.email) return;
-        const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
-        const fmt = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
-        const { subject, html } = buildAccountingPaymentEmail({
-          userName:       user.name ?? user.email,
-          requestLabel:   payment.request.label,
-          trancheNumber,
-          releasedAmount: fmt(released),
-          plannedAmount:  fmt(planned),
-          isPartial,
-          residualAmount: isPartial ? fmt(remainder) : undefined,
-          churchName:     church?.name ?? "Koinonia",
-          requestUrl:     `${appUrl}/accounting/requests/${payment.requestId}`,
-        });
-        return dispatchUserEmails([payment.request.submittedById], "accounting", { subject, html });
-      })
-      .catch((err) => console.error("[accounting/payments] dispatchUserEmails failed:", err?.message ?? err));
+    await createNotification(
+      {
+        userId:  payment.request.submittedById,
+        domain:  "accounting",
+        type:    "ACCOUNTING_PAYMENT_RELEASED",
+        title:   "Fonds remis",
+        message: `Un paiement pour "${payment.request.label}" a été confirmé remis${partialMsg}.`,
+        link:    `/accounting/requests/${payment.requestId}`,
+      },
+      { email }
+    );
 
     return successResponse(result);
   } catch (error) {
