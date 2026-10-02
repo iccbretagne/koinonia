@@ -363,6 +363,7 @@ Compt = Comptable.
 | `departments:manage` | x | x | | x | | | | | | |
 | `absences:view` | x | x | x | x | x | | | | | |
 | `absences:manage` | x | x | x | x | x | | | | | |
+| `availability:settings` | x | x | x | | | | | | | |
 | `church:manage` | x | | | | | | | | | |
 | `users:manage` | x | x | | | | | | | | |
 | `integration:manage` | x | x | x | | | | | | | |

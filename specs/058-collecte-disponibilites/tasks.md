@@ -162,14 +162,14 @@
 
 #### 4.5–4.7 Grille
 
-- [ ] **T33** — Pastille de disponibilité (`StatusChip`, « en retard » si échéance passée) à la
+- [x] **T33** — Pastille de disponibilité (`StatusChip`, « en retard » si échéance passée) à la
   place d'`AbsenceBadge` ; mention « De service en <département> ».
   *(fichier : `src/components/PlanningGrid.tsx`)*
-- [ ] **T34** — Tri disponibles → si besoin → sans réponse → pas disponibles ; en-tête compteur
+- [x] **T34** — Tri disponibles → si besoin → sans réponse → pas disponibles ; en-tête compteur
   `N disponibles · M si besoin · K sans réponse`. *(même fichier)*
-- [ ] **T35** — Segment `INDISPONIBLE` retiré ; placer un indisponible affiche une `Alert`
+- [x] **T35** — Segment `INDISPONIBLE` retiré ; placer un indisponible affiche une `Alert`
   d'avertissement sur la ligne avec la raison. *(même fichier)*
-- [ ] **T36** — Boutons « Interroger l'équipe » et « Relancer les sans-réponse » (désactivé si
+- [x] **T36** — Boutons « Interroger l'équipe » et « Relancer les sans-réponse » (désactivé si
   déjà fait aujourd'hui), confirmation, toast. *(même fichier)*
 
 #### 4.8 Documentation
@@ -177,7 +177,7 @@
 - [x] **T37** [P] — Guide : entrées « Indiquer mes disponibilités », « Lire les disponibilités
   dans la grille », « Régler la collecte » ; `docs/processus/absences.md` réécrit.
   *(fichiers : `src/components/GuideContent.tsx`, `docs/processus/absences.md`)*
-- [ ] **T38** [P] — Permission `availability:settings` dans la matrice de `CLAUDE.md` et
+- [x] **T38** [P] — Permission `availability:settings` dans la matrice de `CLAUDE.md` et
   `docs/auth.md` ; CHANGELOG (section non publiée) ; ADR-0020 passé « Accepté ».
   *(fichiers : `CLAUDE.md`, `docs/auth.md`, `CHANGELOG.md`, `docs/adr/0020-…`, `docs/adr/README.md`)*
 

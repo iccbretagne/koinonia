@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api-utils";
 import { absenceCovers } from "../absence-targeting";
 import { defaultDb, type DbClient } from "./db";
 import { recordReminders } from "./reminders";
@@ -175,8 +176,8 @@ async function openCollections(
   return opened;
 }
 
-async function notifyOpenings(db: DbClient, now: Date): Promise<number> {
-  const pending = await db.availabilityCollection.findMany({ where: { notifiedAt: null } });
+async function notifyOpenings(db: DbClient, now: Date, onlyId?: string): Promise<number> {
+  const pending = await db.availabilityCollection.findMany({ where: { notifiedAt: null, ...(onlyId ? { id: onlyId } : {}) } });
   let sent = 0;
   for (const c of pending) {
     const events = await upcomingMonthEvents(db, c.churchId, c.month, now);
@@ -329,4 +330,56 @@ export async function runAvailabilityTasks(now: Date = new Date()): Promise<Avai
   const asksSent = await sendPendingAsks(db, now);
   const relances = await sendRelances(db, settingsByChurch, now);
   return { opened, openingNotified, asksSent, relances };
+}
+
+export interface CollectionMonth {
+  month: Date;
+  eventCount: number;
+  open: boolean;
+  closesAt: Date | null;
+}
+
+/** Mois en cours et les `horizon` suivants, avec l'état de leur collecte (écran de réglage). */
+export async function listCollectionMonths(churchId: string, now: Date = new Date(), horizon = 6): Promise<CollectionMonth[]> {
+  const db = await defaultDb();
+  const current = monthStart(now);
+  const months = Array.from({ length: horizon + 1 }, (_, k) => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + k, 1)));
+  const collections = await db.availabilityCollection.findMany({
+    where: { churchId, month: { in: months } },
+    select: { month: true, closesAt: true },
+  });
+  const byMonth = new Map(collections.map((c) => [c.month.getTime(), c]));
+  return Promise.all(
+    months.map(async (month) => {
+      const eventCount = (await upcomingMonthEvents(db, churchId, month, now)).length;
+      const c = byMonth.get(month.getTime());
+      return { month, eventCount, open: !!c, closesAt: c?.closesAt ?? null };
+    })
+  );
+}
+
+/**
+ * Ouvre à la demande la collecte d'un mois, sans attendre la fenêtre automatique (spec 058) :
+ * mois en cours ou à venir, au moins un événement à venir, collecte pas déjà ouverte. L'église
+ * n'a pas besoin d'avoir activé la collecte automatique. Les STAR sont notifiés aussitôt.
+ */
+export async function openCollectionNow(
+  churchId: string,
+  month: Date,
+  now: Date = new Date()
+): Promise<{ closesAt: Date; notified: number }> {
+  const db = await defaultDb();
+  const target = monthStart(month);
+  if (target < monthStart(now)) throw new ApiError(400, "Ce mois est déjà passé");
+  if (await db.availabilityCollection.findUnique({ where: { churchId_month: { churchId, month: target } }, select: { id: true } })) {
+    throw new ApiError(409, "La collecte de ce mois est déjà ouverte");
+  }
+  const upcoming = await upcomingMonthEvents(db, churchId, target, now);
+  if (upcoming.length === 0) throw new ApiError(400, "Aucun événement à venir ce mois-là");
+
+  const settings = (await listAvailabilitySettingsByChurch(db)).get(churchId) ?? DEFAULT_AVAILABILITY_SETTINGS;
+  const { closesAt } = collectionWindow(settings, target, upcoming[0].date);
+  const created = await db.availabilityCollection.create({ data: { churchId, month: target, closesAt, openedAt: now } });
+  const notified = await notifyOpenings(db, now, created.id);
+  return { closesAt, notified };
 }

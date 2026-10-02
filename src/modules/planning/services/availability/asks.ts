@@ -80,6 +80,16 @@ async function loadEvent(db: DbClient, eventId: string) {
   return event;
 }
 
+/** Le département participe-t-il à l'événement ? 404 sinon (actions de la grille). */
+export async function assertEventDepartment(eventId: string, departmentId: string): Promise<void> {
+  const db = await defaultDb();
+  const linked = await db.eventDepartment.findUnique({
+    where: { eventId_departmentId: { eventId, departmentId } },
+    select: { id: true },
+  });
+  if (!linked) throw new ApiError(404, "Ce département ne participe pas à cet événement");
+}
+
 /**
  * « Interroger l'équipe » : demande ponctuelle d'un responsable sur un événement. Notifie tout de
  * suite les membres du département qui n'ont pas répondu.

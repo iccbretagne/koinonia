@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 import { createAdminSession } from "@/__mocks__/auth";
+import { ApiError } from "@/lib/api-utils";
 
 const mockRequirePermission = vi.fn();
 const mockResolveChurchId = vi.fn().mockResolvedValue("church-1");
@@ -22,6 +23,9 @@ vi.mock("@/modules/planning", () => ({
   updateAvailabilitySettings: (...a: unknown[]) => mockUpdateSettings(...a),
   askTeam: (...a: unknown[]) => mockAsk(...a),
   manualRelance: (...a: unknown[]) => mockRelance(...a),
+  assertEventDepartment: async () => {
+    if (!(await prismaMock.eventDepartment.findUnique({} as never))) throw new ApiError(404, "absent");
+  },
 }));
 
 const settings = await import("../settings/route");

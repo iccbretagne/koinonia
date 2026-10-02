@@ -59,6 +59,7 @@ export default async function AvailabilityPage({
         canDesignateBackup={canDesignateBackup}
         backupOptions={backupOptions}
         canSettings={canSettings}
+        canViewOverview={session.user.isSuperAdmin || permissions.has("absences:view")}
         initialMonth={validMonth}
         focusEventId={event ?? null}
         initialMemberId={member ?? null}

@@ -1,7 +1,7 @@
 "use client";
 
+import AvailabilityTabs from "@/components/AvailabilityTabs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -142,6 +142,7 @@ interface AbsencesClientProps {
   readonly churchId: string;
   readonly canView: boolean;
   readonly canManage: boolean;
+  readonly canSettings: boolean;
   readonly selfMembers: MemberRef[];
   readonly manageableMembers: MemberRef[];
   readonly ministries: { id: string; name: string }[];
@@ -164,6 +165,7 @@ export default function AbsencesClient({
   churchId,
   canView,
   canManage,
+  canSettings,
   selfMembers,
   manageableMembers,
   ministries,
@@ -340,6 +342,7 @@ export default function AbsencesClient({
 
   return (
     <div className="space-y-8">
+      <AvailabilityTabs self={selfMembers.length > 0} team collections={canSettings} />
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-ink">Indisponibilités</h1>
@@ -347,11 +350,6 @@ export default function AbsencesClient({
             Périodes déclarées et réponses « Pas disponible » de votre périmètre.
           </p>
         </div>
-        {selfMembers.length > 0 && (
-          <Link href="/disponibilites" className="text-sm text-brand-text hover:underline min-h-[44px] inline-flex items-center">
-            Indiquer mes disponibilités →
-          </Link>
-        )}
       </div>
 
       {error && <div className="p-3 bg-danger-soft text-danger text-sm rounded-lg">{error}</div>}

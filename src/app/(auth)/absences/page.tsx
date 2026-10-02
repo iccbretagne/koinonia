@@ -74,6 +74,7 @@ export default async function AbsencesPage() {
         churchId={churchId}
         canView={canView}
         canManage={canManage}
+        canSettings={session.user.isSuperAdmin || userPermissions.has("availability:settings")}
         selfMembers={selfMembers}
         manageableMembers={manageableMembers}
         ministries={ministries}

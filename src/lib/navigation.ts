@@ -231,8 +231,10 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
 
   const planningPages: NavPage[] = [];
   if (input.hasMyPlanning) planningPages.push({ href: "/planning", label: "Mon planning" });
+  // Une seule entrée : « Disponibilités » (réponses du STAR), ou la vue d'ensemble pour qui n'a pas de fiche liée.
+  // Les deux écrans se rejoignent par des onglets (AvailabilityTabs).
   if (input.hasAvailability) planningPages.push({ href: "/disponibilites", label: "Disponibilités" });
-  if (input.hasAbsences) planningPages.push({ href: "/absences", label: "Indisponibilités" });
+  else if (input.hasAbsences) planningPages.push({ href: "/absences", label: "Disponibilités" });
   if (input.hasPlanningAccess) {
     for (const d of input.departments) {
       planningPages.push({ href: `/dashboard?dept=${d.id}`, label: d.name, deptId: d.id, group: d.ministryName || undefined });

@@ -178,7 +178,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Lire les disponibilités dans la grille",
-    description: "Dans la grille du planning, chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible, « en retard »), les STAR disponibles sont classés en premier et un compteur résume la situation. Placer un STAR indisponible reste possible mais affiche un avertissement avec la raison. « Interroger l'équipe » et « Relancer les sans-réponse » (une fois par jour) permettent de demander ou de relancer la réponse sans attendre la collecte.",
+    description: "Dans la grille du planning, chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible, « en retard »), les STAR disponibles sont classés en premier et un compteur résume la situation. Placer un STAR indisponible reste possible mais affiche un avertissement avec la raison. « Interroger l'équipe sur leurs disponibilités » et « Relancer les sans-réponse » (une fois par jour) permettent de demander ou de relancer la réponse sans attendre la collecte.",
     category: "Absences",
     screenshotTitle: "Disponibilités dans la grille",
     screenshotFile: "guide-disponibilites-grille.png",
@@ -186,7 +186,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Régler la collecte",
-    description: "Depuis « Disponibilités → Régler la collecte » : activer ou non la collecte automatique, combien de mois avant l'ouverture, combien de jours avant le début du mois pour la clôture et pour la relance des sans-réponse.",
+    description: "L'onglet « Collectes » (menu « Disponibilités ») liste le mois en cours et les suivants avec l'état de leur collecte ; « Ouvrir maintenant » ouvre celle d'un mois à l'avance et notifie aussitôt les STAR. Le lien « Réglages » permet d'activer ou non la collecte automatique et de choisir combien de mois avant l'ouverture, combien de jours avant le début du mois pour la clôture et pour la relance des sans-réponse.",
     category: "Absences",
     screenshotTitle: "Paramètres de la collecte",
     screenshotFile: "guide-disponibilites-parametres.png",
@@ -194,7 +194,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Indisponibilités de mon périmètre",
-    description: "« Indisponibilités » liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
+    description: "L'onglet « Indisponibilités de l'équipe » (menu « Disponibilités ») liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
     category: "Absences",
     screenshotTitle: "Indisponibilités",
     screenshotFile: "guide-absences-vue-ensemble.png",

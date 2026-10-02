@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
@@ -185,9 +186,9 @@ function EventCard({ event, highlighted, saving, onSave }: CardProps) {
       )}
 
       {multi && (
-        <button type="button" onClick={() => setPerDept((v) => !v)} className="text-sm text-brand-text hover:underline min-h-[44px]">
+        <Button variant="ghost" onClick={() => setPerDept((v) => !v)} className="-ml-4">
           {perDept ? "Même réponse pour tous mes départements" : "Préciser par département"}
-        </button>
+        </Button>
       )}
 
       {thirdParty && <p className="text-xs text-ink-subtle">Réponse saisie par un responsable.</p>}
@@ -208,6 +209,7 @@ interface Props {
   readonly canDesignateBackup: boolean;
   readonly backupOptions: BackupOption[];
   readonly canSettings: boolean;
+  readonly canViewOverview: boolean;
   readonly initialMonth: string | null;
   readonly focusEventId: string | null;
   readonly initialMemberId: string | null;
@@ -220,6 +222,7 @@ export default function AvailabilityClient({
   canDesignateBackup,
   backupOptions,
   canSettings,
+  canViewOverview,
   initialMonth,
   focusEventId,
   initialMemberId,
@@ -316,6 +319,7 @@ export default function AvailabilityClient({
 
   return (
     <div className="max-w-2xl space-y-6">
+      <AvailabilityTabs self={selfMembers.length > 0} team={canViewOverview} collections={canSettings} />
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-ink">
@@ -325,11 +329,6 @@ export default function AvailabilityClient({
             Indiquez si vous pouvez servir. Votre responsable construit le planning à partir de vos réponses.
           </p>
         </div>
-        {canSettings && (
-          <Link href="/disponibilites/parametres" className="text-sm text-brand-text hover:underline min-h-[44px] inline-flex items-center">
-            Régler la collecte
-          </Link>
-        )}
       </div>
 
       {manageableMembers.length > 0 && (

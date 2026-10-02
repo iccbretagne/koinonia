@@ -272,6 +272,7 @@ RSP = Référent soins pastoraux, Compt = Comptable.
 | `reports:edit` | x | x | x | | | | x | | | |
 | `absences:view` | x | x | x | x | x | | | | | |
 | `absences:manage` | x | x | x | x | x | | | | | |
+| `availability:settings` | x | x | x | | | | | | | |
 
 #### Module `discipleship`
 
