@@ -374,9 +374,10 @@ export default async function AuthLayout({
     : null;
   const hasMyPlanning = hasStarPlanning && memberLink !== null;
 
-  // "Absences" — visible pour tout STAR lié (auto-déclaration) ou tout
+  // "Disponibilités" (spec 058) — tout compte lié à une fiche STAR ; "Indisponibilités" —
   // responsable/ministre/admin ayant la permission de vue transverse.
-  const hasAbsences = memberLink !== null || userPermissions.has("absences:view");
+  const hasAvailability = memberLink !== null;
+  const hasAbsences = userPermissions.has("absences:view");
 
   // Determine the user's primary role for the current church
   const currentRole = churchRoles.find((r) => r.churchId === currentChurchId)?.role ?? "DEPARTMENT_HEAD";
@@ -405,7 +406,8 @@ export default async function AuthLayout({
     hasRooms ||
     hasMyPlanning ||
     showStarEvents ||
-    hasAbsences;
+    hasAbsences ||
+    hasAvailability;
 
   if (!hasAnyNavigation) {
     redirect("/no-access");
@@ -432,6 +434,7 @@ export default async function AuthLayout({
       hasMyPlanning={hasMyPlanning}
       showStarEvents={showStarEvents}
       hasAbsences={hasAbsences}
+      hasAvailability={hasAvailability}
       hasRooms={hasRooms}
       homeHref={landingHref({ isPastoral: isInPastoralMode, hasPlanningAccess, hasStarPlanning })}
       userRole={currentRole as TourRoleKey}

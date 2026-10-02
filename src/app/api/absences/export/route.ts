@@ -9,6 +9,8 @@ import { z } from "zod";
 const exportSchema = z.object({
   churchId: z.string().min(1),
   absenceIds: z.array(z.string().min(1)).max(1000),
+  /** Réponses « Pas disponible » affichées (spec 058) — second onglet du classeur. */
+  responseIds: z.array(z.string().min(1)).max(1000).default([]),
 });
 
 const COLUMNS = [
@@ -35,7 +37,7 @@ const COLUMNS = [
  */
 export async function POST(request: Request) {
   try {
-    const { churchId, absenceIds } = exportSchema.parse(await request.json());
+    const { churchId, absenceIds, responseIds } = exportSchema.parse(await request.json());
     const session = await requireChurchPermission("absences:view", churchId);
 
     let visibilityWhere: ReturnType<typeof absenceVisibilityWhere> | undefined;
@@ -115,14 +117,47 @@ export async function POST(request: Request) {
     );
 
     const wb = new ExcelJS.Workbook();
-    const sheet = wb.addWorksheet("Absences");
+    const sheet = wb.addWorksheet("Indisponibilités");
     sheet.columns = COLUMNS.map((key) => ({ header: key, key }));
     for (const row of rows.map(sanitizeRow)) {
       sheet.addRow(row);
     }
 
+    if (responseIds.length > 0) {
+      const responses = await prisma.availabilityResponse.findMany({
+        where: {
+          id: { in: responseIds },
+          churchId,
+          answer: "UNAVAILABLE",
+          ...(deptScope.scoped ? { departmentId: { in: deptScope.departmentIds } } : {}),
+        },
+        include: {
+          member: { select: { firstName: true, lastName: true } },
+          event: { select: { title: true, date: true } },
+          department: { select: { name: true, ministry: { select: { name: true } } } },
+          enteredBy: { select: { name: true, displayName: true } },
+        },
+        orderBy: { event: { date: "asc" } },
+      });
+      const respSheet = wb.addWorksheet("Pas disponible");
+      const respColumns = ["STAR", "Département", "Ministère", "Événement", "Date", "Saisi par"] as const;
+      respSheet.columns = respColumns.map((key) => ({ header: key, key }));
+      for (const r of responses) {
+        respSheet.addRow(
+          sanitizeRow({
+            STAR: `${r.member.firstName} ${r.member.lastName}`,
+            Département: r.department.name,
+            Ministère: r.department.ministry.name,
+            Événement: r.event.title,
+            Date: r.event.date.toLocaleDateString("fr-FR"),
+            "Saisi par": r.enteredBy ? (r.enteredBy.displayName ?? r.enteredBy.name ?? "") : "Le STAR",
+          })
+        );
+      }
+    }
+
     const buf = await wb.xlsx.writeBuffer();
-    const filename = `absences-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = `indisponibilites-${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     return new Response(buf as ArrayBuffer, {
       headers: {

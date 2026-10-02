@@ -75,4 +75,18 @@ export {
 } from "./services/member-directory.service";
 export type { MemberLookupResult } from "./services/member-directory.service";
 
+export { registerAvailabilitySubscribers } from "./services/availability/subscribers";
+export { runAvailabilityTasks, openCollectionNow, listCollectionMonths } from "./services/availability/collection";
+export type { CollectionMonth } from "./services/availability/collection";
+export {
+  getAvailabilitySettings,
+  updateAvailabilitySettings,
+  DEFAULT_AVAILABILITY_SETTINGS,
+} from "./services/availability/settings";
+export { listMemberAvailability, saveResponses, listLinkedMemberIds } from "./services/availability/responses";
+export { getPlanningAvailability } from "./services/availability/grid";
+export { askTeam, manualRelance, assertEventDepartment } from "./services/availability/asks";
+export { resolveAvailability, countsAsUnavailable, unavailabilityReason } from "./services/availability/state";
+export type { AvailabilityState, ResolvedAvailability } from "./services/availability/state";
+
 export { planningModule } from "./manifest";

@@ -1,15 +1,19 @@
 "use client";
 
+import AvailabilityTabs from "@/components/AvailabilityTabs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import DataTable from "@/components/ui/DataTable";
-import CheckboxGroup from "@/components/ui/CheckboxGroup";
 import { isAbsencePast } from "@/lib/absence-lock";
 import { ROLE_SHORT_LABELS } from "@/lib/roles";
+import UnavailabilityPeriodForm, {
+  type BackupOption,
+  type EditablePeriod,
+  type MemberRef,
+} from "@/components/UnavailabilityPeriodForm";
 import AbsencesTimeline from "./AbsencesTimeline";
 
 type StatusFilter = "ACTIVE" | "ALL" | "CANCELLED";
@@ -34,12 +38,6 @@ function StatusBadge({ status }: { readonly status: "ACTIVE" | "CANCELLED" }) {
 
 function BackupList({ backups }: { readonly backups: { name: string }[] }) {
   return backups.length > 0 ? <>{backups.map((b) => b.name).join(", ")}</> : <>—</>;
-}
-
-interface MemberRef {
-  id: string;
-  firstName: string;
-  lastName: string;
 }
 
 interface AbsenceBackupRow {
@@ -84,67 +82,21 @@ interface AbsenceRow {
   backups: AbsenceBackupRow[];
 }
 
-interface BackupOption {
-  value: string;
-  label: string;
-}
-
-interface TargetOptionEvent {
+interface ResponseRow {
   id: string;
-  title: string;
-  date: string;
-  departmentIds: string[];
-}
-
-interface TargetOptions {
-  departments: { id: string; name: string; selectable: boolean }[];
-  events: TargetOptionEvent[];
-}
-
-function RadioPills({
-  name,
-  options,
-  value,
-  onChange,
-}: {
-  readonly name: string;
-  readonly options: { value: string; label: string }[];
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <label
-          key={opt.value}
-          className={`flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full border text-sm cursor-pointer transition-colors ${
-            value === opt.value
-              ? "bg-brand text-on-brand border-brand"
-              : "border-control-line text-ink-muted hover:border-brand"
-          }`}
-        >
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="sr-only"
-          />
-          {opt.label}
-        </label>
-      ))}
-    </div>
-  );
+  member: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    departments: { id: string; name: string; ministry: { id: string; name: string } }[];
+  };
+  event: { id: string; title: string; date: string };
+  department: { id: string; name: string };
+  enteredBy: string | null;
 }
 
 function eventDateFmt(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
-}
-
-function monthGroupLabel(iso: string): string {
-  const label = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date(iso));
-  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /** Fenêtre effective d'une absence pour le tri/filtrage : période déclarée, ou bornes des
@@ -190,6 +142,7 @@ interface AbsencesClientProps {
   readonly churchId: string;
   readonly canView: boolean;
   readonly canManage: boolean;
+  readonly canSettings: boolean;
   readonly selfMembers: MemberRef[];
   readonly manageableMembers: MemberRef[];
   readonly ministries: { id: string; name: string }[];
@@ -202,27 +155,17 @@ function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
 }
 
-function toDateInputValue(iso: string): string {
-  return iso.slice(0, 10);
-}
-
 function isEditable(a: AbsenceRow): boolean {
   if (a.status !== "ACTIVE") return false;
   const { end } = effectiveRange(a);
   return !isAbsencePast(end.toISOString());
 }
 
-function parseBackupSelection(selected: string[]): { type: "STAR" | "RESPONSIBLE"; memberId?: string; userChurchRoleId?: string }[] {
-  return selected.map((value) => {
-    const [type, id] = value.split(":");
-    return type === "STAR" ? { type: "STAR" as const, memberId: id } : { type: "RESPONSIBLE" as const, userChurchRoleId: id };
-  });
-}
-
 export default function AbsencesClient({
   churchId,
   canView,
   canManage,
+  canSettings,
   selfMembers,
   manageableMembers,
   ministries,
@@ -230,9 +173,8 @@ export default function AbsencesClient({
   canDesignateBackup,
   backupOptions,
 }: AbsencesClientProps) {
-  const [selfAbsences, setSelfAbsences] = useState<AbsenceRow[]>([]);
   const [allAbsences, setAllAbsences] = useState<AbsenceRow[]>([]);
-  const [loadingSelf, setLoadingSelf] = useState(true);
+  const [responses, setResponses] = useState<ResponseRow[]>([]);
   const [loadingAll, setLoadingAll] = useState(canView);
   const [error, setError] = useState<string | null>(null);
 
@@ -251,41 +193,8 @@ export default function AbsencesClient({
   const searchParams = useSearchParams();
   const highlightId = searchParams.get("highlightId") ?? timelineHighlightId;
 
-  const [declareOpen, setDeclareOpen] = useState(false);
-  const [declareMode, setDeclareMode] = useState<"self" | "manage">("self");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingIsSelf, setEditingIsSelf] = useState(false);
-  const [formMemberId, setFormMemberId] = useState("");
-  const [formKind, setFormKind] = useState<"PERIOD" | "EVENTS">("PERIOD");
-  const [formStartDate, setFormStartDate] = useState("");
-  const [formEndDate, setFormEndDate] = useState("");
-  const [formEventIds, setFormEventIds] = useState<string[]>([]);
-  const [formAllDepartments, setFormAllDepartments] = useState(true);
-  const [formDepartmentIds, setFormDepartmentIds] = useState<string[]>([]);
-  const [formReason, setFormReason] = useState("");
-  const [formBackups, setFormBackups] = useState<string[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [manageBackupEligible, setManageBackupEligible] = useState(false);
-  const [manageBackupOptions, setManageBackupOptions] = useState<BackupOption[]>([]);
-  const [loadingManageBackupOptions, setLoadingManageBackupOptions] = useState(false);
-  const [targetOptions, setTargetOptions] = useState<TargetOptions>({ departments: [], events: [] });
-  const [loadingTargetOptions, setLoadingTargetOptions] = useState(false);
-  const [deselectedEventsMessage, setDeselectedEventsMessage] = useState<string | null>(null);
-
-  const fetchSelf = useCallback(async () => {
-    setLoadingSelf(true);
-    try {
-      const res = await fetch(`/api/absences?churchId=${churchId}&scope=self`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSelfAbsences(data.absences);
-    } catch {
-      setError("Erreur lors du chargement de vos absences.");
-    } finally {
-      setLoadingSelf(false);
-    }
-  }, [churchId]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<EditablePeriod | null>(null);
 
   const fetchAll = useCallback(async () => {
     if (!canView) return;
@@ -299,99 +208,17 @@ export default function AbsencesClient({
       if (!res.ok) throw new Error();
       const data = await res.json();
       setAllAbsences(data.absences);
+      setResponses(data.responses ?? []);
     } catch {
-      setError("Erreur lors du chargement de la vue transverse.");
+      setError("Erreur lors du chargement des indisponibilités.");
     } finally {
       setLoadingAll(false);
     }
   }, [churchId, canView, ministryFilter, departmentFilter, roleFilter]);
 
   useEffect(() => {
-    fetchSelf();
-  }, [fetchSelf]);
-
-  useEffect(() => {
     fetchAll();
   }, [fetchAll]);
-
-  useEffect(() => {
-    if (!declareOpen || declareMode !== "manage" || !formMemberId) {
-      setManageBackupEligible(false);
-      setManageBackupOptions([]);
-      return;
-    }
-    let cancelled = false;
-    setLoadingManageBackupOptions(true);
-    fetch(`/api/absences/backup-options?churchId=${churchId}&memberId=${formMemberId}`)
-      .then((res) => (res.ok ? res.json() : { eligible: false, options: [] }))
-      .then((data) => {
-        if (cancelled) return;
-        setManageBackupEligible(!!data.eligible);
-        setManageBackupOptions(data.options ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setManageBackupEligible(false);
-          setManageBackupOptions([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingManageBackupOptions(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [declareOpen, declareMode, formMemberId, churchId]);
-
-  useEffect(() => {
-    if (!declareOpen || !formMemberId) {
-      setTargetOptions({ departments: [], events: [] });
-      return;
-    }
-    let cancelled = false;
-    setLoadingTargetOptions(true);
-    fetch(`/api/absences/target-options?churchId=${churchId}&memberId=${formMemberId}`)
-      .then((res) => (res.ok ? res.json() : { departments: [], events: [] }))
-      .then((data) => {
-        if (!cancelled) setTargetOptions({ departments: data.departments ?? [], events: data.events ?? [] });
-      })
-      .catch(() => {
-        if (!cancelled) setTargetOptions({ departments: [], events: [] });
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingTargetOptions(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [declareOpen, formMemberId, churchId]);
-
-  const eligibleEvents = useMemo(() => {
-    if (formAllDepartments) return targetOptions.events;
-    return targetOptions.events.filter((e) => e.departmentIds.some((id) => formDepartmentIds.includes(id)));
-  }, [targetOptions.events, formAllDepartments, formDepartmentIds]);
-
-  useEffect(() => {
-    if (formKind !== "EVENTS") return;
-    const eligibleIds = new Set(eligibleEvents.map((e) => e.id));
-    const kept = formEventIds.filter((id) => eligibleIds.has(id));
-    if (kept.length !== formEventIds.length) {
-      setFormEventIds(kept);
-      setDeselectedEventsMessage(
-        `${formEventIds.length - kept.length} événement(s) décoché(s) : hors des départements sélectionnés.`
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eligibleEvents]);
-
-  const eventsByMonth = useMemo(() => {
-    const groups = new Map<string, TargetOptionEvent[]>();
-    for (const e of [...eligibleEvents].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())) {
-      const key = monthGroupLabel(e.date);
-      groups.set(key, [...(groups.get(key) ?? []), e]);
-    }
-    return Array.from(groups.entries());
-  }, [eligibleEvents]);
 
   const displayedAbsences = useMemo(() => {
     let rows = allAbsences;
@@ -420,6 +247,19 @@ export default function AbsencesClient({
     return sorted;
   }, [allAbsences, statusFilter, search, dateFrom, dateTo, sortBy]);
 
+  // Les réponses « Pas disponible » suivent les mêmes filtres de recherche et de dates.
+  const displayedResponses = useMemo(() => {
+    let rows = responses;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      rows = rows.filter((r) => memberName(r).toLowerCase().includes(q));
+    }
+    if (dateFrom) rows = rows.filter((r) => new Date(r.event.date) >= new Date(dateFrom));
+    if (dateTo) rows = rows.filter((r) => new Date(r.event.date) <= new Date(dateTo));
+    // La réponse n'a pas de statut « annulée » : masquée quand on ne veut que les annulations.
+    return statusFilter === "CANCELLED" ? [] : rows;
+  }, [responses, search, dateFrom, dateTo, statusFilter]);
+
   const hasScrolledToHighlight = useRef(false);
   useEffect(() => {
     if (!highlightId || hasScrolledToHighlight.current) return;
@@ -429,131 +269,28 @@ export default function AbsencesClient({
     hasScrolledToHighlight.current = true;
   }, [highlightId, displayedAbsences]);
 
-  function resetForm() {
-    setFormKind("PERIOD");
-    setFormStartDate("");
-    setFormEndDate("");
-    setFormEventIds([]);
-    setFormAllDepartments(true);
-    setFormDepartmentIds([]);
-    setFormReason("");
-    setFormBackups([]);
-    setFormError(null);
-    setDeselectedEventsMessage(null);
+  function openForOther() {
+    setEditing(null);
+    setFormOpen(true);
   }
 
-  function openDeclareForSelf() {
-    setEditingId(null);
-    setDeclareMode("self");
-    setFormMemberId(selfMembers[0]?.id ?? "");
-    resetForm();
-    setDeclareOpen(true);
-  }
-
-  function openDeclareForOther() {
-    setEditingId(null);
-    setDeclareMode("manage");
-    setFormMemberId("");
-    resetForm();
-    setDeclareOpen(true);
-  }
-
-  function openEdit(a: AbsenceRow, isSelf: boolean) {
-    setEditingId(a.id);
-    setEditingIsSelf(isSelf);
-    setDeclareMode(isSelf ? "self" : "manage");
-    setFormMemberId(a.member.id);
-    setFormKind(a.kind);
-    setFormStartDate(a.startDate ? toDateInputValue(a.startDate) : "");
-    setFormEndDate(a.endDate ? toDateInputValue(a.endDate) : "");
-    setFormEventIds(a.targetEvents.filter((e) => !e.deleted && e.eventId).map((e) => e.eventId!));
-    setFormAllDepartments(a.allDepartments);
-    setFormDepartmentIds(a.targetDepartments.map((d) => d.id));
-    setFormReason(a.reason ?? "");
-    setFormBackups(a.backups.map((b) => `${b.type}:${b.targetId}`));
-    setFormError(null);
-    setDeselectedEventsMessage(null);
-    setDeclareOpen(true);
-  }
-
-  function onStartDateChange(value: string) {
-    setFormStartDate(value);
-    if (!formEndDate || formEndDate < value) setFormEndDate(value);
-  }
-
-  async function submitForm() {
-    if (!editingId && !formMemberId) {
-      setFormError("Choisir une fiche STAR.");
-      return;
-    }
-    if (formKind === "PERIOD" && (!formStartDate || !formEndDate)) {
-      setFormError("Date de début et date de fin sont requises.");
-      return;
-    }
-    if (formKind === "EVENTS" && formEventIds.length === 0) {
-      setFormError("Sélectionner au moins un événement.");
-      return;
-    }
-    if (!formAllDepartments && formDepartmentIds.length === 0) {
-      setFormError("Sélectionner au moins un département.");
-      return;
-    }
-    setSubmitting(true);
-    setFormError(null);
-    try {
-      const includeBackups =
-        declareMode === "self"
-          ? canDesignateBackup && (!editingId || editingIsSelf)
-          : manageBackupEligible;
-      const backups = includeBackups ? parseBackupSelection(formBackups) : undefined;
-
-      const targeting = {
-        kind: formKind,
-        ...(formKind === "PERIOD"
-          ? { startDate: new Date(formStartDate).toISOString(), endDate: new Date(formEndDate).toISOString() }
-          : { eventIds: formEventIds }),
-        allDepartments: formAllDepartments,
-        ...(formAllDepartments ? {} : { departmentIds: formDepartmentIds }),
-      };
-
-      const res = editingId
-        ? await fetch(`/api/absences/${editingId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "update",
-              ...targeting,
-              reason: formReason || null,
-              ...(backups ? { backups } : {}),
-            }),
-          })
-        : await fetch("/api/absences", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              churchId,
-              memberId: formMemberId,
-              ...targeting,
-              reason: formReason || null,
-              ...(backups ? { backups } : {}),
-            }),
-          });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Erreur lors de l'enregistrement");
-      }
-      setDeclareOpen(false);
-      await Promise.all([fetchSelf(), fetchAll()]);
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Erreur lors de l'enregistrement");
-    } finally {
-      setSubmitting(false);
-    }
+  function openEdit(a: AbsenceRow) {
+    setEditing({
+      id: a.id,
+      memberId: a.member.id,
+      startDate: a.startDate,
+      endDate: a.endDate,
+      allDepartments: a.allDepartments,
+      departmentIds: a.targetDepartments.map((d) => d.id),
+      reason: a.reason,
+      backups: a.backups.map((b) => `${b.type}:${b.targetId}`),
+      isSelf: selfMembers.some((m) => m.id === a.member.id),
+    });
+    setFormOpen(true);
   }
 
   async function cancelAbsence(id: string) {
-    if (!confirm("Annuler définitivement cette absence ?")) return;
+    if (!confirm("Annuler définitivement cette indisponibilité ?")) return;
     try {
       const res = await fetch(`/api/absences/${id}`, {
         method: "PATCH",
@@ -561,7 +298,7 @@ export default function AbsencesClient({
         body: JSON.stringify({ action: "cancel" }),
       });
       if (!res.ok) throw new Error();
-      await Promise.all([fetchSelf(), fetchAll()]);
+      await fetchAll();
     } catch {
       setError("Erreur lors de l'annulation.");
     }
@@ -573,14 +310,18 @@ export default function AbsencesClient({
       const res = await fetch("/api/absences/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ churchId, absenceIds: displayedAbsences.map((a) => a.id) }),
+        body: JSON.stringify({
+          churchId,
+          absenceIds: displayedAbsences.map((a) => a.id),
+          responseIds: displayedResponses.map((r) => r.id),
+        }),
       });
       if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `absences-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      link.download = `indisponibilites-${new Date().toISOString().slice(0, 10)}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -595,62 +336,23 @@ export default function AbsencesClient({
     setTimelineHighlightId(id);
   }
 
-  const activeAbsences = selfAbsences.filter((a) => a.status === "ACTIVE");
   const visibleDepartments = ministryFilter
     ? departments.filter((d) => d.ministryId === ministryFilter)
     : departments;
-  const showBackupField =
-    declareMode === "self"
-      ? canDesignateBackup && (!editingId || editingIsSelf)
-      : manageBackupEligible;
-  const activeBackupOptions = declareMode === "self" ? backupOptions : manageBackupOptions;
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-ink">Absences</h1>
+      <AvailabilityTabs self={selfMembers.length > 0} team collections={canSettings} />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Indisponibilités</h1>
+          <p className="text-sm text-ink-muted mt-1">
+            Périodes déclarées et réponses « Pas disponible » de votre périmètre.
+          </p>
+        </div>
+      </div>
 
       {error && <div className="p-3 bg-danger-soft text-danger text-sm rounded-lg">{error}</div>}
-
-      {selfMembers.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-ink">Mes absences</h2>
-            <Button size="sm" onClick={openDeclareForSelf}>Déclarer une absence</Button>
-          </div>
-          {loadingSelf ? (
-            <p className="text-ink-muted text-sm">Chargement...</p>
-          ) : (
-            <DataTable
-              data={activeAbsences}
-              emptyMessage="Aucune absence déclarée."
-              columns={[
-                { header: "Quand", accessor: (a) => <WhenCell a={a} /> },
-                { header: "Départements", accessor: (a) => formatDepartments(a) },
-                { header: "Motif", accessor: (a) => a.reason ?? "—" },
-                { header: "Backup(s)", accessor: (a) => <BackupList backups={a.backups} /> },
-                {
-                  header: "Conflit",
-                  accessor: (a) => <ConflictBadge hasConflict={a.hasConflict} />,
-                },
-              ]}
-              actions={(a) => (
-                <div className="flex gap-2 justify-end">
-                  {isEditable(a) && (
-                    <Button size="sm" variant="secondary" onClick={() => openEdit(a, true)}>
-                      Modifier
-                    </Button>
-                  )}
-                  {isEditable(a) && (
-                    <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
-                      Annuler
-                    </Button>
-                  )}
-                </div>
-              )}
-            />
-          )}
-        </section>
-      )}
 
       {canView && (
         <section className="space-y-3">
@@ -677,7 +379,7 @@ export default function AbsencesClient({
                 {exporting ? "Export..." : "Exporter"}
               </Button>
               {canManage && (
-                <Button size="sm" onClick={openDeclareForOther}>Déclarer pour un STAR</Button>
+                <Button size="sm" onClick={openForOther}>Déclarer pour un STAR</Button>
               )}
             </div>
           </div>
@@ -764,210 +466,83 @@ export default function AbsencesClient({
           {loadingAll ? (
             <p className="text-ink-muted text-sm">Chargement...</p>
           ) : viewMode === "timeline" ? (
-            <AbsencesTimeline absences={displayedAbsences} onSelect={selectFromTimeline} />
+            <AbsencesTimeline absences={displayedAbsences} responses={displayedResponses} onSelect={selectFromTimeline} />
           ) : (
-            <DataTable
-              data={displayedAbsences}
-              highlightedId={highlightId}
-              emptyMessage="Aucune absence ne correspond à ces filtres."
-              columns={[
-                { header: "Membre", accessor: (a) => memberName(a) },
-                {
-                  header: "Département",
-                  accessor: (a) => a.member.departments.map((d) => d.name).join(", ") || "—",
-                },
-                {
-                  header: "Ministère",
-                  accessor: (a) =>
-                    Array.from(new Set(a.member.departments.map((d) => d.ministry.name))).join(", ") || "—",
-                },
-                { header: "Quand", accessor: (a) => <WhenCell a={a} /> },
-                { header: "Départements visés", accessor: (a) => formatDepartments(a) },
-                { header: "Backup(s)", accessor: (a) => <BackupList backups={a.backups} /> },
-                { header: "Déclaré par", accessor: (a) => a.createdBy.name ?? "—" },
-                { header: "Statut", accessor: (a) => <StatusBadge status={a.status} /> },
-                {
-                  header: "Conflit",
-                  accessor: (a) => <ConflictBadge hasConflict={a.hasConflict} />,
-                },
-              ]}
-              actions={
-                canManage
-                  ? (a) =>
-                      a.status === "ACTIVE" ? (
-                        <div className="flex gap-2 justify-end">
-                          {isEditable(a) && (
-                            <Button size="sm" variant="secondary" onClick={() => openEdit(a, false)}>
-                              Modifier
-                            </Button>
-                          )}
-                          {isEditable(a) && (
-                            <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
-                              Annuler
-                            </Button>
-                          )}
-                        </div>
-                      ) : null
-                  : undefined
-              }
-            />
+            <>
+              <DataTable
+                data={displayedAbsences}
+                highlightedId={highlightId}
+                emptyMessage="Aucune période ne correspond à ces filtres."
+                columns={[
+                  { header: "Membre", accessor: (a) => memberName(a) },
+                  {
+                    header: "Département",
+                    accessor: (a) => a.member.departments.map((d) => d.name).join(", ") || "—",
+                  },
+                  {
+                    header: "Ministère",
+                    accessor: (a) =>
+                      Array.from(new Set(a.member.departments.map((d) => d.ministry.name))).join(", ") || "—",
+                  },
+                  { header: "Quand", accessor: (a) => <WhenCell a={a} /> },
+                  { header: "Départements visés", accessor: (a) => formatDepartments(a) },
+                  { header: "Remplaçant(s)", accessor: (a) => <BackupList backups={a.backups} /> },
+                  { header: "Déclaré par", accessor: (a) => a.createdBy.name ?? "—" },
+                  { header: "Statut", accessor: (a) => <StatusBadge status={a.status} /> },
+                  {
+                    header: "Conflit",
+                    accessor: (a) => <ConflictBadge hasConflict={a.hasConflict} />,
+                  },
+                ]}
+                actions={
+                  canManage
+                    ? (a) =>
+                        a.status === "ACTIVE" ? (
+                          <div className="flex gap-2 justify-end">
+                            {isEditable(a) && a.kind === "PERIOD" && (
+                              <Button size="sm" variant="secondary" onClick={() => openEdit(a)}>
+                                Modifier
+                              </Button>
+                            )}
+                            {isEditable(a) && (
+                              <Button size="sm" variant="danger" onClick={() => cancelAbsence(a.id)}>
+                                Annuler
+                              </Button>
+                            )}
+                          </div>
+                        ) : null
+                    : undefined
+                }
+              />
+
+              <h3 className="text-base font-semibold text-ink pt-2">Réponses « Pas disponible » à venir</h3>
+              <DataTable
+                data={displayedResponses}
+                emptyMessage="Aucune réponse « Pas disponible » à venir."
+                columns={[
+                  { header: "Membre", accessor: (r) => memberName(r) },
+                  { header: "Département", accessor: (r) => r.department.name },
+                  { header: "Événement", accessor: (r) => `${r.event.title} (${eventDateFmt(r.event.date)})` },
+                  { header: "Saisi par", accessor: (r) => r.enteredBy ?? "Le STAR" },
+                ]}
+              />
+            </>
           )}
         </section>
       )}
 
-      <Modal
-        open={declareOpen}
-        onClose={() => setDeclareOpen(false)}
-        title={editingId ? "Modifier l'absence" : declareMode === "self" ? "Déclarer une absence" : "Déclarer pour un STAR"}
-      >
-        <div className="space-y-4">
-          {!editingId && declareMode === "self" && selfMembers.length > 1 && (
-            <Select
-              label="Fiche STAR"
-              value={formMemberId}
-              onChange={(e) => setFormMemberId(e.target.value)}
-              options={selfMembers.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` }))}
-            />
-          )}
-          {!editingId && declareMode === "manage" && (
-            <Select
-              label="STAR"
-              placeholder="Sélectionner..."
-              value={formMemberId}
-              onChange={(e) => {
-                setFormMemberId(e.target.value);
-                setFormBackups([]);
-              }}
-              options={manageableMembers.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` }))}
-            />
-          )}
-
-          <div className="space-y-2">
-            <span className="block text-sm font-medium text-ink-muted">Quand ?</span>
-            <RadioPills
-              name="formKind"
-              value={formKind}
-              onChange={(v) => setFormKind(v as "PERIOD" | "EVENTS")}
-              options={[
-                { value: "PERIOD", label: "Une période" },
-                { value: "EVENTS", label: "Des événements précis" },
-              ]}
-            />
-
-            {formKind === "PERIOD" ? (
-              <div className="space-y-3 pt-1">
-                <Input
-                  type="date"
-                  label="Date de début"
-                  value={formStartDate}
-                  onChange={(e) => onStartDateChange(e.target.value)}
-                />
-                <Input
-                  type="date"
-                  label="Date de fin"
-                  value={formEndDate}
-                  min={formStartDate || undefined}
-                  onChange={(e) => setFormEndDate(e.target.value)}
-                />
-              </div>
-            ) : (
-              <div className="pt-1 space-y-2">
-                {loadingTargetOptions ? (
-                  <p className="text-xs text-ink-subtle">Chargement des événements...</p>
-                ) : eventsByMonth.length === 0 ? (
-                  <p className="text-sm text-ink-subtle">Aucun événement disponible.</p>
-                ) : (
-                  <div className="max-h-64 overflow-y-auto border border-control-line rounded-lg p-2 space-y-3">
-                    {eventsByMonth.map(([month, events]) => (
-                      <div key={month}>
-                        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide px-1 mb-1">
-                          {month}
-                        </p>
-                        <div className="space-y-1">
-                          {events.map((ev) => (
-                            <label
-                              key={ev.id}
-                              className="flex items-start gap-2 px-2 py-2 min-h-[44px] rounded text-sm hover:bg-surface-sunken cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={formEventIds.includes(ev.id)}
-                                onChange={() =>
-                                  setFormEventIds((prev) =>
-                                    prev.includes(ev.id) ? prev.filter((id) => id !== ev.id) : [...prev, ev.id]
-                                  )
-                                }
-                                className="mt-0.5 shrink-0 rounded border-control-line text-brand-text focus:ring-focus"
-                              />
-                              <span className="min-w-0 break-words leading-snug">
-                                {ev.title} — {eventDateFmt(ev.date)}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {deselectedEventsMessage && <p className="text-xs text-warning">{deselectedEventsMessage}</p>}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <span className="block text-sm font-medium text-ink-muted">Pour quels départements ?</span>
-            <RadioPills
-              name="formAllDepartments"
-              value={formAllDepartments ? "ALL" : "SOME"}
-              onChange={(v) => {
-                setFormAllDepartments(v === "ALL");
-                setDeselectedEventsMessage(null);
-              }}
-              options={[
-                { value: "ALL", label: "Tous mes départements" },
-                { value: "SOME", label: "Certains départements" },
-              ]}
-            />
-            {!formAllDepartments && (
-              <CheckboxGroup
-                label="Départements visés"
-                options={targetOptions.departments
-                  .filter((d) => d.selectable)
-                  .map((d) => ({ value: d.id, label: d.name }))}
-                selected={formDepartmentIds}
-                onChange={setFormDepartmentIds}
-              />
-            )}
-          </div>
-
-          <Input
-            label="Motif (optionnel)"
-            value={formReason}
-            onChange={(e) => setFormReason(e.target.value)}
-          />
-
-          {declareMode === "manage" && loadingManageBackupOptions && (
-            <p className="text-xs text-ink-subtle">Vérification du backup possible...</p>
-          )}
-          {showBackupField && activeBackupOptions.length > 0 && (
-            <CheckboxGroup
-              label="Backup (optionnel)"
-              options={activeBackupOptions}
-              selected={formBackups}
-              onChange={setFormBackups}
-            />
-          )}
-
-          {formError && <p className="text-sm text-danger">{formError}</p>}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setDeclareOpen(false)}>Annuler</Button>
-            <Button onClick={submitForm} disabled={submitting}>
-              {submitting ? "Envoi..." : editingId ? "Enregistrer" : "Déclarer"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <UnavailabilityPeriodForm
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSaved={fetchAll}
+        churchId={churchId}
+        mode="manage"
+        editing={editing}
+        selfMembers={selfMembers}
+        manageableMembers={manageableMembers}
+        canDesignateBackup={canDesignateBackup}
+        backupOptions={backupOptions}
+      />
     </div>
   );
 }

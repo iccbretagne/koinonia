@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { deleteEvents } from "@/modules/planning";
+import { deleteEvents, planningBus } from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(
@@ -110,8 +110,8 @@ export async function PUT(
         : null;
 
       // Update each event individually: propagate time + relative deadline
-      await prisma.$transaction(
-        seriesEvents.map((ev) => {
+      await prisma.$transaction(async (tx) => {
+        for (const ev of seriesEvents) {
           const eventDate = new Date(ev.date);
           // Keep the event's own date (day) but apply the new time
           eventDate.setHours(newHours, newMinutes, 0, 0);
@@ -122,7 +122,7 @@ export async function PUT(
               ? new Date(eventDate.getTime() + deadlineOffsetMs)
               : null;
 
-          return prisma.event.update({
+          await tx.event.update({
             where: { id: ev.id },
             data: {
               title: data.title,
@@ -131,8 +131,13 @@ export async function PUT(
               planningDeadline: eventDeadline,
             },
           });
-        })
-      );
+          await planningBus.emit(
+            "planning:event:rescheduled",
+            { tx, churchId, userId: putSession.user.id },
+            { eventId: ev.id, churchId, previousDate: ev.date.toISOString(), newDate: eventDate.toISOString() }
+          );
+        }
+      });
 
       // Re-fetch the current event for UI update
       const event = await prisma.event.findUnique({
@@ -150,7 +155,9 @@ export async function PUT(
       return successResponse({ ...event, seriesUpdated: seriesEvents.length });
     }
 
-    const event = await prisma.event.update({
+    const event = await prisma.$transaction(async (tx) => {
+    const before = await tx.event.findUnique({ where: { id: eventId }, select: { date: true } });
+    const updated = await tx.event.update({
       where: { id: eventId },
       data: {
         title: data.title,
@@ -169,6 +176,15 @@ export async function PUT(
           include: { department: { select: { id: true, name: true } } },
         },
       },
+    });
+    if (before) {
+      await planningBus.emit(
+        "planning:event:rescheduled",
+        { tx, churchId, userId: putSession.user.id },
+        { eventId, churchId, previousDate: before.date.toISOString(), newDate: updated.date.toISOString() }
+      );
+    }
+    return updated;
     });
 
     await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title } });

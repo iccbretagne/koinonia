@@ -60,6 +60,7 @@ const PERMISSION_OWNER: Record<string, string> = {
   "integration:manage": "integration",
   "integration:delete": "integration",
   "absences:manage": "planning",
+  "availability:settings": "planning",
   "absences:view": "planning",
   "departments:manage": "planning",
   "departments:view": "planning",

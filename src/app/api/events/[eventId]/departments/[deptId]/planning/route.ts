@@ -7,15 +7,44 @@ import {
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notifications";
-import { findActiveAbsencesForPlanning } from "@/modules/planning";
+import { getPlanningAvailability } from "@/modules/planning";
+import { rolePermissions } from "@/lib/registry";
 import { z } from "zod";
 
 const STATUS_LABELS: Record<string, string> = {
   EN_SERVICE: "En service",
   EN_SERVICE_DEBRIEF: "En service (débrief)",
-  INDISPONIBLE: "Indisponible",
   REMPLACANT: "Remplaçant",
 };
+
+type PlanningAvailability = Awaited<ReturnType<typeof getPlanningAvailability>>;
+
+/** Disponibilités dérivées (spec 058) sérialisées pour la grille — jamais stockées comme statut de planning. */
+function serializeAvailability(av: PlanningAvailability, memberId: string) {
+  const m = av.members.get(memberId);
+  return m ?? null;
+}
+
+async function availabilityPayload(
+  churchId: string,
+  event: { id: string; date: Date },
+  departmentId: string,
+  memberIds: string[],
+  canAskTeam: boolean
+) {
+  const av = await getPlanningAvailability(churchId, event, departmentId, memberIds);
+  let manualRelanceAvailable = false;
+  if (canAskTeam && av.counts.noResponse > 0) {
+    const ask = await prisma.availabilityAsk.findUnique({
+      where: { eventId_departmentId: { eventId: event.id, departmentId } },
+      select: { manualRelanceAt: true },
+    });
+    const today = new Date();
+    manualRelanceAvailable =
+      !ask?.manualRelanceAt || ask.manualRelanceAt.toDateString() !== today.toDateString();
+  }
+  return { av, counts: av.counts, canAskTeam, manualRelanceAvailable };
+}
 
 export async function GET(
   _request: Request,
@@ -37,6 +66,7 @@ export async function GET(
     const canBypassDeadline = churchRoles.some(
       (r) => r === "SUPER_ADMIN" || r === "ADMIN" || r === "SECRETARY"
     );
+    const canAskTeam = churchRoles.some((r) => rolePermissions[r]?.includes("planning:edit"));
 
     // Verify department belongs to same church as event
     const deptCheck = await prisma.department.findUnique({
@@ -93,14 +123,15 @@ export async function GET(
         ? new Date() > new Date(event.planningDeadline)
         : false;
 
-      const absenceByMember = event
-        ? await findActiveAbsencesForPlanning(
-            prisma,
+      const payload = event
+        ? await availabilityPayload(
             churchId,
+            { id: eventId, date: event.date },
+            departmentId,
             department.memberDepts.map(({ member }) => member.id),
-            { eventId, eventDate: event.date, departmentId }
+            canAskTeam
           )
-        : new Map();
+        : null;
 
       return successResponse({
         eventDepartment: null,
@@ -108,19 +139,23 @@ export async function GET(
           ...m,
           status: null,
           planningId: null,
-          activeAbsence: absenceByMember.get(m.id) ?? null,
+          availability: payload ? serializeAvailability(payload.av, m.id) : null,
         })),
         planningDeadline: event?.planningDeadline ?? null,
         deadlinePassed,
         canBypassDeadline,
+        counts: payload?.counts ?? null,
+        canAskTeam,
+        manualRelanceAvailable: payload?.manualRelanceAvailable ?? false,
       });
     }
 
-    const absenceByMember = await findActiveAbsencesForPlanning(
-      prisma,
+    const payload = await availabilityPayload(
       churchId,
+      { id: eventId, date: eventDept.event.date },
+      departmentId,
       eventDept.department.memberDepts.map(({ member }) => member.id),
-      { eventId, eventDate: eventDept.event.date, departmentId }
+      canAskTeam
     );
 
     const members = eventDept.department.memberDepts.map(({ member }) => {
@@ -131,7 +166,7 @@ export async function GET(
         ...member,
         status: planning?.status || null,
         planningId: planning?.id || null,
-        activeAbsence: absenceByMember.get(member.id) ?? null,
+        availability: serializeAvailability(payload.av, member.id),
       };
     });
 
@@ -145,6 +180,9 @@ export async function GET(
       planningDeadline: eventDept.event.planningDeadline,
       deadlinePassed,
       canBypassDeadline,
+      counts: payload.counts,
+      canAskTeam,
+      manualRelanceAvailable: payload.manualRelanceAvailable,
     });
   } catch (error) {
     return errorResponse(error);
@@ -156,7 +194,7 @@ const planningSchema = z.object({
     z.object({
       memberId: z.string(),
       status: z
-        .enum(["EN_SERVICE", "EN_SERVICE_DEBRIEF", "INDISPONIBLE", "REMPLACANT"])
+        .enum(["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT"])
         .nullable(),
     })
   ),

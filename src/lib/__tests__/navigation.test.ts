@@ -26,7 +26,7 @@ const star: NavigationInput = {
   famillesUrl: FAMILLES,
   hasMyPlanning: true,
   showStarEvents: true,
-  hasAbsences: true,
+  hasAvailability: true,
   hasJobs: true,
   homeHref: "/planning",
 };
@@ -112,7 +112,7 @@ describe("buildSpaces", () => {
   it("STAR : aucune grille par département, les liens STAR des événements, le RDV pastoral autonome", () => {
     const links = hrefs(star);
     expect(links).toEqual(
-      expect.arrayContaining(["/planning", "/absences", "/planning/events", "/events/announcement-sheets", "/agenda/request", "/audio", "/jobs", FAMILLES])
+      expect.arrayContaining(["/planning", "/disponibilites", "/planning/events", "/events/announcement-sheets", "/agenda/request", "/audio", "/jobs", FAMILLES])
     );
     expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
     expect(links).not.toContain("/events");
@@ -283,7 +283,7 @@ describe("bottomDestinations", () => {
   });
 
   it("n'invente pas de destination : un espace externe seul ou absent est écarté", () => {
-    const reporter: NavigationInput = { ...star, hasMyPlanning: false, hasAbsences: false, showStarEvents: false, hasEventsAccess: true, requestLinks: [], homeHref: "/profile" };
+    const reporter: NavigationInput = { ...star, hasMyPlanning: false, hasAbsences: false, hasAvailability: false, showStarEvents: false, hasEventsAccess: true, requestLinks: [], homeHref: "/profile" };
     expect(labels(reporter, "REPORTER")).toEqual(["Accueil", "Agenda"]);
   });
 
@@ -314,7 +314,7 @@ describe("recherche de pages", () => {
     const pages = searchablePages(buildSpaces(star));
     const list = pages.map((p) => p.href);
     expect(new Set(list).size).toBe(list.length);
-    expect(list).toEqual(expect.arrayContaining(["/planning", "/absences", "/profile", "/guide"]));
+    expect(list).toEqual(expect.arrayContaining(["/planning", "/disponibilites", "/profile", "/guide"]));
   });
 
   it("ignore accents et casse, classe les débuts de libellé en tête", () => {

@@ -41,7 +41,7 @@ export async function executeRequest(
         result = await executeAjoutEvenement(tx, churchId, payload);
         break;
       case "MODIFICATION_EVENEMENT":
-        result = await executeModificationEvenement(tx, churchId, payload);
+        result = await executeModificationEvenement(tx, churchId, payload, ctx);
         break;
       case "ANNULATION_EVENEMENT":
         // ctx + requestId passés pour émettre planning:event:cancelled AVANT la suppression
@@ -197,7 +197,8 @@ async function executeAjoutEvenement(
 async function executeModificationEvenement(
   tx: TxClient,
   churchId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  ctx: { tx: TxClient; churchId: string; userId: string }
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
   const changes = payload.changes as Record<string, unknown> | undefined;
@@ -206,11 +207,11 @@ async function executeModificationEvenement(
     return { success: false, error: "Données manquantes : eventId, changes" };
   }
 
-  const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true } });
+  const event = await tx.event.findUnique({ where: { id: eventId }, select: { id: true, churchId: true, date: true } });
   if (!event) return { success: false, error: "Événement introuvable" };
   if (event.churchId !== churchId) return { success: false, error: "Événement hors périmètre" };
 
-  await tx.event.update({
+  const updated = await tx.event.update({
     where: { id: eventId },
     data: {
       ...(changes.title ? { title: changes.title as string } : {}),
@@ -221,6 +222,14 @@ async function executeModificationEvenement(
         : {}),
     },
   });
+
+  if (updated.date.getTime() !== event.date.getTime()) {
+    await planningBus.emit(
+      "planning:event:rescheduled",
+      ctx,
+      { eventId, churchId, previousDate: event.date.toISOString(), newDate: updated.date.toISOString() }
+    );
+  }
 
   return { success: true, resourceId: eventId };
 }

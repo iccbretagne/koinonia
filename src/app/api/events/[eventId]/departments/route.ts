@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { planningBus } from "@/modules/planning";
 import { z } from "zod";
 
 async function verifyDepartmentChurch(departmentId: string, expectedChurchId: string) {
@@ -51,28 +52,51 @@ export async function POST(
   try {
     const { eventId } = await params;
     const churchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("events:manage", churchId);
+    const session = await requireChurchPermission("events:manage", churchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
     await verifyDepartmentChurch(departmentId, churchId);
 
     if (applyToSeries) {
       const eventIds = await getSeriesEventIds(eventId);
-      const created = await prisma.$transaction(
-        eventIds.map((eid) =>
-          prisma.eventDepartment.upsert({
+      const created = await prisma.$transaction(async (tx) => {
+        const links = [];
+        for (const eid of eventIds) {
+          const existed = await tx.eventDepartment.findUnique({
             where: { eventId_departmentId: { eventId: eid, departmentId } },
-            update: {},
-            create: { eventId: eid, departmentId },
-          })
-        )
-      );
+            select: { id: true },
+          });
+          links.push(
+            await tx.eventDepartment.upsert({
+              where: { eventId_departmentId: { eventId: eid, departmentId } },
+              update: {},
+              create: { eventId: eid, departmentId },
+            })
+          );
+          if (!existed) {
+            await planningBus.emit(
+              "planning:event:departments:added",
+              { tx, churchId, userId: session.user.id },
+              { eventId: eid, churchId, departmentIds: [departmentId] }
+            );
+          }
+        }
+        return links;
+      });
       return successResponse({ created: created.length }, 201);
     }
 
-    const eventDept = await prisma.eventDepartment.create({
-      data: { eventId, departmentId },
-      include: { department: { select: { id: true, name: true } } },
+    const eventDept = await prisma.$transaction(async (tx) => {
+      const created = await tx.eventDepartment.create({
+        data: { eventId, departmentId },
+        include: { department: { select: { id: true, name: true } } },
+      });
+      await planningBus.emit(
+        "planning:event:departments:added",
+        { tx, churchId, userId: session.user.id },
+        { eventId, churchId, departmentIds: [departmentId] }
+      );
+      return created;
     });
 
     return successResponse(eventDept, 201);

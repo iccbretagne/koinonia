@@ -89,9 +89,26 @@ export async function PATCH(request: Request) {
       updateData.date = new Date(data.date);
     }
 
-    await prisma.event.updateMany({
-      where: { id: { in: ids } },
-      data: updateData,
+    await prisma.$transaction(async (tx) => {
+      const before = data.date
+        ? await tx.event.findMany({ where: { id: { in: ids } }, select: { id: true, date: true } })
+        : [];
+      await tx.event.updateMany({
+        where: { id: { in: ids } },
+        data: updateData,
+      });
+      for (const ev of before) {
+        await planningBus.emit(
+          "planning:event:rescheduled",
+          { tx, churchId: evtChurchId, userId: patchSession.user.id },
+          {
+            eventId: ev.id,
+            churchId: evtChurchId,
+            previousDate: ev.date.toISOString(),
+            newDate: (updateData.date as Date).toISOString(),
+          }
+        );
+      }
     });
 
     for (const id of ids) {

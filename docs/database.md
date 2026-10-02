@@ -504,6 +504,26 @@ s'il est déplacé). Contrainte unique : `[absenceId, eventId]`.
 Inchangé par la spec 050 — voir le modèle `AbsenceBackup` du schéma pour le détail des deux
 types (`STAR` / `RESPONSIBLE`).
 
+#### Disponibilités (spec 058, ADR-0020)
+
+La disponibilité d'un STAR est **dérivée**, jamais stockée comme statut de planning. Ordre de
+précédence, pour un événement et un département : réponse explicite > période d'indisponibilité
+active (`absences` de type `PERIOD`) > « Sans réponse » si la disponibilité a été demandée (en
+retard après l'échéance : compte comme indisponible) > « Non demandée ».
+
+| Table | Rôle | Clés |
+|---|---|---|
+| `availability_settings` | Réglage par église : `enabled` (défaut `true`), `openMonthsBefore` (2), `closeDaysBefore` (7), `relanceDaysBefore` (3). Aucune ligne = valeurs par défaut | `churchId` unique |
+| `availability_collections` | Collecte commune d'un mois : `openedAt`, `closesAt` (figée à l'ouverture), `notifiedAt`, `relanceSentAt` | unique `[churchId, month]` |
+| `availability_responses` | Réponse `AVAILABLE` / `IF_NEEDED` / `UNAVAILABLE` d'un STAR pour un événement et un département ; `enteredById` renseigné si saisie par un tiers | unique `[memberId, eventId, departmentId]` |
+| `availability_asks` | Demande ciblée (`EVENT_ADDED`, `EVENT_MOVED`, `LEADER`) : `dueAt`, `notifiedAt`, `relanceSentAt`, `manualRelanceAt` | unique `[eventId, departmentId]` |
+| `availability_reminder_logs` | Garde-fou : une seule relance par STAR, événement et jour | unique `[memberId, eventId, sentOn]` |
+
+**Reprise (migration `add_availability_collection`)** : les absences `EVENTS` actives deviennent
+des réponses `UNAVAILABLE` (puis sont supprimées) et les plannings `INDISPONIBLE` deviennent des
+réponses `UNAVAILABLE` sans auteur (puis sont supprimés). `ServiceStatus.INDISPONIBLE` et
+`AbsenceKind.EVENTS` restent dans les enums pour l'historique, mais ne sont plus écrits ni créés.
+
 ### Enums
 
 #### `Role`
@@ -524,7 +544,7 @@ STAR             # Membre actif (acces uniquement a son planning personnel via M
 ```
 EN_SERVICE          # Present et en service
 EN_SERVICE_DEBRIEF  # En service + animateur du debrief (max 1 par dept/event)
-INDISPONIBLE        # Absent
+INDISPONIBLE        # Historique : n'est plus écrit (spec 058) — voir « Disponibilités »
 REMPLACANT          # Remplace un membre indisponible
 ```
 
@@ -588,7 +608,7 @@ ERREUR       # Echec de l'execution automatique
 
 ```
 PERIOD  # Absence sur une plage de dates (defaut, retro-compatible)
-EVENTS  # Absence sur une liste d'evenements precis
+EVENTS  # Historique : plus créé (spec 058), repris en réponses de disponibilité
 ```
 
 ### Module Média
