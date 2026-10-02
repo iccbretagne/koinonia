@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 import { Check, CircleCheck, CircleDashed, CloudAlert, Lock, MessageSquare, Repeat, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonList } from "@/components/ui/Skeleton";
 import StatusChip, { statusToneClasses } from "@/components/ui/StatusChip";
@@ -13,75 +13,92 @@ import { useToast } from "@/components/ui/Toast";
 import type { ServiceStatus } from "@/generated/prisma/client";
 import TaskPanel from "./TaskPanel";
 
+type AvailabilityState = "AVAILABLE" | "IF_NEEDED" | "UNAVAILABLE" | "NO_RESPONSE" | "NOT_ASKED";
+
+/** Disponibilité dérivée d'un STAR pour l'événement (spec 058, ADR-0020) — jamais un statut de planning. */
+interface MemberAvailability {
+  state: AvailabilityState;
+  overdue: boolean;
+  source: "response" | "period" | "asked" | "none";
+  enteredByThirdParty: boolean;
+  busyElsewhere: string[];
+}
+
 interface MemberPlanning {
   id: string;
   firstName: string;
   lastName: string;
   status: string | null;
   planningId: string | null;
-  activeAbsence?: {
-    id: string;
-    kind: "PERIOD" | "EVENTS";
-    startDate: string | null;
-    endDate: string | null;
-    eventCount: number;
-  } | null;
+  availability?: MemberAvailability | null;
 }
 
-type ActiveAbsence = NonNullable<MemberPlanning["activeAbsence"]>;
-
-function formatAbsencePeriod(activeAbsence: ActiveAbsence): string {
-  if (activeAbsence.kind === "EVENTS") return "Absence déclarée sur cet événement";
-  const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-  return `Absence déclarée du ${fmt.format(new Date(activeAbsence.startDate!))} au ${fmt.format(new Date(activeAbsence.endDate!))}`;
+interface AvailabilityCounts {
+  available: number;
+  ifNeeded: number;
+  noResponse: number;
+  unavailable: number;
 }
 
-function formatAbsencePeriodShort(activeAbsence: ActiveAbsence): string {
-  if (activeAbsence.kind === "EVENTS") return "cet événement";
-  const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-  return `${fmt.format(new Date(activeAbsence.startDate!))}–${fmt.format(new Date(activeAbsence.endDate!))}`;
+/** Ordre de la liste : disponibles, si besoin, sans réponse, puis pas disponibles. */
+const AVAILABILITY_RANK: Record<AvailabilityState, number> = {
+  AVAILABLE: 0,
+  IF_NEEDED: 1,
+  NOT_ASKED: 2,
+  NO_RESPONSE: 3,
+  UNAVAILABLE: 4,
+};
+
+function rank(a: MemberAvailability | null | undefined): number {
+  if (!a) return AVAILABILITY_RANK.NOT_ASKED;
+  // Sans réponse après la date limite = traité comme indisponible, donc en bas de liste.
+  if (a.state === "NO_RESPONSE" && a.overdue) return AVAILABILITY_RANK.UNAVAILABLE;
+  return AVAILABILITY_RANK[a.state];
 }
 
-// La période est affichée en texte (pas seulement via `title`) car les tooltips
-// hover ne sont pas accessibles au toucher sur mobile.
-function AbsenceBadge({
-  activeAbsence,
-  canViewAbsences,
-}: {
-  readonly activeAbsence: ActiveAbsence;
-  readonly canViewAbsences: boolean;
-}) {
-  const text =
-    activeAbsence.kind === "PERIOD"
-      ? `Absent · période ${formatAbsencePeriodShort(activeAbsence)}`
-      : "Absent · cet événement";
-
-  if (canViewAbsences) {
-    return (
-      <Link
-        href={`/absences?highlightId=${activeAbsence.id}`}
-        title={formatAbsencePeriod(activeAbsence)}
-        aria-label={`${formatAbsencePeriod(activeAbsence)} — voir le détail`}
-        className="max-w-full rounded-chip hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      >
-        <StatusChip tone="warning" icon={TriangleAlert}>{text}</StatusChip>
-      </Link>
-    );
+/** Raison affichée quand on place un STAR indisponible (avertissement, jamais un blocage). */
+function unavailabilityReason(a: MemberAvailability | null | undefined): string | null {
+  if (!a) return null;
+  if (a.state === "UNAVAILABLE") {
+    return a.source === "period" ? "Période d'indisponibilité déclarée" : "A répondu « Pas disponible »";
   }
+  if (a.state === "NO_RESPONSE" && a.overdue) return "Sans réponse après la date limite";
+  return null;
+}
 
-  return (
-    <StatusChip tone="warning" icon={TriangleAlert} title={formatAbsencePeriod(activeAbsence)} aria-label={formatAbsencePeriod(activeAbsence)}>
-      {text}
-    </StatusChip>
-  );
+// Le texte est toujours affiché (pas seulement via `title`) : les tooltips ne sont pas accessibles au toucher.
+function AvailabilityChip({ availability }: { readonly availability: MemberAvailability | null | undefined }) {
+  if (!availability || availability.state === "NOT_ASKED") {
+    return <StatusChip tone="neutral">Non demandée</StatusChip>;
+  }
+  switch (availability.state) {
+    case "AVAILABLE":
+      return <StatusChip tone="success" icon={Check}>Disponible</StatusChip>;
+    case "IF_NEEDED":
+      return <StatusChip tone="warning" icon={Repeat}>Si besoin</StatusChip>;
+    case "UNAVAILABLE":
+      return (
+        <StatusChip tone="danger" icon={X}>
+          {availability.source === "period" ? "Indisponible · période" : "Pas disponible"}
+        </StatusChip>
+      );
+    default:
+      return availability.overdue ? (
+        <StatusChip tone="danger" icon={TriangleAlert}>Sans réponse · en retard</StatusChip>
+      ) : (
+        <StatusChip tone="neutral" icon={CircleDashed}>Sans réponse</StatusChip>
+      );
+  }
 }
 
 interface PlanningGridProps {
   readonly eventId: string;
   readonly departmentId: string;
   readonly readOnly?: boolean;
-  readonly canViewAbsences?: boolean;
 }
+
+/** Statuts que l'on peut poser : `INDISPONIBLE` n'est plus un statut de planning (spec 058). */
+const PLANNABLE_STATUSES = SERVICE_STATUS_ORDER.filter((s) => s !== "INDISPONIBLE");
 
 /**
  * Pictogramme de chaque bouton du contrôle segmenté (maquettes : check, message, x, repeat),
@@ -112,7 +129,7 @@ function StatusSegments({
 }) {
   return (
     <div role="group" aria-label={`Statut de ${memberName}`} className="inline-flex shrink-0 gap-0.5 rounded-control bg-surface-sunken p-[3px]">
-      {SERVICE_STATUS_ORDER.map((value) => {
+      {PLANNABLE_STATUSES.map((value) => {
         const { tone, label } = SERVICE_STATUS[value];
         const Icon = SEGMENT_ICON[value];
         const active = status === value;
@@ -171,7 +188,6 @@ export default function PlanningGrid({
   eventId,
   departmentId,
   readOnly = false,
-  canViewAbsences = false,
 }: PlanningGridProps) {
   const toast = useToast();
   const [members, setMembers] = useState<MemberPlanning[]>([]);
@@ -183,6 +199,11 @@ export default function PlanningGrid({
   const [deadlinePassed, setDeadlinePassed] = useState(false);
   const [canBypassDeadline, setCanBypassDeadline] = useState(false);
   const [planningDeadline, setPlanningDeadline] = useState<string | null>(null);
+  const [availCounts, setAvailCounts] = useState<AvailabilityCounts | null>(null);
+  const [canAskTeam, setCanAskTeam] = useState(false);
+  const [relanceAvailable, setRelanceAvailable] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"ask" | "relance" | null>(null);
+  const [acting, setActing] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isReadOnly = readOnly || (deadlinePassed && !canBypassDeadline);
@@ -200,6 +221,9 @@ export default function PlanningGrid({
       setDeadlinePassed(data.deadlinePassed ?? false);
       setCanBypassDeadline(data.canBypassDeadline ?? false);
       setPlanningDeadline(data.planningDeadline ?? null);
+      setAvailCounts(data.counts ?? null);
+      setCanAskTeam(data.canAskTeam ?? false);
+      setRelanceAvailable(data.manualRelanceAvailable ?? false);
       setDirty(false);
     } catch {
       setFetchError(true);
@@ -224,7 +248,7 @@ export default function PlanningGrid({
             body: JSON.stringify({
               plannings: updatedMembers.map((m) => ({
                 memberId: m.id,
-                status: m.status,
+                status: m.status === "INDISPONIBLE" ? null : m.status,
               })),
             }),
           }
@@ -263,6 +287,32 @@ export default function PlanningGrid({
     debounceRef.current = setTimeout(() => savePlanning(updated), 1000);
   };
 
+  async function runTeamAction(action: "ask" | "relance") {
+    setActing(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/departments/${departmentId}/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? "Action impossible");
+      const n = json.notified ?? 0;
+      toast.success(
+        action === "ask"
+          ? `Équipe interrogée : ${plural(n, "STAR notifié", "STAR notifiés")}`
+          : `Relance envoyée : ${plural(n, "STAR relancé", "STAR relancés")}`
+      );
+      setConfirmAction(null);
+      await fetchPlanning();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action impossible");
+      setConfirmAction(null);
+    } finally {
+      setActing(false);
+    }
+  }
+
   if (loading) {
     return <SkeletonList rows={6} label="Chargement du planning…" />;
   }
@@ -295,7 +345,10 @@ export default function PlanningGrid({
     );
   }
 
-  const counts = SERVICE_STATUS_ORDER.map((status) => ({
+  const sortedMembers = [...members].sort(
+    (a, b) => rank(a.availability) - rank(b.availability) || a.lastName.localeCompare(b.lastName, "fr")
+  );
+  const counts = PLANNABLE_STATUSES.map((status) => ({
     status,
     count: members.filter((m) => m.status === status).length,
   }));
@@ -303,6 +356,10 @@ export default function PlanningGrid({
   const enService = members.filter(
     (m) => m.status === "EN_SERVICE" || m.status === "EN_SERVICE_DEBRIEF"
   ).length;
+
+  const availabilitySummary = availCounts
+    ? `${availCounts.available} disponible${availCounts.available > 1 ? "s" : ""} · ${availCounts.ifNeeded} si besoin · ${availCounts.noResponse} sans réponse`
+    : null;
 
   const deadlineLabel = planningDeadline
     ? new Date(planningDeadline).toLocaleString("fr-FR", {
@@ -331,7 +388,7 @@ export default function PlanningGrid({
           chaque ligne affiche déjà son statut en texte (ReadOnlyStatus), pas besoin de légende. */}
       {!isReadOnly && (
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5 px-1 text-[13px] leading-[18px] text-ink-muted">
-          {SERVICE_STATUS_ORDER.map((status) => {
+          {PLANNABLE_STATUSES.map((status) => {
             const Icon = SEGMENT_ICON[status];
             const { label } = SERVICE_STATUS[status];
             return (
@@ -344,11 +401,44 @@ export default function PlanningGrid({
         </ul>
       )}
 
+      {canAskTeam && !isReadOnly && availCounts && (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")}>
+            Interroger l&apos;équipe
+          </Button>
+          {availCounts.noResponse > 0 && (
+            <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")}>
+              {relanceAvailable ? "Relancer les sans-réponse" : "Relance déjà envoyée aujourd'hui"}
+            </Button>
+          )}
+        </div>
+      )}
+
+      <ConfirmModal
+        open={confirmAction !== null}
+        title={confirmAction === "relance" ? "Relancer les STAR sans réponse ?" : "Interroger l'équipe ?"}
+        message={
+          confirmAction === "relance"
+            ? "Les STAR qui n'ont pas répondu pour cet événement reçoivent une notification. Une seule relance est possible par jour."
+            : "Tous les STAR du département reçoivent une notification pour indiquer leur disponibilité sur cet événement."
+        }
+        confirmLabel={confirmAction === "relance" ? "Relancer" : "Interroger"}
+        variant="primary"
+        confirming={acting}
+        onConfirm={() => confirmAction && runTeamAction(confirmAction)}
+        onCancel={() => setConfirmAction(null)}
+      />
+
       <section aria-label="Planning de l'équipe" className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line bg-surface-sunken px-4 py-2.5">
           <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-muted">
             {plural(members.length, "STAR", "STAR")} · {enService} en service
           </p>
+          {availabilitySummary && (
+            <p className="w-full text-[13px] leading-[18px] text-ink-muted" aria-label="Disponibilités">
+              {availabilitySummary}
+            </p>
+          )}
           <SaveState
             isReadOnly={isReadOnly}
             deadlinePassed={deadlinePassed}
@@ -359,8 +449,11 @@ export default function PlanningGrid({
         </div>
 
         <ul className="divide-y divide-line">
-          {members.map((member) => {
+          {sortedMembers.map((member) => {
             const name = `${member.firstName} ${member.lastName}`;
+            const reason = unavailabilityReason(member.availability);
+            const placed = member.status === "EN_SERVICE" || member.status === "EN_SERVICE_DEBRIEF" || member.status === "REMPLACANT";
+            const busy = member.availability?.busyElsewhere ?? [];
             return (
               <li
                 key={member.id}
@@ -368,8 +461,17 @@ export default function PlanningGrid({
               >
                 <div className="flex min-w-0 flex-col items-start gap-1">
                   <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
-                  {member.activeAbsence && (
-                    <AbsenceBadge activeAbsence={member.activeAbsence} canViewAbsences={canViewAbsences} />
+                  <AvailabilityChip availability={member.availability} />
+                  {busy.length > 0 && (
+                    <span className="text-[13px] leading-[18px] text-ink-muted">De service en {busy.join(", ")}</span>
+                  )}
+                  {member.availability?.enteredByThirdParty && (
+                    <span className="text-[13px] leading-[18px] text-ink-subtle">Réponse saisie par un responsable</span>
+                  )}
+                  {placed && reason && (
+                    <Alert tone="warning" className="mt-1 w-full">
+                      {reason} : à confirmer avec {member.firstName} avant de valider son service.
+                    </Alert>
                   )}
                 </div>
                 {isReadOnly ? (
