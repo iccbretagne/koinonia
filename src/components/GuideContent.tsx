@@ -178,7 +178,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Lire les disponibilités dans la grille",
-    description: "Dans la grille du planning, chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible, « en retard »), les STAR disponibles sont classés en premier et un compteur résume la situation. Placer un STAR indisponible reste possible mais affiche un avertissement avec la raison. « Interroger l'équipe » et « Relancer les sans-réponse » (une fois par jour) permettent de demander ou de relancer la réponse sans attendre la collecte.",
+    description: "Dans la grille du planning, chaque STAR affiche sa disponibilité (disponible, si besoin, sans réponse, indisponible, « en retard »), les STAR disponibles sont classés en premier et un compteur résume la situation. Placer un STAR indisponible reste possible mais affiche un avertissement avec la raison. « Interroger l'équipe sur leurs disponibilités » et « Relancer les sans-réponse » (une fois par jour) permettent de demander ou de relancer la réponse sans attendre la collecte.",
     category: "Absences",
     screenshotTitle: "Disponibilités dans la grille",
     screenshotFile: "guide-disponibilites-grille.png",

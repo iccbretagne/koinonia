@@ -404,7 +404,7 @@ export default function PlanningGrid({
       {canAskTeam && !isReadOnly && availCounts && (
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")}>
-            Interroger l&apos;équipe
+            Interroger l&apos;équipe sur leurs disponibilités
           </Button>
           {availCounts.noResponse > 0 && (
             <Button variant="secondary" size="sm" disabled={!relanceAvailable} onClick={() => setConfirmAction("relance")}>
@@ -416,7 +416,7 @@ export default function PlanningGrid({
 
       <ConfirmModal
         open={confirmAction !== null}
-        title={confirmAction === "relance" ? "Relancer les STAR sans réponse ?" : "Interroger l'équipe ?"}
+        title={confirmAction === "relance" ? "Relancer les STAR sans réponse ?" : "Interroger l'équipe sur leurs disponibilités ?"}
         message={
           confirmAction === "relance"
             ? "Les STAR qui n'ont pas répondu pour cet événement reçoivent une notification. Une seule relance est possible par jour."
