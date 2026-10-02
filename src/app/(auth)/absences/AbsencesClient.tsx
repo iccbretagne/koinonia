@@ -142,6 +142,7 @@ interface AbsencesClientProps {
   readonly churchId: string;
   readonly canView: boolean;
   readonly canManage: boolean;
+  readonly canSettings: boolean;
   readonly selfMembers: MemberRef[];
   readonly manageableMembers: MemberRef[];
   readonly ministries: { id: string; name: string }[];
@@ -164,6 +165,7 @@ export default function AbsencesClient({
   churchId,
   canView,
   canManage,
+  canSettings,
   selfMembers,
   manageableMembers,
   ministries,
@@ -340,7 +342,7 @@ export default function AbsencesClient({
 
   return (
     <div className="space-y-8">
-      {selfMembers.length > 0 && <AvailabilityTabs />}
+      <AvailabilityTabs self={selfMembers.length > 0} team collections={canSettings} />
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-ink">Indisponibilités</h1>

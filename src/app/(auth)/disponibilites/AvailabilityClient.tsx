@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
-import { buttonClasses } from "@/components/ui/button-classes";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
 import StatusChip from "@/components/ui/StatusChip";
@@ -320,7 +319,7 @@ export default function AvailabilityClient({
 
   return (
     <div className="max-w-2xl space-y-6">
-      {canViewOverview && <AvailabilityTabs />}
+      <AvailabilityTabs self={selfMembers.length > 0} team={canViewOverview} collections={canSettings} />
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-ink">
@@ -330,11 +329,6 @@ export default function AvailabilityClient({
             Indiquez si vous pouvez servir. Votre responsable construit le planning à partir de vos réponses.
           </p>
         </div>
-        {canSettings && (
-          <Link href="/disponibilites/parametres" className={buttonClasses("ghost", "md")}>
-            Régler la collecte
-          </Link>
-        )}
       </div>
 
       {manageableMembers.length > 0 && (

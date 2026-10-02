@@ -186,7 +186,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Régler la collecte",
-    description: "Depuis « Disponibilités → Régler la collecte » : activer ou non la collecte automatique, combien de mois avant l'ouverture, combien de jours avant le début du mois pour la clôture et pour la relance des sans-réponse.",
+    description: "L'onglet « Collectes » (menu « Disponibilités ») liste le mois en cours et les suivants avec l'état de leur collecte ; « Ouvrir maintenant » ouvre celle d'un mois à l'avance et notifie aussitôt les STAR. Le lien « Réglages » permet d'activer ou non la collecte automatique et de choisir combien de mois avant l'ouverture, combien de jours avant le début du mois pour la clôture et pour la relance des sans-réponse.",
     category: "Absences",
     screenshotTitle: "Paramètres de la collecte",
     screenshotFile: "guide-disponibilites-parametres.png",

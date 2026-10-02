@@ -1,14 +1,25 @@
-import Tabs from "@/components/ui/Tabs";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
 
-/** Onglets entre « Mes disponibilités » et la vue d'ensemble du périmètre (spec 058). */
-export default function AvailabilityTabs() {
-  return (
-    <Tabs
-      ariaLabel="Disponibilités"
-      tabs={[
-        { href: "/disponibilites", label: "Mes disponibilités", exact: true },
-        { href: "/absences", label: "Indisponibilités de l'équipe" },
-      ]}
-    />
-  );
+/**
+ * Onglets de l'espace Disponibilités (spec 058) : chacun n'apparaît qu'avec son droit, et la barre
+ * n'est affichée que s'il y a au moins deux onglets. Chaque page vérifie son droit côté serveur.
+ */
+export default function AvailabilityTabs({
+  self,
+  team,
+  collections,
+}: {
+  /** Compte lié à une fiche STAR. */
+  readonly self: boolean;
+  /** `absences:view`. */
+  readonly team: boolean;
+  /** `availability:settings`. */
+  readonly collections: boolean;
+}) {
+  const tabs: TabItem[] = [];
+  if (self) tabs.push({ href: "/disponibilites", label: "Mes disponibilités", exact: true });
+  if (team) tabs.push({ href: "/absences", label: "Indisponibilités de l'équipe" });
+  if (collections) tabs.push({ href: "/disponibilites/collectes", label: "Collectes" });
+  if (tabs.length < 2) return null;
+  return <Tabs ariaLabel="Disponibilités" tabs={tabs} />;
 }
