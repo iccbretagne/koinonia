@@ -83,9 +83,9 @@ export {
   updateAvailabilitySettings,
   DEFAULT_AVAILABILITY_SETTINGS,
 } from "./services/availability/settings";
-export { listMemberAvailability, saveResponses } from "./services/availability/responses";
+export { listMemberAvailability, saveResponses, listLinkedMemberIds } from "./services/availability/responses";
 export { getPlanningAvailability } from "./services/availability/grid";
-export { askTeam, manualRelance } from "./services/availability/asks";
+export { askTeam, manualRelance, assertEventDepartment } from "./services/availability/asks";
 export { resolveAvailability, countsAsUnavailable, unavailabilityReason } from "./services/availability/state";
 export type { AvailabilityState, ResolvedAvailability } from "./services/availability/state";
 

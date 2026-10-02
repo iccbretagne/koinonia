@@ -1,7 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { requireAuth, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { getMemberScope, listMemberAvailability, saveResponses } from "@/modules/planning";
+import { getMemberScope, listLinkedMemberIds, listMemberAvailability, saveResponses } from "@/modules/planning";
 import { z } from "zod";
 
 /**
@@ -11,11 +10,7 @@ import { z } from "zod";
  */
 async function resolveTarget(churchId: string, memberId: string | null) {
   const session = await requireAuth();
-  const links = await prisma.memberUserLink.findMany({
-    where: { userId: session.user.id, churchId, validatedAt: { not: null } },
-    select: { memberId: true },
-  });
-  const ownIds = links.map((l) => l.memberId);
+  const ownIds = await listLinkedMemberIds(session.user.id, churchId);
 
   if (!memberId || ownIds.includes(memberId)) {
     const own = memberId ?? ownIds[0];

@@ -155,6 +155,16 @@ export async function listMemberAvailability(
   };
 }
 
+/** Fiches STAR liées (et validées) au compte dans l'église : c'est pour elles que l'on répond « pour soi ». */
+export async function listLinkedMemberIds(userId: string, churchId: string): Promise<string[]> {
+  const db = await defaultDb();
+  const links = await db.memberUserLink.findMany({
+    where: { userId, churchId, validatedAt: { not: null } },
+    select: { memberId: true },
+  });
+  return links.map((l) => l.memberId);
+}
+
 export interface AnswerInput {
   eventId: string;
   answer: AvailabilityAnswer;
