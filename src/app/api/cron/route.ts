@@ -45,6 +45,12 @@ async function runJobsLifecycleTask(appUrl: string) {
   return runJobOffersLifecycle(appUrl);
 }
 
+/** Collecte des disponibilités (spec 058) : ouverture, demandes ciblées, relances. Module planning (noyau). */
+async function runAvailabilityTasks() {
+  const { runAvailabilityTasks: run } = await import("@/modules/planning");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -287,13 +293,14 @@ export async function POST(request: Request) {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [remindersResult, digestResult, integrationResult, careResult, jobOffersLifecycleResult] =
+    const [remindersResult, digestResult, integrationResult, careResult, jobOffersLifecycleResult, availabilityResult] =
       await Promise.all([
         runReminders(),
         runPlanningDigest(),
         runIntegrationInactivityTasks(appUrl),
         runCareTasks(appUrl),
         runJobsLifecycleTask(appUrl),
+        runAvailabilityTasks(),
       ]);
 
     return successResponse({
@@ -304,6 +311,7 @@ export async function POST(request: Request) {
       msdpInactivity: careResult?.msdpInactivityResult ?? null,
       careRelance: careResult?.careRelanceResult ?? null,
       jobOffersLifecycle: jobOffersLifecycleResult,
+      availability: availabilityResult,
     });
   } catch (error) {
     return errorResponse(error);

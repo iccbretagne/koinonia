@@ -422,6 +422,32 @@ interface DeclareAbsenceParams {
   declarerScope?: DeclarerScope;
 }
 
+
+/**
+ * Spec 058 : une indisponibilité se déclare désormais sur une période ; les réponses explicites
+ * du STAR que cette période couvre deviennent redondantes et sont supprimées (même transaction).
+ */
+async function deleteResponsesCoveredByPeriod(
+  tx: Pick<import("@/generated/prisma/client").Prisma.TransactionClient, "availabilityResponse">,
+  p: { memberId: string; startDate: Date | null; endDate: Date | null; allDepartments: boolean; departmentIds: string[] }
+): Promise<void> {
+  if (!p.startDate || !p.endDate) return;
+  const end = new Date(p.endDate.getTime() + 24 * 3600 * 1000);
+  await tx.availabilityResponse.deleteMany({
+    where: {
+      memberId: p.memberId,
+      event: { date: { gte: p.startDate, lt: end } },
+      ...(p.allDepartments ? {} : { departmentId: { in: p.departmentIds } }),
+    },
+  });
+}
+
+function assertPeriodOnly(kind: AbsenceKind | undefined): void {
+  if (kind === "EVENTS") {
+    throw new ApiError(400, "Les absences sur événements précis ne sont plus créées : répondez depuis « Mes disponibilités »");
+  }
+}
+
 /**
  * Déclare une absence (période ou événements précis, tous départements ou une liste), calcule
  * les conflits avec le planning existant, notifie les responsables des départements effectivement
@@ -445,6 +471,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
     backups = [],
     declarerScope = { scoped: false, departmentIds: [] },
   } = params;
+  assertPeriodOnly(kind);
   const { prisma } = await import("@/lib/prisma");
 
   const member = await prisma.member.findUnique({
@@ -485,6 +512,14 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
             }
           : {}),
       },
+    });
+
+    await deleteResponsesCoveredByPeriod(tx, {
+      memberId,
+      startDate: absence.startDate,
+      endDate: absence.endDate,
+      allDepartments,
+      departmentIds,
     });
 
     if (backups.length > 0) {
@@ -734,6 +769,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
     backups,
     declarerScope = { scoped: false, departmentIds: [] },
   } = params;
+  assertPeriodOnly(kind);
   const { prisma } = await import("@/lib/prisma");
 
   return prisma.$transaction(async (tx) => {
@@ -838,6 +874,14 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         allDepartments: newAllDepartments,
         ...(reason !== undefined ? { reason: reason ?? null } : {}),
       },
+    });
+
+    await deleteResponsesCoveredByPeriod(tx, {
+      memberId: absence.memberId,
+      startDate: updated.startDate,
+      endDate: updated.endDate,
+      allDepartments: newAllDepartments,
+      departmentIds: newDepartmentIds,
     });
 
     const targetingAfter: AbsenceTargeting = {

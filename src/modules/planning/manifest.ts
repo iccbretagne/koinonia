@@ -37,6 +37,7 @@ export const planningModule = defineModule({
     ],
     api: [
       { path: "/api/absences" },
+      { path: "/api/availability" },
       { path: "/api/announcements" },
       { path: "/api/departments" },
       { path: "/api/events" },
@@ -74,6 +75,8 @@ export const planningModule = defineModule({
     // Absences des STAR
     "absences:view":       ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
     "absences:manage":     ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER", "DEPARTMENT_HEAD"],
+    // Réglage de la collecte des disponibilités (spec 058) : fenêtre d'ouverture, clôture, relance
+    "availability:settings": ["SUPER_ADMIN", "ADMIN", "SECRETARY"],
   },
 
   // Domaines de notification (spec 053). `planning` couvre déjà des emails aujourd'hui (rappels

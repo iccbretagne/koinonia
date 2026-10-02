@@ -29,7 +29,7 @@ const createSchema = z
   .object({
     churchId: z.string().min(1),
     memberId: z.string().min(1),
-    kind: z.enum(["PERIOD", "EVENTS"]).default("PERIOD"),
+    kind: z.enum(["PERIOD"]).default("PERIOD"),
     startDate: z.string().datetime().optional(),
     endDate: z.string().datetime().optional(),
     eventIds: z.array(z.string().min(1)).max(52).default([]),

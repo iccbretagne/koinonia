@@ -17,7 +17,7 @@ const patchSchema = z
     z.object({ action: z.literal("cancel") }),
     z.object({
       action: z.literal("update"),
-      kind: z.enum(["PERIOD", "EVENTS"]).optional(),
+      kind: z.enum(["PERIOD"]).optional(),
       startDate: z.string().datetime().optional(),
       endDate: z.string().datetime().optional(),
       eventIds: z.array(z.string().min(1)).max(52).optional(),
@@ -34,10 +34,6 @@ const patchSchema = z
   .refine(
     (d) => d.action !== "update" || d.allDepartments === undefined || d.allDepartments || (d.departmentIds?.length ?? 0) > 0,
     { message: "Au moins un département doit être ciblé", path: ["departmentIds"] }
-  )
-  .refine(
-    (d) => d.action !== "update" || d.kind !== "EVENTS" || (d.eventIds?.length ?? 0) > 0,
-    { message: "Au moins un événement doit être ciblé", path: ["eventIds"] }
   );
 
 /**

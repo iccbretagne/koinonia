@@ -28,6 +28,13 @@ vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
 }));
 
+// La dérivation des disponibilités (spec 058) a ses propres tests : ici on vérifie la sérialisation.
+const mockGetPlanningAvailability = vi.fn();
+vi.mock("@/modules/planning", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/planning")>()),
+  getPlanningAvailability: (...args: unknown[]) => mockGetPlanningAvailability(...args),
+}));
+
 vi.mock("@/lib/audit", () => ({
   logAudit: vi.fn().mockResolvedValue(undefined),
 }));
@@ -46,6 +53,12 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
     prismaMock.absence.findMany.mockResolvedValue([]);
+    mockGetPlanningAvailability.mockResolvedValue({
+      members: new Map(),
+      counts: { available: 0, ifNeeded: 0, noResponse: 0, unavailable: 0 },
+      asked: false,
+      dueAt: null,
+    });
   });
 
   it("returns planning data with members and statuses", async () => {
@@ -97,8 +110,17 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     expect(body.members[0].status).toBeNull();
   });
 
-  it("includes the absence id in activeAbsence (eventDept path)", async () => {
-    const eventDept = {
+  const unavailable = {
+    state: "UNAVAILABLE",
+    overdue: false,
+    source: "period",
+    answer: null,
+    enteredByThirdParty: false,
+    busyElsewhere: [],
+  };
+
+  it("expose la disponibilité dérivée, les compteurs et les droits d'interroger (eventDept path)", async () => {
+    prismaMock.eventDepartment.findUnique.mockResolvedValue({
       id: "ed-1",
       eventId: "evt-1",
       departmentId: "dept-1",
@@ -107,27 +129,26 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
       department: {
         memberDepts: [{ member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } }],
       },
-    };
-    prismaMock.eventDepartment.findUnique.mockResolvedValue(eventDept);
-    prismaMock.absence.findMany.mockResolvedValue([
-      {
-        id: "abs-1",
-        memberId: "m-1",
-        kind: "PERIOD",
-        startDate: new Date("2026-07-30"),
-        endDate: new Date("2026-08-05"),
-        targetEvents: [],
-      },
-    ] as never);
+    });
+    mockGetPlanningAvailability.mockResolvedValue({
+      members: new Map([["m-1", unavailable]]),
+      counts: { available: 0, ifNeeded: 0, noResponse: 2, unavailable: 1 },
+      asked: true,
+      dueAt: null,
+    });
 
     const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");
     const res = await GET(request, { params: makeParams("evt-1", "dept-1") });
 
     const body = await res.json();
-    expect(body.members[0].activeAbsence).toMatchObject({ id: "abs-1" });
+    expect(body.members[0].availability).toMatchObject({ state: "UNAVAILABLE", source: "period" });
+    expect(body.members[0].activeAbsence).toBeUndefined();
+    expect(body.counts).toEqual({ available: 0, ifNeeded: 0, noResponse: 2, unavailable: 1 });
+    expect(body.canAskTeam).toBe(true);
+    expect(body.manualRelanceAvailable).toBe(true);
   });
 
-  it("includes the absence id in activeAbsence (fallback path, no event-department link)", async () => {
+  it("expose la disponibilité aussi sans lien événement-département (fallback)", async () => {
     prismaMock.eventDepartment.findUnique.mockResolvedValue(null);
     prismaMock.department.findUnique
       .mockResolvedValueOnce(mockDeptChurchCheck as never)
@@ -136,22 +157,19 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
         memberDepts: [{ member: { id: "m-1", firstName: "Jean", lastName: "Dupont" } }],
       } as never);
     prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", date: new Date("2026-08-01"), planningDeadline: null } as never);
-    prismaMock.absence.findMany.mockResolvedValue([
-      {
-        id: "abs-2",
-        memberId: "m-1",
-        kind: "PERIOD",
-        startDate: new Date("2026-07-30"),
-        endDate: new Date("2026-08-05"),
-        targetEvents: [],
-      },
-    ] as never);
+    mockGetPlanningAvailability.mockResolvedValue({
+      members: new Map([["m-1", unavailable]]),
+      counts: { available: 0, ifNeeded: 0, noResponse: 0, unavailable: 1 },
+      asked: false,
+      dueAt: null,
+    });
 
     const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning");
     const res = await GET(request, { params: makeParams("evt-1", "dept-1") });
 
     const body = await res.json();
-    expect(body.members[0].activeAbsence).toMatchObject({ id: "abs-2" });
+    expect(body.members[0].availability).toMatchObject({ state: "UNAVAILABLE" });
+    expect(body.counts.unavailable).toBe(1);
   });
 
   it("detects deadline passed", async () => {
@@ -244,6 +262,17 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.eventDepartment.create).toHaveBeenCalledOnce();
+  });
+
+  it("refuse INDISPONIBLE : la disponibilité n'est plus un statut de planning (spec 058)", async () => {
+    const request = new Request("http://localhost/api/events/evt-1/departments/dept-1/planning", {
+      method: "PUT",
+      body: JSON.stringify({ plannings: [{ memberId: "m-1", status: "INDISPONIBLE" }] }),
+    });
+    const res = await PUT(request, { params: makeParams("evt-1", "dept-1") });
+
+    expect(res.status).toBe(400);
+    expect(prismaMock.planning.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects multiple EN_SERVICE_DEBRIEF", async () => {
