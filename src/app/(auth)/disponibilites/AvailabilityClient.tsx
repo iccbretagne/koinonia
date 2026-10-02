@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/button-classes";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
 import StatusChip from "@/components/ui/StatusChip";
@@ -186,9 +187,9 @@ function EventCard({ event, highlighted, saving, onSave }: CardProps) {
       )}
 
       {multi && (
-        <button type="button" onClick={() => setPerDept((v) => !v)} className="text-sm text-brand-text hover:underline min-h-[44px]">
+        <Button variant="ghost" onClick={() => setPerDept((v) => !v)} className="-ml-4">
           {perDept ? "Même réponse pour tous mes départements" : "Préciser par département"}
-        </button>
+        </Button>
       )}
 
       {thirdParty && <p className="text-xs text-ink-subtle">Réponse saisie par un responsable.</p>}
@@ -330,7 +331,7 @@ export default function AvailabilityClient({
           </p>
         </div>
         {canSettings && (
-          <Link href="/disponibilites/parametres" className="text-sm text-brand-text hover:underline min-h-[44px] inline-flex items-center">
+          <Link href="/disponibilites/parametres" className={buttonClasses("ghost", "md")}>
             Régler la collecte
           </Link>
         )}
