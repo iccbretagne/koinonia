@@ -76,7 +76,8 @@ export {
 export type { MemberLookupResult } from "./services/member-directory.service";
 
 export { registerAvailabilitySubscribers } from "./services/availability/subscribers";
-export { runAvailabilityTasks } from "./services/availability/collection";
+export { runAvailabilityTasks, openCollectionNow, listCollectionMonths } from "./services/availability/collection";
+export type { CollectionMonth } from "./services/availability/collection";
 export {
   getAvailabilitySettings,
   updateAvailabilitySettings,
