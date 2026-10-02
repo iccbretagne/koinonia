@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
@@ -208,6 +209,7 @@ interface Props {
   readonly canDesignateBackup: boolean;
   readonly backupOptions: BackupOption[];
   readonly canSettings: boolean;
+  readonly canViewOverview: boolean;
   readonly initialMonth: string | null;
   readonly focusEventId: string | null;
   readonly initialMemberId: string | null;
@@ -220,6 +222,7 @@ export default function AvailabilityClient({
   canDesignateBackup,
   backupOptions,
   canSettings,
+  canViewOverview,
   initialMonth,
   focusEventId,
   initialMemberId,
@@ -316,6 +319,7 @@ export default function AvailabilityClient({
 
   return (
     <div className="max-w-2xl space-y-6">
+      {canViewOverview && <AvailabilityTabs />}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-ink">

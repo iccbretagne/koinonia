@@ -194,7 +194,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Indisponibilités de mon périmètre",
-    description: "« Indisponibilités » liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
+    description: "L'onglet « Indisponibilités de l'équipe » (menu « Disponibilités ») liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
     category: "Absences",
     screenshotTitle: "Indisponibilités",
     screenshotFile: "guide-absences-vue-ensemble.png",

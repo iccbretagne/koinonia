@@ -32,7 +32,7 @@ La disponibilité n'est jamais écrite dans le planning : elle se **calcule** �
 |---|---|
 | Répondre pour les événements | **Disponibilités** (ou « Je ne peux pas » depuis Mon planning) |
 | Déclarer une période d'indisponibilité | **Disponibilités → Pas disponible du … au …** |
-| Suivre les indisponibilités du périmètre | **Indisponibilités** (tableau ou frise, export) |
+| Suivre les indisponibilités du périmètre | **Disponibilités → Indisponibilités de l'équipe** (tableau ou frise, export) |
 | Régler la collecte | **Disponibilités → Régler la collecte** |
 
 ## Les règles à connaître
