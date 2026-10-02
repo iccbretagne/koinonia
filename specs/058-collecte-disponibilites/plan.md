@@ -1,7 +1,7 @@
 # Plan technique — Collecte des disponibilités et disponibilités dans la grille
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-02
 - **ADR** : [ADR-0020](../../docs/adr/0020-disponibilite-derivee-absence-indisponible.md) — fusion
   de l'absence et du statut `INDISPONIBLE` (revient sur la spec 050, § Statuts de service)
@@ -213,13 +213,17 @@ Dans `src/modules/planning/services/availability/` :
   `manualRelance(...)` pour la route du responsable (envoi immédiat, `manualRelanceAt` contrôlé
   au jour près).
 - **`collection.ts`** — `runAvailabilityTasks(now)` appelée par le cron, par église active :
-  1. **ouvrir** les mois cibles dont `opensAt ≤ now` et sans collecte, uniquement si le mois a au
-     moins un événement et si `closesAt` laisse **au moins 7 jours** (pas de collecte éclair au
-     déploiement ni pour un mois déjà entamé) ;
+  1. **ouvrir** les mois cibles dont `opensAt ≤ now` et sans collecte, dès qu'il reste au moins un
+     événement à venir dans le mois — **même si la clôture calculée est proche ou passée**
+     (décision 2026-10-02 : au déploiement, ou pour un mois déjà entamé, la collecte « en retard »
+     sert justement à pourvoir les services en urgence). La notification d'ouverture indique
+     alors « à renseigner au plus vite » ; seuls les événements à venir sont listés ;
   2. **notifier** l'ouverture (`notifiedAt`), un message par STAR lié concerné ;
   3. **notifier les demandes ciblées** en attente (`notifiedAt IS NULL`), **regroupées par STAR**
      (une série récurrente = une notification) ;
-  4. **relancer** collectes et demandes dont la date de relance est atteinte (`relanceSentAt`),
+  4. **relancer** collectes et demandes dont la date de relance est atteinte (`relanceSentAt`) —
+     sauf si la collecte a été ouverte **après** sa date de relance : la notification d'ouverture
+     tient alors lieu de relance,
      uniquement les STAR ayant au moins un « Sans réponse », dédoublonné par
      `AvailabilityReminderLog` (`createMany` + `skipDuplicates`, envoi aux seules lignes nouvelles),
      un message groupé par STAR.
@@ -312,15 +316,17 @@ garde `registry.has` (module `planning` toujours actif, comme `runReminders`).
   `/api/cron` est le mécanisme effectif (care, intégration).
 - **Écarté** : un compteur « au regard du besoin » — *Raison* : aucune notion d'effectif requis
   n'existe par département/événement ; le compteur affiche disponibles / si besoin / sans
-  réponse. **Écart à la spec** (scénario « composer le planning », point 2) à valider.
+  réponse (validé 2026-10-02, spec ajustée).
 
 ## Risques & points d'attention
 
 - **Reprise SQL** : la conversion des absences `EVENTS` et des plannings `INDISPONIBLE` doit être
   rejouée sur une copie de la base de recette avant la production ; compter les lignes avant/après.
-- **Premier passage du cron au déploiement** : sans la garde « clôture ≥ 7 jours », le mois
-  suivant ouvrirait une collecte presque close et marquerait tout le monde « en retard ». Avec la
-  garde, octobre et probablement novembre restent « Non demandés ».
+- **Premier passage du cron au déploiement** : les mois déjà dans la fenêtre (mois en cours et
+  suivant) s'ouvrent aussitôt, avec une clôture proche ou passée : leurs « Sans réponse » sont
+  immédiatement « en retard ». Voulu (pourvoir en urgence), mais à **annoncer aux églises** avant
+  la mise en production, avec le volume de notifications qui en découle (deux à trois collectes
+  d'un coup).
 - **Volume de notifications** : une église de 150 STAR reçoit ~150 notifications à l'ouverture,
   ~N relances ; l'envoi email passe par `dispatchUserEmails` (erreurs SMTP avalées).
 - **Écrans touchés nombreux** (`AbsencesClient` ~36 K) : extraire le formulaire de période plutôt
@@ -332,7 +338,7 @@ garde `registry.has` (module `planning` toujours actif, comme `runReminders`).
 ## Stratégie de tests
 
 - **`state.ts`** (pur, exhaustif) : précédence réponse > période > demandé/non demandé ; `overdue`
-  après échéance ; fenêtre (M-2, J-7, mois sans événement, garde 7 jours) ; `askDueAt` (collecte
+  après échéance ; fenêtre (M-2, J-7, mois sans événement, mois entamé ou clôture passée → ouverte quand même, pas de relance si ouverte après la date de relance) ; `askDueAt` (collecte
   ouverte / passée / événement proche) ; `shouldRelance` (échéance trop proche).
 - **`responses.ts`** : dépliage « tous mes départements », ciblage, refus d'un département non
   servant, alerte au responsable seulement si planifié, `enteredById` d'un tiers.

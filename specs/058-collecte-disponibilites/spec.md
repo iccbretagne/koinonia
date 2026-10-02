@@ -90,8 +90,8 @@ facultative, comme l'absence ciblée d'aujourd'hui (spec 050).
 
 1. Dans la grille d'un événement, Marie voit pour chaque STAR : Disponible / Si besoin /
    Pas disponible / Sans réponse.
-2. Un compteur par événement indique le nombre de STAR **disponibles** (et « si besoin »)
-   au regard du besoin.
+2. Un compteur par événement indique le nombre de STAR **disponibles**, « si besoin » et
+   « sans réponse » (pas d'effectif requis à atteindre : hors périmètre).
 3. Un STAR **déjà de service dans un autre département** le même jour est signalé.
 4. Marie place un STAR indisponible : c'est **possible**, avec un **avertissement** qui précise
    la raison (« a répondu Pas disponible » ou « n'a pas répondu »).
@@ -161,6 +161,10 @@ facultative, comme l'absence ciblée d'aujourd'hui (spec 050).
   réponse ».
 - **Fenêtre modifiée en cours de collecte** : s'applique aux collectes à venir ; une collecte déjà
   ouverte garde la date de clôture annoncée aux STAR.
+- **Collecte ouverte tardivement** (mise en service, ou mois déjà dans la fenêtre) : la collecte
+  s'ouvre quand même pour les événements à venir, même si sa clôture est proche ou passée ; les
+  « Sans réponse » sont alors aussitôt comptés indisponibles, ce qui aide à pourvoir les services
+  en urgence. La notification indique de répondre au plus vite.
 - **Mois sans événement pour un STAR** : il n'est pas sollicité pour ce mois.
 
 ## Reprise de l'existant
