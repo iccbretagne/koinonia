@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
-import { notifyUsers, dispatchUserEmails } from "@/lib/notifications";
+import { notifyUsers } from "@/lib/notifications";
 import { assertAttachmentsAssignable } from "@/modules/accounting";
 import { z } from "zod";
 
@@ -159,48 +159,47 @@ async function notifyAccountingTeam(
     select: { accountingEmails: true, name: true },
   });
 
-  // Notif in-app pour tous les ACCOUNTANT de l'église
   const accountants = await prisma.userChurchRole.findMany({
     where: { churchId, role: "ACCOUNTANT" },
     select: { userId: true },
   });
   const accountantIds = accountants.map((a) => a.userId);
+  const emails = parseEmailList(church?.accountingEmails);
+  if (emails.length === 0 && accountantIds.length === 0) return;
 
-  if (accountantIds.length > 0) {
-    await notifyUsers(accountantIds, {
+  // Un seul email par destinataire : le gabarit détaillé est passé à la notification, qui
+  // l'envoie aux comptables selon leur préférence du domaine "accounting" (spec 053) — sans lui,
+  // le helper enverrait en plus son email générique.
+  // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  const email = buildAccountingNewRequestEmail({
+    requestLabel:   req.label,
+    requestAmount:  amount,
+    requestType:    req.type,
+    departmentName: req.department?.name ?? "—",
+    submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
+    description:    req.description,
+    churchName:     church!.name,
+    requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
+  });
+
+  // Adresse institutionnelle configurée par l'église (church.accountingEmails, liste blanche :
+  // destinataire sans compte) — se cumule avec les comptables, ne les remplace pas.
+  if (emails.length > 0) {
+    sendEmail({ to: emails, ...email })
+      .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
+  }
+
+  await notifyUsers(
+    accountantIds,
+    {
       domain:  "accounting",
       type:    "ACCOUNTING_NEW_REQUEST",
       title:   "Nouvelle demande financière",
       message: `${req.type === "EXPENSE_REPORT" ? "Note de frais" : "Avance de budget"} : ${req.label}`,
       link:    `/accounting/requests/${req.id}`,
-    });
-  }
-
-  // Email : adresse institutionnelle configurée par l'église (church.accountingEmails, liste
-  // blanche, inchangée) + comptables ayant personnellement activé le domaine "accounting"
-  // (spec 053, T52) — les deux se cumulent, l'un ne remplace pas l'autre.
-  const emails = parseEmailList(church?.accountingEmails);
-  if (emails.length > 0 || accountantIds.length > 0) {
-    // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
-    const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
-    const { subject, html } = buildAccountingNewRequestEmail({
-      requestLabel:   req.label,
-      requestAmount:  amount,
-      requestType:    req.type,
-      departmentName: req.department?.name ?? "—",
-      submitterName:  req.submittedBy.name ?? req.submittedBy.email ?? "—",
-      description:    req.description,
-      churchName:     church!.name,
-      requestUrl:     `${appUrl}/accounting/requests/${req.id}`,
-    });
-    if (emails.length > 0) {
-      sendEmail({ to: emails, subject, html })
-        .catch((err) => console.error("[accounting] sendEmail to accountingEmails failed:", err?.message ?? err));
-    }
-    if (accountantIds.length > 0) {
-      dispatchUserEmails(accountantIds, "accounting", { subject, html })
-        .catch((err) => console.error("[accounting] dispatchUserEmails to accountants failed:", err?.message ?? err));
-    }
-  }
+    },
+    { email }
+  );
 }
