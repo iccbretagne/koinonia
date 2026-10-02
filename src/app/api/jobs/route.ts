@@ -103,14 +103,19 @@ async function notifySubscribers(job: {
   await Promise.allSettled(
     subs.map(async (sub) => {
       if (sub.inApp) {
-        await createNotification({
-          userId:  sub.userId,
-          domain:  "jobs",
-          type:    "JOB_OFFER",
-          title:   `Nouvelle offre ${typeLabel}`,
-          message: `${job.title} chez ${job.company}`,
-          link:    `/jobs/${job.id}`,
-        });
+        // L'email dépend de `sub.email` (ci-dessous) : sans `email: false`, le gabarit générique
+        // partirait en plus, y compris pour un abonné qui n'a demandé que l'in-app.
+        await createNotification(
+          {
+            userId:  sub.userId,
+            domain:  "jobs",
+            type:    "JOB_OFFER",
+            title:   `Nouvelle offre ${typeLabel}`,
+            message: `${job.title} chez ${job.company}`,
+            link:    `/jobs/${job.id}`,
+          },
+          { email: false }
+        );
       }
       // Filtre fin existant (spec 053, T30) : `sub.email` reste la condition d'envoi, la
       // préférence du domaine "jobs" (activée par défaut) s'ajoute par-dessus sans le remplacer.

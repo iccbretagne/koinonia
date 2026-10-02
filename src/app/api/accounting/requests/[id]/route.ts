@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
-import { createNotification, dispatchUserEmails } from "@/lib/notifications";
+import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
 
 const patchSchema = z.discriminatedUnion("action", [
@@ -270,35 +270,36 @@ async function notifySubmitter(
     CANCELLED:  "Demande annulée",
   };
 
-  await createNotification({
-    userId:  req.submittedById,
-    domain:  "accounting",
-    type:    `ACCOUNTING_${status}`,
-    title:   titles[status] ?? "Mise à jour demande",
-    message: messages[status] ?? `Statut mis à jour : ${status}`,
-    link:    `/accounting/requests/${req.id}`,
-  });
-
-  // Email — fire-and-forget, gouverné par la préférence du domaine "accounting" (spec 053)
+  // Un seul email : le gabarit détaillé accompagne la notification, envoyé selon la préférence
+  // du domaine "accounting" (spec 053) — sans lui, le helper enverrait son email générique en plus.
   // `||` et non `??` : une variable présente mais vide dans le .env ne doit pas produire un lien relatif
   const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
-  prisma.user.findUnique({ where: { id: req.submittedById }, select: { name: true, email: true } })
-    .then(async (user) => {
-      if (!user?.email) return;
-      const church = await prisma.church.findUnique({ where: { id: req.churchId }, select: { name: true } });
-      const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
-      const { subject, html } = buildAccountingStatusEmail({
-        userName:        user.name ?? user.email,
-        requestLabel:    req.label,
-        requestAmount:   amount,
-        status:          status as "PROCESSING" | "APPROVED" | "REJECTED" | "CANCELLED",
-        priority,
-        priorityNote,
-        rejectionReason,
-        churchName:      church?.name ?? "Koinonia",
-        requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
-      });
-      return dispatchUserEmails([req.submittedById], "accounting", { subject, html });
-    })
-    .catch((err) => console.error("[accounting] dispatchUserEmails failed:", err?.message ?? err));
+  const [user, church] = await Promise.all([
+    prisma.user.findUnique({ where: { id: req.submittedById }, select: { name: true, email: true } }),
+    prisma.church.findUnique({ where: { id: req.churchId }, select: { name: true } }),
+  ]);
+  const amount = Number(req.amount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  const email = buildAccountingStatusEmail({
+    userName:        user?.name ?? user?.email ?? "",
+    requestLabel:    req.label,
+    requestAmount:   amount,
+    status:          status as "PROCESSING" | "APPROVED" | "REJECTED" | "CANCELLED",
+    priority,
+    priorityNote,
+    rejectionReason,
+    churchName:      church?.name ?? "Koinonia",
+    requestUrl:      `${appUrl}/accounting/requests/${req.id}`,
+  });
+
+  await createNotification(
+    {
+      userId:  req.submittedById,
+      domain:  "accounting",
+      type:    `ACCOUNTING_${status}`,
+      title:   titles[status] ?? "Mise à jour demande",
+      message: messages[status] ?? `Statut mis à jour : ${status}`,
+      link:    `/accounting/requests/${req.id}`,
+    },
+    { email }
+  );
 }

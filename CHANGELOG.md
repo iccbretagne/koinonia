@@ -16,6 +16,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - « Absences » devient « Indisponibilités » : périodes uniquement (plus d'absence « sur certains événements »), plus les réponses « Pas disponible » à venir.
 - Le statut de service `INDISPONIBLE` n'est plus posable dans la grille : la disponibilité est dérivée (ADR-0020). Migration : les anciennes absences par événements et plannings `INDISPONIBLE` deviennent des réponses « Pas disponible ».
 
+### Corrigé
+
+- Notifications : un seul email par événement — le gabarit détaillé remplace l'email générique pour la comptabilité (nouvelle demande, fonds remis, changement de statut), les relances d'intégration et la relance d'offre d'emploi ; une nouvelle offre n'envoie plus d'email à un abonné qui ne l'a pas demandé (audit notifications).
+
 ## [v1.27.0] - 2026-10-01
 
 ### Ajouté

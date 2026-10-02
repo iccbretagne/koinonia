@@ -72,8 +72,10 @@ describe("runJobOffersLifecycle", () => {
       expect.objectContaining({ where: { id: "o1" }, data: { renewalRequestedAt: expect.any(Date) } })
     );
     expect(mockCreateNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "u1", domain: "jobs", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" })
+      expect.objectContaining({ userId: "u1", domain: "jobs", type: "JOB_OFFER_RENEWAL", link: "/jobs/o1" }),
+      { email: false }
     );
+    // Un seul email : le détaillé, la notification ne part qu'en in-app.
     expect(mockDispatchUserEmails).toHaveBeenCalledTimes(1);
     expect(mockDispatchUserEmails).toHaveBeenCalledWith(["u1"], "jobs", { subject: "s", html: "h" });
     expect(res).toEqual({ archived: 0, renewalsSent: 1, emailFailures: 0 });
