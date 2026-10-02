@@ -1,7 +1,7 @@
 import { boot } from "@/core/boot";
 import { buildRolePermissions } from "@/core/permissions";
 import { buildNotificationDomains } from "@/core/notification-domains";
-import { planningBus } from "@/modules/planning";
+import { planningBus, registerAvailabilitySubscribers } from "@/modules/planning";
 // Import ciblé sur `bus.ts` plutôt que l'index du module : l'index d'`integration`
 // réexporte `auth.ts`, qui importe `@/lib/auth` (NextAuth) au niveau module — un import
 // statique ici créerait le même cycle/TDZ documenté pour les gardes de module (issue #446).
@@ -55,6 +55,8 @@ export const notificationDomains = buildNotificationDomains(registry);
  * tard, ou données historiques). C'est l'unique exception nommée par la spec :
  * « nettoyer oui, créer non ».
  */
+registerAvailabilitySubscribers();
+
 planningBus.on("planning:event:cancelled", async ({ tx }, { eventId }) => {
   await tx.discipleshipAttendance.deleteMany({ where: { eventId } });
 });

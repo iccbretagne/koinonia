@@ -375,6 +375,50 @@ describe("cancelAbsence", () => {
   });
 });
 
+describe("declareAbsence — spec 058", () => {
+  const params = {
+    churchId: "church-1",
+    memberId: "member-1",
+    startDate: new Date("2026-08-01"),
+    endDate: new Date("2026-08-10"),
+    reason: null,
+    createdById: "user-1",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    planningBus.clear();
+    prismaMock.member.findUnique.mockResolvedValue({ firstName: "Jean", lastName: "Dupont" } as never);
+    prismaMock.absence.create.mockResolvedValue({ id: "abs-1", ...params, status: "ACTIVE" } as never);
+    prismaMock.memberDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.notification.createMany.mockResolvedValue({} as never);
+  });
+
+  it("refuse une absence sur événements précis (400) sans rien écrire", async () => {
+    await expect(declareAbsence({ ...params, kind: "EVENTS", eventIds: ["evt-1"] })).rejects.toMatchObject({ statusCode: 400 });
+    expect(prismaMock.absence.create).not.toHaveBeenCalled();
+  });
+
+  it("supprime dans la même transaction les réponses couvertes par la période (tous départements)", async () => {
+    await declareAbsence(params);
+    const call = prismaMock.availabilityResponse.deleteMany.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where).toMatchObject({ memberId: "member-1", event: { date: { gte: params.startDate } } });
+    expect(call.where.departmentId).toBeUndefined();
+  });
+
+  it("limite la suppression aux départements ciblés", async () => {
+    prismaMock.memberDepartment.findMany.mockResolvedValue([
+      { departmentId: "dept-1", department: { id: "dept-1", ministryId: "min-1" } },
+    ] as never);
+    await declareAbsence({ ...params, allDepartments: false, departmentIds: ["dept-1"] });
+    const call = prismaMock.availabilityResponse.deleteMany.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(call.where.departmentId).toEqual({ in: ["dept-1"] });
+  });
+});
+
 describe("declareAbsence avec backups", () => {
   const baseParams = {
     churchId: "church-1",

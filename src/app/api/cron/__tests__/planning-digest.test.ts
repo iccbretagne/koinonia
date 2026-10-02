@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+// La collecte des disponibilités (spec 058) a ses propres tests : ici on isole le cron.
+vi.mock("@/modules/planning/services/availability/collection", () => ({
+  runAvailabilityTasks: vi.fn().mockResolvedValue({ opened: 0, openingNotified: 0, asksSent: 0, relances: 0 }),
+}));
 vi.mock("@/modules/integration", () => ({
   integrationBus: { on: vi.fn() },
   runInactivityNotifications: vi.fn().mockResolvedValue({}),

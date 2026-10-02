@@ -27,6 +27,24 @@ export type PlanningEvents = {
     requestId?: string;
   };
 
+  /**
+   * La date d'un événement a changé (spec 058) : les réponses de disponibilité données pour
+   * l'ancienne date n'ont plus de sens, une nouvelle demande est créée.
+   */
+  "planning:event:rescheduled": {
+    eventId: string;
+    churchId: string;
+    previousDate: string;
+    newDate: string;
+  };
+
+  /** Des départements ont été ajoutés à un événement (spec 058) : ils doivent répondre. */
+  "planning:event:departments:added": {
+    eventId: string;
+    churchId: string;
+    departmentIds: string[];
+  };
+
   /** Une demande (Request) a été approuvée et exécutée avec succès. */
   "planning:request:executed": {
     requestId: string;

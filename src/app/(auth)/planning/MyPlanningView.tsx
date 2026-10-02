@@ -281,7 +281,7 @@ export function NextServiceCard({ planning, tasks }: { readonly planning: Planni
           Voir l&apos;équipe
         </Link>
         <Link
-          href="/absences"
+          href={`/disponibilites?event=${event.id}`}
           className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control border border-on-brand/50 px-4 font-display text-sm font-semibold text-on-brand transition-colors hover:bg-on-brand/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-brand sm:flex-none"
         >
           Je ne peux pas

@@ -73,6 +73,10 @@ model Church {
   discipleships             Discipleship[]
   eventReports              EventReport[]
   absences                  Absence[]
+  availabilitySettings      AvailabilitySettings?
+  availabilityCollections   AvailabilityCollection[]
+  availabilityResponses     AvailabilityResponse[]
+  availabilityAsks          AvailabilityAsk[]
   // Module media
   mediaEvents               MediaEvent[]
   mediaProjects             MediaProject[]
@@ -215,6 +219,7 @@ model User {
   teamEventsCreated                 TeamEvent[]                  @relation("TeamEventCreatedBy")
   // (relation superviseur église déplacée vers PastoralProfile)
 
+    availabilityEntries AvailabilityResponse[] @relation("AvailabilityEnteredBy")
   @@map("users")
 }
 
@@ -287,6 +292,8 @@ model Department {
   teamEvents        TeamEvent[]
   // Absence ciblée (spec 050) : départements visés quand allDepartments = false
   absenceTargets    AbsenceDepartment[]
+  availabilityResponses AvailabilityResponse[]
+  availabilityAsks  AvailabilityAsk[]
 
   @@map("departments")
 }
@@ -314,6 +321,7 @@ model Member {
   familyIntegrationRequests FamilyIntegrationRequest[] @relation("IntegrationMemberLink")
 
   absences       Absence[]
+  availabilityResponses AvailabilityResponse[]
   absenceBackups AbsenceBackup[]
 
   // Service d'ouverture/fermeture de l'église (spec 041)
@@ -459,6 +467,8 @@ model Event {
   announcementSheet         AnnouncementSheet?
   // Absence ciblée (spec 050) : références depuis les déclarations ciblées sur cet événement
   absenceTargets            AbsenceEvent[]
+  availabilityResponses     AvailabilityResponse[]
+  availabilityAsks          AvailabilityAsk[]
 
   @@map("events")
 }
@@ -2407,4 +2417,103 @@ model AudioShareToken {
 
   @@index([serviceId])
   @@map("audio_share_tokens")
+}
+
+// ─── Disponibilités (spec 058, ADR-0020) ────────────────────────────────────
+
+enum AvailabilityAnswer {
+  AVAILABLE
+  IF_NEEDED
+  UNAVAILABLE
+}
+
+enum AvailabilityAskReason {
+  EVENT_ADDED
+  EVENT_MOVED
+  LEADER
+}
+
+/// Réglages de collecte par église. Absence de ligne = valeurs par défaut, collecte active.
+model AvailabilitySettings {
+  id                String   @id @default(cuid())
+  churchId          String   @unique
+  enabled           Boolean  @default(true)
+  openMonthsBefore  Int      @default(2)
+  closeDaysBefore   Int      @default(7)
+  relanceDaysBefore Int      @default(3)
+  church            Church   @relation(fields: [churchId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("availability_settings")
+}
+
+/// Collecte d'un mois cible. `closesAt` est figée à l'ouverture.
+model AvailabilityCollection {
+  id            String    @id @default(cuid())
+  churchId      String
+  month         DateTime  @db.Date
+  openedAt      DateTime  @default(now())
+  closesAt      DateTime
+  notifiedAt    DateTime?
+  relanceSentAt DateTime?
+  church        Church    @relation(fields: [churchId], references: [id])
+
+  @@unique([churchId, month])
+  @@map("availability_collections")
+}
+
+/// Réponse d'un STAR pour un événement et un département.
+model AvailabilityResponse {
+  id           String             @id @default(cuid())
+  churchId     String
+  memberId     String
+  eventId      String
+  departmentId String
+  answer       AvailabilityAnswer
+  enteredById  String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  church       Church             @relation(fields: [churchId], references: [id])
+  member       Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  event        Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  department   Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  enteredBy    User?              @relation("AvailabilityEnteredBy", fields: [enteredById], references: [id], onDelete: SetNull)
+
+  @@unique([memberId, eventId, departmentId])
+  @@index([eventId, departmentId])
+  @@map("availability_responses")
+}
+
+/// Demande ciblée sur un événement x département.
+model AvailabilityAsk {
+  id              String                @id @default(cuid())
+  churchId        String
+  eventId         String
+  departmentId    String
+  reason          AvailabilityAskReason
+  dueAt           DateTime
+  createdById     String?
+  notifiedAt      DateTime?
+  relanceSentAt   DateTime?
+  manualRelanceAt DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  church          Church                @relation(fields: [churchId], references: [id])
+  event           Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  department      Department            @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, departmentId])
+  @@map("availability_asks")
+}
+
+/// Jamais deux relances pour le même STAR et le même événement le même jour.
+model AvailabilityReminderLog {
+  id       String   @id @default(cuid())
+  memberId String
+  eventId  String
+  sentOn   DateTime @db.Date
+
+  @@unique([memberId, eventId, sentOn])
+  @@map("availability_reminder_logs")
 }
