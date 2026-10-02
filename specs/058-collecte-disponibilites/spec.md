@@ -117,6 +117,24 @@ facultative, comme l'absence ciblée d'aujourd'hui (spec 050).
 2. Marie (ou le Secrétariat) saisit la réponse de Jean pour lui, sur le même écran.
 3. La réponse est marquée comme saisie par un tiers dans l'historique.
 
+### Relances
+
+- **Collecte mensuelle** : **une** relance, envoyée un nombre de jours avant la clôture réglé
+  par l'église avec la fenêtre (par défaut **3 jours**), aux seuls STAR qui n'ont pas répondu à
+  tous leurs événements.
+- **Demandes ciblées** (événement ajouté ou déplacé, demande ponctuelle d'un responsable) :
+  elles ont une **échéance** — la clôture de la collecte si l'événement en fait partie et
+  qu'elle n'est pas passée, sinon 7 jours avant l'événement. Une relance part avant cette
+  échéance, avec le même délai ; pas de relance si l'échéance est trop proche pour en laisser
+  le temps.
+- **Relance manuelle** : depuis la grille d'un événement, un responsable peut **relancer les
+  « Sans réponse »** de son département, au plus **une fois par jour** et par événement, pour
+  éviter les sollicitations répétées.
+- Ouverture, demandes et relances suivent les **préférences de notification** de chacun
+  (notification dans l'application, et email si la personne ne l'a pas désactivé pour le
+  planning).
+- Un STAR ne reçoit jamais deux relances pour le même événement le même jour.
+
 ### Scénarios alternatifs / cas limites
 
 - **Modification après la clôture** : un STAR peut encore changer sa réponse jusqu'à
@@ -170,7 +188,12 @@ facultative, comme l'absence ciblée d'aujourd'hui (spec 050).
 - [ ] Seuls le Secrétaire, l'équipe Secrétariat, l'Admin et le Super Admin peuvent régler la
   fenêtre de collecte de leur église.
 - [ ] À l'ouverture, chaque STAR concerné reçoit une notification ; une relance part avant la
-  clôture vers ceux qui n'ont pas tout renseigné, et vers eux seuls.
+  clôture, au délai réglé par l'église, vers ceux qui n'ont pas tout renseigné, et vers eux seuls.
+- [ ] Une demande ciblée est relancée avant son échéance, sauf si celle-ci est trop proche.
+- [ ] Un responsable peut relancer les « Sans réponse » de son département sur un événement, au
+  plus une fois par jour.
+- [ ] Les notifications de collecte, de demande et de relance respectent les préférences de
+  notification (in-app, email).
 - [ ] Un STAR membre de plusieurs départements reçoit **une seule** collecte et répond sur **un
   seul** écran, qui liste les événements où au moins un de ses départements sert.
 - [ ] Le STAR peut répondre Disponible / Si besoin / Pas disponible par événement, et poser
@@ -221,7 +244,7 @@ facultative, comme l'absence ciblée d'aujourd'hui (spec 050).
 
 ## Questions ouvertes
 
-Arbitrages du 2026-10-02 intégrés ci-dessus (alerte au responsable dès le lot 1, remise à zéro
+Arbitrages du 2026-10-02 intégrés ci-dessus (relances : une avant clôture à délai réglable, demandes ciblées relancées avant échéance, relance manuelle quotidienne, préférences de notification ; alerte au responsable dès le lot 1, remise à zéro
 sur changement de date, collecte active par défaut, clôture annoncée non recalculée, reprise des
 « Indisponible » en réponses, backup et frise conservés, événements d'équipe exclus).
 
