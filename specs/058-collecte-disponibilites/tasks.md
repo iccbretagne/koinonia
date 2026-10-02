@@ -115,7 +115,7 @@
   *(fichier : `src/app/api/events/[eventId]/departments/[deptId]/planning/route.ts`)*
 - [x] **T23** — Planning `PUT` : `INDISPONIBLE` retiré de l'enum Zod accepté.
   *(même fichier)*
-- [ ] **T24** [P] — *(POST/PATCH faits en A ; `GET`/export/`target-options` reportés en B avec la vue « Indisponibilités »)* Absences `POST`/`PATCH` et `target-options` : `kind` limité à `PERIOD` ;
+- [x] **T24** [P] — *(POST/PATCH faits en A ; `GET`/export/`target-options` reportés en B avec la vue « Indisponibilités »)* Absences `POST`/`PATCH` et `target-options` : `kind` limité à `PERIOD` ;
   `GET`/export incluent les réponses `UNAVAILABLE` pour la vue « Indisponibilités ».
   *(fichiers : `src/app/api/absences/route.ts`, `[id]/route.ts`, `export/route.ts`,
   `target-options/route.ts`)*
@@ -124,29 +124,29 @@
 
 #### 4.1 « Mes disponibilités »
 
-- [ ] **T25** — Page serveur `/disponibilites` : membre lié, membres gérables
+- [x] **T25** — Page serveur `/disponibilites` : membre lié, membres gérables
   (`absences:manage`), paramètres `?month`/`?event`/`?member`, `loading.tsx`.
   *(fichiers : `src/app/(auth)/disponibilites/page.tsx`, `loading.tsx`)*
-- [ ] **T26** — Client : onglets par mois avec échéance, carte par événement, segmenté
+- [x] **T26** — Client : onglets par mois avec échéance, carte par événement, segmenté
   Disponible / Si besoin / Pas disponible, « Sans réponse » visible, « Préciser par département »
   (si ≥ 2 départements servants), enregistrement par carte avec toast, événement `?event` mis en
   évidence, mobile d'abord. *(fichier : `src/app/(auth)/disponibilites/AvailabilityClient.tsx`)*
-- [ ] **T27** — Extraction du formulaire de période (dates, départements, « Qui me remplace ? »
+- [x] **T27** — Extraction du formulaire de période (dates, départements, « Qui me remplace ? »
   pour un responsable) depuis `AbsencesClient` en composant partagé ; bouton « Pas disponible du
   … au … » dans `AvailabilityClient`. *(fichiers : `src/components/UnavailabilityPeriodForm.tsx`,
   `AbsencesClient.tsx`, `AvailabilityClient.tsx`)*
-- [ ] **T28** — « Répondre pour… » (gérables) et mention « Saisi par X ».
+- [x] **T28** — « Répondre pour… » (gérables) et mention « Saisi par X ».
   *(fichier : `AvailabilityClient.tsx`)*
 
 #### 4.2 Réglages
 
-- [ ] **T29** [P] — `/disponibilites/parametres` : activation + trois délais, sur le modèle de
+- [x] **T29** [P] — `/disponibilites/parametres` : activation + trois délais, sur le modèle de
   `/care/parametres`. *(fichiers : `src/app/(auth)/disponibilites/parametres/page.tsx`,
   `AvailabilitySettingsClient.tsx`)*
 
 #### 4.3 « Indisponibilités »
 
-- [ ] **T30** — `/absences` : retrait de « Mes absences », du formulaire et du mode « Des
+- [x] **T30** — `/absences` : retrait de « Mes absences », du formulaire et du mode « Des
   événements précis » ; titre « Indisponibilités » ; la vue d'ensemble, la frise et l'export
   affichent périodes et réponses « Pas disponible » ; libellés sans jargon (« Backup » →
   « Remplaçant »). *(fichiers : `src/app/(auth)/absences/page.tsx`, `AbsencesClient.tsx`,
@@ -154,10 +154,10 @@
 
 #### 4.4 Navigation & liens
 
-- [ ] **T31** [P] — Navigation : « Disponibilités » pour tout membre d'un département,
+- [x] **T31** [P] — Navigation : « Disponibilités » pour tout membre d'un département,
   « Indisponibilités » pour `absences:view`. *(fichiers : `src/lib/navigation.ts`,
   `src/app/(auth)/layout.tsx`)*
-- [ ] **T32** [P] — « Je ne peux pas » → `/disponibilites?event=<id>`.
+- [x] **T32** [P] — « Je ne peux pas » → `/disponibilites?event=<id>`.
   *(fichier : `src/app/(auth)/planning/MyPlanningView.tsx`)*
 
 #### 4.5–4.7 Grille
@@ -174,7 +174,7 @@
 
 #### 4.8 Documentation
 
-- [ ] **T37** [P] — Guide : entrées « Indiquer mes disponibilités », « Lire les disponibilités
+- [x] **T37** [P] — Guide : entrées « Indiquer mes disponibilités », « Lire les disponibilités
   dans la grille », « Régler la collecte » ; `docs/processus/absences.md` réécrit.
   *(fichiers : `src/components/GuideContent.tsx`, `docs/processus/absences.md`)*
 - [ ] **T38** [P] — Permission `availability:settings` dans la matrice de `CLAUDE.md` et

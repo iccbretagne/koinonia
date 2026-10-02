@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { requireAuth, getCurrentChurchId, getUserDepartmentScope } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +18,8 @@ export default async function AbsencesPage() {
   );
   const canView = session.user.isSuperAdmin || userPermissions.has("absences:view");
   const canManage = session.user.isSuperAdmin || userPermissions.has("absences:manage");
+  // Sans droit de consultation, la déclaration passe par « Mes disponibilités » (spec 058).
+  if (!canView) redirect("/disponibilites");
 
   const memberLinks = await prisma.memberUserLink.findMany({
     where: { userId: session.user.id, churchId },

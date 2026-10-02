@@ -99,6 +99,8 @@ export interface NavigationInput {
   readonly hasMyPlanning?: boolean;
   readonly showStarEvents?: boolean;
   readonly hasAbsences?: boolean;
+  /** « Disponibilités » : tout compte lié à une fiche STAR (spec 058). */
+  readonly hasAvailability?: boolean;
   readonly hasRooms?: boolean;
   readonly hasAccounting?: boolean;
   readonly hasJobs?: boolean;
@@ -229,7 +231,8 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
 
   const planningPages: NavPage[] = [];
   if (input.hasMyPlanning) planningPages.push({ href: "/planning", label: "Mon planning" });
-  if (input.hasAbsences) planningPages.push({ href: "/absences", label: "Absences" });
+  if (input.hasAvailability) planningPages.push({ href: "/disponibilites", label: "Disponibilités" });
+  if (input.hasAbsences) planningPages.push({ href: "/absences", label: "Indisponibilités" });
   if (input.hasPlanningAccess) {
     for (const d of input.departments) {
       planningPages.push({ href: `/dashboard?dept=${d.id}`, label: d.name, deptId: d.id, group: d.ministryName || undefined });

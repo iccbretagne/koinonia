@@ -24,6 +24,7 @@ export const planningModule = defineModule({
       { path: "/events" },
       { path: "/planning" },
       { path: "/absences" },
+      { path: "/disponibilites" },
       { path: "/requests" },
       { path: "/secretariat" },
       { path: "/communication" },
