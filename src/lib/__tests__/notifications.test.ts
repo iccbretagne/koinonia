@@ -60,10 +60,10 @@ describe("dispatchUserEmails", () => {
     expect(result).toEqual({ sent: 0, failed: 0 });
   });
 
-  it("n'envoie rien pour un domaine désactivé par défaut (rooms) sans préférence explicite", async () => {
+  it("n'envoie rien pour un domaine désactivé par défaut (media) sans préférence explicite", async () => {
     prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "a@example.com" }]);
 
-    const result = await dispatchUserEmails(["u1"], "rooms", { subject: "s", html: "h" });
+    const result = await dispatchUserEmails(["u1"], "media", { subject: "s", html: "h" });
 
     expect(mockSendEmail).not.toHaveBeenCalled();
     expect(result).toEqual({ sent: 0, failed: 0 });
@@ -72,10 +72,10 @@ describe("dispatchUserEmails", () => {
   it("envoie pour un domaine désactivé par défaut si l'utilisateur l'a explicitement activé", async () => {
     prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "a@example.com" }]);
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([
-      { userId: "u1", domain: "rooms", enabled: true },
+      { userId: "u1", domain: "media", enabled: true },
     ]);
 
-    const result = await dispatchUserEmails(["u1"], "rooms", { subject: "s", html: "h" });
+    const result = await dispatchUserEmails(["u1"], "media", { subject: "s", html: "h" });
 
     expect(mockSendEmail).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ sent: 1, failed: 0 });
@@ -195,7 +195,7 @@ describe("sans tx — l'email part quand un contenu est fourni et la préférenc
 });
 
 /**
- * Test de bout en bout (spec 053, T61) : un domaine désactivé par défaut (`rooms`,
+ * Test de bout en bout (spec 053, T61) : un domaine désactivé par défaut (`media`,
  * `defaultEmail: false`) n'envoie rien tant que l'utilisateur ne l'a pas explicitement activé,
  * puis envoie effectivement l'email une fois cette préférence enregistrée — en passant par le
  * point d'entrée réel (`createNotification`), pas directement par `dispatchUserEmails`.
@@ -208,11 +208,11 @@ describe("bout en bout — activer un domaine désactivé par défaut déclenche
     prismaMock.user.findMany.mockResolvedValue([{ id: "u1", email: "a@example.com" }]);
   });
 
-  it("domaine « rooms » jamais réglé : aucun email, malgré un contenu email fourni", async () => {
+  it("domaine « media » jamais réglé : aucun email, malgré un contenu email fourni", async () => {
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([]);
 
     await createNotification(
-      { userId: "u1", domain: "rooms", type: "ROOM_CHECKLIST_ISSUE", title: "t", message: "m", link: "/rooms" },
+      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/media" },
       { email: { subject: "s", html: "h" } }
     );
 
@@ -220,13 +220,13 @@ describe("bout en bout — activer un domaine désactivé par défaut déclenche
     expect(mockSendEmail).not.toHaveBeenCalled();
   });
 
-  it("domaine « rooms » explicitement activé par l'utilisateur : l'email part", async () => {
+  it("domaine « media » explicitement activé par l'utilisateur : l'email part", async () => {
     prismaMock.notificationEmailPreference.findMany.mockResolvedValue([
-      { userId: "u1", domain: "rooms", enabled: true },
+      { userId: "u1", domain: "media", enabled: true },
     ]);
 
     await createNotification(
-      { userId: "u1", domain: "rooms", type: "ROOM_CHECKLIST_ISSUE", title: "t", message: "m", link: "/rooms" },
+      { userId: "u1", domain: "media", type: "MEDIA_FILE_APPROVED", title: "t", message: "m", link: "/media" },
       { email: { subject: "s", html: "h" } }
     );
 

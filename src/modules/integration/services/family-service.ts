@@ -495,6 +495,34 @@ export async function runWaitingRelanceNotifications(
 // ─── Renvoi à l'équipe intégration (spec 051, amendement de recette) ──────────
 
 /** Prévient toute l'équipe intégration qu'un berger lui renvoie une demande, raison comprise. */
+/**
+ * Prévient l'équipe intégration à l'arrivée d'une demande publique (audit notifications) : sans
+ * cela, elle ne la découvrait que dans sa file ou à la relance d'inactivité. Email selon la
+ * préférence du domaine "integration" (activé par défaut). Ne fait jamais échouer le dépôt.
+ */
+export async function notifyIntegrationTeamNewRequest(params: {
+  churchId: string;
+  requestId: string;
+  firstName: string;
+  lastName: string;
+}): Promise<void> {
+  const { churchId, requestId, firstName, lastName } = params;
+  const managers = await createIntegrationManagersResolver()(churchId);
+  if (managers.length === 0) return;
+  await notifyUsers(
+    managers.map((m) => m.id),
+    {
+      domain: "integration",
+      type: "INTEGRATION_NEW_REQUEST",
+      title: "Nouvelle demande d'intégration",
+      message: `${firstName} ${lastName} a déposé une demande d'intégration.`,
+      link: `/integration/requests/${requestId}`,
+      entityType: REQUEST_ENTITY,
+      entityId: requestId,
+    }
+  ).catch(() => {});
+}
+
 export async function notifyIntegrationTeamHandback(params: {
   churchId: string;
   requestId: string;

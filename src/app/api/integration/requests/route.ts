@@ -6,6 +6,7 @@ import {
   contactConsentSchema,
   initialRequestStatusData,
   integrationBus,
+  notifyIntegrationTeamNewRequest,
 } from "@/modules/integration";
 import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
@@ -199,6 +200,14 @@ export async function POST(request: Request) {
       );
 
       return created;
+    });
+
+    // L'équipe intégration est prévenue de l'arrivée de la demande (in-app + email selon sa préférence).
+    await notifyIntegrationTeamNewRequest({
+      churchId: data.churchId,
+      requestId: integrationRequest.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
     });
 
     // Email de confirmation au demandeur

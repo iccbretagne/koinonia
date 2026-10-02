@@ -28,6 +28,7 @@ vi.mock("@/lib/email", () => ({
 }));
 
 const mockBusEmit = vi.fn();
+const mockNotifyTeam = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/modules/integration", async () => {
   const { z } = await import("zod");
   return {
@@ -36,6 +37,7 @@ vi.mock("@/modules/integration", async () => {
     contactConsentSchema: z.enum(["NOW", "LATER"]).default("NOW"),
     initialRequestStatusData: () => ({ status: "SUBMITTED", waitingFrom: null, waitingSince: null }),
     integrationBus: { emit: (...args: unknown[]) => mockBusEmit(...args) },
+    notifyIntegrationTeamNewRequest: (...args: unknown[]) => mockNotifyTeam(...args),
   };
 });
 
@@ -72,6 +74,7 @@ function expectNoSideEffect() {
   expect(prismaMock.familyIntegrationRequest.create).not.toHaveBeenCalled();
   expect(prismaMock.personJourney.create).not.toHaveBeenCalled();
   expect(mockBusEmit).not.toHaveBeenCalled();
+  expect(mockNotifyTeam).not.toHaveBeenCalled();
 }
 
 describe("POST /api/integration/requests — CAPTCHA", () => {
@@ -124,5 +127,9 @@ describe("POST /api/integration/requests — CAPTCHA", () => {
     expect(mockVerifyTurnstile).toHaveBeenCalledWith("tok-valide", "203.0.113.13");
     expect(prismaMock.familyIntegrationRequest.create).toHaveBeenCalledOnce();
     expect(mockSendEmail).toHaveBeenCalledOnce();
+    // L'équipe intégration est prévenue à l'arrivée de la demande (audit notifications).
+    expect(mockNotifyTeam).toHaveBeenCalledWith(
+      expect.objectContaining({ churchId: "church-1", firstName: "Jean", lastName: "Dupont" })
+    );
   });
 });

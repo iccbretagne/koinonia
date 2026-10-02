@@ -125,6 +125,33 @@ interface ValidateChecklistParams {
 }
 
 /**
+ * Notification « écart constaté » au créateur de la réservation. Écrite dans la transaction
+ * (in-app), l'email ne peut pas partir dedans (`tx` ⇒ aucun envoi, spec 053) : il est envoyé
+ * après validation par `dispatchIssueEmail` — sans quoi le domaine « Salles » n'envoyait jamais
+ * d'email, même activé (audit notifications).
+ */
+interface IssueNotice {
+  userId: string;
+  title: string;
+  message: string;
+  link: string;
+}
+
+async function notifyIssue(tx: DbClient, notice: IssueNotice) {
+  const { createNotification } = await import("@/lib/notifications");
+  await createNotification({ ...notice, domain: "rooms", type: "ROOM_CHECKLIST_ISSUE" }, { tx });
+}
+
+async function dispatchIssueEmail(notice: IssueNotice | null): Promise<void> {
+  if (!notice) return;
+  const [{ dispatchUserEmails }, { buildGenericNotificationEmail }] = await Promise.all([
+    import("@/lib/notifications"),
+    import("@/lib/email"),
+  ]);
+  await dispatchUserEmails([notice.userId], "rooms", buildGenericNotificationEmail(notice));
+}
+
+/**
  * Contrôle une main courante déclarée fermée. Concordance avec la déclaration → `VALIDATED` ;
  * écart (ou `incidentNotes` renseigné) → `ISSUE_REPORTED`, avec notification du créateur.
  */
@@ -132,7 +159,7 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
   const { reservationId, validatorId, validatedClosedProperly, validatedCleaned, validatedEquipmentOk, incidentNotes } = params;
   const { prisma } = await import("@/lib/prisma");
 
-  return prisma.$transaction(async (tx) => {
+  const { updated, notice } = await prisma.$transaction(async (tx) => {
     const reservation = await getReservationOwnership(reservationId, tx);
     if (reservation.checklist.status !== "CLOSED_DECLARED") {
       throw new ApiError(409, "Cette main courante n'a pas encore de fermeture déclarée");
@@ -162,23 +189,21 @@ export async function validateChecklist(params: ValidateChecklistParams): Promis
       },
     });
 
+    let notice: IssueNotice | null = null;
     if (hasIssue) {
-      const { createNotification } = await import("@/lib/notifications");
-      await createNotification(
-        {
-          userId: reservation.createdById,
-          domain: "rooms",
-          type: "ROOM_CHECKLIST_ISSUE",
-          title: "Écart constaté sur une salle",
-          message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} ».`,
-          link: "/rooms",
-        },
-        { tx }
-      );
+      notice = {
+        userId: reservation.createdById,
+        title: "Écart constaté sur une salle",
+        message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} ».`,
+        link: "/rooms",
+      };
+      await notifyIssue(tx, notice);
     }
 
-    return updated;
+    return { updated, notice };
   });
+  await dispatchIssueEmail(notice);
+  return updated;
 }
 
 /** Réservé aux réservations jamais déclarées (ouverture/fermeture) et déjà terminées. */
@@ -207,7 +232,7 @@ export async function reportIssueWithoutDeclaration(
   const { reservationId, validatorId, incidentNotes } = params;
   const { prisma } = await import("@/lib/prisma");
 
-  return prisma.$transaction(async (tx) => {
+  const { updated, notice } = await prisma.$transaction(async (tx) => {
     const reservation = await getReservationOwnership(reservationId, tx);
     assertUndeclaredAndPastDue(reservation.checklist.status, reservation.endAt);
 
@@ -222,21 +247,18 @@ export async function reportIssueWithoutDeclaration(
       },
     });
 
-    const { createNotification } = await import("@/lib/notifications");
-    await createNotification(
-      {
-        userId: reservation.createdById,
-        domain: "rooms",
-        type: "ROOM_CHECKLIST_ISSUE",
-        title: "Écart constaté sur une salle",
-        message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} », dont la main courante n'avait pas été déclarée.`,
-        link: "/rooms",
-      },
-      { tx }
-    );
+    const notice: IssueNotice = {
+      userId: reservation.createdById,
+      title: "Écart constaté sur une salle",
+      message: `Un écart a été constaté par l'équipe de contrôle sur la réservation « ${reservation.title} », dont la main courante n'avait pas été déclarée.`,
+      link: "/rooms",
+    };
+    await notifyIssue(tx, notice);
 
-    return updated;
+    return { updated, notice };
   });
+  await dispatchIssueEmail(notice);
+  return updated;
 }
 
 interface CloseWithoutDeclarationParams {

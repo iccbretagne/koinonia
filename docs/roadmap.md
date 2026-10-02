@@ -89,7 +89,7 @@
 - [x] API REST : CRUD, attendance, stats, tree (lignée récursive), export Excel
 - [x] Dashboard /admin/discipleship : 3 onglets (Relations, Appel, Statistiques)
 - [x] Export Excel : feuille statistiques + feuille détail présences
-- [x] Notifications rappel de suivi pour les faiseurs de disciples
+- [ ] Notifications rappel de suivi pour les faiseurs de disciples (à faire — jamais implémentée : aucun domaine ni émetteur de notification discipolat, constat de l'audit notifications)
 
 ## Comptes rendus
 

@@ -24,6 +24,7 @@ export {
   notifyBergerAssigned,
   notifyBergerUnassigned,
   notifyIntegrationTeamHandback,
+  notifyIntegrationTeamNewRequest,
   runInactivityNotifications,
   DEFAULT_INTEGRATION_SETTINGS,
   getIntegrationSettings,
