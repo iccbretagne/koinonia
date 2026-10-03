@@ -116,6 +116,11 @@ cette église. Deux mécanismes dérogent volontairement à cette règle, sur de
 | Vérifie dans | `requireChurchPermission` — garde générique du multi-tenant | `requireAudioListenAccess` — garde dédié, borné au module audio |
 | Qui l'accorde | l'administration (attribution du profil pastoral à une personne) | un Admin/Super Admin de l'église **propriétaire**, à une église entière |
 
+Les permissions d'un profil pastoral **s'ajoutent** à celles d'un éventuel rôle classique dans la
+même église (berger également STAR, par exemple) : avant la v1.28.1, la présence d'un rôle les
+écartait et la navigation proposait des pages refusées (FORBIDDEN). Elles restent bornées aux
+églises de `pastoralChurchIds`.
+
 Le partage de bibliothèque audio est le **deuxième** axe d'accès transverse inter-églises du
 projet. Il ne passe volontairement **pas** par `requireChurchPermission` ni par
 `PASTORAL_READ_PERMISSIONS` : élargir le garde générique qui protège tout le multi-tenant pour un

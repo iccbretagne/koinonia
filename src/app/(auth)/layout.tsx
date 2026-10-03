@@ -62,24 +62,6 @@ export default async function AuthLayout({
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
   const hasBothRoles = isPastoral && hasClassicRole;
 
-  async function switchToAdminMode() {
-    "use server";
-    (await cookies()).set("koinonia-view-mode", "admin", { path: "/", maxAge: 2592000 });
-    // Même accueil que l'entrée « Accueil » de la navigation (landingHref) plutôt que
-    // "/dashboard" en dur : sur une instance qui désactive le module planning, ou pour un
-    // rôle sans planning:department (spec 031/#462), ce dernier mènerait à un 404/FORBIDDEN.
-    redirect(landingHref({ isPastoral: false, hasPlanningAccess: canAccessDashboard, hasStarPlanning }));
-  }
-  async function signOutAction() {
-    "use server";
-    await signOut({ redirectTo: "/" });
-  }
-  async function switchToPastoralMode() {
-    "use server";
-    (await cookies()).set("koinonia-view-mode", "pastoral", { path: "/", maxAge: 2592000 });
-    redirect("/pastoral");
-  }
-
   const currentChurchDb = currentChurchId
     ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
     : null;
@@ -364,6 +346,27 @@ export default async function AuthLayout({
   // "Mon planning", événements STAR et absences reposent sur planning:view (conservé
   // par le STAR), volontairement dissocié de hasPlanningAccess (spec 031/#462).
   const hasStarPlanning = userPermissions.has("planning:view");
+
+  // Actions de bascule déclarées APRÈS canAccessDashboard/hasStarPlanning : une server action
+  // inline est extraite du composant et ne reçoit que les variables liées à l'endroit où elle
+  // est définie — déclarées avant elles, leur exécution échouait (ReferenceError en recette).
+  async function switchToAdminMode() {
+    "use server";
+    (await cookies()).set("koinonia-view-mode", "admin", { path: "/", maxAge: 2592000 });
+    // Même accueil que l'entrée « Accueil » de la navigation (landingHref) plutôt que
+    // "/dashboard" en dur : sur une instance qui désactive le module planning, ou pour un
+    // rôle sans planning:department (spec 031/#462), ce dernier mènerait à un 404/FORBIDDEN.
+    redirect(landingHref({ isPastoral: false, hasPlanningAccess: canAccessDashboard, hasStarPlanning }));
+  }
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
+  async function switchToPastoralMode() {
+    "use server";
+    (await cookies()).set("koinonia-view-mode", "pastoral", { path: "/", maxAge: 2592000 });
+    redirect("/pastoral");
+  }
   // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
   // section Événements existante (Liste/Calendrier), réservée à events:view.
   const showStarEvents = hasStarPlanning && !hasEventsAccess;
