@@ -219,6 +219,14 @@
   ::placeholder {
     color: var(--ink-subtle);
   }
+  /* Liste déroulante native : sur desktop, le popup n'hérite pas toujours du fond du <select>
+     et reste clair en thème sombre (texte illisible) — on le lie explicitement aux tokens. */
+  select,
+  select option,
+  select optgroup {
+    background-color: var(--surface);
+    color: var(--ink);
+  }
   /* Les bordures par défaut de Tailwind v4 (currentColor) suivent le token de filet. */
   *, ::after, ::before, ::backdrop, ::file-selector-button {
     border-color: var(--line);
