@@ -228,5 +228,5 @@
 - [x] Migration rejouée sur une copie de la base de recette (reprise vérifiée) avant la production *(appliquée en recette par « Deploy Staging », recette validée le 2026-10-02)*
 - [x] Tous les critères d'acceptation de `spec.md` satisfaits
 - [x] CHANGELOG (section non publiée) mis à jour
-- [ ] PR finale `feat/collecte-disponibilites` → `main` ; annonce aux églises préparée (ouverture
+- [x] PR finale `feat/collecte-disponibilites` → `main` (#624) ; annonce aux églises préparée (`annonce-eglises.md` ; ouverture
   simultanée de plusieurs collectes au déploiement)
