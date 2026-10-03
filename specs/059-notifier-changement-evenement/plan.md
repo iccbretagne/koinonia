@@ -1,7 +1,7 @@
 # Plan technique — Prévenir les personnes planifiées d'un changement ou d'une suppression d'événement
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-03
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.

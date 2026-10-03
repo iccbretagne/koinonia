@@ -3,7 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
-import { executeRequest, planningBus } from "@/modules/planning";
+import { executeRequest, planningBus, sendEventChangeNotices, type EventChangeNotices } from "@/modules/planning";
 import { createNotification } from "@/lib/notifications";
 import { functionForRequestType } from "@/lib/department-functions";
 import { isMemberOfFunction, getFunctionDepartmentsMap } from "@/lib/function-departments";
@@ -212,6 +212,8 @@ export async function PATCH(
 
     const isExecutableType = EXECUTABLE_TYPES.includes(existing.type);
 
+    // Notifications de changement d'événement (spec 059), envoyées après le commit.
+    let eventNotices: EventChangeNotices | undefined;
     const updated = await prisma.$transaction(async (tx) => {
       // For executable types approved → run auto-execution
       if (data.status === "APPROUVEE" && isExecutableType) {
@@ -225,6 +227,7 @@ export async function PATCH(
           effectivePayload,
           session.user.id
         );
+        eventNotices = execResult.notices;
 
         const result = await tx.request.update({
           where: { id },
@@ -323,6 +326,8 @@ export async function PATCH(
       return result;
     });
 
+    const { notified } = eventNotices ? await sendEventChangeNotices(eventNotices) : { notified: 0 };
+
     await logAudit({ userId: session.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "Request", entityId: id, details: { status: data.status, type: existing.type } });
 
     // Notify demandeur on approval / refusal
@@ -348,7 +353,7 @@ export async function PATCH(
       }
     }
 
-    return successResponse(updated);
+    return successResponse({ ...updated, notified });
   } catch (error) {
     return errorResponse(error);
   }

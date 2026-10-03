@@ -2,7 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { deleteEvents, planningBus } from "@/modules/planning";
+import {
+  deleteEvents,
+  planningBus,
+  collectEventChangeNotices,
+  sendEventChangeNotices,
+  type EventChange,
+} from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(
@@ -110,7 +116,8 @@ export async function PUT(
         : null;
 
       // Update each event individually: propagate time + relative deadline
-      await prisma.$transaction(async (tx) => {
+      const notices = await prisma.$transaction(async (tx) => {
+        const changes: EventChange[] = [];
         for (const ev of seriesEvents) {
           const eventDate = new Date(ev.date);
           // Keep the event's own date (day) but apply the new time
@@ -136,8 +143,11 @@ export async function PUT(
             { tx, churchId, userId: putSession.user.id },
             { eventId: ev.id, churchId, previousDate: ev.date.toISOString(), newDate: eventDate.toISOString() }
           );
+          changes.push({ kind: "MOVED", eventId: ev.id, previousDate: ev.date, newDate: eventDate });
         }
+        return collectEventChangeNotices(tx, churchId, changes, { actorId: putSession.user.id });
       });
+      const { notified } = await sendEventChangeNotices(notices);
 
       // Re-fetch the current event for UI update
       const event = await prisma.event.findUnique({
@@ -152,10 +162,10 @@ export async function PUT(
 
       await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title, seriesUpdated: seriesEvents.length } });
 
-      return successResponse({ ...event, seriesUpdated: seriesEvents.length });
+      return successResponse({ ...event, seriesUpdated: seriesEvents.length, notified });
     }
 
-    const event = await prisma.$transaction(async (tx) => {
+    const { event, notices } = await prisma.$transaction(async (tx) => {
     const before = await tx.event.findUnique({ where: { id: eventId }, select: { date: true } });
     const updated = await tx.event.update({
       where: { id: eventId },
@@ -184,12 +194,19 @@ export async function PUT(
         { eventId, churchId, previousDate: before.date.toISOString(), newDate: updated.date.toISOString() }
       );
     }
-    return updated;
+    const notices = await collectEventChangeNotices(
+      tx,
+      churchId,
+      before ? [{ kind: "MOVED", eventId, previousDate: before.date, newDate: updated.date }] : [],
+      { actorId: putSession.user.id }
+    );
+    return { event: updated, notices };
     });
+    const { notified } = await sendEventChangeNotices(notices);
 
     await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title } });
 
-    return successResponse(event);
+    return successResponse({ ...event, notified });
   } catch (error) {
     return errorResponse(error);
   }
@@ -275,13 +292,14 @@ export async function DELETE(
       throw new ApiError(404, "Événement introuvable");
     }
 
-    await prisma.$transaction(async (tx) => {
-      await deleteEvents({ tx, churchId, userId: delSession.user.id }, [eventId]);
-    });
+    const notices = await prisma.$transaction((tx) =>
+      deleteEvents({ tx, churchId, userId: delSession.user.id }, [eventId])
+    );
+    const { notified } = await sendEventChangeNotices(notices);
 
     await logAudit({ userId: delSession.user.id, churchId, action: "DELETE", entityType: "Event", entityId: eventId, details: { title: event.title } });
 
-    return successResponse({ success: true });
+    return successResponse({ success: true, notified });
   } catch (error) {
     return errorResponse(error);
   }

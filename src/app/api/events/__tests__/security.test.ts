@@ -18,6 +18,7 @@ describe("PATCH /api/events (bulk) — cross-tenant isolation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequirePermission.mockResolvedValue(createAdminSession());
+    prismaMock.event.findMany.mockResolvedValue([]); // audience des notifications (spec 059)
   });
 
   it("rejects bulk delete when IDs span multiple churches", async () => {

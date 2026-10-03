@@ -10,6 +10,7 @@ import { eventTypeTone } from "@/components/event-type-tone";
 import Modal from "@/components/ui/Modal";
 import BulkActionBar from "@/components/ui/BulkActionBar";
 import StatusChip from "@/components/ui/StatusChip";
+import { useToast } from "@/components/ui/Toast";
 
 interface EventItem {
   id: string;
@@ -82,6 +83,7 @@ function defaultMonth(): string {
 export default function EventsClient({ initialEvents, churches }: Props) {
   const [events, setEvents] = useState(initialEvents);
   const [modalOpen, setModalOpen] = useState(false);
+  const toast = useToast();
   const [editing, setEditing] = useState<EventItem | null>(null);
   const [title, setTitle] = useState("");
   const [type, setType] = useState("");
@@ -228,6 +230,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
 
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Erreur"); }
+      announceNotified(await res.json());
 
       await reloadEvents();
       setModalOpen(false); setSeriesStep(false);
@@ -238,11 +241,18 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     }
   }
 
+  /** Spec 059 : nombre de personnes planifiées prévenues d'un déplacement ou d'une annulation. */
+  function announceNotified(body: { notified?: number }) {
+    const n = body?.notified ?? 0;
+    if (n > 0) toast.success(`${n} personne${n > 1 ? "s" : ""} prévenue${n > 1 ? "s" : ""}`);
+  }
+
   async function handleDelete(ev: EventItem) {
     if (!confirm(`Supprimer l'événement "${ev.title}" ?`)) return;
     try {
       const res = await fetch(`/api/events/${ev.id}`, { method: "DELETE" });
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      announceNotified(await res.json());
       setEvents((prev) => prev.filter((x) => x.id !== ev.id));
     } catch { alert("Erreur lors de la suppression"); }
   }
@@ -252,6 +262,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     try {
       const res = await fetch("/api/events", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: Array.from(selectedIds), action: "delete" }) });
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
+      announceNotified(await res.json());
       setEvents((prev) => prev.filter((ev) => !selectedIds.has(ev.id)));
       setSelectedIds(new Set());
     } catch { alert("Erreur lors de la suppression"); }
@@ -273,6 +284,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     try {
       const res = await fetch("/api/events", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: Array.from(selectedIds), action: "update", data }) });
       if (!res.ok) { const r = await res.json(); throw new Error(r.error || "Erreur"); }
+      announceNotified(await res.json());
       setEvents((prev) => prev.map((ev) => {
         if (!selectedIds.has(ev.id)) return ev;
         const updated = { ...ev };

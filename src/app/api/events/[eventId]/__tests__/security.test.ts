@@ -180,6 +180,7 @@ describe("GET /api/events/[eventId] — multi-tenant isolation", () => {
 describe("DELETE /api/events/[eventId] — multi-tenant isolation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.event.findMany.mockResolvedValue([]); // audience des notifications (spec 059)
   });
 
   it("rejects admin from church-1 deleting event in church-2", async () => {
@@ -201,7 +202,7 @@ describe("DELETE /api/events/[eventId] — multi-tenant isolation", () => {
       .mockResolvedValueOnce({ id: "evt-1", churchId: "church-1" });
 
     prismaMock.eventDepartment.findMany.mockResolvedValue([]);
-    prismaMock.$transaction.mockResolvedValue(undefined);
+    prismaMock.$transaction.mockResolvedValue({ items: [] }); // retour de deleteEvents (spec 059)
 
     const request = new Request("http://localhost/api/events/evt-1", {
       method: "DELETE",

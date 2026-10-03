@@ -1,7 +1,7 @@
 # Spec — Prévenir les personnes planifiées d'un changement ou d'une suppression d'événement
 
 - **Numéro** : 059
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-03
 - **Branche suggérée** : `feat/notifier-changement-evenement`
 

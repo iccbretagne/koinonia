@@ -89,7 +89,7 @@ export const planningModule = defineModule({
       key: "planning",
       label: "Planning et service",
       description:
-        "Ajout ou retrait d'un service, rappel avant un service, changements de planning, absences et remplaçants.",
+        "Ajout ou retrait d'un service, rappel avant un service, changements de planning, événement déplacé ou annulé, absences et remplaçants.",
       defaultEmail: true,
       visibleWith: ["planning:view"],
     },

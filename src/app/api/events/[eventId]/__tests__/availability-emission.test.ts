@@ -12,6 +12,8 @@ vi.mock("@/lib/audit", () => ({ logAudit: vi.fn() }));
 const emitted: { name: string; payload: unknown }[] = [];
 vi.mock("@/modules/planning", () => ({
   deleteEvents: vi.fn(),
+  collectEventChangeNotices: vi.fn(async () => ({ items: [] })),
+  sendEventChangeNotices: vi.fn(async () => ({ notified: 0 })),
   planningBus: { emit: vi.fn(async (name: string, _ctx: unknown, payload: unknown) => void emitted.push({ name, payload })) },
 }));
 

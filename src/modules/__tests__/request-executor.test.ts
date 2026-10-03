@@ -210,3 +210,51 @@ describe("executeAjoutEvenement — date validation / DoS prevention", () => {
     expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
   });
 });
+
+describe("événements modifiés ou annulés par demande — notifications (spec 059)", () => {
+  const oldDate = new Date("2099-03-01T09:00:00Z");
+  const newDate = new Date("2099-03-01T10:00:00Z");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.availabilityCollection.findUnique.mockResolvedValue(null);
+    prismaMock.eventDepartment.findMany.mockResolvedValue([]);
+    prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", churchId: "church-1", date: oldDate } as never);
+    prismaMock.event.findMany.mockResolvedValue([{ id: "evt-1", title: "Culte", date: oldDate }] as never);
+    prismaMock.planning.findMany.mockResolvedValue([
+      {
+        eventDepartment: { eventId: "evt-1", departmentId: "dept-1", department: { name: "Louange", ministryId: "min-1" } },
+        member: { userLinks: [{ userId: "u-star" }] },
+      },
+    ] as never);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+  });
+
+  it("MODIFICATION_EVENEMENT avec nouvelle date : notifications rendues à l'appelant", async () => {
+    prismaMock.event.update.mockResolvedValue({ id: "evt-1", date: newDate } as never);
+    const result = await executeRequest(tx, "req-1", "church-1", "MODIFICATION_EVENEMENT", {
+      eventId: "evt-1",
+      changes: { date: newDate.toISOString() },
+    }, "approver-1");
+    expect(result.success).toBe(true);
+    expect(result.notices?.items.map((i) => i.userId)).toEqual(["u-star"]);
+  });
+
+  it("MODIFICATION_EVENEMENT sur le titre seul : aucune notification", async () => {
+    prismaMock.event.update.mockResolvedValue({ id: "evt-1", date: oldDate } as never);
+    const result = await executeRequest(tx, "req-1", "church-1", "MODIFICATION_EVENEMENT", {
+      eventId: "evt-1",
+      changes: { title: "Culte de louange" },
+    }, "approver-1");
+    expect(result.success).toBe(true);
+    expect(result.notices).toBeUndefined();
+    expect(prismaMock.planning.findMany).not.toHaveBeenCalled();
+  });
+
+  it("ANNULATION_EVENEMENT : notifications d'annulation rendues à l'appelant", async () => {
+    const result = await executeRequest(tx, "req-1", "church-1", "ANNULATION_EVENEMENT", { eventId: "evt-1" }, "approver-1");
+    expect(result.success).toBe(true);
+    expect(result.notices?.items).toEqual([expect.objectContaining({ userId: "u-star", type: "EVENT_CANCELLED" })]);
+  });
+});
