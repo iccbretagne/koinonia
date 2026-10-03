@@ -447,16 +447,17 @@ export async function requireChurchPermission(
     (r) => r.churchId === churchId
   );
 
-  if (roles.length === 0) {
-    // Pas de rôle dans cette église — vérifier si un profil pastoral donne accès
-    if (
-      PASTORAL_READ_PERMISSIONS.has(permission) &&
-      (session.user.pastoralChurchIds ?? []).includes(churchId)
-    ) {
-      return session;
-    }
-    throw new Error("FORBIDDEN");
+  // Un profil pastoral dans cette église accorde ses permissions de lecture, qu'il s'ajoute ou
+  // non à un rôle classique : un berger également STAR ne doit pas en avoir moins qu'un berger
+  // sans rôle (la navigation les lui propose dans les deux vues).
+  if (
+    PASTORAL_READ_PERMISSIONS.has(permission) &&
+    (session.user.pastoralChurchIds ?? []).includes(churchId)
+  ) {
+    return session;
   }
+
+  if (roles.length === 0) throw new Error("FORBIDDEN");
 
   const { rolePermissions } = await import("./registry");
   const userPermissions = new Set(
