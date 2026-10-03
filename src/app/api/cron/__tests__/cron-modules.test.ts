@@ -27,6 +27,10 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = "test-secret";
     prismaMock.church.findMany.mockResolvedValue([]);
+    // Planificateur (ADR-0021) : aucune tâche encore passée, donc toutes dues.
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([]);
+    prismaMock.cronTaskRun.createMany.mockResolvedValue({ count: 1 });
+    prismaMock.cronTaskRun.update.mockResolvedValue({});
   });
 
   afterEach(() => {

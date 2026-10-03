@@ -47,6 +47,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0018](0018-tokens-semantiques-design-system.md) | L'interface passe par des tokens sémantiques (thèmes clair/sombre) | Accepté |
 | [0019](0019-effacement-demande-supprimee.md) | Supprimer une demande efface son historique et ses notifications | Accepté |
 | [0020](0020-disponibilite-derivee-absence-indisponible.md) | La disponibilité est dérivée ; absence et statut INDISPONIBLE fusionnent | Accepté |
+| [0021](0021-planificateur-taches-cron.md) | Un seul déclencheur cron, chaque tâche à son propre rythme | Accepté |
 
 ## Note sur les ADR 0001–0003
 

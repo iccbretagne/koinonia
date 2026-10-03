@@ -91,7 +91,7 @@ https://recette.votre-domaine.com/api/auth/callback/google
 
 ### Timers cron/backup — garde-fou non négociable
 
-Les timers systemd `koinonia-cron.timer` (rappels email) et `koinonia-backup.timer` (backup BDD) **ne doivent pas être activés tels quels sur la recette**, sous peine de :
+Les timers systemd `koinonia-cron.timer` (tâches planifiées : rappels email, relances, collecte des disponibilités) et `koinonia-backup.timer` (backup BDD) **ne doivent pas être activés tels quels sur la recette**, sous peine de :
 
 - Envoyer de **vrais emails** de rappel de service à de vrais STAR (si la base de recette contient des données réelles restaurées depuis la production)
 - **Écraser les backups de production** si le bucket S3 backups n'est pas correctement séparé

@@ -1036,6 +1036,22 @@ antérieures et celles sans objet précis. Index `[entityType, entityId]`.
 | `entityType` | String? (50) | `AppointmentRequest`, `MsdpFollowUp` ou `FamilyIntegrationRequest` (mêmes valeurs que `audit_logs.entityType`) |
 | `entityId` | String? | Identifiant de l'objet |
 
+### Plateforme
+
+#### `cron_task_runs` — planificateur des tâches planifiées (ADR-0021)
+
+Une ligne par tâche déclarée dans `POST /api/cron`, créée à son premier passage. Donnée de
+plateforme, **sans `churchId`** : les tâches parcourent elles-mêmes les églises.
+
+| Champ | Type | Description |
+|---|---|---|
+| `key` | String (PK) | Identifiant de la tâche (`reminders`, `planning-digest`, `availability`…) |
+| `lastStartedAt` | DateTime? | Début du dernier passage ; décide si la tâche est due et sert de jeton de concurrence |
+| `lastFinishedAt` | DateTime? | Fin du dernier passage |
+| `lastDurationMs` | Int? | Durée du dernier passage |
+| `lastError` | Text? | Message de la dernière erreur, `null` après un passage réussi |
+| `lockedUntil` | DateTime? | Verrou : aucun autre appel ne relance la tâche avant cette date |
+
 ## Seed (données initiales)
 
 Le script `prisma/seed.ts` crée :

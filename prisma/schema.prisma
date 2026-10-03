@@ -2517,3 +2517,19 @@ model AvailabilityReminderLog {
   @@unique([memberId, eventId, sentOn])
   @@map("availability_reminder_logs")
 }
+
+/// Planificateur des tâches de `/api/cron` (ADR-0021) : une ligne par tâche déclarée.
+/// Donnée de plateforme, sans `churchId` : les tâches parcourent elles-mêmes les églises.
+model CronTaskRun {
+  key            String    @id
+  /// Début du dernier passage ; sert à décider si la tâche est due et de jeton de concurrence.
+  lastStartedAt  DateTime?
+  lastFinishedAt DateTime?
+  lastDurationMs Int?
+  /// Message de la dernière erreur ; null si le dernier passage a réussi.
+  lastError      String?   @db.Text
+  /// Verrou : tant qu'il n'est pas échu, aucun autre appel ne relance la tâche.
+  lockedUntil    DateTime?
+
+  @@map("cron_task_runs")
+}
