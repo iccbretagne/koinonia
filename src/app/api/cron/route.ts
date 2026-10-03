@@ -52,6 +52,12 @@ async function runAvailabilityTasks() {
   return run();
 }
 
+/** Récapitulatifs des changements de planning (spec 060) : un seul message par STAR, après le délai de son église. */
+async function runPlanningChangeNotices() {
+  const { flushPlanningChangeNotices } = await import("@/modules/planning");
+  return flushPlanningChangeNotices();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -306,6 +312,8 @@ function cronTasks(appUrl: string): CronTask[] {
     },
     { key: "care", module: "care", schedule: { kind: "interval", minutes: 60 }, run: () => runCareTasks(appUrl) },
     { key: "jobs-lifecycle", module: "jobs", schedule: { kind: "interval", minutes: 60 }, run: () => runJobsLifecycleTask(appUrl) },
+    // Le délai de regroupement est réglé par église ; le passage de 5 minutes borne la précision.
+    { key: "planning-change-notices", schedule: { kind: "every-run" }, run: runPlanningChangeNotices },
     // Idempotente (horodatages) : un rythme plus serré ne fait qu'améliorer la réactivité.
     { key: "availability", schedule: { kind: "interval", minutes: 15 }, run: runAvailabilityTasks },
   ];
@@ -336,6 +344,7 @@ export async function POST(request: Request) {
       careRelance: care?.careRelanceResult ?? null,
       jobOffersLifecycle: resultOf(outcomes["jobs-lifecycle"]),
       availability: resultOf(outcomes["availability"]),
+      planningChangeNotices: resultOf(outcomes["planning-change-notices"]),
     });
   } catch (error) {
     return errorResponse(error);

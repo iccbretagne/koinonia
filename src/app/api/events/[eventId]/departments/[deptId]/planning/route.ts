@@ -6,16 +6,9 @@ import {
   ApiError,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { notifyUsers } from "@/lib/notifications";
-import { getPlanningAvailability } from "@/modules/planning";
+import { getPlanningAvailability, recordPlanningChanges } from "@/modules/planning";
 import { rolePermissions } from "@/lib/registry";
 import { z } from "zod";
-
-const STATUS_LABELS: Record<string, string> = {
-  EN_SERVICE: "En service",
-  EN_SERVICE_DEBRIEF: "En service (débrief)",
-  REMPLACANT: "Remplaçant",
-};
 
 type PlanningAvailability = Awaited<ReturnType<typeof getPlanningAvailability>>;
 
@@ -322,51 +315,24 @@ export async function PUT(
       details: { eventId, departmentId, count: plannings.length },
     });
 
-    // Notifier les STARs dont le statut a changé
-    if (memberIds.length > 0) {
-      const links = await prisma.memberUserLink.findMany({
-        where: { memberId: { in: memberIds }, churchId: eventChurchId, validatedAt: { not: null } },
-        select: { memberId: true, userId: true },
-      });
-      const userIdByMember = new Map(links.map((l) => [l.memberId, l.userId]));
-      const eventTitle = event?.title ?? "l'événement";
-
-      for (const p of plannings) {
-        const userId = userIdByMember.get(p.memberId);
-        if (!userId || userId === session.user.id) continue;
-
-        const prev = prevStatusMap.get(p.memberId) ?? null;
-        const next = p.status;
-        if (prev === next) continue;
-
-        let notif: { type: string; title: string; message: string; link: string } | null = null;
-        if (prev === null && next !== null) {
-          notif = {
-            type: "PLANNING_ASSIGNED",
-            title: "Affectation au planning",
-            message: `Vous êtes affecté(e) à « ${eventTitle} » — statut : ${STATUS_LABELS[next] ?? next}.`,
-            link: "/dashboard",
-          };
-        } else if (prev !== null && next === null) {
-          notif = {
-            type: "PLANNING_REMOVED",
-            title: "Retrait du planning",
-            message: `Vous avez été retiré(e) du planning de « ${eventTitle} ».`,
-            link: "/dashboard",
-          };
-        } else if (prev !== null && next !== null) {
-          notif = {
-            type: "PLANNING_STATUS_CHANGED",
-            title: "Statut planning modifié",
-            message: `Votre statut pour « ${eventTitle} » : ${STATUS_LABELS[prev] ?? prev} → ${STATUS_LABELS[next] ?? next}.`,
-            link: "/dashboard",
-          };
-        }
-
-        if (notif) {
-          notifyUsers([userId], { domain: "planning", ...notif }).catch(() => {});
-        }
-      }
+    // Les STAR dont le service change sont prévenus en un seul récapitulatif, une fois le délai
+    // de l'église écoulé sans nouvelle modification (spec 060) ; rien ne part ici.
+    try {
+      await recordPlanningChanges(
+        prisma,
+        eventChurchId,
+        plannings
+          .filter((p) => (prevStatusMap.get(p.memberId) ?? null) !== p.status)
+          .map((p) => ({
+            memberId: p.memberId,
+            eventId,
+            departmentId,
+            previousStatus: prevStatusMap.get(p.memberId) ?? null,
+          })),
+        { actorId: session.user.id }
+      );
+    } catch (error) {
+      console.error("[planning] enregistrement des changements à notifier impossible", error);
     }
 
     return successResponse(results);

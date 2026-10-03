@@ -432,6 +432,7 @@ La route `POST /api/cron` orchestre toutes les tâches planifiées. Elle doit ê
 | `care` | Horaire | Relances du suivi pastoral (module `care`) |
 | `jobs-lifecycle` | Horaire | Archivage et renouvellement des offres d'emploi (module `jobs`) |
 | `availability` | 15 minutes | Collecte des disponibilités : ouverture, demandes, relances |
+| `planning-change-notices` | À chaque passage (5 min) | Récapitulatif unique des changements de planning de chaque STAR, une fois le délai de son église écoulé sans nouvelle modification (spec 060) |
 
 Un appel plus fréquent ne fait que vérifier les tâches dues : une tâche non due ne coûte qu'une lecture de `cron_task_runs`. Deux appels qui se chevauchent n'exécutent jamais deux fois la même tâche (verrou par tâche). Diagnostic :
 

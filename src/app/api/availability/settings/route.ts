@@ -22,6 +22,7 @@ const schema = z.object({
   openMonthsBefore: z.number().int().min(1).max(6),
   closeDaysBefore: z.number().int().min(1).max(30),
   relanceDaysBefore: z.number().int().min(1).max(30),
+  planningNoticeDelayMinutes: z.number().int().min(5, "Le délai doit être d'au moins 5 minutes").max(120, "Le délai ne peut pas dépasser 2 heures"),
 });
 
 export async function PUT(request: Request) {

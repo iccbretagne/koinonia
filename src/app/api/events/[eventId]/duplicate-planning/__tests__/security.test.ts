@@ -10,6 +10,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+vi.mock("@/modules/planning", () => ({ recordPlanningChanges: vi.fn() }));
 
 const { POST } = await import("../route");
 
@@ -46,6 +47,7 @@ describe("POST /api/events/[eventId]/duplicate-planning — cross-tenant", () =>
       .mockResolvedValueOnce([
         { id: "ed-target", departmentId: "dept-1" },
       ]);
+    prismaMock.planning.findMany.mockResolvedValue([]);
     prismaMock.planning.upsert.mockResolvedValue({ id: "p-new" });
 
     const request = new Request("http://localhost/api/events/evt-1/duplicate-planning", {

@@ -513,11 +513,12 @@ retard après l'échéance : compte comme indisponible) > « Non demandée ».
 
 | Table | Rôle | Clés |
 |---|---|---|
-| `availability_settings` | Réglage par église : `enabled` (défaut `true`), `openMonthsBefore` (2), `closeDaysBefore` (7), `relanceDaysBefore` (3). Aucune ligne = valeurs par défaut | `churchId` unique |
+| `availability_settings` | Réglage par église : `enabled` (défaut `true`), `openMonthsBefore` (2), `closeDaysBefore` (7), `relanceDaysBefore` (3), `planningNoticeDelayMinutes` (15, de 5 à 120 : délai avant l'envoi des changements de planning, spec 060). Aucune ligne = valeurs par défaut | `churchId` unique |
 | `availability_collections` | Collecte commune d'un mois : `openedAt`, `closesAt` (figée à l'ouverture), `notifiedAt`, `relanceSentAt` | unique `[churchId, month]` |
 | `availability_responses` | Réponse `AVAILABLE` / `IF_NEEDED` / `UNAVAILABLE` d'un STAR pour un événement et un département ; `enteredById` renseigné si saisie par un tiers | unique `[memberId, eventId, departmentId]` |
 | `availability_asks` | Demande ciblée (`EVENT_ADDED`, `EVENT_MOVED`, `LEADER`) : `dueAt`, `notifiedAt`, `relanceSentAt`, `manualRelanceAt` | unique `[eventId, departmentId]` |
 | `availability_reminder_logs` | Garde-fou : une seule relance par STAR, événement et jour | unique `[memberId, eventId, sentOn]` |
+| `planning_change_notices` | Changement de planning en attente de notification regroupée (spec 060) : `previousStatus` (statut d'avant la première modification de la fenêtre, `null` = absent) et `lastChangedAt` (alignée sur toutes les lignes du STAR). Supprimée à l'envoi. **Sans relations** : survit au retrait d'un département, ne bloque aucune suppression de structure ; une ligne orpheline est écartée à l'envoi | unique `[memberId, eventId, departmentId]` |
 
 **Reprise (migration `add_availability_collection`)** : les absences `EVENTS` actives deviennent
 des réponses `UNAVAILABLE` (puis sont supprimées) et les plannings `INDISPONIBLE` deviennent des

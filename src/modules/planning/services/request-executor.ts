@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { planningBus } from "../bus";
 import { deleteEvents } from "./event.service";
 import { collectEventChangeNotices, type EventChangeNotices } from "./event-change-notices";
+import { recordRemovedPlannings } from "./planning-change-notices";
 import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "./recurrence";
 
 export interface ExecutionResult {
@@ -52,7 +53,7 @@ export async function executeRequest(
         result = await executeAnnulationEvenement(tx, churchId, payload, ctx, requestId);
         break;
       case "MODIFICATION_PLANNING":
-        result = await executeModificationPlanning(tx, churchId, payload);
+        result = await executeModificationPlanning(tx, churchId, payload, userId);
         break;
       case "DEMANDE_ACCES":
         result = await executeDemandeAcces(tx, churchId, payload);
@@ -272,7 +273,8 @@ async function executeAnnulationEvenement(
 async function executeModificationPlanning(
   tx: TxClient,
   churchId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  actorId: string
 ): Promise<ExecutionResult> {
   const eventId = payload.eventId as string;
   const departmentIds = payload.departmentIds as string[] | undefined;
@@ -305,6 +307,8 @@ async function executeModificationPlanning(
 
   if (toRemove.length > 0) {
     const removeIds = toRemove.map((ed) => ed.id);
+    // Les STAR planifiés dans un département retiré ne servent plus : à notifier (spec 060).
+    await recordRemovedPlannings(tx, churchId, removeIds, { actorId });
     await tx.planning.deleteMany({ where: { eventDepartmentId: { in: removeIds } } });
     await tx.eventDepartment.deleteMany({ where: { id: { in: removeIds } } });
   }
