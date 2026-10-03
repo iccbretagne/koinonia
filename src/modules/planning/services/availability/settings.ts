@@ -11,6 +11,8 @@ export interface AvailabilitySettingsValues {
   openMonthsBefore: number;
   closeDaysBefore: number;
   relanceDaysBefore: number;
+  /** Délai sans nouvelle modification avant l'envoi des changements de planning (spec 060), en minutes. */
+  planningNoticeDelayMinutes: number;
 }
 
 export const DEFAULT_AVAILABILITY_SETTINGS: AvailabilitySettingsValues = {
@@ -18,9 +20,18 @@ export const DEFAULT_AVAILABILITY_SETTINGS: AvailabilitySettingsValues = {
   openMonthsBefore: 2,
   closeDaysBefore: 7,
   relanceDaysBefore: 3,
+  planningNoticeDelayMinutes: 15,
 };
 
-const SELECT = { enabled: true, openMonthsBefore: true, closeDaysBefore: true, relanceDaysBefore: true } as const;
+export const PLANNING_NOTICE_DELAY_BOUNDS = { min: 5, max: 120 } as const;
+
+const SELECT = {
+  enabled: true,
+  openMonthsBefore: true,
+  closeDaysBefore: true,
+  relanceDaysBefore: true,
+  planningNoticeDelayMinutes: true,
+} as const;
 
 export async function getAvailabilitySettings(churchId: string, db?: DbClient): Promise<AvailabilitySettingsValues> {
   db ??= await defaultDb();

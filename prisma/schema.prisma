@@ -2441,6 +2441,8 @@ model AvailabilitySettings {
   openMonthsBefore  Int      @default(2)
   closeDaysBefore   Int      @default(7)
   relanceDaysBefore Int      @default(3)
+  /// Délai sans nouvelle modification avant l'envoi du récapitulatif de changements de planning (spec 060).
+  planningNoticeDelayMinutes Int @default(15)
   church            Church   @relation(fields: [churchId], references: [id])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -2532,4 +2534,24 @@ model CronTaskRun {
   lockedUntil    DateTime?
 
   @@map("cron_task_runs")
+}
+
+/// Changement de planning en attente de notification regroupée (spec 060).
+/// Une ligne par STAR × événement × département, supprimée à l'envoi. Sans relations : elle doit
+/// survivre au retrait d'un département (l'`EventDepartment` disparaît) et ne bloquer aucune
+/// suppression de structure ; une ligne orpheline est écartée à l'envoi.
+model PlanningChangeNotice {
+  id             String         @id @default(cuid())
+  churchId       String
+  memberId       String
+  eventId        String
+  departmentId   String
+  /// Statut avant la première modification de la fenêtre ; null = absent du planning.
+  previousStatus ServiceStatus?
+  lastChangedAt  DateTime
+  createdAt      DateTime       @default(now())
+
+  @@unique([memberId, eventId, departmentId])
+  @@index([churchId, lastChangedAt])
+  @@map("planning_change_notices")
 }

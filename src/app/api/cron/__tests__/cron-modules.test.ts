@@ -6,6 +6,11 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/modules/planning/services/availability/collection", () => ({
   runAvailabilityTasks: vi.fn().mockResolvedValue({ opened: 0, openingNotified: 0, asksSent: 0, relances: 0 }),
 }));
+const mockFlushPlanningNotices = vi.fn().mockResolvedValue({ notified: 0, members: 0 });
+vi.mock("@/modules/planning/services/planning-change-notices", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/planning/services/planning-change-notices")>()),
+  flushPlanningChangeNotices: (...args: unknown[]) => mockFlushPlanningNotices(...args),
+}));
 vi.mock("@/lib/email", () => ({
   sendEmail: vi.fn(),
   buildReminderEmail: vi.fn(),
@@ -106,5 +111,21 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(runCareRelances).toHaveBeenCalledOnce();
     expect(runWaitingRelanceNotifications).toHaveBeenCalledOnce();
     expect(runJobOffersLifecycle).toHaveBeenCalledOnce();
+  });
+
+  it("la tâche des changements de planning (spec 060) est due à chaque passage, même juste après un passage", async () => {
+    delete process.env.ENABLED_MODULES;
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([
+      { key: "planning-change-notices", lastStartedAt: new Date(Date.now() - 60_000) },
+    ]);
+    prismaMock.cronTaskRun.updateMany.mockResolvedValue({ count: 1 });
+    mockFlushPlanningNotices.mockResolvedValueOnce({ notified: 3, members: 3 });
+
+    const res = await postCron();
+    const body = await res.json();
+
+    expect(body.tasks["planning-change-notices"]).toBe("ran");
+    expect(body.planningChangeNotices).toEqual({ notified: 3, members: 3 });
+    expect(mockFlushPlanningNotices).toHaveBeenCalledOnce();
   });
 });

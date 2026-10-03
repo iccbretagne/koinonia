@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { recordPlanningChanges, type PlanningChange } from "@/modules/planning";
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,7 +15,7 @@ export async function POST(
   try {
     const { eventId: sourceEventId } = await params;
     const churchId = await resolveChurchId("event", sourceEventId);
-    await requireChurchPermission("planning:edit", churchId);
+    const session = await requireChurchPermission("planning:edit", churchId);
     const body = await request.json();
     const { targetEventId } = schema.parse(body);
 
@@ -48,13 +49,32 @@ export async function POST(
     const targetByDept = new Map(targetEDs.map((ed) => [ed.departmentId, ed]));
 
     let copiedCount = 0;
+    const changes: PlanningChange[] = [];
 
     await prisma.$transaction(async (tx) => {
       for (const sourceED of sourceEDs) {
         const targetED = targetByDept.get(sourceED.departmentId);
         if (!targetED) continue; // Skip if department not linked to target event
 
+        // Situation avant recopie, pour prévenir les STAR dont le service change (spec 060).
+        const before = new Map(
+          (
+            await tx.planning.findMany({
+              where: { eventDepartmentId: targetED.id },
+              select: { memberId: true, status: true },
+            })
+          ).map((p) => [p.memberId, p.status])
+        );
+
         for (const planning of sourceED.plannings) {
+          if ((before.get(planning.memberId) ?? null) !== planning.status) {
+            changes.push({
+              memberId: planning.memberId,
+              eventId: targetEventId,
+              departmentId: sourceED.departmentId,
+              previousStatus: before.get(planning.memberId) ?? null,
+            });
+          }
           await tx.planning.upsert({
             where: {
               eventDepartmentId_memberId: {
@@ -73,6 +93,12 @@ export async function POST(
         }
       }
     });
+
+    try {
+      await recordPlanningChanges(prisma, churchId, changes, { actorId: session.user.id });
+    } catch (error) {
+      console.error("[duplicate-planning] enregistrement des changements à notifier impossible", error);
+    }
 
     return successResponse({
       copied: copiedCount,

@@ -1,7 +1,7 @@
 # Spec — Notifications regroupées des changements de planning
 
 - **Numéro** : 060
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-03
 - **Branche suggérée** : `feat/notifications-regroupees-planning`
 - **Origine** : issue #612, lot 2 (lot 1 : spec 058 ; lot 3 : « Je ne peux plus », remplacements)

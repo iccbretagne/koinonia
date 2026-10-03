@@ -258,3 +258,53 @@ describe("événements modifiés ou annulés par demande — notifications (spec
     expect(result.notices?.items).toEqual([expect.objectContaining({ userId: "u-star", type: "EVENT_CANCELLED" })]);
   });
 });
+
+describe("MODIFICATION_PLANNING — retrait d'un département (spec 060)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", churchId: "church-1" } as never);
+    prismaMock.department.count.mockResolvedValue(1);
+    prismaMock.eventDepartment.findMany.mockResolvedValue([
+      { id: "ed-1", departmentId: "dept-1" },
+      { id: "ed-2", departmentId: "dept-2" },
+    ] as never);
+    prismaMock.planning.findMany.mockResolvedValue([
+      { memberId: "m1", status: "EN_SERVICE", eventDepartment: { eventId: "evt-1", departmentId: "dept-2" } },
+    ] as never);
+    prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+    prismaMock.event.findMany.mockResolvedValue([{ id: "evt-1" }] as never);
+    prismaMock.planning.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.eventDepartment.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.planningChangeNotice.upsert.mockResolvedValue({});
+    prismaMock.planningChangeNotice.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("enregistre les STAR planifiés dans le département retiré, avec l'approbateur comme auteur", async () => {
+    const result = await executeRequest(tx, "req-1", "church-1", "MODIFICATION_PLANNING", {
+      eventId: "evt-1",
+      departmentIds: ["dept-1"],
+    }, "approver-1");
+
+    expect(result.success).toBe(true);
+    expect(prismaMock.planning.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { eventDepartmentId: { in: ["ed-2"] } } })
+    );
+    expect(prismaMock.memberUserLink.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "approver-1" }) })
+    );
+    expect(prismaMock.planningChangeNotice.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ memberId: "m1", eventId: "evt-1", departmentId: "dept-2", previousStatus: "EN_SERVICE" }),
+      })
+    );
+  });
+
+  it("n'enregistre rien quand aucun département n'est retiré", async () => {
+    await executeRequest(tx, "req-1", "church-1", "MODIFICATION_PLANNING", {
+      eventId: "evt-1",
+      departmentIds: ["dept-1", "dept-2"],
+    }, "approver-1");
+
+    expect(prismaMock.planningChangeNotice.upsert).not.toHaveBeenCalled();
+  });
+});

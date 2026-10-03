@@ -41,6 +41,7 @@ export const prismaMock = {
   absence: createModelMock(),
   availabilitySettings: createModelMock(),
   cronTaskRun: createModelMock(),
+  planningChangeNotice: createModelMock(),
   availabilityCollection: createModelMock(),
   availabilityResponse: createModelMock(),
   availabilityAsk: createModelMock(),

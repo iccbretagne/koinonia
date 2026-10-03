@@ -53,20 +53,46 @@ describe("/api/availability/settings", () => {
   });
 
   it("PUT enregistre un réglage valide", async () => {
-    const body = { churchId: "church-1", enabled: false, openMonthsBefore: 3, closeDaysBefore: 10, relanceDaysBefore: 4 };
+    const body = {
+      churchId: "church-1",
+      enabled: false,
+      openMonthsBefore: 3,
+      closeDaysBefore: 10,
+      relanceDaysBefore: 4,
+      planningNoticeDelayMinutes: 30,
+    };
     const res = await settings.PUT(new Request("http://localhost", { method: "PUT", body: JSON.stringify(body) }));
     expect(res.status).toBe(200);
-    expect(mockUpdateSettings).toHaveBeenCalledWith("church-1", { enabled: false, openMonthsBefore: 3, closeDaysBefore: 10, relanceDaysBefore: 4 });
+    expect(mockUpdateSettings).toHaveBeenCalledWith("church-1", {
+      enabled: false,
+      openMonthsBefore: 3,
+      closeDaysBefore: 10,
+      relanceDaysBefore: 4,
+      planningNoticeDelayMinutes: 30,
+    });
   });
+
+  it.each([{ planningNoticeDelayMinutes: 5 }, { planningNoticeDelayMinutes: 120 }])(
+    "PUT accepte le délai de changements de planning aux bornes (%o)",
+    async (override) => {
+      const body = { churchId: "church-1", enabled: true, openMonthsBefore: 2, closeDaysBefore: 7, relanceDaysBefore: 3, ...override };
+      const res = await settings.PUT(new Request("http://localhost", { method: "PUT", body: JSON.stringify(body) }));
+      expect(res.status).toBe(200);
+    }
+  );
 
   it.each([
     { openMonthsBefore: 0 },
+    { planningNoticeDelayMinutes: 4 },
+    { planningNoticeDelayMinutes: 121 },
+    { planningNoticeDelayMinutes: 7.5 },
+    { planningNoticeDelayMinutes: "15" },
     { openMonthsBefore: 7 },
     { closeDaysBefore: 0 },
     { relanceDaysBefore: 31 },
     { enabled: "yes" },
   ])("PUT rejette %o (400)", async (override) => {
-    const body = { churchId: "church-1", enabled: true, openMonthsBefore: 2, closeDaysBefore: 7, relanceDaysBefore: 3, ...override };
+    const body = { churchId: "church-1", enabled: true, openMonthsBefore: 2, closeDaysBefore: 7, relanceDaysBefore: 3, planningNoticeDelayMinutes: 15, ...override };
     const res = await settings.PUT(new Request("http://localhost", { method: "PUT", body: JSON.stringify(body) }));
     expect(res.status).toBe(400);
     expect(mockUpdateSettings).not.toHaveBeenCalled();

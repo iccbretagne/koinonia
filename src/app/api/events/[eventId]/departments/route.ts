@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { planningBus } from "@/modules/planning";
+import { planningBus, recordRemovedPlannings } from "@/modules/planning";
 import { z } from "zod";
 
 async function verifyDepartmentChurch(departmentId: string, expectedChurchId: string) {
@@ -112,7 +112,7 @@ export async function DELETE(
   try {
     const { eventId } = await params;
     const delChurchId = await resolveChurchId("event", eventId);
-    await requireChurchPermission("events:manage", delChurchId);
+    const delSession = await requireChurchPermission("events:manage", delChurchId);
     const body = await request.json();
     const { departmentId, applyToSeries } = schema.parse(body);
     await verifyDepartmentChurch(departmentId, delChurchId);
@@ -130,6 +130,7 @@ export async function DELETE(
             select: { id: true },
           })
         ).map((ed) => ed.id);
+        await recordRemovedPlannings(tx, delChurchId, edIds, { actorId: delSession.user.id });
         await tx.planning.deleteMany({ where: { eventDepartmentId: { in: edIds } } });
         await tx.eventDepartment.deleteMany({
           where: {
@@ -146,7 +147,10 @@ export async function DELETE(
         where: { eventId_departmentId: { eventId, departmentId } },
         select: { id: true },
       });
-      if (ed) await tx.planning.deleteMany({ where: { eventDepartmentId: ed.id } });
+      if (ed) {
+        await recordRemovedPlannings(tx, delChurchId, [ed.id], { actorId: delSession.user.id });
+        await tx.planning.deleteMany({ where: { eventDepartmentId: ed.id } });
+      }
       await tx.eventDepartment.delete({
         where: { eventId_departmentId: { eventId, departmentId } },
       });

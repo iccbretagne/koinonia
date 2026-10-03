@@ -1,7 +1,7 @@
 # Tâches — Notifications regroupées des changements de planning
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0021-planificateur-taches-cron.md`
-- **Statut** : À faire
+- **Statut** : En cours (code livré, recette à faire)
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -10,50 +10,50 @@
 
 - [x] Branche créée : `feat/notifications-regroupees-planning`, rebasée sur `main` (planificateur
   de la PR #634 disponible)
-- [ ] Migration Prisma générée (T2)
+- [x] Migration Prisma générée (T2)
 
 ## Tâches
 
 ### 1. Données & migration
 
-- [ ] **T1** — Ajouter le modèle `PlanningChangeNotice` : `churchId`, `memberId`, `eventId`,
+- [x] **T1** — Ajouter le modèle `PlanningChangeNotice` : `churchId`, `memberId`, `eventId`,
   `departmentId`, `previousStatus ServiceStatus?`, `lastChangedAt`, `createdAt`.
   - Clé unique `[memberId, eventId, departmentId]`, index `[churchId, lastChangedAt]`.
   - Aucune relation vers les autres tables.
   - Ajouter aussi `planningNoticeDelayMinutes Int @default(15)` à `AvailabilitySettings`.
   - *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Générer la migration `add_planning_change_notices` (`prisma migrate dev`) et
+- [x] **T2** — Générer la migration `add_planning_change_notices` (`prisma migrate dev`) et
   vérifier le SQL. Ajouter `planningChangeNotice` au mock *(fichiers :
   `prisma/migrations/…`, `src/__mocks__/prisma.ts`)*
-- [ ] **T3** [P] — Documenter la table et la colonne *(fichier : `docs/database.md`)*
+- [x] **T3** [P] — Documenter la table et la colonne *(fichier : `docs/database.md`)*
 
 ### 2. Logique métier (services)
 
-- [ ] **T4** — Ajouter `planningNoticeDelayMinutes` à `getAvailabilitySettings` (défaut 15 sans
+- [x] **T4** — Ajouter `planningNoticeDelayMinutes` à `getAvailabilitySettings` (défaut 15 sans
   ligne) et à `updateAvailabilitySettings` *(fichier :
   `src/modules/planning/services/availability/settings.ts`)*
-- [ ] **T5** — Créer `planning-change-notices.ts` avec :
+- [x] **T5** — Créer `planning-change-notices.ts` avec :
   - le type `PlanningChange` ;
   - `computeNetChanges(rows, current)`, pure. `null` et `INDISPONIBLE` valent « absent ». Elle
     renvoie `ADDED` / `REMOVED` / `CHANGED`, ou rien si le statut d'origine est retrouvé.
 
   *(fichier : `src/modules/planning/services/planning-change-notices.ts`)*
-- [ ] **T6** — `buildPlanningDigest(changes)`, pure :
+- [x] **T6** — `buildPlanningDigest(changes)`, pure :
   - lignes triées par date d'événement, chacune avec date, événement, département et nature du
     changement ;
   - titre « Planning mis à jour » et message de synthèse en une phrase ;
   - lien `/planning`.
 
   *(même fichier)*
-- [ ] **T7** — `recordPlanningChanges(db, churchId, changes, { actorId, now })` :
+- [x] **T7** — `recordPlanningChanges(db, churchId, changes, { actorId, now })` :
   - écarte le STAR relié au compte de l'auteur (`MemberUserLink` validé) et les événements passés ;
   - `upsert` sans jamais écraser `previousStatus` ;
   - puis `updateMany` pour aligner `lastChangedAt` sur toutes les lignes du STAR.
 
   *(même fichier)*
-- [ ] **T8** — Gabarit d'email `buildPlanningChangesEmail({ title, lines, link })`, qui affiche la
+- [x] **T8** — Gabarit d'email `buildPlanningChangesEmail({ title, lines, link })`, qui affiche la
   liste des changements, avec échappement HTML *(fichier : `src/lib/email.ts`)*
-- [ ] **T9** — `flushPlanningChangeNotices(now)` :
+- [x] **T9** — `flushPlanningChangeNotices(now)` :
   1. délais par église (défaut 15), puis sélection des STAR dont toutes les lignes sont calmes
      depuis le délai ;
   2. par STAR, dans une transaction : relecture puis `deleteMany` conditionnel
@@ -68,36 +68,36 @@
 
   Import dynamique de `@/lib/notifications` et `@/lib/email`, comme
   `event-change-notices.ts` *(même fichier)*
-- [ ] **T10** — Exporter `recordPlanningChanges`, `flushPlanningChangeNotices` et le type
+- [x] **T10** — Exporter `recordPlanningChanges`, `flushPlanningChangeNotices` et le type
   `PlanningChange` depuis l'index du module *(fichier : `src/modules/planning/index.ts`)*
-- [ ] **T11** — Retrait d'un département via une demande approuvée : lire les plannings des
+- [x] **T11** — Retrait d'un département via une demande approuvée : lire les plannings des
   `EventDepartment` retirés avant le `deleteMany`, puis `recordPlanningChanges(tx, …)` avec
   `previousStatus` *(fichier : `src/modules/planning/services/request-executor.ts`)*
 
 ### 3. API (route handlers) et planificateur
 
-- [ ] **T12** — Grille :
+- [x] **T12** — Grille :
   - supprimer le bloc de notifications immédiates (`notifyUsers`, `PLANNING_ASSIGNED`/`REMOVED`/
     `STATUS_CHANGED`) ;
   - appeler `recordPlanningChanges` pour les statuts modifiés, à partir de `prevStatusMap`.
 
   Un échec d'enregistrement est journalisé et n'empêche pas la réponse *(fichier :
   `src/app/api/events/[eventId]/departments/[deptId]/planning/route.ts`)*
-- [ ] **T13** [P] — Recopie : lire dans la transaction les plannings cibles existants avant les
+- [x] **T13** [P] — Recopie : lire dans la transaction les plannings cibles existants avant les
   `upsert`, puis `recordPlanningChanges(tx, …)` pour les statuts qui changent *(fichier :
   `src/app/api/events/[eventId]/duplicate-planning/route.ts`)*
-- [ ] **T14** [P] — Retrait d'un département, pour un événement seul ou une série : lire les
+- [x] **T14** [P] — Retrait d'un département, pour un événement seul ou une série : lire les
   plannings avant le `deleteMany`, puis `recordPlanningChanges(tx, …)` avec `previousStatus` et
   un statut actuel absent *(fichier : `src/app/api/events/[eventId]/departments/route.ts`)*
-- [ ] **T15** [P] — Ajouter `planningNoticeDelayMinutes: z.number().int().min(5).max(120)` au
+- [x] **T15** [P] — Ajouter `planningNoticeDelayMinutes: z.number().int().min(5).max(120)` au
   schéma `PUT` *(fichier : `src/app/api/availability/settings/route.ts`)*
-- [ ] **T16** — Déclarer la tâche `planning-change-notices` au rythme `every-run`, qui appelle
+- [x] **T16** — Déclarer la tâche `planning-change-notices` au rythme `every-run`, qui appelle
   `flushPlanningChangeNotices` par import dynamique de `@/modules/planning`. L'ajouter à la
   réponse (`planningChangeNotices`) *(fichier : `src/app/api/cron/route.ts`)*
 
 ### 4. UI
 
-- [ ] **T17** — Paramètres des disponibilités : section distincte « Changements de planning »
+- [x] **T17** — Paramètres des disponibilités : section distincte « Changements de planning »
   avec un champ numérique « Délai avant l'envoi (minutes) », de 5 à 120, et un texte d'aide.
   - Le champ reste éditable quand la collecte est désactivée.
   - Une colonne sur mobile.
@@ -108,7 +108,7 @@
 
 ### 5. Tests
 
-- [ ] **T18** — Tests du service `computeNetChanges` et `buildPlanningDigest` :
+- [x] **T18** — Tests du service `computeNetChanges` et `buildPlanningDigest` :
   - ajouté, retiré, statut changé ;
   - aller-retour annulé ;
   - `INDISPONIBLE` traité comme absent ;
@@ -116,14 +116,14 @@
   - lien `/planning`.
 
   *(fichier : `src/modules/planning/services/__tests__/planning-change-notices.test.ts`)*
-- [ ] **T19** — Tests de `recordPlanningChanges` :
+- [x] **T19** — Tests de `recordPlanningChanges` :
   - statut d'origine conservé ;
   - auteur écarté ;
   - événement passé écarté ;
   - `lastChangedAt` aligné sur toutes les lignes du STAR.
 
   *(même fichier)*
-- [ ] **T20** — Tests de `flushPlanningChangeNotices` :
+- [x] **T20** — Tests de `flushPlanningChangeNotices` :
   - délai non écoulé, rien n'est envoyé ;
   - délai écoulé : une seule notification pour deux départements et deux auteurs ;
   - changement net vide : rien n'est envoyé, les lignes sont supprimées ;
@@ -135,35 +135,35 @@
   - domaine `planning` et email fourni.
 
   *(même fichier)*
-- [ ] **T21** [P] — Route grille : plus aucun `notifyUsers`, `recordPlanningChanges` appelé avec
+- [x] **T21** [P] — Route grille : plus aucun `notifyUsers`, `recordPlanningChanges` appelé avec
   les bons `previousStatus`, et un échec d'enregistrement sans effet sur la réponse *(fichier :
   `src/app/api/events/[eventId]/departments/[deptId]/__tests__/planning-change-notices.test.ts`)*
-- [ ] **T22** [P] — Recopie et retrait d'un département (événement seul et série) : changements
+- [x] **T22** [P] — Recopie et retrait d'un département (événement seul et série) : changements
   enregistrés *(fichiers : `…/duplicate-planning/__tests__/`, `…/departments/__tests__/`)*
-- [ ] **T23** [P] — Exécuteur de demandes : un retrait de département enregistre les changements
+- [x] **T23** [P] — Exécuteur de demandes : un retrait de département enregistre les changements
   *(fichier : `src/modules/planning/services/request-executor.test.ts` ou équivalent existant)*
-- [ ] **T24** [P] — Réglage : bornes 5 et 120 refusées en dehors, valeur enregistrée *(fichier :
+- [x] **T24** [P] — Réglage : bornes 5 et 120 refusées en dehors, valeur enregistrée *(fichier :
   `src/app/api/availability/__tests__/settings-and-ask.test.ts`)*
-- [ ] **T25** [P] — Cron : la tâche `planning-change-notices` est due à chaque passage et appelle
+- [x] **T25** [P] — Cron : la tâche `planning-change-notices` est due à chaque passage et appelle
   le vidage *(fichier : `src/app/api/cron/__tests__/cron-modules.test.ts`)*
-- [ ] **T26** — Adapter les mocks existants de `@/modules/planning`, qui doivent recevoir les
+- [x] **T26** — Adapter les mocks existants de `@/modules/planning`, qui doivent recevoir les
   nouveaux exports, dans les tests qui le simulent *(fichiers : tests en échec après T10)*
 
 ### 6. Documentation
 
-- [ ] **T27** [P] — `docs/api.md` (champ de réglage, tâche cron), `docs/production.md` (ligne
+- [x] **T27** [P] — `docs/api.md` (champ de réglage, tâche cron), `docs/production.md` (ligne
   `planning-change-notices` du tableau des tâches), CHANGELOG (Ajouté + Modifié : fin de la
   notification immédiate), description du manifeste planning si elle cite les notifications
   d'affectation *(fichiers : docs, `CHANGELOG.md`, `src/modules/planning/manifest.ts`)*
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary` (pas de nouvelle route qui importe Prisma)
-- [ ] `npm run test`
-- [ ] `npm run build`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary` (pas de nouvelle route qui importe Prisma)
+- [x] `npm run test`
+- [x] `npm run build`
 - [ ] Migration rejouée sur base vierge (job CI `migrations`)
 - [ ] Tous les critères d'acceptation de `spec.md` satisfaits (voir couverture ci-dessous)
 - [ ] Recette : minuteur passé à 5 minutes ; scénario « placer, retirer, attendre le délai » vérifié

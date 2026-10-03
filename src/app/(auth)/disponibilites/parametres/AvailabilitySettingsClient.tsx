@@ -11,6 +11,7 @@ interface Settings {
   openMonthsBefore: number;
   closeDaysBefore: number;
   relanceDaysBefore: number;
+  planningNoticeDelayMinutes: number;
 }
 
 export default function AvailabilitySettingsClient({
@@ -25,6 +26,7 @@ export default function AvailabilitySettingsClient({
   const [open, setOpen] = useState(String(settings.openMonthsBefore));
   const [close, setClose] = useState(String(settings.closeDaysBefore));
   const [relance, setRelance] = useState(String(settings.relanceDaysBefore));
+  const [noticeDelay, setNoticeDelay] = useState(String(settings.planningNoticeDelayMinutes));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ export default function AvailabilitySettingsClient({
           openMonthsBefore: Number(open),
           closeDaysBefore: Number(close),
           relanceDaysBefore: Number(relance),
+          planningNoticeDelayMinutes: Number(noticeDelay),
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -83,6 +86,18 @@ export default function AvailabilitySettingsClient({
         value={relance}
         onChange={(e) => setRelance(e.target.value)}
       />
+      <div className="border-t border-line pt-4 space-y-4">
+        <h2 className="text-base font-semibold text-ink">Changements de planning</h2>
+        <Input
+          label="Délai avant l'envoi (minutes)"
+          type="number"
+          min={5}
+          max={120}
+          value={noticeDelay}
+          onChange={(e) => setNoticeDelay(e.target.value)}
+          hint="Les STAR reçoivent un seul récapitulatif une fois que leur planning n'a plus changé pendant ce délai (de 5 minutes à 2 heures)."
+        />
+      </div>
       {error && <Alert tone="danger">{error}</Alert>}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>

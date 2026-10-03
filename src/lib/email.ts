@@ -120,6 +120,31 @@ export interface PlanningChange {
   modifiedBy: string;
 }
 
+/** Récapitulatif des changements de service d'un STAR (spec 060) : une ligne par changement. */
+export function buildPlanningChangesEmail(params: {
+  title: string;
+  lines: string[];
+  link?: string;
+}): { subject: string; html: string } {
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const items = params.lines.map((l) => `<li style="margin: 0 0 8px;">${escapeHtml(l)}</li>`).join("");
+  return {
+    subject: params.title,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin: 0 0 12px; font-weight: 600; color: #111827;">${escapeHtml(params.title)}</p>
+          <ul style="margin: 0; padding-left: 20px; color: #374151;">${items}</ul>
+          ${params.link ? `<p style="margin: 20px 0 0;"><a href="${appUrl}${params.link}" style="color: #5E17EB; font-weight: 600;">Voir mon planning →</a></p>` : ""}
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildPlanningDigestEmail(params: {
   churchName: string;
   changes: PlanningChange[];

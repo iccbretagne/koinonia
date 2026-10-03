@@ -10,6 +10,8 @@ export {
   mergeEventChangeNotices,
 } from "./services/event-change-notices";
 export type { EventChange, EventChangeNotices } from "./services/event-change-notices";
+export { recordPlanningChanges, recordRemovedPlannings, flushPlanningChangeNotices } from "./services/planning-change-notices";
+export type { PlanningChange } from "./services/planning-change-notices";
 export {
   declareAbsence,
   cancelAbsence,
