@@ -316,7 +316,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Vue et planification agenda",
-    description: "Consultez l'agenda hebdomadaire de chaque profil pastoral depuis /agenda, planifiez les créneaux des demandes confiées à un profil pastoral depuis /agenda/schedule (un membre du MSDP fixe lui-même sa date depuis /care), ou ajoutez une entrée manuelle depuis /agenda/new. Un titulaire de profil pastoral voit également \"Mon agenda\", indépendamment de son rôle global.",
+    description: "Consultez l'agenda hebdomadaire de chaque profil pastoral depuis /agenda, planifiez les créneaux des demandes confiées à un profil pastoral depuis /agenda/schedule (un membre du MSDP fixe lui-même sa date depuis /care), ou inscrivez directement une activité ou un rendez-vous avec le bouton \"Ajouter à l'agenda\" de /agenda. Un titulaire de profil pastoral voit également \"Mon agenda\", indépendamment de son rôle global.",
     category: "Suivi pastoral",
     screenshotTitle: "Vue et planification de l'agenda",
     screenshotFile: "guide-agenda-planification.png",
