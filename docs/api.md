@@ -28,6 +28,18 @@ Géré par NextAuth. Inclut :
 - `GET /api/auth/session` — session courante
 - `POST /api/auth/signout` — déconnexion
 
+### `GET /api/health`
+
+État de l'instance : `{ status: "ok" | "degraded", version, db: "ok" | "error", uptime }`
+(200, ou 503 si la base ne répond pas).
+
+**Réservée aux utilisateurs connectés** : la route ne figure pas parmi les adresses publiques,
+le proxy (`src/proxy.ts`) répond donc `401` sans session. Elle ne vérifie en revanche aucune
+permission — tout compte authentifié y accède — et n'expose que la version et l'état de la
+base, aucune donnée d'église. Une sonde de supervision externe ne peut pas l'appeler telle
+quelle : la rendre publique (ou la protéger par un jeton, comme `/api/cron`) serait une
+décision à prendre explicitement.
+
 ---
 
 ## Églises
