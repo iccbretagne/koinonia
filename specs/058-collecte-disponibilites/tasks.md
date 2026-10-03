@@ -1,7 +1,7 @@
 # Tâches — Collecte des disponibilités et disponibilités dans la grille
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0020-…`
-- **Statut** : À faire
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
