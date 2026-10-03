@@ -28,6 +28,14 @@ Géré par NextAuth. Inclut :
 - `GET /api/auth/session` — session courante
 - `POST /api/auth/signout` — déconnexion
 
+### `POST /api/csp-report`
+
+Collecte des violations de la CSP (ADR-0022), appelée par les navigateurs (`report-uri`).
+**Publique** (sans session), bornée à 30 rapports/minute par IP et 16 Ko par requête. Accepte
+le format `application/csp-report` et le format Reporting API ; journalise directive, ressource
+bloquée et page (sans la query string, qui peut porter un jeton). Répond toujours `204` (`429`
+au-delà du débit, `413` au-delà de la taille).
+
 ### `GET /api/health`
 
 État de l'instance : `{ status: "ok" | "degraded", version, db: "ok" | "error", uptime }`

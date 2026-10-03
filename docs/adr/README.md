@@ -48,6 +48,7 @@ Statuts possibles : `Proposé`, `Accepté`, `Rejeté`, `Déprécié`, `Remplacé
 | [0019](0019-effacement-demande-supprimee.md) | Supprimer une demande efface son historique et ses notifications | Accepté |
 | [0020](0020-disponibilite-derivee-absence-indisponible.md) | La disponibilité est dérivée ; absence et statut INDISPONIBLE fusionnent | Accepté |
 | [0021](0021-planificateur-taches-cron.md) | Un seul déclencheur cron, chaque tâche à son propre rythme | Accepté |
+| [0022](0022-csp-nonce-report-only.md) | CSP stricte par nonce, déployée d'abord en Report-Only | Accepté |
 
 ## Note sur les ADR 0001–0003
 

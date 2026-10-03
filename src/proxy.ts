@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { resolveRouteOwner, isPublicRoute } from "@/lib/module-routes";
+import { buildCsp, cspHeaderName, generateNonce, storageOrigins, CSP_REPORT_PATH } from "@/lib/csp";
 
 /**
  * Noms du cookie de session posé par Auth.js — variante non préfixée (HTTP,
@@ -18,8 +19,31 @@ export const SESSION_COOKIE_NAMES = [
   "__Secure-authjs.session-token",
 ] as const;
 
+/**
+ * Politique de sécurité du contenu (ADR-0022) posée sur les pages — pas sur l'API, qui ne
+ * rend pas de HTML. Le nonce est aussi transmis dans l'en-tête de la **requête** : c'est là que
+ * Next.js le lit pour l'apposer sur ses propres scripts (et `headers()` pour le layout racine).
+ */
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) return route(request);
+
+  const headerName = cspHeaderName();
+  const policy = buildCsp({
+    nonce: generateNonce(),
+    isDev: process.env.NODE_ENV === "development",
+    storage: storageOrigins(),
+  });
+  const forwarded = new Headers(request.headers);
+  forwarded.set(headerName, policy);
+
+  const response = route(request, forwarded);
+  response.headers.set(headerName, policy);
+  return response;
+}
+
+function route(request: NextRequest, forwarded?: Headers): NextResponse {
   const pathname = request.nextUrl.pathname;
+  const next = () => (forwarded ? NextResponse.next({ request: { headers: forwarded } }) : NextResponse.next());
 
   // ─── Contrôle de module (spec 038) ─────────────────────────────────────────
   //
@@ -42,7 +66,10 @@ export function proxy(request: NextRequest) {
     }
     // Réécriture interne : préserve l'URL affichée, /module-absent appelle notFound()
     // pour produire un vrai statut 404 avec l'habillage de l'application.
-    return NextResponse.rewrite(new URL("/module-absent", request.url));
+    return NextResponse.rewrite(
+      new URL("/module-absent", request.url),
+      forwarded ? { request: { headers: forwarded } } : undefined
+    );
   }
 
   const sessionToken = SESSION_COOKIE_NAMES.map(
@@ -54,25 +81,29 @@ export function proxy(request: NextRequest) {
     // — ce n'est pas une adresse de module (NOYAU_ROUTES), donc pas déclarable via
     // `routes.public` d'un manifeste.
     if (pathname.startsWith("/api/cron")) {
-      return NextResponse.next();
+      return next();
+    }
+    // Rapports de violation CSP : envoyés par le navigateur, session ou non (ADR-0022).
+    if (pathname === CSP_REPORT_PATH) {
+      return next();
     }
     // NextAuth gère sa propre poignée de main (signin, callback, csrf, session) : ces
     // endpoints DOIVENT rester joignables sans session. Le matcher élargi de spec 038
     // les fait désormais traverser le proxy (avant : exclus par `/api/((?!auth).*)`).
     if (pathname.startsWith("/api/auth")) {
-      return NextResponse.next();
+      return next();
     }
     // La page de connexion se rend elle-même sans session (formulaire de connexion) —
     // la rediriger vers elle-même serait une boucle. Même raisonnement pour le matcher
     // élargi : "/" n'était pas intercepté avant spec 038.
     if (pathname === "/") {
-      return NextResponse.next();
+      return next();
     }
     // Adresses publiques par jeton d'un module actif (partage média, écoute audio,
     // formulaire agenda/intégration…) — dérivées de `routes.public` des manifestes,
     // plus de liste blanche codée en dur ici (spec 038).
     if (isPublicRoute(pathname, request.method)) {
-      return NextResponse.next();
+      return next();
     }
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -80,7 +111,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {
