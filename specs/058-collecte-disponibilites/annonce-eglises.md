@@ -62,6 +62,7 @@ second message, plus court, est destiné aux STAR.
 
 - [ ] Date de mise en ligne fixée et reportée dans le message (`[date]`).
 - [ ] Message envoyé aux responsables au moins quelques jours avant.
-- [ ] Une église qui ne veut pas de la collecte immédiatement doit la désactiver juste après la
-      mise en ligne, **avant le passage suivant de la tâche horaire**. Sinon, prévoir de
-      l'empêcher par configuration au déploiement (non prévu aujourd'hui).
+- [ ] Prévenir qu'une église qui ne veut pas de la collecte immédiatement doit la désactiver
+      juste après la mise en ligne, **avant le passage suivant de la tâche horaire**. Décision
+      (2026-10-03) : pas d'interrupteur au déploiement, la collecte est active par défaut et
+      l'annonce suffit.
