@@ -8,6 +8,7 @@ import { buildMediaSpaceCards, type MediaSpaceAccess } from "@/lib/media-space";
 import AuthLayoutShell from "@/components/AuthLayoutShell";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
+import { isPastoralView } from "@/lib/view-mode";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
@@ -56,9 +57,10 @@ export default async function AuthLayout({
   // Mode d'affichage : cookie pour persister le choix entre vue pastorale et vue admin
   const cookieStore = await cookies();
   const viewModeCookie = cookieStore.get("koinonia-view-mode")?.value;
-  const isInPastoralMode = isPastoral && viewModeCookie !== "admin";
+  const hasClassicRole = churchRoles.some((r) => r.churchId === currentChurchId);
+  const isInPastoralMode = isPastoralView({ isPastoral, hasClassicRole, viewModeCookie });
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
-  const hasBothRoles = isPastoral && churchRoles.some((r) => r.churchId === currentChurchId);
+  const hasBothRoles = isPastoral && hasClassicRole;
 
   async function switchToAdminMode() {
     "use server";
