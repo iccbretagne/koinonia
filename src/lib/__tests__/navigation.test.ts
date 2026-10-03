@@ -10,7 +10,10 @@ import {
   parentLink,
   resolveActive,
   searchablePages,
+  sidebarBlocks,
   type NavigationInput,
+  type NavSpace,
+  type SidebarBlock,
 } from "../navigation";
 
 const FAMILLES = "https://familles.example";
@@ -325,5 +328,366 @@ describe("recherche de pages", () => {
     expect(filterByQuery(pages, "fonctions dep", (p) => p.label, (p) => p.label).map((p) => p.href)).toEqual([
       "/admin/departments/functions",
     ]);
+  });
+});
+
+/** Admin d'une église à plusieurs ministères, avec intégration et administration complètes. */
+const fullAdmin: NavigationInput = {
+  ...admin,
+  departments: [
+    { id: "d1", name: "Choristes", ministryName: "Louange" },
+    { id: "d2", name: "Musiciens", ministryName: "Louange" },
+    { id: "d3", name: "Protocole", ministryName: "Accueil" },
+  ],
+  configLinks: [
+    { href: "/admin/churches", label: "Églises" },
+    { href: "/admin/departments", label: "Départements" },
+    { href: "/admin/users", label: "Utilisateurs" },
+    { href: "/admin/access", label: "Accès & rôles" },
+    { href: "/admin/audit-logs", label: "Historique" },
+  ],
+  integrationLinks: [
+    { href: "/integration/requests", label: "Intégration" },
+    { href: "/integration/leaders", label: "Bergers de famille" },
+    { href: "/integration/parcours", label: "Parcours d'intégration" },
+  ],
+  hasMyPlanning: true,
+  hasAvailability: true,
+};
+
+function spaceOf(input: NavigationInput, key: NavSpace["key"]): NavSpace {
+  return buildSpaces(input).find((s) => s.key === key)!;
+}
+
+/** Vue lisible d'un bloc : intitulé, pages (libellés affichés) et ministères. */
+function outline(blocks: SidebarBlock[]) {
+  return blocks.map((b) => ({
+    label: b.label,
+    count: b.count,
+    pages: b.entries.map((e) => e.label),
+    ministries: b.ministries.map((m) => `${m.name}: ${m.entries.map((e) => e.label).join(", ")}`),
+  }));
+}
+
+describe("sidebarBlocks (sidebar desktop)", () => {
+  it("Planning : pages personnelles, puis un bloc Départements rangé par ministère", () => {
+    expect(outline(sidebarBlocks(spaceOf(fullAdmin, "planning").pages))).toEqual([
+      { label: null, count: undefined, pages: ["Mon planning", "Disponibilités"], ministries: [] },
+      { label: "Départements", count: 3, pages: [], ministries: ["Louange: Choristes, Musiciens", "Accueil: Protocole"] },
+    ]);
+  });
+
+  it("un seul ministère : il est nommé dans l'intitulé, sans rangée intermédiaire", () => {
+    expect(outline(sidebarBlocks(spaceOf(deptHead, "planning").pages))).toEqual([
+      { label: null, count: undefined, pages: ["Disponibilités"], ministries: [] },
+      { label: "Départements · Louange", count: 2, pages: ["Choristes", "Musiciens"], ministries: [] },
+    ]);
+  });
+
+  it("Agenda : bloc « Église » face à « Agenda pastoral »", () => {
+    expect(outline(sidebarBlocks(spaceOf(admin, "agenda").pages)).map((b) => [b.label, b.pages])).toEqual([
+      ["Église", ["Agenda de l'église", "Trame des annonces", "Gérer les événements", "Service d'accueil", "Comptes rendus"]],
+      ["Agenda pastoral", ["Vue agenda", "Planification"]],
+    ]);
+  });
+
+  it("un espace réduit à un seul bloc n'affiche pas d'intitulé", () => {
+    expect(outline(sidebarBlocks(spaceOf(deptHead, "agenda").pages)).map((b) => [b.label, b.pages])).toEqual([
+      [null, ["Agenda de l'église", "Trame des annonces"]],
+    ]);
+  });
+
+  it("libellés raccourcis sous l'intitulé « Intégration » seulement", () => {
+    const blocks = outline(sidebarBlocks(spaceOf(fullAdmin, "people").pages));
+    expect(blocks.map((b) => [b.label, b.pages])).toEqual([
+      [null, ["STAR", "Discipolat"]],
+      ["Intégration", ["Demandes", "Bergers de famille", "Parcours"]],
+      [null, ["Suivi pastoral", "Familles"]],
+    ]);
+    // Seul dans son espace, le bloc perd son intitulé et reprend le libellé complet.
+    const alone = buildSpaces({ ...star, famillesUrl: null, integrationLinks: [{ href: "/integration/requests", label: "Intégration" }] });
+    const people = alone.find((s) => s.key === "people")!;
+    expect(outline(sidebarBlocks(people.pages)).map((b) => [b.label, b.pages])).toEqual([[null, ["Intégration"]]]);
+  });
+
+  it("Administration : Organisation, Accès, Plateforme", () => {
+    expect(outline(sidebarBlocks(spaceOf(fullAdmin, "admin").pages)).map((b) => [b.label, b.pages])).toEqual([
+      ["Organisation", ["Églises", "Départements"]],
+      ["Accès", ["Utilisateurs", "Accès & rôles"]],
+      ["Plateforme", ["Historique"]],
+    ]);
+  });
+});
+
+describe("panneau « Plus » mobile : données inchangées par la sidebar desktop", () => {
+  // Le panneau « Plus » (MoreSheet + NavPageList en taille `touch`) lit libellé, sous-groupe et
+  // département de chaque page. Les blocs et libellés de la sidebar desktop passent par des champs
+  // à part (`sidebarBlock`, `sidebarLabel`) : ce test échoue si une évolution du desktop modifie
+  // ce que voit le mobile.
+  it("libellés, sous-groupes et compteurs des pages, espace par espace", () => {
+    const mobile = buildSpaces(fullAdmin).map((s) => ({
+      space: s.label,
+      pages: s.pages.map((p) => [p.label, p.group ?? null, p.deptId ?? null, p.badge ?? null, !!p.external]),
+    }));
+    expect(mobile).toMatchInlineSnapshot(`
+      [
+        {
+          "pages": [],
+          "space": "Accueil",
+        },
+        {
+          "pages": [
+            [
+              "Mon planning",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Disponibilités",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Choristes",
+              "Louange",
+              "d1",
+              null,
+              false,
+            ],
+            [
+              "Musiciens",
+              "Louange",
+              "d2",
+              null,
+              false,
+            ],
+            [
+              "Protocole",
+              "Accueil",
+              "d3",
+              null,
+              false,
+            ],
+          ],
+          "space": "Planning",
+        },
+        {
+          "pages": [
+            [
+              "Agenda de l'église",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Trame des annonces",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Gérer les événements",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Service d'accueil",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Comptes rendus",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Vue agenda",
+              "Agenda pastoral",
+              null,
+              null,
+              false,
+            ],
+            [
+              "Planification",
+              "Agenda pastoral",
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Agenda",
+        },
+        {
+          "pages": [
+            [
+              "STAR",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Discipolat",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Intégration",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Bergers de famille",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Parcours d'intégration",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Suivi pastoral",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Familles",
+              null,
+              null,
+              null,
+              true,
+            ],
+          ],
+          "space": "Personnes",
+        },
+        {
+          "pages": [
+            [
+              "Mes demandes",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Traitement des demandes",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Comptabilité",
+              null,
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Demandes",
+        },
+        {
+          "pages": [
+            [
+              "Communication & Production",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Audio",
+              null,
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Médias",
+        },
+        {
+          "pages": [
+            [
+              "Salles",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Offres",
+              null,
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Ressources",
+        },
+        {
+          "pages": [
+            [
+              "Églises",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Départements",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Utilisateurs",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Accès & rôles",
+              null,
+              null,
+              null,
+              false,
+            ],
+            [
+              "Historique",
+              null,
+              null,
+              null,
+              false,
+            ],
+          ],
+          "space": "Administration",
+        },
+      ]
+    `);
   });
 });

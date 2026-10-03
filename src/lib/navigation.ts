@@ -51,6 +51,13 @@ export interface NavPage {
   readonly badge?: number;
   /** Ancre de la visite guidée (`src/lib/tour-steps.ts`). */
   readonly dataTour?: string;
+  /**
+   * Bloc de la sidebar desktop (« Église », « Intégration », « Organisation »…), à défaut de
+   * `group`. Lu seulement par `sidebarBlocks` : le panneau « Plus » mobile n'en tient pas compte.
+   */
+  readonly sidebarBlock?: string;
+  /** Libellé raccourci sous l'intitulé de son bloc dans la sidebar desktop (« Parcours »). */
+  readonly sidebarLabel?: string;
 }
 
 export interface NavSpace {
@@ -193,9 +200,31 @@ function jobsPage(input: NavigationInput): NavPage {
   };
 }
 
+/** Blocs de l'espace Administration dans la sidebar desktop. */
+const CONFIG_BLOCKS: Record<string, string> = {
+  "/admin/churches": "Organisation",
+  "/admin/ministries": "Organisation",
+  "/admin/departments": "Organisation",
+  "/admin/departments/functions": "Organisation",
+  "/admin/rooms": "Organisation",
+  "/admin/users": "Accès",
+  "/admin/access": "Accès",
+  "/admin/pastoral-profiles": "Accès",
+  "/admin/audit-logs": "Plateforme",
+  "/admin/backups": "Plateforme",
+};
+
 function configPages(input: NavigationInput): NavPage[] {
-  return input.configLinks.map((l) => ({ href: l.href, label: l.label }));
+  return input.configLinks.map((l) => ({ href: l.href, label: l.label, sidebarBlock: CONFIG_BLOCKS[l.href] }));
 }
+
+/** Libellés des pages d'intégration sous l'intitulé « Intégration » de la sidebar desktop. */
+const INTEGRATION_SHORT_LABELS: Record<string, string> = {
+  "/integration/requests": "Demandes",
+  "/integration/parcours": "Parcours",
+  "/integration/stats": "Statistiques",
+  "/integration/parametres": "Paramètres",
+};
 
 /** Vue pastorale : navigation simplifiée, mêmes entrées que la sidebar et le menu mobile actuels. */
 function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
@@ -242,26 +271,32 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
   }
 
   const agenda: NavPage[] = [];
+  // Pages de l'église : bloc « Église » de la sidebar desktop, face à « Agenda pastoral ».
+  const church = "Église";
   // STAR sans events:view : vue hebdomadaire + trame des annonces (spec 043).
   if (input.showStarEvents) {
-    agenda.push({ href: "/planning/events", label: "Agenda de l'église" });
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces" });
+    agenda.push({ href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church });
+    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
   }
   if (input.hasEventsAccess) {
-    agenda.push({ href: "/events", label: "Agenda de l'église" });
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces" });
+    agenda.push({ href: "/events", label: "Agenda de l'église", sidebarBlock: church });
+    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
     if (input.hasEventsManage) {
-      agenda.push({ href: "/admin/events", label: "Gérer les événements" });
-      agenda.push({ href: "/admin/welcome-duty", label: "Service d'accueil" });
+      agenda.push({ href: "/admin/events", label: "Gérer les événements", sidebarBlock: church });
+      agenda.push({ href: "/admin/welcome-duty", label: "Service d'accueil", sidebarBlock: church });
     }
-    if (input.hasReports) agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports" });
+    if (input.hasReports) {
+      agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
+    }
   }
   agenda.push(...agendaPages);
 
   const people: NavPage[] = [];
   if (input.hasMembersAccess) people.push({ href: "/admin/members", label: "STAR" });
   if (input.hasDiscipleship) people.push({ href: "/admin/discipleship", label: "Discipolat" });
-  for (const l of input.integrationLinks ?? []) people.push({ href: l.href, label: l.label });
+  for (const l of input.integrationLinks ?? []) {
+    people.push({ href: l.href, label: l.label, sidebarBlock: "Intégration", sidebarLabel: INTEGRATION_SHORT_LABELS[l.href] });
+  }
   people.push(...carePages);
   if (input.famillesUrl) people.push({ href: input.famillesUrl, label: "Familles", external: true });
 
@@ -296,6 +331,92 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
     space("admin", "Administration", Settings, "church", configPages(input), { dataTour: "sidebar-config" }),
   ];
   return spaces.filter((s): s is NavSpace => s !== null);
+}
+
+/* ── Sidebar desktop : blocs d'un espace ─────────────────────────────────────── */
+
+export interface SidebarEntry {
+  readonly page: NavPage;
+  /** Libellé affiché : raccourci (`sidebarLabel`) seulement sous l'intitulé de son bloc. */
+  readonly label: string;
+}
+
+export interface SidebarMinistry {
+  readonly name: string;
+  readonly entries: readonly SidebarEntry[];
+}
+
+export interface SidebarBlock {
+  /** Intitulé du bloc (séparateur « libellé + filet ») ; `null` : pages sans intitulé. */
+  readonly label: string | null;
+  /** Nombre de départements (bloc « Départements » seulement). */
+  readonly count?: number;
+  /** Pages hors ministère, dans l'ordre. */
+  readonly entries: readonly SidebarEntry[];
+  /** Départements rangés par ministère repliable (plusieurs ministères dans le bloc). */
+  readonly ministries: readonly SidebarMinistry[];
+}
+
+const DEPARTMENTS_BLOCK = "Départements";
+
+function blockOf(page: NavPage): string | null {
+  if (page.sidebarBlock) return page.sidebarBlock;
+  if (page.deptId) return DEPARTMENTS_BLOCK;
+  return page.group ?? null;
+}
+
+/** Regroupe des éléments consécutifs selon une clé, dans l'ordre. */
+function runs<T, K>(items: readonly T[], key: (item: T) => K): { key: K; items: T[] }[] {
+  const out: { key: K; items: T[] }[] = [];
+  for (const item of items) {
+    const k = key(item);
+    const last = out[out.length - 1];
+    if (last && last.key === k) last.items.push(item);
+    else out.push({ key: k, items: [item] });
+  }
+  return out;
+}
+
+/**
+ * Arborescence des pages d'un espace dans la sidebar desktop (spec 055, retours sur le menu) :
+ * pages sans intitulé, puis blocs à intitulé (« Départements », « Agenda pastoral »…). Le bloc
+ * « Départements » range ses départements par ministère repliable ; avec un seul ministère, il
+ * le nomme dans son intitulé (« Départements · Louange ») et liste les départements directement.
+ * Un espace réduit à un seul bloc (hors départements) n'affiche pas d'intitulé : il ne
+ * distinguerait rien. Le panneau « Plus » mobile garde sa propre présentation (`group`).
+ */
+export function sidebarBlocks(pages: readonly NavPage[]): SidebarBlock[] {
+  const groups = runs(pages, blockOf);
+  const single = groups.length === 1 && groups[0].key !== null && groups[0].key !== DEPARTMENTS_BLOCK;
+
+  return groups.map(({ key, items }) => {
+    const label = single ? null : key;
+    const entry = (page: NavPage): SidebarEntry => ({
+      page,
+      label: label !== null && page.sidebarLabel ? page.sidebarLabel : page.label,
+    });
+    if (key !== DEPARTMENTS_BLOCK) return { label, entries: items.map(entry), ministries: [] };
+
+    const named = [...new Set(items.map((p) => p.group).filter((g): g is string => !!g))];
+    if (named.length <= 1) {
+      const onlyNamed = named.length === 1 && items.every((p) => p.group === named[0]);
+      return {
+        label: onlyNamed ? `${DEPARTMENTS_BLOCK} · ${named[0]}` : DEPARTMENTS_BLOCK,
+        count: items.length,
+        entries: items.map(entry),
+        ministries: [],
+      };
+    }
+    const byMinistry = runs(items, (p) => p.group ?? null);
+    return {
+      label: DEPARTMENTS_BLOCK,
+      count: items.length,
+      entries: byMinistry.filter((m) => m.key === null).flatMap((m) => m.items.map(entry)),
+      ministries: byMinistry
+        .filter((m): m is { key: string; items: NavPage[] } => m.key !== null)
+        .map((m) => ({ name: m.key, entries: m.items.map(entry) })),
+    };
+  });
 }
 
 /* ── Page active ───────────────────────────────────────────────────────────── */

@@ -14,6 +14,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Modifié
 
+- Menu desktop plus lisible : un seul espace ouvert à la fois, une seule surbrillance (la page ouverte), un séparateur distinct par niveau (sections du menu, blocs « libellé + filet », ministères repliables). Planning distingue vos pages personnelles du bloc « Départements » rangé par ministère ; Agenda, Personnes et Administration regroupent leurs pages (Église / Agenda pastoral, Intégration, Organisation / Accès / Plateforme). Le panneau « Plus » mobile est inchangé.
+- Agenda pastoral : l'entrée de menu « Nouvelle entrée » disparaît ; le bouton « + Entrée directe » de la vue agenda devient « + Ajouter à l'agenda », et sa page explique ce qu'elle fait.
 - « Absences » devient « Indisponibilités » : périodes uniquement (plus d'absence « sur certains événements »), plus les réponses « Pas disponible » à venir.
 - Les anomalies constatées sur une salle réservée (checklist) envoient désormais un email par défaut (domaine « Salles », désactivable dans « Mon profil ») ; jusque-là, aucun email ne partait, même préférence activée.
 - Le statut de service `INDISPONIBLE` n'est plus posable dans la grille : la disponibilité est dérivée (ADR-0020). Migration : les anciennes absences par événements et plannings `INDISPONIBLE` deviennent des réponses « Pas disponible ».
