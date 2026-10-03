@@ -6,6 +6,8 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
+import Alert from "@/components/ui/Alert";
+import Link from "next/link";
 
 interface Church {
   id: string;
@@ -157,6 +159,23 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
               onChange={(e) => setResponsibleProfileId(e.target.value)}
               options={profileOptions}
             />
+            {profiles.length === 0 && (
+              <Alert
+                tone="info"
+                title="Aucun profil pastoral dans cette église."
+                action={
+                  <Link
+                    href={`/admin/pastoral-profiles?churchId=${church.id}`}
+                    className="text-sm font-semibold text-brand underline"
+                  >
+                    Créer un profil pastoral pour {church.name}
+                  </Link>
+                }
+              >
+                Les profils pastoraux sont propres à chaque église : le responsable se choisit parmi
+                ceux de {church.name}.
+              </Alert>
+            )}
             <Select
               label="Superviseur (pasteur superviseur)"
               value={supervisorProfileId}
