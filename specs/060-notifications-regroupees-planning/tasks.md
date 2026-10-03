@@ -1,7 +1,7 @@
 # Tâches — Notifications regroupées des changements de planning
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md` · **ADR** : `docs/adr/0021-planificateur-taches-cron.md`
-- **Statut** : En cours (code livré, recette à faire)
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.

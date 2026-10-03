@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.28.0] - 2026-10-03
+
 ### Ajouté
 
 - **Collecte des disponibilités** (spec 058, issue #612) : chaque mois, tous les STAR indiquent leur disponibilité (Disponible / Si besoin / Pas disponible) par événement depuis « Disponibilités » ; ouverture, clôture et relance automatiques et réglables (`availability:settings`), demandes ciblées à l'ajout ou au déplacement d'un événement, « Répondre pour… » par un responsable.
