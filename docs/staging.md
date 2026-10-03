@@ -44,6 +44,11 @@ http:
           - url: "http://127.0.0.1:3001" # adapter selon PORT dans shared/.env de la recette
 ```
 
+Appliquer à la recette le même durcissement que la production
+([production.md § Durcissement](production.md#durcissement--ip-client-port-applicatif-hsts)) :
+`HOSTNAME=127.0.0.1` dans l'unité systemd, aucun `forwardedHeaders` permissif sur l'entrypoint,
+middleware d'en-têtes de sécurité.
+
 ### `shared/.env` propre à la recette
 
 Ne jamais réutiliser le `.env` de production. Créer un fichier `/opt/koinonia/shared/.env` dédié sur la VM de recette avec :
