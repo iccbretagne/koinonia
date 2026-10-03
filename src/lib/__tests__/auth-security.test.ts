@@ -143,6 +143,24 @@ describe("requireChurchPermission", () => {
       requireChurchPermission("members:manage", "church-1")
     ).rejects.toThrow("FORBIDDEN");
   });
+
+  // Double rôle (berger + STAR) : les permissions pastorales s'ajoutent à celles du rôle —
+  // auparavant, la présence d'un rôle les écartait (FORBIDDEN sur Discipolat, Agenda…).
+  it("a pastoral profile combined with a classic role keeps the pastoral read permissions", async () => {
+    const session = createStarSession("church-1");
+    mockAuth.mockResolvedValue({ ...session, user: { ...session.user, pastoralChurchIds: ["church-1"] } });
+
+    await expect(requireChurchPermission("discipleship:view", "church-1")).resolves.toBeDefined();
+    await expect(requireChurchPermission("events:view", "church-1")).resolves.toBeDefined();
+    await expect(requireChurchPermission("members:manage", "church-1")).rejects.toThrow("FORBIDDEN");
+  });
+
+  it("the pastoral read permissions stay limited to the profile's church", async () => {
+    const session = createStarSession("church-1");
+    mockAuth.mockResolvedValue({ ...session, user: { ...session.user, pastoralChurchIds: ["church-2"] } });
+
+    await expect(requireChurchPermission("discipleship:view", "church-1")).rejects.toThrow("FORBIDDEN");
+  });
 });
 
 describe("requireChurchAccess", () => {
