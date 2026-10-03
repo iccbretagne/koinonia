@@ -1,7 +1,7 @@
 # Plan technique — Notifications regroupées des changements de planning
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-03
 - **Prérequis** : planificateur de tâches mutualisé (chantier `chore/planificateur-cron`,
   ADR-0021) — un seul déclencheur toutes les 5 minutes, chaque tâche à son propre rythme
