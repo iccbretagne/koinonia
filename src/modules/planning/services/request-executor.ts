@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { planningBus } from "../bus";
 import { deleteEvents } from "./event.service";
+import { collectEventChangeNotices, type EventChangeNotices } from "./event-change-notices";
 import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "./recurrence";
 
 export interface ExecutionResult {
@@ -9,6 +10,8 @@ export interface ExecutionResult {
   /** ID de la ressource créée ou modifiée (event, role…), si applicable. */
   resourceId?: string;
   recurrenceTruncated?: boolean;
+  /** Notifications de changement d'événement à envoyer après le commit (spec 059). */
+  notices?: EventChangeNotices;
   maxOccurrences?: number;
   /** Nombre d'occurrences enfants créées (AJOUT_EVENEMENT récurrent uniquement). */
   childCount?: number;
@@ -229,6 +232,13 @@ async function executeModificationEvenement(
       ctx,
       { eventId, churchId, previousDate: event.date.toISOString(), newDate: updated.date.toISOString() }
     );
+    const notices = await collectEventChangeNotices(
+      tx,
+      churchId,
+      [{ kind: "MOVED", eventId, previousDate: event.date, newDate: updated.date }],
+      { actorId: ctx.userId }
+    );
+    return { success: true, resourceId: eventId, notices };
   }
 
   return { success: true, resourceId: eventId };
@@ -254,9 +264,9 @@ async function executeAnnulationEvenement(
 
   // deleteEvents gère : émission bus, cleanup FK (planning + discipleship
   // via handler + eventReport + announcementEvent), puis suppression.
-  await deleteEvents(ctx, [eventId]);
+  const notices = await deleteEvents(ctx, [eventId]);
 
-  return { success: true, resourceId: eventId };
+  return { success: true, resourceId: eventId, notices };
 }
 
 async function executeModificationPlanning(

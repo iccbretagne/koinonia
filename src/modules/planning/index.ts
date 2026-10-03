@@ -4,6 +4,13 @@ export { executeRequest } from "./services/request-executor";
 export type { ExecutionResult } from "./services/request-executor";
 export { deleteEvents } from "./services/event.service";
 export {
+  collectEventChangeNotices,
+  sendEventChangeNotices,
+  emptyEventChangeNotices,
+  mergeEventChangeNotices,
+} from "./services/event-change-notices";
+export type { EventChange, EventChangeNotices } from "./services/event-change-notices";
+export {
   declareAbsence,
   cancelAbsence,
   updateAbsence,

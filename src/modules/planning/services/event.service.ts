@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { planningBus } from "../bus";
+import { collectEventChangeNotices, emptyEventChangeNotices, type EventChangeNotices } from "./event-change-notices";
 
 type TxClient = Prisma.TransactionClient;
 
@@ -23,12 +24,22 @@ interface DeleteEventsCtx {
  *
  * Utiliser cette fonction pour toute suppression d'événement — API bulk delete
  * ET executor de demandes — afin de garantir la cohérence et les émissions bus.
+ *
+ * Retourne les notifications à envoyer aux personnes planifiées (spec 059), lues avant la
+ * purge des plannings : l'appelant les envoie via `sendEventChangeNotices` après le commit.
  */
 export async function deleteEvents(
   ctx: DeleteEventsCtx,
   eventIds: string[]
-): Promise<void> {
-  if (eventIds.length === 0) return;
+): Promise<EventChangeNotices> {
+  if (eventIds.length === 0) return emptyEventChangeNotices();
+
+  const notices = await collectEventChangeNotices(
+    ctx.tx,
+    ctx.churchId,
+    eventIds.map((eventId) => ({ kind: "CANCELLED" as const, eventId })),
+    { actorId: ctx.userId }
+  );
 
   // 1. Émettre avant la suppression pour que les handlers cross-module
   //    (ex. discipleship) nettoient leurs FK dans la même transaction.
@@ -59,4 +70,6 @@ export async function deleteEvents(
 
   // 3. Supprimer les events (FK propres grâce aux étapes précédentes)
   await ctx.tx.event.deleteMany({ where: { id: { in: eventIds } } });
+
+  return notices;
 }

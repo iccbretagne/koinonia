@@ -3,7 +3,13 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { planningBus, deleteEvents } from "@/modules/planning";
+import {
+  planningBus,
+  deleteEvents,
+  collectEventChangeNotices,
+  sendEventChangeNotices,
+  emptyEventChangeNotices,
+} from "@/modules/planning";
 import { z } from "zod";
 
 export async function GET(request: Request) {
@@ -68,16 +74,14 @@ export async function PATCH(request: Request) {
     const patchSession = await requireChurchPermission("events:manage", evtChurchId);
 
     if (action === "delete") {
-      await prisma.$transaction(async (tx) => {
-        await deleteEvents(
-          { tx, churchId: evtChurchId, userId: patchSession.user.id },
-          ids
-        );
-      });
+      const notices = await prisma.$transaction((tx) =>
+        deleteEvents({ tx, churchId: evtChurchId, userId: patchSession.user.id }, ids)
+      );
+      const { notified } = await sendEventChangeNotices(notices);
       for (const id of ids) {
         await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "DELETE", entityType: "Event", entityId: id });
       }
-      return successResponse({ deleted: ids.length });
+      return successResponse({ deleted: ids.length, notified });
     }
 
     if (!data || Object.keys(data).length === 0) {
@@ -89,7 +93,7 @@ export async function PATCH(request: Request) {
       updateData.date = new Date(data.date);
     }
 
-    await prisma.$transaction(async (tx) => {
+    const notices = await prisma.$transaction(async (tx) => {
       const before = data.date
         ? await tx.event.findMany({ where: { id: { in: ids } }, select: { id: true, date: true } })
         : [];
@@ -109,12 +113,20 @@ export async function PATCH(request: Request) {
           }
         );
       }
+      if (before.length === 0) return emptyEventChangeNotices();
+      return collectEventChangeNotices(
+        tx,
+        evtChurchId,
+        before.map((ev) => ({ kind: "MOVED" as const, eventId: ev.id, previousDate: ev.date, newDate: updateData.date as Date })),
+        { actorId: patchSession.user.id }
+      );
     });
+    const { notified } = await sendEventChangeNotices(notices);
 
     for (const id of ids) {
       await logAudit({ userId: patchSession.user.id, churchId: evtChurchId, action: "UPDATE", entityType: "Event", entityId: id, details: data });
     }
-    return successResponse({ updated: ids.length });
+    return successResponse({ updated: ids.length, notified });
   } catch (error) {
     return errorResponse(error);
   }

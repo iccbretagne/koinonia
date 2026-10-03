@@ -9,6 +9,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Ajouté
 
 - **Collecte des disponibilités** (spec 058, issue #612) : chaque mois, tous les STAR indiquent leur disponibilité (Disponible / Si besoin / Pas disponible) par événement depuis « Disponibilités » ; ouverture, clôture et relance automatiques et réglables (`availability:settings`), demandes ciblées à l'ajout ou au déplacement d'un événement, « Répondre pour… » par un responsable.
+- **Événement déplacé ou annulé** (spec 059) : les STAR planifiés (en service, remplaçants), leurs responsables de département et les Ministres concernés sont prévenus (application + email selon « Planning et service ») quand un événement à venir change de date ou d'heure, ou est supprimé — directement ou par approbation d'une demande. Une notification par personne, même pour une série ; l'auteur voit combien de personnes ont été prévenues.
 - Une nouvelle demande d'intégration reçue par le formulaire public notifie l'équipe intégration (application + email).
 - Grille de planning : disponibilité de chaque STAR, tri, compteur, avertissement en cas de placement d'un indisponible, « Interroger l'équipe » et « Relancer les sans-réponse ».
 

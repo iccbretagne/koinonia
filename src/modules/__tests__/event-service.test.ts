@@ -19,6 +19,7 @@ describe("deleteEvents", () => {
     vi.clearAllMocks();
     planningBus.clear();
     prismaMock.eventDepartment.findMany.mockResolvedValue([]);
+    prismaMock.event.findMany.mockResolvedValue([]); // audience des notifications (spec 059)
   });
 
   it("est un no-op si la liste est vide", async () => {
@@ -74,5 +75,36 @@ describe("deleteEvents", () => {
     await deleteEvents({ tx, churchId: "church-1" }, ["evt-1"]);
 
     expect(handler.mock.calls[0][1]).toMatchObject({ cancelledById: "system" });
+  });
+});
+
+describe("deleteEvents — notifications d'annulation (spec 059)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    planningBus.clear();
+    prismaMock.eventDepartment.findMany.mockResolvedValue([{ id: "ed-1" }] as never);
+    prismaMock.event.findMany.mockResolvedValue([{ id: "evt-1", title: "Culte", date: new Date("2099-01-04T09:00:00Z") }] as never);
+    prismaMock.planning.findMany.mockResolvedValue([
+      {
+        eventDepartment: { eventId: "evt-1", departmentId: "dept-1", department: { name: "Louange", ministryId: "min-1" } },
+        member: { userLinks: [{ userId: "u-star" }] },
+      },
+    ] as never);
+    prismaMock.userDepartment.findMany.mockResolvedValue([]);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
+  });
+
+  it("lit les planifiés avant de purger les plannings et rend les notifications", async () => {
+    const notices = await deleteEvents(makeCtx(), ["evt-1"]);
+
+    const readOrder = prismaMock.planning.findMany.mock.invocationCallOrder[0];
+    const purgeOrder = prismaMock.planning.deleteMany.mock.invocationCallOrder[0];
+    expect(readOrder).toBeLessThan(purgeOrder);
+    expect(notices.items).toEqual([expect.objectContaining({ userId: "u-star", type: "EVENT_CANCELLED" })]);
+  });
+
+  it("n'inclut pas l'auteur de la suppression", async () => {
+    const notices = await deleteEvents(makeCtx("church-1", "u-star"), ["evt-1"]);
+    expect(notices.items).toEqual([]);
   });
 });

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 
 const DESTRUCTIVE_STATUSES = new Set(["REFUSEE", "ANNULE"]);
 
@@ -95,6 +96,7 @@ interface Props {
 }
 
 export default function RequestsDashboard({ requests: initial, canManage = false }: Props) {
+  const toast = useToast();
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -148,6 +150,9 @@ export default function RequestsDashboard({ requests: initial, canManage = false
       }
 
       const result = await res.json();
+      // Spec 059 : personnes planifiées prévenues d'un déplacement ou d'une annulation.
+      const notified: number = result.notified ?? 0;
+      if (notified > 0) toast.success(`${notified} personne${notified > 1 ? "s" : ""} prévenue${notified > 1 ? "s" : ""}`);
 
       setRequests((prev) =>
         prev.map((r) =>
