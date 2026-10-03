@@ -19,6 +19,7 @@ const {
   isRelanceDue,
   getIntegrationSettings,
   notifyIntegrationTeamNewRequest,
+  notifyBergerAssigned,
 } = await import("../services/family-service");
 
 function makeRequest(overrides: Record<string, unknown> = {}) {
@@ -218,5 +219,24 @@ describe("notifyIntegrationTeamNewRequest (audit notifications)", () => {
     await notifyIntegrationTeamNewRequest({ churchId: "church-1", requestId: "req-1", firstName: "Marie", lastName: "Curie" });
 
     expect(mockNotifyUsers).not.toHaveBeenCalled();
+  });
+});
+
+describe("notifyBergerAssigned (#629)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.user.findUnique.mockResolvedValue({ id: "u-berger", name: "Paul", email: "paul@example.com" } as never);
+    mockCreateNotification.mockResolvedValue(undefined);
+  });
+
+  it("pointe la notification et l'email vers la page réelle de la demande", async () => {
+    await notifyBergerAssigned({
+      bergerId: "u-berger", firstName: "Marie", lastName: "Curie", requestId: "req-1", familyName: null, appUrl: "https://app.test",
+    });
+
+    const [notification, options] = mockCreateNotification.mock.calls[0];
+    expect(notification.link).toBe("/integration/requests/req-1");
+    expect(options.email.html).toContain('href="https://app.test/integration/requests/req-1"');
+    expect(options.email.html).not.toContain("/admin/integration");
   });
 });
