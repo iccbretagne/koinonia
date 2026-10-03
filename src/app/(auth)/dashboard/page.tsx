@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { auth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
+import { isPastoralView } from "@/lib/view-mode";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import EventSelector from "@/components/EventSelector";
@@ -54,7 +55,8 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   const viewMode = cookieStore.get("koinonia-view-mode")?.value;
   const pastoralChurchIds = session.user.pastoralChurchIds ?? [];
   const isPastoralChurch = currentChurchId ? pastoralChurchIds.includes(currentChurchId) : false;
-  if (isPastoralChurch && viewMode !== "admin") redirect("/pastoral");
+  const hasClassicRole = session.user.churchRoles.some((r) => r.churchId === currentChurchId);
+  if (isPastoralView({ isPastoral: isPastoralChurch, hasClassicRole, viewModeCookie: viewMode })) redirect("/pastoral");
 
   if (!currentChurchId) {
     return (
