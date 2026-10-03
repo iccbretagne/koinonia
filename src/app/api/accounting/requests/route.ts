@@ -1,10 +1,9 @@
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { rolePermissions } from "@/lib/registry";
 import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
 import { notifyUsers } from "@/lib/notifications";
-import { assertAttachmentsAssignable } from "@/modules/accounting";
+import { assertAttachmentsAssignable, getAccountingDepartmentScope, accountingScopeWhere } from "@/modules/accounting";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -26,45 +25,16 @@ export async function GET(request: Request) {
     const departmentId = searchParams.get("departmentId") ?? undefined;
     const type       = searchParams.get("type") ?? undefined;
 
-    const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-    const canManage = roles.flatMap((r) => rolePermissions[r] ?? []).includes("accounting:manage");
-    const isMinister = roles.includes("MINISTER");
-
-    // Scope : managers voient tout ; ministres voient leur(s) ministère(s) ; autres voient leurs départements.
-    // Dans tous les cas, chacun voit ses propres demandes personnelles (departmentId null).
-    let deptFilter: string[] | undefined;
-    if (!canManage) {
-      const userRoles = await prisma.userChurchRole.findMany({
-        where: { userId: session.user.id!, churchId },
-        include: { departments: { select: { departmentId: true } } },
-      });
-      if (isMinister) {
-        const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
-        if (ministryIds.length > 0) {
-          const depts = await prisma.department.findMany({
-            where: { ministryId: { in: ministryIds } },
-            select: { id: true },
-          });
-          deptFilter = depts.map((d) => d.id);
-        } else {
-          deptFilter = [];
-        }
-      } else {
-        deptFilter = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
-      }
-    }
-
-    // Filtre scope : département(s) assigné(s) OU propres demandes personnelles (sans département)
-    const scopeCondition = deptFilter
-      ? { OR: [{ departmentId: { in: deptFilter } }, { submittedById: session.user.id!, departmentId: null }] }
-      : {};
+    // Le filtre ?departmentId= restreint le périmètre autorisé, il ne le remplace jamais.
+    const scope = await getAccountingDepartmentScope(session, churchId);
 
     const requests = await prisma.financialRequest.findMany({
       where: {
         churchId,
         ...(status ? { status: status as never } : {}),
         ...(type ? { type: type as never } : {}),
-        ...(departmentId ? { departmentId } : scopeCondition),
+        ...(departmentId ? { departmentId } : {}),
+        ...accountingScopeWhere(scope, session.user.id!),
       },
       include: {
         department:  { select: { id: true, name: true } },

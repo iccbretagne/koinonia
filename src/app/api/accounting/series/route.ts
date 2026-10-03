@@ -1,6 +1,7 @@
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { getAccountingDepartmentScope, accountingScopeWhere } from "@/modules/accounting";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -15,7 +16,8 @@ const createSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const { churchId } = await requireCurrentChurchPermission("accounting:view");
+    const { session, churchId } = await requireCurrentChurchPermission("accounting:view");
+    const scope = await getAccountingDepartmentScope(session, churchId);
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") ?? undefined;
@@ -24,6 +26,7 @@ export async function GET(request: Request) {
       where: {
         churchId,
         ...(status ? { status: status as never } : {}),
+        ...accountingScopeWhere(scope, session.user.id!),
       },
       include: {
         department:  { select: { id: true, name: true } },
