@@ -4,6 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import { getAccountingDepartmentScope } from "@/modules/accounting";
 import { z } from "zod";
 
 const patchSchema = z.discriminatedUnion("action", [
@@ -67,24 +68,7 @@ export async function GET(
     if (!hasPermission(perms, "accounting:manage")) {
       // Propre demande → toujours accessible
       if (req.submittedById !== session.user.id!) {
-        const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-        const isMinister = roles.includes("MINISTER");
-        const userRoles = await prisma.userChurchRole.findMany({
-          where: { userId: session.user.id!, churchId },
-          include: { departments: { select: { departmentId: true } } },
-        });
-
-        let allowedDeptIds: string[];
-        if (isMinister) {
-          const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
-          const depts = ministryIds.length > 0
-            ? await prisma.department.findMany({ where: { ministryId: { in: ministryIds } }, select: { id: true } })
-            : [];
-          allowedDeptIds = depts.map((d) => d.id);
-        } else {
-          allowedDeptIds = userRoles.flatMap((r) => r.departments.map((d) => d.departmentId));
-        }
-
+        const allowedDeptIds = (await getAccountingDepartmentScope(session, churchId)) ?? [];
         if (!req.departmentId || !allowedDeptIds.includes(req.departmentId)) {
           throw new ApiError(403, "Accès refusé");
         }
