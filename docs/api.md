@@ -2340,24 +2340,28 @@ Définit l'église active de l'utilisateur via un cookie HTTP-only (durée : 30 
 
 ## Tâches CRON
 
-### `POST /api/cron/reminders`
+### `POST /api/cron`
 
-Envoie les rappels de service (emails + notifications in-app) pour les événements à J-1 et J-3.
+Point d'entrée unique des tâches planifiées, appelé **toutes les 5 minutes** par le minuteur
+systemd (voir [production](production.md#cron--tâches-planifiées)). Chaque tâche déclare son
+propre rythme et ne s'exécute que lorsqu'elle est due (planificateur, ADR-0021) ; l'état de
+chaque tâche est conservé dans `cron_task_runs`.
 
 **Authentification** : token secret via header `Authorization: Bearer {CRON_SECRET}`
 
-**Comportement** :
-- Identifie les événements ayant lieu dans 1 ou 3 jours
-- Pour chaque membre en service (`EN_SERVICE` ou `EN_SERVICE_DEBRIEF`) : envoie un email si SMTP est configuré et si le membre a une adresse email
-- Pour chaque responsable de département concerné : crée une notification in-app
-
-**Réponse** :
+**Réponse** : le statut de chaque tâche déclarée (`ran`, `not-due`, `locked`, `failed`) et le
+compte rendu de celles qui ont tourné (`null` sinon) :
 ```json
 {
-  "emailsSent": 5,
-  "notificationsCreated": 8
+  "tasks": { "reminders": "not-due", "planning-digest": "ran", "availability": "ran" },
+  "reminders": null,
+  "planningDigest": { "digestsSent": 1 },
+  "availability": { "opened": 0, "openingNotified": 0, "asksSent": 0, "relances": 0 }
 }
 ```
+
+L'échec d'une tâche est consigné (`cron_task_runs.lastError`, journal) sans empêcher les autres
+ni faire échouer l'appel.
 
 ---
 

@@ -61,6 +61,10 @@ describe("POST /api/cron — digest planning, emails multiples secrétariat", ()
     vi.clearAllMocks();
     process.env.CRON_SECRET = "test-secret";
     process.env.SMTP_HOST = "smtp.test";
+    // Planificateur (ADR-0021) : aucune tâche encore passée, donc toutes dues.
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([]);
+    prismaMock.cronTaskRun.createMany.mockResolvedValue({ count: 1 });
+    prismaMock.cronTaskRun.update.mockResolvedValue({});
     prismaMock.event.findMany.mockResolvedValue([]); // pas de rappels
     prismaMock.church.update.mockResolvedValue({});
     prismaMock.auditLog.findMany.mockResolvedValue([auditEntry]);
@@ -114,5 +118,21 @@ describe("POST /api/cron — digest planning, emails multiples secrétariat", ()
 
     expect(mockRunJobOffersLifecycle).toHaveBeenCalledTimes(1);
     expect(body.jobOffersLifecycle).toEqual({ archived: 2, renewalsSent: 5, emailFailures: 1 });
+  });
+
+  it("planificateur : le digest passé il y a 10 minutes n'est pas relancé par l'appel de 5 minutes", async () => {
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([
+      { key: "planning-digest", lastStartedAt: new Date(Date.now() - 10 * 60_000) },
+    ]);
+    prismaMock.church.findMany.mockResolvedValue([
+      { id: "church-1", name: "ICC Rennes", secretariatEmails: "sec@icc.fr", planningDigestLastSentAt: null },
+    ]);
+
+    const res = await POST(cronRequest());
+    const body = await res.json();
+
+    expect(body.tasks["planning-digest"]).toBe("not-due");
+    expect(body.planningDigest).toBeNull();
+    expect(mockSendEmail).not.toHaveBeenCalledWith(expect.objectContaining({ to: ["sec@icc.fr"] }));
   });
 });

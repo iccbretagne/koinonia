@@ -93,53 +93,26 @@ describe("POST /api/cron/backup — auth and S3 checks", () => {
   });
 });
 
-describe("POST /api/cron/reminders — auth and processing", () => {
-  beforeEach(async () => {
+describe("POST /api/cron — authentification", () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = "test-secret";
   });
 
-  it("returns 401 when no Authorization header", async () => {
-    const { POST } = await import("../reminders/route");
-
-    const request = new Request("http://localhost/api/cron/reminders", {
-      method: "POST",
-    });
-    const res = await POST(request);
+  it("returns 401 when no Authorization header, sans lancer aucune tâche", async () => {
+    const { POST } = await import("../route");
+    const res = await POST(new Request("http://localhost/api/cron", { method: "POST" }));
 
     expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toBeDefined();
+    expect(prismaMock.cronTaskRun.findMany).not.toHaveBeenCalled();
   });
 
   it("returns 401 when wrong Bearer token", async () => {
-    const { POST } = await import("../reminders/route");
-
-    const request = new Request("http://localhost/api/cron/reminders", {
-      method: "POST",
-      headers: { authorization: "Bearer wrong-secret" },
-    });
-    const res = await POST(request);
+    const { POST } = await import("../route");
+    const res = await POST(
+      new Request("http://localhost/api/cron", { method: "POST", headers: { authorization: "Bearer wrong-secret" } })
+    );
 
     expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toBeDefined();
-  });
-
-  it("returns 200 on success with empty events", async () => {
-    prismaMock.event.findMany.mockResolvedValue([]);
-
-    const { POST } = await import("../reminders/route");
-
-    const request = new Request("http://localhost/api/cron/reminders", {
-      method: "POST",
-      headers: { authorization: "Bearer test-secret" },
-    });
-    const res = await POST(request);
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.emailsSent).toBe(0);
-    expect(body.notificationsCreated).toBe(0);
   });
 });

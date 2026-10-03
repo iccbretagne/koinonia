@@ -3,6 +3,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildReminderEmail, buildPlanningDigestEmail, parseEmailList } from "@/lib/email";
 import { registry } from "@/lib/registry";
 import { createNotification, notifyUsers } from "@/lib/notifications";
+import { runScheduledTasks, type CronTask, type CronTaskOutcome } from "@/lib/cron-scheduler";
 
 /**
  * `/api/cron` est une adresse du **noyau** (spec 038, `NOYAU_ROUTES`) : elle répond
@@ -112,7 +113,7 @@ async function runReminders() {
       // Batch-lookup des comptes utilisateurs liés aux membres concernés (spec 053) : un membre
       // avec un compte lié reçoit son rappel via le mécanisme de préférence (domaine
       // "planning") ; un membre sans compte reste sur l'email direct à `member.email`, inchangé
-      // — même logique que `cron/reminders/route.ts` (T26).
+      // (T26).
       const allMemberIds = events.flatMap((e) =>
         e.eventDepts.flatMap((ed) => ed.plannings.map((p) => p.memberId))
       );
@@ -287,31 +288,54 @@ async function runPlanningDigest() {
 }
 
 // ─── Endpoint ─────────────────────────────────────────────────────────────────
+// Appelé toutes les 5 minutes par le minuteur systemd ; chaque tâche ne s'exécute que
+// lorsqu'elle est due selon son rythme (planificateur, ADR-0021). Une tâche d'un module
+// désactivé n'est pas déclarée du tout : elle ne crée aucune ligne de suivi.
+
+function cronTasks(appUrl: string): CronTask[] {
+  const tasks: (CronTask & { module?: string })[] = [
+    // Rappels J-1/J-3 : une fois par jour (le garde `reminderLastSentAt` par église demeure).
+    { key: "reminders", schedule: { kind: "daily", hour: 0 }, run: runReminders },
+    // Récapitulatif secrétariat : envoie tout changement depuis le précédent, donc horaire.
+    { key: "planning-digest", schedule: { kind: "interval", minutes: 60 }, run: runPlanningDigest },
+    {
+      key: "integration-inactivity",
+      module: "integration",
+      schedule: { kind: "interval", minutes: 60 },
+      run: () => runIntegrationInactivityTasks(appUrl),
+    },
+    { key: "care", module: "care", schedule: { kind: "interval", minutes: 60 }, run: () => runCareTasks(appUrl) },
+    { key: "jobs-lifecycle", module: "jobs", schedule: { kind: "interval", minutes: 60 }, run: () => runJobsLifecycleTask(appUrl) },
+    // Idempotente (horodatages) : un rythme plus serré ne fait qu'améliorer la réactivité.
+    { key: "availability", schedule: { kind: "interval", minutes: 15 }, run: runAvailabilityTasks },
+  ];
+  return tasks.filter((t) => !t.module || registry.has(t.module));
+}
+
+function resultOf<T>(outcome: CronTaskOutcome | undefined): T | null {
+  return outcome?.status === "ran" ? (outcome.result as T) : null;
+}
 
 export async function POST(request: Request) {
   try {
     authorizeCron(request);
 
     const appUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "";
-    const [remindersResult, digestResult, integrationResult, careResult, jobOffersLifecycleResult, availabilityResult] =
-      await Promise.all([
-        runReminders(),
-        runPlanningDigest(),
-        runIntegrationInactivityTasks(appUrl),
-        runCareTasks(appUrl),
-        runJobsLifecycleTask(appUrl),
-        runAvailabilityTasks(),
-      ]);
+    const outcomes = await runScheduledTasks(cronTasks(appUrl));
+
+    const integration = resultOf<Awaited<ReturnType<typeof runIntegrationInactivityTasks>>>(outcomes["integration-inactivity"]);
+    const care = resultOf<Awaited<ReturnType<typeof runCareTasks>>>(outcomes["care"]);
 
     return successResponse({
-      reminders: remindersResult,
-      planningDigest: digestResult,
-      integrationInactivity: integrationResult?.integrationInactivityResult ?? null,
-      integrationRelance: integrationResult?.integrationRelanceResult ?? null,
-      msdpInactivity: careResult?.msdpInactivityResult ?? null,
-      careRelance: careResult?.careRelanceResult ?? null,
-      jobOffersLifecycle: jobOffersLifecycleResult,
-      availability: availabilityResult,
+      tasks: Object.fromEntries(Object.entries(outcomes).map(([key, o]) => [key, o.status])),
+      reminders: resultOf(outcomes["reminders"]),
+      planningDigest: resultOf(outcomes["planning-digest"]),
+      integrationInactivity: integration?.integrationInactivityResult ?? null,
+      integrationRelance: integration?.integrationRelanceResult ?? null,
+      msdpInactivity: care?.msdpInactivityResult ?? null,
+      careRelance: care?.careRelanceResult ?? null,
+      jobOffersLifecycle: resultOf(outcomes["jobs-lifecycle"]),
+      availability: resultOf(outcomes["availability"]),
     });
   } catch (error) {
     return errorResponse(error);

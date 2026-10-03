@@ -422,12 +422,22 @@ Déclencher un backup manuel depuis l'interface admin ou appeler directement le 
 
 ## Cron — tâches planifiées
 
-La route `POST /api/cron` orchestre toutes les tâches planifiées. Elle doit être appelée **toutes les heures**. Chaque tâche gère sa propre fréquence en interne :
+La route `POST /api/cron` orchestre toutes les tâches planifiées. Elle doit être appelée **toutes les 5 minutes**. Un planificateur interne (ADR-0021) décide à chaque appel quelles tâches sont dues ; l'état de chacune (dernier passage, durée, dernière erreur, verrou) est conservé dans la table `cron_task_runs` :
 
-| Tâche | Fréquence effective | Description |
+| Tâche (`key`) | Rythme | Description |
 |-------|--------------------|--------------------------------------------|
-| Rappels de service | 1 fois/jour par église | Emails + notifications in-app J-3 et J-1 |
-| Digest planning | Horaire si changements | Email récapitulatif des modifications au secrétariat |
+| `reminders` | 1 fois/jour (à partir de minuit) | Emails + notifications in-app J-3 et J-1 |
+| `planning-digest` | Horaire | Email récapitulatif des modifications au secrétariat |
+| `integration-inactivity` | Horaire | Relances des demandes d'intégration inactives (module `integration`) |
+| `care` | Horaire | Relances du suivi pastoral (module `care`) |
+| `jobs-lifecycle` | Horaire | Archivage et renouvellement des offres d'emploi (module `jobs`) |
+| `availability` | 15 minutes | Collecte des disponibilités : ouverture, demandes, relances |
+
+Un appel plus fréquent ne fait que vérifier les tâches dues : une tâche non due ne coûte qu'une lecture de `cron_task_runs`. Deux appels qui se chevauchent n'exécutent jamais deux fois la même tâche (verrou par tâche). Diagnostic :
+
+```sql
+SELECT `key`, lastStartedAt, lastDurationMs, lastError, lockedUntil FROM cron_task_runs;
+```
 
 ### Variables d'environnement requises
 
@@ -470,19 +480,21 @@ SyslogIdentifier=koinonia-cron
 
 ```ini
 [Unit]
-Description=Tâches cron Koinonia — toutes les heures
+Description=Tâches cron Koinonia — toutes les 5 minutes
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=*:0/5
 Persistent=true
-RandomizedDelaySec=60
+RandomizedDelaySec=30
 
 [Install]
 WantedBy=timers.target
 ```
 
 - `Persistent=true` : si le serveur était éteint, la tâche sera exécutée au prochain démarrage.
-- `RandomizedDelaySec=60` : délai aléatoire de 0 à 60s pour éviter les pics de charge.
+- `RandomizedDelaySec=30` : délai aléatoire de 0 à 30 s pour éviter les pics de charge (le planificateur tolère ce décalage).
+
+> **Mise à niveau d'un serveur existant** (minuteur horaire) : remplacer `OnCalendar=hourly` par `OnCalendar=*:0/5`, puis `sudo systemctl daemon-reload && sudo systemctl restart koinonia-cron.timer`. Tant que ce n'est pas fait, les tâches continuent de tourner, au rythme horaire.
 
 **3. Activer le timer** :
 
@@ -515,10 +527,10 @@ sudo journalctl -u koinonia-cron -n 20
 sudo -u koinonia crontab -e
 ```
 
-Ajouter la ligne suivante (exécution toutes les heures) :
+Ajouter la ligne suivante (exécution toutes les 5 minutes) :
 
 ```
-0 * * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
+*/5 * * * * . /opt/koinonia/shared/.env && curl -sf -X POST http://127.0.0.1:${PORT:-3000}/api/cron -H "Authorization: Bearer $CRON_SECRET" >> /opt/koinonia/logs/cron.log 2>&1
 ```
 
 ### Option 3 — service webcron externe
@@ -528,7 +540,7 @@ Configurer un service type [cron-job.org](https://cron-job.org) ou EasyCron :
 - **URL** : `https://votre-domaine.com/api/cron`
 - **Méthode** : `POST`
 - **Header** : `Authorization: Bearer VOTRE_CRON_SECRET`
-- **Fréquence** : toutes les heures
+- **Fréquence** : toutes les 5 minutes
 
 ## Captures du guide utilisateur
 
@@ -1075,7 +1087,7 @@ Voir [docs/staging.md](staging.md) pour la mise en place complète (provisionnem
 - [ ] `AUTH_SECRET` généré avec `openssl rand -base64 32`
 - [ ] `CRON_SECRET` généré avec `openssl rand -base64 32`
 - [ ] Variables SMTP configurées dans `shared/.env` (optionnel, pour les rappels email)
-- [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les heures
+- [ ] Timer systemd `koinonia-cron.timer` activé (ou crontab/webcron externe) pour appeler `/api/cron` toutes les 5 minutes
 - [ ] Variables `BACKUP_S3_*` configurées pour les backups BDD (optionnel)
 - [ ] Variables `MEDIA_S3_*` configurées pour le bucket média (optionnel)
 - [ ] `AUDIO_CACHE_DIR`/`AUDIO_CACHE_MAX_BYTES` dimensionnés pour le cache des renditions audio (optionnel, valeurs par défaut sinon)
