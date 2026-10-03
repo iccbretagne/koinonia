@@ -1,7 +1,7 @@
 # Spec — Accompagnants déclarés du suivi pastoral
 
 - **Numéro** : 056
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-01
 - **Branche suggérée** : `feat/accompagnants-declares`
 

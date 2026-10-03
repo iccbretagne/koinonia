@@ -1,7 +1,7 @@
 # Spec — Gestion des salles et de leur réservation
 
 - **Numéro** : 008
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-26
 - **Branche suggérée** : `feat/gestion-reservation-salles`
 

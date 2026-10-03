@@ -1,7 +1,7 @@
 # Plan technique — Accompagnants déclarés du suivi pastoral
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-01
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
