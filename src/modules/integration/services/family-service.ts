@@ -81,7 +81,7 @@ export function buildBergerNotifEmail(params: {
         <p style="margin:0;color:#111827;font-size:15px;font-weight:600">${firstName} ${lastName}</p>
         ${familyName ? `<p style="margin:4px 0 0;color:#6b7280;font-size:13px">Famille : ${familyName}</p>` : ""}
       </div>
-      <a href="${appUrl}/admin/integration/requests/${requestId}"
+      <a href="${appUrl}/integration/requests/${requestId}"
          style="display:inline-block;background:#5E17EB;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600">
         Voir la demande →
       </a>
@@ -166,7 +166,7 @@ export async function notifyBergerAssigned(params: {
       type: "INTEGRATION_ASSIGNED",
       title: "Nouvelle demande d'intégration",
       message: `${firstName} ${lastName} vous a été affecté${familyName ? ` (${familyName})` : ""}.`,
-      link: `/admin/integration/requests/${requestId}`,
+      link: `/integration/requests/${requestId}`,
       entityType: REQUEST_ENTITY,
       entityId: requestId,
     },

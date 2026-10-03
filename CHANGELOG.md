@@ -22,6 +22,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- La notification et l'email d'affectation d'une demande d'intégration menaient à une page inexistante ; ils ouvrent désormais la demande, et les anciens liens sont redirigés (#629).
 - Notifications : un seul email par événement — le gabarit détaillé remplace l'email générique pour la comptabilité (nouvelle demande, fonds remis, changement de statut), les relances d'intégration et la relance d'offre d'emploi ; une nouvelle offre n'envoie plus d'email à un abonné qui ne l'a pas demandé (audit notifications).
 
 ### Documentation

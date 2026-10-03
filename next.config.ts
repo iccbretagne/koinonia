@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
       { source: "/agenda/requests/:path*", destination: "/care", permanent: true },
       { source: "/agenda/request", destination: "/care/request", permanent: true },
       { source: "/agenda/request/:path*", destination: "/care/request", permanent: true },
+      // Lien erroné des anciennes notifications d'affectation d'intégration (#629).
+      { source: "/admin/integration/requests/:id", destination: "/integration/requests/:id", permanent: true },
     ];
   },
 };
