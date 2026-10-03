@@ -59,7 +59,7 @@ export default async function AgendaPage({
             <Button size="sm" variant="info">Planifier RDV</Button>
           </Link>
           <Link href="/agenda/new">
-            <Button size="sm">+ Entrée directe</Button>
+            <Button size="sm">+ Ajouter à l&apos;agenda</Button>
           </Link>
         </div>
       </div>

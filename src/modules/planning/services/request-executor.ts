@@ -123,11 +123,11 @@ async function executeAjoutEvenement(
   }
 
   const eventDate = new Date(date);
-  if (isNaN(eventDate.getTime())) {
+  if (Number.isNaN(eventDate.getTime())) {
     return { success: false, error: "eventDate invalide" };
   }
 
-  if (recurrenceEnd && isNaN(new Date(recurrenceEnd).getTime())) {
+  if (recurrenceEnd && Number.isNaN(new Date(recurrenceEnd).getTime())) {
     return { success: false, error: "recurrenceEnd invalide" };
   }
 

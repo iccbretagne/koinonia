@@ -303,7 +303,8 @@ export default async function AuthLayout({
 
   if (hasAgendaView) agendaLinks.push({ href: "/agenda", label: "Vue agenda" });
   if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
-  if (hasAgendaManage) agendaLinks.push({ href: "/agenda/new", label: "Nouvelle entrée" });
+  // L'ajout direct à l'agenda (/agenda/new) se fait depuis le bouton « Ajouter à l'agenda » de la
+  // vue agenda : ce n'est pas une destination de navigation.
 
   // Suivi pastoral (spec 052, ADR-0015) : qualification des RDV et suivi des nouveaux
   // convertis, module `care` — remplace l'ancien lien « Qualification » de l'agenda.

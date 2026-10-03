@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, ExternalLink, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import ChurchSwitcher from "@/components/ChurchSwitcher";
-import NavPageList from "@/components/NavPageList";
+import SidebarPageTree from "@/components/SidebarPageTree";
 import { useSidebarPref, useViewport } from "@/components/shell-state";
-import { SECTION_LABELS, type ActiveNav, type NavSpace } from "@/lib/navigation";
+import { SECTION_LABELS, type ActiveNav, type NavSpace, type SpaceKey } from "@/lib/navigation";
 
 interface SidebarProps {
   readonly spaces: readonly NavSpace[];
@@ -23,7 +23,7 @@ interface SidebarProps {
 
 const overline = "font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle";
 
-const itemBase = `flex min-h-10 min-w-0 flex-1 items-center gap-3 rounded-control px-3 font-display text-sm font-semibold leading-5
+const itemBase = `flex min-h-10 min-w-0 items-center gap-3 rounded-control px-3 font-display text-sm font-semibold leading-5
   transition-colors duration-120 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus`;
 
 function Brand({ compact }: { readonly compact: boolean }) {
@@ -38,6 +38,17 @@ function Brand({ compact }: { readonly compact: boolean }) {
 }
 
 /* ── Sidebar dépliée (≥ 1024px) ───────────────────────────────────────────── */
+
+/**
+ * Un espace s'ouvre sur ses pages quand il en a plusieurs (ou un message d'absence de page) ;
+ * sinon sa ligne mène directement à son unique destination — même règle que le panneau « Plus ».
+ */
+function directTarget(space: NavSpace): { href: string; external: boolean } | null {
+  if (space.key === "home") return { href: space.href, external: false };
+  if (space.emptyMessage || space.pages.length > 1) return null;
+  const page = space.pages[0];
+  return page ? { href: page.href, external: !!page.external } : { href: space.href, external: !!space.external };
+}
 
 function ExpandedSpace({
   space,
@@ -54,9 +65,17 @@ function ExpandedSpace({
 }) {
   const isActive = active.space === space.key;
   const Icon = space.icon;
-  const hasPages = space.pages.length > 0 || !!space.emptyMessage;
-  const tone = isActive ? "bg-brand-soft text-brand-text" : "text-ink-muted hover:bg-surface-sunken hover:text-ink";
+  const target = directTarget(space);
+  // Une seule surbrillance : la page active. Un espace ouvert sur ses pages ne fait qu'indiquer le
+  // chemin (texte foncé, icône `brand-text`) ; seul un espace à destination unique se remplit.
+  const tone =
+    isActive && target
+      ? "bg-brand-soft text-brand-text"
+      : isActive
+        ? "text-ink hover:bg-surface-sunken"
+        : "text-ink-muted hover:bg-surface-sunken hover:text-ink";
   const iconTone = isActive ? "text-brand-text" : "text-ink-subtle";
+  const className = `${itemBase} w-full ${tone}`;
   const content = (
     <>
       <Icon aria-hidden="true" className={`size-5 shrink-0 ${iconTone}`} strokeWidth={1.75} />
@@ -67,44 +86,32 @@ function ExpandedSpace({
 
   return (
     <li data-tour={withTour ? space.dataTour : undefined}>
-      <div className={`flex items-center rounded-control ${tone}`}>
-        {space.external ? (
-          // Espace dont la seule page est externe (Familles) : la rangée déplie la liste.
-          <button type="button" onClick={onToggle} aria-expanded={open} className={`${itemBase} cursor-pointer text-left`}>
-            {content}
-          </button>
-        ) : (
-          <Link
-            href={space.href}
-            aria-current={isActive ? (active.page === null || active.page === space.href ? "page" : "true") : undefined}
-            className={itemBase}
-          >
-            {content}
-          </Link>
-        )}
-        {hasPages && !space.external && (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={open}
-            aria-label={`${open ? "Replier" : "Déplier"} ${space.label}`}
-            title={`${open ? "Replier" : "Déplier"} ${space.label}`}
-            className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-control hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
-          >
-            <ChevronDown
-              aria-hidden="true"
-              className={`size-4 transition-transform duration-120 ${open ? "" : "-rotate-90"} ${iconTone}`}
-              strokeWidth={1.75}
-            />
-          </button>
-        )}
-      </div>
-      {open && hasPages && (
-        <div className="mb-1 ml-[22px] mt-0.5 border-l border-line pl-2">
+      {target?.external ? (
+        <a href={target.href} target="_blank" rel="noopener noreferrer" className={className}>
+          {content}
+          <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+          <span className="sr-only">(nouvel onglet)</span>
+        </a>
+      ) : target ? (
+        <Link href={target.href} aria-current={isActive ? "page" : undefined} className={className}>
+          {content}
+        </Link>
+      ) : (
+        <button type="button" onClick={onToggle} aria-expanded={open} className={`${className} cursor-pointer text-left`}>
+          {content}
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-4 shrink-0 text-ink-subtle transition-transform duration-120 ${open ? "" : "-rotate-90"}`}
+            strokeWidth={1.75}
+          />
+        </button>
+      )}
+      {open && !target && (
+        <div className="mb-2 ml-[21px] mt-0.5 border-l border-line py-0.5 pl-2.5">
           {space.pages.length === 0 ? (
             <p className="px-3 py-2 text-sm text-ink-subtle">{space.emptyMessage}</p>
           ) : (
-            <NavPageList pages={space.pages} activePage={active.page} collapsibleGroups withTour={withTour} />
+            <SidebarPageTree pages={space.pages} activePage={active.page} guide withTour={withTour} />
           )}
         </div>
       )}
@@ -121,15 +128,16 @@ function ExpandedNav({
   readonly active: ActiveNav;
   readonly withTour: boolean;
 }) {
-  // Espaces dépliés à la main ; l'espace actif l'est toujours, sauf s'il a été replié.
-  const [toggled, setToggled] = useState<Record<string, boolean>>({});
+  // Un seul espace ouvert à la fois : celui de la page active, sauf choix de l'utilisateur
+  // (`null` : tout replié). Une nouvelle page rouvre son espace.
+  const [chosen, setChosen] = useState<SpaceKey | null | undefined>(undefined);
   const pathname = usePathname();
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
-    // Nouvelle page : l'espace actif se redéplie même s'il avait été replié.
     setLastPath(pathname);
-    if (active.space && toggled[active.space] === false) setToggled({ ...toggled, [active.space]: true });
+    setChosen(undefined);
   }
+  const openKey = chosen === undefined ? active.space : chosen;
 
   const sections = (["service", "church"] as const).map((section) => ({
     section,
@@ -138,28 +146,28 @@ function ExpandedNav({
 
   return (
     <nav aria-label="Navigation principale" className="flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
-      {sections.map(({ section, spaces: list }) =>
-        list.length === 0 ? null : (
-          <div key={section}>
+      {sections
+        .filter(({ spaces: list }) => list.length > 0)
+        .map(({ section, spaces: list }, si) => (
+          <div key={section} className={si > 0 ? "mt-3.5 border-t border-line" : undefined}>
             <p className={`${overline} mx-3 mb-1 mt-4`}>{SECTION_LABELS[section]}</p>
             <ul className="flex flex-col gap-0.5">
               {list.map((s) => {
-                const open = toggled[s.key] ?? active.space === s.key;
+                const open = openKey === s.key;
                 return (
                   <ExpandedSpace
                     key={s.key}
                     space={s}
                     active={active}
-                    open={open && s.key !== "home"}
-                    onToggle={() => setToggled((t) => ({ ...t, [s.key]: !open }))}
+                    open={open}
+                    onToggle={() => setChosen(open ? null : s.key)}
                     withTour={withTour}
                   />
                 );
               })}
             </ul>
           </div>
-        )
-      )}
+        ))}
     </nav>
   );
 }
@@ -291,7 +299,7 @@ function RailNav({
             {openSpace.pages.length === 0 ? (
               <p className="px-3 py-2 text-sm text-ink-subtle">{openSpace.emptyMessage}</p>
             ) : (
-              <NavPageList pages={openSpace.pages} activePage={active.page} onNavigate={() => setFlyout(null)} />
+              <SidebarPageTree pages={openSpace.pages} activePage={active.page} onNavigate={() => setFlyout(null)} />
             )}
           </div>
         </div>

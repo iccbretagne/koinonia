@@ -49,7 +49,7 @@ Ces informations ne sont pas de la paperasse : ce sont elles qui permettent la q
 | Qualifier | Gestion pastorale → Qualification |
 | Attribuer un créneau | Gestion pastorale → Planification |
 | Voir les rendez-vous de la semaine | Gestion pastorale → Vue agenda |
-| Poser un rendez-vous hors circuit | Gestion pastorale → Nouvelle entrée |
+| Poser un rendez-vous hors circuit | Gestion pastorale → Vue agenda → « Ajouter à l'agenda » |
 
 ## Les règles à connaître
 
