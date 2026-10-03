@@ -6,6 +6,30 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.29.0] - 2026-10-04
+
+### Ajouté
+
+- **Politique de sécurité du contenu (CSP)** (ADR-0022) : chaque page n'autorise que ses propres scripts (nonce par requête) et une liste fermée d'origines externes (Turnstile, API Adresse, avatars Google, stockages S3). Publiée d'abord en **Report-Only** : rien n'est bloqué, les violations sont journalisées via `POST /api/csp-report`. **Action serveur** : observer le journal, puis activer avec `CSP_ENFORCE=true` (voir `docs/production.md`).
+- Fiche d'une église sans profil pastoral : un encadré l'explique et propose de créer un profil directement pour cette église.
+
+### Modifié
+
+- Page « Profils pastoraux » : l'église concernée est affichée, et la page peut cibler une église précise (`?churchId=`) — un Super Admin sans rôle dans une église pouvait jusque-là ni y créer de profil, ni lui désigner un responsable pastoral.
+- Un profil pastoral cumule désormais ses droits de lecture avec ceux d'un rôle classique dans la même église (berger également STAR, par exemple).
+
+### Corrigé
+
+- **Sécurité — comptabilité** : la liste des demandes filtrée par département (`?departmentId=`) ignorait le périmètre de l'appelant, et la liste des séries n'en avait aucun ; un Responsable de département ou un Ministre pouvait lire les demandes et séries d'autres départements. La route locale des pièces jointes applique désormais les mêmes règles que le téléchargement principal (audit sécurité).
+- La bascule vers la vue admin provoquait une erreur serveur ; un berger également STAR recevait une erreur sur les pages que la navigation lui proposait (Discipolat, Agenda de l'église…).
+- Un berger sans rôle dans une église restait coincé en vue admin (sans bouton de bascule) après avoir choisi cette vue dans une autre église.
+- Mode sombre : les listes déroulantes avaient un fond clair sur desktop, rendant leur texte illisible.
+
+### Sécurité
+
+- `dompurify` 3.4.16 : `npm audit --omit=dev` ne signale plus aucune vulnérabilité.
+- Documentation de durcissement serveur (`docs/production.md`) : process Node lié à `127.0.0.1`, IP client fiable derrière Traefik, HSTS d'un an. **Action serveur** à appliquer sur la recette puis la production.
+
 ## [v1.28.0] - 2026-10-03
 
 ### Ajouté
