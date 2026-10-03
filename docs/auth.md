@@ -117,7 +117,7 @@ cette église. Deux mécanismes dérogent volontairement à cette règle, sur de
 | Qui l'accorde | l'administration (attribution du profil pastoral à une personne) | un Admin/Super Admin de l'église **propriétaire**, à une église entière |
 
 Les permissions d'un profil pastoral **s'ajoutent** à celles d'un éventuel rôle classique dans la
-même église (berger également STAR, par exemple) : avant la v1.28.1, la présence d'un rôle les
+même église (berger également STAR, par exemple) : auparavant, la présence d'un rôle les
 écartait et la navigation proposait des pages refusées (FORBIDDEN). Elles restent bornées aux
 églises de `pastoralChurchIds`.
 
