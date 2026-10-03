@@ -166,31 +166,31 @@
 
 ### 2.1 Données
 
-- [ ] **T37** — Migration `backfill_salvation_followups` : un suivi `SUBMITTED` pour chaque demande
+- [x] **T37** — Migration `backfill_salvation_followups` : un suivi `SUBMITTED` pour chaque demande
       d'accueil non archivée, `salvationCall = 1`, sans suivi (identifiant
       `CONCAT('c', REPLACE(UUID(), '-', ''))`). Rejouée sur MariaDB locale avec des cas archivés,
       déjà suivis et non suivis.
 
 ### 2.2 Services
 
-- [ ] **T38** — `services/assignee.ts` : type `{ kind: "PROFILE" | "MEMBER" }`, `resolveAssignee`
+- [x] **T38** — `services/assignee.ts` : type `{ kind: "PROFILE" | "MEMBER" }`, `resolveAssignee`
       (profil de l'église ; membre d'un département de fonction `MSDP`), `isCurrentAssignee`,
       invariant d'affectation exclusive. *(fichier : `src/modules/care/services/assignee.ts`)*
-- [ ] **T39** — `services/appointment-state.ts` (pur) : `validate` vers profil **ou** membre,
+- [x] **T39** — `services/appointment-state.ts` (pur) : `validate` vers profil **ou** membre,
       `reject` avec motif obligatoire, `reassign`, `set_date` (membre du MSDP seul), `outcome`
       (cinq issues), `handback` avec raison ; droits par action.
-- [ ] **T40** — `services/followup-state.ts` (pur) : `assign`/`reassign` vers membre **ou**
+- [x] **T40** — `services/followup-state.ts` (pur) : `assign`/`reassign` vers membre **ou**
       profil par le référent seul, `handback`, étapes existantes réservées à l'accompagnant en
       charge.
-- [ ] **T41** — Issue « orienté vers un suivi de nouveau converti » : création du suivi avec
+- [x] **T41** — Issue « orienté vers un suivi de nouveau converti » : création du suivi avec
       l'identité et le dossier de parcours du rendez-vous (`sourceAppointmentId`).
-- [ ] **T42** — `services/notifications.ts` : affectation (in-app si compte, email si adresse, sans
+- [x] **T42** — `services/notifications.ts` : affectation (in-app si compte, email si adresse, sans
       le message), dessaisissement, retour au référent (tous les `care:qualify` de l'église),
       date fixée par un membre du MSDP → demandeur (`buildAppointmentScheduledEmail`), rejet →
       demandeur avec motif ; transmission au protocole seulement pour un profil pastoral.
-- [ ] **T43** — `services/history.ts` : journal `{ action, from, to, assignee?, note? }`, lecture
+- [x] **T43** — `services/history.ts` : journal `{ action, from, to, assignee?, note? }`, lecture
       des entrées antérieures (agenda `details.transition`, MSDP `{ action }`).
-- [ ] **T44** — `services/related.ts` : autres demandes et suivis du même dossier de parcours
+- [x] **T44** — `services/related.ts` : autres demandes et suivis du même dossier de parcours
       (sorte, date, état), projetés selon le lecteur.
 - [x] **T45** — `listMyRequests(userId, churchId)` : demandes du demandeur, sans accompagnant.
 
@@ -227,7 +227,7 @@
       → email seul ; dessaisissement notifié ; protocole prévenu pour un profil, pas pour un
       membre ; demandeur prévenu de la date dans les deux cas.
 - [x] **T57** [P] — `history.test.ts` et `related.test.ts` ; `mine` limité à l'appelant.
-- [ ] **T58** — Vérification complète du lot, migration T37 rejouée. PR lot 2 → base.
+- [x] **T58** — Vérification complète du lot, migration T37 rejouée. PR lot 2 → base.
 
 ---
 
@@ -245,21 +245,21 @@
 - [x] **T63** [P] — Documentation : guide intégré (`GuideContent.tsx` : espace suivi pastoral,
       rôle renommé), `docs/auth.md`, `docs/guide-screenshots.md`, `CLAUDE.md` (module `care`,
       permissions), ADR-0015 passé à **Accepté** et index des ADR.
-- [ ] **T64** — Vérification complète, puis PR finale `feat/suivi-rendez-vous-pastoraux` → `main`.
+- [x] **T64** — Vérification complète, puis PR finale `feat/suivi-rendez-vous-pastoraux` → `main`.
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary`
-- [ ] `npm run test`
-- [ ] Migrations rejouées sur base vierge, `prisma migrate diff --exit-code` sans écart
-- [ ] Avant déploiement : migration du rôle rejouée sur une copie de production ; comptage des
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary`
+- [x] `npm run test`
+- [x] Migrations rejouées sur base vierge, `prisma migrate diff --exit-code` sans écart
+- [x] Avant déploiement : migration du rôle rejouée sur une copie de production ; comptage des
       appels au salut sans suivi ; équipes protocole et secrétariat prévenues de la perte d'accès
       au contenu des demandes
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits (voir couverture ci-dessous)
-- [ ] PR finale ouverte vers `main`
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits (voir couverture ci-dessous)
+- [x] PR finale ouverte vers `main`
 
 ## Couverture des critères d'acceptation
 

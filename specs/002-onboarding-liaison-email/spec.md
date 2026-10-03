@@ -1,7 +1,7 @@
 # Spec — Refonte de l'onboarding : liaison compte ↔ STAR par email (anti-doublon)
 
 - **Numéro** : 002
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-07-03
 - **Branche suggérée** : `feat/onboarding-liaison-email`
 

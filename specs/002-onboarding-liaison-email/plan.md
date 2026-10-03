@@ -1,7 +1,7 @@
 # Plan technique — Refonte de l'onboarding : liaison compte ↔ STAR par email
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-07-04
 
 > Ce plan traduit la spec en approche technique conforme à `../constitution.md`.

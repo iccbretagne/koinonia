@@ -1,7 +1,7 @@
 # Tâches — Refonte onboarding (liaison par email)
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : P1 terminée
+- **Statut** : Livrée (P1 + P2)
 
 > Feature livrée en plusieurs phases (voir `plan.md`). Ce fichier décrit **la Phase 1 uniquement** ;
 > les tâches P2 (réconciliation + auto-liaison) et P3 (parcours self-service) seront ajoutées quand

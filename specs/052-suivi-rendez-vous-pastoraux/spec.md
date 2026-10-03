@@ -1,7 +1,7 @@
 # Spec — Suivi des nouveaux convertis et des demandes de rendez-vous pastoral
 
 - **Numéro** : 052
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-09-24
 - **Branche suggérée** : `feat/suivi-rendez-vous-pastoraux`
 - **Issue source** : [#580](https://github.com/iccbretagne/koinonia/issues/580)

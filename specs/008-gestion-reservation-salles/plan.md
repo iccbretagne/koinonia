@@ -1,7 +1,7 @@
 # Plan technique — Gestion des salles et de leur réservation
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-07-26
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
