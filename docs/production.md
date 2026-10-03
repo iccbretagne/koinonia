@@ -265,6 +265,29 @@ automatiquement, aucune ressource en HTTP) : un navigateur qui a reçu l'en-têt
 site en HTTP pendant toute sa durée. `stsIncludeSubdomains` reste à `false` tant que tous les
 sous-domaines ne sont pas eux aussi servis en HTTPS.
 
+## Politique de sécurité du contenu (ADR-0022)
+
+L'application publie elle-même sa CSP (nonce par requête, `src/lib/csp.ts`) — **ne pas** en
+ajouter une dans le middleware d'en-têtes Traefik, qui ne peut pas porter de nonce.
+
+Par défaut, elle est publiée en **`Content-Security-Policy-Report-Only`** : rien n'est bloqué,
+les violations sont envoyées par les navigateurs à `/api/csp-report` et journalisées.
+
+```bash
+sudo journalctl -u koinonia --since "1 day ago" | grep "csp: violation"
+```
+
+Procédure d'activation, en recette puis en production :
+1. Laisser tourner en Report-Only et parcourir les parcours sensibles : connexion Google,
+   formulaires publics (`/agenda-public`, `/rejoindre`, avec Turnstile), photos et visuels,
+   écoute audio, pièces jointes comptables, exports PDF, partages publics.
+2. Écarter le bruit (extensions de navigateur : `chrome-extension://`, `moz-extension://`,
+   outils de traduction) ; toute autre origine bloquée est soit à ajouter dans
+   `src/lib/csp.ts` (ressource légitime), soit à investiguer.
+3. Une fois le journal sans violation propre à l'application : `CSP_ENFORCE=true` dans
+   `shared/.env`, puis `sudo systemctl restart koinonia`.
+4. Retour arrière immédiat : vider `CSP_ENFORCE` et redémarrer.
+
 ## Cache disque des renditions audio (ADR-0008)
 
 Le module audio (spec 021 — bibliothèque d'écoute) sert les renditions MP3 depuis un cache

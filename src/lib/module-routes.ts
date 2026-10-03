@@ -18,7 +18,7 @@ export const NOYAU_ROUTES: NoyauRoutes = {
   // /admin/users selon les droits — il ne rend rien de propre à un module, donc noyau. Les
   // sous-sections (/admin/churches, /admin/departments, …) restent déclarées par leur module.
   pages: ["/", "/no-access", "/module-absent", "/admin", "/accueil"],
-  api: ["/api/auth", "/api/health", "/api/current-church", "/api/user", "/api/cron"],
+  api: ["/api/auth", "/api/health", "/api/current-church", "/api/user", "/api/cron", "/api/csp-report"],
 };
 
 /**

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Montserrat, Source_Sans_3 } from "next/font/google";
 import { TriangleAlert } from "lucide-react";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
@@ -72,15 +73,22 @@ function StagingBanner() {
   );
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   readonly children: React.ReactNode;
 }) {
+  // Nonce de la CSP posée par le proxy (ADR-0022) : Next.js l'appose sur ses propres scripts,
+  // le script de thème inline doit le porter lui aussi.
+  const requestHeaders = await headers();
+  const csp =
+    requestHeaders.get("content-security-policy") ?? requestHeaders.get("content-security-policy-report-only");
+  const nonce = csp?.match(/'nonce-([^']+)'/)?.[1];
+
   return (
     <html lang="fr" suppressHydrationWarning className={`${montserrat.variable} ${sourceSans.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="icon" href="/brand/koinonia-app-icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/brand/koinonia-app-icon.svg" />
       </head>
