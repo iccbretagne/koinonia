@@ -1,0 +1,125 @@
+# Workflow de RELEASE : tag + GitHub Release, a la demande (workflow_dispatch).
+#
+# Remplace l'etape manuelle « git tag vX.Y.Z && git push origin vX.Y.Z && gh release create »
+# de la sequence de release (CLAUDE.md). A lancer APRES le merge de la PR « chore: release
+# vX.Y.Z » sur main :
+#   GitHub -> Actions -> "Release" -> "Run workflow" (branche main) -> version (ex: 1.30.0)
+#
+# Le tag est pousse avec RELEASE_TOKEN, pas avec GITHUB_TOKEN : un push fait avec le jeton par
+# defaut d'un workflow ne declenche aucun autre workflow, or c'est le push du tag qui lance la
+# CI (artefact de release, check-version) puis deploy.yml (production). Avec RELEASE_TOKEN, la
+# suite est exactement celle d'un tag pousse a la main.
+#
+# RELEASE_TOKEN : secret du depot (Settings -> Secrets and variables -> Actions), jeton
+# « fine-grained » limite a ce depot avec la seule permission Contents: Read and write (ou un
+# jeton de GitHub App equivalent).
+#
+# Le job tourne dans l'environnement GitHub « release » : y ajouter des « Required reviewers »
+# (Settings -> Environments -> release) pour exiger une approbation humaine avant tout tag —
+# donc avant tout deploiement en production.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a publier, sans le v (ex: 1.30.0) — doit etre celle de package.json sur main"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    steps:
+      - name: Check inputs
+        env:
+          VERSION: ${{ inputs.version }}
+          HAS_TOKEN: ${{ secrets.RELEASE_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Une release se lance depuis main (lance depuis $GITHUB_REF)."
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version invalide « $VERSION » : attendu X.Y.Z, sans le v."
+            exit 1
+          fi
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::error::Secret RELEASE_TOKEN absent (voir l'en-tete de ce workflow)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Check version, changelog and tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$PKG" != "$VERSION" ]; then
+            echo "::error::package.json sur main est en $PKG, pas en $VERSION : merger d'abord la PR « chore: release v$VERSION »."
+            exit 1
+          fi
+          if ! grep -q "^## \[v$VERSION\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md n'a pas de section « ## [v$VERSION] »."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Le tag v$VERSION existe deja."
+            exit 1
+          fi
+
+      # Notes de la release : la section du CHANGELOG, de son titre (exclu) au titre suivant.
+      - name: Extract release notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          awk -v head="## [v$VERSION]" '
+            index($0, head) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::La section « ## [v$VERSION] » du CHANGELOG est vide."
+            exit 1
+          fi
+          cat release-notes.md
+
+      - name: Tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "v$VERSION" HEAD
+          git push origin "v$VERSION"
+          echo "Tag v$VERSION pousse sur $(git rev-parse --short HEAD) — la CI du tag puis Deploy prennent le relais."
+
+      - name: GitHub Release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md --verify-tag
