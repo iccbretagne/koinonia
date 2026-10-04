@@ -21,9 +21,9 @@ const configLinksDef = [
   // Personnes
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
-  { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:manage"] },
+  { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:settings"] },
   // Système
-  { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:manage"] },
+  { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
 ];
 
@@ -141,6 +141,11 @@ export default async function AuthLayout({
       return link.permissions.some((p) => userPermissions.has(p));
     })
     .map(({ href, label }) => ({ href, label }));
+  // Sans la liste des églises (church:manage, plateforme), un Admin rejoint directement les
+  // paramètres de la sienne.
+  if (currentChurchId && !userPermissions.has("church:manage") && userPermissions.has("church:settings")) {
+    visibleConfigLinks.unshift({ href: `/admin/churches/${currentChurchId}`, label: "Paramètres de l'église" });
+  }
 
   // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
   const requestLinks: { href: string; label: string }[] = [];

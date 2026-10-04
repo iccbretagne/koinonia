@@ -18,7 +18,7 @@ export default async function PastoralProfilesPage({
   const { churchId: requestedChurchId } = await searchParams;
   const churchId = requestedChurchId ?? (await getCurrentChurchId(session));
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
-  await requireChurchPermission("church:manage", churchId);
+  await requireChurchPermission("church:settings", churchId);
 
   const church = await prisma.church.findUnique({ where: { id: churchId }, select: { name: true } });
   if (!church) return <p>Église introuvable.</p>;

@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope, hasChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { loadAccessPeople } from "@/lib/access-overview";
-import { ALL_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, PRIVILEGED_ROLES, ASSIGNABLE_BY_MINISTER } from "@/lib/roles";
+import { ALL_ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
 import RoleHoldersClient from "./RoleHoldersClient";
 
@@ -24,7 +24,10 @@ export default async function RoleHoldersPage({
   // Un Ministre au périmètre restreint ne voit ni n'attribue aucun rôle transverse (spec 054)
   if (ministryScope.scoped && !ASSIGNABLE_BY_MINISTER.includes(role)) return notFound();
 
-  const canManage = !PRIVILEGED_ROLES.includes(role) || session.user.isSuperAdmin;
+  const canManage = canGrantRole(role, {
+    isSuperAdmin: session.user.isSuperAdmin,
+    canGrantChurchAdmins: await hasChurchPermission(session, "access:admins", churchId),
+  });
 
   const [allHolders, scopedPeople] = await Promise.all([
     prisma.userChurchRole.findMany({

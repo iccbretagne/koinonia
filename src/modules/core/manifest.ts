@@ -49,6 +49,14 @@ export const coreModule = defineModule({
     // Gestion des accès/rôles au sein d'une église — distinct de users:manage (cycle de vie du
     // compte). Remplace l'emprunt à events:manage (spec 031, issue #467)
     "access:manage": ["SUPER_ADMIN", "ADMIN", "SECRETARY", "MINISTER"],
+    // Attribuer/retirer les rôles d'administration d'une église (Admin, Secrétaire) — en plus
+    // d'access:manage. Le rôle Super Admin, lui, ne s'attribue que par un Super Admin.
+    "access:admins": ["SUPER_ADMIN", "ADMIN"],
+    // Configuration propre à UNE église, distincte de church:manage (création/suppression
+    // d'églises, réservée à la plateforme) : profils pastoraux, paramètres de l'église (emails
+    // secrétariat/comptabilité, couleur, responsable pastoral) et historique des modifications.
+    // Le nom, l'adresse publique (slug) et le superviseur restent à church:manage.
+    "church:settings": ["SUPER_ADMIN", "ADMIN"],
   },
 
   // Domaine de notification (spec 053) : aucun email aujourd'hui (rôle attribué, liaison

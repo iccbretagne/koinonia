@@ -12,6 +12,7 @@ import {
   ROLE_CATEGORY_LABELS,
   ASSIGNABLE_BY_MINISTER,
   PRIVILEGED_ROLES,
+  canGrantRole,
 } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
 
@@ -55,5 +56,29 @@ describe("src/lib/roles.ts — source unique (spec 054)", () => {
     }
     const intersection = ASSIGNABLE_BY_MINISTER.filter((r) => PRIVILEGED_ROLES.includes(r));
     expect(intersection).toEqual([]);
+  });
+});
+
+describe("canGrantRole", () => {
+  const superAdmin = { isSuperAdmin: true, canGrantChurchAdmins: true };
+  const admin = { isSuperAdmin: false, canGrantChurchAdmins: true };
+  const secretary = { isSuperAdmin: false, canGrantChurchAdmins: false };
+
+  it("Super Admin : seul un Super Admin l'attribue", () => {
+    expect(canGrantRole("SUPER_ADMIN", superAdmin)).toBe(true);
+    expect(canGrantRole("SUPER_ADMIN", admin)).toBe(false);
+  });
+
+  it("Admin et Secrétaire : un Admin de l'église (access:admins), pas un Secrétaire", () => {
+    for (const role of ["ADMIN", "SECRETARY"] as Role[]) {
+      expect(canGrantRole(role, admin), role).toBe(true);
+      expect(canGrantRole(role, secretary), role).toBe(false);
+    }
+  });
+
+  it("les autres rôles : access:manage suffit", () => {
+    for (const role of ALL_ROLES.filter((r) => !PRIVILEGED_ROLES.includes(r))) {
+      expect(canGrantRole(role, secretary), role).toBe(true);
+    }
   });
 });

@@ -3,7 +3,7 @@
 // de l'appelant : un Ministre restreint ne doit pas pouvoir distinguer « personne/rôle
 // inexistant » de « hors de mon périmètre » (voir commentaires des deux page.tsx).
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createAdminSession, createMinisterSession } from "@/__mocks__/auth";
+import { createAdminSession, createMinisterSession, fakeHasChurchPermission } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 import { fakeGetUserMinistryScope } from "@/lib/__tests__/support/ministry-scope-mock";
 
@@ -11,6 +11,7 @@ const mockRequireAuth = vi.fn();
 const mockGetCurrentChurchId = vi.fn();
 const mockRequireChurchPermission = vi.fn();
 vi.mock("@/lib/auth", () => ({
+  hasChurchPermission: fakeHasChurchPermission,
   requireAuth: () => mockRequireAuth(),
   getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),

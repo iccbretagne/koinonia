@@ -184,7 +184,7 @@ Un utilisateur peut avoir **plusieurs rôles** dans **plusieurs églises** via l
 ### Attribution
 
 - **Super Admin** : automatique à la première connexion si l'email est dans `SUPER_ADMIN_EMAILS`
-- **Autres rôles** : via l'interface admin (`/admin/users`), avec affectation optionnelle de ministère (MINISTER) ou départements (DEPARTMENT_HEAD)
+- **Autres rôles** : via l'interface admin (`/admin/access`), avec affectation optionnelle de ministère (MINISTER) ou départements (DEPARTMENT_HEAD). Admin et Secrétaire : par un Admin de l'église ou un Super Admin (`access:admins`) ; Super Admin : par un Super Admin uniquement
 - **isDeputy** : la table `user_departments` (liaison `DEPARTMENT_HEAD` ↔ départements) dispose d'un flag `isDeputy` pour distinguer le responsable principal du responsable adjoint (deputy)
 - **STAR** : attribué depuis la fiche personne ou la page du rôle STAR dans `/admin/access` ; les
   départements visibles sont dérivés automatiquement depuis `MemberUserLink → Member →
@@ -257,8 +257,17 @@ RSP = Référent soins pastoraux, Compt = Comptable.
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `church:manage` | x | | | | | | | | | |
+| `church:settings` | x | x | | | | | | | | |
 | `users:manage` | x | x | | | | | | | | |
 | `access:manage` | x | x | x | x | | | | | | |
+| `access:admins` | x | x | | | | | | | | |
+
+`church:manage` reste la permission de la **plateforme** (créer, onboarder, supprimer une église ;
+en changer le nom, l'adresse publique ou le superviseur). `church:settings` couvre la configuration
+d'**une** église par son Admin : profils pastoraux, paramètres (`PUT /api/churches/[churchId]`
+hors nom/slug/superviseur), historique des modifications. `access:admins` s'ajoute à
+`access:manage` pour attribuer ou retirer les rôles Admin et Secrétaire (`canGrantRole`,
+`src/lib/roles.ts`) ; le rôle Super Admin ne s'attribue que par un Super Admin.
 
 #### Module `planning`
 

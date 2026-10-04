@@ -40,9 +40,9 @@ function findGlobalScopeUsages(guardName: string): string[] {
   return hits.sort();
 }
 
+// L'historique et les paramètres d'une église en sont sortis : ils relèvent de church:settings,
+// évaluée dans l'église (Admin de l'église).
 const EXPECTED_SUPER_ADMIN_FILES = [
-  "(auth)/admin/audit-logs/page.tsx",
-  "(auth)/admin/churches/[churchId]/page.tsx",
   "(auth)/admin/churches/onboard/page.tsx",
   "(auth)/admin/churches/page.tsx",
 ].sort();

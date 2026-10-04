@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchPermission, getUserMinistryScope, hasChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAccessPerson, listInheritedAccess } from "@/lib/access-overview";
-import { ALL_ROLES, PRIVILEGED_ROLES, ASSIGNABLE_BY_MINISTER } from "@/lib/roles";
+import { ALL_ROLES, ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
 import PersonAccessClient from "./PersonAccessClient";
 
 export default async function PersonAccessPage({
@@ -55,10 +55,10 @@ export default async function PersonAccessPage({
     }),
   ]);
 
+  const canGrantChurchAdmins = await hasChurchPermission(session, "access:admins", churchId);
   const assignableRoles = ALL_ROLES.filter((role) => {
     if (ministryScope.scoped && !ASSIGNABLE_BY_MINISTER.includes(role)) return false;
-    if (PRIVILEGED_ROLES.includes(role) && !session.user.isSuperAdmin) return false;
-    return true;
+    return canGrantRole(role, { isSuperAdmin: session.user.isSuperAdmin, canGrantChurchAdmins });
   });
 
   return (

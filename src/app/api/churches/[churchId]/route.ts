@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission, hasChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { parseEmailList, formatEmailList } from "@/lib/email";
@@ -23,9 +23,24 @@ export async function PUT(
 ) {
   try {
     const { churchId } = await params;
-    const session = await requireChurchPermission("church:manage", churchId);
+    // church:settings (Admin de l'église) ; le nom, l'adresse publique (slug) et le superviseur,
+    // qui engagent au-delà de l'église, restent à church:manage (Super Admin).
+    const session = await requireChurchPermission("church:settings", churchId);
     const body = await request.json();
     const data = updateSchema.parse(body);
+
+    if (!(await hasChurchPermission(session, "church:manage", churchId))) {
+      const current = await prisma.church.findUnique({
+        where: { id: churchId },
+        select: { name: true, slug: true, supervisorProfileId: true },
+      });
+      if (!current) throw new ApiError(404, "Église introuvable");
+      const supervisorChanged =
+        data.supervisorProfileId !== undefined && (data.supervisorProfileId ?? null) !== current.supervisorProfileId;
+      if (data.name !== current.name || data.slug !== current.slug || supervisorChanged) {
+        throw new ApiError(403, "Le nom, l'adresse et le superviseur de l'église ne sont modifiables que par un Super Admin");
+      }
+    }
 
     // Vérifier que le profil responsable appartient à cette église
     if (data.responsibleProfileId) {

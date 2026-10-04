@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, getUserMinistryScope } from "@/lib/auth";
+import { requireChurchPermission, getUserMinistryScope, hasChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
-import { ASSIGNABLE_BY_MINISTER, PRIVILEGED_ROLES } from "@/lib/roles";
+import { ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
 import { z } from "zod";
 
@@ -107,11 +107,10 @@ export async function POST(
     const session = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
-    // Les rôles privilégiés nécessitent users:manage (seul SUPER_ADMIN)
-    if (PRIVILEGED_ROLES.includes(role as Role)) {
-      if (!session.user.isSuperAdmin) {
-        throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
-      }
+    // Admin et Secrétaire : access:admins dans l'église ; Super Admin : un Super Admin seulement
+    const canGrantChurchAdmins = await hasChurchPermission(session, "access:admins", churchId);
+    if (!canGrantRole(role as Role, { isSuperAdmin: session.user.isSuperAdmin, canGrantChurchAdmins })) {
+      throw new ApiError(403, "Droits insuffisants pour attribuer ce rôle");
     }
 
     // Vérifier que le ministryId appartient à cette église
@@ -343,11 +342,10 @@ export async function DELETE(
     const delSession = await requireChurchPermission("access:manage", churchId);
     requireRateLimit(request, { prefix: `roles:${delSession.user.id}`, ...RATE_LIMIT_SENSITIVE });
 
-    // Block deletion of privileged roles by non-super-admins
-    if (PRIVILEGED_ROLES.includes(role as Role)) {
-      if (!delSession.user.isSuperAdmin) {
-        throw new ApiError(403, "Droits insuffisants pour supprimer ce rôle");
-      }
+    // Même règle qu'à l'attribution (canGrantRole)
+    const delCanGrantChurchAdmins = await hasChurchPermission(delSession, "access:admins", churchId);
+    if (!canGrantRole(role as Role, { isSuperAdmin: delSession.user.isSuperAdmin, canGrantChurchAdmins: delCanGrantChurchAdmins })) {
+      throw new ApiError(403, "Droits insuffisants pour supprimer ce rôle");
     }
 
     const delMinistryScope = getUserMinistryScope(delSession, churchId);

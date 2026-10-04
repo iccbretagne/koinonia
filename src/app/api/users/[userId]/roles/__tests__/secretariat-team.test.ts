@@ -4,12 +4,13 @@
 // l'entrée synthétique (id `virtual-secretariat-*`, jamais persistée) échoue proprement, sans
 // crash ni contrainte Prisma silencieuse.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createSecretariatTeamSession, createSecretarySession } from "@/__mocks__/auth";
+import { createSecretariatTeamSession, createSecretarySession, fakeHasChurchPermission } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockRequirePermission = vi.fn();
 const mockRequireRateLimit = vi.fn();
 vi.mock("@/lib/auth", () => ({
+  hasChurchPermission: fakeHasChurchPermission,
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   getUserMinistryScope: () => ({ scoped: false }),
 }));

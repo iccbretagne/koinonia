@@ -42,6 +42,16 @@ describe("POST /api/agenda/profiles — cross-tenant userId validation (T02)", (
     expect(body.error).toContain("n'appartient pas");
   });
 
+  it("un Admin de l'église gère les profils pastoraux (church:settings, pas church:manage)", async () => {
+    const req = new Request("http://localhost/api/agenda/profiles", {
+      method: "POST",
+      body: JSON.stringify({ churchId: "church-1", name: "Pasteur X", role: "PASTEUR" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    expect(mockRequireChurchPermission).toHaveBeenCalledWith("church:settings", "church-1");
+  });
+
   it("creates profile without userId (no cross-tenant check needed)", async () => {
     const req = new Request("http://localhost/api/agenda/profiles", {
       method: "POST",
@@ -87,7 +97,7 @@ describe("POST /api/agenda/profiles — cross-tenant userId validation (T02)", (
     expect(res.status).toBe(401);
   });
 
-  it("returns 403 when lacking church:manage", async () => {
+  it("returns 403 when lacking church:settings", async () => {
     mockRequireChurchPermission.mockRejectedValue(new Error("FORBIDDEN"));
 
     const req = new Request("http://localhost/api/agenda/profiles", {

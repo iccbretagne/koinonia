@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
     const churchId = await getCurrentChurchId(session);
     if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");
-    await requireChurchPermission("church:manage", churchId);
+    await requireChurchPermission("church:settings", churchId);
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({

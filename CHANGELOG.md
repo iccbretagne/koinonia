@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Corrigé
+
+- Un Admin d'église gère les profils pastoraux de son église ; jusque-là, seul un Super Admin le pouvait.
+
+### Modifié
+
+- Un Admin d'église administre désormais son église : « Paramètres de l'église » (emails du secrétariat et de la comptabilité, couleur, responsable pastoral), historique des modifications, et nomination ou retrait des Admins et Secrétaires de son église. Le nom, l'adresse publique et le superviseur de l'église, la création ou la suppression d'églises et le rôle Super Admin restent réservés au Super Admin.
+
 ## [v1.29.0] - 2026-10-04
 
 ### Ajouté

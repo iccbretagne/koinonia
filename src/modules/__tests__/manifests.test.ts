@@ -54,8 +54,10 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
  * Propriétaire de chaque permission. `storage` n'en déclare aucune : infrastructure pure.
  */
 const PERMISSION_OWNER: Record<string, string> = {
+  "access:admins": "core",
   "access:manage": "core",
   "church:manage": "core",
+  "church:settings": "core",
   "users:manage": "core",
   "integration:manage": "integration",
   "integration:delete": "integration",
@@ -217,8 +219,10 @@ describe("Manifestes des modules", () => {
 
   it("core ne déclare que des permissions globales", () => {
     expect(Object.keys(coreModule.permissions ?? {}).sort()).toEqual([
+      "access:admins",
       "access:manage",
       "church:manage",
+      "church:settings",
       "users:manage",
     ]);
   });

@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createAdminSession, createMinisterSession, createSecretarySession } from "@/__mocks__/auth";
+import { createAdminSession, createMinisterSession, createSecretarySession, fakeHasChurchPermission } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 import { fakeGetUserMinistryScope } from "@/lib/__tests__/support/ministry-scope-mock";
 
 const mockRequirePermission = vi.fn();
 const mockRequireRateLimit = vi.fn();
 vi.mock("@/lib/auth", () => ({
+  hasChurchPermission: fakeHasChurchPermission,
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   getUserMinistryScope: (...args: Parameters<typeof fakeGetUserMinistryScope>) =>
     fakeGetUserMinistryScope(...args),
@@ -74,15 +75,59 @@ describe("POST /api/users/[userId]/roles — scope validation", () => {
     expect(body.error).toContain("église");
   });
 
-  it("returns 403 when non-super-admin tries to assign ADMIN role", async () => {
+  it("un Secrétaire ne peut attribuer ni ADMIN ni SECRETARY (access:admins) → 403", async () => {
+    mockRequirePermission.mockResolvedValue(createSecretarySession("church-1"));
+    for (const role of ["ADMIN", "SECRETARY"]) {
+      const request = new Request("http://localhost/api/users/user-1/roles", {
+        method: "POST",
+        body: JSON.stringify({ churchId: "church-1", role }),
+      });
+      const res = await POST(request, { params: Promise.resolve({ userId: "user-1" }) });
+      expect(res.status, role).toBe(403);
+    }
+    expect(prismaMock.userChurchRole.create).not.toHaveBeenCalled();
+  });
+
+  it("un Admin attribue ADMIN et SECRETARY dans son église → 201", async () => {
+    for (const role of ["ADMIN", "SECRETARY"]) {
+      prismaMock.userChurchRole.create.mockResolvedValue({
+        id: "ucr-1",
+        userId: "user-1",
+        churchId: "church-1",
+        role,
+        ministryId: null,
+        church: { id: "church-1", name: "Test Church" },
+        ministry: null,
+        departments: [],
+      } as never);
+      const request = new Request("http://localhost/api/users/user-1/roles", {
+        method: "POST",
+        body: JSON.stringify({ churchId: "church-1", role }),
+      });
+      const res = await POST(request, { params: Promise.resolve({ userId: "user-1" }) });
+      expect(res.status, role).toBe(201);
+    }
+  });
+
+  it("un Admin d'une autre église ne peut pas attribuer ADMIN ici → 403", async () => {
+    // access:manage passé (mock), mais access:admins s'évalue dans l'église ciblée
+    mockRequirePermission.mockResolvedValue(createAdminSession("church-OTHER"));
     const request = new Request("http://localhost/api/users/user-1/roles", {
       method: "POST",
       body: JSON.stringify({ churchId: "church-1", role: "ADMIN" }),
     });
-
     const res = await POST(request, { params: Promise.resolve({ userId: "user-1" }) });
-
     expect(res.status).toBe(403);
+  });
+
+  it("un Admin ne peut pas attribuer SUPER_ADMIN → 403", async () => {
+    const request = new Request("http://localhost/api/users/user-1/roles", {
+      method: "POST",
+      body: JSON.stringify({ churchId: "church-1", role: "SUPER_ADMIN" }),
+    });
+    const res = await POST(request, { params: Promise.resolve({ userId: "user-1" }) });
+    expect(res.status).toBe(403);
+    expect(prismaMock.userChurchRole.create).not.toHaveBeenCalled();
   });
 });
 

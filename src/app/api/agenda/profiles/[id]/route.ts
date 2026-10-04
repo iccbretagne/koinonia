@@ -18,7 +18,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("pastoralProfile", id);
-    const session = await requireChurchPermission("church:manage", churchId);
+    const session = await requireChurchPermission("church:settings", churchId);
 
     const body = await request.json();
     const data = updateSchema.parse(body);
@@ -63,7 +63,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const churchId = await resolveChurchId("pastoralProfile", id);
-    const session = await requireChurchPermission("church:manage", churchId);
+    const session = await requireChurchPermission("church:settings", churchId);
 
     const profile = await prisma.pastoralProfile.findUnique({
       where: { id },

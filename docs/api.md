@@ -107,7 +107,7 @@ ou pour une mise à jour :
 
 Met à jour le nom et le slug d'une église.
 
-**Permission requise** : `church:manage`
+**Permission requise** : `church:settings` (Admin de l'église) ; changer le nom, le slug ou le superviseur exige `church:manage` (Super Admin), sinon 403
 
 **Body** :
 ```json
@@ -2309,7 +2309,7 @@ Une clé de `domains` inconnue du registre ou non visible pour l'appelant → `4
 
 Liste les journaux d'audit de l'église courante, paginés.
 
-**Permission requise** : `church:manage`
+**Permission requise** : `church:settings` dans l'église courante (Admin, Super Admin)
 
 **Query params** :
 - `page` (optionnel, défaut : `1`) — numéro de page
