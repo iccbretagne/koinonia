@@ -4,7 +4,8 @@ import type { Session } from "next-auth";
  * Départements « sans STAR planifié » : prévus sur un événement (EventDepartment) mais sans
  * personne en service (En service, Debrief ou Remplaçant). Signalés seulement aux personnes qui
  * peuvent les planifier (`planning:department`, dans leur périmètre de départements) et seulement
- * pour les événements à venir — un STAR et l'export partagé n'en voient qu'une carte neutre.
+ * pour les événements à venir — un STAR n'en voit qu'une carte neutre ; l'export partagé aussi, avec
+ * leur nombre dans l'en-tête.
  */
 
 /** Statuts qui comptent comme « STAR planifié » sur un événement. */

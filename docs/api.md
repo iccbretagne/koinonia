@@ -349,8 +349,9 @@ Vue publique d'un événement avec tous les membres en service (statuts `EN_SERV
 que l'appelant peut planifier (`planning:department`, dans son périmètre). Vide pour un STAR.
 `canEditPlanning` (`planning:edit`) fixe l'action proposée : « Planifier », ou « Voir » pour un
 Secrétaire dont la grille s'ouvre en lecture seule.
-L'écran les montre en alerte ; l'export partagé et l'impression n'en montrent qu'une carte neutre
-« Pas de STAR planifié ».
+L'écran les montre en alerte ; l'export partagé et l'impression montrent des cartes neutres
+« Pas de STAR planifié » et gardent leur nombre dans l'en-tête (« 3 départements sans STAR
+planifié »).
 
 **Réponse** :
 ```json

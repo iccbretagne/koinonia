@@ -238,9 +238,11 @@ export default function StarViewClient({ eventId }: Props) {
   }
 
   const activeDepartments = data.departments.filter((d) => d.members.length > 0);
-  // Alerte réservée à l'écran de qui peut planifier : l'export partagé (image, PDF) et l'impression
-  // n'en montrent que des cartes neutres « Pas de STAR planifié ».
+  // Bandeau et boutons réservés à l'écran de qui peut planifier : l'export partagé (image, PDF) et
+  // l'impression montrent des cartes neutres « Pas de STAR planifié ».
   const gapIds = new Set(exporting ? [] : data.unstaffedDepartmentIds);
+  // Le nombre, lui, reste dans l'en-tête de l'export : celui qui partage l'image signale le manque.
+  const unstaffedCount = data.unstaffedDepartmentIds.length;
   const gapDepartments = data.departments.filter((d) => gapIds.has(d.id));
   const ministries = groupByMinistry(data.departments);
   const gapAction: GapAction = {
@@ -301,10 +303,10 @@ export default function StarViewClient({ eventId }: Props) {
             <span className="rounded-full bg-on-brand/20 px-3 py-1 text-xs font-semibold">
               {data.totalStars} STAR en service
             </span>
-            {gapDepartments.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 text-xs font-semibold text-warning print:hidden">
+            {unstaffedCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 text-xs font-semibold text-warning">
                 <TriangleAlert aria-hidden="true" className="size-3.5" strokeWidth={2} />
-                {`${activeDepartments.length} sur ${data.departments.length} départements mobilisés`}
+                {`${unstaffedCount} département${unstaffedCount > 1 ? "s" : ""} sans STAR planifié`}
               </span>
             )}
           </div>
