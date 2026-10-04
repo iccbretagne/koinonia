@@ -22,7 +22,7 @@ const MAX_BYTES = Number(process.env.AUDIO_CACHE_MAX_BYTES) || 5 * 1024 * 1024 *
 const inFlight = new Map<string, Promise<string>>();
 
 function cacheFileName(s3Key: string): string {
-  return createHash("sha1").update(s3Key).digest("hex") + ".mp3";
+  return createHash("sha256").update(s3Key).digest("hex") + ".mp3";
 }
 
 /**
