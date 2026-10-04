@@ -34,9 +34,9 @@ def api(path, params=None, post=False):
 
 
 desired = {
-    "new_software_quality_security_rating": ("GT", "1"),
-    "new_software_quality_reliability_rating": ("GT", "1"),
-    "new_software_quality_maintainability_rating": ("GT", "1"),
+    "new_security_rating": ("GT", "1"),
+    "new_reliability_rating": ("GT", "1"),
+    "new_maintainability_rating": ("GT", "1"),
     "new_security_hotspots_reviewed": ("LT", "100"),
     "new_coverage": ("LT", "50"),
     "new_duplicated_lines_density": ("GT", "3"),

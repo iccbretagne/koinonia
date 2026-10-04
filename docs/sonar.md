@@ -25,9 +25,9 @@ l'associe uniquement à Koinonia et vérifie les conditions enregistrées.
 
 | Condition sur le nouveau code | Seuil |
 | --- | --- |
-| Sécurité (MQR) | A |
-| Fiabilité (MQR) | A |
-| Maintenabilité (MQR) | A |
+| Sécurité | A |
+| Fiabilité | A |
+| Maintenabilité | A |
 | Security Hotspots examinés, si présents | 100 % |
 | Couverture | ≥ 50 % |
 | Duplication | ≤ 3 % |
