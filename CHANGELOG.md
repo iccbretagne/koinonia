@@ -6,17 +6,19 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.30.0] - 2026-10-04
+
 ### Ajouté
 
 - Départements sans STAR planifié rendus visibles à qui peut les planifier : dans le « Planning des STAR », un bandeau d'alerte avec un lien vers la grille de chaque département concerné (« Planifier », ou « Voir » pour qui n'a la grille qu'en lecture), une carte « Personne en service » à sa place (cartes rangées par ministère) et « N départements sans STAR planifié » dans l'en-tête, conservé dans l'image et le PDF partagés ; dans l'agenda de l'église et sur l'accueil, un repère « N dép. sans STAR » sur les événements à venir concernés. Un STAR ne voit qu'une carte neutre « Pas de STAR planifié », comme l'export partagé et l'impression (hors nombre dans l'en-tête).
 
-### Corrigé
-
-- Un Admin d'église gère les profils pastoraux de son église ; jusque-là, seul un Super Admin le pouvait.
-
 ### Modifié
 
 - Un Admin d'église administre désormais son église : « Paramètres de l'église » (emails du secrétariat et de la comptabilité, couleur, responsable pastoral), historique des modifications, et nomination ou retrait des Admins et Secrétaires de son église. Le nom, l'adresse publique et le superviseur de l'église, la création ou la suppression d'églises et le rôle Super Admin restent réservés au Super Admin.
+
+### Corrigé
+
+- Un Admin d'église gère les profils pastoraux de son église ; jusque-là, seul un Super Admin le pouvait.
 
 ## [v1.29.0] - 2026-10-04
 
