@@ -21,6 +21,7 @@ import { getEventTypeLabel } from "@/lib/event-types";
 import DateTile from "@/components/DateTile";
 import { eventTypeTone } from "@/components/event-type-tone";
 import EmptyState from "@/components/ui/EmptyState";
+import UnstaffedChip from "@/components/UnstaffedChip";
 import StatusChip from "@/components/ui/StatusChip";
 import { buttonClasses } from "@/components/ui/button-classes";
 import { serviceStatusDescriptor } from "@/components/ui/status";
@@ -29,6 +30,7 @@ import { loadMyPlanning } from "../planning/my-planning-data";
 import { loadMyRequests } from "../requests/my-requests-data";
 import { REQUEST_TYPE_LABEL, requestStatus, requestTypeIcon } from "../requests/request-display";
 import { pickFirstName } from "./first-name";
+import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
 
 /**
  * Accueil « Aujourd'hui » (spec 055, lot 4) : assemble, pour le rôle connecté, des données que
@@ -176,6 +178,9 @@ export default async function TodayPage() {
     .slice(0, MAX_SERVICES);
 
   const upcomingEvents = (churchEvents ?? []).filter((e) => e.date >= now).slice(0, MAX_EVENTS);
+  // Départements sans STAR planifié, pour qui peut planifier (même repère que l'agenda).
+  const gapViewer = canDepartment ? await getStaffingGapViewer(session, churchId) : null;
+  const unstaffed = gapViewer ? await countUnstaffedDepartments(upcomingEvents, gapViewer, now) : new Map<string, number>();
   const openRequests = (myRequests ?? []).filter((r) => OPEN_REQUEST_STATUSES.has(r.status));
 
   const shortcuts: Shortcut[] = [
@@ -292,6 +297,7 @@ export default async function TodayPage() {
                             {formatTime(event.date)}
                           </p>
                         </div>
+                        {(unstaffed.get(event.id) ?? 0) > 0 && <UnstaffedChip count={unstaffed.get(event.id)!} />}
                         <StatusChip tone={eventTypeTone(event.type)} className="shrink-0">
                           {getEventTypeLabel(event.type)}
                         </StatusChip>

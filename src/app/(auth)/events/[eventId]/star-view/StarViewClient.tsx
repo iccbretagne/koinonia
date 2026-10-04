@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Headphones, MessageSquare, Repeat } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, ChevronRight, FileText, Headphones, MessageSquare, Repeat, TriangleAlert, UserX } from "lucide-react";
 import ExportBar from "@/components/ExportBar";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -39,6 +40,8 @@ interface StarViewData {
   };
   departments: DepartmentItem[];
   totalStars: number;
+  /** Départements sans STAR planifié à signaler à l'appelant (vide pour un STAR, un événement passé). */
+  unstaffedDepartmentIds: string[];
   welcomeFamilies: string[];
   audioLink: { url: string } | null;
   openingClosing: OpeningClosingData;
@@ -233,7 +236,12 @@ export default function StarViewClient({ eventId }: Props) {
   }
 
   const activeDepartments = data.departments.filter((d) => d.members.length > 0);
-  const idleDepartments = data.departments.filter((d) => d.members.length === 0);
+  // Alerte réservée à l'écran de qui peut planifier : l'export partagé (image, PDF) et l'impression
+  // n'en montrent que des cartes neutres « Pas de STAR planifié ».
+  const gapIds = new Set(exporting ? [] : data.unstaffedDepartmentIds);
+  const gapDepartments = data.departments.filter((d) => gapIds.has(d.id));
+  const ministries = groupByMinistry(data.departments);
+  const planHref = (deptId: string) => `/dashboard?dept=${deptId}&event=${eventId}`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -287,6 +295,12 @@ export default function StarViewClient({ eventId }: Props) {
             <span className="rounded-full bg-on-brand/20 px-3 py-1 text-xs font-semibold">
               {data.totalStars} STAR en service
             </span>
+            {gapDepartments.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-soft px-3 py-1 text-xs font-semibold text-warning print:hidden">
+                <TriangleAlert aria-hidden="true" className="size-3.5" strokeWidth={2} />
+                {`${activeDepartments.length} sur ${data.departments.length} départements mobilisés`}
+              </span>
+            )}
           </div>
           {data.event.welcomeDutyEnabled && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -322,46 +336,134 @@ export default function StarViewClient({ eventId }: Props) {
           </div>
         </div>
 
-        <div className="px-4 py-5 sm:px-5">
-          {activeDepartments.length === 0 ? (
-            <p className="py-6 text-center text-[15px] text-ink-muted">Aucun STAR n&apos;est encore en service pour cet événement.</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {activeDepartments.map((dept) => (
-                <div key={dept.id} className="rounded-control border border-line border-l-[3px] border-l-brand bg-surface px-4 py-3">
-                  <h3 className="mb-2 truncate text-xs font-semibold text-brand-text first-letter:uppercase">{dept.name}</h3>
-                  <ul className="flex flex-col gap-1">
-                    {dept.members.map((member) => (
-                      <li key={member.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-                        <span className="min-w-0 break-words text-sm font-medium text-ink">
-                          {member.firstName} {member.lastName}
-                        </span>
-                        {member.status === "EN_SERVICE_DEBRIEF" && (
-                          <StatusChip tone="brand" icon={MessageSquare} className="shrink-0">
-                            Debrief
-                          </StatusChip>
-                        )}
-                        {member.status === "REMPLACANT" && (
-                          <StatusChip tone="info" icon={Repeat} className="shrink-0">
-                            Remplaçant
-                          </StatusChip>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        <div className="flex flex-col gap-5 px-4 py-5 sm:px-5">
+          {gapDepartments.length > 0 && (
+            <Alert
+              tone="warning"
+              icon={TriangleAlert}
+              title={`${gapDepartments.length} département${gapDepartments.length > 1 ? "s n'ont" : " n'a"} personne en service.`}
+              action={gapDepartments.map((d) => (
+                <Link
+                  key={d.id}
+                  href={planHref(d.id)}
+                  className="inline-flex min-h-8 items-center gap-1 rounded-full border border-warning/45 bg-surface py-1 pl-3 pr-2 text-[13px] font-semibold text-ink hover:border-warning focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+                >
+                  {d.name}
+                  <ChevronRight aria-hidden="true" className="size-3.5 text-ink-subtle" strokeWidth={2} />
+                </Link>
               ))}
-            </div>
+              className="print:hidden"
+            >
+              Ils sont prévus sur cet événement, mais aucun STAR n&apos;y est planifié.
+            </Alert>
           )}
 
-          {idleDepartments.length > 0 && (
-            <p className="mt-4 border-t border-line pt-3 text-xs text-ink-muted">
-              <span className="font-semibold">Non mobilisés : </span>
-              {idleDepartments.map((d) => d.name).join(", ")}
-            </p>
+          {data.departments.length === 0 ? (
+            <p className="py-6 text-center text-[15px] text-ink-muted">Aucun département n&apos;est prévu sur cet événement.</p>
+          ) : (
+            <>
+              {activeDepartments.length === 0 && (
+                <p className="text-center text-[15px] text-ink-muted">Aucun STAR n&apos;est encore en service pour cet événement.</p>
+              )}
+              {ministries.map((ministry) => (
+                <section key={ministry.name} aria-label={ministry.name}>
+                  <h2 className="mb-2 font-display text-[11px] font-bold uppercase tracking-[0.08em] text-ink-subtle">
+                    {ministry.name}
+                  </h2>
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {ministry.departments.map((dept) =>
+                      dept.members.length > 0 ? (
+                        <StaffedCard key={dept.id} dept={dept} />
+                      ) : gapIds.has(dept.id) ? (
+                        <GapCard key={dept.id} dept={dept} href={planHref(dept.id)} />
+                      ) : (
+                        <UnstaffedCard key={dept.id} dept={dept} />
+                      )
+                    )}
+                  </div>
+                </section>
+              ))}
+            </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Départements rangés par ministère (ordre alphabétique des ministères puis des départements). */
+function groupByMinistry(departments: DepartmentItem[]): { name: string; departments: DepartmentItem[] }[] {
+  const byName = new Map<string, DepartmentItem[]>();
+  for (const dept of departments) {
+    const list = byName.get(dept.ministryName) ?? [];
+    list.push(dept);
+    byName.set(dept.ministryName, list);
+  }
+  return [...byName.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "fr"))
+    .map(([name, list]) => ({ name, departments: list.sort((a, b) => a.name.localeCompare(b.name, "fr")) }));
+}
+
+function StaffedCard({ dept }: { readonly dept: DepartmentItem }) {
+  return (
+    <div className="rounded-control border border-line border-l-[3px] border-l-brand bg-surface px-4 py-3">
+      <h3 className="mb-2 truncate text-xs font-semibold text-brand-text first-letter:uppercase">{dept.name}</h3>
+      <ul className="flex flex-col gap-1">
+        {dept.members.map((member) => (
+          <li key={member.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+            <span className="min-w-0 break-words text-sm font-medium text-ink">
+              {member.firstName} {member.lastName}
+            </span>
+            {member.status === "EN_SERVICE_DEBRIEF" && (
+              <StatusChip tone="brand" icon={MessageSquare} className="shrink-0">
+                Debrief
+              </StatusChip>
+            )}
+            {member.status === "REMPLACANT" && (
+              <StatusChip tone="info" icon={Repeat} className="shrink-0">
+                Remplaçant
+              </StatusChip>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Carte neutre : ce que voient un STAR, l'export partagé et l'impression. */
+function UnstaffedCard({ dept }: { readonly dept: DepartmentItem }) {
+  return (
+    <div className="rounded-control border border-dashed border-line border-l-[3px] border-l-line bg-surface-sunken px-4 py-3">
+      <h3 className="mb-1 truncate text-xs font-semibold text-ink-subtle first-letter:uppercase">{dept.name}</h3>
+      <p className="text-sm italic text-ink-subtle">Pas de STAR planifié</p>
+    </div>
+  );
+}
+
+/**
+ * Carte d'alerte, à l'écran de qui peut planifier le département. À l'impression, elle reprend
+ * l'aspect de la carte neutre.
+ */
+function GapCard({ dept, href }: { readonly dept: DepartmentItem; readonly href: string }) {
+  return (
+    <div
+      className="rounded-control border border-dashed border-warning/60 border-l-[3px] border-l-warning bg-warning-soft px-4 py-3
+        print:border-line print:border-l-line print:bg-surface-sunken"
+    >
+      <h3 className="mb-1 truncate text-xs font-semibold text-warning first-letter:uppercase print:text-ink-subtle">{dept.name}</h3>
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-ink print:hidden">
+        <UserX aria-hidden="true" className="size-4 shrink-0 text-warning" strokeWidth={2} />
+        Personne en service
+      </p>
+      <p className="hidden text-sm italic text-ink-subtle print:block">Pas de STAR planifié</p>
+      <Link
+        href={href}
+        className="mt-2 inline-flex items-center gap-1 rounded-chip text-[13px] font-semibold text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus print:hidden"
+      >
+        Planifier
+        <ArrowRight aria-hidden="true" className="size-3.5" strokeWidth={2} />
+      </Link>
     </div>
   );
 }

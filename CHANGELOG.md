@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Départements sans STAR planifié rendus visibles à qui peut les planifier : dans le « Planning des STAR », un bandeau d'alerte avec un lien vers la grille de chaque département concerné, une carte « Personne en service » à sa place (cartes rangées par ministère) et le nombre de départements mobilisés ; dans l'agenda de l'église et sur l'accueil, un repère « N dép. sans STAR » sur les événements à venir concernés. Un STAR, l'export partagé et l'impression n'en voient qu'une carte neutre « Pas de STAR planifié ».
+
 ### Corrigé
 
 - Un Admin d'église gère les profils pastoraux de son église ; jusque-là, seul un Super Admin le pouvait.

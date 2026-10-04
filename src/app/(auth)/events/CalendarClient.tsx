@@ -3,12 +3,14 @@
 import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import html2canvas from "html2canvas-pro";
-import { CalendarX2, ChevronRight } from "lucide-react";
+import { CalendarX2, ChevronRight, TriangleAlert, UserX } from "lucide-react";
 import DateTile from "@/components/DateTile";
 import ExportBar from "@/components/ExportBar";
 import PeriodNav from "@/components/PeriodNav";
 import { eventTypeDot, eventTypeTone } from "@/components/event-type-tone";
+import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
+import UnstaffedChip from "@/components/UnstaffedChip";
 import StatusChip, { statusToneClasses } from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
 import { EVENT_TYPES, getEventTypeLabel } from "@/lib/event-types";
@@ -18,6 +20,8 @@ interface CalendarEvent {
   title: string;
   type: string;
   date: string;
+  /** Départements sans STAR planifié (événement à venir, pour qui peut planifier ; 0 sinon). */
+  unstaffed: number;
 }
 
 interface Props {
@@ -127,8 +131,17 @@ function DaysGrid({
                     key={ev.id}
                     href={`/events/${ev.id}/star-view`}
                     className={`block truncate rounded-chip px-1.5 py-1 text-xs font-semibold transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${statusToneClasses[eventTypeTone(ev.type)]}`}
-                    title={`${ev.title} (${getEventTypeLabel(ev.type)})`}
+                    title={`${ev.title} (${getEventTypeLabel(ev.type)})${
+                      ev.unstaffed > 0 ? ` — ${ev.unstaffed} département${ev.unstaffed > 1 ? "s" : ""} sans STAR planifié` : ""
+                    }`}
                   >
+                    {ev.unstaffed > 0 && (
+                      <UserX
+                        aria-hidden="true"
+                        className="mr-1 inline size-3.5 align-[-2px] text-warning group-data-[capturing]:hidden print:hidden"
+                        strokeWidth={2.25}
+                      />
+                    )}
                     {ev.title}
                   </Link>
                 ))}
@@ -167,6 +180,7 @@ function EventRows({ events }: { readonly events: CalendarEvent[] }) {
                   {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }).replace(":", "h")}
                 </p>
               </div>
+              {ev.unstaffed > 0 && <UnstaffedChip count={ev.unstaffed} />}
               <StatusChip tone={eventTypeTone(ev.type)} className="shrink-0">
                 {getEventTypeLabel(ev.type)}
               </StatusChip>
@@ -270,6 +284,7 @@ export default function CalendarClient({ events }: Props) {
   }, [mode, events, year, month]);
 
   const todayStr = localDateStr(new Date());
+  const unstaffedEvents = events.filter((ev) => ev.unstaffed > 0).length;
 
   const printTitle =
     mode !== "multi"
@@ -439,6 +454,17 @@ export default function CalendarClient({ events }: Props) {
             </span>
           )}
         </div>
+      )}
+
+      {unstaffedEvents > 0 && (
+        <Alert tone="warning" icon={TriangleAlert} className="print:hidden">
+          <strong className="font-semibold">
+            {unstaffedEvents} événement{unstaffedEvents > 1 ? "s" : ""} à venir {unstaffedEvents > 1 ? "ont" : "a"}
+          </strong>{" "}
+          des départements sans STAR planifié, repérés par l&apos;icône{" "}
+          <UserX aria-label="sans STAR" className="inline size-4 align-[-3px] text-warning" strokeWidth={2.25} /> dans le
+          calendrier.
+        </Alert>
       )}
 
       {/* Zone capturée (PNG, impression) */}

@@ -10,6 +10,7 @@ import CalendarClient from "./CalendarClient";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import { Church, Settings2 } from "lucide-react";
+import { countUnstaffedDepartments, getStaffingGapViewer } from "@/modules/planning";
 
 export default async function ChurchAgendaPage() {
   const session = await auth();
@@ -46,6 +47,10 @@ export default async function ChurchAgendaPage() {
   );
   const canManageEvents = session.user.isSuperAdmin || userPermissions.has("events:manage");
 
+  // Événements à venir dont des départements n'ont aucun STAR planifié — pour qui peut planifier.
+  const gapViewer = await getStaffingGapViewer(session, currentChurchId);
+  const unstaffed = gapViewer ? await countUnstaffedDepartments(events, gapViewer) : new Map<string, number>();
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -64,6 +69,7 @@ export default async function ChurchAgendaPage() {
         events={events.map((e) => ({
           ...e,
           date: e.date.toISOString(),
+          unstaffed: unstaffed.get(e.id) ?? 0,
         }))}
       />
     </div>

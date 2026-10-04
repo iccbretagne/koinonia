@@ -15,12 +15,19 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const mockCanManage = vi.fn();
 const mockCanDeposit = vi.fn();
 const mockCanRead = vi.fn();
+const mockGetStaffingGapViewer = vi.fn();
 
-vi.mock("@/modules/planning", () => ({
-  canManageOpeningClosing: (...args: unknown[]) => mockCanManage(...args),
-  canDepositAnnouncementSheet: (...args: unknown[]) => mockCanDeposit(...args),
-  canReadAnnouncementSheet: (...args: unknown[]) => mockCanRead(...args),
-}));
+vi.mock("@/modules/planning", async () => {
+  const actual = await vi.importActual<typeof import("@/modules/planning")>("@/modules/planning");
+  return {
+    PLANNED_STATUSES: actual.PLANNED_STATUSES,
+    isUpcoming: actual.isUpcoming,
+    canManageOpeningClosing: (...args: unknown[]) => mockCanManage(...args),
+    canDepositAnnouncementSheet: (...args: unknown[]) => mockCanDeposit(...args),
+    canReadAnnouncementSheet: (...args: unknown[]) => mockCanRead(...args),
+    getStaffingGapViewer: (...args: unknown[]) => mockGetStaffingGapViewer(...args),
+  };
+});
 
 const { GET } = await import("../[eventId]/star-view/route");
 
@@ -160,5 +167,59 @@ describe("GET /api/events/[eventId]/star-view — announcementSheet (spec 040)",
 
     expect(body.announcementSheet.canDeposit).toBe(false);
     expect(body.announcementSheet.canRead).toBe(false);
+  });
+});
+
+describe("GET /api/events/[eventId]/star-view — départements sans STAR planifié", () => {
+  const future = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+  const eventDepts = [
+    { department: { id: "d-son", name: "Son", ministry: { name: "Louange" } }, plannings: [] },
+    { department: { id: "d-parking", name: "Parking", ministry: { name: "Accueil" } }, plannings: [] },
+    {
+      department: { id: "d-chorale", name: "Choristes", ministry: { name: "Louange" } },
+      plannings: [{ status: "EN_SERVICE", member }],
+    },
+  ];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession());
+    mockResolveChurchId.mockResolvedValue("church-1");
+    prismaMock.audioService.findUnique.mockResolvedValue(null);
+    mockCanManage.mockResolvedValue(false);
+    mockCanDeposit.mockResolvedValue(false);
+    mockCanRead.mockResolvedValue(false);
+  });
+
+  async function fetchBody() {
+    const res = await GET(new Request("http://localhost/api/events/event-1/star-view"), {
+      params: makeParams("event-1"),
+    });
+    return res.json();
+  }
+
+  it("signale les départements vides du périmètre de l'appelant, pour un événement à venir", async () => {
+    prismaMock.event.findUnique.mockResolvedValue(buildEvent({ date: future, eventDepts }) as never);
+    mockGetStaffingGapViewer.mockResolvedValue({ inScope: (id: string) => id !== "d-parking" });
+
+    const body = await fetchBody();
+    expect(body.unstaffedDepartmentIds).toEqual(["d-son"]);
+  });
+
+  it("ne signale rien à qui ne peut pas planifier (STAR)", async () => {
+    prismaMock.event.findUnique.mockResolvedValue(buildEvent({ date: future, eventDepts }) as never);
+    mockGetStaffingGapViewer.mockResolvedValue(null);
+
+    const body = await fetchBody();
+    expect(body.unstaffedDepartmentIds).toEqual([]);
+  });
+
+  it("ne signale rien pour un événement passé", async () => {
+    prismaMock.event.findUnique.mockResolvedValue(buildEvent({ date: new Date("2020-01-05"), eventDepts }) as never);
+    mockGetStaffingGapViewer.mockResolvedValue({ inScope: () => true });
+
+    const body = await fetchBody();
+    expect(body.unstaffedDepartmentIds).toEqual([]);
+    expect(mockGetStaffingGapViewer).not.toHaveBeenCalled();
   });
 });
