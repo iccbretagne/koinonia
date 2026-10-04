@@ -49,6 +49,7 @@ Conçue pour ICC Bretagne, adaptable à toute église structurée en ministères
 koinonia/
 ├── .github/
 │   ├── workflows/ci.yml         # CI : typecheck + lint + lint:boundaries + tests + migrations
+│   ├── workflows/release.yml    # Release a la demande : tag vX.Y.Z + GitHub Release
 │   └── dependabot.yml           # Mises a jour automatiques des dependances
 ├── prisma/
 │   ├── schema.prisma            # Schema BDD (domaine + NextAuth)
@@ -675,11 +676,15 @@ git checkout -b chore/release-vX.Y.Z
 git commit -m "chore: release vX.Y.Z (#N)"
 # Ouvrir une PR vers main, la merger
 
-# 2. Tagger apres merge
+# 2. Tag + GitHub Release : workflow « Release » (.github/workflows/release.yml), sur main
+#    Actions -> Release -> Run workflow -> version X.Y.Z (ou via l'API workflow_dispatch)
+#    Il verifie package.json et la section du CHANGELOG, pousse le tag vX.Y.Z avec le secret
+#    RELEASE_TOKEN (pour que la CI du tag puis Deploy se declenchent) et cree la release
+#    avec la section du CHANGELOG comme notes.
+
+# A defaut (secret absent), a la main :
 git checkout main && git pull
 git tag vX.Y.Z && git push origin vX.Y.Z
-
-# 3. Creer la GitHub Release
 gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."
 ```
 

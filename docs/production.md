@@ -450,7 +450,9 @@ deploiement traitee par [le TODO H-10](todo-separation-comptes-deploiement.md).
 
 ### Fonctionnement
 
-1. Push d'un tag `v*` (ex: `git tag v0.6.0 && git push origin v0.6.0`)
+1. Push d'un tag `v*` : par le workflow « Release » (`.github/workflows/release.yml`, lancé à la
+   main sur `main` avec la version, il pousse le tag avec le secret `RELEASE_TOKEN` et crée la
+   GitHub Release), ou à la main (`git tag v0.6.0 && git push origin v0.6.0`)
 2. Le CI s'exécute (typecheck, tests, vérification version) et, sur un tag, **empaquette l'artefact de release** puis le publie comme artefact du run
 3. Si le CI passe, le workflow deploy **télécharge cet artefact depuis le run CI** — il ne recompile rien et ne fait aucun checkout — puis se connecte en SSH au serveur
 4. L'artefact pré-compilé est transféré par SCP, extrait, les assets statiques assemblés — aucune compilation n'a lieu en production. L'artefact inclut `prisma.config.ts` (requis par Prisma 7 pour la configuration CLI)
