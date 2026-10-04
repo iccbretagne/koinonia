@@ -66,6 +66,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
   SUPER_ADMIN: [
     "absences:manage",
     "absences:view",
+    "access:admins",
     "access:manage",
     "accounting:manage",
     "accounting:stats",
@@ -83,6 +84,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "care:qualify",
     "care:view",
     "church:manage",
+    "church:settings",
     "departments:manage",
     "departments:view",
     "discipleship:export",
@@ -116,6 +118,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
   ADMIN: [
     "absences:manage",
     "absences:view",
+    "access:admins",
     "access:manage",
     "accounting:manage",
     "accounting:stats",
@@ -132,6 +135,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "care:delete",
     "care:qualify",
     "care:view",
+    "church:settings",
     "departments:manage",
     "departments:view",
     "discipleship:export",
@@ -431,6 +435,17 @@ describe("roleHasPermission", () => {
     }
   });
 
+  it("church:settings et access:admins : SUPER_ADMIN et ADMIN seulement", () => {
+    const registry = buildFullRegistry();
+    for (const permission of ["church:settings", "access:admins"]) {
+      expect(roleHasPermission(registry, "SUPER_ADMIN", permission)).toBe(true);
+      expect(roleHasPermission(registry, "ADMIN", permission)).toBe(true);
+      for (const role of ALL_ROLES.filter((r) => r !== "SUPER_ADMIN" && r !== "ADMIN")) {
+        expect(roleHasPermission(registry, role, permission), `${permission} — rôle ${role}`).toBe(false);
+      }
+    }
+  });
+
   it("users:manage est réservé à SUPER_ADMIN et ADMIN (#583)", () => {
     const registry = buildFullRegistry();
     expect(roleHasPermission(registry, "SUPER_ADMIN", "users:manage")).toBe(true);
@@ -490,7 +505,7 @@ describe("buildRolePermissions — registry partiel (spec 038)", () => {
     const rolePermissions = buildRolePermissions(registry);
 
     expect(rolePermissions.SUPER_ADMIN.sort()).toEqual(
-      ["access:manage", "church:manage", "users:manage"].sort()
+      ["access:admins", "access:manage", "church:manage", "church:settings", "users:manage"].sort()
     );
     expect(rolePermissions.ACCOUNTANT ?? []).toHaveLength(0);
   });

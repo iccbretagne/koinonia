@@ -215,7 +215,12 @@ const CONFIG_BLOCKS: Record<string, string> = {
 };
 
 function configPages(input: NavigationInput): NavPage[] {
-  return input.configLinks.map((l) => ({ href: l.href, label: l.label, sidebarBlock: CONFIG_BLOCKS[l.href] }));
+  return input.configLinks.map((l) => ({
+    href: l.href,
+    label: l.label,
+    // Paramètres de l'église d'un Admin : `/admin/churches/<id>`
+    sidebarBlock: CONFIG_BLOCKS[l.href] ?? (l.href.startsWith("/admin/churches/") ? "Organisation" : undefined),
+  }));
 }
 
 /** Libellés des pages d'intégration sous l'intitulé « Intégration » de la sidebar desktop. */

@@ -62,7 +62,7 @@ koinonia/
 │   │   ├── boot.ts              # boot() : charge et valide les modules actifs
 │   │   └── permissions.ts       # buildRolePermissions(registry)
 │   ├── modules/                 # Logique metier par domaine
-│   │   ├── core/manifest.ts     # Manifeste : church:manage, users:manage, access:manage
+│   │   ├── core/manifest.ts     # Manifeste : church:manage/settings, users:manage, access:manage/admins
 │   │   ├── planning/
 │   │   │   ├── manifest.ts      # Manifeste (sans dépendance runtime : testable isolément)
 │   │   │   ├── index.ts         # API publique : re-exporte le manifeste + planningBus, executeRequest…
@@ -355,6 +355,7 @@ Compt = Comptable.
 | `planning:edit` | x | x | | x | x | | | | | |
 | `planning:department` | x | x | x | x | x | | | | | |
 | `access:manage` | x | x | x | x | | | | | | |
+| `access:admins` | x | x | | | | | | | | |
 | `members:view` | x | x | x | x | x | | | | | |
 | `members:manage` | x | x | | x | x | | | | | |
 | `events:view` | x | x | x | x | x | | x | | | |
@@ -365,6 +366,7 @@ Compt = Comptable.
 | `absences:manage` | x | x | x | x | x | | | | | |
 | `availability:settings` | x | x | x | | | | | | | |
 | `church:manage` | x | | | | | | | | | |
+| `church:settings` | x | x | | | | | | | | |
 | `users:manage` | x | x | | | | | | | | |
 | `integration:manage` | x | x | x | | | | | | | |
 | `integration:delete` | x | x | | | | | | | | |
@@ -510,8 +512,19 @@ renommé spec 052) :
   que des rôles rattachables (`MINISTER`, `DEPARTMENT_HEAD`, `STAR`), et seulement dans **ses**
   ministères — jamais un rôle transverse à l'église (`ADMIN`, `SECRETARY`, `REPORTER`,
   `ACCOUNTANT`, `DISCIPLE_MAKER`, `PASTORAL_CARE_REFERENT`)
-- L'anti-escalade `PRIVILEGED_ROLES` → `isSuperAdmin` (SUPER_ADMIN/ADMIN/SECRETARY) reste
-  inchangée et s'applique en plus de ce périmètre
+- L'anti-escalade `canGrantRole` (`src/lib/roles.ts`) s'applique en plus de ce périmètre :
+  attribuer ou retirer Admin/Secrétaire exige `access:admins` dans l'église (Admin, Super Admin),
+  et le rôle Super Admin ne s'attribue que par un Super Admin
+
+**Spécificités de l'Admin d'église** :
+- Administre **son** église : `church:settings` ouvre les profils pastoraux, les paramètres de
+  l'église (`/admin/churches/[churchId]`, lien « Paramètres de l'église » : emails du
+  secrétariat et de la comptabilité, couleur, responsable pastoral) et l'historique des
+  modifications de l'église ; `access:admins` lui permet de nommer ou retirer un Admin ou un
+  Secrétaire dans cette église
+- Reste réservé au Super Admin (`church:manage`, plateforme) : créer, onboarder ou supprimer
+  une église, en changer le nom, l'adresse publique (slug) ou le superviseur, les sauvegardes,
+  les ministères et départements « système », et le rôle Super Admin
 
 **Spécificités du Reporter** :
 - Accès en lecture aux événements (`events:view`)

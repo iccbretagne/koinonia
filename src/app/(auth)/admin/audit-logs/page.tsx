@@ -1,8 +1,12 @@
-import { requireSuperAdmin } from "@/lib/auth";
+import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import AuditLogsClient from "./AuditLogsClient";
 
+/** Historique des modifications de l'église courante (`church:settings` : Admin et Super Admin). */
 export default async function AuditLogsPage() {
-  await requireSuperAdmin();
+  const session = await requireAuth();
+  const churchId = await getCurrentChurchId(session);
+  if (!churchId) return <p>Aucune église sélectionnée.</p>;
+  await requireChurchPermission("church:settings", churchId);
 
   return (
     <div>

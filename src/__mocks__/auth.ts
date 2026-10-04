@@ -1,4 +1,7 @@
 import type { Session } from "next-auth";
+import { ModuleRegistry } from "@/core/module-registry";
+import { buildRolePermissions } from "@/core/permissions";
+import { allManifests } from "@/lib/manifests";
 
 const GLOBAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
 
@@ -35,6 +38,22 @@ export function createAuthScopeMocks() {
       };
     },
   };
+}
+
+/** Matrice réelle, construite depuis les manifestes (sans le boot de `@/lib/registry`). */
+const manifestRegistry = new ModuleRegistry();
+for (const mod of allManifests) manifestRegistry.register(mod);
+const manifestRolePermissions = buildRolePermissions(manifestRegistry);
+
+/**
+ * `hasChurchPermission` à injecter dans une factory `vi.mock("@/lib/auth", …)` : même règle
+ * que la vraie (Super Admin, sinon permissions des rôles de la session dans l'église).
+ */
+export async function fakeHasChurchPermission(session: Session, permission: string, churchId: string) {
+  if (session.user.isSuperAdmin) return true;
+  return session.user.churchRoles.some(
+    (r) => r.churchId === churchId && (manifestRolePermissions[r.role] ?? []).includes(permission)
+  );
 }
 
 // Factory helpers for creating test sessions

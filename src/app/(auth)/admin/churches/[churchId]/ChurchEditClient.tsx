@@ -38,9 +38,13 @@ interface Props {
   readonly church: Church;
   readonly profiles: Option[];
   readonly supervisors: Option[];
+  /** Nom, adresse (slug) et superviseur : Super Admin seulement (`church:manage`). */
+  readonly canEditIdentity: boolean;
 }
 
-export default function ChurchEditClient({ church, profiles, supervisors }: Props) {
+const SUPER_ADMIN_ONLY = "Modifiable par un Super Admin uniquement.";
+
+export default function ChurchEditClient({ church, profiles, supervisors, canEditIdentity }: Props) {
   const router = useRouter();
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
@@ -106,12 +110,16 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          disabled={!canEditIdentity}
+          hint={canEditIdentity ? undefined : SUPER_ADMIN_ONLY}
         />
         <Input
           label="Slug"
           value={slug}
           onChange={(e) => setSlug(e.target.value)}
           required
+          disabled={!canEditIdentity}
+          hint={canEditIdentity ? undefined : `Adresse des pages publiques de l'église. ${SUPER_ADMIN_ONLY}`}
         />
         <Textarea
           label="Emails secrétariat (digest planning, un par ligne)"
@@ -165,7 +173,7 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
                 title="Aucun profil pastoral dans cette église."
                 action={
                   <Link
-                    href={`/admin/pastoral-profiles?churchId=${church.id}`}
+                    href={canEditIdentity ? `/admin/pastoral-profiles?churchId=${church.id}` : "/admin/pastoral-profiles"}
                     className="text-sm font-semibold text-brand underline"
                   >
                     Créer un profil pastoral pour {church.name}
@@ -181,6 +189,8 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
               value={supervisorProfileId}
               onChange={(e) => setSupervisorProfileId(e.target.value)}
               options={supervisorOptions}
+              disabled={!canEditIdentity}
+              hint={canEditIdentity ? undefined : SUPER_ADMIN_ONLY}
             />
           </div>
         </div>
@@ -193,13 +203,15 @@ export default function ChurchEditClient({ church, profiles, supervisors }: Prop
           <Button type="submit" disabled={loading}>
             {loading ? "Enregistrement..." : "Enregistrer"}
           </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => router.push("/admin/churches")}
-          >
-            Retour
-          </Button>
+          {canEditIdentity && (
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => router.push("/admin/churches")}
+            >
+              Retour
+            </Button>
+          )}
         </div>
       </form>
     </div>

@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createSuperAdminSession } from "@/__mocks__/auth";
+import { createSuperAdminSession, fakeHasChurchPermission } from "@/__mocks__/auth";
 
 const mockRequireChurchPermission = vi.fn();
 vi.mock("@/lib/auth", () => ({
+  hasChurchPermission: fakeHasChurchPermission,
   requireChurchPermission: (...args: unknown[]) => mockRequireChurchPermission(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    const session = await requireChurchPermission("church:manage", data.churchId);
+    const session = await requireChurchPermission("church:settings", data.churchId);
 
     if (data.userId) {
       const role = await prisma.userChurchRole.findFirst({

@@ -472,6 +472,19 @@ export async function requireChurchPermission(
 }
 
 /**
+ * Variante booléenne de `requireChurchPermission`, pour adapter une page ou une action à ce
+ * que l'appelant peut faire en plus (ex. un champ réservé). Ne tient pas compte des droits de
+ * lecture d'un profil pastoral.
+ */
+export async function hasChurchPermission(session: Session, permission: string, churchId: string): Promise<boolean> {
+  if (session.user.isSuperAdmin) return true;
+  const { rolePermissions } = await import("./registry");
+  return session.user.churchRoles.some(
+    (r) => r.churchId === churchId && (rolePermissions[r.role] ?? []).includes(permission)
+  );
+}
+
+/**
  * Vérifie que l'utilisateur a au moins un rôle dans l'église donnée (sans vérifier de permission précise).
  */
 export async function requireChurchAccess(churchId: string) {

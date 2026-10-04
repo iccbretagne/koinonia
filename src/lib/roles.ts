@@ -72,8 +72,25 @@ export const ROLE_CATEGORY_LABELS: Record<RoleCategory, string> = {
  */
 export const ASSIGNABLE_BY_MINISTER: readonly Role[] = ["MINISTER", "DEPARTMENT_HEAD", "STAR"];
 
-/** Rôles réservés au Super Admin (`PRIVILEGED_ROLES` de la route des rôles). */
+/**
+ * Rôles qu'`access:manage` ne suffit pas à attribuer ni à retirer : Super Admin (réservé au
+ * Super Admin), Admin et Secrétaire (permission `access:admins` dans l'église — voir `canGrantRole`).
+ */
 export const PRIVILEGED_ROLES: readonly Role[] = ["SUPER_ADMIN", "ADMIN", "SECRETARY"];
+
+/**
+ * L'appelant, qui a déjà `access:manage` dans l'église, peut-il attribuer ou retirer ce rôle ?
+ * Super Admin : seulement par un Super Admin. Admin et Secrétaire : par un Super Admin ou un
+ * détenteur d'`access:admins` dans l'église (un Admin). Les autres rôles : oui.
+ */
+export function canGrantRole(
+  role: Role,
+  caller: { readonly isSuperAdmin: boolean; readonly canGrantChurchAdmins: boolean }
+): boolean {
+  if (role === "SUPER_ADMIN") return caller.isSuperAdmin;
+  if (PRIVILEGED_ROLES.includes(role)) return caller.isSuperAdmin || caller.canGrantChurchAdmins;
+  return true;
+}
 
 export const ALL_ROLES: readonly Role[] = [
   "SUPER_ADMIN",

@@ -3,13 +3,14 @@
 // couvre exclusivement l'ajout de assertRoleWithinMinistryScope ; les autres règles
 // (400 de validation, escalade privilégiée) sont couvertes par scope.test.ts.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createMinisterSession, createAdminSession, createSuperAdminSession } from "@/__mocks__/auth";
+import { createMinisterSession, createAdminSession, createSuperAdminSession, fakeHasChurchPermission } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 import { fakeGetUserMinistryScope } from "@/lib/__tests__/support/ministry-scope-mock";
 
 const mockRequirePermission = vi.fn();
 const mockRequireRateLimit = vi.fn();
 vi.mock("@/lib/auth", () => ({
+  hasChurchPermission: fakeHasChurchPermission,
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   getUserMinistryScope: (...args: Parameters<typeof fakeGetUserMinistryScope>) =>
     fakeGetUserMinistryScope(...args),

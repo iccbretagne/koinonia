@@ -1,4 +1,4 @@
-import { requireSuperAdmin } from "@/lib/auth";
+import { requireChurchPermission, hasChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseEmailList } from "@/lib/email";
 import { notFound } from "next/navigation";
@@ -9,8 +9,10 @@ export default async function ChurchDetailPage({
 }: {
   readonly params: Promise<{ churchId: string }>;
 }) {
-  await requireSuperAdmin();
   const { churchId } = await params;
+  // Admin de l'église (church:settings) ; nom, adresse et superviseur réservés à church:manage
+  const session = await requireChurchPermission("church:settings", churchId);
+  const canEditIdentity = await hasChurchPermission(session, "church:manage", churchId);
 
   const church = await prisma.church.findUnique({
     where: { id: churchId },
@@ -35,8 +37,10 @@ export default async function ChurchDetailPage({
     orderBy: [{ role: "asc" }, { name: "asc" }],
   });
 
-  // Tous les profils pastoraux (potentiels superviseurs, toutes églises)
+  // Potentiels superviseurs (toutes églises) : chargés seulement pour qui peut le changer ; un
+  // Admin ne voit que le superviseur actuel.
   const supervisorCandidates = await prisma.pastoralProfile.findMany({
+    where: canEditIdentity ? undefined : { id: church.supervisorProfileId ?? "" },
     select: { id: true, name: true, role: true, church: { select: { name: true } } },
     orderBy: [{ role: "asc" }, { name: "asc" }],
   });
@@ -50,9 +54,10 @@ export default async function ChurchDetailPage({
   return (
     <div>
       <h1 className="text-2xl font-bold text-ink mb-6">
-        Modifier l&apos;église
+        {canEditIdentity ? "Modifier l'église" : "Paramètres de l'église"}
       </h1>
       <ChurchEditClient
+        canEditIdentity={canEditIdentity}
         church={{
           id: church.id,
           name: church.name,
