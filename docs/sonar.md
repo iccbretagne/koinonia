@@ -7,8 +7,11 @@ La CI cible le projet SonarCloud `iccbretagne_koinonia`, dans l'organisation
 ## Réglages du serveur
 
 Le Quality Gate « Koinonia progressif » a été appliqué au SonarQube local.
-Il doit être recréé et associé au projet dans SonarCloud : les réglages du serveur
-local ne sont pas transférés par le scan. Conserver les profils TypeScript/CSS
+Le script crée les mêmes conditions dans SonarCloud et associe le gate au projet.
+Cette association nécessite un plan autorisant les gates personnalisés (OSS ou
+Team/Enterprise) : le plan Free la refuse avec HTTP 403, même si la création du
+gate a réussi. Les réglages locaux ne sont pas transférés par le scan.
+Conserver les profils TypeScript/CSS
 « Sonar way » et définir le nouveau code par la version précédente sur `main`.
 Les PR sont comparées à leur branche cible.
 
@@ -22,6 +25,11 @@ python3 scripts/configure-sonar-gate.py
 Le script demande le jeton sans l'afficher, ou utilise `SONAR_TOKEN` si cette
 variable d'environnement est déjà définie. Il crée ou met à jour le gate nommé,
 l'associe uniquement à Koinonia et vérifie les conditions enregistrées.
+
+Le workflow manuel **Configure SonarCloud gate**, dans GitHub → Actions, permet
+également d'appliquer le gate avec le secret `SONAR_TOKEN`, une fois ce workflow
+fusionné dans `main`. Il ne s'exécute pas lors des scans ordinaires et ne change
+pas le gate par défaut de l'organisation.
 
 | Condition sur le nouveau code | Seuil |
 | --- | --- |

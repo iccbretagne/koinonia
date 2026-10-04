@@ -1,9 +1,7 @@
 name: Configure SonarCloud gate
 
 on:
-  push:
-    branches: ["chore/sonarcloud-ci"]
-    paths: ["scripts/configure-sonar-gate.py", ".github/workflows/sonar-gate-setup.yml"]
+  workflow_dispatch:
 
 permissions:
   contents: read
