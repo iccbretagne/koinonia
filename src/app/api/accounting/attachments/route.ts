@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     }
 
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-    const s3Key = `accounting/${churchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const s3Key = `accounting/${churchId}/${Date.now()}-${randomUUID()}.${ext}`;
     const buffer = Buffer.from(new Uint8Array(await file.arrayBuffer()));
 
     await storeFile(s3Key, buffer, file.type);

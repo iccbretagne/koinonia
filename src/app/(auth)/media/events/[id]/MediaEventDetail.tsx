@@ -1093,7 +1093,6 @@ export default function MediaEventDetail({
                         photo.status === "APPROVED"     ? "bg-success" :
                         photo.status === "REJECTED"     ? "bg-danger" :
                         photo.status === "PREVALIDATED" ? "bg-info" :
-                        photo.status === "PREREJECTED"  ? "bg-warning" :
                         "bg-warning"
                       }`} />
                     </div>

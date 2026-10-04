@@ -452,7 +452,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
           {/* Stats cards */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-success" : "text-success"}`}>{approvedCount}</p>
+              <p className={`text-2xl font-bold tabular-nums text-success`}>{approvedCount}</p>
               <p className={`text-xs mt-0.5 ${dk ? "text-success/70" : "text-success"}`}>{labels.approvedPlural}</p>
             </div>
             <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
@@ -460,7 +460,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
               <p className={`text-xs mt-0.5 ${dk ? "text-ink/30" : "text-ink-subtle"}`}>en attente</p>
             </div>
             <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-danger" : "text-danger"}`}>{rejectedCount}</p>
+              <p className={`text-2xl font-bold tabular-nums text-danger`}>{rejectedCount}</p>
               <p className={`text-xs mt-0.5 ${dk ? "text-danger/70" : "text-danger"}`}>{labels.rejectedPlural}</p>
             </div>
           </div>
