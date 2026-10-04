@@ -130,6 +130,7 @@ export async function GET(
       departments,
       totalStars,
       unstaffedDepartmentIds,
+      canEditPlanning: gapViewer?.canEdit ?? false,
       welcomeFamilies,
       audioLink,
       openingClosing,

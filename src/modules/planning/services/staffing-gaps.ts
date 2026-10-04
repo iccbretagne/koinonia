@@ -12,8 +12,13 @@ export const PLANNED_STATUSES = ["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT
 
 /** Qui voit les départements sans STAR planifié, et lesquels. */
 export interface StaffingGapViewer {
-  /** Le département fait-il partie du périmètre que l'appelant peut planifier ? */
+  /** Le département fait-il partie du périmètre de l'appelant (`getUserDepartmentScope`) ? */
   readonly inScope: (departmentId: string) => boolean;
+  /**
+   * `planning:edit` : l'appelant peut saisir le planning. Sinon (Secrétaire), la grille s'ouvre
+   * en lecture seule — l'action proposée est « Voir », pas « Planifier ».
+   */
+  readonly canEdit: boolean;
 }
 
 /** Événement à venir : à partir d'aujourd'hui (00:00), un événement du jour compte encore. */
@@ -31,10 +36,11 @@ export async function getStaffingGapViewer(session: Session, churchId: string): 
   // Import différé : `@/lib/auth` instancie NextAuth au chargement (voir opening-closing.service).
   const { getUserDepartmentScope, hasChurchPermission } = await import("@/lib/auth");
   if (!(await hasChurchPermission(session, "planning:department", churchId))) return null;
+  const canEdit = await hasChurchPermission(session, "planning:edit", churchId);
   const scope = getUserDepartmentScope(session, churchId);
-  if (!scope.scoped) return { inScope: () => true };
+  if (!scope.scoped) return { inScope: () => true, canEdit };
   const ids = new Set(scope.departmentIds);
-  return { inScope: (departmentId) => ids.has(departmentId) };
+  return { inScope: (departmentId) => ids.has(departmentId), canEdit };
 }
 
 /**

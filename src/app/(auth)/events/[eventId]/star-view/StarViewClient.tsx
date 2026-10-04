@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ChevronRight, FileText, Headphones, MessageSquare, Repeat, TriangleAlert, UserX } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Eye, FileText, Headphones, MessageSquare, Repeat, TriangleAlert, UserX, type LucideIcon } from "lucide-react";
 import ExportBar from "@/components/ExportBar";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -42,6 +42,8 @@ interface StarViewData {
   totalStars: number;
   /** Départements sans STAR planifié à signaler à l'appelant (vide pour un STAR, un événement passé). */
   unstaffedDepartmentIds: string[];
+  /** `planning:edit` : « Planifier » ; sinon la grille s'ouvre en lecture seule (« Voir »). */
+  canEditPlanning: boolean;
   welcomeFamilies: string[];
   audioLink: { url: string } | null;
   openingClosing: OpeningClosingData;
@@ -241,7 +243,11 @@ export default function StarViewClient({ eventId }: Props) {
   const gapIds = new Set(exporting ? [] : data.unstaffedDepartmentIds);
   const gapDepartments = data.departments.filter((d) => gapIds.has(d.id));
   const ministries = groupByMinistry(data.departments);
-  const planHref = (deptId: string) => `/dashboard?dept=${deptId}&event=${eventId}`;
+  const gapAction: GapAction = {
+    href: (deptId) => `/dashboard?dept=${deptId}&event=${eventId}`,
+    verb: data.canEditPlanning ? "Planifier" : "Voir",
+    icon: data.canEditPlanning ? CalendarPlus : Eye,
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -343,14 +349,7 @@ export default function StarViewClient({ eventId }: Props) {
               icon={TriangleAlert}
               title={`${gapDepartments.length} département${gapDepartments.length > 1 ? "s n'ont" : " n'a"} personne en service.`}
               action={gapDepartments.map((d) => (
-                <Link
-                  key={d.id}
-                  href={planHref(d.id)}
-                  className="inline-flex min-h-8 items-center gap-1 rounded-full border border-warning/45 bg-surface py-1 pl-3 pr-2 text-[13px] font-semibold text-ink hover:border-warning focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                >
-                  {d.name}
-                  <ChevronRight aria-hidden="true" className="size-3.5 text-ink-subtle" strokeWidth={2} />
-                </Link>
+                <GapActionLink key={d.id} action={gapAction} dept={d} withName />
               ))}
               className="print:hidden"
             >
@@ -375,7 +374,7 @@ export default function StarViewClient({ eventId }: Props) {
                       dept.members.length > 0 ? (
                         <StaffedCard key={dept.id} dept={dept} />
                       ) : gapIds.has(dept.id) ? (
-                        <GapCard key={dept.id} dept={dept} href={planHref(dept.id)} />
+                        <GapCard key={dept.id} dept={dept} action={gapAction} />
                       ) : (
                         <UnstaffedCard key={dept.id} dept={dept} />
                       )
@@ -441,11 +440,47 @@ function UnstaffedCard({ dept }: { readonly dept: DepartmentItem }) {
   );
 }
 
+interface GapAction {
+  readonly href: (deptId: string) => string;
+  /** « Planifier » (planning:edit) ou « Voir » (grille en lecture seule). */
+  readonly verb: string;
+  readonly icon: LucideIcon;
+}
+
+/**
+ * Lien vers la grille du département, en bouton `ghost` (Button.md : action d'une alerte ou d'une
+ * carte). `withName` : le libellé nomme le département (bandeau d'alerte, plusieurs liens).
+ */
+function GapActionLink({
+  action,
+  dept,
+  withName = false,
+  className = "",
+}: {
+  readonly action: GapAction;
+  readonly dept: DepartmentItem;
+  readonly withName?: boolean;
+  readonly className?: string;
+}) {
+  const Icon = action.icon;
+  const label = withName ? `${action.verb} ${dept.name}` : action.verb;
+  return (
+    <Link
+      href={action.href(dept.id)}
+      aria-label={withName ? undefined : `${action.verb} ${dept.name}`}
+      className={`${buttonClasses("ghost", "md")} print:hidden ${className}`}
+    >
+      <Icon aria-hidden="true" className="size-4" strokeWidth={1.75} />
+      {label}
+    </Link>
+  );
+}
+
 /**
  * Carte d'alerte, à l'écran de qui peut planifier le département. À l'impression, elle reprend
  * l'aspect de la carte neutre.
  */
-function GapCard({ dept, href }: { readonly dept: DepartmentItem; readonly href: string }) {
+function GapCard({ dept, action }: { readonly dept: DepartmentItem; readonly action: GapAction }) {
   return (
     <div
       className="rounded-control border border-dashed border-warning/60 border-l-[3px] border-l-warning bg-warning-soft px-4 py-3
@@ -457,13 +492,7 @@ function GapCard({ dept, href }: { readonly dept: DepartmentItem; readonly href:
         Personne en service
       </p>
       <p className="hidden text-sm italic text-ink-subtle print:block">Pas de STAR planifié</p>
-      <Link
-        href={href}
-        className="mt-2 inline-flex items-center gap-1 rounded-chip text-[13px] font-semibold text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus print:hidden"
-      >
-        Planifier
-        <ArrowRight aria-hidden="true" className="size-3.5" strokeWidth={2} />
-      </Link>
+      <GapActionLink action={action} dept={dept} className="mt-2" />
     </div>
   );
 }

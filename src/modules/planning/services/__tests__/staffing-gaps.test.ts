@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession, createDepartmentHeadSession, createStarSession } from "@/__mocks__/auth";
+import { createAdminSession, createDepartmentHeadSession, createSecretarySession, createStarSession } from "@/__mocks__/auth";
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("next-auth", () => ({
@@ -27,9 +27,16 @@ describe("isUpcoming", () => {
 });
 
 describe("getStaffingGapViewer", () => {
-  it("Admin : tous les départements de l'église", async () => {
+  it("Admin : tous les départements de l'église, et peut planifier", async () => {
     const viewer = await getStaffingGapViewer(createAdminSession("church-1"), "church-1");
     expect(viewer?.inScope("n-importe-lequel")).toBe(true);
+    expect(viewer?.canEdit).toBe(true);
+  });
+
+  it("Secrétaire : tous les départements, mais grille en lecture seule (pas planning:edit)", async () => {
+    const viewer = await getStaffingGapViewer(createSecretarySession("church-1"), "church-1");
+    expect(viewer?.inScope("n-importe-lequel")).toBe(true);
+    expect(viewer?.canEdit).toBe(false);
   });
 
   it("Responsable de département : ses départements seulement", async () => {
@@ -60,7 +67,7 @@ describe("countUnstaffedDepartments", () => {
       { eventId: "ev-1", departmentId: "d-parking", _count: { plannings: 0 } },
       { eventId: "ev-1", departmentId: "d-chorale", _count: { plannings: 3 } },
     ] as never);
-    const viewer = { inScope: (id: string) => id !== "d-parking" };
+    const viewer = { inScope: (id: string) => id !== "d-parking", canEdit: true };
 
     const counts = await countUnstaffedDepartments([upcoming, past], viewer, NOW);
 
@@ -80,7 +87,7 @@ describe("countUnstaffedDepartments", () => {
   });
 
   it("n'interroge pas la base sans événement à venir", async () => {
-    const counts = await countUnstaffedDepartments([past], { inScope: () => true }, NOW);
+    const counts = await countUnstaffedDepartments([past], { inScope: () => true, canEdit: true }, NOW);
     expect(counts.size).toBe(0);
     expect(prismaMock.eventDepartment.findMany).not.toHaveBeenCalled();
   });

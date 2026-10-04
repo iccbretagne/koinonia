@@ -200,10 +200,11 @@ describe("GET /api/events/[eventId]/star-view — départements sans STAR planif
 
   it("signale les départements vides du périmètre de l'appelant, pour un événement à venir", async () => {
     prismaMock.event.findUnique.mockResolvedValue(buildEvent({ date: future, eventDepts }) as never);
-    mockGetStaffingGapViewer.mockResolvedValue({ inScope: (id: string) => id !== "d-parking" });
+    mockGetStaffingGapViewer.mockResolvedValue({ inScope: (id: string) => id !== "d-parking", canEdit: false });
 
     const body = await fetchBody();
     expect(body.unstaffedDepartmentIds).toEqual(["d-son"]);
+    expect(body.canEditPlanning).toBe(false);
   });
 
   it("ne signale rien à qui ne peut pas planifier (STAR)", async () => {
@@ -212,11 +213,12 @@ describe("GET /api/events/[eventId]/star-view — départements sans STAR planif
 
     const body = await fetchBody();
     expect(body.unstaffedDepartmentIds).toEqual([]);
+    expect(body.canEditPlanning).toBe(false);
   });
 
   it("ne signale rien pour un événement passé", async () => {
     prismaMock.event.findUnique.mockResolvedValue(buildEvent({ date: new Date("2020-01-05"), eventDepts }) as never);
-    mockGetStaffingGapViewer.mockResolvedValue({ inScope: () => true });
+    mockGetStaffingGapViewer.mockResolvedValue({ inScope: () => true, canEdit: true });
 
     const body = await fetchBody();
     expect(body.unstaffedDepartmentIds).toEqual([]);

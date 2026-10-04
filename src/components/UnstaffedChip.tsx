@@ -1,4 +1,5 @@
 import { UserX } from "lucide-react";
+import StatusChip from "@/components/ui/StatusChip";
 
 /**
  * Repère d'un événement à venir dont des départements n'ont aucun STAR planifié (agenda de
@@ -6,12 +7,13 @@ import { UserX } from "lucide-react";
  */
 export default function UnstaffedChip({ count }: { readonly count: number }) {
   return (
-    <span
+    <StatusChip
+      tone="warning"
+      icon={UserX}
       title={`${count} département${count > 1 ? "s" : ""} prévu${count > 1 ? "s" : ""} sans STAR planifié`}
-      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning print:hidden"
+      className="shrink-0 print:hidden"
     >
-      <UserX aria-hidden="true" className="size-3.5" strokeWidth={2} />
       {count} dép. sans STAR
-    </span>
+    </StatusChip>
   );
 }
