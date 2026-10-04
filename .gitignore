@@ -30,6 +30,7 @@ coverage/
 .codex
 
 # Analyse Sonar locale (docker-compose.sonar.yml)
+.env.sonar
 .scannerwork/
 
 # Local file uploads (stockage S3 en production)

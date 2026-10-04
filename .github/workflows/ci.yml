@@ -18,6 +18,8 @@ jobs:
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0 # Historique nécessaire au calcul du nouveau code Sonar.
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
@@ -38,6 +40,32 @@ jobs:
       # garde-fou. Le graphe de production est a zero vulnerabilite au moment de l'ajout de
       # cette etape — le seuil est donc tenable et non un voeu pieux.
       - run: npm audit --omit=dev --audit-level=high
+      # SonarCloud : main et PR internes vers main. Ni les forks ni Dependabot (secrets Dependabot
+      # distincts) n'ont SONAR_TOKEN : leurs PR sont analysees au push sur main apres merge.
+      # Désactiver Automatic Analysis dans SonarCloud avant SONAR_ENABLED=true.
+      - name: Read version for SonarQube
+        if: >-
+          vars.SONAR_ENABLED == 'true' &&
+          ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'pull_request' && github.base_ref == 'main' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'))
+        run: node -e 'console.log("SONAR_PROJECT_VERSION=" + require("./package.json").version)' >> "$GITHUB_ENV"
+      - name: SonarQube scan and Quality Gate
+        if: >-
+          vars.SONAR_ENABLED == 'true' &&
+          ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          (github.event_name == 'pull_request' && github.base_ref == 'main' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'))
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        with:
+          args: >-
+            -Dsonar.projectVersion=${{ env.SONAR_PROJECT_VERSION }}
+            -Dsonar.qualitygate.wait=true
 
   # Rejoue tout l'historique de migrations sur une base MariaDB vierge, comme `migrate deploy`
   # en production, puis vérifie que le résultat correspond exactement à schema.prisma (#500).
