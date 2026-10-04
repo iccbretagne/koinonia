@@ -8,17 +8,17 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "prisma/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["src/lib/**", "src/app/api/**", "src/modules/**"],
-      // Seuils en CLIQUET ANTI-REGRESSION : cales juste sous la couverture reelle du moment
-      // (40.14 / 36.07 / 41.49 / 41.66 au 2026-08-29), pas sur un objectif. A 20 %, soit la
-      // moitie du reel, le seuil n'aurait pas detecte une chute de moitie de la couverture.
-      // Les relever au fil des ajouts de tests ; elever l'objectif par module sensible reste
-      // un chantier a part entiere (audit Q-01).
+      include: ["src/core/**", "src/lib/**", "src/app/api/**", "src/modules/**"],
+      exclude: ["**/*.test.ts", "**/__tests__/**", "**/__mocks__/**", "**/*.d.ts"],
+      reporter: ["text-summary", "lcov"],
+      // Non-régression : 1 à 2 points sous les mesures du 2026-10-04
+      // (61.43 / 54.92 / 63.18 / 62.75), avec src/core et sans les helpers de tests.
+      // Relever les seuils au fil des gains de couverture.
       thresholds: {
-        statements: 38,
-        branches: 34,
-        functions: 39,
-        lines: 39,
+        statements: 60,
+        branches: 53,
+        functions: 62,
+        lines: 61,
       },
     },
   },
