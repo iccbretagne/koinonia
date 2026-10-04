@@ -5,6 +5,9 @@ import {
   canManageOpeningClosing,
   canDepositAnnouncementSheet,
   canReadAnnouncementSheet,
+  PLANNED_STATUSES,
+  getStaffingGapViewer,
+  isUpcoming,
 } from "@/modules/planning";
 
 export async function GET(
@@ -40,9 +43,7 @@ export async function GET(
             },
             plannings: {
               where: {
-                status: {
-                  in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT"],
-                },
+                status: { in: [...PLANNED_STATUSES] },
               },
               include: {
                 member: true,
@@ -74,6 +75,13 @@ export async function GET(
         members,
       };
     });
+
+    // Départements sans STAR planifié signalés à qui peut les planifier, pour un événement à
+    // venir ; les autres (STAR, export partagé) n'en voient qu'une carte neutre.
+    const gapViewer = isUpcoming(event.date) ? await getStaffingGapViewer(session, churchId) : null;
+    const unstaffedDepartmentIds = gapViewer
+      ? departments.filter((d) => d.members.length === 0 && gapViewer.inScope(d.id)).map((d) => d.id)
+      : [];
 
     const welcomeFamilies = event.welcomeDutyAssignments.map(
       (a) => a.welcomeDutyFamily.familyName
@@ -121,6 +129,8 @@ export async function GET(
       },
       departments,
       totalStars,
+      unstaffedDepartmentIds,
+      canEditPlanning: gapViewer?.canEdit ?? false,
       welcomeFamilies,
       audioLink,
       openingClosing,

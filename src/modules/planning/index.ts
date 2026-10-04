@@ -98,4 +98,11 @@ export { askTeam, manualRelance, assertEventDepartment } from "./services/availa
 export { resolveAvailability, countsAsUnavailable, unavailabilityReason } from "./services/availability/state";
 export type { AvailabilityState, ResolvedAvailability } from "./services/availability/state";
 
+export {
+  PLANNED_STATUSES,
+  isUpcoming,
+  getStaffingGapViewer,
+  countUnstaffedDepartments,
+} from "./services/staffing-gaps";
+export type { StaffingGapViewer } from "./services/staffing-gaps";
 export { planningModule } from "./manifest";
