@@ -8,17 +8,20 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "prisma/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["src/core/**", "src/lib/**", "src/app/api/**", "src/modules/**"],
+      include: ["src/core/**", "src/lib/**", "src/modules/**", "src/app/**/*.ts", "src/proxy.ts"],
       exclude: ["**/*.test.ts", "**/__tests__/**", "**/__mocks__/**", "**/*.d.ts"],
       reporter: ["text-summary", "lcov"],
-      // Non-régression : 1 à 2 points sous les mesures du 2026-10-04
-      // (61.43 / 54.92 / 63.18 / 62.75), avec src/core et sans les helpers de tests.
+      // Non-régression : 1 à 2 points sous les mesures du 2026-10-05
+      // (58.22 / 49.77 / 55.76 / 59.91). Périmètre : tout le TypeScript hors React — y compris
+      // les helpers .ts des pages et src/proxy.ts, ajoutés ce jour (d'où la baisse apparente
+      // par rapport aux 61/55/63/63 mesurés sur core/lib/modules/api seuls). Les composants
+      // .tsx, sans tests, sont exclus ici comme dans sonar.coverage.exclusions.
       // Relever les seuils au fil des gains de couverture.
       thresholds: {
-        statements: 60,
-        branches: 53,
-        functions: 62,
-        lines: 61,
+        statements: 57,
+        branches: 48,
+        functions: 54,
+        lines: 58,
       },
     },
   },
