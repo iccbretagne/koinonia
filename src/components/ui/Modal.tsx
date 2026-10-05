@@ -42,7 +42,7 @@ export default function Modal({
   size = "md",
   mobileLayout = "fullscreen",
 }: ModalProps) {
-  const dialogRef = useModalDialog(open);
+  const dialogRef = useModalDialog(open, mobileLayout === "sheet" ? onClose : undefined);
   const titleId = useId();
 
   if (!open) return null;
@@ -51,14 +51,6 @@ export default function Modal({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      onClick={
-        mobileLayout === "sheet"
-          ? (e) => {
-              // Appui sur le voile : la cible est le <dialog> lui-même (le contenu le remplit).
-              if (e.target === e.currentTarget) onClose();
-            }
-          : undefined
-      }
       aria-labelledby={titleId}
       className={`m-0 max-w-none overflow-y-auto overscroll-contain border-0 bg-surface p-0 text-ink shadow-overlay
         backdrop:bg-scrim

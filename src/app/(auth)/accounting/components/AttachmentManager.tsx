@@ -119,7 +119,7 @@ export default function AttachmentManager({
   // Drag-and-drop handlers
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
-    handleFiles(e.dataTransfer.files);
+    void handleFiles(e.dataTransfer.files);
   }
   function onDragOver(e: React.DragEvent) { e.preventDefault(); }
 
@@ -181,7 +181,15 @@ export default function AttachmentManager({
             onDrop={onDrop}
             onDragOver={onDragOver}
             onClick={() => inputRef.current?.click()}
-            className="relative flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-line rounded-xl px-4 py-4 text-center cursor-pointer hover:border-brand/40 hover:bg-brand-hover/[0.02] transition-colors"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                inputRef.current?.click();
+              }
+            }}
+            className="relative flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-line rounded-xl px-4 py-4 text-center cursor-pointer hover:border-brand/40 hover:bg-brand-hover/[0.02] focus-visible:ring-2 focus-visible:ring-focus outline-none transition-colors"
           >
             {uploading ? (
               <div className="flex items-center gap-2 text-sm text-brand-text">

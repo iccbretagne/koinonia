@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { CollectionConfig } from "@/modules/media";
 
 type Photo = {
@@ -72,6 +72,14 @@ function Lightbox({
   const current = items[index];
   const [downloading, setDownloading] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   async function download() {
     setDownloading(true);
     try {
@@ -92,9 +100,9 @@ function Lightbox({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="presentation" onClick={onClose}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" role="presentation" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors shrink-0">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +120,7 @@ function Lightbox({
       </div>
 
       {/* Image */}
-      <div className="flex-1 flex items-center justify-center relative px-14 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center relative px-14 overflow-hidden" role="presentation" onClick={(e) => e.stopPropagation()}>
         <button onClick={onPrev} disabled={index === 0} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-full p-2.5 transition-all disabled:opacity-20 z-10">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -132,7 +140,7 @@ function Lightbox({
       </div>
 
       {/* Bottom bar */}
-      <div className="flex items-center justify-end px-4 py-3 gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-end px-4 py-3 gap-3 shrink-0" role="presentation" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={download}
           disabled={downloading}

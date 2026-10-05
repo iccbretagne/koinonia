@@ -177,9 +177,19 @@ function ConfirmModal({ title, message, confirmLabel = "Confirmer", danger = fal
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
       <div className="relative bg-surface rounded-2xl shadow-overlay max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? "bg-danger-soft" : "bg-surface-sunken"}`}>
@@ -531,9 +541,17 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
 
   return (
     <div
-      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft transition-all"
+      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
       onClick={() => inputRef.current?.click()}
-      onDrop={(e) => { e.preventDefault(); handleFiles(Array.from(e.dataTransfer.files)); }}
+      onDrop={(e) => { e.preventDefault(); void handleFiles(Array.from(e.dataTransfer.files)); }}
       onDragOver={(e) => e.preventDefault()}
     >
       <input
@@ -542,7 +560,7 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
         accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp,image/svg+xml,application/pdf"
         multiple
         className="hidden"
-        onChange={(e) => { handleFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
+        onChange={(e) => { void handleFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
       />
       {uploading && progress ? (
         <div className="space-y-2">
@@ -702,11 +720,11 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
     }
   }, [file.id]);
 
-  useEffect(() => { loadVersions(); loadComments(); }, [loadVersions, loadComments]);
+  useEffect(() => { void loadVersions(); void loadComments(); }, [loadVersions, loadComments]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") { if (!e.defaultPrevented) onClose(); }
       else if (e.key === "ArrowLeft" && hasPrev) onNavigate(allFiles[fileIndex - 1]);
       else if (e.key === "ArrowRight" && hasNext) onNavigate(allFiles[fileIndex + 1]);
     };
@@ -745,7 +763,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
       />
     )}
     <div className="fixed inset-0 z-[60] flex">
-      <div className="absolute inset-0 bg-scrim" onClick={onClose} />
+      <div className="absolute inset-0 bg-scrim" aria-hidden="true" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-xl bg-surface h-full flex flex-col shadow-overlay overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-line shrink-0">
@@ -877,7 +895,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
           {activeTab === "versions" && (
             <div className="space-y-3">
               {canUpload && (
-                <NewVersionUpload fileId={file.id} onDone={() => { loadVersions(); onRefresh(); }} />
+                <NewVersionUpload fileId={file.id} onDone={() => { void loadVersions(); onRefresh(); }} />
               )}
               {loadingVersions ? (
                 <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
@@ -1295,7 +1313,7 @@ export default function MediaProjectDetail({
             <div className="px-5 py-4 border-b border-line bg-surface-sunken/50">
               <FileUploadZone
                 projectId={project.id}
-                onUploaded={() => { setShowUpload(false); refreshProject(); }}
+                onUploaded={() => { setShowUpload(false); refreshProject().catch(() => undefined); }}
                 onActivityChange={(active, filename) =>
                   setActivity(active ? { label: `Upload en cours · ${filename ?? ""}` } : null)
                 }
@@ -1331,7 +1349,15 @@ export default function MediaProjectDetail({
                   return (
                     <div
                       key={file.id}
-                      className="bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group"
+                      className="bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group focus-visible:ring-2 focus-visible:ring-focus outline-none"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                          e.preventDefault();
+                          setSelectedFile(file);
+                        }
+                      }}
                       onClick={() => setSelectedFile(file)}
                     >
                       {/* Preview */}

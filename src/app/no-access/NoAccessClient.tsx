@@ -99,7 +99,7 @@ export default function NoAccessClient({
   // Réconciliation par email au chargement de l'assistant (P2)
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const res = await fetch("/api/onboarding/candidates");
         const json = await res.json();

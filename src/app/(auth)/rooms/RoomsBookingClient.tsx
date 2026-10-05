@@ -595,7 +595,7 @@ export default function RoomsBookingClient({
   }, [churchId]);
 
   useEffect(() => {
-    load();
+    load().catch(() => undefined);
   }, [load]);
 
   function openForm() {

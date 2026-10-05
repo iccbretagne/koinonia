@@ -326,7 +326,7 @@ export default function LinkRequestsClient({
               onClick={() => {
                 const role = approveModal?.requestedRole;
                 const needsDept = !approveModal?.member || role === "DEPARTMENT_HEAD" || role === "DEPUTY";
-                handleAction(approveModal!.id, "approve", {
+                void handleAction(approveModal!.id, "approve", {
                   departmentId: needsDept ? departmentId : undefined,
                 });
               }}

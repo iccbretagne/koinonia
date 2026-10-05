@@ -217,7 +217,7 @@ export default function AbsencesClient({
   }, [churchId, canView, ministryFilter, departmentFilter, roleFilter]);
 
   useEffect(() => {
-    fetchAll();
+    void fetchAll();
   }, [fetchAll]);
 
   const displayedAbsences = useMemo(() => {

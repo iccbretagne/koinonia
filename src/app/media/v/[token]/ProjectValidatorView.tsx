@@ -121,8 +121,8 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="presentation" onClick={onClose}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" role="presentation" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -136,7 +136,7 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
           </a>
         ) : <span />}
       </div>
-      <div className="flex-1 flex items-center justify-center px-4" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center px-4" role="presentation" onClick={(e) => e.stopPropagation()}>
         <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -185,9 +185,17 @@ function ActionDrawer({
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
   return (
     <div data-theme="dark" className="fixed inset-0 z-40 flex flex-col justify-end sm:items-center sm:justify-center">
-      <div className="absolute inset-0 bg-scrim" onClick={onCancel} />
+      <div className="absolute inset-0 bg-scrim" aria-hidden="true" onClick={onCancel} />
       <div
         className="relative bg-surface border-t border-ink/10 sm:border sm:rounded-2xl w-full sm:max-w-md p-4 sm:p-6 space-y-4 shadow-overlay rounded-t-2xl"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}

@@ -54,7 +54,7 @@ export default function DepartmentTasksView({
 
   useEffect(() => {
     setLoading(true);
-    fetchTasks();
+    void fetchTasks();
   }, [fetchTasks]);
 
   async function handleCreate(e: FormEvent) {

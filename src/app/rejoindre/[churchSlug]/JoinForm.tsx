@@ -403,7 +403,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
                       e.preventDefault();
                       set("address", s.label);
                       clearSuggestions();
-                      familySuggestion.lookup(s.label);
+                      void familySuggestion.lookup(s.label);
                     }}
                     className="w-full text-left px-3 py-2.5 text-sm hover:bg-brand-soft hover:text-brand-text transition-colors flex items-center gap-2"
                   >

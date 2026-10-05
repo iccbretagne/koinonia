@@ -3,7 +3,7 @@
 import { Ban, CirclePlay, Eye, Pencil } from "lucide-react";
 import StatusChip from "@/components/ui/StatusChip";
 import { buttonClasses } from "@/components/ui/button-classes";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ALL_ROLES } from "@/lib/roles";
 import type { Role } from "@/generated/prisma/client";
@@ -570,6 +570,15 @@ function Screenshot({
 export default function GuideContent({ defaultRole }: GuideContentProps) {
   const [activeRole, setActiveRole] = useState<RoleKey>(defaultRole);
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
+
+  useEffect(() => {
+    if (!zoomedImage) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomedImage(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomedImage]);
   const router = useRouter();
 
   const visibleFeatures = FEATURES.filter((f) => f.access[activeRole] !== "none");
@@ -659,6 +668,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       {zoomedImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-scrim cursor-zoom-out p-4"
+          role="presentation"
           onClick={() => setZoomedImage(null)}
         >
           <button
@@ -671,13 +681,14 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={zoomedImage.src}
-            alt={zoomedImage.alt}
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-overlay"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div role="presentation" className="max-w-full" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zoomedImage.src}
+              alt={zoomedImage.alt}
+              className="block max-w-full max-h-[90vh] object-contain rounded-lg shadow-overlay"
+            />
+          </div>
         </div>
       )}
     </div>

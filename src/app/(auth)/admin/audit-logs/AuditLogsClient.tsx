@@ -48,7 +48,7 @@ export default function AuditLogsClient() {
   }, [page]);
 
   useEffect(() => {
-    fetchLogs();
+    void fetchLogs();
   }, [fetchLogs]);
 
   function formatDate(iso: string) {

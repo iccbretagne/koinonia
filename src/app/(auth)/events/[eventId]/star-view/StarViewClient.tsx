@@ -77,7 +77,7 @@ export default function StarViewClient({ eventId }: Props) {
   }, [eventId]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   function getExportFileName() {

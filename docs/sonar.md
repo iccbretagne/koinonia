@@ -49,9 +49,14 @@ la référence à zéro pour faire disparaître les anomalies du nouveau code.
 ## Couverture
 
 `npm run test:coverage` produit `coverage/lcov.info`, importé par Sonar.
-Vitest mesure le cœur, les bibliothèques, les API et les modules. Sonar analyse
-tout `src`, y compris les pages et composants : les pourcentages diffèrent par
-leur périmètre et leur calcul. Les pages restent dans la couverture Sonar.
+Vitest et Sonar mesurent la couverture sur le même périmètre : tout le TypeScript
+hors React — cœur, bibliothèques, modules, routes API, helpers `.ts` des pages et
+`src/proxy.ts`. Les pages et composants `.tsx` (`src/app/**/*.tsx`,
+`src/components/**`) n'ont pas de tests et sont exclus de la couverture
+(`sonar.coverage.exclusions`) : sans cela, toute PR d'interface échouerait sur la
+condition de couverture du nouveau code. Ils restent soumis aux autres conditions
+(fiabilité, sécurité, maintenabilité, duplication). Le jour où des tests de
+composants existent, retirer ces deux motifs des exclusions et de `vitest.config.ts`.
 Les fichiers générés, déclarations de types, mocks et helpers de tests ne sont
 pas des objectifs de couverture. Les tests et helpers sont classés comme tests.
 

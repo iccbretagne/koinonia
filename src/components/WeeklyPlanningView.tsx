@@ -115,7 +115,7 @@ export default function WeeklyPlanningView({
   }, [churchId, departmentId, weekStart]);
 
   useEffect(() => {
-    fetchWeek();
+    void fetchWeek();
   }, [fetchWeek]);
 
   function prevWeek() {

@@ -102,7 +102,7 @@ export default function CompanionsSettings({
       });
       return;
     }
-    applyState(c.id, "EXCLUDED");
+    void applyState(c.id, "EXCLUDED");
   }
 
   function removeAdded(c: Companion) {
@@ -119,7 +119,7 @@ export default function CompanionsSettings({
       });
       return;
     }
-    applyState(c.id, "DEFAULT");
+    void applyState(c.id, "DEFAULT");
   }
 
   return (
@@ -209,7 +209,7 @@ export default function CompanionsSettings({
                     aria-label={`Ajouter ${displayName(c)} comme accompagnant`}
                     disabled={saving}
                     onClick={() => {
-                      applyState(c.id, "ADDED");
+                      void applyState(c.id, "ADDED");
                       setQuery("");
                     }}
                   />

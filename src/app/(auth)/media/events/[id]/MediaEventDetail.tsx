@@ -179,12 +179,12 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
     const files = Array.from(e.dataTransfer.files).filter((f) =>
       ["image/jpeg", "image/png", "image/webp"].includes(f.type)
     );
-    if (files.length > 0) uploadFiles(files);
+    if (files.length > 0) void uploadFiles(files);
   }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (files.length > 0) uploadFiles(files);
+    if (files.length > 0) void uploadFiles(files);
     e.target.value = "";
   }
 
@@ -193,7 +193,15 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
       onClick={() => !uploading && inputRef.current?.click()}
-      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft transition-all"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && !uploading && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
     >
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFileChange} />
       {uploading && progress ? (
@@ -409,9 +417,19 @@ function ConfirmDeleteModal({ title, message, onConfirm, onCancel }: {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
       <div className="relative bg-surface rounded-2xl shadow-overlay max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-danger-soft flex items-center justify-center shrink-0">
@@ -478,7 +496,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !e.defaultPrevented) onClose();
       else if (e.key === "ArrowLeft") go(-1);
       else if (e.key === "ArrowRight") go(1);
     };
@@ -491,11 +509,11 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
   // sont volontaires, indépendantes du thème (cf. docs/design-system/migration.md).
   return (
     // eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre
-    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" role="presentation" onClick={onClose}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 py-3 bg-scrim backdrop-blur-sm shrink-0"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${PHOTO_STATUS_COLORS[photo.status]}`}>
@@ -519,7 +537,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       </div>
 
       {/* Image + navigation */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-4" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-4" role="presentation" onClick={(e) => e.stopPropagation()}>
         {hasPrev && (
           <button
             onClick={() => go(-1)}
@@ -556,7 +574,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       {/* Bottom bar */}
       <div
         className="shrink-0 flex items-center justify-center gap-4 py-4 px-5 bg-scrim backdrop-blur-sm"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PHOTO_STATUS_COLORS[photo.status]}`}>
           {PHOTO_STATUS_LABELS[photo.status]}
@@ -696,7 +714,7 @@ export default function MediaEventDetail({
       method: "DELETE",
     });
     setBulkLoading(false);
-    refreshPhotos();
+    refreshPhotos().catch(() => undefined);
   }
 
   async function deleteEvent() {
@@ -974,7 +992,7 @@ export default function MediaEventDetail({
           <div className="px-5 py-4 border-b border-line bg-surface-sunken/50">
             <PhotoUploadZone
               eventId={event.id}
-              onUploaded={() => { setShowUpload(false); refreshPhotos(); }}
+              onUploaded={() => { setShowUpload(false); refreshPhotos().catch(() => undefined); }}
               onProgressChange={setUploadProgress}
             />
           </div>
@@ -1043,11 +1061,20 @@ export default function MediaEventDetail({
                 return (
                   <div
                     key={photo.id}
-                    className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-focus outline-none ${
                       isSelected
                         ? "border-brand ring-2 ring-focus/30"
                         : "border-transparent hover:border-line"
                     }`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        if (selectedPhotoIds.size > 0) toggleSelect(photo.id);
+                        else setLightboxIndex(globalIndex);
+                      }
+                    }}
                     onClick={() => {
                       if (selectedPhotoIds.size > 0) toggleSelect(photo.id);
                       else setLightboxIndex(globalIndex);
@@ -1073,18 +1100,21 @@ export default function MediaEventDetail({
 
                     {/* Checkbox top-left (si canUpload) */}
                     {canUpload && (
-                      <div
-                        className={`absolute top-1.5 left-1.5 transition-opacity ${isSelected || selectedPhotoIds.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      <button
+                        type="button"
+                        aria-label={isSelected ? "Désélectionner la photo" : "Sélectionner la photo"}
+                        aria-pressed={isSelected}
+                        className={`absolute top-1.5 left-1.5 transition-opacity focus-visible:opacity-100 ${isSelected || selectedPhotoIds.size > 0 ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                         onClick={(e) => { e.stopPropagation(); toggleSelect(photo.id); }}
                       >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-brand border-brand" : "bg-surface/90 border-control-line"}`}>
+                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-brand border-brand" : "bg-surface/90 border-control-line"}`}>
                           {isSelected && (
                             <svg className="w-3 h-3 text-on-brand" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           )}
-                        </div>
-                      </div>
+                        </span>
+                      </button>
                     )}
 
                     {/* Status dot top-right */}

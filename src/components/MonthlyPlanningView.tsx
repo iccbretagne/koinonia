@@ -62,7 +62,7 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
   }, [departmentId, currentMonth]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
 
   function navigateMonth(delta: number) {

@@ -37,7 +37,7 @@ export default function WelcomeDutyPoolClient() {
     }
   }, []);
 
-  useEffect(() => { fetchPool(); }, [fetchPool]);
+  useEffect(() => { fetchPool().catch(() => undefined); }, [fetchPool]);
 
   async function openPicker() {
     setShowPicker(true);

@@ -81,7 +81,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
 
   useEffect(() => {
     setLoading(true);
-    fetchEvents();
+    void fetchEvents();
   }, [fetchEvents]);
 
   function openCreate() {

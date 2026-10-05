@@ -113,9 +113,9 @@ function HdLightbox({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="presentation" onClick={onClose}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" role="presentation" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors" aria-label="Fermer">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -141,7 +141,7 @@ function HdLightbox({
       {/* Image */}
       <div
         className="flex-1 flex items-center justify-center px-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <div className="relative flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -174,7 +174,7 @@ function HdLightbox({
       {isPending && (
         <div
           className="flex items-center justify-center gap-4 px-4 py-4 shrink-0"
-          onClick={(e) => e.stopPropagation()}
+          role="presentation" onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => void handleAction(rejectStatus)}

@@ -365,7 +365,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
                         alert("Une note est requise pour refuser une demande.");
                         return;
                       }
-                      updateRequest(req.id, "REFUSEE", notes[req.id]);
+                      void updateRequest(req.id, "REFUSEE", notes[req.id]);
                     }}
                     disabled={processing === req.id}
                   >

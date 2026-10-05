@@ -88,11 +88,11 @@ function Lightbox({
   }, [onClose, onPrev, onNext]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="presentation" onClick={onClose}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-4 py-3 shrink-0"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 min-w-0">
           <button
@@ -117,7 +117,7 @@ function Lightbox({
       {/* Image */}
       <div
         className="flex-1 flex items-center justify-center relative px-14 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         {/* Prev */}
         <button
@@ -162,7 +162,7 @@ function Lightbox({
       {/* Bottom bar */}
       <div
         className="flex items-center justify-between px-4 py-3 gap-3 shrink-0"
-        onClick={(e) => e.stopPropagation()}
+        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 text-on-brand/50 text-sm min-w-0">
           <span className="shrink-0">{formatSize(photo.size)}</span>
@@ -378,7 +378,15 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                 >
                   {/* Thumbnail — click opens lightbox */}
                   <div
-                    className="aspect-square bg-surface-sunken relative cursor-pointer overflow-hidden"
+                    className="aspect-square bg-surface-sunken relative cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-focus outline-none"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setLightboxIdx(idx);
+                      }
+                    }}
                     onClick={() => setLightboxIdx(idx)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

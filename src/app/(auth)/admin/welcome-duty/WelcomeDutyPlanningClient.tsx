@@ -83,7 +83,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
     }
   }, [year, month, churchId]);
 
-  useEffect(() => { fetchMonth(); }, [fetchMonth]);
+  useEffect(() => { fetchMonth().catch(() => undefined); }, [fetchMonth]);
 
   function prevMonth() {
     if (month === 0) { setYear((y) => y - 1); setMonth(11); }

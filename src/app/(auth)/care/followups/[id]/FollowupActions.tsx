@@ -127,7 +127,7 @@ export default function FollowupActions({
 
       {canAbandon && (
         <Button size="sm" variant="danger" disabled={loading}
-          onClick={() => { if (confirm("Abandonner ce suivi ?")) patch({ action: "abandon" }); }}>
+          onClick={() => { if (confirm("Abandonner ce suivi ?")) void patch({ action: "abandon" }); }}>
           Abandonner
         </Button>
       )}

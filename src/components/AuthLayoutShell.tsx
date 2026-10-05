@@ -109,7 +109,7 @@ export default function AuthLayoutShell({
         // Silencieux : la pastille reste simplement à sa dernière valeur connue.
       }
     };
-    fetchCount();
+    void fetchCount();
     const interval = setInterval(fetchCount, 60000);
     return () => {
       cancelled = true;

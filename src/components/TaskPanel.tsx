@@ -52,7 +52,7 @@ export default function TaskPanel({
   }, [eventId, departmentId]);
 
   useEffect(() => {
-    fetchTasks();
+    void fetchTasks();
   }, [fetchTasks]);
 
   async function handleToggleMember(taskId: string, memberId: string) {

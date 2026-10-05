@@ -117,7 +117,7 @@ export async function POST(
         }
       }
       await archive.finalize();
-    })();
+    })().catch((err) => passthrough.destroy(err));
 
     const readable = new ReadableStream({
       start(controller) {
