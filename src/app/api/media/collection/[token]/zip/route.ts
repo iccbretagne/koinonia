@@ -106,7 +106,7 @@ export async function POST(
     const passthrough = new PassThrough();
     archive.pipe(passthrough);
 
-    void (async () => {
+    (async () => {
       const allEntries = [...photoEntries, ...fileEntries];
       for (const entry of allEntries) {
         try {
