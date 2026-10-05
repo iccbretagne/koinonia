@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Photo = {
   id: string;
@@ -23,6 +23,15 @@ function formatDate(d: string) {
 
 export default function GalleryView({ data }: { readonly data: GalleryData }) {
   const [lightbox, setLightbox] = useState<Photo | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
   const { event, photos } = data;
 
@@ -62,6 +71,7 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
       {lightbox && (
         <div
           className="fixed inset-0 bg-scrim/90 z-50 flex items-center justify-center p-4"
+          role="presentation"
           onClick={() => setLightbox(null)}
         >
           <button
@@ -71,13 +81,14 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
             ✕
           </button>
           <div className="max-w-3xl w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lightbox.thumbnailUrl}
-              alt={lightbox.filename}
-              className="w-full rounded-lg max-h-[80vh] object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div role="presentation" onClick={(e) => e.stopPropagation()}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightbox.thumbnailUrl}
+                alt={lightbox.filename}
+                className="block w-full rounded-lg max-h-[80vh] object-contain"
+              />
+            </div>
             <p className="text-on-brand/70 text-sm text-center mt-2">{lightbox.filename}</p>
           </div>
         </div>

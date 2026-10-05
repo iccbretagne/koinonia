@@ -143,7 +143,7 @@ export default function AccountingStats({
 
   const handlePeriod = (p: Period) => {
     setPeriod(p);
-    fetchStats(p);
+    fetchStats(p).catch(() => undefined);
   };
 
   const { overview, byStatus, byType, byDepartment, byMonth, overduePayments, dateRange } = data;

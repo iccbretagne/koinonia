@@ -43,9 +43,19 @@ function RestoreModal({
 }) {
   const [step, setStep] = useState<1 | 2>(1);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-scrim backdrop-blur-sm" aria-hidden="true" onClick={onCancel} />
       <div className="relative bg-surface rounded-2xl shadow-overlay w-full max-w-md p-6 space-y-4">
         {step === 1 ? (
           <>
@@ -157,6 +167,7 @@ export default function BackupsClient() {
           if (mounted) setBackups(data);
         }
       })
+      .catch(() => { if (mounted) setError("Impossible de charger les sauvegardes"); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [refreshKey]);

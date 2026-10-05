@@ -293,7 +293,7 @@ export default function PersonAccessClient({
                           onChange={() => {
                             if (needsTarget) {
                               if (has) {
-                                if (role === "MINISTER") removeMinister();
+                                if (role === "MINISTER") void removeMinister();
                                 else if (deptHeadRole) {
                                   if (confirm("Retirer toutes les responsabilités de département ?")) {
                                     fetch(`/api/users/${person.id}/roles`, {
@@ -305,14 +305,14 @@ export default function PersonAccessClient({
                                         setRoles((prev) => prev.filter((r) => r.role !== "DEPARTMENT_HEAD"));
                                         refresh();
                                       }
-                                    });
+                                    }).catch(() => setError("Erreur"));
                                   }
                                 }
                               } else {
                                 setModal({ mode: role === "MINISTER" ? "minister" : "department-head" });
                               }
                             } else {
-                              simpleToggle(role);
+                              void simpleToggle(role);
                             }
                           }}
                           className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus"

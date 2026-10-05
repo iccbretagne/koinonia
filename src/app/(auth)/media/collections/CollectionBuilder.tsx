@@ -254,23 +254,23 @@ export default function CollectionBuilder({
                 {filteredEvents.map((e) => (
                   <li
                     key={e.id}
-                    onClick={() => toggleEvent(e.id)}
-                    className={`flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-sunken transition-colors ${selectedEvents.has(e.id) ? "bg-brand-soft" : ""}`}
+                    className={`hover:bg-surface-sunken transition-colors ${selectedEvents.has(e.id) ? "bg-brand-soft" : ""}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedEvents.has(e.id)}
-                      onChange={() => toggleEvent(e.id)}
-                      onClick={(ev) => ev.stopPropagation()}
-                      className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-ink truncate">{e.name}</p>
-                      <p className="text-xs text-ink-subtle">{formatDate(e.date)}</p>
-                    </div>
-                    <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${e.approvedPhotoCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
-                      {e.approvedPhotoCount} validée{e.approvedPhotoCount !== 1 ? "s" : ""} / {e.totalPhotoCount} au total
-                    </span>
+                    <label className="flex items-center gap-3 px-5 py-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedEvents.has(e.id)}
+                        onChange={() => toggleEvent(e.id)}
+                        className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink truncate">{e.name}</p>
+                        <p className="text-xs text-ink-subtle">{formatDate(e.date)}</p>
+                      </div>
+                      <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${e.approvedPhotoCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
+                        {e.approvedPhotoCount} validée{e.approvedPhotoCount !== 1 ? "s" : ""} / {e.totalPhotoCount} au total
+                      </span>
+                    </label>
                   </li>
                 ))}
               </ul>
@@ -306,23 +306,23 @@ export default function CollectionBuilder({
                 {projects.map((p) => (
                   <li
                     key={p.id}
-                    onClick={() => toggleProject(p.id)}
-                    className={`flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-surface-sunken transition-colors ${selectedProjects.has(p.id) ? "bg-brand-soft" : ""}`}
+                    className={`hover:bg-surface-sunken transition-colors ${selectedProjects.has(p.id) ? "bg-brand-soft" : ""}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedProjects.has(p.id)}
-                      onChange={() => toggleProject(p.id)}
-                      onClick={(ev) => ev.stopPropagation()}
-                      className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-ink truncate">{p.name}</p>
-                      <p className="text-xs text-ink-subtle">{formatDate(p.createdAt)}</p>
-                    </div>
-                    <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${p.approvedFileCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
-                      {p.approvedFileCount} approuvé{p.approvedFileCount !== 1 ? "s" : ""}
-                    </span>
+                    <label className="flex items-center gap-3 px-5 py-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedProjects.has(p.id)}
+                        onChange={() => toggleProject(p.id)}
+                        className="w-4 h-4 rounded border-control-line accent-brand shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink truncate">{p.name}</p>
+                        <p className="text-xs text-ink-subtle">{formatDate(p.createdAt)}</p>
+                      </div>
+                      <span className={`text-xs rounded-full px-2 py-0.5 shrink-0 ${p.approvedFileCount > 0 ? "bg-success-soft text-success" : "bg-surface-sunken text-ink-subtle"}`}>
+                        {p.approvedFileCount} approuvé{p.approvedFileCount !== 1 ? "s" : ""}
+                      </span>
+                    </label>
                   </li>
                 ))}
               </ul>

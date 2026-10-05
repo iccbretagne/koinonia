@@ -18,9 +18,28 @@ const FOCUSABLE =
  * Fermer de l'en-tête. On lui préfère, dans l'ordre : un élément déjà focalisé par `autoFocus`
  * (React le focalise avant `showModal()`), puis le premier contrôle du corps
  * (`[data-dialog-body]` : champ d'un formulaire, « Annuler » d'une confirmation).
+ *
+ * `onBackdropClick` : appui sur le voile (la cible est le `<dialog>` lui-même, son contenu le remplit).
+ * Branché en écouteur natif plutôt qu'en `onClick` JSX : Échap ferme déjà le dialogue nativement,
+ * le clic sur le voile n'est qu'un raccourci souris sans équivalent clavier à fournir.
  */
-export function useModalDialog(open: boolean) {
+export function useModalDialog(open: boolean, onBackdropClick?: () => void) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const backdropRef = useRef(onBackdropClick);
+  useEffect(() => {
+    backdropRef.current = onBackdropClick;
+  });
+  const hasBackdropClick = onBackdropClick !== undefined;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!open || !dialog || !hasBackdropClick) return;
+    const onClick = (e: MouseEvent) => {
+      if (e.target === dialog) backdropRef.current?.();
+    };
+    dialog.addEventListener("click", onClick);
+    return () => dialog.removeEventListener("click", onClick);
+  }, [open, hasBackdropClick]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

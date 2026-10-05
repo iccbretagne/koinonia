@@ -346,7 +346,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     }
   }, [churchId]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => { void fetchRows(); }, [fetchRows]);
 
   // Membres déjà pris comme disciple (liste complète de l'église + nouvelles relations ajoutées en session)
   const assignedDiscipleIds = new Set([
@@ -373,7 +373,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
       setCreateModal(false);
-      fetchRows();
+      void fetchRows();
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -461,7 +461,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
       setChangeFDRow(null);
-      fetchRows();
+      void fetchRows();
     } catch (e) {
       setChangeFDError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -494,7 +494,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Erreur");
       setEditRelationRow(null);
-      fetchRows();
+      void fetchRows();
     } catch (e) {
       setEditRelationError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -843,7 +843,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
         setLoadingEvents(false);
       }
     }
-    fetchEvents();
+    void fetchEvents();
   }, [churchId]);
 
   // Fetch disciples + existing attendance when event changes
@@ -1025,7 +1025,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
     }
   }, [churchId, from, to]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => { void fetchStats(); }, [fetchStats]);
 
   async function handleExport() {
     setExporting(true);

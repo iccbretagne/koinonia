@@ -49,7 +49,7 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
 
   function requestAction(action: PendingAction) {
     if (!isRecurring) {
-      executeAction(action, false);
+      void executeAction(action, false);
     } else {
       setSeriesScope("single");
       setPendingAction(action);

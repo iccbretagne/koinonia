@@ -986,7 +986,7 @@ export default function RequestForm({
               onChange={(e) => {
                 const id = e.target.value;
                 setSelectedEventId(id);
-                if (id) loadEventDepartments(id);
+                if (id) void loadEventDepartments(id);
                 else setPlanningDeptIds([]);
               }}
               required

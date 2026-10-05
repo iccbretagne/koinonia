@@ -50,7 +50,7 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
   }, []);
 
   useEffect(() => {
-    if (open) load();
+    if (open) void load();
   }, [open, load]);
 
   async function handleRevoke(id: string) {

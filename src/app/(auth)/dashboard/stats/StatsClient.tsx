@@ -151,7 +151,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
   }, [selectedDeptId, periodMode, months, customFrom, customTo]);
 
   useEffect(() => {
-    fetchStats();
+    void fetchStats();
   }, [fetchStats]);
 
   function formatMonth(ym: string) {

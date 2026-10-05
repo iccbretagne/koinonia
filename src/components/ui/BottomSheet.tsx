@@ -35,7 +35,7 @@ export default function BottomSheet({
   children,
   className = "",
 }: BottomSheetProps) {
-  const dialogRef = useModalDialog(open);
+  const dialogRef = useModalDialog(open, onClose);
   const titleId = useId();
   const [dragY, setDragY] = useState(0);
   const dragStart = useRef<number | null>(null);
@@ -64,10 +64,6 @@ export default function BottomSheet({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      onClick={(e) => {
-        // Appui sur le voile : la cible est le <dialog> lui-même (le contenu le remplit).
-        if (e.target === e.currentTarget) onClose();
-      }}
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : (ariaLabel ?? "Menu")}
       style={dragY ? { translate: `0 ${dragY}px`, transition: "none" } : undefined}

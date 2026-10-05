@@ -90,15 +90,12 @@ function pageResult(p: SearchablePage): Result {
  * déjà : une catégorie refusée (403) ou indisponible est simplement masquée.
  */
 export default function CommandPalette({ open, onClose, pages, churchId, canSearchMembers, canSearchEvents }: CommandPaletteProps) {
-  const dialogRef = useModalDialog(open);
+  const dialogRef = useModalDialog(open, onClose);
   if (!open) return null;
   return (
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
       aria-label="Rechercher"
       className="m-0 h-dvh max-h-none w-full max-w-none overflow-hidden border-0 bg-surface p-0 text-ink backdrop:bg-scrim
         md:mx-auto md:mt-[12vh] md:h-fit md:max-h-[70vh] md:w-[min(640px,calc(100%-2rem))] md:rounded-card md:shadow-overlay"
@@ -150,8 +147,8 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
       }
     };
     const cid = encodeURIComponent(churchId);
-    if (members.status === "idle") load<MemberRow>(`/api/members?churchId=${cid}`, setMembers);
-    if (events.status === "idle") load<EventRow>(`/api/events?churchId=${cid}`, setEvents);
+    if (members.status === "idle") void load<MemberRow>(`/api/members?churchId=${cid}`, setMembers);
+    if (events.status === "idle") void load<EventRow>(`/api/events?churchId=${cid}`, setEvents);
     return () => {
       controller.abort();
       // La requête annulée (repassage sous le seuil pendant le chargement) ne doit pas
@@ -341,6 +338,13 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
                       aria-selected={selected}
                       onMouseMove={() => setActiveIndex(i)}
                       onClick={() => go(r)}
+                      onKeyDown={(e) => {
+                        // Le clavier passe d'ordinaire par le champ (aria-activedescendant) ; ceci couvre l'option focalisée.
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          go(r);
+                        }
+                      }}
                       className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-control px-3 py-1.5 ${
                         selected ? "bg-brand-soft" : ""
                       }`}

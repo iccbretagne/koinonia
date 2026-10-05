@@ -233,7 +233,7 @@ export default function PlanningGrid({
   }, [eventId, departmentId]);
 
   useEffect(() => {
-    fetchPlanning();
+    void fetchPlanning();
   }, [fetchPlanning]);
 
   const savePlanning = useCallback(
