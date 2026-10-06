@@ -6,6 +6,7 @@ import { Church } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import RequestForm, { type EditData } from "../../new/RequestForm";
+import { buildSourceOptions } from "../../source-options";
 
 interface Props {
   readonly params: Promise<{ id: string }>;
@@ -77,34 +78,7 @@ export default async function EditRequestPage({ params }: Props) {
     (r) => r.churchId === churchId
   );
 
-  const sourceOptions: { type: "department" | "ministry"; id: string; label: string }[] = [];
-  const seenIds = new Set<string>();
-
-  const roleMinistryIds = churchRoles.flatMap((r) => (r.ministryId ? [r.ministryId] : []));
-  const ministriesById = new Map(
-    (
-      await prisma.ministry.findMany({
-        where: { id: { in: roleMinistryIds } },
-        select: { id: true, name: true },
-      })
-    ).map((m) => [m.id, m])
-  );
-
-  for (const role of churchRoles) {
-    if (role.ministryId && !seenIds.has(role.ministryId)) {
-      const ministry = ministriesById.get(role.ministryId);
-      if (ministry) {
-        sourceOptions.push({ type: "ministry", id: ministry.id, label: ministry.name });
-        seenIds.add(ministry.id);
-      }
-    }
-    for (const { department } of role.departments) {
-      if (!seenIds.has(department.id)) {
-        sourceOptions.push({ type: "department", id: department.id, label: department.name });
-        seenIds.add(department.id);
-      }
-    }
-  }
+  const sourceOptions = await buildSourceOptions(churchRoles);
 
   // Departments for planning modification requests
   const departments = await prisma.department.findMany({
