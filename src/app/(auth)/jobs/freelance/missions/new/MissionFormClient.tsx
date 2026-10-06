@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface MissionInitial {
@@ -24,6 +24,7 @@ export default function MissionFormClient({
   readonly initial?: MissionInitial;
   readonly defaultEmail?: string | null;
 }) {
+  const id = useId();
   const router = useRouter();
   const isEdit = !!initial;
 
@@ -82,8 +83,8 @@ export default function MissionFormClient({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Titre de la mission *</label>
-          <input
+          <label htmlFor={`${id}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Titre de la mission *</label>
+          <input id={`${id}-f1`}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -95,8 +96,8 @@ export default function MissionFormClient({
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Domaine / Stack technique *</label>
-          <input
+          <label htmlFor={`${id}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Domaine / Stack technique *</label>
+          <input id={`${id}-f2`}
             type="text"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
@@ -108,8 +109,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Durée estimée</label>
-          <input
+          <label htmlFor={`${id}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Durée estimée</label>
+          <input id={`${id}-f3`}
             type="text"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
@@ -120,8 +121,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Modalité *</label>
-          <select
+          <label htmlFor={`${id}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Modalité *</label>
+          <select id={`${id}-f4`}
             value={modality}
             onChange={(e) => setModality(e.target.value as "REMOTE" | "ONSITE" | "HYBRID")}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
@@ -133,8 +134,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">TJM (taux journalier)</label>
-          <input
+          <label htmlFor={`${id}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">TJM (taux journalier)</label>
+          <input id={`${id}-f5`}
             type="text"
             value={dailyRate}
             onChange={(e) => setDailyRate(e.target.value)}
@@ -145,8 +146,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Taux horaire</label>
-          <input
+          <label htmlFor={`${id}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">Taux horaire</label>
+          <input id={`${id}-f6`}
             type="text"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(e.target.value)}
@@ -158,8 +159,8 @@ export default function MissionFormClient({
 
         {modality !== "REMOTE" && (
           <div className="col-span-2">
-            <label className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation</label>
-            <input
+            <label htmlFor={`${id}-f7`} className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation</label>
+            <input id={`${id}-f7`}
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -171,8 +172,8 @@ export default function MissionFormClient({
         )}
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Description de la mission *</label>
-          <textarea
+          <label htmlFor={`${id}-f8`} className="block text-sm font-semibold text-ink-muted mb-1.5">Description de la mission *</label>
+          <textarea id={`${id}-f8`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -183,8 +184,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
-          <input
+          <label htmlFor={`${id}-f9`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
+          <input id={`${id}-f9`}
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
@@ -194,8 +195,8 @@ export default function MissionFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Lien (site, LinkedIn…)</label>
-          <input
+          <label htmlFor={`${id}-f10`} className="block text-sm font-semibold text-ink-muted mb-1.5">Lien (site, LinkedIn…)</label>
+          <input id={`${id}-f10`}
             type="url"
             value={contactUrl}
             onChange={(e) => setContactUrl(e.target.value)}

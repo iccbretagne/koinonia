@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useId, useState } from "react";
 import Image from "next/image";
 
 interface UserRef {
@@ -55,6 +55,7 @@ function Avatar({ user, size = 8 }: { readonly user: UserRef; readonly size?: nu
 }
 
 export default function LeadersDashboard({ churchId, initialAssignments, users }: Props) {
+  const uid = useId();
   const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
   const [showForm, setShowForm] = useState(false);
   const [families, setFamilies] = useState<FamilyOption[]>([]);
@@ -154,10 +155,11 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">
+              <label htmlFor={`${uid}-user`} className="block text-sm font-medium text-ink-muted mb-1">
                 Utilisateur <span className="text-danger">*</span>
               </label>
               <select
+                id={`${uid}-user`}
                 required
                 value={form.userId}
                 onChange={(e) => setForm((f) => ({ ...f, userId: e.target.value }))}
@@ -173,13 +175,14 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">
+              <label htmlFor={`${uid}-family`} className="block text-sm font-medium text-ink-muted mb-1">
                 Famille <span className="text-danger">*</span>
               </label>
               {familiesLoading ? (
                 <p className="text-sm text-ink-subtle">Chargement…</p>
               ) : (
                 <select
+                  id={`${uid}-family`}
                   required
                   value={form.familyId}
                   onChange={(e) => setForm((f) => ({ ...f, familyId: e.target.value }))}
@@ -195,8 +198,8 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">Rôle</label>
+            <fieldset className="min-w-0">
+              <legend className="block text-sm font-medium text-ink-muted mb-1">Rôle</legend>
               <div className="flex gap-2">
                 {(["BERGER", "CO_BERGER"] as const).map((r) => (
                   <label
@@ -219,7 +222,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
 

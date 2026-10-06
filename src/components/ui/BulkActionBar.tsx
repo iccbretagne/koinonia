@@ -43,8 +43,7 @@ export default function BulkActionBar({ count, onEdit, onDelete, onClear }: Bulk
   if (count === 0) return null;
 
   return (
-    <div
-      role="region"
+    <section
       aria-label="Actions sur la sélection"
       className="fixed bottom-[calc(64px+env(safe-area-inset-bottom)+12px)] left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1
         rounded-card bg-ink py-1.5 pl-4 pr-1.5 text-bg shadow-float md:bottom-6 print:hidden"
@@ -63,6 +62,6 @@ export default function BulkActionBar({ count, onEdit, onDelete, onClear }: Bulk
       <button type="button" onClick={onClear} className={inverseControl} aria-label="Désélectionner" title="Désélectionner (Échap)">
         <X aria-hidden="true" className="size-5" strokeWidth={1.75} />
       </button>
-    </div>
+    </section>
   );
 }

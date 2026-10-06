@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,6 +23,7 @@ export default function NewMediaEventForm({
   readonly churchId: string;
   readonly planningEvents: PlanningEvent[];
 }) {
+  const id = useId();
   const router = useRouter();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -76,10 +77,10 @@ export default function NewMediaEventForm({
     <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
       {planningEvents.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">
             Lier à un événement planning <span className="text-ink-subtle">(optionnel)</span>
           </label>
-          <select
+          <select id={`${id}-f1`}
             value={planningEventId}
             onChange={(e) => onPlanningEventChange(e.target.value)}
             className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
@@ -95,10 +96,10 @@ export default function NewMediaEventForm({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">
           Nom de l&apos;événement <span className="text-danger">*</span>
         </label>
-        <Input
+        <Input id={`${id}-f2`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -107,10 +108,10 @@ export default function NewMediaEventForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">
           Date <span className="text-danger">*</span>
         </label>
-        <Input
+        <Input id={`${id}-f3`}
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
@@ -119,10 +120,10 @@ export default function NewMediaEventForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">
           Description <span className="text-ink-subtle">(optionnel)</span>
         </label>
-        <textarea
+        <textarea id={`${id}-f4`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}

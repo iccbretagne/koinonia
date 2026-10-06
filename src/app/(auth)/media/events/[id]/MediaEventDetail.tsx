@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -189,21 +189,14 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
   }
 
   return (
-    <div
+    <>
+    <button
+      type="button"
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
       onClick={() => !uploading && inputRef.current?.click()}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && !uploading && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          inputRef.current?.click();
-        }
-      }}
-      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
+      className="block w-full border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
     >
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFileChange} />
       {uploading && progress ? (
         <div className="space-y-2">
           <p className="text-sm font-medium text-ink-muted">
@@ -228,7 +221,9 @@ function PhotoUploadZone({ eventId, onUploaded, onProgressChange }: {
         </>
       )}
       {error && <p className="mt-2 text-xs text-danger whitespace-pre-line">{error}</p>}
-    </div>
+    </button>
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onFileChange} />
+    </>
   );
 }
 
@@ -239,6 +234,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   readonly tokens: ShareToken[];
   readonly onRefresh: () => void;
 }) {
+  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newType, setNewType] = useState<MediaTokenType>("GALLERY");
@@ -340,8 +336,9 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
           <p className="text-sm font-medium text-ink-muted">Nouveau lien de partage</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">Type</label>
+              <label htmlFor={`${fieldId}-type`} className="text-xs text-ink-muted mb-1 block">Type</label>
               <select
+                id={`${fieldId}-type`}
                 value={newType}
                 onChange={(e) => setNewType(e.target.value as MediaTokenType)}
                 className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
@@ -352,9 +349,10 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
               </select>
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
+              <label htmlFor={`${fieldId}-expiry`} className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
               <div className="relative">
                 <input
+                  id={`${fieldId}-expiry`}
                   type="number"
                   min="0"
                   value={newExpiry}
@@ -366,8 +364,9 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
             </div>
           </div>
           <div>
-            <label className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
+            <label htmlFor={`${fieldId}-label`} className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
             <input
+              id={`${fieldId}-label`}
               type="text"
               placeholder="Ex : Validateurs familles"
               value={newLabel}
@@ -509,11 +508,10 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
   // sont volontaires, indépendantes du thème (cf. docs/design-system/migration.md).
   return (
     // eslint-disable-next-line no-restricted-syntax -- visionneuse photo plein écran toujours sombre
-    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" role="presentation" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       {/* Top bar */}
       <div
         className="flex items-center justify-between px-5 py-3 bg-scrim backdrop-blur-sm shrink-0"
-        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${PHOTO_STATUS_COLORS[photo.status]}`}>
@@ -537,7 +535,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       </div>
 
       {/* Image + navigation */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-4" role="presentation" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center relative overflow-hidden p-4">
         {hasPrev && (
           <button
             onClick={() => go(-1)}
@@ -574,7 +572,6 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
       {/* Bottom bar */}
       <div
         className="shrink-0 flex items-center justify-center gap-4 py-4 px-5 bg-scrim backdrop-blur-sm"
-        role="presentation" onClick={(e) => e.stopPropagation()}
       >
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${PHOTO_STATUS_COLORS[photo.status]}`}>
           {PHOTO_STATUS_LABELS[photo.status]}
@@ -612,6 +609,7 @@ export default function MediaEventDetail({
   readonly canManage: boolean;
 }) {
   const router = useRouter();
+  const editId = useId();
   const [event, setEvent] = useState(initialEvent);
   const [thumbnailUrls, setThumbnailUrls] = useState(initialThumbnailUrls);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
@@ -805,8 +803,9 @@ export default function MediaEventDetail({
           {editMode && (
             <div className="mt-4 p-4 bg-surface-sunken border border-line rounded-xl space-y-3">
               <div>
-                <label className="text-xs font-medium text-ink-muted block mb-1">Nom de l&apos;événement</label>
+                <label htmlFor={`${editId}-name`} className="text-xs font-medium text-ink-muted block mb-1">Nom de l&apos;événement</label>
                 <input
+                  id={`${editId}-name`}
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
@@ -815,8 +814,9 @@ export default function MediaEventDetail({
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-ink-muted block mb-1">Lier à un événement planning</label>
+                <label htmlFor={`${editId}-planning`} className="text-xs font-medium text-ink-muted block mb-1">Lier à un événement planning</label>
                 <select
+                  id={`${editId}-planning`}
                   value={editPlanningEventId}
                   onChange={(e) => setEditPlanningEventId(e.target.value)}
                   className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand bg-surface"

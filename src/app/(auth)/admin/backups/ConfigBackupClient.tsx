@@ -98,8 +98,8 @@ function ExportSection() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">Périmètre</label>
+      <fieldset className="min-w-0">
+        <legend className="block text-sm font-medium text-ink-muted mb-1">Périmètre</legend>
         <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
@@ -135,7 +135,7 @@ function ExportSection() {
             ))}
           </select>
         )}
-      </div>
+      </fieldset>
 
       <div>
         <p className="block text-sm font-medium text-ink-muted mb-2">Catégories</p>
@@ -376,9 +376,9 @@ function ImportSection() {
                       onChange={() => setStrategy(opt.value)}
                       className="mt-0.5 text-brand-text focus:ring-focus shrink-0"
                     />
-                    <div>
-                      <p className="text-sm font-medium text-ink">{opt.label}</p>
-                      <p className="text-xs text-ink-muted mt-0.5">{opt.desc}</p>
+                    <div className="text-sm font-medium text-ink">
+                      {opt.label}
+                      <span className="block text-xs font-normal text-ink-muted mt-0.5">{opt.desc}</span>
                     </div>
                   </label>
                 ))}

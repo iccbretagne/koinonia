@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
@@ -297,6 +297,7 @@ function DiscipleCombobox({
 // ─── Tab: Relations ───────────────────────────────────────────────────────────
 
 function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, canEditRelation, isFD, linkedMemberId, filterMine }: { readonly churchId: string; readonly members: MemberOption[]; readonly allAssignedDiscipleIds: string[]; readonly canManage: boolean; readonly canEditRelation: boolean; readonly isFD: boolean; readonly linkedMemberId: string | null; readonly filterMine: boolean }) {
+  const uid = useId();
   const [rows, setRows] = useState<DiscipleshipRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -632,8 +633,8 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
       {/* Modal: nouvelle relation */}
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="Nouvelle relation de discipolat">
         <form onSubmit={handleCreate} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Disciple</label>
+          <fieldset className="min-w-0">
+            <legend className="block text-sm font-medium text-ink-muted mb-1">Disciple</legend>
             <DiscipleCombobox
               options={availableDisciples}
               value={discipleSelection}
@@ -644,7 +645,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                 Nouveau membre — sera ajouté dans «&nbsp;Sans département&nbsp;».
               </p>
             )}
-          </div>
+          </fieldset>
 
           {!isFD && (
             <Select
@@ -672,8 +673,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
           <form onSubmit={handleEditProfile} className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-muted mb-1">Prénom</label>
+                <label htmlFor={`${uid}-first-name`} className="block text-sm font-medium text-ink-muted mb-1">Prénom</label>
                 <input
+                  id={`${uid}-first-name`}
                   type="text"
                   value={editFirstName}
                   onChange={(e) => setEditFirstName(e.target.value)}
@@ -682,8 +684,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-muted mb-1">Nom</label>
+                <label htmlFor={`${uid}-last-name`} className="block text-sm font-medium text-ink-muted mb-1">Nom</label>
                 <input
+                  id={`${uid}-last-name`}
                   type="text"
                   value={editLastName}
                   onChange={(e) => setEditLastName(e.target.value)}
@@ -693,8 +696,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">Email <span className="text-ink-subtle font-normal">(optionnel)</span></label>
+              <label htmlFor={`${uid}-email`} className="block text-sm font-medium text-ink-muted mb-1">Email <span className="text-ink-subtle font-normal">(optionnel)</span></label>
               <input
+                id={`${uid}-email`}
                 type="email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
@@ -703,8 +707,9 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">Téléphone <span className="text-ink-subtle font-normal">(optionnel)</span></label>
+              <label htmlFor={`${uid}-phone`} className="block text-sm font-medium text-ink-muted mb-1">Téléphone <span className="text-ink-subtle font-normal">(optionnel)</span></label>
               <input
+                id={`${uid}-phone`}
                 type="tel"
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
@@ -802,6 +807,7 @@ interface TrackedEvent {
 }
 
 function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonly churchId: string; readonly canManage: boolean; readonly filterMine: boolean; readonly linkedMemberId: string | null }) {
+  const uid = useId();
   const [events, setEvents] = useState<TrackedEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
   const [discipleships, setDiscipleships] = useState<DiscipleshipRow[]>([]);
@@ -925,8 +931,9 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
       {/* Event selector */}
       <div className="flex flex-wrap items-end gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
         <div className="flex-1 min-w-48">
-          <label className="block text-xs font-medium text-ink-muted mb-1">Événement</label>
+          <label htmlFor={`${uid}-event`} className="block text-xs font-medium text-ink-muted mb-1">Événement</label>
           <select
+            id={`${uid}-event`}
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
@@ -1003,6 +1010,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
 // ─── Tab: Statistiques ────────────────────────────────────────────────────────
 
 function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonly churchId: string; readonly canExport: boolean; readonly filterMine: boolean; readonly linkedMemberId: string | null }) {
+  const uid = useId();
   const [from, setFrom] = useState(firstDayOfMonthISO());
   const [to, setTo] = useState(todayISO());
   const [data, setData] = useState<{ period: { from: string; to: string }; trackedEvents: { id: string; title: string; date: string }[]; stats: StatRow[] } | null>(null);
@@ -1056,8 +1064,9 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
       <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4 mb-6 p-4 bg-surface border border-line rounded-lg">
         <div className="flex gap-3 flex-1">
           <div className="flex-1">
-            <label className="block text-xs font-medium text-ink-muted mb-1">Du</label>
+            <label htmlFor={`${uid}-from`} className="block text-xs font-medium text-ink-muted mb-1">Du</label>
             <input
+              id={`${uid}-from`}
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
@@ -1065,8 +1074,9 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
             />
           </div>
           <div className="flex-1">
-            <label className="block text-xs font-medium text-ink-muted mb-1">Au</label>
+            <label htmlFor={`${uid}-to`} className="block text-xs font-medium text-ink-muted mb-1">Au</label>
             <input
+              id={`${uid}-to`}
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}

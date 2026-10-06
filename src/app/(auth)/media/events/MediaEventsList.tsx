@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { MediaEventStatus } from "@/generated/prisma/enums";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -55,6 +55,7 @@ export default function MediaEventsList({
   readonly churchId: string;
   readonly canShare: boolean;
 }) {
+  const id = useId();
   const [statusFilter, setStatusFilter] = useState<MediaEventStatus | "">("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -108,8 +109,8 @@ export default function MediaEventsList({
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2">
           <div className="flex items-center gap-2 flex-1">
-            <label className="text-xs text-ink-muted shrink-0">Du</label>
-            <input
+            <label htmlFor={`${id}-f1`} className="text-xs text-ink-muted shrink-0">Du</label>
+            <input id={`${id}-f1`}
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
@@ -117,8 +118,8 @@ export default function MediaEventsList({
             />
           </div>
           <div className="flex items-center gap-2 flex-1">
-            <label className="text-xs text-ink-muted shrink-0">au</label>
-            <input
+            <label htmlFor={`${id}-f2`} className="text-xs text-ink-muted shrink-0">au</label>
+            <input id={`${id}-f2`}
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}

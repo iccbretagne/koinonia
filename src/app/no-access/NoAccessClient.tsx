@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 
 type Church = { id: string; name: string };
@@ -60,6 +60,7 @@ export default function NoAccessClient({
   readonly churches: Church[];
   readonly ministries: Ministry[];
 }) {
+  const id = useId();
   const [step, setStep] = useState<Step>("identity");
   const [churchId, setChurchId] = useState(churches[0]?.id ?? "");
 
@@ -339,8 +340,8 @@ export default function NoAccessClient({
       {/* Sélecteur d'église (si plusieurs) */}
       {churches.length > 1 && (
         <div>
-          <label className="block text-xs font-medium text-ink-muted mb-1">Église</label>
-          <select
+          <label htmlFor={`${id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">Église</label>
+          <select id={`${id}-f1`}
             value={churchId}
             onChange={(e) => { setChurchId(e.target.value); setSelectedMember(null); setResults([]); }}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
@@ -360,8 +361,8 @@ export default function NoAccessClient({
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
-              <input
+              <label htmlFor={`${id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
+              <input id={`${id}-f2`}
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -370,8 +371,8 @@ export default function NoAccessClient({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
-              <input
+              <label htmlFor={`${id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
+              <input id={`${id}-f3`}
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -517,8 +518,8 @@ export default function NoAccessClient({
           {isNewStar && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
-                <input
+                <label htmlFor={`${id}-f4`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
+                <input id={`${id}-f4`}
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -526,8 +527,8 @@ export default function NoAccessClient({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
-                <input
+                <label htmlFor={`${id}-f5`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
+                <input id={`${id}-f5`}
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
@@ -535,8 +536,8 @@ export default function NoAccessClient({
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-ink-muted mb-1">Téléphone (optionnel)</label>
-                <input
+                <label htmlFor={`${id}-f6`} className="block text-xs font-medium text-ink-muted mb-1">Téléphone (optionnel)</label>
+                <input id={`${id}-f6`}
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -547,8 +548,8 @@ export default function NoAccessClient({
           )}
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Ministère</label>
-            <select
+            <label htmlFor={`${id}-f7`} className="block text-xs font-medium text-ink-muted mb-1">Ministère</label>
+            <select id={`${id}-f7`}
               value={selectedMinistryId}
               onChange={(e) => { setSelectedMinistryId(e.target.value); setSelectedDeptId(""); }}
               className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
@@ -562,8 +563,8 @@ export default function NoAccessClient({
 
           {selectedMinistry && (
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1">Département</label>
-              <select
+              <label htmlFor={`${id}-f8`} className="block text-xs font-medium text-ink-muted mb-1">Département</label>
+              <select id={`${id}-f8`}
                 value={selectedDeptId}
                 onChange={(e) => setSelectedDeptId(e.target.value)}
                 className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
@@ -711,10 +712,10 @@ export default function NoAccessClient({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f9`} className="block text-xs font-medium text-ink-muted mb-1">
               Remarques pour l&apos;administrateur <span className="text-ink-subtle">(optionnel)</span>
             </label>
-            <textarea
+            <textarea id={`${id}-f9`}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}

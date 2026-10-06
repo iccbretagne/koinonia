@@ -57,7 +57,7 @@ function TourOverlay({
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDialogElement>(null);
   const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
 
   const step = steps[currentStep];
@@ -253,7 +253,7 @@ function TourOverlay({
 import { forwardRef } from "react";
 
 const TooltipCard = forwardRef<
-  HTMLDivElement,
+  HTMLDialogElement,
   {
     readonly step: TourStep;
     readonly stepIndex: number;
@@ -265,7 +265,7 @@ const TooltipCard = forwardRef<
   }
 >(function TooltipCard({ step, stepIndex, totalSteps, isLast, onNext, onBack, onSkip }, ref) {
   return (
-    <div ref={ref} className="overflow-hidden rounded-card border border-line bg-surface text-ink shadow-overlay" role="dialog" aria-label={step.title}>
+    <dialog open ref={ref} className="static m-0 block h-auto max-h-none w-full max-w-none p-0 overflow-hidden rounded-card border border-line bg-surface text-ink shadow-overlay" aria-label={step.title}>
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="font-display text-base font-semibold leading-6 text-ink">{step.title}</h3>
@@ -294,7 +294,7 @@ const TooltipCard = forwardRef<
           </Button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AttachmentManager, { type AttachmentItem } from "@/app/(auth)/accounting/components/AttachmentManager";
@@ -33,6 +33,7 @@ type RequestMode = "one_shot" | "recurring";
 
 export default function NewRequestForm({ departments, correction, redirectTo = "/accounting/requests" }: Props) {
   const router = useRouter();
+  const id = useId();
   const [mode, setMode] = useState<RequestMode>("one_shot");
   const [type, setType] = useState<"EXPENSE_REPORT" | "BUDGET_ADVANCE">(correction?.type ?? "EXPENSE_REPORT");
   const [loading, setLoading] = useState(false);
@@ -128,8 +129,8 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
       )}
 
       {/* Mode */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-ink-muted">Type de demande</label>
+      <fieldset className="space-y-2 min-w-0">
+        <legend className="block text-sm font-medium text-ink-muted">Type de demande</legend>
         <div className="flex flex-wrap gap-2">
           {[
             { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
@@ -156,15 +157,16 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
             );
           })}
         </div>
-      </div>
+      </fieldset>
 
       {/* Département */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-ink-muted">
+        <label htmlFor={`${id}-department`} className="block text-sm font-medium text-ink-muted">
           Département
           {!isRecurringMode && <span className="text-ink-subtle font-normal ml-1">(facultatif pour les notes de frais personnelles)</span>}
         </label>
         <select
+          id={`${id}-department`}
           value={form.departmentId}
           onChange={(e) => set("departmentId", e.target.value)}
           required={isRecurringMode}
@@ -181,8 +183,9 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Intitulé */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-ink-muted">Intitulé</label>
+        <label htmlFor={`${id}-label`} className="block text-sm font-medium text-ink-muted">Intitulé</label>
         <input
+          id={`${id}-label`}
           type="text"
           value={form.label}
           onChange={(e) => set("label", e.target.value)}
@@ -195,8 +198,9 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Montant */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-ink-muted">Montant TTC (€)</label>
+        <label htmlFor={`${id}-amount`} className="block text-sm font-medium text-ink-muted">Montant TTC (€)</label>
         <input
+          id={`${id}-amount`}
           type="number"
           value={form.amount}
           onChange={(e) => set("amount", e.target.value)}
@@ -231,8 +235,9 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
             </select>
           </div>
           <div className="space-y-1">
-            <label className="block text-xs font-medium text-ink-muted">Date de la première occurrence</label>
+            <label htmlFor={`${id}-first-date`} className="block text-xs font-medium text-ink-muted">Date de la première occurrence</label>
             <input
+              id={`${id}-first-date`}
               type="date"
               value={recurrence.firstDate}
               onChange={(e) => setRecurrence((r) => ({ ...r, firstDate: e.target.value }))}
@@ -245,10 +250,11 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
 
       {/* Description */}
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-ink-muted">
+        <label htmlFor={`${id}-description`} className="block text-sm font-medium text-ink-muted">
           Description <span className="text-ink-subtle font-normal">(facultatif)</span>
         </label>
         <textarea
+          id={`${id}-description`}
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={3}
@@ -258,17 +264,17 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
       </div>
 
       {/* Pièces jointes */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-ink-muted">
+      <fieldset className="space-y-2 min-w-0">
+        <legend className="block text-sm font-medium text-ink-muted">
           Pièces jointes <span className="text-ink-subtle font-normal">(reçu, facture, devis…)</span>
-        </label>
+        </legend>
         <AttachmentManager
           attachments={attachments}
           canUpload
           canDelete
           onChange={setAttachments}
         />
-      </div>
+      </fieldset>
 
       {error && <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{error}</p>}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import AssigneeSelect, { type AssigneeValue } from "../../AssigneeSelect";
@@ -32,6 +32,7 @@ export default function FollowupActions({
   notes: initialNotes,
 }: Props) {
   const router = useRouter();
+  const uid = useId();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState(initialNotes);
@@ -109,10 +110,11 @@ export default function FollowupActions({
       )}
       {mode === "handback" && (
         <div className="bg-surface rounded-xl border border-line p-5 space-y-3">
-          <label className="block text-xs font-medium text-ink-muted mb-1">
+          <label htmlFor={`${uid}-handback`} className="block text-xs font-medium text-ink-muted mb-1">
             Motif du retour au référent <span className="text-danger">*</span>
           </label>
           <textarea
+            id={`${uid}-handback`}
             value={handbackReason}
             onChange={(e) => setHandbackReason(e.target.value)}
             rows={2}
@@ -140,8 +142,9 @@ export default function FollowupActions({
 
       {canNote && (
         <div className="bg-surface rounded-xl border border-line p-5">
-          <label className="block text-xs font-medium text-ink-muted mb-1">Notes</label>
+          <label htmlFor={`${uid}-notes`} className="block text-xs font-medium text-ink-muted mb-1">Notes</label>
           <textarea
+            id={`${uid}-notes`}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}

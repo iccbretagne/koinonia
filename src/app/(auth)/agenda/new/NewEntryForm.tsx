@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
@@ -15,6 +15,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function NewEntryForm({ churchId, profiles }: Props) {
   const router = useRouter();
+  const id = useId();
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     type: "ACTIVITY" as "ACTIVITY" | "APPOINTMENT",
@@ -61,8 +62,8 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-5 bg-surface rounded-lg shadow border border-line p-6">
-      <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">Type</label>
+      <fieldset className="min-w-0">
+        <legend className="block text-sm font-medium text-ink-muted mb-1">Type</legend>
         <div className="flex gap-4">
           {(["ACTIVITY", "APPOINTMENT"] as const).map((t) => (
             <label key={t} className="flex items-center gap-2 cursor-pointer">
@@ -77,13 +78,13 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">
           Profil pastoral <span className="text-danger">*</span>
         </label>
-        <select
+        <select id={`${id}-f1`}
           value={form.recipientId}
           onChange={(e) => set("recipientId", e.target.value)}
           required
@@ -96,10 +97,10 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">
           Titre <span className="text-danger">*</span>
         </label>
-        <input
+        <input id={`${id}-f2`}
           type="text"
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
@@ -111,10 +112,10 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">
             Début <span className="text-danger">*</span>
           </label>
-          <input
+          <input id={`${id}-f3`}
             type="datetime-local"
             value={form.startsAt}
             onChange={(e) => set("startsAt", e.target.value)}
@@ -123,8 +124,8 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Fin</label>
-          <input
+          <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">Fin</label>
+          <input id={`${id}-f4`}
             type="datetime-local"
             value={form.endsAt}
             onChange={(e) => set("endsAt", e.target.value)}
@@ -134,8 +135,8 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">Lieu</label>
-        <input
+        <label htmlFor={`${id}-f5`} className="block text-sm font-medium text-ink-muted mb-1">Lieu</label>
+        <input id={`${id}-f5`}
           type="text"
           value={form.location}
           onChange={(e) => set("location", e.target.value)}
@@ -145,8 +146,8 @@ export default function NewEntryForm({ churchId, profiles }: Props) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">Description</label>
-        <textarea
+        <label htmlFor={`${id}-f6`} className="block text-sm font-medium text-ink-muted mb-1">Description</label>
+        <textarea id={`${id}-f6`}
           value={form.description}
           onChange={(e) => set("description", e.target.value)}
           rows={3}

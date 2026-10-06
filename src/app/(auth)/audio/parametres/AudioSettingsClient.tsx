@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Button from "@/components/ui/Button";
 
 const ALLOWED_COVER_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -19,6 +19,7 @@ export default function AudioSettingsClient({
   readonly settings: Settings;
   readonly coverPreviewUrl: string | null;
 }) {
+  const id = useId();
   const [defaultCoverKey, setDefaultCoverKey] = useState(settings.defaultCoverKey ?? "");
   const [coverPreview, setCoverPreview] = useState(coverPreviewUrl);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -114,7 +115,7 @@ export default function AudioSettingsClient({
   return (
     <div className="max-w-xl space-y-4">
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-ink-muted">Couverture par défaut</label>
+        <label htmlFor={`${id}-cover`} className="block text-sm font-medium text-ink-muted">Couverture par défaut</label>
         {coverPreview && (
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,6 +130,7 @@ export default function AudioSettingsClient({
           </div>
         )}
         <input
+          id={`${id}-cover`}
           type="file"
           accept={ALLOWED_COVER_MIME_TYPES.join(",")}
           onChange={(e) => handleCoverSelected(e.target.files)}
@@ -143,10 +145,11 @@ export default function AudioSettingsClient({
       </div>
 
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-ink-muted">
+        <label htmlFor={`${id}-template`} className="block text-sm font-medium text-ink-muted">
           Template de noms de séquences (un par ligne)
         </label>
         <textarea
+          id={`${id}-template`}
           value={templateText}
           onChange={(e) => setTemplateText(e.target.value)}
           rows={5}

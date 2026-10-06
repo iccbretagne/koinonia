@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Image from "next/image";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 
@@ -66,6 +66,7 @@ function Avatar({ user, size = 32 }: { readonly user: { name: string; image: str
 }
 
 export default function RequestsPanel({ pendingRequests, rejectedRequests, ministries }: Props) {
+  const uid = useId();
   const [localRequests, setLocalRequests] = useState<PendingRequest[]>(pendingRequests);
   const [rejected, setRejected] = useState<RejectedRequest[]>(rejectedRequests);
   const [showRejected, setShowRejected] = useState(false);
@@ -352,8 +353,9 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
 
               {needsDept && allDepts.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-ink-muted mb-1">Département</label>
+                  <label htmlFor={`${uid}-approve-dept`} className="block text-sm font-medium text-ink-muted mb-1">Département</label>
                   <select
+                    id={`${uid}-approve-dept`}
                     value={approveModalDeptId}
                     onChange={(e) => setApproveModalDeptId(e.target.value)}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import AssigneeSelect, { type AssigneeValue } from "../../AssigneeSelect";
@@ -56,6 +56,7 @@ export default function RequestActions({
   canActAsAssigneeProxy,
 }: Props) {
   const router = useRouter();
+  const id = useId();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<
@@ -143,16 +144,16 @@ export default function RequestActions({
       {mode === "validate" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">
               Référent <span className="text-danger">*</span>
             </label>
-            <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
+            <AssigneeSelect id={`${id}-f1`} churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">
               Note transmise au référent (optionnel)
             </label>
-            <textarea
+            <textarea id={`${id}-f2`}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
@@ -169,10 +170,10 @@ export default function RequestActions({
       {mode === "reject" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">
               Motif de refus <span className="text-danger">*</span>
             </label>
-            <select
+            <select id={`${id}-f3`}
               value={reasonCode}
               onChange={(e) => setReasonCode(e.target.value)}
               className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
@@ -184,8 +185,8 @@ export default function RequestActions({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
-            <textarea
+            <label htmlFor={`${id}-f4`} className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
+            <textarea id={`${id}-f4`}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={2}
@@ -202,10 +203,10 @@ export default function RequestActions({
       {mode === "reassign" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f5`} className="block text-xs font-medium text-ink-muted mb-1">
               Nouveau référent <span className="text-danger">*</span>
             </label>
-            <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
+            <AssigneeSelect id={`${id}-f5`} churchId={churchId} value={assignee} onChange={setAssignee} />
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={reassign} disabled={processing}>Confirmer</Button>
@@ -217,10 +218,10 @@ export default function RequestActions({
       {mode === "set_date" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f6`} className="block text-xs font-medium text-ink-muted mb-1">
               Date et heure du rendez-vous <span className="text-danger">*</span>
             </label>
-            <input
+            <input id={`${id}-f6`}
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
@@ -237,10 +238,10 @@ export default function RequestActions({
       {mode === "outcome" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f7`} className="block text-xs font-medium text-ink-muted mb-1">
               Compte rendu du rendez-vous <span className="text-danger">*</span>
             </label>
-            <select
+            <select id={`${id}-f7`}
               value={outcomeKind}
               onChange={(e) => setOutcomeKind(e.target.value)}
               className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
@@ -261,10 +262,10 @@ export default function RequestActions({
       {mode === "handback" && (
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
+            <label htmlFor={`${id}-f8`} className="block text-xs font-medium text-ink-muted mb-1">
               Motif du retour <span className="text-danger">*</span>
             </label>
-            <textarea
+            <textarea id={`${id}-f8`}
               value={handbackReason}
               onChange={(e) => setHandbackReason(e.target.value)}
               rows={2}

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -46,6 +46,7 @@ const SUPER_ADMIN_ONLY = "Modifiable par un Super Admin uniquement.";
 
 export default function ChurchEditClient({ church, profiles, supervisors, canEditIdentity }: Props) {
   const router = useRouter();
+  const colorId = useId();
   const [name, setName] = useState(church.name);
   const [slug, setSlug] = useState(church.slug);
   const [secretariatEmails, setSecretariatEmails] = useState(church.secretariatEmails.join("\n"));
@@ -134,11 +135,12 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
           placeholder={"comptabilite@eglise.fr\nresponsable@eglise.fr"}
         />
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${colorId}-color`} className="block text-sm font-medium text-ink-muted mb-1">
             Couleur principale (bandeau d&apos;entête)
           </label>
           <div className="flex items-center gap-3">
             <input
+              id={`${colorId}-color`}
               type="color"
               value={primaryColor}
               onChange={(e) => setPrimaryColor(e.target.value)}

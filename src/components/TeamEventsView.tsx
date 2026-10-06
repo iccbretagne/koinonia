@@ -234,7 +234,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
         )}
       </div>
 
-      <div role="group" aria-label="Période" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+      <fieldset aria-label="Période" className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
         {periodOptions.map((option) => (
           <button
             key={option.value}
@@ -249,7 +249,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             {option.label}
           </button>
         ))}
-      </div>
+      </fieldset>
 
       {truncatedMessage && <Alert tone="warning">{truncatedMessage}</Alert>}
 

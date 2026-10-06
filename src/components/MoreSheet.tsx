@@ -135,7 +135,7 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
       headerStart={opened ? backButton : undefined}
       aria-label="Menu"
     >
-      <div onKeyDown={onKeyDown}>
+      <div role="none" onKeyDown={onKeyDown}>
         {opened ? (
           <div
             key={opened.key}

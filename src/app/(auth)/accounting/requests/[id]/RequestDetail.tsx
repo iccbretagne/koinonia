@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
@@ -114,6 +114,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
 
 export default function RequestDetail({ request: initial, canManage, isOwn }: Props) {
   const router = useRouter();
+  const uid = useId();
   const [req, setReq] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -400,8 +401,8 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
       {/* Prendre en charge */}
       <Modal open={processOpen} onClose={() => setProcessOpen(false)} title="Prendre en charge la demande">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-ink-muted">Priorité</label>
+          <fieldset className="space-y-2 min-w-0">
+            <legend className="block text-sm font-medium text-ink-muted">Priorité</legend>
             <div className="flex gap-2">
               {(["NORMAL", "URGENT"] as const).map((p) => (
                 <button key={p} type="button" onClick={() => setPriority(p)}
@@ -415,7 +416,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                 placeholder="Délai engagé (ex : sous 48h)…"
                 className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-danger" />
             )}
-          </div>
+          </fieldset>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setProcessOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={async () => {
@@ -437,15 +438,15 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
             {paymentLines.map((line, i) => (
               <div key={i} className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs text-ink-muted mb-1">Montant (€)</label>
-                  <input type="number" min={0.01} step={0.01} value={line.amount}
+                  <label htmlFor={`${uid}-amount-${i}`} className="block text-xs text-ink-muted mb-1">Montant (€)</label>
+                  <input id={`${uid}-amount-${i}`} type="number" min={0.01} step={0.01} value={line.amount}
                     onChange={(e) => setPaymentLines((ls) => ls.map((l, j) => j === i ? { ...l, amount: e.target.value } : l))}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
                 </div>
                 <div>
-                  <label className="block text-xs text-ink-muted mb-1">Date prévue</label>
+                  <label htmlFor={`${uid}-date-${i}`} className="block text-xs text-ink-muted mb-1">Date prévue</label>
                   <div className="flex gap-1">
-                    <input type="date" value={line.scheduledDate}
+                    <input id={`${uid}-date-${i}`} type="date" value={line.scheduledDate}
                       onChange={(e) => setPaymentLines((ls) => ls.map((l, j) => j === i ? { ...l, scheduledDate: e.target.value } : l))}
                       className="flex-1 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
                     {paymentLines.length > 1 && (
@@ -482,8 +483,8 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
       <Modal open={rejectOpen} onClose={() => setRejectOpen(false)} title="Rejeter la demande">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Motif de rejet</label>
-            <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)}
+            <label htmlFor={`${uid}-reject`} className="block text-sm font-medium text-ink-muted mb-1">Motif de rejet</label>
+            <textarea id={`${uid}-reject`} value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)}
               rows={3} placeholder="Précisez la raison du rejet pour le demandeur…"
               className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-danger resize-none" />
           </div>
@@ -530,15 +531,15 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-ink-muted mb-1">Montant remis (€)</label>
-                  <input type="number" min={0.01} max={planned} step={0.01} value={releaseAmount}
+                  <label htmlFor={`${uid}-release-amount`} className="block text-sm font-medium text-ink-muted mb-1">Montant remis (€)</label>
+                  <input id={`${uid}-release-amount`} type="number" min={0.01} max={planned} step={0.01} value={releaseAmount}
                     onChange={(e) => setReleaseAmount(e.target.value)}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
                   <p className="text-xs text-ink-subtle mt-1">Prévu : {fmtAmount(planned)}</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink-muted mb-1">Date de remise</label>
-                  <input type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)}
+                  <label htmlFor={`${uid}-release-date`} className="block text-sm font-medium text-ink-muted mb-1">Date de remise</label>
+                  <input id={`${uid}-release-date`} type="date" value={releaseDate} onChange={(e) => setReleaseDate(e.target.value)}
                     className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-success" />
                 </div>
               </div>

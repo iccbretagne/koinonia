@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useId, useState, useMemo } from "react";
 
 type EventItem = {
   id: string;
@@ -42,6 +42,7 @@ export default function CollectionBuilder({
   readonly lockedScope?: Scope;
   readonly onCreated?: (result: { url: string; label: string | null }) => void;
 }) {
+  const uid = useId();
   const [scope, setScope]           = useState<Scope>(lockedScope ?? "both");
   const [includeAllPhotos, setIncludeAllPhotos] = useState(false);
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set(initialEventIds));
@@ -336,8 +337,9 @@ export default function CollectionBuilder({
         <h2 className="text-sm font-semibold text-ink">Options du lien</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Nom du lien</label>
+            <label htmlFor={`${uid}-f1`} className="block text-xs font-medium text-ink-muted mb-1">Nom du lien</label>
             <input
+              id={`${uid}-f1`}
               type="text"
               required
               value={label}
@@ -347,8 +349,9 @@ export default function CollectionBuilder({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Expiration</label>
+            <label htmlFor={`${uid}-f2`} className="block text-xs font-medium text-ink-muted mb-1">Expiration</label>
             <select
+              id={`${uid}-f2`}
               value={expiresInDays}
               onChange={(e) => setExpiresInDays(e.target.value === "" ? "" : Number(e.target.value))}
               className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/30 focus:border-brand"

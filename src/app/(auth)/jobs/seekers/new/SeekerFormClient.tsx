@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface SeekerInitial {
@@ -26,6 +26,7 @@ export default function SeekerFormClient({
   readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
+  const uid = useId();
   const isEdit = !!initial;
 
   const [title,          setTitle]          = useState(initial?.title          ?? "");
@@ -93,10 +94,11 @@ export default function SeekerFormClient({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">
+          <label htmlFor={`${uid}-title`} className="block text-sm font-semibold text-ink-muted mb-1.5">
             Titre de la recherche *
           </label>
           <input
+            id={`${uid}-title`}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -107,10 +109,10 @@ export default function SeekerFormClient({
           />
         </div>
 
-        <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-2">
+        <fieldset className="col-span-2 min-w-0">
+          <legend className="block text-sm font-semibold text-ink-muted mb-2">
             Type(s) de contrat recherché(s) *
-          </label>
+          </legend>
           <div className="flex gap-4 flex-wrap">
             {[
               { label: "Emploi (CDI/CDD)", key: "wantEmploi",     value: wantEmploi,     set: setWantEmploi },
@@ -131,11 +133,12 @@ export default function SeekerFormClient({
           {noContractSelected && (
             <p className="text-xs text-danger mt-1">Sélectionnez au moins un type de contrat.</p>
           )}
-        </div>
+        </fieldset>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Secteur / Domaine</label>
+          <label htmlFor={`${uid}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Secteur / Domaine</label>
           <input
+            id={`${uid}-f1`}
             type="text"
             value={sector}
             onChange={(e) => setSector(e.target.value)}
@@ -146,8 +149,9 @@ export default function SeekerFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation souhaitée</label>
+          <label htmlFor={`${uid}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation souhaitée</label>
           <input
+            id={`${uid}-f2`}
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -171,8 +175,9 @@ export default function SeekerFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
+          <label htmlFor={`${uid}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
           <input
+            id={`${uid}-f3`}
             type="date"
             value={availableFrom}
             onChange={(e) => setAvailableFrom(e.target.value)}
@@ -181,8 +186,9 @@ export default function SeekerFormClient({
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
+          <label htmlFor={`${uid}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
           <textarea
+            id={`${uid}-f4`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -193,8 +199,9 @@ export default function SeekerFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
+          <label htmlFor={`${uid}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
           <input
+            id={`${uid}-f5`}
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
@@ -204,8 +211,9 @@ export default function SeekerFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
+          <label htmlFor={`${uid}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
           <input
+            id={`${uid}-f6`}
             type="url"
             value={contactUrl}
             onChange={(e) => setContactUrl(e.target.value)}

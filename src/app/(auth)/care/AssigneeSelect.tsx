@@ -21,7 +21,8 @@ const ROLE_LABELS: Record<string, string> = {
  * T50 ; spec 056, vivier MSDP + exceptions déclarées). Un profil sans compte porte la mention
  * « pas de compte : prévenu par email seulement ».
  */
-export default function AssigneeSelect({ churchId, value, onChange }: {
+export default function AssigneeSelect({ id, churchId, value, onChange }: {
+  readonly id?: string;
   readonly churchId: string;
   readonly value: AssigneeValue | null;
   readonly onChange: (value: AssigneeValue | null) => void;
@@ -48,6 +49,7 @@ export default function AssigneeSelect({ churchId, value, onChange }: {
 
   return (
     <select
+      id={id}
       value={selectValue}
       disabled={loading}
       onChange={(e) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -254,6 +254,7 @@ export default function RequestForm({
   editData,
 }: Props) {
   const router = useRouter();
+  const formId = useId();
   const toast = useToast();
   const isEditMode = !!editData;
 
@@ -586,8 +587,8 @@ export default function RequestForm({
             placeholder="Ex : Concert de louange"
           />
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Contenu</label>
-            <textarea
+            <label htmlFor={`${formId}-f1`} className={fieldLabelClasses}>Contenu</label>
+            <textarea id={`${formId}-f1`}
               value={annContent}
               onChange={(e) => setAnnContent(e.target.value)}
               required
@@ -629,15 +630,15 @@ export default function RequestForm({
             </label>
           </div>
           {annChannelInterne && (
-            <div className="flex flex-col gap-2">
-              <label className={fieldLabelClasses}>
+            <fieldset className="min-w-0 flex flex-col gap-2">
+              <legend className={`${fieldLabelClasses} mb-2`}>
                 Dimanches de diffusion
                 {annTargetEventIds.length > 0 && (
                   <span className="ml-2 text-xs font-normal text-brand-text">
                     {annTargetEventIds.length} sélectionné{annTargetEventIds.length > 1 ? "s" : ""}
                   </span>
                 )}
-              </label>
+              </legend>
               {announcementEvents.length === 0 ? (
                 <Alert tone="warning">
                   Aucun événement ouvert à la diffusion dans les 90 prochains jours.{" "}
@@ -671,12 +672,12 @@ export default function RequestForm({
                   <p className="text-[13px] leading-[18px] text-ink-muted">Idéal : 2 à 3 dimanches.</p>
                 </>
               )}
-            </div>
+            </fieldset>
           )}
           {!isEditMode && sourceOptions.length > 1 && (
             <div className="flex flex-col gap-1.5">
-              <label className={fieldLabelClasses}>Département</label>
-              <select
+              <label htmlFor={`${formId}-f5`} className={fieldLabelClasses}>Département</label>
+              <select id={`${formId}-f5`}
                 value={annSourceId}
                 onChange={(e) => setAnnSourceId(e.target.value)}
                 className={selectControl}
@@ -700,8 +701,8 @@ export default function RequestForm({
             placeholder="Ex : Bannière formation leaders"
           />
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Brief</label>
-            <textarea
+            <label htmlFor={`${formId}-f6`} className={fieldLabelClasses}>Brief</label>
+            <textarea id={`${formId}-f6`}
               value={visualBrief}
               onChange={(e) => setVisualBrief(e.target.value)}
               rows={4}
@@ -710,8 +711,8 @@ export default function RequestForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Format</label>
-            <select
+            <label htmlFor={`${formId}-f7`} className={fieldLabelClasses}>Format</label>
+            <select id={`${formId}-f7`}
               value={visualFormat}
               onChange={(e) => setVisualFormat(e.target.value)}
               className={selectControl}
@@ -735,8 +736,8 @@ export default function RequestForm({
           )}
           {sourceOptions.length > 1 && (
             <div className="flex flex-col gap-1.5">
-              <label className={fieldLabelClasses}>Département</label>
-              <select
+              <label htmlFor={`${formId}-f8`} className={fieldLabelClasses}>Département</label>
+              <select id={`${formId}-f8`}
                 value={visualSourceId}
                 onChange={(e) => setVisualSourceId(e.target.value)}
                 className={selectControl}
@@ -760,8 +761,8 @@ export default function RequestForm({
             placeholder="Ex : Culte de louange"
           />
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Type</label>
-            <select
+            <label htmlFor={`${formId}-f9`} className={fieldLabelClasses}>Type</label>
+            <select id={`${formId}-f9`}
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
               className={selectControl}
@@ -785,8 +786,8 @@ export default function RequestForm({
             required
           />
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Délai avant l&apos;événement</label>
-            <select
+            <label htmlFor={`${formId}-f10`} className={fieldLabelClasses}>Délai avant l&apos;événement</label>
+            <select id={`${formId}-f10`}
               value={deadlineOffset}
               onChange={(e) => {
                 const offset = e.target.value;
@@ -817,8 +818,8 @@ export default function RequestForm({
               Échéance calculée : {new Date(planningDeadline).toLocaleString("fr-FR")}
             </p>
           )}
-          <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Départements en service</label>
+          <fieldset className="min-w-0 flex flex-col gap-1.5">
+            <legend className={`${fieldLabelClasses} mb-1.5`}>Départements en service</legend>
             <p className="text-[13px] leading-[18px] text-ink-muted">
               Cochez les départements qui doivent participer à cet événement.
             </p>
@@ -845,10 +846,10 @@ export default function RequestForm({
             <p className="text-[13px] leading-[18px] text-ink-muted">
               {eventDeptIds.length} département{eventDeptIds.length !== 1 ? "s" : ""} sélectionné{eventDeptIds.length !== 1 ? "s" : ""}
             </p>
-          </div>
+          </fieldset>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Récurrence</label>
-            <select
+            <label htmlFor={`${formId}-f12`} className={fieldLabelClasses}>Récurrence</label>
+            <select id={`${formId}-f12`}
               value={recurrenceRule}
               onChange={(e) => {
                 setRecurrenceRule(e.target.value);
@@ -876,8 +877,8 @@ export default function RequestForm({
       {demandType === "MODIFICATION_EVENEMENT" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Événement à modifier</label>
-            <select
+            <label htmlFor={`${formId}-f13`} className={fieldLabelClasses}>Événement à modifier</label>
+            <select id={`${formId}-f13`}
               value={selectedEventId}
               onChange={(e) => {
                 const id = e.target.value;
@@ -913,8 +914,8 @@ export default function RequestForm({
             placeholder="Nouveau titre…"
           />
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Nouveau type</label>
-            <select
+            <label htmlFor={`${formId}-f14`} className={fieldLabelClasses}>Nouveau type</label>
+            <select id={`${formId}-f14`}
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
               className={selectControl}
@@ -926,8 +927,8 @@ export default function RequestForm({
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Nouvelle date</label>
-            <input
+            <label htmlFor={`${formId}-f15`} className={fieldLabelClasses}>Nouvelle date</label>
+            <input id={`${formId}-f15`}
               type="datetime-local"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
@@ -935,8 +936,8 @@ export default function RequestForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Échéance du planning</label>
-            <input
+            <label htmlFor={`${formId}-f16`} className={fieldLabelClasses}>Échéance du planning</label>
+            <input id={`${formId}-f16`}
               type="datetime-local"
               value={planningDeadline}
               onChange={(e) => setPlanningDeadline(e.target.value)}
@@ -949,8 +950,8 @@ export default function RequestForm({
       {demandType === "ANNULATION_EVENEMENT" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Événement à annuler</label>
-            <select
+            <label htmlFor={`${formId}-f17`} className={fieldLabelClasses}>Événement à annuler</label>
+            <select id={`${formId}-f17`}
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
               required
@@ -965,8 +966,8 @@ export default function RequestForm({
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Raison</label>
-            <textarea
+            <label htmlFor={`${formId}-f18`} className={fieldLabelClasses}>Raison</label>
+            <textarea id={`${formId}-f18`}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
@@ -980,8 +981,8 @@ export default function RequestForm({
       {demandType === "MODIFICATION_PLANNING" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Événement</label>
-            <select
+            <label htmlFor={`${formId}-f19`} className={fieldLabelClasses}>Événement</label>
+            <select id={`${formId}-f19`}
               value={selectedEventId}
               onChange={(e) => {
                 const id = e.target.value;
@@ -1001,13 +1002,13 @@ export default function RequestForm({
             </select>
           </div>
           {selectedEventId && (
-            <div className="flex flex-col gap-1.5">
-              <label className={fieldLabelClasses}>
+            <fieldset className="min-w-0 flex flex-col gap-1.5">
+              <legend className={`${fieldLabelClasses} mb-1.5`}>
                 Départements assignés
                 {loadingEventDepts && (
                   <span className="ml-2 text-xs font-normal text-ink-muted">Chargement…</span>
                 )}
-              </label>
+              </legend>
               <p className="text-[13px] leading-[18px] text-ink-muted">
                 Cochez les départements qui doivent participer à cet événement.
               </p>
@@ -1034,7 +1035,7 @@ export default function RequestForm({
               <p className="text-[13px] leading-[18px] text-ink-muted">
                 {planningDeptIds.length} département{planningDeptIds.length !== 1 ? "s" : ""} sélectionné{planningDeptIds.length !== 1 ? "s" : ""}
               </p>
-            </div>
+            </fieldset>
           )}
         </>
       )}
@@ -1042,8 +1043,8 @@ export default function RequestForm({
       {demandType === "DEMANDE_ACCES" && (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Utilisateur</label>
-            <select
+            <label htmlFor={`${formId}-f21`} className={fieldLabelClasses}>Utilisateur</label>
+            <select id={`${formId}-f21`}
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               required
@@ -1056,8 +1057,8 @@ export default function RequestForm({
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={fieldLabelClasses}>Rôle</label>
-            <select
+            <label htmlFor={`${formId}-f22`} className={fieldLabelClasses}>Rôle</label>
+            <select id={`${formId}-f22`}
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
               required
@@ -1070,8 +1071,8 @@ export default function RequestForm({
           </div>
           {targetRole === "MINISTER" && (
             <div className="flex flex-col gap-1.5">
-              <label className={fieldLabelClasses}>Ministère</label>
-              <select
+              <label htmlFor={`${formId}-f23`} className={fieldLabelClasses}>Ministère</label>
+              <select id={`${formId}-f23`}
                 value={targetMinistryId}
                 onChange={(e) => setTargetMinistryId(e.target.value)}
                 required
@@ -1085,8 +1086,8 @@ export default function RequestForm({
             </div>
           )}
           {targetRole === "DEPARTMENT_HEAD" && (
-            <div className="flex flex-col gap-1.5">
-              <label className={fieldLabelClasses}>Départements</label>
+            <fieldset className="min-w-0 flex flex-col gap-1.5">
+              <legend className={`${fieldLabelClasses} mb-1.5`}>Départements</legend>
               <div className={`${listBox} max-h-48`}>
                 {departments.map((d) => (
                   <label key={d.id} className={checkRow}>
@@ -1104,7 +1105,7 @@ export default function RequestForm({
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
           )}
         </>
       )}

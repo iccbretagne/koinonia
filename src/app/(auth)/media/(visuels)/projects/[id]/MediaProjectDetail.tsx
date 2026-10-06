@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -236,6 +236,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
   readonly tokens: ShareToken[];
   readonly onRefresh: () => void;
 }) {
+  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newType, setNewType] = useState<MediaTokenType>("GALLERY");
@@ -338,8 +339,9 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
             <p className="text-sm font-medium text-ink-muted">Nouveau lien de partage</p>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-ink-muted mb-1 block">Type</label>
+                <label htmlFor={`${fieldId}-type`} className="text-xs text-ink-muted mb-1 block">Type</label>
                 <select
+                  id={`${fieldId}-type`}
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as MediaTokenType)}
                   className="w-full border border-control-line rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus bg-surface"
@@ -350,9 +352,10 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
+                <label htmlFor={`${fieldId}-expiry`} className="text-xs text-ink-muted mb-1 block">Durée (0 = illimité)</label>
                 <div className="relative">
                   <input
+                    id={`${fieldId}-expiry`}
                     type="number"
                     min="0"
                     value={newExpiry}
@@ -364,8 +367,9 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
               </div>
             </div>
             <div>
-              <label className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
+              <label htmlFor={`${fieldId}-label`} className="text-xs text-ink-muted mb-1 block">Étiquette (optionnel)</label>
               <input
+                id={`${fieldId}-label`}
                 type="text"
                 placeholder="Ex : Révision client"
                 value={newLabel}
@@ -540,28 +544,14 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
   }
 
   return (
-    <div
-      className="border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          inputRef.current?.click();
-        }
-      }}
+    <>
+    <button
+      type="button"
+      className="block w-full border-2 border-dashed border-control-line rounded-xl p-6 text-center cursor-pointer hover:border-brand hover:bg-brand-soft focus-visible:ring-2 focus-visible:ring-focus outline-none transition-all"
       onClick={() => inputRef.current?.click()}
       onDrop={(e) => { e.preventDefault(); void handleFiles(Array.from(e.dataTransfer.files)); }}
       onDragOver={(e) => e.preventDefault()}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp,image/svg+xml,application/pdf"
-        multiple
-        className="hidden"
-        onChange={(e) => { void handleFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
-      />
       {uploading && progress ? (
         <div className="space-y-2">
           <p className="text-sm font-medium text-ink-muted truncate">{progress.file}</p>
@@ -582,7 +572,16 @@ function FileUploadZone({ projectId, onUploaded, onActivityChange }: {
         </>
       )}
       {error && <p className="mt-2 text-xs text-danger whitespace-pre-line">{error}</p>}
-    </div>
+    </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp,image/svg+xml,application/pdf"
+        multiple
+        className="hidden"
+        onChange={(e) => { void handleFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
+      />
+    </>
   );
 }
 
@@ -1347,17 +1346,10 @@ export default function MediaProjectDetail({
                   const isImage = file.mimeType.startsWith("image/");
                   const latestV = file.versions[0];
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={file.id}
-                      className="bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group focus-visible:ring-2 focus-visible:ring-focus outline-none"
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-                          e.preventDefault();
-                          setSelectedFile(file);
-                        }
-                      }}
+                      className="block w-full text-left bg-surface border border-line rounded-xl overflow-hidden hover:border-brand transition-all shadow-card hover:shadow-float cursor-pointer group focus-visible:ring-2 focus-visible:ring-focus outline-none"
                       onClick={() => setSelectedFile(file)}
                     >
                       {/* Preview */}
@@ -1414,7 +1406,7 @@ export default function MediaProjectDetail({
                           {file.duration ? ` · ${formatDuration(file.duration)}` : ""}
                         </p>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

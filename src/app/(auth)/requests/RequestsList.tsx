@@ -259,7 +259,7 @@ export default function RequestsList({ requests }: Props) {
   return (
     <section aria-label="Demandes envoyées" className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        <div role="group" aria-label="Catégorie" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+        <fieldset aria-label="Catégorie" className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
           {categories.map((cat) => (
             <button
               key={cat.value}
@@ -274,7 +274,7 @@ export default function RequestsList({ requests }: Props) {
               {cat.label}
             </button>
           ))}
-        </div>
+        </fieldset>
         <div className="grid grid-cols-2 gap-3 md:contents">
           <div className="md:w-48">
             <Select

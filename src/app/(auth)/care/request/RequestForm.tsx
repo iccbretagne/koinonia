@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -44,6 +44,7 @@ function RadioGroup({ name, options, value, onChange }: {
 }
 
 export default function RequestForm({ churchId, churchName, defaultFirstName, defaultLastName, defaultEmail, defaultIsStar = "", defaultDepartment = "", redirectTo, redirectLabel = "mes demandes" }: Props) {
+  const id = useId();
   // Statut STAR déjà connu du compte (lien membre validé) : pas besoin de le redemander.
   const isStarKnown = defaultIsStar === "Oui";
   const [form, setForm] = useState({
@@ -160,29 +161,29 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Nom *</label>
-            <input type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className={inputCls} />
+            <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">Nom *</label>
+            <input id={`${id}-f1`} type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Prénom *</label>
-            <input type="text" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className={inputCls} />
+            <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">Prénom *</label>
+            <input id={`${id}-f2`} type="text" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className={inputCls} />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Sexe *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Sexe *</legend>
           <RadioGroup name="gender" options={["Homme", "Femme"]} value={form.gender} onChange={(v) => set("gender", v)} />
           {fieldErrors.gender && <p className="text-xs text-danger mt-1">{fieldErrors.gender}</p>}
+        </fieldset>
+
+        <div>
+          <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">Téléphone *</label>
+          <input id={`${id}-f3`} type="tel" required value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Téléphone *</label>
-          <input type="tel" required value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Adresse mail</label>
-          <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
+          <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">Adresse mail</label>
+          <input id={`${id}-f4`} type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} />
         </div>
       </div>
 
@@ -190,19 +191,19 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
       <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-ink">Votre profil</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Tranche d&apos;âge *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Tranche d&apos;âge *</legend>
           <RadioGroup name="ageRange" options={AGE_RANGES} value={form.ageRange} onChange={(v) => set("ageRange", v)} />
           {fieldErrors.ageRange && <p className="text-xs text-danger mt-1">{fieldErrors.ageRange}</p>}
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Depuis quand êtes-vous à {churchName} ? *
-          </label>
+          </legend>
           <RadioGroup name="membershipDuration" options={DURATIONS} value={form.membershipDuration} onChange={(v) => set("membershipDuration", v)} />
           {fieldErrors.membershipDuration && <p className="text-xs text-danger mt-1">{fieldErrors.membershipDuration}</p>}
-        </div>
+        </fieldset>
 
         {isStarKnown ? (
           <div className="bg-surface-sunken rounded-lg px-3 py-2.5 text-sm text-ink-muted">
@@ -210,16 +211,16 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
           </div>
         ) : (
           <>
-            <div>
-              <label className="block text-sm font-medium text-ink-muted mb-2">Êtes-vous STAR ? *</label>
+            <fieldset className="min-w-0">
+              <legend className="block text-sm font-medium text-ink-muted mb-2">Êtes-vous STAR ? *</legend>
               <RadioGroup name="isStar" options={["Oui", "Non"]} value={form.isStar} onChange={(v) => set("isStar", v)} />
               {fieldErrors.isStar && <p className="text-xs text-danger mt-1">{fieldErrors.isStar}</p>}
-            </div>
+            </fieldset>
 
             {form.isStar === "Oui" && (
               <div>
-                <label className="block text-sm font-medium text-ink-muted mb-1">Dans quel département servez-vous ?</label>
-                <input type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
+                <label htmlFor={`${id}-f5`} className="block text-sm font-medium text-ink-muted mb-1">Dans quel département servez-vous ?</label>
+                <input id={`${id}-f5`} type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
                   placeholder="Ex : Choristes, Accueil, Son…" className={inputCls} />
               </div>
             )}
@@ -231,11 +232,11 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
       <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-ink">Votre demande</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Pour quel motif sollicitez-vous un entretien ? *{" "}
             <span className="font-normal text-ink-subtle">(plusieurs choix possibles)</span>
-          </label>
+          </legend>
           <div className="flex flex-wrap gap-2">
             {MOTIFS.map((motif) => (
               <label key={motif} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
@@ -248,13 +249,13 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
             ))}
           </div>
           {fieldErrors.motifs && <p className="text-xs text-danger mt-1">{fieldErrors.motifs}</p>}
-        </div>
+        </fieldset>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${id}-f6`} className="block text-sm font-medium text-ink-muted mb-1">
             Votre message <span className="font-normal text-ink-subtle">(facultatif)</span>
           </label>
-          <textarea
+          <textarea id={`${id}-f6`}
             value={form.details}
             onChange={(e) => set("details", e.target.value)}
             rows={4}

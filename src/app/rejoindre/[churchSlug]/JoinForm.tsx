@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface AddressSuggestion {
@@ -164,6 +164,7 @@ const CONTACT_CONSENT_OPTIONS = [
 ];
 
 export default function JoinForm({ churchId, churchName, showPastoralCare, turnstileSiteKey }: Props) {
+  const uid = useId();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -289,10 +290,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">
+            <label htmlFor={`${uid}-firstName`} className="block text-sm font-medium text-ink-muted mb-1">
               Prénom <span className="text-danger">*</span>
             </label>
             <input
+              id={`${uid}-firstName`}
               type="text"
               required
               value={form.firstName}
@@ -302,10 +304,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             <FieldError errors={fieldErrors} field="firstName" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">
+            <label htmlFor={`${uid}-lastName`} className="block text-sm font-medium text-ink-muted mb-1">
               Nom <span className="text-danger">*</span>
             </label>
             <input
+              id={`${uid}-lastName`}
               type="text"
               required
               value={form.lastName}
@@ -317,10 +320,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${uid}-phone`} className="block text-sm font-medium text-ink-muted mb-1">
             Téléphone <span className="text-danger">*</span>
           </label>
           <input
+            id={`${uid}-phone`}
             type="tel"
             required
             value={form.phone}
@@ -332,10 +336,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${uid}-email`} className="block text-sm font-medium text-ink-muted mb-1">
             Email <span className="text-ink-subtle text-xs">(pour recevoir une confirmation)</span>
           </label>
           <input
+            id={`${uid}-email`}
             type="email"
             value={form.email}
             onChange={(e) => set("email", e.target.value)}
@@ -364,12 +369,13 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
         </div>
 
         <div className="relative">
-          <label className="block text-sm font-medium text-ink-muted mb-1">Ton adresse</label>
+          <label htmlFor={`${uid}-address`} className="block text-sm font-medium text-ink-muted mb-1">Ton adresse</label>
           <div className="relative">
             <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
+              id={`${uid}-address`}
               type="text"
               value={form.address}
               onChange={(e) => { set("address", e.target.value); familySuggestion.clear(); }}
@@ -456,10 +462,10 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
       <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-ink">Ton profil</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Tranche d&apos;âge <span className="text-danger">*</span>
-          </label>
+          </legend>
           <RadioGroup
             name="ageRange"
             options={AGE_RANGE_OPTIONS}
@@ -468,12 +474,12 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             errors={fieldErrors}
           />
           <FieldError errors={fieldErrors} field="ageRange" />
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Quelle est ta situation à l&apos;église ? <span className="text-danger">*</span>
-          </label>
+          </legend>
           <RadioGroup
             name="churchStatus"
             options={CHURCH_STATUS_OPTIONS}
@@ -482,12 +488,12 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             errors={fieldErrors}
           />
           <FieldError errors={fieldErrors} field="churchStatus" />
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Quand souhaites-tu être contacté·e ? <span className="text-danger">*</span>
-          </label>
+          </legend>
           <RadioGroup
             name="contactConsent"
             options={CONTACT_CONSENT_OPTIONS}
@@ -496,7 +502,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
             errors={fieldErrors}
           />
           <FieldError errors={fieldErrors} field="contactConsent" />
-        </div>
+        </fieldset>
       </div>
 
       {/* Appel au salut */}
@@ -570,10 +576,11 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
 
         {form.pastoralCareRequested && (
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">
+            <label htmlFor={`${uid}-pastoral-message`} className="block text-sm font-medium text-ink-muted mb-1">
               Précise ta demande <span className="text-ink-subtle text-xs">(facultatif)</span>
             </label>
             <textarea
+              id={`${uid}-pastoral-message`}
               value={form.pastoralMessage}
               onChange={(e) => set("pastoralMessage", e.target.value)}
               rows={3}

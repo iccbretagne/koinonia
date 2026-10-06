@@ -317,9 +317,9 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
         <ul ref={listRef} id={listId} role="listbox" aria-label="Résultats">
           {groups.map((g) => (
-            <li key={g.key} role="presentation" className="mb-1">
+            <li key={g.key} role="none" className="mb-1">
               <p
-                role="presentation"
+                role="none"
                 className="px-3 pb-1 pt-2 font-display text-[11px] font-bold uppercase leading-4 tracking-[0.08em] text-ink-subtle"
               >
                 {g.title}
@@ -370,14 +370,14 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
           ))}
         </ul>
         {flat.length === 0 && (
-          <p className="px-3 py-8 text-center text-sm text-ink-muted" role="status">
+          <output className="block px-3 py-8 text-center text-sm text-ink-muted">
             {loading ? "Recherche…" : `Aucun résultat pour « ${query.trim()} ». Essayez un autre mot.`}
-          </p>
+          </output>
         )}
         {flat.length > 0 && loading && (
-          <p className="px-3 py-2 text-[13px] text-ink-subtle" role="status">
+          <output className="block px-3 py-2 text-[13px] text-ink-subtle">
             Recherche des STAR et des événements…
-          </p>
+          </output>
         )}
       </div>
     </div>
