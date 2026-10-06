@@ -44,7 +44,7 @@ function ministerSession(departmentIds: string[]) {
 describe("POST /api/admin/members/assign-star-roles", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.userChurchRole.create.mockResolvedValue({} as never);
+    prismaMock.userChurchRole.createMany.mockResolvedValue({ count: 0 } as never);
   });
 
   it("Admin (non restreint) : assigne le rôle à tous les comptes liés sans rôle", async () => {
@@ -53,7 +53,7 @@ describe("POST /api/admin/members/assign-star-roles", () => {
       { userId: "u1", member: { departments: [{ departmentId: "dept-a" }] } },
       { userId: "u2", member: { departments: [{ departmentId: "dept-b" }] } },
     ] as never);
-    prismaMock.userChurchRole.findFirst.mockResolvedValue(null);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
 
     const res = await POST(request());
     const body = await res.json();
@@ -61,7 +61,12 @@ describe("POST /api/admin/members/assign-star-roles", () => {
     expect(res.status).toBe(200);
     expect(body.total).toBe(2);
     expect(body.assigned).toBe(2);
-    expect(prismaMock.userChurchRole.create).toHaveBeenCalledTimes(2);
+    expect(prismaMock.userChurchRole.createMany).toHaveBeenCalledWith({
+      data: [
+        { userId: "u1", churchId: "church-1", role: "STAR" },
+        { userId: "u2", churchId: "church-1", role: "STAR" },
+      ],
+    });
   });
 
   it("Ministre restreint : n'assigne que les liens dont la fiche est dans son périmètre (B2)", async () => {
@@ -71,7 +76,7 @@ describe("POST /api/admin/members/assign-star-roles", () => {
       { userId: "u1", member: { departments: [{ departmentId: "dept-a" }] } }, // dans le périmètre
       { userId: "u2", member: { departments: [{ departmentId: "dept-hors-perimetre" }] } }, // hors périmètre
     ] as never);
-    prismaMock.userChurchRole.findFirst.mockResolvedValue(null);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([]);
 
     const res = await POST(request());
     const body = await res.json();
@@ -79,9 +84,41 @@ describe("POST /api/admin/members/assign-star-roles", () => {
     expect(res.status).toBe(200);
     expect(body.total).toBe(1);
     expect(body.assigned).toBe(1);
-    expect(prismaMock.userChurchRole.create).toHaveBeenCalledTimes(1);
-    expect(prismaMock.userChurchRole.create).toHaveBeenCalledWith({
-      data: { userId: "u1", churchId: "church-1", role: "STAR" },
+    expect(prismaMock.userChurchRole.createMany).toHaveBeenCalledWith({
+      data: [{ userId: "u1", churchId: "church-1", role: "STAR" }],
     });
+  });
+
+  it("n'assigne pas le rôle à un compte qui a déjà un rôle dans l'église", async () => {
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession("church-1"));
+    prismaMock.memberUserLink.findMany.mockResolvedValue([
+      { userId: "u1", member: { departments: [{ departmentId: "dept-a" }] } },
+      { userId: "u2", member: { departments: [{ departmentId: "dept-b" }] } },
+    ] as never);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([{ userId: "u1" }] as never);
+
+    const body = await (await POST(request())).json();
+
+    expect(body).toEqual({ assigned: 1, total: 2 });
+    expect(prismaMock.userChurchRole.findMany).toHaveBeenCalledWith({
+      where: { churchId: "church-1", userId: { in: ["u1", "u2"] } },
+      select: { userId: true },
+    });
+    expect(prismaMock.userChurchRole.createMany).toHaveBeenCalledWith({
+      data: [{ userId: "u2", churchId: "church-1", role: "STAR" }],
+    });
+  });
+
+  it("n'écrit rien quand tous les comptes ont déjà un rôle", async () => {
+    mockRequireChurchPermission.mockResolvedValue(createAdminSession("church-1"));
+    prismaMock.memberUserLink.findMany.mockResolvedValue([
+      { userId: "u1", member: { departments: [{ departmentId: "dept-a" }] } },
+    ] as never);
+    prismaMock.userChurchRole.findMany.mockResolvedValue([{ userId: "u1" }] as never);
+
+    const body = await (await POST(request())).json();
+
+    expect(body).toEqual({ assigned: 0, total: 1 });
+    expect(prismaMock.userChurchRole.createMany).not.toHaveBeenCalled();
   });
 });

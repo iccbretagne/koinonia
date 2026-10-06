@@ -24,18 +24,21 @@ export async function POST(request: Request) {
       isMemberInScope(memberScope, l.member.departments.map((d) => d.departmentId))
     );
 
-    let assigned = 0;
-    for (const { userId } of scopedLinks) {
-      const hasRole = await prisma.userChurchRole.findFirst({
-        where: { userId, churchId },
+    const withRole = new Set(
+      (
+        await prisma.userChurchRole.findMany({
+          where: { churchId, userId: { in: scopedLinks.map((l) => l.userId) } },
+          select: { userId: true },
+        })
+      ).map((r) => r.userId)
+    );
+    const toAssign = [...new Set(scopedLinks.map((l) => l.userId))].filter((userId) => !withRole.has(userId));
+    if (toAssign.length > 0) {
+      await prisma.userChurchRole.createMany({
+        data: toAssign.map((userId) => ({ userId, churchId, role: "STAR" as const })),
       });
-      if (!hasRole) {
-        await prisma.userChurchRole.create({
-          data: { userId, churchId, role: "STAR" },
-        });
-        assigned++;
-      }
     }
+    const assigned = toAssign.length;
 
     return successResponse({ assigned, total: scopedLinks.length });
   } catch (error) {

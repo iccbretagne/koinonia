@@ -80,12 +80,19 @@ export default async function EditRequestPage({ params }: Props) {
   const sourceOptions: { type: "department" | "ministry"; id: string; label: string }[] = [];
   const seenIds = new Set<string>();
 
+  const roleMinistryIds = churchRoles.flatMap((r) => (r.ministryId ? [r.ministryId] : []));
+  const ministriesById = new Map(
+    (
+      await prisma.ministry.findMany({
+        where: { id: { in: roleMinistryIds } },
+        select: { id: true, name: true },
+      })
+    ).map((m) => [m.id, m])
+  );
+
   for (const role of churchRoles) {
     if (role.ministryId && !seenIds.has(role.ministryId)) {
-      const ministry = await prisma.ministry.findUnique({
-        where: { id: role.ministryId },
-        select: { id: true, name: true },
-      });
+      const ministry = ministriesById.get(role.ministryId);
       if (ministry) {
         sourceOptions.push({ type: "ministry", id: ministry.id, label: ministry.name });
         seenIds.add(ministry.id);

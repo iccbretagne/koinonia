@@ -164,15 +164,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // For MINISTER roles with a ministryId, load all departments of the ministry
       const ministerDeptMap = new Map<string, { id: string; name: string }[]>();
-      for (const cr of churchRoles) {
-        if (cr.role === "MINISTER" && cr.ministryId) {
-          const ministryDepts = await prisma.department.findMany({
-            where: { ministryId: cr.ministryId },
+      const ministerRoles = churchRoles.filter((cr) => cr.role === "MINISTER" && cr.ministryId);
+      const ministerDepts = await Promise.all(
+        ministerRoles.map((cr) =>
+          prisma.department.findMany({
+            where: { ministryId: cr.ministryId! },
             select: { id: true, name: true },
-          });
-          ministerDeptMap.set(cr.id, ministryDepts);
-        }
-      }
+          })
+        )
+      );
+      ministerRoles.forEach((cr, i) => ministerDeptMap.set(cr.id, ministerDepts[i]));
 
       // For STAR roles, load departments from the member link. Cette même liaison sert
       // aussi à détecter l'appartenance à l'équipe Secrétariat (spec 045), indépendamment
@@ -182,21 +183,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const starDeptMap = new Map<string, { id: string; name: string }[]>();
       const secretariatChurchIds = new Set<string>();
       const distinctChurchIds = Array.from(new Set(churchRoles.map((cr) => cr.churchId)));
-      for (const churchId of distinctChurchIds) {
-        const link = await prisma.memberUserLink.findUnique({
-          where: { userId_churchId: { userId: user.id, churchId } },
-          include: {
-            member: {
-              include: {
-                departments: {
-                  include: {
-                    department: { select: { id: true, name: true, function: true } },
+      const links = await Promise.all(
+        distinctChurchIds.map((churchId) =>
+          prisma.memberUserLink.findUnique({
+            where: { userId_churchId: { userId: user.id, churchId } },
+            include: {
+              member: {
+                include: {
+                  departments: {
+                    include: {
+                      department: { select: { id: true, name: true, function: true } },
+                    },
                   },
                 },
               },
             },
-          },
-        });
+          })
+        )
+      );
+      for (const [i, churchId] of distinctChurchIds.entries()) {
+        const link = links[i];
         if (!link) continue;
 
         const departments = link.member.departments.map((d) => d.department);
