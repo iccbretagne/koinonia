@@ -111,6 +111,12 @@ interface Props {
   readonly initialDeptId?: string;
 }
 
+function rateClass(rate: number): string {
+  if (rate >= 50) return "bg-success-soft text-success";
+  if (rate >= 25) return "bg-warning-soft text-warning";
+  return "bg-danger-soft text-danger";
+}
+
 function toLocalDateInputValue(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
@@ -229,7 +235,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
         />
       </div>
 
-      {loading ? (
+      {loading && (
         <div className="flex flex-col gap-4" aria-busy="true">
           <span className="sr-only">Chargement des statistiques…</span>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -239,11 +245,13 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
           </div>
           <Skeleton className="h-72 rounded-card" />
         </div>
-      ) : !data ? (
+      )}
+      {!loading && !data && (
         <div className="rounded-card border border-line bg-surface">
           <EmptyState icon={ChartColumn} title="Choisissez un département" description="Sélectionnez un département pour afficher ses statistiques." />
         </div>
-      ) : (
+      )}
+      {!loading && data && (
         <div className="space-y-8">
           {tab === "planning" ? (
             <>
@@ -363,13 +371,7 @@ export default function StatsClient({ departments, initialDeptId }: Props) {
                           </td>
                           <td className="px-4 py-2 text-sm text-right font-medium">
                             <span
-                              className={`rounded-chip px-2 py-0.5 text-xs font-semibold tabular-nums ${
-                                m.rate >= 50
-                                  ? "bg-success-soft text-success"
-                                  : m.rate >= 25
-                                    ? "bg-warning-soft text-warning"
-                                    : "bg-danger-soft text-danger"
-                              }`}
+                              className={`rounded-chip px-2 py-0.5 text-xs font-semibold tabular-nums ${rateClass(m.rate)}`}
                             >
                               {m.rate}%
                             </span>

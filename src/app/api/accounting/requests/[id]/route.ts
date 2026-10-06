@@ -239,10 +239,12 @@ async function notifySubmitter(
   rejectionReason?: string
 ) {
   const urgentSuffix = priorityNote ? ` — ${priorityNote}` : "";
+  let processingMessage = `Votre demande "${req.label}" est en cours de traitement. Elle sera traitée dans les meilleurs délais.`;
+  if (priority === "URGENT") {
+    processingMessage = `Votre demande "${req.label}" est en cours de traitement (priorité urgente${urgentSuffix}).`;
+  }
   const messages: Record<string, string> = {
-    PROCESSING: priority === "URGENT"
-      ? `Votre demande "${req.label}" est en cours de traitement (priorité urgente${urgentSuffix}).`
-      : `Votre demande "${req.label}" est en cours de traitement. Elle sera traitée dans les meilleurs délais.`,
+    PROCESSING: processingMessage,
     APPROVED:   `Votre demande "${req.label}" a été validée. Consultez le plan de paiement sur votre fiche.`,
     REJECTED:   `Votre demande "${req.label}" a été rejetée. Consultez le motif sur votre fiche.`,
     CANCELLED:  `Votre demande "${req.label}" a été annulée.`,

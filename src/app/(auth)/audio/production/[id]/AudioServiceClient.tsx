@@ -65,6 +65,13 @@ interface FileUploadState {
   error?: string;
 }
 
+function uploadStatusLabel(u: FileUploadState): string {
+  if (u.status === "done") return "Terminé";
+  if (u.status === "error") return "Erreur";
+  if (u.status === "completing") return "Finalisation...";
+  return `${u.uploadedParts}/${u.totalParts || "?"} parts`;
+}
+
 async function uploadParts(
   serviceId: string,
   sourceId: string,
@@ -142,6 +149,12 @@ export default function AudioServiceClient({
   // « Publier » n'a pas été recliqué — se fier au statut bloquait alors le bouton sur « rendu
   // déjà en cours » sans qu'aucun rendu ne tourne réellement (retour terrain).
   const rendering = service.pendingRenderCount > 0;
+  let publishDisabledReason: string | undefined;
+  if (service.segments.length === 0) {
+    publishDisabledReason = "Enregistrez d'abord l'ordre et les noms des séquences";
+  } else if (rendering) {
+    publishDisabledReason = "Rendu déjà en cours — inutile de republier avant qu'il ne se termine";
+  }
   const renderedCount = service.segments.filter((s) => s.hasRendition).length;
 
   // Le rendu (worker hors Next.js, ADR-0007) est asynchrone — sans ce polling, l'écran reste
@@ -387,13 +400,7 @@ export default function AudioServiceClient({
                   <div className="flex justify-between">
                     <span className="text-ink-muted">{u.filename}</span>
                     <span className="text-ink-muted">
-                      {u.status === "done"
-                        ? "Terminé"
-                        : u.status === "error"
-                          ? "Erreur"
-                          : u.status === "completing"
-                            ? "Finalisation..."
-                            : `${u.uploadedParts}/${u.totalParts || "?"} parts`}
+                      {uploadStatusLabel(u)}
                     </span>
                   </div>
                   {u.totalParts > 0 && u.status === "uploading" && (
@@ -427,13 +434,7 @@ export default function AudioServiceClient({
           <Button
             onClick={() => setPublishModal("publish")}
             disabled={service.segments.length === 0 || rendering}
-            title={
-              service.segments.length === 0
-                ? "Enregistrez d'abord l'ordre et les noms des séquences"
-                : rendering
-                  ? "Rendu déjà en cours — inutile de republier avant qu'il ne se termine"
-                  : undefined
-            }
+            title={publishDisabledReason}
           >
             Publier
           </Button>

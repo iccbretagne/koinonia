@@ -245,11 +245,15 @@ export default function UnavailabilityPeriodForm({
     }
   }
 
+  let modalTitle = "Déclarer pour un STAR";
+  if (editing) modalTitle = "Modifier l'indisponibilité";
+  else if (mode === "self") modalTitle = "Pas disponible sur une période";
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={editing ? "Modifier l'indisponibilité" : mode === "self" ? "Pas disponible sur une période" : "Déclarer pour un STAR"}
+      title={modalTitle}
     >
       <div className="space-y-4">
         {!editing && mode === "self" && selfMembers.length > 1 && (

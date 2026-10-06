@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import html2canvas from "html2canvas-pro";
 import { CalendarX2, ChevronRight, TriangleAlert, UserX } from "lucide-react";
@@ -72,6 +72,35 @@ function buildMonthDays(year: number, month: number) {
 
 const WEEKDAY_HEADERS = DAYS_FR;
 
+function dayCellBackground(inMonth: boolean, isToday: boolean): string {
+  if (!inMonth) return "bg-surface-sunken/60";
+  return isToday ? "bg-brand-soft" : "bg-surface";
+}
+
+function dayNumberTone(inMonth: boolean, isToday: boolean): string {
+  if (isToday) return "bg-brand text-on-brand";
+  return inMonth ? "text-ink" : "text-ink-subtle";
+}
+
+function eventLinkTitle(ev: CalendarEvent): string {
+  const base = `${ev.title} (${getEventTypeLabel(ev.type)})`;
+  if (ev.unstaffed <= 0) return base;
+  const plural = ev.unstaffed > 1 ? "s" : "";
+  return `${base} — ${ev.unstaffed} département${plural} sans STAR planifié`;
+}
+
+function buildPrintTitle(
+  mode: "single" | "multi" | "list",
+  month: number,
+  year: number,
+  months: { year: number; month: number }[],
+): string {
+  if (mode !== "multi") return `${MONTHS_FR[month - 1]} ${year}`;
+  if (months.length === 0) return "";
+  const last = months.at(-1)!;
+  return `${MONTHS_FR[months[0].month - 1]} ${months[0].year} — ${MONTHS_FR[last.month - 1]} ${last.year}`;
+}
+
 /**
  * Grille d'un mois. Sous 768px, les cellules ne portent que des points colorés (le titre ne tient
  * pas dans 50px) : la liste du mois, sous la grille, donne le détail.
@@ -106,13 +135,13 @@ function DaysGrid({
               key={day.dateStr}
               className={`min-h-14 border-b border-r border-line p-1 md:min-h-[110px] md:p-1.5 ${
                 idx % 7 === 6 ? "border-r-0" : ""
-              } ${day.inMonth ? (isToday ? "bg-brand-soft" : "bg-surface") : "bg-surface-sunken/60"}`}
+              } ${dayCellBackground(day.inMonth, isToday)}`}
             >
               <div className="flex items-start justify-between">
                 <span
                   aria-current={isToday ? "date" : undefined}
                   className={`mb-1 inline-flex size-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
-                    isToday ? "bg-brand text-on-brand" : day.inMonth ? "text-ink" : "text-ink-subtle"
+                    dayNumberTone(day.inMonth, isToday)
                   }`}
                 >
                   {day.date}
@@ -131,9 +160,7 @@ function DaysGrid({
                     key={ev.id}
                     href={`/events/${ev.id}/star-view`}
                     className={`block truncate rounded-chip px-1.5 py-1 text-xs font-semibold transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus ${statusToneClasses[eventTypeTone(ev.type)]}`}
-                    title={`${ev.title} (${getEventTypeLabel(ev.type)})${
-                      ev.unstaffed > 0 ? ` — ${ev.unstaffed} département${ev.unstaffed > 1 ? "s" : ""} sans STAR planifié` : ""
-                    }`}
+                    title={eventLinkTitle(ev)}
                   >
                     {ev.unstaffed > 0 && (
                       <UserX
@@ -286,12 +313,7 @@ export default function CalendarClient({ events }: Props) {
   const todayStr = localDateStr(new Date());
   const unstaffedEvents = events.filter((ev) => ev.unstaffed > 0).length;
 
-  const printTitle =
-    mode !== "multi"
-      ? `${MONTHS_FR[month - 1]} ${year}`
-      : months.length > 0
-        ? `${MONTHS_FR[months[0].month - 1]} ${months[0].year} — ${MONTHS_FR[months.at(-1)!.month - 1]} ${months.at(-1)!.year}`
-        : "";
+  const printTitle = buildPrintTitle(mode, month, year, months);
 
   async function captureCanvas() {
     if (!captureRef.current) return null;
@@ -368,6 +390,41 @@ export default function CalendarClient({ events }: Props) {
   ];
   const monthInputClasses =
     "min-h-11 cursor-pointer rounded-control border border-control-line bg-surface px-3 text-center font-display text-base font-semibold text-ink focus:border-focus focus:outline-none focus:ring-1 focus:ring-focus";
+
+  let calendarContent: ReactNode;
+  if (mode === "list") {
+    calendarContent = <EventRows events={monthEvents} />;
+  } else if (mode === "single") {
+    calendarContent = (
+      <div className="flex flex-col gap-4">
+        <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={printTitle}>
+          <DaysGrid days={calendarDays} eventsByDate={eventsByDate} todayStr={todayStr} />
+        </section>
+        <div className="md:hidden" data-html2canvas-ignore="true">
+          <EventRows events={monthEvents} />
+        </div>
+      </div>
+    );
+  } else {
+    calendarContent = (
+      <div className="flex flex-col gap-8">
+        {months.map(({ year: y, month: m }) => (
+          <MonthGrid
+            key={`${y}-${m}`}
+            year={y}
+            month={m}
+            eventsByDate={eventsByDate}
+            todayStr={todayStr}
+          />
+        ))}
+        {months.length === 0 && (
+          <div className="rounded-card border border-line bg-surface">
+            <EmptyState title="Période invalide" description="Choisissez un mois de début antérieur au mois de fin." size="sm" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -472,35 +529,7 @@ export default function CalendarClient({ events }: Props) {
         {/* Titre de période — visible à l'impression et dans l'image */}
         <p className="mb-4 hidden font-display text-base font-semibold text-ink group-data-[capturing]:block print:mb-6 print:block">Calendrier — {printTitle}</p>
 
-        {mode === "list" ? (
-          <EventRows events={monthEvents} />
-        ) : mode === "single" ? (
-          <div className="flex flex-col gap-4">
-            <section className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={printTitle}>
-              <DaysGrid days={calendarDays} eventsByDate={eventsByDate} todayStr={todayStr} />
-            </section>
-            <div className="md:hidden" data-html2canvas-ignore="true">
-              <EventRows events={monthEvents} />
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-8">
-            {months.map(({ year: y, month: m }) => (
-              <MonthGrid
-                key={`${y}-${m}`}
-                year={y}
-                month={m}
-                eventsByDate={eventsByDate}
-                todayStr={todayStr}
-              />
-            ))}
-            {months.length === 0 && (
-              <div className="rounded-card border border-line bg-surface">
-                <EmptyState title="Période invalide" description="Choisissez un mois de début antérieur au mois de fin." size="sm" />
-              </div>
-            )}
-          </div>
-        )}
+        {calendarContent}
 
         {mode !== "list" && legend}
       </div>

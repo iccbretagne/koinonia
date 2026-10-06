@@ -22,6 +22,12 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
+function selectionLabel(count: number, size: number): string {
+  if (count === 0) return "Tout sélectionner";
+  const plural = count > 1 ? "s" : "";
+  return `${count} sélectionnée${plural} (${formatSize(size)})`;
+}
+
 function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
@@ -346,9 +352,7 @@ export default function DownloadView({ token, data }: { readonly token: string; 
                 className="w-4 h-4 rounded border-control-line"
               />
               <span className="text-sm text-ink-muted flex-1">
-                {selected.size > 0
-                  ? `${selected.size} sélectionnée${selected.size > 1 ? "s" : ""} (${formatSize(selectedSize)})`
-                  : "Tout sélectionner"}
+                {selectionLabel(selected.size, selectedSize)}
               </span>
               {selected.size > 0 && (
                 <button

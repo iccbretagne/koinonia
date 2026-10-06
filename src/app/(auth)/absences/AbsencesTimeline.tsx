@@ -27,6 +27,12 @@ interface AbsencesTimelineProps {
 const fmt = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
 
 /** Bornes d'affichage : période déclarée, ou dates des événements visés encore existants. */
+function absenceBarColor(a: TimelineAbsence): string {
+  if (a.status === "CANCELLED") return "bg-control-line";
+  if (a.hasConflict) return "bg-warning";
+  return "bg-brand";
+}
+
 function displayRange(a: TimelineAbsence): { start: number; end: number } | null {
   if (a.kind === "PERIOD") {
     if (!a.startDate || !a.endDate) return null;
@@ -85,12 +91,7 @@ export default function AbsencesTimeline({ absences, responses = [], onSelect }:
                 <div className="w-32 shrink-0 text-sm text-ink-muted truncate">{row.name}</div>
                 <div className="relative flex-1 h-6 bg-surface-sunken rounded">
                   {row.items.map(({ a, range }) => {
-                    const color =
-                      a.status === "CANCELLED"
-                        ? "bg-control-line"
-                        : a.hasConflict
-                          ? "bg-warning"
-                          : "bg-brand";
+                    const color = absenceBarColor(a);
                     const title = `${fmt.format(new Date(range.start))} → ${fmt.format(new Date(range.end))}`;
 
                     if (a.kind === "PERIOD") {

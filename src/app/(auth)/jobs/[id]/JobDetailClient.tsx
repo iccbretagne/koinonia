@@ -51,6 +51,7 @@ export default function JobDetailClient({
   const [confirming, setConfirming] = useState(false);
 
   const isArchived = job.status === "ARCHIVED";
+  const archiveLabel = isArchived ? "Republier" : "Archiver";
   const canAct = isAuthor || canManage;
 
   // Une relance est en cours : l'offre sera archivée 14 jours après renewalRequestedAt.
@@ -161,7 +162,7 @@ export default function JobDetailClient({
                   disabled={archiving}
                   className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
-                  {archiving ? "…" : isArchived ? "Republier" : "Archiver"}
+                  {archiving ? "…" : archiveLabel}
                 </button>
               )}
               {(canManage || isAuthor) && (

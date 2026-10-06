@@ -159,8 +159,9 @@ export default function AuthLayoutShell({
   const viewport = useViewport();
   useEffect(() => {
     if (!viewport) return;
-    const width =
-      viewport === "mobile" ? SIDEBAR_WIDTH.mobile : viewport === "tablet" || pref === "rail" ? SIDEBAR_WIDTH.rail : SIDEBAR_WIDTH.expanded;
+    let width: string = SIDEBAR_WIDTH.expanded;
+    if (viewport === "mobile") width = SIDEBAR_WIDTH.mobile;
+    else if (viewport === "tablet" || pref === "rail") width = SIDEBAR_WIDTH.rail;
     const root = document.documentElement;
     root.style.setProperty("--k-sidebar-width", width);
     return () => {

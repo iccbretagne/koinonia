@@ -221,6 +221,24 @@ const TRACK_THEME = {
   },
 } as const;
 
+function stepTone(step: { done: boolean; current: boolean }, current: string, done: string, pending: string): string {
+  if (step.current) return current;
+  if (step.done) return done;
+  return pending;
+}
+
+function resumeHint(waitingFrom: string | null): string {
+  if (waitingFrom === "CONTACTED") return "La demande reprendra à l'ajout au groupe de la famille.";
+  if (waitingFrom === "ASSIGNED") return "La demande reprendra au premier contact.";
+  return "La demande reprendra à l'affectation d'une famille.";
+}
+
+function milestoneInteractiveClass(canToggle: boolean, done: boolean): string {
+  if (canToggle && !done) return "hover:border-brand hover:text-brand-text cursor-pointer";
+  if (canToggle && done) return "hover:bg-success/20 cursor-pointer";
+  return "cursor-default";
+}
+
 function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]; readonly theme?: keyof typeof TRACK_THEME }) {
   const t = TRACK_THEME[theme];
   return (
@@ -239,7 +257,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
             <div className="flex flex-col items-center" style={{ minWidth: 56 }}>
               <div
                 className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-bold ${
-                  step.current ? t.circleCurrent : step.done ? t.circleDone : t.circlePending
+                  stepTone(step, t.circleCurrent, t.circleDone, t.circlePending)
                 }`}
               >
                 {step.done && !step.current ? "✓" : i + 1}
@@ -266,7 +284,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
             <div
               key={i}
               className={`w-2.5 h-2.5 rounded-full ${
-                step.current ? t.dotActive : step.done ? t.dotDone : t.dotPending
+                stepTone(step, t.dotActive, t.dotDone, t.dotPending)
               }`}
             />
           ))}
@@ -316,12 +334,7 @@ function MilestoneChips({
         const base = done
           ? "bg-success-soft text-success border-success/30"
           : "bg-surface-sunken text-ink-subtle border-line";
-        const interactive =
-          canToggle && !done
-            ? "hover:border-brand hover:text-brand-text cursor-pointer"
-            : canToggle && done
-            ? "hover:bg-success/20 cursor-pointer"
-            : "cursor-default";
+        const interactive = milestoneInteractiveClass(canToggle, done);
 
         return (
           <button
@@ -919,13 +932,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                   onClick={() => setPendingTransition({
                     action: "resume",
                     label: "Reprendre le suivi",
-                    description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${
-                      req.waitingFrom === "CONTACTED"
-                        ? "La demande reprendra à l'ajout au groupe de la famille."
-                        : req.waitingFrom === "ASSIGNED"
-                          ? "La demande reprendra au premier contact."
-                          : "La demande reprendra à l'affectation d'une famille."
-                    }`,
+                    description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${resumeHint(req.waitingFrom)}`,
                   })}
                   disabled={loading}
                   className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"

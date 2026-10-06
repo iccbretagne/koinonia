@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
@@ -74,6 +74,16 @@ function fmtAmount(n: number | string) {
 }
 // ── Workflow steps ───────────────────────────────────────────────────────────
 const STEPS = ["SUBMITTED", "PROCESSING", "APPROVED"];
+function stepCircleClass(isRejected: boolean, current: boolean, done: boolean): string {
+  if (isRejected) return "bg-surface-sunken text-ink-subtle";
+  if (current) return "bg-brand text-on-brand ring-2 ring-focus/20";
+  if (done) return "bg-brand-soft text-brand-text";
+  return "bg-surface-sunken text-ink-subtle";
+}
+function priorityClass(selected: boolean, p: "NORMAL" | "URGENT"): string {
+  if (!selected) return "border-line text-ink-muted";
+  return p === "URGENT" ? "border-danger bg-danger-soft text-danger" : "border-brand bg-brand-soft text-brand-text";
+}
 function WorkflowBar({ status }: { readonly status: string }) {
   const isRejected = status === "REJECTED" || status === "CANCELLED";
   return (
@@ -84,12 +94,7 @@ function WorkflowBar({ status }: { readonly status: string }) {
         return (
           <div key={s} className="flex items-center flex-1 last:flex-none">
             <div className={`flex flex-col items-center`} style={{ minWidth: 60 }}>
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                isRejected ? "bg-surface-sunken text-ink-subtle"
-                : current ? "bg-brand text-on-brand ring-2 ring-focus/20"
-                : done ? "bg-brand-soft text-brand-text"
-                : "bg-surface-sunken text-ink-subtle"
-              }`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${stepCircleClass(isRejected, current, done)}`}>
                 {done && !current ? "✓" : i + 1}
               </div>
               <p className={`text-[10px] mt-1 text-center leading-tight max-w-[60px] ${done ? "text-ink-muted font-medium" : "text-ink-subtle"}`}>
@@ -302,6 +307,29 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
           <div className="space-y-2">
             {req.payments.map((p, i) => {
               const isPartial = p.releasedAt && p.releasedAmount != null && Number(p.releasedAmount) < Number(p.amount);
+              let paymentStatus: ReactNode;
+              if (p.releasedAt) {
+                paymentStatus = (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${isPartial ? "text-warning bg-warning-soft" : "text-success bg-success-soft"}`}>
+                    {isPartial ? "Partiel ✓" : "Remis ✓"}
+                  </span>
+                );
+              } else if (canManage) {
+                paymentStatus = (
+                  <button
+                    onClick={() => {
+                      setReleasingPaymentId(p.id);
+                      setReleaseDate(new Date().toISOString().slice(0, 10));
+                      setReleaseAmount(String(Number(p.amount)));
+                    }}
+                    className="shrink-0 text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors"
+                  >
+                    Confirmer remise
+                  </button>
+                );
+              } else {
+                paymentStatus = <span className="text-xs text-ink-subtle shrink-0">En attente</span>;
+              }
               return (
               <div key={p.id} className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 border ${p.releasedAt ? "bg-success-soft border-success/30" : "bg-surface-sunken border-line"}`}>
                 <div className="min-w-0">
@@ -319,24 +347,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                   </p>
                   {p.note && <p className="text-xs text-ink-muted mt-0.5">{p.note}</p>}
                 </div>
-                {p.releasedAt ? (
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${isPartial ? "text-warning bg-warning-soft" : "text-success bg-success-soft"}`}>
-                    {isPartial ? "Partiel ✓" : "Remis ✓"}
-                  </span>
-                ) : canManage ? (
-                  <button
-                    onClick={() => {
-                      setReleasingPaymentId(p.id);
-                      setReleaseDate(new Date().toISOString().slice(0, 10));
-                      setReleaseAmount(String(Number(p.amount)));
-                    }}
-                    className="shrink-0 text-xs font-medium text-brand-text border border-brand/40 px-2.5 py-1 rounded-full hover:bg-brand-hover hover:text-on-brand transition-colors"
-                  >
-                    Confirmer remise
-                  </button>
-                ) : (
-                  <span className="text-xs text-ink-subtle shrink-0">En attente</span>
-                )}
+                {paymentStatus}
               </div>
             );
             })}
@@ -406,7 +417,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
             <div className="flex gap-2">
               {(["NORMAL", "URGENT"] as const).map((p) => (
                 <button key={p} type="button" onClick={() => setPriority(p)}
-                  className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${priority === p ? (p === "URGENT" ? "border-danger bg-danger-soft text-danger" : "border-brand bg-brand-soft text-brand-text") : "border-line text-ink-muted"}`}>
+                  className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${priorityClass(priority === p, p)}`}>
                   {p === "URGENT" ? "⚡ Urgent" : "Normal"}
                 </button>
               ))}
@@ -526,6 +537,9 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
         const entered = Number.parseFloat(releaseAmount) || 0;
         const remainder = Number((planned - entered).toFixed(2));
         const isPartial = entered > 0 && entered < planned;
+        let confirmLabel = "Confirmer la remise";
+        if (loading) confirmLabel = "Enregistrement…";
+        else if (isPartial) confirmLabel = "Confirmer (partiel)";
         return (
           <Modal open={releasingPaymentId !== null} onClose={() => setReleasingPaymentId(null)} title="Confirmer la remise des fonds">
             <div className="space-y-4">
@@ -555,7 +569,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                   disabled={loading || !releaseDate || entered <= 0 || entered > planned}
                   className="px-4 py-2 bg-success text-surface text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
-                  {loading ? "Enregistrement…" : isPartial ? "Confirmer (partiel)" : "Confirmer la remise"}
+                  {confirmLabel}
                 </button>
               </div>
             </div>

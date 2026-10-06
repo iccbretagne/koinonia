@@ -16,11 +16,12 @@ export async function GET(_request: Request) {
     const raw: unknown = await res.json();
 
     // The external API may return either a plain array or { families: [...] }
-    const items = Array.isArray(raw)
-      ? raw
-      : Array.isArray((raw as Record<string, unknown>).families)
-        ? (raw as { families: unknown[] }).families
-        : [];
+    let items: unknown[] = [];
+    if (Array.isArray(raw)) {
+      items = raw;
+    } else if (Array.isArray((raw as Record<string, unknown>).families)) {
+      items = (raw as { families: unknown[] }).families;
+    }
 
     const families = items
       .map((f) => {

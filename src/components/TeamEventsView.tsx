@@ -210,6 +210,13 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     }
   }
 
+  let modalTitle: string;
+  if (scopeStep === "edit") modalTitle = "Modifier un événement récurrent";
+  else if (scopeStep) modalTitle = "Supprimer un événement récurrent";
+  else if (editing) modalTitle = "Modifier l'événement d'équipe";
+  else modalTitle = "Nouvel événement d'équipe";
+  const submitLabel = editing ? "Enregistrer" : "Créer l'événement";
+
   const periodOptions = [
     { value: "upcoming" as const, label: "À venir" },
     { value: "past" as const, label: "Passés" },
@@ -253,9 +260,8 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
 
       {truncatedMessage && <Alert tone="warning">{truncatedMessage}</Alert>}
 
-      {loading ? (
-        <SkeletonList rows={3} label="Chargement des événements d'équipe…" />
-      ) : events.length === 0 ? (
+      {loading && <SkeletonList rows={3} label="Chargement des événements d'équipe…" />}
+      {!loading && events.length === 0 && (
         <div className="rounded-card border border-line bg-surface">
           <EmptyState
             icon={CalendarX2}
@@ -276,7 +282,8 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
             size="sm"
           />
         </div>
-      ) : (
+      )}
+      {!loading && events.length > 0 && (
         <ul className="overflow-hidden rounded-card border border-line bg-surface">
           {events.map((ev) => {
             const start = new Date(ev.startsAt);
@@ -339,17 +346,9 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       <Modal
         open={modalOpen}
         onClose={closeModal}
-        title={
-          scopeStep
-            ? scopeStep === "edit"
-              ? "Modifier un événement récurrent"
-              : "Supprimer un événement récurrent"
-            : editing
-              ? "Modifier l'événement d'équipe"
-              : "Nouvel événement d'équipe"
-        }
+        title={modalTitle}
       >
-        {scopeStep === "edit" ? (
+        {scopeStep === "edit" && (
           <div>
             <p className="mb-6 text-[15px] leading-[22px] text-ink-muted">
               Cet événement fait partie d&apos;une série. Que souhaitez-vous modifier ?
@@ -367,7 +366,8 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
               </Button>
             </div>
           </div>
-        ) : scopeStep === "delete" && editing ? (
+        )}
+        {scopeStep === "delete" && editing && (
           <div>
             <p className="mb-6 text-[15px] leading-[22px] text-ink-muted">
               Cet événement fait partie d&apos;une série. Que souhaitez-vous supprimer ?
@@ -385,7 +385,8 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
               </Button>
             </div>
           </div>
-        ) : (
+        )}
+        {scopeStep !== "edit" && !(scopeStep === "delete" && editing) && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input label="Titre" value={title} onChange={(e) => setTitle(e.target.value)} required />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -441,7 +442,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
                 Annuler
               </Button>
               <Button type="submit" disabled={saving} className="w-full sm:w-auto">
-                {saving ? "Enregistrement…" : editing ? "Enregistrer" : "Créer l'événement"}
+                {saving ? "Enregistrement…" : submitLabel}
               </Button>
             </div>
           </form>

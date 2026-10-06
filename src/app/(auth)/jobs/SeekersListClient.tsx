@@ -164,6 +164,9 @@ function SeekerCard({
   const availableDate   = seeker.availableFrom ? new Date(seeker.availableFrom) : null;
   const authorName      = seeker.author.displayName ?? seeker.author.name ?? "Anonyme";
   const isArchived      = seeker.status === "ARCHIVED";
+  let toggleLabel = "Retirer";
+  if (loading) toggleLabel = "…";
+  else if (isArchived) toggleLabel = "Republier";
 
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
@@ -246,7 +249,7 @@ function SeekerCard({
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
-            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+            {toggleLabel}
           </button>
         </div>
       )}

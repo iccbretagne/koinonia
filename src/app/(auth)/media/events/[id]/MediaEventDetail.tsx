@@ -101,6 +101,12 @@ const EVENT_STATUS_COLORS: Record<MediaEventStatus, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const PHOTO_STATUS_DOT_CLASS: Record<string, string> = {
+  APPROVED: "bg-success",
+  REJECTED: "bg-danger",
+  PREVALIDATED: "bg-info",
+};
+
 function formatDate(d: Date | string) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
@@ -748,6 +754,9 @@ export default function MediaEventDetail({
   ];
 
   const allSelected = filteredPhotos.length > 0 && selectedPhotoIds.size === filteredPhotos.length;
+  const selectedPlural = selectedPhotoIds.size > 1 ? "s" : "";
+  const selectionLabel =
+    selectedPhotoIds.size > 0 ? `${selectedPhotoIds.size} sélectionnée${selectedPlural}` : "Tout sélectionner";
 
   return (
     <div className="space-y-5">
@@ -1012,9 +1021,7 @@ export default function MediaEventDetail({
                 className="w-4 h-4 rounded border-control-line accent-brand"
               />
               <span className="text-xs text-ink-muted">
-                {selectedPhotoIds.size > 0
-                  ? `${selectedPhotoIds.size} sélectionnée${selectedPhotoIds.size > 1 ? "s" : ""}`
-                  : "Tout sélectionner"}
+                {selectionLabel}
               </span>
             </label>
             {selectedPhotoIds.size > 0 && (
@@ -1120,10 +1127,7 @@ export default function MediaEventDetail({
                     {/* Status dot top-right */}
                     <div className="absolute top-1.5 right-1.5">
                       <span className={`block w-2 h-2 rounded-full shadow-card ${
-                        photo.status === "APPROVED"     ? "bg-success" :
-                        photo.status === "REJECTED"     ? "bg-danger" :
-                        photo.status === "PREVALIDATED" ? "bg-info" :
-                        "bg-warning"
+                        PHOTO_STATUS_DOT_CLASS[photo.status] ?? "bg-warning"
                       }`} />
                     </div>
 

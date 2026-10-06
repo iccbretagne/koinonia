@@ -6,7 +6,8 @@ import type { ModuleRegistry } from "./module-registry";
  * comparateur explicite pour documenter cet ordre sans le changer.
  */
 function compareCodePoint(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
 }
 
 /**

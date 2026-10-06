@@ -119,14 +119,14 @@ export default function WelcomeDutyPoolClient() {
         <Button onClick={openPicker}>+ Ajouter une famille</Button>
       </div>
 
-      {loadingPool ? (
-        <p className="text-sm text-ink-subtle">Chargement…</p>
-      ) : active.length === 0 ? (
+      {loadingPool && <p className="text-sm text-ink-subtle">Chargement…</p>}
+      {!loadingPool && active.length === 0 && (
         <div className="text-center py-12 bg-surface rounded-lg border border-dashed border-line">
           <p className="text-ink-subtle text-sm">Aucune famille dans le pool.</p>
           <p className="text-ink-subtle text-xs mt-1">Ajoutez des familles pour commencer la rotation.</p>
         </div>
-      ) : (
+      )}
+      {!loadingPool && active.length > 0 && (
         <div className="bg-surface rounded-lg shadow-card overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -213,11 +213,11 @@ export default function WelcomeDutyPoolClient() {
               />
             </div>
             <div className="flex-1 overflow-y-auto px-2 py-2">
-              {loadingAvailable ? (
-                <p className="text-center text-sm text-ink-subtle py-8">Chargement…</p>
-              ) : filtered.length === 0 ? (
+              {loadingAvailable && <p className="text-center text-sm text-ink-subtle py-8">Chargement…</p>}
+              {!loadingAvailable && filtered.length === 0 && (
                 <p className="text-center text-sm text-ink-subtle py-8">Aucune famille disponible</p>
-              ) : (
+              )}
+              {!loadingAvailable && filtered.length > 0 &&
                 filtered.map((f) => (
                   <button
                     key={f.id}
@@ -228,8 +228,7 @@ export default function WelcomeDutyPoolClient() {
                     <span>{f.name}</span>
                     {adding === f.id && <span className="text-xs text-ink-subtle">Ajout…</span>}
                   </button>
-                ))
-              )}
+                ))}
             </div>
             <div className="px-5 py-3 border-t border-line">
               <Button variant="secondary" onClick={() => setShowPicker(false)} className="w-full">

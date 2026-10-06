@@ -64,6 +64,10 @@ export default function JobFormClient({ initial }: { readonly initial?: {
     }
   }
 
+  let submitLabel = "Publier l'offre";
+  if (saving) submitLabel = "Publication…";
+  else if (isEdit) submitLabel = "Enregistrer";
+
   return (
     <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
       {error && (
@@ -197,7 +201,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
           disabled={saving}
           className="px-5 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
         >
-          {saving ? "Publication…" : isEdit ? "Enregistrer" : "Publier l'offre"}
+          {submitLabel}
         </button>
         <button
           type="button"

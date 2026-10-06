@@ -145,11 +145,12 @@ async function executeAjoutEvenement(
   }
 
   const useOffset = !!deadlineOffset && !planningDeadlineRaw;
-  const deadline = useOffset
-    ? computeDeadlineFromOffset(eventDate, deadlineOffset!)
-    : planningDeadlineRaw
-      ? new Date(planningDeadlineRaw)
-      : null;
+  let deadline: Date | null = null;
+  if (useOffset) {
+    deadline = computeDeadlineFromOffset(eventDate, deadlineOffset!);
+  } else if (planningDeadlineRaw) {
+    deadline = new Date(planningDeadlineRaw);
+  }
 
   if (recurrenceRule && recurrenceEnd) {
     const endDate = new Date(recurrenceEnd);

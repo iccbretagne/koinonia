@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, type ReactNode } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
@@ -272,6 +272,122 @@ function RoomCalendarView({
 
   const todayStr = localDateStr(new Date());
 
+  let calendarContent: ReactNode;
+  if (rooms.length === 0) {
+    calendarContent = <p className="text-sm text-ink-muted">Aucune salle disponible.</p>;
+  } else if (view === "week") {
+    calendarContent = (
+      <div className="overflow-x-auto bg-surface rounded-xl shadow-card border border-line">
+        <div className="min-w-[760px]">
+          <div className="grid bg-brand" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
+            <div className="sticky left-0 z-20 bg-brand px-3 py-3 text-xs font-bold text-on-brand uppercase tracking-wider">
+              Salle
+            </div>
+            {days.map((day) => (
+              <div
+                key={day.dateStr}
+                className="px-2 py-3 text-xs font-bold text-center uppercase tracking-wider text-on-brand"
+              >
+                {day.dateStr === todayStr ? (
+                  <span className="bg-accent text-on-accent rounded px-1.5 py-0.5">{day.weekday} {day.dayNum}</span>
+                ) : (
+                  <>{day.weekday} {day.dayNum}</>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {displayedRooms.length === 0 ? (
+            <p className="px-3 py-6 text-sm text-ink-muted">Aucune salle à afficher pour ce filtre.</p>
+          ) : (
+            displayedRooms.map((room) => (
+              <div
+                key={room.id}
+                className="grid border-t border-line"
+                style={{ gridTemplateColumns: WEEK_GRID_COLS }}
+              >
+                <div className="sticky left-0 z-10 bg-surface border-r border-line px-3 py-2">
+                  <span className="text-sm font-medium text-ink">{room.name}</span>
+                  {!room.isOwner && (
+                    <span className="block text-[10px] text-ink-subtle">{room.ownerChurch.name}</span>
+                  )}
+                  {!room.isActive && <span className="block text-[10px] text-danger">désactivée</span>}
+                </div>
+                {days.map((day) => {
+                  const cell = grouped.get(cellKey(room.id, day.dateStr)) ?? [];
+                  return (
+                    <div
+                      key={day.dateStr}
+                      className={`min-h-[64px] border-r border-line p-1 space-y-1 ${
+                        day.dateStr === todayStr ? "bg-brand-soft" : ""
+                      }`}
+                    >
+                      {cell.map((r) => (
+                        <ReservationChip
+                          key={r.id}
+                          reservation={r}
+                          mine={r.createdBy.id === currentUserId}
+                          onSelect={onSelect}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  } else {
+    calendarContent = (
+      <div className="bg-surface rounded-xl shadow-card border border-line overflow-hidden">
+        <div className="grid grid-cols-7 bg-brand">
+          {DAYS_FR.map((day) => (
+            <div key={day} className="px-2 py-3 text-xs font-bold text-on-brand text-center uppercase tracking-wider">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {days.map((day) => {
+            const cell = displayedRooms
+              .flatMap((room) => grouped.get(cellKey(room.id, day.dateStr)) ?? [])
+              .sort((a, b) => a.startAt.localeCompare(b.startAt));
+            const isToday = day.dateStr === todayStr;
+            return (
+              <div
+                key={day.dateStr}
+                className={`min-h-[90px] md:min-h-[110px] border-b border-r border-line p-1.5 ${
+                  monthCellBackground(day.inMonth, isToday)
+                }`}
+              >
+                <span
+                  className={`inline-flex items-center justify-center text-xs font-semibold mb-1 w-7 h-7 ${
+                    monthDayNumberClass(day.inMonth, isToday)
+                  }`}
+                >
+                  {day.dayNum}
+                </span>
+                <div className="space-y-1">
+                  {cell.map((r) => (
+                    <ReservationChip
+                      key={r.id}
+                      reservation={r}
+                      mine={r.createdBy.id === currentUserId}
+                      showRoom
+                      onSelect={onSelect}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
@@ -312,122 +428,19 @@ function RoomCalendarView({
         </div>
       </div>
 
-      {rooms.length === 0 ? (
-        <p className="text-sm text-ink-muted">Aucune salle disponible.</p>
-      ) : view === "week" ? (
-        <div className="overflow-x-auto bg-surface rounded-xl shadow-card border border-line">
-          <div className="min-w-[760px]">
-            <div className="grid bg-brand" style={{ gridTemplateColumns: WEEK_GRID_COLS }}>
-              <div className="sticky left-0 z-20 bg-brand px-3 py-3 text-xs font-bold text-on-brand uppercase tracking-wider">
-                Salle
-              </div>
-              {days.map((day) => (
-                <div
-                  key={day.dateStr}
-                  className="px-2 py-3 text-xs font-bold text-center uppercase tracking-wider text-on-brand"
-                >
-                  {day.dateStr === todayStr ? (
-                    <span className="bg-accent text-on-accent rounded px-1.5 py-0.5">{day.weekday} {day.dayNum}</span>
-                  ) : (
-                    <>{day.weekday} {day.dayNum}</>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {displayedRooms.length === 0 ? (
-              <p className="px-3 py-6 text-sm text-ink-muted">Aucune salle à afficher pour ce filtre.</p>
-            ) : (
-              displayedRooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="grid border-t border-line"
-                  style={{ gridTemplateColumns: WEEK_GRID_COLS }}
-                >
-                  <div className="sticky left-0 z-10 bg-surface border-r border-line px-3 py-2">
-                    <span className="text-sm font-medium text-ink">{room.name}</span>
-                    {!room.isOwner && (
-                      <span className="block text-[10px] text-ink-subtle">{room.ownerChurch.name}</span>
-                    )}
-                    {!room.isActive && <span className="block text-[10px] text-danger">désactivée</span>}
-                  </div>
-                  {days.map((day) => {
-                    const cell = grouped.get(cellKey(room.id, day.dateStr)) ?? [];
-                    return (
-                      <div
-                        key={day.dateStr}
-                        className={`min-h-[64px] border-r border-line p-1 space-y-1 ${
-                          day.dateStr === todayStr ? "bg-brand-soft" : ""
-                        }`}
-                      >
-                        {cell.map((r) => (
-                          <ReservationChip
-                            key={r.id}
-                            reservation={r}
-                            mine={r.createdBy.id === currentUserId}
-                            onSelect={onSelect}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="bg-surface rounded-xl shadow-card border border-line overflow-hidden">
-          <div className="grid grid-cols-7 bg-brand">
-            {DAYS_FR.map((day) => (
-              <div key={day} className="px-2 py-3 text-xs font-bold text-on-brand text-center uppercase tracking-wider">
-                {day}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {days.map((day) => {
-              const cell = displayedRooms
-                .flatMap((room) => grouped.get(cellKey(room.id, day.dateStr)) ?? [])
-                .sort((a, b) => a.startAt.localeCompare(b.startAt));
-              const isToday = day.dateStr === todayStr;
-              return (
-                <div
-                  key={day.dateStr}
-                  className={`min-h-[90px] md:min-h-[110px] border-b border-r border-line p-1.5 ${
-                    day.inMonth ? (isToday ? "bg-brand-soft" : "bg-surface") : "bg-surface-sunken/50"
-                  }`}
-                >
-                  <span
-                    className={`inline-flex items-center justify-center text-xs font-semibold mb-1 w-7 h-7 ${
-                      isToday
-                        ? "bg-brand text-on-brand rounded-full shadow-card"
-                        : day.inMonth
-                          ? "text-ink-muted"
-                          : "text-ink-subtle"
-                    }`}
-                  >
-                    {day.dayNum}
-                  </span>
-                  <div className="space-y-1">
-                    {cell.map((r) => (
-                      <ReservationChip
-                        key={r.id}
-                        reservation={r}
-                        mine={r.createdBy.id === currentUserId}
-                        showRoom
-                        onSelect={onSelect}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {calendarContent}
     </div>
   );
+}
+
+function monthCellBackground(inMonth: boolean, isToday: boolean): string {
+  if (!inMonth) return "bg-surface-sunken/50";
+  return isToday ? "bg-brand-soft" : "bg-surface";
+}
+
+function monthDayNumberClass(inMonth: boolean, isToday: boolean): string {
+  if (isToday) return "bg-brand text-on-brand rounded-full shadow-card";
+  return inMonth ? "text-ink-muted" : "text-ink-subtle";
 }
 
 // ─── Détail d'une réservation (ouvert depuis le calendrier) ─────────────────
@@ -759,6 +772,14 @@ export default function RoomsBookingClient({
     openChecklist(r, "close");
   }
 
+  let cancelMessage: string;
+  if (cancelTarget?.scope === "series") {
+    cancelMessage = `Toutes les occurrences futures de « ${cancelTarget.reservation.title} » seront annulées. Cette action est irréversible.`;
+  } else {
+    const startLabel = cancelTarget ? formatDateTime(cancelTarget.reservation.startAt) : "";
+    cancelMessage = `La réservation « ${cancelTarget?.reservation.title} » du ${startLabel} sera annulée. Cette action est irréversible.`;
+  }
+
   return (
     <div>
       {myUpcoming.length > 0 && (
@@ -1082,11 +1103,7 @@ export default function RoomsBookingClient({
       <ConfirmModal
         open={!!cancelTarget}
         title={cancelTarget?.scope === "series" ? "Annuler la série" : "Annuler la réservation"}
-        message={
-          cancelTarget?.scope === "series"
-            ? `Toutes les occurrences futures de « ${cancelTarget.reservation.title} » seront annulées. Cette action est irréversible.`
-            : `La réservation « ${cancelTarget?.reservation.title} » du ${cancelTarget ? formatDateTime(cancelTarget.reservation.startAt) : ""} sera annulée. Cette action est irréversible.`
-        }
+        message={cancelMessage}
         confirmLabel="Annuler la réservation"
         confirming={cancelling}
         onConfirm={confirmCancel}

@@ -7,6 +7,12 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import StatusChip from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
 
+function eventCountLabel(count: number): string {
+  if (count === 0) return "Aucun événement à venir";
+  const plural = count > 1 ? "s" : "";
+  return `${count} événement${plural} à venir`;
+}
+
 interface MonthRow {
   month: string;
   eventCount: number;
@@ -62,7 +68,7 @@ export default function CollectionsPanel({
             <div className="min-w-0">
               <p className="font-semibold text-ink">{monthLabel(m.month)}</p>
               <p className="text-sm text-ink-muted">
-                {m.eventCount === 0 ? "Aucun événement à venir" : `${m.eventCount} événement${m.eventCount > 1 ? "s" : ""} à venir`}
+                {eventCountLabel(m.eventCount)}
               </p>
             </div>
             {m.open ? (

@@ -63,13 +63,12 @@ export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, 
   return (
     <div className="bg-surface rounded-card border border-line p-4 md:p-5 space-y-3">
       <h2 className="text-sm font-semibold text-ink-muted">{title}</h2>
-      {error ? (
-        <p className="text-sm text-ink-subtle">Historique indisponible.</p>
-      ) : entries === null ? (
-        <p className="text-sm text-ink-subtle">Chargement…</p>
-      ) : entries.length === 0 ? (
+      {error && <p className="text-sm text-ink-subtle">Historique indisponible.</p>}
+      {!error && entries === null && <p className="text-sm text-ink-subtle">Chargement…</p>}
+      {!error && entries?.length === 0 && (
         <p className="text-sm text-ink-subtle italic">Aucun changement d&apos;état enregistré.</p>
-      ) : (
+      )}
+      {!error && entries && entries.length > 0 && (
         <ol className="relative border-l-2 border-line ml-1.5 space-y-3">
           {entries.map((e) => {
             const actionLabel = e.action ? actionLabels?.[e.action] ?? e.action : null;

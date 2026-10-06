@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { auth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
@@ -173,6 +174,51 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     selectedDepartment?.name ??
     events.flatMap((e) => e.eventDepts).find((ed) => ed.departmentId === selectedDeptId)?.department.name;
 
+  let content: ReactNode;
+  if (view === "week" && selectedDeptId) {
+    content = (
+      <WeeklyPlanningView
+        churchId={currentChurchId}
+        departmentId={selectedDeptId}
+        departmentName={selectedDepartment?.name}
+        churchName={churchName}
+        canEdit={canEditPlanning}
+      />
+    );
+  } else if (view === "tasks" && selectedDeptId) {
+    content = (
+      <DepartmentTasksView
+        departmentId={selectedDeptId}
+        departmentName={selectedDepartment?.name}
+        readOnly={!canEditPlanning}
+      />
+    );
+  } else if (view === "month" && selectedDeptId) {
+    content = (
+      <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
+    );
+  } else if (view === "team" && selectedDeptId) {
+    content = (
+      <TeamEventsView
+        departmentId={selectedDeptId}
+        departmentName={selectedDepartment?.name}
+        canEdit={canEditPlanning}
+      />
+    );
+  } else if (view === "week" || view === "tasks" || view === "month" || view === "team") {
+    content = <SelectPrompt needsDepartment />;
+  } else if (selectedEventId && selectedDeptId) {
+    content = (
+      <PlanningGrid
+        eventId={selectedEventId}
+        departmentId={selectedDeptId}
+        readOnly={!canEditPlanning}
+      />
+    );
+  } else {
+    content = <SelectPrompt needsDepartment={!selectedDeptId} />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader eyebrow="Planning du département" title={departmentName ?? "Planning"}>
@@ -192,53 +238,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         />
       )}
 
-      {view === "week" ? (
-        selectedDeptId ? (
-          <WeeklyPlanningView
-            churchId={currentChurchId}
-            departmentId={selectedDeptId}
-            departmentName={selectedDepartment?.name}
-            churchName={churchName}
-            canEdit={canEditPlanning}
-          />
-        ) : (
-          <SelectPrompt needsDepartment />
-        )
-      ) : view === "tasks" ? (
-        selectedDeptId ? (
-          <DepartmentTasksView
-            departmentId={selectedDeptId}
-            departmentName={selectedDepartment?.name}
-            readOnly={!canEditPlanning}
-          />
-        ) : (
-          <SelectPrompt needsDepartment />
-        )
-      ) : view === "month" ? (
-        selectedDeptId ? (
-          <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
-        ) : (
-          <SelectPrompt needsDepartment />
-        )
-      ) : view === "team" ? (
-        selectedDeptId ? (
-          <TeamEventsView
-            departmentId={selectedDeptId}
-            departmentName={selectedDepartment?.name}
-            canEdit={canEditPlanning}
-          />
-        ) : (
-          <SelectPrompt needsDepartment />
-        )
-      ) : selectedEventId && selectedDeptId ? (
-        <PlanningGrid
-          eventId={selectedEventId}
-          departmentId={selectedDeptId}
-          readOnly={!canEditPlanning}
-        />
-      ) : (
-        <SelectPrompt needsDepartment={!selectedDeptId} />
-      )}
+      {content}
     </div>
   );
 }

@@ -140,7 +140,11 @@ export default function NotificationBell() {
     </button>
   );
 
-  const label = unreadCount > 0 ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? "s" : ""}` : "Notifications";
+  let label = "Notifications";
+  if (unreadCount > 0) {
+    const plural = unreadCount > 1 ? "s" : "";
+    label = `Notifications, ${unreadCount} non lue${plural}`;
+  }
 
   return (
     <div data-tour="header-notifications" className="relative" ref={dropdownRef}>
@@ -149,7 +153,10 @@ export default function NotificationBell() {
         aria-label={label}
         badge={unreadCount}
         aria-expanded={open !== null}
-        onClick={() => setOpen((o) => (o ? null : window.innerWidth < 768 ? "sheet" : "dropdown"))}
+        onClick={() => setOpen((o) => {
+          if (o) return null;
+          return window.innerWidth < 768 ? "sheet" : "dropdown";
+        })}
       />
 
       {open === "dropdown" && (

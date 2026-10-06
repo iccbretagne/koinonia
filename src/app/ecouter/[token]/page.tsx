@@ -51,12 +51,9 @@ export default async function PublicAudioPage({ params }: Props) {
       : null;
 
   if (result.status !== "OK") {
-    const message =
-      result.status === "NOT_FOUND"
-        ? "Ce lien n'existe pas."
-        : result.status === "REVOKED"
-          ? "Ce lien a été révoqué."
-          : "Ce culte n'est plus disponible.";
+    let message = "Ce culte n'est plus disponible.";
+    if (result.status === "NOT_FOUND") message = "Ce lien n'existe pas.";
+    else if (result.status === "REVOKED") message = "Ce lien a été révoqué.";
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-surface-sunken">
         <p className="text-ink-muted text-center max-w-sm">{message}</p>

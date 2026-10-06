@@ -24,6 +24,18 @@ interface ChurchSwitcherProps {
  * une seule église, simple libellé. Le choix passe par `POST /api/current-church` puis recharge
  * la page (le contexte d'église est lu côté serveur).
  */
+const MENU_POSITION = {
+  rail: "left-full top-0 ml-2",
+  topbar: "left-0 top-full mt-2",
+  sidebar: "left-0 right-0 top-full mt-1",
+} as const;
+
+const TRIGGER_SIZE = {
+  rail: "size-10 justify-center",
+  topbar: "min-h-11 max-w-full px-1.5",
+  sidebar: "min-h-10 w-full px-3",
+} as const;
+
 export default function ChurchSwitcher({
   churches,
   currentChurchId,
@@ -94,8 +106,7 @@ export default function ChurchSwitcher({
     );
   }
 
-  const menuPosition =
-    variant === "rail" ? "left-full top-0 ml-2" : variant === "topbar" ? "left-0 top-full mt-2" : "left-0 right-0 top-full mt-1";
+  const menuPosition = MENU_POSITION[variant];
 
   return (
     <div ref={rootRef} className={`relative min-w-0 ${variant === "sidebar" ? "" : "flex"}`}>
@@ -108,11 +119,7 @@ export default function ChurchSwitcher({
         title={variant === "rail" ? `${name} — changer d'église` : undefined}
         className={`flex min-w-0 cursor-pointer items-center gap-2 rounded-control text-left transition-colors duration-120 hover:bg-surface-sunken
           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-            variant === "rail"
-              ? "size-10 justify-center"
-              : variant === "topbar"
-                ? "min-h-11 max-w-full px-1.5"
-                : "min-h-10 w-full px-3"
+            TRIGGER_SIZE[variant]
           }`}
       >
         {dot}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ExternalLink, PanelLeftClose, PanelLeftOpen } from "lucide-react";
@@ -68,12 +68,9 @@ function ExpandedSpace({
   const target = directTarget(space);
   // Une seule surbrillance : la page active. Un espace ouvert sur ses pages ne fait qu'indiquer le
   // chemin (texte foncé, icône `brand-text`) ; seul un espace à destination unique se remplit.
-  const tone =
-    isActive && target
-      ? "bg-brand-soft text-brand-text"
-      : isActive
-        ? "text-ink hover:bg-surface-sunken"
-        : "text-ink-muted hover:bg-surface-sunken hover:text-ink";
+  let tone = "text-ink-muted hover:bg-surface-sunken hover:text-ink";
+  if (isActive && target) tone = "bg-brand-soft text-brand-text";
+  else if (isActive) tone = "text-ink hover:bg-surface-sunken";
   const iconTone = isActive ? "text-brand-text" : "text-ink-subtle";
   const className = `${itemBase} w-full ${tone}`;
   const content = (
@@ -84,28 +81,37 @@ function ExpandedSpace({
     </>
   );
 
+  let trigger: ReactNode;
+  if (target?.external) {
+    trigger = (
+      <a href={target.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {content}
+        <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+        <span className="sr-only">(nouvel onglet)</span>
+      </a>
+    );
+  } else if (target) {
+    trigger = (
+      <Link href={target.href} aria-current={isActive ? "page" : undefined} className={className}>
+        {content}
+      </Link>
+    );
+  } else {
+    trigger = (
+      <button type="button" onClick={onToggle} aria-expanded={open} className={`${className} cursor-pointer text-left`}>
+        {content}
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-4 shrink-0 text-ink-subtle transition-transform duration-120 ${open ? "" : "-rotate-90"}`}
+          strokeWidth={1.75}
+        />
+      </button>
+    );
+  }
+
   return (
     <li data-tour={withTour ? space.dataTour : undefined}>
-      {target?.external ? (
-        <a href={target.href} target="_blank" rel="noopener noreferrer" className={className}>
-          {content}
-          <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-          <span className="sr-only">(nouvel onglet)</span>
-        </a>
-      ) : target ? (
-        <Link href={target.href} aria-current={isActive ? "page" : undefined} className={className}>
-          {content}
-        </Link>
-      ) : (
-        <button type="button" onClick={onToggle} aria-expanded={open} className={`${className} cursor-pointer text-left`}>
-          {content}
-          <ChevronDown
-            aria-hidden="true"
-            className={`size-4 shrink-0 text-ink-subtle transition-transform duration-120 ${open ? "" : "-rotate-90"}`}
-            strokeWidth={1.75}
-          />
-        </button>
-      )}
+      {trigger}
       {open && !target && (
         <div className="mb-2 ml-[21px] mt-0.5 border-l border-line py-0.5 pl-2.5">
           {space.pages.length === 0 ? (
@@ -244,7 +250,11 @@ function RailNav({
               <Badge count={s.badge} className="ring-2 ring-surface" />
             </span>
           );
-          const label = s.badge ? `${s.label}, ${s.badge} nouveauté${s.badge > 1 ? "s" : ""}` : s.label;
+          let label = s.label;
+          if (s.badge) {
+            const plural = s.badge > 1 ? "s" : "";
+            label = `${s.label}, ${s.badge} nouveauté${plural}`;
+          }
           return (
             <div key={s.key} data-tour={withTour ? s.dataTour : undefined}>
               {direct ? (
@@ -326,8 +336,9 @@ export default function Sidebar({
   const [pref, setPref] = useSidebarPref();
   const viewport = useViewport();
   const railForced = pref === "rail";
-  const visible: "expanded" | "rail" | null =
-    viewport === "desktop" ? (railForced ? "rail" : "expanded") : viewport === "tablet" ? "rail" : null;
+  let visible: "expanded" | "rail" | null = null;
+  if (viewport === "desktop") visible = railForced ? "rail" : "expanded";
+  else if (viewport === "tablet") visible = "rail";
 
   const switcher = { churches, currentChurchId, currentName: churchName, color: churchColor };
 

@@ -57,6 +57,18 @@ function fmt(amount: number) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
 }
 
+function kpiBorderClass(accent?: boolean, warning?: boolean): string {
+  if (accent) return "border-brand/30 bg-brand-soft";
+  if (warning) return "border-warning/30 bg-warning-soft";
+  return "border-line";
+}
+
+function kpiValueClass(accent?: boolean, warning?: boolean): string {
+  if (accent) return "text-brand-text";
+  if (warning) return "text-warning";
+  return "text-ink";
+}
+
 function KpiCard({
   label,
   value,
@@ -72,19 +84,11 @@ function KpiCard({
 }) {
   return (
     <div
-      className={`bg-surface rounded-xl border p-4 sm:p-5 ${
-        accent
-          ? "border-brand/30 bg-brand-soft"
-          : warning
-          ? "border-warning/30 bg-warning-soft"
-          : "border-line"
-      }`}
+      className={`bg-surface rounded-xl border p-4 sm:p-5 ${kpiBorderClass(accent, warning)}`}
     >
       <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
       <p
-        className={`text-2xl font-bold ${
-          accent ? "text-brand-text" : warning ? "text-warning" : "text-ink"
-        }`}
+        className={`text-2xl font-bold ${kpiValueClass(accent, warning)}`}
       >
         {value}
       </p>

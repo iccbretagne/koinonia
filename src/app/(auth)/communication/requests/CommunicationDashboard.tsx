@@ -41,6 +41,12 @@ const STATUS_COLOR: Record<string, string> = {
   ANNULE: "bg-surface-sunken text-ink-muted",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  EN_ATTENTE: "En attente",
+  EN_COURS: "En cours",
+  LIVRE: "Publié",
+};
+
 const VISUEL_STATUS_INFO: Record<string, { icon: string; label: string; color: string }> = {
   EN_ATTENTE: { icon: "⏳", label: "Visuel en attente", color: "text-warning" },
   EN_COURS: { icon: "●", label: "Visuel en cours de création", color: "text-info" },
@@ -121,7 +127,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
             </p>
           </div>
           <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLOR[req.status]}`}>
-            {req.status === "EN_ATTENTE" ? "En attente" : req.status === "EN_COURS" ? "En cours" : req.status === "LIVRE" ? "Publié" : "Annulé"}
+            {STATUS_LABEL[req.status] ?? "Annulé"}
           </span>
         </div>
 

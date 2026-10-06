@@ -218,6 +218,10 @@ export async function applyFollowupTransition(params: {
 
   const personName = `${existing.firstName} ${existing.lastName}`;
 
+  let historyNote: string | null | undefined = null;
+  if (body.action === "handback") historyNote = body.reason;
+  else if (body.action === "note") historyNote = body.notes;
+
   await recordCareHistory({
     userId: actorId,
     churchId,
@@ -227,7 +231,7 @@ export async function applyFollowupTransition(params: {
     from: existing.status,
     to: typeof result.data.status === "string" ? result.data.status : existing.status,
     assignee: assignee?.name ?? null,
-    note: body.action === "handback" ? body.reason : body.action === "note" ? body.notes : null,
+    note: historyNote,
   });
 
   if (result.notifyAssigned) {

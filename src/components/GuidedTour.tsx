@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense, type CSSProperties } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { getTourSteps, type TourStep, type RoleKey } from "@/lib/tour-steps";
@@ -125,6 +125,38 @@ function TourOverlay({
 
   const padding = 8;
 
+  let tooltipWrapperStyle: CSSProperties;
+  if (isCentered) {
+    // Centered modal
+    tooltipWrapperStyle = {
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      maxWidth: 400,
+      width: "calc(100% - 32px)",
+    };
+  } else if (tooltipPos) {
+    tooltipWrapperStyle = {
+      position: "absolute",
+      top: tooltipPos.top,
+      left: tooltipPos.left,
+      maxWidth: 360,
+      width: "calc(100% - 16px)",
+      transition: "top 0.3s ease, left 0.3s ease",
+    };
+  } else {
+    // Hidden tooltip for measurement
+    tooltipWrapperStyle = {
+      position: "absolute",
+      top: -9999,
+      left: -9999,
+      maxWidth: 360,
+      width: "calc(100% - 16px)",
+      visibility: "hidden",
+    };
+  }
+
   return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 10000 }}>
       {/* Overlay */}
@@ -176,75 +208,18 @@ function TourOverlay({
       )}
 
       {/* Tooltip */}
-      {isCentered ? (
-        // Centered modal
-        <div
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            maxWidth: 400,
-            width: "calc(100% - 32px)",
-          }}
-        >
-          <TooltipCard
-            ref={tooltipRef}
-            step={step}
-            stepIndex={currentStep}
-            totalSteps={steps.length}
-            isLast={isLast}
-            onNext={handleNext}
-            onBack={handleBack}
-            onSkip={onFinish}
-          />
-        </div>
-      ) : tooltipPos ? (
-        <div
-          style={{
-            position: "absolute",
-            top: tooltipPos.top,
-            left: tooltipPos.left,
-            maxWidth: 360,
-            width: "calc(100% - 16px)",
-            transition: "top 0.3s ease, left 0.3s ease",
-          }}
-        >
-          <TooltipCard
-            ref={tooltipRef}
-            step={step}
-            stepIndex={currentStep}
-            totalSteps={steps.length}
-            isLast={isLast}
-            onNext={handleNext}
-            onBack={handleBack}
-            onSkip={onFinish}
-          />
-        </div>
-      ) : (
-        // Hidden tooltip for measurement
-        <div
-          style={{
-            position: "absolute",
-            top: -9999,
-            left: -9999,
-            maxWidth: 360,
-            width: "calc(100% - 16px)",
-            visibility: "hidden",
-          }}
-        >
-          <TooltipCard
-            ref={tooltipRef}
-            step={step}
-            stepIndex={currentStep}
-            totalSteps={steps.length}
-            isLast={isLast}
-            onNext={handleNext}
-            onBack={handleBack}
-            onSkip={onFinish}
-          />
-        </div>
-      )}
+      <div style={tooltipWrapperStyle}>
+        <TooltipCard
+          ref={tooltipRef}
+          step={step}
+          stepIndex={currentStep}
+          totalSteps={steps.length}
+          isLast={isLast}
+          onNext={handleNext}
+          onBack={handleBack}
+          onSkip={onFinish}
+        />
+      </div>
     </div>,
     document.body
   );

@@ -41,6 +41,7 @@ export default function MissionDetailClient({
 
   const isFilled   = mission.status === "FILLED";
   const isArchived = mission.status === "ARCHIVED";
+  const toggleLabel = isArchived ? "Republier" : "Archiver";
 
   async function markFilled() {
     setLoading(true);
@@ -146,7 +147,7 @@ export default function MissionDetailClient({
                   disabled={loading}
                   className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
-                  {loading ? "…" : isArchived ? "Republier" : "Archiver"}
+                  {loading ? "…" : toggleLabel}
                 </button>
               )}
               {(canManage || isAuthor) && (

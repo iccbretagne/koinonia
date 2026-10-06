@@ -50,6 +50,7 @@ export default function SeekerDetailClient({
 
   const isFound    = seeker.status === "FOUND";
   const isArchived = seeker.status === "ARCHIVED";
+  const archiveLabel = isArchived ? "Republier" : "Archiver";
 
   const contractBadges = (
     [
@@ -164,7 +165,7 @@ export default function SeekerDetailClient({
                   disabled={loading}
                   className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
                 >
-                  {loading ? "…" : isArchived ? "Republier" : "Archiver"}
+                  {loading ? "…" : archiveLabel}
                 </button>
               )}
               {(canManage || isAuthor) && (

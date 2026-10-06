@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
@@ -95,7 +95,8 @@ function StateChip({ d, dueAt }: { readonly d: DeptState; readonly dueAt: string
   }
   if (d.state === "NO_RESPONSE") {
     const dueSuffix = dueAt ? ` · avant le ${shortFmt.format(new Date(dueAt))}` : "";
-    return <StatusChip tone={d.overdue ? "danger" : "neutral"}>{d.overdue ? "Sans réponse — en retard" : `Sans réponse${dueSuffix}`}</StatusChip>;
+    const noResponseLabel = d.overdue ? "Sans réponse — en retard" : `Sans réponse${dueSuffix}`;
+    return <StatusChip tone={d.overdue ? "danger" : "neutral"}>{noResponseLabel}</StatusChip>;
   }
   return <StatusChip tone="neutral">Non demandée</StatusChip>;
 }
@@ -317,6 +318,29 @@ export default function AvailabilityClient({
   const current = months.find((m) => m.month.slice(0, 7) === month);
   const events = data?.events ?? [];
 
+  let eventsContent: ReactNode;
+  if (loading) {
+    eventsContent = <p className="text-sm text-ink-muted">Chargement…</p>;
+  } else if (events.length === 0) {
+    eventsContent = (
+      <p className="text-sm text-ink-muted">Aucun événement à venir pour {month ? monthLabel(month) : "ce mois"} dans vos départements.</p>
+    );
+  } else {
+    eventsContent = (
+      <div className="space-y-4">
+        {events.map((e) => (
+          <EventCard
+            key={`${e.id}:${e.departments.map((d) => d.answer ?? "-").join("")}`}
+            event={e}
+            highlighted={focusEventId === e.id}
+            saving={savingId === e.id}
+            onSave={save}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl space-y-6">
       <AvailabilityTabs self={selfMembers.length > 0} team={canViewOverview} collections={canSettings} />
@@ -379,23 +403,7 @@ export default function AvailabilityClient({
         </Button>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-ink-muted">Chargement…</p>
-      ) : events.length === 0 ? (
-        <p className="text-sm text-ink-muted">Aucun événement à venir pour {month ? monthLabel(month) : "ce mois"} dans vos départements.</p>
-      ) : (
-        <div className="space-y-4">
-          {events.map((e) => (
-            <EventCard
-              key={`${e.id}:${e.departments.map((d) => d.answer ?? "-").join("")}`}
-              event={e}
-              highlighted={focusEventId === e.id}
-              saving={savingId === e.id}
-              onSave={save}
-            />
-          ))}
-        </div>
-      )}
+      {eventsContent}
 
       <UnavailabilityPeriodForm
         open={periodOpen}

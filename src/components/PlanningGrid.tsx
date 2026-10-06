@@ -357,9 +357,11 @@ export default function PlanningGrid({
     (m) => m.status === "EN_SERVICE" || m.status === "EN_SERVICE_DEBRIEF"
   ).length;
 
-  const availabilitySummary = availCounts
-    ? `${availCounts.available} disponible${availCounts.available > 1 ? "s" : ""} · ${availCounts.ifNeeded} si besoin · ${availCounts.noResponse} sans réponse`
-    : null;
+  let availabilitySummary: string | null = null;
+  if (availCounts) {
+    const plural = availCounts.available > 1 ? "s" : "";
+    availabilitySummary = `${availCounts.available} disponible${plural} · ${availCounts.ifNeeded} si besoin · ${availCounts.noResponse} sans réponse`;
+  }
 
   const deadlineLabel = planningDeadline
     ? new Date(planningDeadline).toLocaleString("fr-FR", {

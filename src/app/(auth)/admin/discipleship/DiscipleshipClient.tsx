@@ -148,6 +148,12 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
 // ─── Combobox disciple ────────────────────────────────────────────────────────
 
+function rateBarClass(rate: number): string {
+  if (rate >= 80) return "bg-success";
+  if (rate >= 50) return "bg-accent";
+  return "bg-danger";
+}
+
 function norm(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
@@ -955,11 +961,11 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
 
       {error && <p className="text-sm text-danger mb-4">{error}</p>}
 
-      {loadingAttendance ? (
-        <p className="text-sm text-ink-subtle">Chargement...</p>
-      ) : discipleships.length === 0 ? (
+      {loadingAttendance && <p className="text-sm text-ink-subtle">Chargement...</p>}
+      {!loadingAttendance && discipleships.length === 0 && (
         <p className="text-sm text-ink-subtle">Aucun disciple enregistré.</p>
-      ) : (
+      )}
+      {!loadingAttendance && discipleships.length > 0 && (
         <div className="space-y-4">
           {Object.values(grouped).map(({ maker, disciples }) => (
             <div key={maker.id} className="bg-surface rounded-lg shadow-card border border-line overflow-hidden">
@@ -1144,13 +1150,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                                 <div className="flex items-center gap-2">
                                   <div className="w-24 h-2 bg-surface-sunken rounded-full overflow-hidden">
                                     <div
-                                      className={`h-full rounded-full transition-all ${
-                                        row.stats.rate >= 80
-                                          ? "bg-success-soft0"
-                                          : row.stats.rate >= 50
-                                          ? "bg-accent"
-                                          : "bg-danger"
-                                      }`}
+                                      className={`h-full rounded-full transition-all ${rateBarClass(row.stats.rate)}`}
                                       style={{ width: `${row.stats.rate}%` }}
                                     />
                                   </div>
@@ -1182,13 +1182,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-2 bg-surface-sunken rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${
-                                  row.stats.rate >= 80
-                                    ? "bg-success-soft0"
-                                    : row.stats.rate >= 50
-                                    ? "bg-accent"
-                                    : "bg-danger"
-                                }`}
+                                className={`h-full rounded-full transition-all ${rateBarClass(row.stats.rate)}`}
                                 style={{ width: `${row.stats.rate}%` }}
                               />
                             </div>

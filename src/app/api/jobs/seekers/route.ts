@@ -22,6 +22,13 @@ const createSeekerSchema = z
     message: "Au moins un type de contrat doit être sélectionné",
   });
 
+function contractTypeFilter(type: "EMPLOI" | "STAGE" | "ALTERNANCE" | null) {
+  if (type === "EMPLOI") return { wantEmploi: true };
+  if (type === "STAGE") return { wantStage: true };
+  if (type === "ALTERNANCE") return { wantAlternance: true };
+  return undefined;
+}
+
 export async function GET(request: Request) {
   try {
     await requireAuth();
@@ -29,14 +36,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") as "EMPLOI" | "STAGE" | "ALTERNANCE" | null;
 
-    const typeFilter =
-      type === "EMPLOI"
-        ? { wantEmploi: true }
-        : type === "STAGE"
-          ? { wantStage: true }
-          : type === "ALTERNANCE"
-            ? { wantAlternance: true }
-            : undefined;
+    const typeFilter = contractTypeFilter(type);
 
     const seekers = await prisma.jobSeeker.findMany({
       where: {

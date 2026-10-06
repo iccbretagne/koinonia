@@ -463,11 +463,11 @@ export default function AbsencesClient({
             </div>
           </div>
 
-          {loadingAll ? (
-            <p className="text-ink-muted text-sm">Chargement...</p>
-          ) : viewMode === "timeline" ? (
+          {loadingAll && <p className="text-ink-muted text-sm">Chargement...</p>}
+          {!loadingAll && viewMode === "timeline" && (
             <AbsencesTimeline absences={displayedAbsences} responses={displayedResponses} onSelect={selectFromTimeline} />
-          ) : (
+          )}
+          {!loadingAll && viewMode !== "timeline" && (
             <>
               <DataTable
                 data={displayedAbsences}
