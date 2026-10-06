@@ -128,7 +128,7 @@ function StatusSegments({
   readonly onChange: (status: ServiceStatus | null) => void;
 }) {
   return (
-    <div role="group" aria-label={`Statut de ${memberName}`} className="inline-flex shrink-0 gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+    <fieldset aria-label={`Statut de ${memberName}`} className="inline-flex min-w-0 shrink-0 gap-0.5 rounded-control bg-surface-sunken p-[3px]">
       {PLANNABLE_STATUSES.map((value) => {
         const { tone, label } = SERVICE_STATUS[value];
         const Icon = SEGMENT_ICON[value];
@@ -151,7 +151,7 @@ function StatusSegments({
           </button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
 

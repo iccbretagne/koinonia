@@ -104,8 +104,8 @@ export default function ResponsibilityModal({
         )}
 
         {mode === "department-head" && (
-          <div>
-            <label className="block text-sm font-medium text-ink-muted mb-2">Type</label>
+          <fieldset className="min-w-0">
+            <legend className="block text-sm font-medium text-ink-muted mb-2">Type</legend>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -126,7 +126,7 @@ export default function ResponsibilityModal({
                 Responsable adjoint
               </button>
             </div>
-          </div>
+          </fieldset>
         )}
 
         {error && <p className="text-sm text-danger">{error}</p>}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import HistoryTimeline from "@/components/HistoryTimeline";
@@ -440,6 +440,7 @@ type TabId = "contact" | "profil" | "famille" | "notes";
 
 export default function RequestDetail({ request: initial, appointmentRequest, msdpFollowUp: initialMsdpFollowUp, churchId, isScoped, currentUserId, relanceDue: initialRelanceDue }: Props) {
   const router = useRouter();
+  const uid = useId();
   const [req, setReq] = useState(initial);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1268,8 +1269,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">Famille</label>
+              <label htmlFor={`${uid}-assign-family`} className="block text-sm font-medium text-ink-muted mb-1">Famille</label>
               <select
+                id={`${uid}-assign-family`}
                 value={assignFamilyId}
                 onChange={(e) => { setAssignFamilyId(e.target.value); setAssignBergerId(""); }}
                 className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
@@ -1282,8 +1284,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-muted mb-1">Berger / co-berger</label>
+              <label htmlFor={`${uid}-assign-berger`} className="block text-sm font-medium text-ink-muted mb-1">Berger / co-berger</label>
               <select
+                id={`${uid}-assign-berger`}
                 value={assignBergerId}
                 onChange={(e) => setAssignBergerId(e.target.value)}
                 className="w-full border border-control-line rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand"
@@ -1322,38 +1325,38 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
-              <input type="text" value={editForm.firstName}
+              <label htmlFor={`${uid}-edit-first`} className="block text-xs font-medium text-ink-muted mb-1">Prénom</label>
+              <input id={`${uid}-edit-first`} type="text" value={editForm.firstName}
                 onChange={(e) => setEditForm((f) => ({ ...f, firstName: e.target.value }))}
                 className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
-              <input type="text" value={editForm.lastName}
+              <label htmlFor={`${uid}-edit-last`} className="block text-xs font-medium text-ink-muted mb-1">Nom</label>
+              <input id={`${uid}-edit-last`} type="text" value={editForm.lastName}
                 onChange={(e) => setEditForm((f) => ({ ...f, lastName: e.target.value }))}
                 className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Téléphone</label>
-            <input type="tel" value={editForm.phone}
+            <label htmlFor={`${uid}-edit-phone`} className="block text-xs font-medium text-ink-muted mb-1">Téléphone</label>
+            <input id={`${uid}-edit-phone`} type="tel" value={editForm.phone}
               onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
               className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Email</label>
-            <input type="email" value={editForm.email}
+            <label htmlFor={`${uid}-edit-email`} className="block text-xs font-medium text-ink-muted mb-1">Email</label>
+            <input id={`${uid}-edit-email`} type="email" value={editForm.email}
               onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
               className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Adresse</label>
-            <input type="text" value={editForm.address}
+            <label htmlFor={`${uid}-edit-address`} className="block text-xs font-medium text-ink-muted mb-1">Adresse</label>
+            <input id={`${uid}-edit-address`} type="text" value={editForm.address}
               onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
               className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-2">Tranche d&apos;âge</label>
+          <fieldset className="min-w-0">
+            <legend className="block text-xs font-medium text-ink-muted mb-2">Tranche d&apos;âge</legend>
             <div className="flex flex-wrap gap-2">
               {(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"] as const).map((v) => (
                 <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.ageRange === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
@@ -1362,9 +1365,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 </label>
               ))}
             </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-2">Situation à l&apos;église</label>
+          </fieldset>
+          <fieldset className="min-w-0">
+            <legend className="block text-xs font-medium text-ink-muted mb-2">Situation à l&apos;église</legend>
             <div className="flex flex-wrap gap-2">
               {(["VISITOR", "REGULAR", "ENGAGED"] as const).map((v) => (
                 <label key={v} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${editForm.churchStatus === v ? "bg-brand text-on-brand border-brand" : "border-line text-ink-muted hover:border-brand"}`}>
@@ -1373,7 +1376,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
           <div className="flex gap-2 justify-end pt-1">
             <button onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={submitEdit} disabled={editLoading || !editForm.firstName || !editForm.lastName}
@@ -1409,8 +1412,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             ))}
           </fieldset>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
+            <label htmlFor={`${uid}-abandon-reason`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
+              id={`${uid}-abandon-reason`}
               value={abandonReason}
               onChange={(e) => setAbandonReason(e.target.value)}
               rows={3}
@@ -1443,8 +1447,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             intégration une fois le délai écoulé.
           </p>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
+            <label htmlFor={`${uid}-wait-note`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
+              id={`${uid}-wait-note`}
               value={waitNote}
               onChange={(e) => setWaitNote(e.target.value)}
               rows={2}
@@ -1471,10 +1476,11 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             intégration, qui sera prévenue.
           </p>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">
+            <label htmlFor={`${uid}-handback-reason`} className="block text-sm font-medium text-ink-muted mb-1">
               Raison <span className="text-danger">*</span>
             </label>
             <textarea
+              id={`${uid}-handback-reason`}
               value={handbackReason}
               onChange={(e) => setHandbackReason(e.target.value)}
               rows={3}
@@ -1503,8 +1509,9 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
             La demande reste en attente et le délai avant la prochaine alerte repart de zéro.
           </p>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
+            <label htmlFor={`${uid}-relance-note`} className="block text-sm font-medium text-ink-muted mb-1">Commentaire (facultatif)</label>
             <textarea
+              id={`${uid}-relance-note`}
               value={relanceNote}
               onChange={(e) => setRelanceNote(e.target.value)}
               rows={3}

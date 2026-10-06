@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
@@ -18,6 +18,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
   contactUrl: string | null;
 }}) {
   const router = useRouter();
+  const uid = useId();
   const isEdit = !!initial;
 
   const [title,        setTitle]        = useState(initial?.title        ?? "");
@@ -71,8 +72,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Intitulé du poste *</label>
+          <label htmlFor={`${uid}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Intitulé du poste *</label>
           <input
+            id={`${uid}-f1`}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -84,8 +86,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Type *</label>
+          <label htmlFor={`${uid}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Type *</label>
           <select
+            id={`${uid}-f2`}
             value={type}
             onChange={(e) => setType(e.target.value as JobType)}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
@@ -97,8 +100,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Entreprise / Organisme *</label>
+          <label htmlFor={`${uid}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Entreprise / Organisme *</label>
           <input
+            id={`${uid}-f3`}
             type="text"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
@@ -110,8 +114,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Lieu</label>
+          <label htmlFor={`${uid}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Lieu</label>
           <input
+            id={`${uid}-f4`}
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -122,8 +127,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Durée / Rythme</label>
+          <label htmlFor={`${uid}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">Durée / Rythme</label>
           <input
+            id={`${uid}-f5`}
             type="text"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
@@ -134,8 +140,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Description *</label>
+          <label htmlFor={`${uid}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">Description *</label>
           <textarea
+            id={`${uid}-f6`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -146,8 +153,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Date limite de candidature</label>
+          <label htmlFor={`${uid}-f7`} className="block text-sm font-semibold text-ink-muted mb-1.5">Date limite de candidature</label>
           <input
+            id={`${uid}-f7`}
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
@@ -159,8 +167,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         <div />
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
+          <label htmlFor={`${uid}-f8`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
           <input
+            id={`${uid}-f8`}
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
@@ -170,8 +179,9 @@ export default function JobFormClient({ initial }: { readonly initial?: {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Lien de candidature</label>
+          <label htmlFor={`${uid}-f9`} className="block text-sm font-semibold text-ink-muted mb-1.5">Lien de candidature</label>
           <input
+            id={`${uid}-f9`}
             type="url"
             value={contactUrl}
             onChange={(e) => setContactUrl(e.target.value)}

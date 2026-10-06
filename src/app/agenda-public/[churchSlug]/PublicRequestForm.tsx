@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface Props {
@@ -46,6 +46,7 @@ function RadioGroup({ name, options, value, onChange, errors }: {
 }
 
 export default function PublicRequestForm({ churchSlug, churchName, turnstileSiteKey }: Props) {
+  const id = useId();
   const [form, setForm] = useState({
     lastName: "",
     firstName: "",
@@ -141,36 +142,36 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Nom *</label>
-            <input type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)}
+            <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">Nom *</label>
+            <input id={`${id}-f1`} type="text" required value={form.lastName} onChange={(e) => set("lastName", e.target.value)}
               className={inputClass(fieldErrors, "lastName")} />
             <FieldError errors={fieldErrors} field="lastName" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Prénom *</label>
-            <input type="text" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)}
+            <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">Prénom *</label>
+            <input id={`${id}-f2`} type="text" required value={form.firstName} onChange={(e) => set("firstName", e.target.value)}
               className={inputClass(fieldErrors, "firstName")} />
             <FieldError errors={fieldErrors} field="firstName" />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Sexe *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Sexe *</legend>
           <RadioGroup name="gender" options={["Homme", "Femme"]} value={form.gender}
             onChange={(v) => set("gender", v)} errors={fieldErrors} />
           <FieldError errors={fieldErrors} field="gender" />
-        </div>
+        </fieldset>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Téléphone *</label>
-          <input type="tel" required value={form.phone} onChange={(e) => set("phone", e.target.value)}
+          <label htmlFor={`${id}-f3`} className="block text-sm font-medium text-ink-muted mb-1">Téléphone *</label>
+          <input id={`${id}-f3`} type="tel" required value={form.phone} onChange={(e) => set("phone", e.target.value)}
             className={inputClass(fieldErrors, "phone")} />
           <FieldError errors={fieldErrors} field="phone" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Adresse mail *</label>
-          <input type="email" required value={form.email} onChange={(e) => set("email", e.target.value)}
+          <label htmlFor={`${id}-f4`} className="block text-sm font-medium text-ink-muted mb-1">Adresse mail *</label>
+          <input id={`${id}-f4`} type="email" required value={form.email} onChange={(e) => set("email", e.target.value)}
             className={inputClass(fieldErrors, "email")} />
           <FieldError errors={fieldErrors} field="email" />
         </div>
@@ -180,31 +181,31 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
       <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-ink">Votre profil</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Tranche d&apos;âge *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Tranche d&apos;âge *</legend>
           <RadioGroup name="ageRange" options={AGE_RANGES} value={form.ageRange}
             onChange={(v) => set("ageRange", v)} errors={fieldErrors} />
           <FieldError errors={fieldErrors} field="ageRange" />
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Depuis quand êtes-vous à {churchName} ? *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Depuis quand êtes-vous à {churchName} ? *</legend>
           <RadioGroup name="membershipDuration" options={DURATIONS} value={form.membershipDuration}
             onChange={(v) => set("membershipDuration", v)} errors={fieldErrors} />
           <FieldError errors={fieldErrors} field="membershipDuration" />
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">Êtes-vous STAR ? *</label>
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">Êtes-vous STAR ? *</legend>
           <RadioGroup name="isStar" options={["Oui", "Non"]} value={form.isStar}
             onChange={(v) => set("isStar", v)} errors={fieldErrors} />
           <FieldError errors={fieldErrors} field="isStar" />
-        </div>
+        </fieldset>
 
         {form.isStar === "Oui" && (
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Dans quel département servez-vous ?</label>
-            <input type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
+            <label htmlFor={`${id}-f5`} className="block text-sm font-medium text-ink-muted mb-1">Dans quel département servez-vous ?</label>
+            <input id={`${id}-f5`} type="text" value={form.department} onChange={(e) => set("department", e.target.value)}
               placeholder="Ex : Choristes, Accueil, Son…"
               className={inputClass(fieldErrors, "department")} />
             <FieldError errors={fieldErrors} field="department" />
@@ -216,10 +217,10 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
       <div className="bg-surface rounded-xl border border-line p-4 sm:p-6 space-y-4">
         <h2 className="text-base font-semibold text-ink">Votre demande</h2>
 
-        <div>
-          <label className="block text-sm font-medium text-ink-muted mb-2">
+        <fieldset className="min-w-0">
+          <legend className="block text-sm font-medium text-ink-muted mb-2">
             Pour quel motif sollicitez-vous un entretien ? * <span className="font-normal text-ink-subtle">(plusieurs choix possibles)</span>
-          </label>
+          </legend>
           <div className={`flex flex-wrap gap-2 ${fieldErrors["motifs"] ? "p-2 rounded-lg border border-danger/30 bg-danger-soft" : ""}`}>
             {MOTIFS.map((motif) => (
               <label key={motif} className={`flex items-center gap-2 px-3 py-2.5 md:py-1.5 min-h-[44px] md:min-h-0 rounded-full border text-sm cursor-pointer transition-colors ${
@@ -232,13 +233,13 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
             ))}
           </div>
           <FieldError errors={fieldErrors} field="motifs" />
-        </div>
+        </fieldset>
 
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">
+          <label htmlFor={`${id}-f6`} className="block text-sm font-medium text-ink-muted mb-1">
             Votre message <span className="font-normal text-ink-subtle">(facultatif)</span>
           </label>
-          <textarea
+          <textarea id={`${id}-f6`}
             value={form.details}
             onChange={(e) => set("details", e.target.value)}
             rows={4}

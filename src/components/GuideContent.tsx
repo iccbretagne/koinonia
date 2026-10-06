@@ -668,8 +668,8 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
       {zoomedImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-scrim cursor-zoom-out p-4"
-          role="presentation"
-          onClick={() => setZoomedImage(null)}
+          role="none"
+          onClick={(e) => { if (e.target === e.currentTarget) setZoomedImage(null); }}
         >
           <button
             type="button"
@@ -681,7 +681,7 @@ export default function GuideContent({ defaultRole }: GuideContentProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <div role="presentation" className="max-w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={zoomedImage.src}

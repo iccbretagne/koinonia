@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProfileInitial {
@@ -25,6 +25,7 @@ export default function FreelanceProfileFormClient({
   readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
+  const uid = useId();
   const isEdit = !!initial;
 
   const [title,        setTitle]        = useState(initial?.title        ?? "");
@@ -84,8 +85,9 @@ export default function FreelanceProfileFormClient({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Titre *</label>
+          <label htmlFor={`${uid}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Titre *</label>
           <input
+            id={`${uid}-f1`}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -97,8 +99,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Domaine / Stack technique *</label>
+          <label htmlFor={`${uid}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Domaine / Stack technique *</label>
           <input
+            id={`${uid}-f2`}
             type="text"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
@@ -110,8 +113,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Modalité *</label>
+          <label htmlFor={`${uid}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Modalité *</label>
           <select
+            id={`${uid}-f3`}
             value={modality}
             onChange={(e) => setModality(e.target.value as "REMOTE" | "ONSITE" | "HYBRID")}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
@@ -123,8 +127,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
+          <label htmlFor={`${uid}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
           <input
+            id={`${uid}-f4`}
             type="date"
             value={availableFrom}
             onChange={(e) => setAvailableFrom(e.target.value)}
@@ -133,8 +138,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">TJM (taux journalier)</label>
+          <label htmlFor={`${uid}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">TJM (taux journalier)</label>
           <input
+            id={`${uid}-f5`}
             type="text"
             value={dailyRate}
             onChange={(e) => setDailyRate(e.target.value)}
@@ -145,8 +151,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Taux horaire</label>
+          <label htmlFor={`${uid}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">Taux horaire</label>
           <input
+            id={`${uid}-f6`}
             type="text"
             value={hourlyRate}
             onChange={(e) => setHourlyRate(e.target.value)}
@@ -158,8 +165,9 @@ export default function FreelanceProfileFormClient({
 
         {modality !== "REMOTE" && (
           <div className="col-span-2">
-            <label className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation</label>
+            <label htmlFor={`${uid}-f7`} className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation</label>
             <input
+              id={`${uid}-f7`}
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -171,8 +179,9 @@ export default function FreelanceProfileFormClient({
         )}
 
         <div className="col-span-2">
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
+          <label htmlFor={`${uid}-f8`} className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
           <textarea
+            id={`${uid}-f8`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -183,8 +192,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
+          <label htmlFor={`${uid}-f9`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
           <input
+            id={`${uid}-f9`}
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
@@ -194,8 +204,9 @@ export default function FreelanceProfileFormClient({
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
+          <label htmlFor={`${uid}-f10`} className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
           <input
+            id={`${uid}-f10`}
             type="url"
             value={contactUrl}
             onChange={(e) => setContactUrl(e.target.value)}

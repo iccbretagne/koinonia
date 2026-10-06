@@ -317,9 +317,9 @@ export default function PersonAccessClient({
                           }}
                           className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus"
                         />
-                        <div>
-                          <p className="text-sm font-medium text-ink">{ROLE_LABELS[role]}</p>
-                          <p className="text-xs text-ink-muted">{ROLE_DESCRIPTIONS[role]}</p>
+                        <div className="text-sm font-medium text-ink">
+                          {ROLE_LABELS[role]}
+                          <span className="block text-xs font-normal text-ink-muted">{ROLE_DESCRIPTIONS[role]}</span>
                         </div>
                       </label>
                     );

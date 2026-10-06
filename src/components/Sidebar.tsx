@@ -184,7 +184,7 @@ function RailNav({
   readonly withTour: boolean;
 }) {
   const [flyout, setFlyout] = useState<{ key: string; top: number; left: number } | null>(null);
-  const flyoutRef = useRef<HTMLDivElement>(null);
+  const flyoutRef = useRef<HTMLElement>(null);
   /** Bouton du rail à l'origine du panneau ouvert : reçoit le focus quand Échap le referme. */
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
@@ -285,9 +285,8 @@ function RailNav({
       </nav>
 
       {openSpace && flyout && (
-        <div
+        <section
           ref={flyoutRef}
-          role="region"
           aria-label={openSpace.label}
           tabIndex={-1}
           style={{ top: flyout.top, left: flyout.left }}
@@ -302,7 +301,7 @@ function RailNav({
               <SidebarPageTree pages={openSpace.pages} activePage={active.page} onNavigate={() => setFlyout(null)} />
             )}
           </div>
-        </div>
+        </section>
       )}
     </>
   );

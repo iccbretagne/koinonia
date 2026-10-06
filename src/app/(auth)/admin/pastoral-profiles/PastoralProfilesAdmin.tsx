@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Button from "@/components/ui/Button";
 
 interface User { id: string; name: string | null; displayName: string | null; email: string | null }
@@ -23,6 +23,7 @@ const ROLES = [
 const EMPTY_FORM = { name: "", role: "PASTEUR", email: "", userId: "" };
 
 export default function PastoralProfilesAdmin({ churchId, profiles: initial, users }: Props) {
+  const id = useId();
   const [profiles, setProfiles] = useState(initial);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
@@ -92,8 +93,8 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
         <h2 className="font-semibold text-ink mb-4">{editId ? "Modifier le profil" : "Nouveau profil"}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Nom <span className="text-danger">*</span></label>
-            <input
+            <label htmlFor={`${id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">Nom <span className="text-danger">*</span></label>
+            <input id={`${id}-f1`}
               type="text"
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
@@ -102,8 +103,8 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Rôle <span className="text-danger">*</span></label>
-            <select
+            <label htmlFor={`${id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">Rôle <span className="text-danger">*</span></label>
+            <select id={`${id}-f2`}
               value={form.role}
               onChange={(e) => set("role", e.target.value)}
               className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
@@ -112,8 +113,8 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Email</label>
-            <input
+            <label htmlFor={`${id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">Email</label>
+            <input id={`${id}-f3`}
               type="email"
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
@@ -121,8 +122,8 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">Compte utilisateur (optionnel)</label>
-            <select
+            <label htmlFor={`${id}-f4`} className="block text-xs font-medium text-ink-muted mb-1">Compte utilisateur (optionnel)</label>
+            <select id={`${id}-f4`}
               value={form.userId}
               onChange={(e) => set("userId", e.target.value)}
               className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"

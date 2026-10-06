@@ -373,7 +373,7 @@ export default function CalendarClient({ events }: Props) {
     <div className="flex flex-col gap-4">
       {/* Contrôles — masqués à l'impression */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
-        <div role="group" aria-label="Affichage" className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+        <fieldset aria-label="Affichage" className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
           {modes.map((m) => (
             <button
               key={m.value}
@@ -388,7 +388,7 @@ export default function CalendarClient({ events }: Props) {
               {m.label}
             </button>
           ))}
-        </div>
+        </fieldset>
 
         {/* Exports — ils capturent la grille, sans objet en vue liste */}
         {mode !== "list" && (

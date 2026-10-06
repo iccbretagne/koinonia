@@ -71,8 +71,8 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
       {lightbox && (
         <div
           className="fixed inset-0 bg-scrim/90 z-50 flex items-center justify-center p-4"
-          role="presentation"
-          onClick={() => setLightbox(null)}
+          role="none"
+          onClick={(e) => { if (!(e.target instanceof HTMLImageElement)) setLightbox(null); }}
         >
           <button
             className="absolute top-4 right-4 text-on-brand text-2xl hover:text-on-brand/70"
@@ -81,14 +81,12 @@ export default function GalleryView({ data }: { readonly data: GalleryData }) {
             ✕
           </button>
           <div className="max-w-3xl w-full">
-            <div role="presentation" onClick={(e) => e.stopPropagation()}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={lightbox.thumbnailUrl}
-                alt={lightbox.filename}
-                className="block w-full rounded-lg max-h-[80vh] object-contain"
-              />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightbox.thumbnailUrl}
+              alt={lightbox.filename}
+              className="block w-full rounded-lg max-h-[80vh] object-contain"
+            />
             <p className="text-on-brand/70 text-sm text-center mt-2">{lightbox.filename}</p>
           </div>
         </div>

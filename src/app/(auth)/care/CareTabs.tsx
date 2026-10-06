@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import AssigneeSelect, { type AssigneeValue } from "./AssigneeSelect";
@@ -85,6 +85,7 @@ function QualifyForm({ req, churchId, onDone }: {
   readonly churchId: string;
   readonly onDone: (id: string) => void;
 }) {
+  const uid = useId();
   const [assignee, setAssignee] = useState<AssigneeValue | null>(null);
   const [note, setNote] = useState("");
   const [rejectMode, setRejectMode] = useState(false);
@@ -130,10 +131,11 @@ function QualifyForm({ req, churchId, onDone }: {
     return (
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-ink-muted mb-1">
+          <label htmlFor={`${uid}-reason`} className="block text-xs font-medium text-ink-muted mb-1">
             Motif de refus <span className="text-danger">*</span>
           </label>
           <select
+            id={`${uid}-reason`}
             value={reasonCode}
             onChange={(e) => setReasonCode(e.target.value)}
             className="w-full px-3 py-2 border border-line rounded-lg text-sm focus:outline-none focus:border-brand"
@@ -145,8 +147,9 @@ function QualifyForm({ req, churchId, onDone }: {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
+          <label htmlFor={`${uid}-comment`} className="block text-xs font-medium text-ink-muted mb-1">Commentaire (optionnel)</label>
           <textarea
+            id={`${uid}-comment`}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
@@ -164,16 +167,17 @@ function QualifyForm({ req, churchId, onDone }: {
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs font-medium text-ink-muted mb-1">
+        <label htmlFor={`${uid}-assignee`} className="block text-xs font-medium text-ink-muted mb-1">
           Référent <span className="text-danger">*</span>
         </label>
-        <AssigneeSelect churchId={churchId} value={assignee} onChange={setAssignee} />
+        <AssigneeSelect id={`${uid}-assignee`} churchId={churchId} value={assignee} onChange={setAssignee} />
       </div>
       <div>
-        <label className="block text-xs font-medium text-ink-muted mb-1">
+        <label htmlFor={`${uid}-note`} className="block text-xs font-medium text-ink-muted mb-1">
           Note transmise au référent (optionnel)
         </label>
         <textarea
+          id={`${uid}-note`}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}

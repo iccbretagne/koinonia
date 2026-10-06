@@ -36,7 +36,7 @@ function Segmented<T extends string>({
   readonly onChange: (v: T) => void;
 }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
+    <fieldset aria-label={label} className="inline-flex min-w-0 w-fit gap-0.5 rounded-control bg-surface-sunken p-[3px]">
       {options.map((o) => (
         <button
           key={o.value}
@@ -51,7 +51,7 @@ function Segmented<T extends string>({
           {o.label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }
 

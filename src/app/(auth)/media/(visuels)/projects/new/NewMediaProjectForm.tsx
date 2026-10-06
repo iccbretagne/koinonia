@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 export default function NewMediaProjectForm({ churchId }: { readonly churchId: string }) {
+  const id = useId();
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -35,10 +36,10 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f1`} className="block text-sm font-medium text-ink-muted mb-1">
           Nom du projet <span className="text-danger">*</span>
         </label>
-        <Input
+        <Input id={`${id}-f1`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -47,10 +48,10 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink-muted mb-1">
+        <label htmlFor={`${id}-f2`} className="block text-sm font-medium text-ink-muted mb-1">
           Description <span className="text-ink-subtle">(optionnel)</span>
         </label>
-        <textarea
+        <textarea id={`${id}-f2`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}

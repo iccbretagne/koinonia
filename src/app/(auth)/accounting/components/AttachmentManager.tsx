@@ -177,19 +177,12 @@ export default function AttachmentManager({
       {/* Zone d'upload */}
       {canUpload && (
         <>
-          <div
+          <button
+            type="button"
             onDrop={onDrop}
             onDragOver={onDragOver}
             onClick={() => inputRef.current?.click()}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                inputRef.current?.click();
-              }
-            }}
-            className="relative flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-line rounded-xl px-4 py-4 text-center cursor-pointer hover:border-brand/40 hover:bg-brand-hover/[0.02] focus-visible:ring-2 focus-visible:ring-focus outline-none transition-colors"
+            className="relative w-full flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-line rounded-xl px-4 py-4 text-center cursor-pointer hover:border-brand/40 hover:bg-brand-hover/[0.02] focus-visible:ring-2 focus-visible:ring-focus outline-none transition-colors"
           >
             {uploading ? (
               <div className="flex items-center gap-2 text-sm text-brand-text">
@@ -210,16 +203,18 @@ export default function AttachmentManager({
                 <p className="text-xs text-ink-subtle">JPEG, PNG, PDF · max 5 Mo</p>
               </>
             )}
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ALLOWED_EXT}
-              multiple
-              className="sr-only"
-              onChange={(e) => handleFiles(e.target.files)}
-              disabled={uploading}
-            />
-          </div>
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ALLOWED_EXT}
+            multiple
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(e) => handleFiles(e.target.files)}
+            disabled={uploading}
+          />
           {uploadError && (
             <p className="text-xs text-danger bg-danger-soft border border-danger/30 rounded-lg px-3 py-2">{uploadError}</p>
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Button from "@/components/ui/Button";
 
 interface PastoralProfile { id: string; name: string; role: string }
@@ -26,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function ScheduleDashboard({ requests: initial }: Props) {
+  const id = useId();
   const [requests, setRequests] = useState(initial);
   const [processing, setProcessing] = useState<string | null>(null);
   const [forms, setForms] = useState<Record<string, { startsAt: string; endsAt: string; location: string }>>({});
@@ -96,10 +97,10 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
             <div className="border-t border-line pt-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-ink-muted mb-1">
+                  <label htmlFor={`${id}-${req.id}-f1`} className="block text-xs font-medium text-ink-muted mb-1">
                     Date et heure de début <span className="text-danger">*</span>
                   </label>
-                  <input
+                  <input id={`${id}-${req.id}-f1`}
                     type="datetime-local"
                     value={f.startsAt}
                     onChange={(e) => setField(req.id, "startsAt", e.target.value)}
@@ -107,10 +108,10 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-muted mb-1">
+                  <label htmlFor={`${id}-${req.id}-f2`} className="block text-xs font-medium text-ink-muted mb-1">
                     Heure de fin (optionnel)
                   </label>
-                  <input
+                  <input id={`${id}-${req.id}-f2`}
                     type="datetime-local"
                     value={f.endsAt}
                     onChange={(e) => setField(req.id, "endsAt", e.target.value)}
@@ -119,8 +120,8 @@ export default function ScheduleDashboard({ requests: initial }: Props) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Lieu (optionnel)</label>
-                <input
+                <label htmlFor={`${id}-${req.id}-f3`} className="block text-xs font-medium text-ink-muted mb-1">Lieu (optionnel)</label>
+                <input id={`${id}-${req.id}-f3`}
                   type="text"
                   value={f.location}
                   onChange={(e) => setField(req.id, "location", e.target.value)}

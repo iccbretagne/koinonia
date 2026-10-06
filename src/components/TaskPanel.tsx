@@ -127,7 +127,7 @@ export default function TaskPanel({
               </div>
 
               {eligibleMembers.length > 0 && (
-                <div role="group" aria-label={`Attribuer « ${task.name} »`} className="flex flex-wrap gap-1.5" aria-busy={isSaving || undefined}>
+                <fieldset aria-label={`Attribuer « ${task.name} »`} className="flex min-w-0 flex-wrap gap-1.5" aria-busy={isSaving || undefined}>
                   {eligibleMembers.map((m) => {
                     const assigned = assignedIds.has(m.id);
                     return (
@@ -149,7 +149,7 @@ export default function TaskPanel({
                       </button>
                     );
                   })}
-                </div>
+                </fieldset>
               )}
             </li>
           );

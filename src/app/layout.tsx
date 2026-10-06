@@ -56,8 +56,7 @@ function StagingBanner() {
   if (!STAGING_BUILD_VERSION) return null;
 
   return (
-    <div
-      role="status"
+    <output
       className={`fixed top-0 inset-x-0 z-[100] ${STAGING_BANNER_HEIGHT_CLASS} flex items-center justify-center gap-2 px-3 bg-accent text-on-accent shadow-float`}
       style={{
         backgroundImage:
@@ -69,7 +68,7 @@ function StagingBanner() {
         Recette — pas la production
       </span>
       <span className="hidden sm:inline text-xs opacity-70">(build {STAGING_BUILD_VERSION})</span>
-    </div>
+    </output>
   );
 }
 

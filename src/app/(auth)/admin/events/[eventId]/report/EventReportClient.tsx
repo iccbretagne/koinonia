@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatReportWhatsApp, generateReportPDF, type ReportExportData } from "@/lib/report-export";
@@ -125,6 +125,7 @@ function SaveIndicator({ status, error }: { readonly status: SaveStatus; readonl
 const AUTOSAVE_DELAY = 1500; // ms
 
 export default function EventReportClient({ eventId, eventTitle, eventDate, eventType, statsEnabled, existingReport, eventDepts }: Props) {
+  const uid = useId();
   const params = useParams<{ eventId: string }>();
   const id = params?.eventId ?? eventId;
 
@@ -341,8 +342,9 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       <div className="bg-surface rounded-lg border border-line p-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Orateur</label>
+            <label htmlFor={`${uid}-speaker`} className="block text-sm font-medium text-ink-muted mb-1">Orateur</label>
             <input
+              id={`${uid}-speaker`}
               type="text"
               value={speaker}
               onChange={(e) => { setSpeaker(e.target.value); scheduleSave(); }}
@@ -351,8 +353,9 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-muted mb-1">Titre du message</label>
+            <label htmlFor={`${uid}-message-title`} className="block text-sm font-medium text-ink-muted mb-1">Titre du message</label>
             <input
+              id={`${uid}-message-title`}
               type="text"
               value={messageTitle}
               onChange={(e) => { setMessageTitle(e.target.value); scheduleSave(); }}
@@ -410,13 +413,13 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                   {(deptType === "accueil" || deptType === "navette") && (
                     <>
                       <div>
-                        <label className="block text-xs text-ink-muted mb-1">Total adultes</label>
+                        <p className="block text-xs text-ink-muted mb-1">Total adultes</p>
                         <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0)}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs text-ink-muted mb-1">Total adultes + enfants</label>
+                        <p className="block text-xs text-ink-muted mb-1">Total adultes + enfants</p>
                         <div className="w-full border border-dashed border-line rounded-lg px-3 py-1.5 text-sm text-ink-muted bg-surface-sunken">
                           {(statVal(section.stats, "hommes") ?? 0) + (statVal(section.stats, "femmes") ?? 0) + (statVal(section.stats, "enfants") ?? 0)}
                         </div>
@@ -427,8 +430,9 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
               )}
 
               <div>
-                <label className="block text-xs text-ink-muted mb-1">Observations</label>
+                <label htmlFor={`${uid}-section-notes-${i}`} className="block text-xs text-ink-muted mb-1">Observations</label>
                 <textarea
+                  id={`${uid}-section-notes-${i}`}
                   value={section.notes ?? ""}
                   onChange={(e) => updateSectionField(i, "notes", e.target.value || null)}
                   rows={2}
@@ -444,8 +448,9 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
       {/* Champs globaux */}
       <div className="bg-surface rounded-lg border border-line p-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Observations générales</label>
+          <label htmlFor={`${uid}-notes`} className="block text-sm font-medium text-ink-muted mb-1">Observations générales</label>
           <textarea
+            id={`${uid}-notes`}
             value={notes}
             onChange={(e) => { setNotes(e.target.value); scheduleSave(); }}
             rows={3}
@@ -454,8 +459,9 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink-muted mb-1">Décisions / Actions</label>
+          <label htmlFor={`${uid}-decisions`} className="block text-sm font-medium text-ink-muted mb-1">Décisions / Actions</label>
           <textarea
+            id={`${uid}-decisions`}
             value={decisions}
             onChange={(e) => { setDecisions(e.target.value); scheduleSave(); }}
             rows={3}

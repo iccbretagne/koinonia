@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useId, useState, useMemo } from "react";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -89,6 +89,7 @@ function fmtDateTime(iso: string) {
 type Tab = "list" | "stats";
 
 export default function ReportsClient({ events, churchId }: Props) {
+  const uid = useId();
   const [tab, setTab] = useState<Tab>("list");
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [exportFrom, setExportFrom] = useState<string>(() => {
@@ -354,8 +355,9 @@ export default function ReportsClient({ events, churchId }: Props) {
         <div className="space-y-6">
           {/* Filtre période */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-ink-muted">Période :</label>
+            <label htmlFor={`${uid}-period`} className="text-sm font-medium text-ink-muted">Période :</label>
             <select
+              id={`${uid}-period`}
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
               className="border border-line rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-focus"
@@ -376,8 +378,9 @@ export default function ReportsClient({ events, churchId }: Props) {
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 bg-surface rounded-lg border border-line shadow-card px-5 py-4">
             <div className="flex gap-3 flex-1">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-ink-muted mb-1">Du</label>
+                <label htmlFor={`${uid}-export-from`} className="block text-xs font-medium text-ink-muted mb-1">Du</label>
                 <input
+                  id={`${uid}-export-from`}
                   type="date"
                   value={exportFrom}
                   onChange={(e) => setExportFrom(e.target.value)}
@@ -385,8 +388,9 @@ export default function ReportsClient({ events, churchId }: Props) {
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-ink-muted mb-1">Au</label>
+                <label htmlFor={`${uid}-export-to`} className="block text-xs font-medium text-ink-muted mb-1">Au</label>
                 <input
+                  id={`${uid}-export-to`}
                   type="date"
                   value={exportTo}
                   onChange={(e) => setExportTo(e.target.value)}

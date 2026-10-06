@@ -121,8 +121,8 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="presentation" onClick={onClose}>
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" role="presentation" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-scrim/95 flex flex-col" role="none" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button onClick={onClose} className="text-on-brand/70 hover:text-on-brand transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -136,7 +136,7 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
           </a>
         ) : <span />}
       </div>
-      <div className="flex-1 flex items-center justify-center px-4" role="presentation" onClick={(e) => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center px-4">
         <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
