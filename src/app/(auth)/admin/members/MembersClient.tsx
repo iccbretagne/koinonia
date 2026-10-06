@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { SubmitEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -168,7 +168,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
       if (!stillVisible || nextDepts.filter((d) => manageableIds.has(d.id)).length === 0) {
         setRemoveModal(null);
       } else {
-        setRemoveModal((cur) => (cur && cur.id === m.id ? { ...cur, allDepartments: nextDepts } : cur));
+        setRemoveModal((cur) => (cur?.id === m.id ? { ...cur, allDepartments: nextDepts } : cur));
       }
     } catch (e) {
       setRemoveError(e instanceof Error ? e.message : "Erreur");
@@ -208,7 +208,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
         ministry: { id: "", name: dept.ministryName },
       };
       setMembers((prev) => {
-        const existing = prev.find((x) => x.id === lookupSelected.id);
+        const existing = prev.some((x) => x.id === lookupSelected.id);
         if (existing) {
           return prev.map((x) =>
             x.id === lookupSelected.id ? { ...x, allDepartments: [...x.allDepartments, newRef] } : x
@@ -340,7 +340,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setModalOpen(true);
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     await submitMember(false);
   }
@@ -493,7 +493,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: FormEvent) {
+  async function handleBulkEdit(e: SubmitEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkFirstName) data.firstName = bulkFirstName;
@@ -534,7 +534,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
                 ...d,
                 isPrimary: d.id === data.primaryDepartmentId,
               }));
-              if (!updated.allDepartments.find((d) => d.id === data.primaryDepartmentId)) {
+              if (!updated.allDepartments.some((d) => d.id === data.primaryDepartmentId)) {
                 updated.allDepartments = [
                   { id: dept.id, name: dept.name, isPrimary: true, ministry: { id: "", name: dept.ministryName } },
                   ...updated.allDepartments,

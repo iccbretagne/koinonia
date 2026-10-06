@@ -43,8 +43,7 @@ export default async function EditRequestPage({ params }: Props) {
 
   // Only the owner can edit, only EN_ATTENTE requests can be edited
   if (
-    !request ||
-    request.submittedById !== session.user.id ||
+    request?.submittedById !== session.user.id ||
     request.status !== "EN_ATTENTE"
   ) {
     notFound();

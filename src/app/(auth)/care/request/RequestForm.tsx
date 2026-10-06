@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
@@ -78,7 +78,7 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
     if (fieldErrors["motifs"]) setFieldErrors((e) => ({ ...e, motifs: undefined }));
   }
 
-  async function submit(e: FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
     const errs: FieldErrors = {};
     if (!form.gender) errs.gender = "Veuillez sélectionner votre sexe";
@@ -96,13 +96,14 @@ export default function RequestForm({ churchId, churchName, defaultFirstName, de
     setGlobalError(null);
 
     const subject = form.motifs.join(", ");
+    const departmentSuffix = form.isStar === "Oui" && form.department ? ` — Département : ${form.department}` : "";
     const message = [
       form.details.trim() || null,
       [
         `Sexe : ${form.gender}`,
         `Tranche d'âge : ${form.ageRange}`,
         `À l'église depuis : ${form.membershipDuration}`,
-        `STAR : ${form.isStar}${form.isStar === "Oui" && form.department ? ` — Département : ${form.department}` : ""}`,
+        `STAR : ${form.isStar}${departmentSuffix}`,
       ].join("\n"),
     ]
       .filter(Boolean)

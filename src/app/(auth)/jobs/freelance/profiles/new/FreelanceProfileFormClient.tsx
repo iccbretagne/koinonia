@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface ProfileInitial {
@@ -43,7 +43,7 @@ export default function FreelanceProfileFormClient({
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);

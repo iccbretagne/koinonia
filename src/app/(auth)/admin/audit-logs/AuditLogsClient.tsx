@@ -25,6 +25,16 @@ const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   EXPORT: { label: "Export", color: "bg-brand-soft text-brand-text" },
 };
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AuditLogsClient() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,16 +60,6 @@ export default function AuditLogsClient() {
   useEffect(() => {
     void fetchLogs();
   }, [fetchLogs]);
-
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
 
   function getUserName(user: AuditLogEntry["user"]) {
     return user.displayName || user.name || user.email;

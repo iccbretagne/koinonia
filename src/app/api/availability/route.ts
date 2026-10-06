@@ -20,7 +20,7 @@ async function resolveTarget(churchId: string, memberId: string | null) {
 
   await requireChurchPermission("planning:edit", churchId);
   const scope = await getMemberScope(memberId);
-  if (!scope || scope.churchId !== churchId) throw new ApiError(404, "Fiche STAR introuvable");
+  if (scope?.churchId !== churchId) throw new ApiError(404, "Fiche STAR introuvable");
   const deptScope = getUserDepartmentScope(session, churchId);
   if (!deptScope.scoped) return { session, memberId, isSelf: false, allowedDepartmentIds: null };
   const allowed = scope.departmentIds.filter((d) => deptScope.departmentIds.includes(d));

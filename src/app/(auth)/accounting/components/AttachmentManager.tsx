@@ -19,7 +19,7 @@ interface Props {
 }
 
 const MAX_SIZE = 5 * 1024 * 1024;
-const ALLOWED = ["image/jpeg", "image/png", "application/pdf"];
+const ALLOWED = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const ALLOWED_EXT = ".jpg,.jpeg,.png,.pdf";
 
 function fmtSize(b: number) {
@@ -41,6 +41,21 @@ function FileIcon({ mimeType }: { readonly mimeType: string }) {
   );
 }
 
+async function handleDownload(id: string, filename: string) {
+  try {
+    const res = await fetch(`/api/accounting/attachments/${id}`);
+    if (!res.ok) return;
+    const { url } = await res.json();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.target = "_blank";
+    a.click();
+  } catch { /* silent */ }
+}
+
+function onDragOver(e: React.DragEvent) { e.preventDefault(); }
+
 export default function AttachmentManager({
   attachments: initialAttachments,
   requestId,
@@ -60,7 +75,7 @@ export default function AttachmentManager({
     setUploadError(null);
 
     for (const file of Array.from(files)) {
-      if (!ALLOWED.includes(file.type)) {
+      if (!ALLOWED.has(file.type)) {
         setUploadError(`"${file.name}" : format non supporté (JPEG, PNG, PDF uniquement)`);
         return;
       }
@@ -103,25 +118,11 @@ export default function AttachmentManager({
     finally { setDeletingId(null); }
   }
 
-  async function handleDownload(id: string, filename: string) {
-    try {
-      const res = await fetch(`/api/accounting/attachments/${id}`);
-      if (!res.ok) return;
-      const { url } = await res.json();
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.target = "_blank";
-      a.click();
-    } catch { /* silent */ }
-  }
-
   // Drag-and-drop handlers
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     void handleFiles(e.dataTransfer.files);
   }
-  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
 
   return (
     <div className={`space-y-2 ${className}`}>

@@ -18,10 +18,10 @@ export async function GET(
     // Default to current month
     const now = new Date();
     const year = monthParam
-      ? parseInt(monthParam.split("-")[0])
+      ? Number.parseInt(monthParam.split("-")[0])
       : now.getFullYear();
     const month = monthParam
-      ? parseInt(monthParam.split("-")[1]) - 1
+      ? Number.parseInt(monthParam.split("-")[1]) - 1
       : now.getMonth();
 
     const startOfMonth = new Date(year, month, 1);

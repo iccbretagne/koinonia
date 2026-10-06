@@ -5,7 +5,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { storeFile } from "@/lib/file-storage";
 
 const MAX_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
 
 export async function POST(request: Request) {
   try {
@@ -16,12 +16,12 @@ export async function POST(request: Request) {
     const requestId = formData.get("requestId") as string | null;
 
     if (!file) throw new ApiError(400, "Fichier manquant");
-    if (!ALLOWED_TYPES.includes(file.type)) throw new ApiError(400, "Format non supporté (JPEG, PNG, PDF uniquement)");
+    if (!ALLOWED_TYPES.has(file.type)) throw new ApiError(400, "Format non supporté (JPEG, PNG, PDF uniquement)");
     if (file.size > MAX_SIZE) throw new ApiError(400, "Fichier trop volumineux (max 5 Mo)");
 
     if (requestId) {
       const req = await prisma.financialRequest.findUnique({ where: { id: requestId } });
-      if (!req || req.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
+      if (req?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
       if (req.status !== "SUBMITTED") throw new ApiError(400, "Impossible d'ajouter une pièce jointe après traitement");
       if (req.submittedById !== session.user.id!) throw new ApiError(403, "Accès refusé");
     }

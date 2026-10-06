@@ -167,7 +167,7 @@ export default function AccountingStats({
     .filter((m) => {
       if (!periodFrom || !periodTo) return true;
       const [y, mo] = m.month.split("-");
-      const monthStart = new Date(parseInt(y), parseInt(mo) - 1, 1);
+      const monthStart = new Date(Number.parseInt(y), Number.parseInt(mo) - 1, 1);
       const fromMonth = new Date(periodFrom.getFullYear(), periodFrom.getMonth(), 1);
       const toMonth = new Date(periodTo.getFullYear(), periodTo.getMonth(), 1);
       return monthStart >= fromMonth && monthStart <= toMonth;
@@ -175,7 +175,7 @@ export default function AccountingStats({
     .map((m) => {
       const [y, mo] = m.month.split("-");
       return {
-        label: MONTH_NAMES[parseInt(mo) - 1] + (y !== String(new Date().getFullYear()) ? ` ${y.slice(2)}` : ""),
+        label: MONTH_NAMES[Number.parseInt(mo) - 1] + (y !== String(new Date().getFullYear()) ? ` ${y.slice(2)}` : ""),
         submitted: Math.round(m.submitted * 100) / 100,
         released: Math.round(m.released * 100) / 100,
       };

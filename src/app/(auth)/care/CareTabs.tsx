@@ -306,7 +306,7 @@ export default function CareTabs({ canQualify, requests, followUps, churchId }: 
             tab === "requests" ? "border-brand text-brand-text" : "border-transparent text-ink-muted hover:text-ink-muted"
           }`}
         >
-          Rendez-vous {requests.filter((r) => r.status === "PENDING").length > 0 && canQualify && (
+          Rendez-vous {requests.some((r) => r.status === "PENDING") && canQualify && (
             <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-brand text-on-brand">
               {requests.filter((r) => r.status === "PENDING").length}
             </span>

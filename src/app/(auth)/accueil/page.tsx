@@ -165,14 +165,17 @@ export default async function TodayPage() {
       status: serviceStatusDescriptor(p.status),
       href: `/events/${p.eventDepartment.event.id}/star-view`,
     })),
-    ...upcomingTeamEvents.map((t) => ({
+    ...upcomingTeamEvents.map((t) => {
+      const locationSuffix = t.location ? ` · ${t.location}` : "";
+      return {
       key: `team-${t.id}`,
       date: new Date(t.startsAt),
       title: t.title,
-      meta: `${formatTime(new Date(t.startsAt))} · ${t.department.name}${t.location ? ` · ${t.location}` : ""}`,
+      meta: `${formatTime(new Date(t.startsAt))} · ${t.department.name}${locationSuffix}`,
       status: null,
       href: "/planning",
-    })),
+      };
+    }),
   ]
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, MAX_SERVICES);

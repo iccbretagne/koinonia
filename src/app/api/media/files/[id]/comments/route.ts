@@ -71,7 +71,7 @@ export async function POST(
 
     if (data.parentId) {
       const parent = await prisma.mediaComment.findUnique({ where: { id: data.parentId } });
-      if (!parent || parent.mediaFileId !== id) throw new ApiError(400, "Commentaire parent invalide");
+      if (parent?.mediaFileId !== id) throw new ApiError(400, "Commentaire parent invalide");
     }
 
     const comment = await prisma.mediaComment.create({

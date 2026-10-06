@@ -61,8 +61,7 @@ function sortedSections(sections: ReportExportData["sections"]) {
 export function formatReportWhatsApp(data: ReportExportData): string {
   const lines: string[] = [];
 
-  lines.push(`*Compte rendu — ${data.event.title}*`);
-  lines.push(formatDateFR(data.event.date));
+  lines.push(`*Compte rendu — ${data.event.title}*`, formatDateFR(data.event.date));
 
   for (const section of sortedSections(data.sections)) {
     const deptType = getDeptType(section.label);
@@ -71,8 +70,7 @@ export function formatReportWhatsApp(data: ReportExportData): string {
 
     if (!hasStats && !hasNotes) continue;
 
-    lines.push("");
-    lines.push(`*${section.label.toUpperCase()}*`);
+    lines.push("", `*${section.label.toUpperCase()}*`);
 
     if (hasStats && deptType === "accueil") {
       const h = section.stats!["hommes"] ?? null;
@@ -82,9 +80,7 @@ export function formatReportWhatsApp(data: ReportExportData): string {
       const totalGeneral = totalAdultes !== null && e !== null ? totalAdultes + e : null;
 
       lines.push(
-        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)} | Enfants : ${statDisplay(e)}`
-      );
-      lines.push(
+        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)} | Enfants : ${statDisplay(e)}`,
         `Total adultes : ${statDisplay(totalAdultes)} | Total général : ${statDisplay(totalGeneral)}`
       );
     } else if (hasStats && deptType === "sainte-cene") {
@@ -99,8 +95,8 @@ export function formatReportWhatsApp(data: ReportExportData): string {
       const convertis = section.stats!["convertis"] ?? null;
       const voeux = section.stats!["voeux"] ?? null;
 
-      lines.push(`Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)}`);
       lines.push(
+        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)}`,
         `De passage : ${statDisplay(passage)} | Convertis : ${statDisplay(convertis)} | Voeux : ${statDisplay(voeux)}`
       );
     } else if (hasStats) {
@@ -113,15 +109,11 @@ export function formatReportWhatsApp(data: ReportExportData): string {
   }
 
   if (data.notes && data.notes.trim() !== "") {
-    lines.push("");
-    lines.push(`*OBSERVATIONS GENERALES*`);
-    lines.push(data.notes);
+    lines.push("", `*OBSERVATIONS GENERALES*`, data.notes);
   }
 
   if (data.decisions && data.decisions.trim() !== "") {
-    lines.push("");
-    lines.push(`*DECISIONS / ACTIONS*`);
-    lines.push(data.decisions);
+    lines.push("", `*DECISIONS / ACTIONS*`, data.decisions);
   }
 
   return lines.join("\n");
@@ -321,8 +313,8 @@ export function generateReportPDF(data: ReportExportData): void {
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace("#", "");
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
+  const r = Number.parseInt(clean.slice(0, 2), 16);
+  const g = Number.parseInt(clean.slice(2, 4), 16);
+  const b = Number.parseInt(clean.slice(4, 6), 16);
   return [r, g, b];
 }

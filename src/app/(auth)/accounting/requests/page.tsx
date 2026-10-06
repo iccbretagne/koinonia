@@ -11,15 +11,15 @@ export default async function AccountingRequestsPage() {
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-  const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
+  const perms = new Set(roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []));
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
-  if (!perms.includes("accounting:view") && !isPastoral) {
+  if (!perms.has("accounting:view") && !isPastoral) {
     return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
-  const canManage = perms.includes("accounting:manage");
-  const canSubmit = perms.includes("accounting:submit") || isPastoral;
-  const canViewStats = perms.includes("accounting:stats") || isPastoral;
+  const canManage = perms.has("accounting:manage");
+  const canSubmit = perms.has("accounting:submit") || isPastoral;
+  const canViewStats = perms.has("accounting:stats") || isPastoral;
 
   // Scope des demandes visibles :
   // - canManage ou isPastoral → toutes les demandes de l'église

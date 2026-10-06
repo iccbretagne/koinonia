@@ -325,7 +325,7 @@ function MemberPicker({
       />
       {selected && !search && (
         <div className="flex items-center justify-between gap-2 bg-brand-soft rounded px-2 py-1.5 mb-2">
-          <span className="min-w-0 truncate text-sm font-medium text-brand-text" title={`${selected.firstName} ${selected.lastName}${selected.email ? ` (${selected.email})` : ""}`}>
+          <span className="min-w-0 truncate text-sm font-medium text-brand-text" title={[`${selected.firstName} ${selected.lastName}`, selected.email && `(${selected.email})`].filter(Boolean).join(" ")}>
             {selected.firstName} {selected.lastName}
             {selected.email && <span className="text-xs text-ink-muted ml-1">({selected.email})</span>}
           </span>
@@ -457,8 +457,8 @@ export default function DuplicatesView({ groups, allMembers, churchId, canAssign
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-ink-muted">{groups.length} groupe(s) de doublons potentiels détecté(s)</p>
-          {groups.map((group, i) => (
-            <div key={i} className="border rounded-lg p-4">
+          {groups.map((group) => (
+            <div key={group.members.map((m) => m.id).join("-")} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs font-semibold px-2 py-1 rounded ${REASON_COLOR[group.reason]}`}>
                   {REASON_LABEL[group.reason]}

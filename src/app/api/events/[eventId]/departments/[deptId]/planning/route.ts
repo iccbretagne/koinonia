@@ -34,7 +34,7 @@ async function availabilityPayload(
     });
     const today = new Date();
     manualRelanceAvailable =
-      !ask?.manualRelanceAt || ask.manualRelanceAt.toDateString() !== today.toDateString();
+      ask?.manualRelanceAt?.toDateString() !== today.toDateString();
   }
   return { av, counts: av.counts, canAskTeam, manualRelanceAvailable };
 }

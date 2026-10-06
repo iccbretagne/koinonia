@@ -26,7 +26,7 @@ export async function POST(
     if (service.status !== "PUBLISHED") throw new ApiError(410, "Ce culte n'est plus disponible.");
 
     const segment = await prisma.audioSegment.findUnique({ where: { id: segmentId }, select: { serviceId: true } });
-    if (!segment || segment.serviceId !== id) throw new ApiError(404, "Séquence introuvable");
+    if (segment?.serviceId !== id) throw new ApiError(404, "Séquence introuvable");
 
     await prisma.audioSegment.update({ where: { id: segmentId }, data: { playCount: { increment: 1 } } });
 

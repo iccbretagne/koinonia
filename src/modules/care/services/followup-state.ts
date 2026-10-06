@@ -35,7 +35,7 @@ export const followupPatchSchema = z.discriminatedUnion("action", [
 
 export type FollowupPatchBody = z.infer<typeof followupPatchSchema>;
 
-const ACTIVE_STATUSES: MsdpStatus[] = ["ASSIGNED", "CONTACTED", "IN_FORMATION"];
+const ACTIVE_STATUSES = new Set<MsdpStatus>(["ASSIGNED", "CONTACTED", "IN_FORMATION"]);
 
 export interface FollowupState {
   status: MsdpStatus;
@@ -98,7 +98,7 @@ export function computeFollowupTransitionData(
 
     case "reassign": {
       requireReferent(actor);
-      if (!ACTIVE_STATUSES.includes(current.status))
+      if (!ACTIVE_STATUSES.has(current.status))
         throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
       if (!assignee) throw new ApiError(400, "Accompagnant requis");
       return {
@@ -152,7 +152,7 @@ export function computeFollowupTransitionData(
 
     case "handback": {
       requireCurrentAssignee(actor);
-      if (!ACTIVE_STATUSES.includes(current.status))
+      if (!ACTIVE_STATUSES.has(current.status))
         throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
       return {
         ...BASE_RESULT,

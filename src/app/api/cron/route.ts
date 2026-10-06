@@ -94,6 +94,7 @@ async function runReminders() {
 
     for (const daysAhead of reminders) {
       const targetDate = new Date(now);
+      const whenLabel = daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`;
       targetDate.setDate(targetDate.getDate() + daysAhead);
       const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
       const endOfDay = new Date(startOfDay.getTime() + 86400000);
@@ -152,7 +153,7 @@ async function runReminders() {
                   domain: "planning",
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
-                  message: `Vous êtes en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}.`,
+                  message: `Vous êtes en service pour ${eventDept.department.name} ${whenLabel}.`,
                   link: `/dashboard`,
                 },
                 member.email ? { email: { subject, html } } : undefined
@@ -182,7 +183,7 @@ async function runReminders() {
                   domain: "planning",
                   type: "PLANNING_REMINDER",
                   title: `Rappel : ${event.title}`,
-                  message: `${memberName} est en service pour ${eventDept.department.name} ${daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`}`,
+                  message: `${memberName} est en service pour ${eventDept.department.name} ${whenLabel}`,
                   link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
                 }
               );

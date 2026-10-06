@@ -393,8 +393,8 @@ export default function PersonAccessClient({
             Ces accès ne viennent pas d&apos;un rôle attribué ci-dessus — lecture seule.
           </p>
           <div className="space-y-2">
-            {inheritedAccess.map((access, i) => (
-              <div key={i} className="bg-surface-sunken rounded-lg border border-line px-4 py-3">
+            {inheritedAccess.map((access) => (
+              <div key={`${access.label}-${access.origin}`} className="bg-surface-sunken rounded-lg border border-line px-4 py-3">
                 <p className="text-sm font-medium text-ink">{access.label}</p>
                 <p className="text-xs text-ink-muted mt-0.5">{access.origin}</p>
               </div>

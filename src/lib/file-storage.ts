@@ -3,8 +3,8 @@
  * - Si ACCOUNTING_S3_BUCKET est défini → S3/MinIO
  * - Sinon → système de fichiers local (dev uniquement, non adapté multi-serveurs)
  */
-import path from "path";
-import fs from "fs/promises";
+import path from "node:path";
+import fs from "node:fs/promises";
 
 export const S3_CONFIGURED = !!(
   process.env.ACCOUNTING_S3_BUCKET &&

@@ -7,12 +7,12 @@
  * entièrement en amont, dans les routes appelantes — ce module ne fait qu'accélérer la
  * livraison d'un fichier déjà autorisé.
  */
-import { createHash } from "crypto";
-import { mkdir, rename, rm, stat, utimes, readdir } from "fs/promises";
-import { createWriteStream } from "fs";
-import path from "path";
-import { tmpdir } from "os";
-import { pipeline } from "stream/promises";
+import { createHash } from "node:crypto";
+import { mkdir, rename, rm, stat, utimes, readdir } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import path from "node:path";
+import { tmpdir } from "node:os";
+import { pipeline } from "node:stream/promises";
 import { getS3ObjectStream } from "@/modules/storage";
 
 const CACHE_DIR = process.env.AUDIO_CACHE_DIR || path.join(tmpdir(), "koinonia-audio-cache");
@@ -137,7 +137,7 @@ export async function primeRenditionCache(s3Key: string, sourcePath: string): Pr
     await mkdir(CACHE_DIR, { recursive: true });
     const destination = cachePath(s3Key);
     const partPath = `${destination}.part`;
-    const { copyFile } = await import("fs/promises");
+    const { copyFile } = await import("node:fs/promises");
     await copyFile(sourcePath, partPath);
     await rename(partPath, destination);
   } catch {

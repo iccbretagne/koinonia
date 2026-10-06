@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { SubmitEvent, useCallback, useEffect, useState } from "react";
 import { ListChecks, Plus, Trash2 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -57,7 +57,7 @@ export default function DepartmentTasksView({
     void fetchTasks();
   }, [fetchTasks]);
 
-  async function handleCreate(e: FormEvent) {
+  async function handleCreate(e: SubmitEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);

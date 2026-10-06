@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
@@ -35,7 +35,7 @@ export default function JobFormClient({ initial }: { readonly initial?: {
   const [saving,       setSaving]       = useState(false);
   const [error,        setError]        = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);

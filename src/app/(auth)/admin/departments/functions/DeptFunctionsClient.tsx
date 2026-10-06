@@ -80,24 +80,24 @@ const FUNCTIONS = [
 
 type FnKey = (typeof FUNCTIONS)[number]["key"];
 
+async function patchDept(id: string, fn: string | null) {
+  const res = await fetch(`/api/departments/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ function: fn }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Erreur");
+  }
+}
+
 export default function DeptFunctionsClient({ departments }: Props) {
   const [depts, setDepts] = useState(departments);
   const [saving, setSaving] = useState<string | null>(null);
 
   function getAssigned(fn: FnKey) {
     return depts.filter((d) => d.function === fn).map((d) => d.id);
-  }
-
-  async function patchDept(id: string, fn: string | null) {
-    const res = await fetch(`/api/departments/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ function: fn }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || "Erreur");
-    }
   }
 
   async function handleChange(fn: FnKey, newSelection: string[]) {

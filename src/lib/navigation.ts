@@ -280,15 +280,21 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
   const church = "Église";
   // STAR sans events:view : vue hebdomadaire + trame des annonces (spec 043).
   if (input.showStarEvents) {
-    agenda.push({ href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church });
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
+    agenda.push(
+      { href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church },
+      { href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church },
+    );
   }
   if (input.hasEventsAccess) {
-    agenda.push({ href: "/events", label: "Agenda de l'église", sidebarBlock: church });
-    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
+    agenda.push(
+      { href: "/events", label: "Agenda de l'église", sidebarBlock: church },
+      { href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church },
+    );
     if (input.hasEventsManage) {
-      agenda.push({ href: "/admin/events", label: "Gérer les événements", sidebarBlock: church });
-      agenda.push({ href: "/admin/welcome-duty", label: "Service d'accueil", sidebarBlock: church });
+      agenda.push(
+        { href: "/admin/events", label: "Gérer les événements", sidebarBlock: church },
+        { href: "/admin/welcome-duty", label: "Service d'accueil", sidebarBlock: church },
+      );
     }
     if (input.hasReports) {
       agenda.push({ href: "/admin/reports", label: "Comptes rendus", dataTour: "sidebar-reports", sidebarBlock: church });
@@ -375,8 +381,8 @@ function runs<T, K>(items: readonly T[], key: (item: T) => K): { key: K; items: 
   const out: { key: K; items: T[] }[] = [];
   for (const item of items) {
     const k = key(item);
-    const last = out[out.length - 1];
-    if (last && last.key === k) last.items.push(item);
+    const last = out.at(-1);
+    if (last?.key === k) last.items.push(item);
     else out.push({ key: k, items: [item] });
   }
   return out;

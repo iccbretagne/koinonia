@@ -25,13 +25,13 @@ export async function createShareToken(input: CreateShareTokenInput, db?: DbClie
   db ??= await defaultDb();
 
   const service = await db.audioService.findUnique({ where: { id: input.serviceId } });
-  if (!service || service.churchId !== input.churchId) {
+  if (service?.churchId !== input.churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
 
   if (input.segmentId) {
     const segment = await db.audioSegment.findUnique({ where: { id: input.segmentId } });
-    if (!segment || segment.serviceId !== input.serviceId) {
+    if (segment?.serviceId !== input.serviceId) {
       throw new ApiError(404, "Séquence introuvable pour ce culte");
     }
   }
@@ -94,7 +94,7 @@ export async function revokeShareToken(id: string, churchId: string, db?: DbClie
   db ??= await defaultDb();
 
   const shareToken = await db.audioShareToken.findUnique({ where: { id }, include: { service: true } });
-  if (!shareToken || shareToken.service.churchId !== churchId) {
+  if (shareToken?.service.churchId !== churchId) {
     throw new ApiError(404, "Lien de partage introuvable");
   }
 

@@ -30,8 +30,8 @@ function groupPages(pages: readonly NavPage[], collapsible: boolean): Group[] {
   const groups: Group[] = [];
   for (const page of pages) {
     const name = page.group ?? null;
-    const last = groups[groups.length - 1];
-    if (last && last.name === name) last.pages.push(page);
+    const last = groups.at(-1);
+    if (last?.name === name) last.pages.push(page);
     else groups.push({ name, collapsible: collapsible && !!page.deptId && !!name, pages: [page] });
   }
   return groups;

@@ -20,14 +20,14 @@ export default async function NewAccountingRequestPage({
   const roles = session.user.churchRoles
     .filter((r) => r.churchId === churchId)
     .map((r) => r.role);
-  const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
+  const perms = new Set(roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []));
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
 
-  if (!perms.includes("accounting:submit") && !isPastoral) {
+  if (!perms.has("accounting:submit") && !isPastoral) {
     redirect("/accounting/requests");
   }
 
-  const canManage = perms.includes("accounting:manage");
+  const canManage = perms.has("accounting:manage");
   const isAdmin = canManage || isPastoral;
 
   // Départements disponibles :

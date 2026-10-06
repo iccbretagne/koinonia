@@ -99,7 +99,7 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   const result = new Date(eventDate);
   const match = offset.match(/^(\d+)(h|d)$/);
   if (!match) return result;
-  const value = parseInt(match[1], 10);
+  const value = Number.parseInt(match[1], 10);
   const unit = match[2];
   if (unit === "h") result.setHours(result.getHours() - value);
   else if (unit === "d") result.setDate(result.getDate() - value);
@@ -301,8 +301,8 @@ async function executeModificationPlanning(
     select: { id: true, departmentId: true },
   });
 
-  const currentDeptIds = currentEventDepts.map((ed) => ed.departmentId);
-  const toAdd = departmentIds.filter((id) => !currentDeptIds.includes(id));
+  const currentDeptIds = new Set(currentEventDepts.map((ed) => ed.departmentId));
+  const toAdd = departmentIds.filter((id) => !currentDeptIds.has(id));
   const toRemove = currentEventDepts.filter((ed) => !departmentIds.includes(ed.departmentId));
 
   if (toRemove.length > 0) {

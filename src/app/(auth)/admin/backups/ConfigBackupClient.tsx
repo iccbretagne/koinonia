@@ -290,8 +290,8 @@ function ImportSection() {
             <div className="mt-2 space-y-1">
               <p className="text-xs font-medium text-warning">Avertissements :</p>
               <ul className="text-xs text-warning list-disc pl-4 space-y-0.5">
-                {importResult.warnings.map((w, i) => (
-                  <li key={i}>{w}</li>
+                {importResult.warnings.map((w) => (
+                  <li key={w}>{w}</li>
                 ))}
               </ul>
             </div>

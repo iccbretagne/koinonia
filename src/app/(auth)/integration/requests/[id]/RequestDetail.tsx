@@ -602,7 +602,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
   }
 
   async function submitAssign() {
-    const family = families.find((f) => f.id === parseInt(assignFamilyId));
+    const family = families.find((f) => f.id === Number.parseInt(assignFamilyId));
     if (!family || !assignBergerId) return;
     setAssignLoading(true);
     const ok = await patch({
@@ -722,7 +722,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
   ];
 
   const filteredLeaders = assignFamilyId
-    ? leaders.filter((l) => l.familyId === parseInt(assignFamilyId))
+    ? leaders.filter((l) => l.familyId === Number.parseInt(assignFamilyId))
     : leaders;
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -1143,7 +1143,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
                   <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Carte familles</span>
                   <a
-                    href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? `${req.lat}, ${req.lng}`)}`}
+                    href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? [req.lat, req.lng].join(", "))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-brand-text hover:underline"

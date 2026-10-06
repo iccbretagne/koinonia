@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       churchId,
       archivedAt: null,
       ...(status && { status }),
-      ...(familyId && { assignedFamilyId: parseInt(familyId) }),
+      ...(familyId && { assignedFamilyId: Number.parseInt(familyId) }),
       ...(scope.scoped && { assignedFamilyId: { in: scope.familyIds } }),
       ...(search && {
         OR: [

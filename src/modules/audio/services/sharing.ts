@@ -129,7 +129,7 @@ export async function revokeLibraryShare(ownerChurchId: string, shareId: string,
   db ??= await defaultDb();
 
   const share = await db.audioLibraryShare.findUnique({ where: { id: shareId } });
-  if (!share || share.ownerChurchId !== ownerChurchId) throw new ApiError(404, "Partage introuvable");
+  if (share?.ownerChurchId !== ownerChurchId) throw new ApiError(404, "Partage introuvable");
 
   await db.audioLibraryShare.delete({ where: { id: shareId } });
 }

@@ -1,11 +1,11 @@
-import { spawn } from "child_process";
-import { existsSync } from "fs";
-import { join } from "path";
-import { createGunzip } from "zlib";
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createGunzip } from "node:zlib";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
 import { logger } from "./logger";
-import type { Readable } from "stream";
+import type { Readable } from "node:stream";
 
 export interface RestoreResult {
   key: string;

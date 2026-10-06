@@ -61,7 +61,7 @@ export async function admitToChurch(
       where: { id: input.newMember.departmentId },
       include: { ministry: { select: { churchId: true } } },
     });
-    if (!dept || dept.ministry.churchId !== churchId) {
+    if (dept?.ministry.churchId !== churchId) {
       throw new ApiError(400, "Ce département n'appartient pas à cette église");
     }
 
@@ -118,7 +118,7 @@ export async function admitToChurch(
         where: { id: input.ministryId },
         select: { churchId: true },
       });
-      if (!ministry || ministry.churchId !== churchId) {
+      if (ministry?.churchId !== churchId) {
         throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
       }
       if (existingRole) {
@@ -137,7 +137,7 @@ export async function admitToChurch(
           where: { id: input.departmentId },
           include: { ministry: { select: { churchId: true } } },
         });
-        if (!roleDept || roleDept.ministry.churchId !== churchId) {
+        if (roleDept?.ministry.churchId !== churchId) {
           throw new ApiError(400, "Ce département n'appartient pas à cette église");
         }
       }

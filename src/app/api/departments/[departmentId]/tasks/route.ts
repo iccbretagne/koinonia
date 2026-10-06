@@ -98,7 +98,7 @@ export async function DELETE(
       where: { id: taskId },
     });
 
-    if (!task || task.departmentId !== departmentId) {
+    if (task?.departmentId !== departmentId) {
       throw new ApiError(404, "Tâche introuvable dans ce département");
     }
 

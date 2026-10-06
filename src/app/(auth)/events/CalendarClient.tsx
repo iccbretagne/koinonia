@@ -103,7 +103,7 @@ function DaysGrid({
           const isToday = day.dateStr === todayStr;
           return (
             <div
-              key={idx}
+              key={day.dateStr}
               className={`min-h-14 border-b border-r border-line p-1 md:min-h-[110px] md:p-1.5 ${
                 idx % 7 === 6 ? "border-r-0" : ""
               } ${day.inMonth ? (isToday ? "bg-brand-soft" : "bg-surface") : "bg-surface-sunken/60"}`}
@@ -290,7 +290,7 @@ export default function CalendarClient({ events }: Props) {
     mode !== "multi"
       ? `${MONTHS_FR[month - 1]} ${year}`
       : months.length > 0
-        ? `${MONTHS_FR[months[0].month - 1]} ${months[0].year} — ${MONTHS_FR[months[months.length - 1].month - 1]} ${months[months.length - 1].year}`
+        ? `${MONTHS_FR[months[0].month - 1]} ${months[0].year} — ${MONTHS_FR[months.at(-1)!.month - 1]} ${months.at(-1)!.year}`
         : "";
 
   async function captureCanvas() {

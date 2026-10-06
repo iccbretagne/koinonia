@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mkdtemp, rm, readdir, stat, writeFile } from "fs/promises";
+import { mkdtemp, rm, readdir, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "os";
 import path from "path";
 import { Readable } from "stream";
@@ -10,8 +10,8 @@ vi.mock("@/modules/storage", () => ({ getS3ObjectStream: (...args: unknown[]) =>
 // `vi.spyOn` ne peut pas redéfinir un export ESM (namespace non configurable) — on passe par
 // un mock partiel dont `mkdir` peut être basculé en échec pour un seul test (repli disque → S3).
 let mkdirShouldFail = false;
-vi.mock("fs/promises", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("fs/promises")>();
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
   return {
     ...actual,
     mkdir: (...args: Parameters<typeof actual.mkdir>) => {

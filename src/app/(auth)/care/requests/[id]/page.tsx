@@ -54,7 +54,7 @@ export default async function CareRequestDetailPage({
   const access = await getCareAccess(session, churchId);
 
   const item = await getAppointmentRequestById(id);
-  if (!item || item.churchId !== churchId) return notFound();
+  if (item?.churchId !== churchId) return notFound();
 
   const readerAccess = resolveRequestReaderAccess({
     canQualify: access.canQualify,

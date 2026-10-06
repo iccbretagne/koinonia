@@ -277,7 +277,7 @@ export default function CareStatsView({ appointments, msdp }: Props) {
                       {msdp.byMonth.map((m) => {
                         const height = Math.max(Math.round((m.count / maxMonth) * 100), m.count > 0 ? 4 : 0);
                         const [year, month] = m.month.split("-");
-                        const label = `${MONTH_NAMES[parseInt(month) - 1]} ${year.slice(2)}`;
+                        const label = `${MONTH_NAMES[Number.parseInt(month) - 1]} ${year.slice(2)}`;
                         return (
                           <div key={m.month} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
                             <span className="text-xs text-ink-muted font-medium">{m.count > 0 ? m.count : ""}</span>

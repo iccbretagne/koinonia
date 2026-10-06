@@ -25,10 +25,12 @@ export function isDevLoginEnabled(env: { AUTH_DEV_LOGIN?: string; NODE_ENV?: str
   return env.AUTH_DEV_LOGIN === "true" && env.NODE_ENV !== "production";
 }
 
-const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
+const SUPER_ADMIN_EMAILS = new Set(
+  (process.env.SUPER_ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
 
 /**
  * Vérifie si un email est dans la liste SUPER_ADMIN_EMAILS (var d'env).
@@ -37,7 +39,7 @@ const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS || "")
  * Ne pas utiliser pour des contrôles d'accès API — utiliser session.user.isSuperAdmin (DB-backed).
  */
 function isBootstrapSuperAdminEmail(email: string): boolean {
-  return SUPER_ADMIN_EMAILS.includes(email.toLowerCase());
+  return SUPER_ADMIN_EMAILS.has(email.toLowerCase());
 }
 
 declare module "next-auth" {

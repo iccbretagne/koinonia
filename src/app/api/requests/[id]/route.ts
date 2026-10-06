@@ -10,13 +10,13 @@ import { isMemberOfFunction, getFunctionDepartmentsMap } from "@/lib/function-de
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 
-const EXECUTABLE_TYPES = [
+const EXECUTABLE_TYPES = new Set([
   "AJOUT_EVENEMENT",
   "MODIFICATION_EVENEMENT",
   "ANNULATION_EVENEMENT",
   "MODIFICATION_PLANNING",
   "DEMANDE_ACCES",
-];
+]);
 
 const patchSchema = z.object({
   status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE", "APPROUVEE", "REFUSEE"]).optional(),
@@ -210,7 +210,7 @@ export async function PATCH(
       ? { ...currentPayload, ...payloadUpdates }
       : undefined;
 
-    const isExecutableType = EXECUTABLE_TYPES.includes(existing.type);
+    const isExecutableType = EXECUTABLE_TYPES.has(existing.type);
 
     // Notifications de changement d'événement (spec 059), envoyées après le commit.
     let eventNotices: EventChangeNotices | undefined;
@@ -342,12 +342,13 @@ export async function PATCH(
           link: `/requests`,
         }).catch(() => {});
       } else if (data.status === "REFUSEE") {
+        const rejectionReason = data.reviewNotes ? ` Motif : ${data.reviewNotes}` : "";
         createNotification({
           userId: existing.submittedById,
           domain: "requests",
           type: "REQUEST_REJECTED",
           title: "Demande refusée",
-          message: `Votre demande « ${existing.title} » a été refusée.${data.reviewNotes ? ` Motif : ${data.reviewNotes}` : ""}`,
+          message: `Votre demande « ${existing.title} » a été refusée.${rejectionReason}`,
           link: `/requests`,
         }).catch(() => {});
       }

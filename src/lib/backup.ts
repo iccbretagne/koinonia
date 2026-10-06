@@ -1,7 +1,7 @@
-import { execFile } from "child_process";
-import { existsSync } from "fs";
-import { join } from "path";
-import { createGzip } from "zlib";
+import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createGzip } from "node:zlib";
 import { PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
 import { logger } from "./logger";

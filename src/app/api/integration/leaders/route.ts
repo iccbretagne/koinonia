@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const leaders = await prisma.familyLeaderAssignment.findMany({
       where: {
         churchId,
-        ...(familyId && { familyId: parseInt(familyId) }),
+        ...(familyId && { familyId: Number.parseInt(familyId) }),
       },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },

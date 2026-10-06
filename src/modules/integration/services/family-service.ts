@@ -159,13 +159,14 @@ export async function notifyBergerAssigned(params: {
   });
   if (!berger) return;
 
+  const familySuffix = familyName ? ` (${familyName})` : "";
   await createNotification(
     {
       userId: berger.id,
       domain: "integration",
       type: "INTEGRATION_ASSIGNED",
       title: "Nouvelle demande d'intégration",
-      message: `${firstName} ${lastName} vous a été affecté${familyName ? ` (${familyName})` : ""}.`,
+      message: `${firstName} ${lastName} vous a été affecté${familySuffix}.`,
       link: `/integration/requests/${requestId}`,
       entityType: REQUEST_ENTITY,
       entityId: requestId,

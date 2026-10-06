@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useRef, useState } from "react";
+import { SubmitEvent, useEffect, useId, useRef, useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface AddressSuggestion {
@@ -192,7 +192,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
     if (fieldErrors[field]) setFieldErrors((e) => ({ ...e, [field]: undefined }));
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!turnstileToken) {
       setGlobalError("Merci de compléter la vérification anti-robots ci-dessus.");

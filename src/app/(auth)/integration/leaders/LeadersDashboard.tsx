@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useId, useState } from "react";
+import { SubmitEvent, useEffect, useId, useState } from "react";
 import Image from "next/image";
 
 interface UserRef {
@@ -85,7 +85,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
   const selectedFamily = families.find((f) => String(f.id) === form.familyId);
 
-  async function handleAdd(e: FormEvent) {
+  async function handleAdd(e: SubmitEvent) {
     e.preventDefault();
     if (!form.userId || !form.familyId) return;
     setSaving(true);
@@ -97,7 +97,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
         body: JSON.stringify({
           churchId,
           userId: form.userId,
-          familyId: parseInt(form.familyId),
+          familyId: Number.parseInt(form.familyId),
           familyName: selectedFamily?.name ?? "",
           role: form.role,
         }),

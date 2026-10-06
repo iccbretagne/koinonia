@@ -123,7 +123,7 @@ export async function updateAudioService(
   db ??= await defaultDb();
 
   const service = await db.audioService.findUnique({ where: { id } });
-  if (!service || service.churchId !== churchId) {
+  if (service?.churchId !== churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
 
@@ -172,7 +172,7 @@ export async function deleteAudioService(id: string, churchId: string, db?: DbCl
     where: { id },
     include: { sources: true, segments: { include: { rendition: true } } },
   });
-  if (!service || service.churchId !== churchId) {
+  if (service?.churchId !== churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
   if (service.status === "PUBLISHED") {

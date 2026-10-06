@@ -22,7 +22,7 @@ export async function GET(
     const access = await getCareAccess(session, churchId);
 
     const item = await getAppointmentRequestById(id);
-    if (!item || item.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
+    if (item?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
     const readerAccess = resolveRequestReaderAccess({
       canQualify: access.canQualify,

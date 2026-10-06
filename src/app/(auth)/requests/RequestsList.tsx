@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { REQUEST_TYPE_LABEL as TYPE_LABEL, requestStatus, requestTypeIcon } from "./request-display";
 import { formatAssignedDepts, type DeptFunction } from "@/lib/department-functions";
 
-const ANNOUNCEMENT_TYPES = ["VISUEL", "DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"];
+const ANNOUNCEMENT_TYPES = new Set(["VISUEL", "DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"]);
 
 type FilterCategory = "all" | "announcements" | "demands";
 
@@ -200,8 +200,8 @@ export default function RequestsList({ requests }: Props) {
   }
 
   const filtered = items.filter((r) => {
-    if (category === "announcements" && !ANNOUNCEMENT_TYPES.includes(r.type)) return false;
-    if (category === "demands" && ANNOUNCEMENT_TYPES.includes(r.type)) return false;
+    if (category === "announcements" && !ANNOUNCEMENT_TYPES.has(r.type)) return false;
+    if (category === "demands" && ANNOUNCEMENT_TYPES.has(r.type)) return false;
     if (statusFilter !== "all" && r.status !== statusFilter) return false;
     if (typeFilter !== "all" && r.type !== typeFilter) return false;
     if (search.trim()) {

@@ -10,7 +10,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createAudioService } from "@/modules/audio";
 import type { AudioServiceStatus } from "@/generated/prisma/client";
 
-const STATUSES: AudioServiceStatus[] = ["DRAFT", "PENDING_REVIEW", "READY", "PUBLISHED", "UNPUBLISHED"];
+const STATUSES = new Set<string>(["DRAFT", "PENDING_REVIEW", "READY", "PUBLISHED", "UNPUBLISHED"] satisfies AudioServiceStatus[]);
 
 const createSchema = z.object({
   planningEventId: z.string().optional(),
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
-    if (status && !STATUSES.includes(status as AudioServiceStatus)) {
+    if (status && !STATUSES.has(status)) {
       throw new ApiError(400, `Statut invalide : ${status}`);
     }
 

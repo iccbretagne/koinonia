@@ -32,7 +32,7 @@ export async function POST(
 
     if (segmentId) {
       const segment = await prisma.audioSegment.findUnique({ where: { id: segmentId }, select: { serviceId: true } });
-      if (!segment || segment.serviceId !== id) throw new ApiError(404, "Séquence introuvable");
+      if (segment?.serviceId !== id) throw new ApiError(404, "Séquence introuvable");
     }
 
     const token = segmentId

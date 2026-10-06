@@ -74,7 +74,7 @@ function route(request: NextRequest, forwarded?: Headers): NextResponse {
 
   const sessionToken = SESSION_COOKIE_NAMES.map(
     (name) => request.cookies.get(name)?.value
-  ).find(Boolean);
+  ).some(Boolean);
 
   if (!sessionToken) {
     // Le cron est authentifié par jeton porteur dans le route handler, pas par session

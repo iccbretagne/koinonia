@@ -63,7 +63,7 @@ export async function PUT(
       where: { id: eventId },
       select: { churchId: true },
     });
-    if (!event || event.churchId !== churchId) {
+    if (event?.churchId !== churchId) {
       throw new ApiError(404, "Événement introuvable");
     }
 

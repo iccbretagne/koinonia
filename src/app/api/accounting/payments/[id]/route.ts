@@ -30,7 +30,7 @@ export async function PATCH(
       where: { id },
       include: { request: { select: { churchId: true, label: true, submittedById: true, amount: true } } },
     });
-    if (!payment || payment.request.churchId !== churchId) throw new ApiError(404, "Paiement introuvable");
+    if (payment?.request.churchId !== churchId) throw new ApiError(404, "Paiement introuvable");
     if (payment.releasedAt) throw new ApiError(400, "Ce paiement a déjà été confirmé");
 
     const body = releaseSchema.parse(await request.json());

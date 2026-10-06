@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -164,7 +164,7 @@ function computeDeadlineFromOffset(eventDate: string, offset: string): string {
   const match = offset.match(/^(\d+)(h|d)$/);
   if (!match) return "";
   const d = new Date(eventDate);
-  const value = parseInt(match[1], 10);
+  const value = Number.parseInt(match[1], 10);
   const unit = match[2];
   if (unit === "h") d.setHours(d.getHours() - value);
   else if (unit === "d") d.setDate(d.getDate() - value);
@@ -472,7 +472,7 @@ export default function RequestForm({
     return res;
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -19,6 +19,15 @@ interface Props {
   readonly initialChurches: Church[];
 }
 
+function toSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export default function ChurchesClient({ initialChurches }: Props) {
   const [churches, setChurches] = useState(initialChurches);
   const [modalOpen, setModalOpen] = useState(false);
@@ -33,15 +42,6 @@ export default function ChurchesClient({ initialChurches }: Props) {
   const [bulkSlug, setBulkSlug] = useState("");
   const [bulkError, setBulkError] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
-
-  function toSlug(value: string): string {
-    return value
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  }
 
   function openCreate() {
     setName("");
@@ -58,7 +58,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -132,7 +132,7 @@ export default function ChurchesClient({ initialChurches }: Props) {
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: FormEvent) {
+  async function handleBulkEdit(e: SubmitEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkName) data.name = bulkName;

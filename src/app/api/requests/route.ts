@@ -152,7 +152,7 @@ async function createVisuel(_request: Request, body: unknown) {
       where: { id: data.departmentId },
       select: { ministry: { select: { churchId: true } } },
     });
-    if (!dept || dept.ministry.churchId !== data.churchId) {
+    if (dept?.ministry.churchId !== data.churchId) {
       throw new ApiError(400, "Le département n'appartient pas à cette église");
     }
   }
@@ -161,7 +161,7 @@ async function createVisuel(_request: Request, body: unknown) {
       where: { id: data.ministryId },
       select: { churchId: true },
     });
-    if (!ministry || ministry.churchId !== data.churchId) {
+    if (ministry?.churchId !== data.churchId) {
       throw new ApiError(400, "Le ministère n'appartient pas à cette église");
     }
   }
@@ -205,7 +205,7 @@ async function createDemand(_request: Request, body: unknown) {
       where: { id: data.departmentId },
       select: { ministry: { select: { churchId: true } } },
     });
-    if (!dept || dept.ministry.churchId !== data.churchId) {
+    if (dept?.ministry.churchId !== data.churchId) {
       throw new ApiError(400, "Le département n'appartient pas à cette église");
     }
   }
@@ -214,7 +214,7 @@ async function createDemand(_request: Request, body: unknown) {
       where: { id: data.ministryId },
       select: { churchId: true },
     });
-    if (!ministry || ministry.churchId !== data.churchId) {
+    if (ministry?.churchId !== data.churchId) {
       throw new ApiError(400, "Le ministère n'appartient pas à cette église");
     }
   }

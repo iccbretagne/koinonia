@@ -119,7 +119,7 @@ export async function POST(
         where: { id: ministryId },
         select: { churchId: true },
       });
-      if (!ministry || ministry.churchId !== churchId) {
+      if (ministry?.churchId !== churchId) {
         throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
       }
     }
@@ -255,7 +255,7 @@ export async function PATCH(
         where: { id: ministryId },
         select: { churchId: true },
       });
-      if (!ministry || ministry.churchId !== existing.churchId) {
+      if (ministry?.churchId !== existing.churchId) {
         throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
       }
     }

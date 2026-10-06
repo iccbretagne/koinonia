@@ -27,6 +27,11 @@ const configLinksDef = [
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
 ];
 
+async function signOutAction() {
+  "use server";
+  await signOut({ redirectTo: "/" });
+}
+
 export default async function AuthLayout({
   children,
 }: {
@@ -257,9 +262,11 @@ export default async function AuthLayout({
       integrationLinks.push({ href: "/integration/requests", label: "Intégration" });
     }
     if (isIntegrationMember) {
-      integrationLinks.push({ href: "/integration/leaders", label: "Bergers de famille" });
-      integrationLinks.push({ href: "/integration/parcours", label: "Parcours d'intégration" });
-      integrationLinks.push({ href: "/integration/stats", label: "Statistiques intégration" });
+      integrationLinks.push(
+        { href: "/integration/leaders", label: "Bergers de famille" },
+        { href: "/integration/parcours", label: "Parcours d'intégration" },
+        { href: "/integration/stats", label: "Statistiques intégration" },
+      );
     }
     // Réglage des délais de relance (spec 051) : même règle que requireIntegrationSettingsAccess
     // — Super Admin / events:manage, ou responsable d'un département de fonction INTEGRATION.
@@ -362,10 +369,6 @@ export default async function AuthLayout({
     // "/dashboard" en dur : sur une instance qui désactive le module planning, ou pour un
     // rôle sans planning:department (spec 031/#462), ce dernier mènerait à un 404/FORBIDDEN.
     redirect(landingHref({ isPastoral: false, hasPlanningAccess: canAccessDashboard, hasStarPlanning }));
-  }
-  async function signOutAction() {
-    "use server";
-    await signOut({ redirectTo: "/" });
   }
   async function switchToPastoralMode() {
     "use server";
