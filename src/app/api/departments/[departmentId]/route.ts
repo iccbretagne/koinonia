@@ -62,7 +62,7 @@ export async function PUT(
       where: { id: data.ministryId },
       select: { churchId: true },
     });
-    if (!targetMinistry || targetMinistry.churchId !== churchId) {
+    if (targetMinistry?.churchId !== churchId) {
       throw new ApiError(403, "Le ministère cible n'appartient pas à la même église");
     }
 

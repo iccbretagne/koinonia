@@ -32,6 +32,14 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 /** Tiroir listant les liens de partage actifs (spec 049) — remplace l'écran « Collections ». */
+async function copyLink(url: string) {
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // best-effort
+  }
+}
+
 export default function SharesDrawer({ open, onClose }: { readonly open: boolean; readonly onClose: () => void }) {
   const [shares, setShares] = useState<ActiveShare[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,14 +75,6 @@ export default function SharesDrawer({ open, onClose }: { readonly open: boolean
       setError(err instanceof Error ? err.message : "Erreur lors de la révocation");
     } finally {
       setRevokingId(null);
-    }
-  }
-
-  async function copyLink(url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // best-effort
     }
   }
 

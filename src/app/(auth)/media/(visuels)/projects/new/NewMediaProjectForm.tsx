@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -13,7 +13,7 @@ export default function NewMediaProjectForm({ churchId }: { readonly churchId: s
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);

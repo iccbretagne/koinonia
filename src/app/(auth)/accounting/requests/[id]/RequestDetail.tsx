@@ -130,7 +130,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
   const [priority, setPriority] = useState<"URGENT" | "NORMAL">("NORMAL");
   const [priorityNote, setPriorityNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
-  const [paymentLines, setPaymentLines] = useState([{ amount: String(initial.amount), scheduledDate: "", note: "" }]);
+  const [paymentLines, setPaymentLines] = useState(() => [{ id: crypto.randomUUID(), amount: String(initial.amount), scheduledDate: "", note: "" }]);
   const [releaseDate, setReleaseDate] = useState(new Date().toISOString().slice(0, 10));
   const [releaseAmount, setReleaseAmount] = useState("");
 
@@ -161,7 +161,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
 
   async function releasePayment(paymentId: string) {
     const planned = Number(req.payments.find((p) => p.id === paymentId)?.amount ?? 0);
-    const released = parseFloat(releaseAmount) || planned;
+    const released = Number.parseFloat(releaseAmount) || planned;
     setLoading(true);
     try {
       const res = await fetch(`/api/accounting/payments/${paymentId}`, {
@@ -436,7 +436,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
           <p className="text-sm text-ink-muted">Définissez le ou les paiements pour <strong>{fmtAmount(req.amount)}</strong> au total.</p>
           <div className="space-y-2">
             {paymentLines.map((line, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2">
+              <div key={line.id} className="grid grid-cols-2 gap-2">
                 <div>
                   <label htmlFor={`${uid}-amount-${i}`} className="block text-xs text-ink-muted mb-1">Montant (€)</label>
                   <input id={`${uid}-amount-${i}`} type="number" min={0.01} step={0.01} value={line.amount}
@@ -457,7 +457,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
                 </div>
               </div>
             ))}
-            <button type="button" onClick={() => setPaymentLines((ls) => [...ls, { amount: "", scheduledDate: "", note: "" }])}
+            <button type="button" onClick={() => setPaymentLines((ls) => [...ls, { id: crypto.randomUUID(), amount: "", scheduledDate: "", note: "" }])}
               className="text-xs text-brand-text hover:underline">
               + Ajouter une tranche
             </button>
@@ -466,7 +466,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
             <button onClick={() => setApproveOpen(false)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">Annuler</button>
             <button onClick={async () => {
               const payments = paymentLines.map((l) => ({
-                amount: parseFloat(l.amount),
+                amount: Number.parseFloat(l.amount),
                 scheduledDate: new Date(l.scheduledDate).toISOString(),
               }));
               const ok = await patch({ action: "approve", payments });
@@ -523,7 +523,7 @@ export default function RequestDetail({ request: initial, canManage, isOwn }: Pr
       {(() => {
         const relPayment = req.payments.find((p) => p.id === releasingPaymentId);
         const planned = Number(relPayment?.amount ?? 0);
-        const entered = parseFloat(releaseAmount) || 0;
+        const entered = Number.parseFloat(releaseAmount) || 0;
         const remainder = Number((planned - entered).toFixed(2));
         const isPartial = entered > 0 && entered < planned;
         return (

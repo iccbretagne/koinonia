@@ -6,14 +6,14 @@ import { useToast } from "@/components/ui/Toast";
 
 const DESTRUCTIVE_STATUSES = new Set(["REFUSEE", "ANNULE"]);
 
-const ANNOUNCEMENT_TYPES = ["DIFFUSION_INTERNE", "RESEAUX_SOCIAUX", "VISUEL"];
-const DEMAND_TYPES = [
+const ANNOUNCEMENT_TYPES = new Set(["DIFFUSION_INTERNE", "RESEAUX_SOCIAUX", "VISUEL"]);
+const DEMAND_TYPES = new Set([
   "AJOUT_EVENEMENT",
   "MODIFICATION_EVENEMENT",
   "ANNULATION_EVENEMENT",
   "MODIFICATION_PLANNING",
   "DEMANDE_ACCES",
-];
+]);
 
 const TYPE_LABEL: Record<string, string> = {
   VISUEL: "Visuel",
@@ -105,8 +105,8 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   const filtered = requests.filter((r) => {
-    if (category === "announcements" && !ANNOUNCEMENT_TYPES.includes(r.type)) return false;
-    if (category === "demands" && !DEMAND_TYPES.includes(r.type)) return false;
+    if (category === "announcements" && !ANNOUNCEMENT_TYPES.has(r.type)) return false;
+    if (category === "demands" && !DEMAND_TYPES.has(r.type)) return false;
     return true;
   });
 
@@ -211,7 +211,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   function renderRequest(req: RequestItem) {
     const author = req.submittedBy.displayName ?? req.submittedBy.name ?? "—";
     const source = req.department?.name ?? req.ministry?.name ?? null;
-    const isDemand = DEMAND_TYPES.includes(req.type);
+    const isDemand = DEMAND_TYPES.has(req.type);
     const payloadSummary = renderPayloadSummary(req);
 
     return (

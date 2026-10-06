@@ -26,7 +26,7 @@ export async function GET(
       where: { id: segmentId },
       include: { rendition: true },
     });
-    if (!segment || segment.serviceId !== id || !segment.rendition) {
+    if (segment?.serviceId !== id || !segment.rendition) {
       throw new ApiError(404, "Séquence introuvable");
     }
 

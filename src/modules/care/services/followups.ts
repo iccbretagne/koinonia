@@ -119,7 +119,7 @@ export async function startMsdpFollowUpFromIntegrationRequest(params: {
       msdpFollowUp: { select: { id: true } },
     },
   });
-  if (!req || req.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
+  if (req?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
   if (req.msdpFollowUp) throw new ApiError(409, "Un suivi MSDP existe déjà pour cette demande");
 
   return prisma.msdpFollowUp.create({

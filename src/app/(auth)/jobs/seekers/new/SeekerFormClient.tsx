@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface SeekerInitial {
@@ -47,7 +47,7 @@ export default function SeekerFormClient({
 
   const noContractSelected = !wantEmploi && !wantStage && !wantAlternance;
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (noContractSelected) {
       setError("Sélectionnez au moins un type de contrat.");

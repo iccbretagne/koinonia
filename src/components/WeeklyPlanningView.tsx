@@ -218,7 +218,11 @@ export default function WeeklyPlanningView({
         toast.success("Image copiée dans le presse-papiers");
       } catch {
         const w = window.open();
-        if (w) { w.document.write(`<img src="${canvas.toDataURL("image/png")}" />`); }
+        if (w) {
+          const img = w.document.createElement("img");
+          img.src = canvas.toDataURL("image/png");
+          w.document.body.append(img);
+        }
       }
     } catch {
       toast.error("Export impossible. Réessayez dans un instant.");

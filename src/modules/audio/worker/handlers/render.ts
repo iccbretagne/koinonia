@@ -1,8 +1,8 @@
-import { writeFile, readFile, mkdtemp, rm } from "fs/promises";
-import { tmpdir } from "os";
-import path from "path";
-import { execFile } from "child_process";
-import { promisify } from "util";
+import { writeFile, readFile, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { AudioJob } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { downloadFile, uploadFile, deleteMediaFile } from "@/modules/storage";
@@ -71,7 +71,7 @@ export async function renderHandler(job: AudioJob): Promise<void> {
     where: { id: payload.segmentId },
     include: { source: true, service: true, rendition: true },
   });
-  if (!segment || !segment.source) {
+  if (!segment?.source) {
     throw new Error(`Segment ${payload.segmentId} introuvable ou sans source associée`);
   }
 
@@ -131,7 +131,7 @@ export async function renderHandler(job: AudioJob): Promise<void> {
     // l'y placer directement plutôt que de faire attendre le premier auditeur.
     await primeRenditionCache(key, outputPath);
 
-    const truePeakDb = parseFloat(measured.input_tp);
+    const truePeakDb = Number.parseFloat(measured.input_tp);
     await prisma.audioRendition.upsert({
       where: { segmentId: segment.id },
       create: {

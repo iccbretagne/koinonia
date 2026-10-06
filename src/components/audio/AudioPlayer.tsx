@@ -232,7 +232,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
             <select
               aria-label="Vitesse de lecture"
               value={playbackRate}
-              onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
+              onChange={(e) => setPlaybackRate(Number.parseFloat(e.target.value))}
               className="min-h-9 shrink-0 cursor-pointer rounded-control border border-control-line bg-surface px-2 text-sm text-ink"
             >
               {speedOptions}

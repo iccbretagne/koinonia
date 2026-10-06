@@ -151,13 +151,13 @@ export function filterQueue(rows: AudioServiceRow[], c: QueueCriteria): AudioSer
     if (c.to && day > c.to) return false;
 
     if (c.speaker === NO_SPEAKER) {
-      if (row.speaker && row.speaker.trim()) return false;
+      if (row.speaker?.trim()) return false;
     } else if (c.speaker && row.speaker !== c.speaker) {
       return false;
     }
 
     if (c.series === NO_SERIES) {
-      if (row.series && row.series.trim()) return false;
+      if (row.series?.trim()) return false;
     } else if (c.series && row.series !== c.series) {
       return false;
     }

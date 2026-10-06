@@ -62,7 +62,7 @@ export async function GET(
       },
     });
 
-    if (!req || req.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
+    if (req?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
     // Scope : managers voient tout ; sinon vérifier que la demande est dans le périmètre
     if (!hasPermission(perms, "accounting:manage")) {
@@ -95,7 +95,7 @@ export async function PATCH(
     const perms = roles.flatMap((r) => rolePermissions[r] ?? []);
 
     const existing = await prisma.financialRequest.findUnique({ where: { id } });
-    if (!existing || existing.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
+    if (existing?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
     const body = patchSchema.parse(await request.json());
 
@@ -187,7 +187,7 @@ async function createNextOccurrence(
 ) {
   if (!current.seriesId) return;
   const series = await tx.financialSeries.findUnique({ where: { id: current.seriesId } });
-  if (!series || series.status !== "ACTIVE") return;
+  if (series?.status !== "ACTIVE") return;
 
   const nextDate = new Date(series.nextOccurrenceDate);
   if (series.recurrenceUnit === "WEEK") {
@@ -238,9 +238,10 @@ async function notifySubmitter(
   priorityNote?: string,
   rejectionReason?: string
 ) {
+  const urgentSuffix = priorityNote ? ` — ${priorityNote}` : "";
   const messages: Record<string, string> = {
     PROCESSING: priority === "URGENT"
-      ? `Votre demande "${req.label}" est en cours de traitement (priorité urgente${priorityNote ? ` — ${priorityNote}` : ""}).`
+      ? `Votre demande "${req.label}" est en cours de traitement (priorité urgente${urgentSuffix}).`
       : `Votre demande "${req.label}" est en cours de traitement. Elle sera traitée dans les meilleurs délais.`,
     APPROVED:   `Votre demande "${req.label}" a été validée. Consultez le plan de paiement sur votre fiche.`,
     REJECTED:   `Votre demande "${req.label}" a été rejetée. Consultez le motif sur votre fiche.`,

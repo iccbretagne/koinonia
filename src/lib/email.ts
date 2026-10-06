@@ -11,7 +11,7 @@ function escapeHtml(str: string): string {
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "localhost",
-  port: parseInt(process.env.SMTP_PORT || "587"),
+  port: Number.parseInt(process.env.SMTP_PORT || "587"),
   secure: process.env.SMTP_SECURE === "true",
   auth: process.env.SMTP_USER
     ? {
@@ -390,12 +390,14 @@ export function buildAccountingStatusEmail(params: {
     CANCELLED:  `Votre demande a été annulée — ${church}`,
   };
 
+  const priorityNoteHtml = params.priorityNote ? ` : <em>${escapeHtml(params.priorityNote)}</em>` : "";
+  const rejectionHtml = params.rejectionReason ? `<br><br>Motif : <em>${escapeHtml(params.rejectionReason)}</em>` : "";
   const intros: Record<string, string> = {
     PROCESSING: params.priority === "URGENT"
-      ? `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement en priorité urgente${params.priorityNote ? ` : <em>${escapeHtml(params.priorityNote)}</em>` : ""}.`
+      ? `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement en priorité urgente${priorityNoteHtml}.`
       : `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement. Elle sera traitée dans les meilleurs délais.`,
     APPROVED:   `Votre demande <strong>« ${label} »</strong> (${amount}) a été validée. Consultez le plan de paiement pour connaître les dates de remise.`,
-    REJECTED:   `Votre demande <strong>« ${label} »</strong> (${amount}) n'a malheureusement pas pu être retenue.${params.rejectionReason ? `<br><br>Motif : <em>${escapeHtml(params.rejectionReason)}</em>` : ""}`,
+    REJECTED:   `Votre demande <strong>« ${label} »</strong> (${amount}) n'a malheureusement pas pu être retenue.${rejectionHtml}`,
     CANCELLED:  `Votre demande <strong>« ${label} »</strong> (${amount}) a été annulée.`,
   };
 
@@ -439,8 +441,11 @@ export function buildAccountingPaymentEmail(params: {
   const label = escapeHtml(params.requestLabel);
   const church = escapeHtml(params.churchName);
 
+  const residualHtml = params.residualAmount
+    ? ` Le solde restant de <strong>${escapeHtml(params.residualAmount)}</strong> a été reporté en nouvelle tranche.`
+    : "";
   const body = params.isPartial
-    ? `Un versement partiel de <strong>${escapeHtml(params.releasedAmount)}</strong> sur <strong>${escapeHtml(params.plannedAmount)}</strong> a été confirmé pour la tranche ${params.trancheNumber} de votre demande <strong>« ${label} »</strong>.${params.residualAmount ? ` Le solde restant de <strong>${escapeHtml(params.residualAmount)}</strong> a été reporté en nouvelle tranche.` : ""}`
+    ? `Un versement partiel de <strong>${escapeHtml(params.releasedAmount)}</strong> sur <strong>${escapeHtml(params.plannedAmount)}</strong> a été confirmé pour la tranche ${params.trancheNumber} de votre demande <strong>« ${label} »</strong>.${residualHtml}`
     : `La tranche ${params.trancheNumber} de votre demande <strong>« ${label} »</strong> a été remise : <strong>${escapeHtml(params.releasedAmount)}</strong>.`;
 
   return {
@@ -603,8 +608,9 @@ export function buildReminderEmail(params: {
   const eventTitle = escapeHtml(params.eventTitle);
   const departmentName = escapeHtml(params.departmentName);
 
+  const whenLabel = params.daysUntil === 1 ? "demain" : `dans ${params.daysUntil} jours`;
   return {
-    subject: `Rappel : ${params.eventTitle} — ${params.daysUntil === 1 ? "demain" : `dans ${params.daysUntil} jours`}`,
+    subject: `Rappel : ${params.eventTitle} — ${whenLabel}`,
     html: `
       <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">

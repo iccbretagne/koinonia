@@ -129,10 +129,10 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
   }
 
   // Get church name for the current church
-  const currentChurchRole = session.user.churchRoles.find(
+  const hasCurrentChurchRole = session.user.churchRoles.some(
     (r) => r.churchId === currentChurchId
   );
-  const churchName = currentChurchRole
+  const churchName = hasCurrentChurchRole
     ? (await prisma.church.findUnique({
         where: { id: currentChurchId },
         select: { name: true },

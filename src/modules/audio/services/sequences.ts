@@ -57,7 +57,7 @@ export async function applySequences(
   db ??= await defaultDb();
 
   const service = await db.audioService.findUnique({ where: { id: serviceId } });
-  if (!service || service.churchId !== churchId) {
+  if (service?.churchId !== churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
   assertServiceEditable(service, "modifier les séquences");

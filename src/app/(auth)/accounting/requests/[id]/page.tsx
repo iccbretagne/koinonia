@@ -16,9 +16,9 @@ export default async function AccountingRequestDetailPage({
   if (!churchId) return <p className="p-4 text-ink-muted">Aucune église sélectionnée.</p>;
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId).map((r) => r.role);
-  const perms = roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []);
+  const perms = new Set(roles.flatMap((r: string) => rolePermissions[r as keyof typeof rolePermissions] ?? []));
   const isPastoral = (session.user.pastoralChurchIds ?? []).includes(churchId);
-  if (!perms.includes("accounting:view") && !isPastoral) {
+  if (!perms.has("accounting:view") && !isPastoral) {
     return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
@@ -36,9 +36,9 @@ export default async function AccountingRequestDetailPage({
     },
   });
 
-  if (!req || req.churchId !== churchId) return notFound();
+  if (req?.churchId !== churchId) return notFound();
 
-  const canManage = perms.includes("accounting:manage");
+  const canManage = perms.has("accounting:manage");
   const isOwn = req.submittedById === session.user.id!;
 
   // Scope : gestionnaires voient tout ; propriétaire aussi ; sinon vérifier le périmètre

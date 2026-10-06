@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
 import type { Prisma, AudioService } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/errors";
 
@@ -42,7 +42,7 @@ export async function publishAudioService(
       },
     },
   });
-  if (!service || service.churchId !== churchId) {
+  if (service?.churchId !== churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
   if (service.segments.length === 0) {
@@ -111,7 +111,7 @@ export async function unpublishAudioService(
   db ??= await defaultDb();
 
   const service = await db.audioService.findUnique({ where: { id: serviceId } });
-  if (!service || service.churchId !== churchId) {
+  if (service?.churchId !== churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
   if (service.status !== "PUBLISHED") {
@@ -151,7 +151,7 @@ export async function maybeCompletePublication(
       },
     },
   });
-  if (!service || service.status !== "READY") return { published: false, remaining: 0 };
+  if (service?.status !== "READY") return { published: false, remaining: 0 };
 
   const remaining = service.segments.filter(
     (segment) => segment.rendition?.sourceHash !== computeSourceHash(segment.source?.etag ?? null)

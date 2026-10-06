@@ -155,7 +155,7 @@ export default function RoomsAdminClient({
         )
       );
       setAccessRoom((prev) =>
-        prev && prev.id === roomId ? { ...prev, sharedWith: prev.sharedWith.filter((a) => a.church.id !== targetChurchId) } : prev
+        prev?.id === roomId ? { ...prev, sharedWith: prev.sharedWith.filter((a) => a.church.id !== targetChurchId) } : prev
       );
     }
   }

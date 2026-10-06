@@ -83,12 +83,12 @@ export default function ProfileAgenda({ profile, entries, weekStart }: Props) {
         </div>
       ) : (
         <div className="space-y-3">
-          {days.map((day, i) => {
+          {days.map((day) => {
             const dayEntries = entriesForDay(day);
             if (dayEntries.length === 0) return null;
             const isToday = day.toDateString() === new Date().toDateString();
             return (
-              <div key={i} className="bg-surface rounded-lg shadow border border-line overflow-hidden">
+              <div key={day.toISOString()} className="bg-surface rounded-lg shadow border border-line overflow-hidden">
                 <div className={`px-4 py-2 border-b border-line ${isToday ? "bg-brand-soft" : "bg-surface-sunken"}`}>
                   <p className={`text-sm font-semibold capitalize ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
                     {fmtDate(day)}

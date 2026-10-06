@@ -15,12 +15,12 @@ import { z } from "zod";
 
 const PRESIGNED_EXPIRY = 3600; // 1h
 
-const ALLOWED_MIME_TYPES = [
+const ALLOWED_MIME_TYPES = new Set([
   // Images / visuels
   "image/jpeg", "image/png", "image/webp", "image/svg+xml", "application/pdf",
   // Vidéos
   "video/mp4", "video/quicktime", "video/webm",
-];
+]);
 
 const schema = z.object({
   filename: z.string().min(1),
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = schema.parse(body);
 
-    if (!ALLOWED_MIME_TYPES.includes(data.contentType)) {
+    if (!ALLOWED_MIME_TYPES.has(data.contentType)) {
       throw new ApiError(400, `Type MIME non supporté : ${data.contentType}`);
     }
     if (data.size > MAX_FILE_SIZE) {

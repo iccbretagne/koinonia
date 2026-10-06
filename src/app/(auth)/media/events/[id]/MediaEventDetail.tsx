@@ -256,7 +256,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
         body: JSON.stringify({
           type: newType,
           label: newLabel || null,
-          expiresInDays: newExpiry && parseInt(newExpiry, 10) > 0 ? parseInt(newExpiry, 10) : undefined,
+          expiresInDays: newExpiry && Number.parseInt(newExpiry, 10) > 0 ? Number.parseInt(newExpiry, 10) : undefined,
         }),
       });
       const json = await res.json();

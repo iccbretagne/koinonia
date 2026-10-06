@@ -138,7 +138,7 @@ const ALLOWED_TYPES: Record<string, MediaFileType> = {
 };
 
 // Statuts qui comptent comme "traités" pour la barre de progression
-const DONE_STATUSES: MediaFileStatus[] = ["FINAL_APPROVED", "APPROVED", "REJECTED", "PREREJECTED"];
+const DONE_STATUSES = new Set<MediaFileStatus>(["FINAL_APPROVED", "APPROVED", "REJECTED", "PREREJECTED"]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,7 +158,8 @@ function formatSize(bytes: number) {
 function formatDuration(s: number) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return m > 0 ? `${m}min${sec > 0 ? ` ${sec}s` : ""}` : `${sec}s`;
+  const secSuffix = sec > 0 ? ` ${sec}s` : "";
+  return m > 0 ? `${m}min${secSuffix}` : `${sec}s`;
 }
 
 function formatTimecode(s: number) {
@@ -258,7 +259,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
         body: JSON.stringify({
           type: newType,
           label: newLabel || null,
-          expiresInDays: newExpiry && parseInt(newExpiry, 10) > 0 ? parseInt(newExpiry, 10) : undefined,
+          expiresInDays: newExpiry && Number.parseInt(newExpiry, 10) > 0 ? Number.parseInt(newExpiry, 10) : undefined,
         }),
       });
       const json = await res.json();
@@ -1052,7 +1053,7 @@ export default function MediaProjectDetail({
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const allFiles = project.files ?? [];
-  const doneCount        = allFiles.filter((f) => DONE_STATUSES.includes(f.status)).length;
+  const doneCount        = allFiles.filter((f) => DONE_STATUSES.has(f.status)).length;
   const finalApprovedCount = allFiles.filter((f) => f.status === "FINAL_APPROVED").length;
   const approvedCount    = allFiles.filter((f) => f.status === "APPROVED").length;
   const prevalidatedCount = allFiles.filter((f) => f.status === "PREVALIDATED").length;

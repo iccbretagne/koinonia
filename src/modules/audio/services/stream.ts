@@ -11,8 +11,8 @@
  *    chaîne — non fait aujourd'hui (plan.md § Services / logique métier). La délégation n'a lieu
  *    que si la rendition est effectivement en cache : nginx ne sait pas la télécharger.
  */
-import { createReadStream, statSync } from "fs";
-import { Readable } from "stream";
+import { createReadStream, statSync } from "node:fs";
+import { Readable } from "node:stream";
 import { getCachedRenditionPath, getCacheFileName } from "./rendition-cache";
 import { getS3ObjectStream } from "@/modules/storage";
 
@@ -26,12 +26,12 @@ function parseRange(rangeHeader: string | null, size: number): { start: number; 
   if (!match) return null;
 
   const [, startStr, endStr] = match;
-  let start = startStr ? parseInt(startStr, 10) : NaN;
-  let end = endStr ? parseInt(endStr, 10) : size - 1;
+  let start = startStr ? Number.parseInt(startStr, 10) : Number.NaN;
+  let end = endStr ? Number.parseInt(endStr, 10) : size - 1;
 
   if (startStr === "" && endStr !== "") {
     // Suffixe "bytes=-500" : les 500 derniers octets.
-    const suffixLength = parseInt(endStr, 10);
+    const suffixLength = Number.parseInt(endStr, 10);
     start = Math.max(0, size - suffixLength);
     end = size - 1;
   }

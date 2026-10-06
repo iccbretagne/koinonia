@@ -21,6 +21,7 @@ interface Props {
 
 /** Suppression définitive d'une demande ou d'un suivi (spec 057), réservée à `care:delete`/`integration:delete`. */
 export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, blockedBy = [] }: Props) {
+  const extraSuffix = extraMessage ? ` ${extraMessage}` : "";
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -75,7 +76,7 @@ export default function DeleteItemButton({ endpoint, redirectTo, extraMessage, b
         <ConfirmModal
           open={open}
           title="Supprimer définitivement cette demande ?"
-          message={`Les coordonnées, le message, l'historique et les notifications de la demande seront effacés. Cette action est irréversible.${extraMessage ? ` ${extraMessage}` : ""}`}
+          message={`Les coordonnées, le message, l'historique et les notifications de la demande seront effacés. Cette action est irréversible.${extraSuffix}`}
           confirmLabel="Supprimer"
           confirmingLabel="Suppression…"
           confirming={deleting}

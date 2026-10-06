@@ -58,7 +58,7 @@ export async function PATCH(
         where: { id: data.planningEventId },
         select: { churchId: true },
       });
-      if (!pe || pe.churchId !== churchId) {
+      if (pe?.churchId !== churchId) {
         throw new ApiError(400, "Événement planning invalide ou hors périmètre");
       }
     }

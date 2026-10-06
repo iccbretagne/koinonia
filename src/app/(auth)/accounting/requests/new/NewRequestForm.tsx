@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AttachmentManager, { type AttachmentItem } from "@/app/(auth)/accounting/components/AttachmentManager";
@@ -60,12 +60,12 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  async function submit(e: FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const amount = parseFloat(form.amount);
+      const amount = Number.parseFloat(form.amount);
       if (Number.isNaN(amount) || amount <= 0) { setError("Montant invalide"); setLoading(false); return; }
 
       let res: Response;
@@ -78,7 +78,7 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
             label:               form.label,
             description:         form.description || undefined,
             amount,
-            recurrenceEvery:     parseInt(recurrence.every),
+            recurrenceEvery:     Number.parseInt(recurrence.every),
             recurrenceUnit:      recurrence.unit,
             firstOccurrenceDate: new Date(recurrence.firstDate).toISOString(),
           }),
@@ -136,11 +136,11 @@ export default function NewRequestForm({ departments, correction, redirectTo = "
             { value: "one_shot",  label: "Note de frais",     desc: "Dépense déjà effectuée" },
             { value: "one_shot",  label: "Avance one-shot",   desc: "Dépense à venir, ponctuelle", type: "BUDGET_ADVANCE" as const },
             { value: "recurring", label: "Avance récurrente", desc: "Virement régulier planifié" },
-          ].filter((opt) => !correction || opt.value !== "recurring").map((opt, i) => {
+          ].filter((opt) => !correction || opt.value !== "recurring").map((opt) => {
             const isActive = mode === opt.value && (opt.type ? type === opt.type : type === "EXPENSE_REPORT" || opt.value === "recurring");
             return (
               <button
-                key={i}
+                key={opt.label}
                 type="button"
                 onClick={() => {
                   setMode(opt.value as RequestMode);

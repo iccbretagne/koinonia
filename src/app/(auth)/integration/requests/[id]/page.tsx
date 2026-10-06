@@ -43,7 +43,7 @@ export default async function IntegrationRequestDetailPage({
     },
   });
 
-  if (!req || req.churchId !== churchId) return notFound();
+  if (req?.churchId !== churchId) return notFound();
 
   // Rendez-vous pastoral et suivi MSDP nés de cette demande : propriété de `care` (spec 052,
   // ADR-0015) — orchestré ici plutôt qu'importé dans `integration` (aucun import entre modules).

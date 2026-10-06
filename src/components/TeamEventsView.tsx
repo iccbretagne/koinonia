@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { SubmitEvent, useCallback, useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -119,7 +119,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     setDeleteError(null);
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (editing?.seriesId) {
       setScopeStep("edit");

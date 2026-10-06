@@ -350,7 +350,7 @@ export async function validateBackupTargets(
         departments: { select: { department: { select: { ministryId: true } } } },
       },
     });
-    if (!target || target.churchId !== churchId) throw new ApiError(403, "Backup introuvable");
+    if (target?.churchId !== churchId) throw new ApiError(403, "Backup introuvable");
     if (target.userId === declarerUserId) {
       throw new ApiError(403, "Vous ne pouvez pas vous désigner vous-même en backup");
     }

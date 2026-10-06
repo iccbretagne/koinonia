@@ -84,10 +84,10 @@ export type FamilyPatchBody = z.infer<typeof familyPatchSchema>;
 export const WAITING_STATUSES: FamilyIntegrationStatus[] = ["WAITING_RECONTACT", "WAITING_MISSION"];
 
 /** Seuls points d'entrée autorisés dans un état d'attente (spec 051). */
-const WAITING_ENTRY_STATUSES: FamilyIntegrationStatus[] = ["SUBMITTED", "ASSIGNED", "CONTACTED"];
+const WAITING_ENTRY_STATUSES = new Set<FamilyIntegrationStatus>(["SUBMITTED", "ASSIGNED", "CONTACTED"]);
 
 /** États depuis lesquels un berger peut renvoyer une demande à l'équipe intégration. */
-const HANDBACK_STATUSES: FamilyIntegrationStatus[] = ["ASSIGNED", "CONTACTED"];
+const HANDBACK_STATUSES = new Set<FamilyIntegrationStatus>(["ASSIGNED", "CONTACTED"]);
 
 /**
  * Détachement complet d'une demande qui repart à « demande reçue » : famille, berger, jalons
@@ -233,7 +233,7 @@ export function computeFamilyTransitionData(
       return result;
 
     case "wait":
-      if (!WAITING_ENTRY_STATUSES.includes(current.status))
+      if (!WAITING_ENTRY_STATUSES.has(current.status))
         throw new ApiError(
           400,
           "Transition invalide : seule une demande reçue, affectée ou au premier contact établi peut être mise en attente"
@@ -266,7 +266,7 @@ export function computeFamilyTransitionData(
 
     case "handback":
       requireBergerOrIntegrationMember(actor);
-      if (!HANDBACK_STATUSES.includes(current.status))
+      if (!HANDBACK_STATUSES.has(current.status))
         throw new ApiError(
           400,
           "Transition invalide : seule une demande affectée ou au premier contact établi peut être renvoyée à l'équipe intégration"

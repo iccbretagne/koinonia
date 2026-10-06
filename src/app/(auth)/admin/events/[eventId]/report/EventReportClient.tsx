@@ -404,7 +404,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
                       <input
                         type="number" min={0}
                         value={statVal(section.stats, key) ?? ""}
-                        onChange={(e) => updateStat(i, key, e.target.value === "" ? null : parseInt(e.target.value, 10))}
+                        onChange={(e) => updateStat(i, key, e.target.value === "" ? null : Number.parseInt(e.target.value, 10))}
                         placeholder="—"
                         className={`w-full border ${color} rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
                       />

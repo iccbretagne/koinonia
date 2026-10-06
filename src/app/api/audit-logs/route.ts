@@ -6,8 +6,8 @@ export async function GET(request: Request) {
   try {
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
+    const page = Number.parseInt(searchParams.get("page") || "1");
+    const limit = Math.min(Number.parseInt(searchParams.get("limit") || "50"), 100);
 
     const churchId = await getCurrentChurchId(session);
     if (!churchId) throw new ApiError(400, "Aucune église sélectionnée");

@@ -25,7 +25,7 @@ export async function GET(
       where: { id: segmentId },
       include: { rendition: true, service: true },
     });
-    if (!segment || segment.serviceId !== shareToken.serviceId) {
+    if (segment?.serviceId !== shareToken.serviceId) {
       throw new ApiError(404, "Segment introuvable");
     }
     if (segment.service.status !== "PUBLISHED" || !segment.rendition) {

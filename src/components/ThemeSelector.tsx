@@ -44,19 +44,19 @@ function subscribe(listener: () => void) {
   };
 }
 
+function apply(next: ThemeChoice) {
+  try {
+    if (next === "system") localStorage.removeItem(STORAGE_KEY);
+    else localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // Stockage indisponible (navigation privée) : le choix s'applique pour cette page seulement.
+  }
+  applyToDocument(next);
+  listeners.forEach((listener) => listener());
+}
+
 export default function ThemeSelector() {
   const choice = useSyncExternalStore(subscribe, readChoice, () => "system" as ThemeChoice);
-
-  function apply(next: ThemeChoice) {
-    try {
-      if (next === "system") localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Stockage indisponible (navigation privée) : le choix s'applique pour cette page seulement.
-    }
-    applyToDocument(next);
-    listeners.forEach((listener) => listener());
-  }
 
   return (
     <div role="radiogroup" aria-label="Thème" className="inline-flex gap-1 rounded-control bg-surface-sunken p-1">

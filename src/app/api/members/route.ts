@@ -149,7 +149,7 @@ export async function PATCH(request: Request) {
         where: { id: primaryDepartmentId },
         include: { ministry: { select: { churchId: true } } },
       });
-      if (!targetDept || targetDept.ministry.churchId !== firstMemberChurchId) {
+      if (targetDept?.ministry.churchId !== firstMemberChurchId) {
         throw new ApiError(403, "Le département cible n'appartient pas à la même église");
       }
     }

@@ -37,7 +37,7 @@ export default async function ProfileAgendaPage({
     select: { id: true, name: true, role: true, churchId: true, userId: true },
   });
 
-  if (!profile || profile.churchId !== churchId) return notFound();
+  if (profile?.churchId !== churchId) return notFound();
 
   // Accès : agenda:view (rôle) OU Protocole OU profil lié au compte
   const isOwnProfile = profile.userId === session.user.id;

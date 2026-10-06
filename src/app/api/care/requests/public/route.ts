@@ -45,13 +45,15 @@ export async function POST(request: Request) {
 
     // Motifs → subject ; message libre (facultatif) + contexte démographique → message structuré
     const subject = data.motifs.join(", ");
+    const starDepartment =
+      data.isStar === "Oui" && data.department ? ` — Département : ${data.department}` : "";
     const message = [
       data.details,
       [
         `Sexe : ${data.gender}`,
         `Tranche d'âge : ${data.ageRange}`,
         `À l'église depuis : ${data.membershipDuration}`,
-        `STAR : ${data.isStar}${data.isStar === "Oui" && data.department ? ` — Département : ${data.department}` : ""}`,
+        `STAR : ${data.isStar}${starDepartment}`,
       ].join("\n"),
     ]
       .filter(Boolean)

@@ -97,7 +97,7 @@ export async function signSequenceUpload(input: SignSequenceUploadInput, db?: Db
   db ??= await defaultDb();
 
   const service = await db.audioService.findUnique({ where: { id: input.serviceId } });
-  if (!service || service.churchId !== input.churchId) {
+  if (service?.churchId !== input.churchId) {
     throw new ApiError(404, "Culte audio introuvable");
   }
   assertServiceEditable(service, "déposer de nouvelles séquences");
@@ -146,7 +146,7 @@ export async function signSequenceUpload(input: SignSequenceUploadInput, db?: Db
 export async function getUploadedParts(sourceId: string, churchId: string, db?: DbClient) {
   db ??= await defaultDb();
   const source = await db.audioSource.findUnique({ where: { id: sourceId }, include: { service: true } });
-  if (!source || source.service.churchId !== churchId) {
+  if (source?.service.churchId !== churchId) {
     throw new ApiError(404, "Source audio introuvable");
   }
   if (!source.uploadId) {
@@ -170,7 +170,7 @@ export async function completeSequenceUpload(input: CompleteSequenceUploadInput,
   db ??= await defaultDb();
 
   const source = await db.audioSource.findUnique({ where: { id: input.sourceId }, include: { service: true } });
-  if (!source || source.service.churchId !== input.churchId || source.serviceId !== input.serviceId) {
+  if (source?.service.churchId !== input.churchId || source.serviceId !== input.serviceId) {
     throw new ApiError(404, "Source audio introuvable");
   }
   if (!source.uploadId) {
@@ -209,7 +209,7 @@ export async function deleteAudioSource(
     where: { id: sourceId },
     include: { service: true, segment: true },
   });
-  if (!source || source.serviceId !== serviceId || source.service.churchId !== churchId) {
+  if (source?.serviceId !== serviceId || source.service.churchId !== churchId) {
     throw new ApiError(404, "Source audio introuvable");
   }
   assertServiceEditable(source.service, "supprimer une séquence");

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     const backup = await createBackup();
 
-    const retentionDays = parseInt(process.env.BACKUP_RETENTION_DAYS || "30", 10);
+    const retentionDays = Number.parseInt(process.env.BACKUP_RETENTION_DAYS || "30", 10);
     let cleanedUp = 0;
     try {
       cleanedUp = await cleanupOldBackups(retentionDays);

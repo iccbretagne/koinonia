@@ -106,7 +106,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                 const isToday =
                   day.toDateString() === new Date().toDateString();
                 return (
-                  <div key={i} className={`p-2 min-h-[80px] ${isToday ? "bg-brand-soft" : ""}`}>
+                  <div key={day.toISOString()} className={`p-2 min-h-[80px] ${isToday ? "bg-brand-soft" : ""}`}>
                     <p className={`text-xs font-medium mb-1 ${isToday ? "text-brand-text" : "text-ink-muted"}`}>
                       {DAYS[i]} {day.getDate()}
                     </p>
@@ -118,7 +118,7 @@ export default function AgendaCalendar({ profiles, entries, weekStart }: Props) 
                             ? "bg-info-soft text-info"
                             : "bg-surface-sunken text-ink-muted"
                         }`}
-                        title={`${e.title}${e.location ? ` — ${e.location}` : ""}`}
+                        title={e.location ? `${e.title} — ${e.location}` : e.title}
                       >
                         <span>{fmtTime(e.startsAt)}</span> {e.title}
                       </div>

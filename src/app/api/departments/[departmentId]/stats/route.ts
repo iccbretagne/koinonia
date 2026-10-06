@@ -12,7 +12,7 @@ export async function GET(
     const session = await requireChurchPermission("planning:department", churchId);
     requireDepartmentAccess(session, churchId, departmentId);
     const { searchParams } = new URL(request.url);
-    const months = parseInt(searchParams.get("months") || "6");
+    const months = Number.parseInt(searchParams.get("months") || "6");
     const fromParam = searchParams.get("from");
     const toParam = searchParams.get("to");
 

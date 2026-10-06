@@ -126,7 +126,9 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
         const dataUrl = canvas.toDataURL("image/png");
         const w = window.open();
         if (w) {
-          w.document.write(`<img src="${dataUrl}" />`);
+          const img = w.document.createElement("img");
+          img.src = dataUrl;
+          w.document.body.append(img);
           w.document.title = "Planning - copier l'image";
         } else {
           toast.error("Impossible de copier l'image. Vérifiez les permissions du navigateur.");

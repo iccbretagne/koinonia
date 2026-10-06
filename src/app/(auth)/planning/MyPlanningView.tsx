@@ -98,9 +98,10 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
     ].sort((a, b) => a.localeCompare(b));
     // Extend range to include current month
     const cur = currentMonthKey();
+    const lastKey = keys.at(-1) ?? cur;
     return {
       minKey: keys[0] < cur ? keys[0] : cur,
-      maxKey: keys[keys.length - 1] > cur ? keys[keys.length - 1] : cur,
+      maxKey: lastKey > cur ? lastKey : cur,
     };
   }, [plannings, teamEvents, hasAny]);
 

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         where: { id: data.planningEventId },
         select: { churchId: true },
       });
-      if (!planningEvent || planningEvent.churchId !== data.churchId) {
+      if (planningEvent?.churchId !== data.churchId) {
         throw new ApiError(400, "Événement planning invalide ou hors périmètre");
       }
     }

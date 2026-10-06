@@ -48,7 +48,7 @@ export async function PUT(
         where: { id: data.responsibleProfileId },
         select: { churchId: true },
       });
-      if (!profile || profile.churchId !== churchId) {
+      if (profile?.churchId !== churchId) {
         throw new ApiError(400, "Profil pastoral introuvable pour cette église");
       }
     }

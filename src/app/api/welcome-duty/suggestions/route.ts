@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
-    const limit = Math.min(parseInt(searchParams.get("limit") ?? "5", 10), 20);
+    const limit = Math.min(Number.parseInt(searchParams.get("limit") ?? "5", 10), 20);
 
     // Already-assigned families for this event (to exclude from suggestions)
     const assignedIds = eventId

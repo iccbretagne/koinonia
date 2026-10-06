@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
+import { SubmitEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
@@ -148,6 +148,10 @@ export default function DiscipleshipClient({ churchId, members, allAssignedDisci
 
 // ─── Combobox disciple ────────────────────────────────────────────────────────
 
+function norm(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 function DiscipleCombobox({
   options,
   value,
@@ -164,10 +168,6 @@ function DiscipleCombobox({
   const isSelected = value !== null;
   const selectedMember = typeof value === "string" ? options.find((o) => o.id === value) : null;
   const isNew = value !== null && typeof value === "object";
-
-  function norm(s: string) {
-    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  }
 
   // Filter by both fields, accent-insensitive
   const qFirst = norm(firstName);
@@ -356,7 +356,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
   ]);
   const availableDisciples = members.filter((m) => !assignedDiscipleIds.has(m.id));
 
-  async function handleCreate(e: FormEvent) {
+  async function handleCreate(e: SubmitEvent) {
     e.preventDefault();
     if (!discipleSelection) { setCreateError("Sélectionnez ou créez un disciple"); return; }
     const makerId = isFD ? (linkedMemberId ?? newMakerId) : newMakerId;
@@ -391,7 +391,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setEditProfileError(null);
   }
 
-  async function handleEditProfile(e: FormEvent) {
+  async function handleEditProfile(e: SubmitEvent) {
     e.preventDefault();
     if (!editProfileRow) return;
     setEditProfileLoading(true);
@@ -444,7 +444,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setChangeFDError(null);
   }
 
-  async function handleChangeFD(e: FormEvent) {
+  async function handleChangeFD(e: SubmitEvent) {
     e.preventDefault();
     if (!changeFDRow) return;
     if (newFDId === changeFDRow.discipleId) {
@@ -477,7 +477,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     setEditRelationError(null);
   }
 
-  async function handleEditRelation(e: FormEvent) {
+  async function handleEditRelation(e: SubmitEvent) {
     e.preventDefault();
     if (!editRelationRow) return;
     setEditRelationLoading(true);

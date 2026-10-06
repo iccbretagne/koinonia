@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         where: { id: body.sourceRequestId },
         select: { churchId: true, personJourney: { select: { id: true } } },
       });
-      if (!req || req.churchId !== body.churchId)
+      if (req?.churchId !== body.churchId)
         throw new ApiError(404, "Demande source introuvable");
       if (req.personJourney)
         throw new ApiError(409, "Un dossier parcours existe déjà pour cette demande");

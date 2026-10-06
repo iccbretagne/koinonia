@@ -65,6 +65,58 @@ interface FileUploadState {
   error?: string;
 }
 
+async function uploadParts(
+  serviceId: string,
+  sourceId: string,
+  file: File,
+  partUrls: string[],
+  onProgress: (uploadedParts: number) => void,
+  startFrom = 0
+) {
+  for (let i = startFrom; i < partUrls.length; i++) {
+    const start = i * PART_SIZE;
+    const end = Math.min(start + PART_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const putRes = await fetch(partUrls[i], { method: "PUT", body: chunk });
+    if (!putRes.ok) throw new Error(`Échec de l'envoi de la part ${i + 1}/${partUrls.length}`);
+    // Nécessite que le bucket S3 expose l'en-tête ETag en réponse au navigateur (CORS
+    // ExposeHeaders) — sans quoi la complétion multipart échouera côté serveur.
+    const etag = putRes.headers.get("etag");
+    if (!etag) throw new Error("ETag manquant dans la réponse S3 (vérifier la config CORS du bucket)");
+
+    const pending = readPending(serviceId);
+    if (pending[sourceId]) {
+      pending[sourceId].completedParts[i + 1] = etag;
+      writePending(serviceId, pending);
+    }
+
+    onProgress(i + 1);
+  }
+}
+
+async function completeUpload(serviceId: string, sourceId: string, totalParts: number) {
+  const pending = readPending(serviceId);
+  const entry = pending[sourceId];
+  const parts = Array.from({ length: totalParts }, (_, i) => ({
+    partNumber: i + 1,
+    etag: entry?.completedParts[i + 1] ?? "",
+  }));
+
+  const completeRes = await fetch(`/api/audio/services/${serviceId}/upload/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sourceId, parts }),
+  });
+  if (!completeRes.ok) {
+    const body = await completeRes.json().catch(() => ({}));
+    throw new Error(body.error ?? "Échec de la complétion de l'upload");
+  }
+
+  delete pending[sourceId];
+  writePending(serviceId, pending);
+}
+
 export default function AudioServiceClient({
   service,
   templateNames,
@@ -158,58 +210,6 @@ export default function AudioServiceClient({
       // chargées avant le dépôt et ne reflète pas ce qui a réellement été enregistré.
       router.refresh();
     }
-  }
-
-  async function uploadParts(
-    serviceId: string,
-    sourceId: string,
-    file: File,
-    partUrls: string[],
-    onProgress: (uploadedParts: number) => void,
-    startFrom = 0
-  ) {
-    for (let i = startFrom; i < partUrls.length; i++) {
-      const start = i * PART_SIZE;
-      const end = Math.min(start + PART_SIZE, file.size);
-      const chunk = file.slice(start, end);
-
-      const putRes = await fetch(partUrls[i], { method: "PUT", body: chunk });
-      if (!putRes.ok) throw new Error(`Échec de l'envoi de la part ${i + 1}/${partUrls.length}`);
-      // Nécessite que le bucket S3 expose l'en-tête ETag en réponse au navigateur (CORS
-      // ExposeHeaders) — sans quoi la complétion multipart échouera côté serveur.
-      const etag = putRes.headers.get("etag");
-      if (!etag) throw new Error("ETag manquant dans la réponse S3 (vérifier la config CORS du bucket)");
-
-      const pending = readPending(serviceId);
-      if (pending[sourceId]) {
-        pending[sourceId].completedParts[i + 1] = etag;
-        writePending(serviceId, pending);
-      }
-
-      onProgress(i + 1);
-    }
-  }
-
-  async function completeUpload(serviceId: string, sourceId: string, totalParts: number) {
-    const pending = readPending(serviceId);
-    const entry = pending[sourceId];
-    const parts = Array.from({ length: totalParts }, (_, i) => ({
-      partNumber: i + 1,
-      etag: entry?.completedParts[i + 1] ?? "",
-    }));
-
-    const completeRes = await fetch(`/api/audio/services/${serviceId}/upload/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sourceId, parts }),
-    });
-    if (!completeRes.ok) {
-      const body = await completeRes.json().catch(() => ({}));
-      throw new Error(body.error ?? "Échec de la complétion de l'upload");
-    }
-
-    delete pending[sourceId];
-    writePending(serviceId, pending);
   }
 
   function handleFilesSelected(files: FileList | null) {

@@ -136,7 +136,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
       if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
       const removed = assignments.find((a) => a.id === assignmentId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
-      if (removed && openEventId === removed.eventId) {
+      if (openEventId === removed?.eventId) {
         const res2 = await fetch(`/api/welcome-duty/suggestions?eventId=${removed.eventId}&limit=8`);
         const data = await res2.json();
         setSuggestions(Array.isArray(data) ? data : []);

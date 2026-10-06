@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -58,7 +58,7 @@ export default function ChurchEditClient({ church, profiles, supervisors, canEdi
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");

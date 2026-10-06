@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDevLoginEnabled, SESSION_COOKIE_NAME } from "@/lib/auth";

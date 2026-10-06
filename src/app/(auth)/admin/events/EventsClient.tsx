@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { SubmitEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -58,7 +58,7 @@ function computeDeadline(eventDate: string, offset: string): string {
   const match = offset.match(/^(\d+)(h|d)$/);
   if (!match) return "";
   const d = new Date(eventDate);
-  const value = parseInt(match[1], 10);
+  const value = Number.parseInt(match[1], 10);
   if (match[2] === "h") d.setHours(d.getHours() - value);
   else d.setDate(d.getDate() - value);
   return toLocalDatetime(d);
@@ -201,7 +201,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setModalOpen(true);
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (removeFromSeries) { await doSubmit(false); return; }
     if (editing && (editing.seriesId || editing.isRecurrenceParent)) {
@@ -273,7 +273,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setBulkModalOpen(true);
   }
 
-  async function handleBulkEdit(e: FormEvent) {
+  async function handleBulkEdit(e: SubmitEvent) {
     e.preventDefault();
     const data: Record<string, string> = {};
     if (bulkTitle) data.title = bulkTitle;
@@ -304,7 +304,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
     setDuplicateModalOpen(true);
   }
 
-  async function handleDuplicate(e: FormEvent) {
+  async function handleDuplicate(e: SubmitEvent) {
     e.preventDefault();
     if (!duplicateTargetId) { setDuplicateError("Sélectionnez un événement cible"); return; }
     setDuplicateLoading(true); setDuplicateError("");
@@ -373,6 +373,8 @@ export default function EventsClient({ initialEvents, churches }: Props) {
           const isSelected = selectedIds.has(ev.id);
           const seriesParentId = ev.isRecurrenceParent ? ev.id : ev.seriesId;
           const isRecurrent = ev.isRecurrenceParent || !!ev.seriesId;
+          const recurrenceLabel = ev.recurrenceRule ? ` — ${RECURRENCE_LABELS[ev.recurrenceRule] ?? ev.recurrenceRule}` : "";
+          const recurrenceTitle = `Récurrent${recurrenceLabel}`;
 
           return (
             <div key={ev.id} className={`bg-surface rounded-lg border-2 transition-colors ${isSelected ? "border-brand/40 bg-brand-soft" : "border-line hover:border-line"}`}>
@@ -397,7 +399,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-semibold text-ink text-sm">{ev.title}</span>
-                      {isRecurrent && <span className="text-brand-text text-sm" title={`Récurrent${ev.recurrenceRule ? ` — ${RECURRENCE_LABELS[ev.recurrenceRule] ?? ev.recurrenceRule}` : ""}`}>↻</span>}
+                      {isRecurrent && <span className="text-brand-text text-sm" title={recurrenceTitle}>↻</span>}
                       <StatusChip tone={eventTypeTone(ev.type)}>{getEventTypeLabel(ev.type)}</StatusChip>
                     </div>
                     <p className="text-xs text-ink-muted mt-0.5">{dateLabel} {timeStr} — {ev.church.name}</p>

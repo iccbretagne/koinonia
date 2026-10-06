@@ -54,6 +54,15 @@ interface Props {
   readonly eventId: string;
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function StarViewClient({ eventId }: Props) {
   const router = useRouter();
   const toast = useToast();
@@ -126,7 +135,9 @@ export default function StarViewClient({ eventId }: Props) {
         const dataUrl = canvas.toDataURL("image/png");
         const w = window.open();
         if (w) {
-          w.document.write(`<img src="${dataUrl}" />`);
+          const img = w.document.createElement("img");
+          img.src = dataUrl;
+          w.document.body.append(img);
           w.document.title = "STAR - copier l'image";
         } else {
           toast.error("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
@@ -206,15 +217,6 @@ export default function StarViewClient({ eventId }: Props) {
     } finally {
       setDownloadingSheet(false);
     }
-  }
-
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
   }
 
   if (loading) {

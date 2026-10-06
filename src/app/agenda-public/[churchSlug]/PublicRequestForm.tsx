@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useId, useState } from "react";
+import { SubmitEvent, useId, useState } from "react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 
 interface Props {
@@ -80,7 +80,7 @@ export default function PublicRequestForm({ churchSlug, churchName, turnstileSit
     if (fieldErrors["motifs"]) setFieldErrors((e) => ({ ...e, motifs: undefined }));
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!turnstileToken) { setGlobalError("Veuillez compléter la vérification anti-robots ci-dessus."); return; }
     setSubmitting(true); setGlobalError(null); setFieldErrors({});

@@ -94,7 +94,8 @@ function StateChip({ d, dueAt }: { readonly d: DeptState; readonly dueAt: string
     return <StatusChip tone="danger">{d.source === "period" ? "Pas disponible (période)" : "Pas disponible"}</StatusChip>;
   }
   if (d.state === "NO_RESPONSE") {
-    return <StatusChip tone={d.overdue ? "danger" : "neutral"}>{d.overdue ? "Sans réponse — en retard" : `Sans réponse${dueAt ? ` · avant le ${shortFmt.format(new Date(dueAt))}` : ""}`}</StatusChip>;
+    const dueSuffix = dueAt ? ` · avant le ${shortFmt.format(new Date(dueAt))}` : "";
+    return <StatusChip tone={d.overdue ? "danger" : "neutral"}>{d.overdue ? "Sans réponse — en retard" : `Sans réponse${dueSuffix}`}</StatusChip>;
   }
   return <StatusChip tone="neutral">Non demandée</StatusChip>;
 }
@@ -274,8 +275,7 @@ export default function AvailabilityClient({
   // Quand un lien profond cible un événement d'un autre mois, on bascule sur son mois.
   useEffect(() => {
     if (!focusEventId || focusedRef.current || !data) return;
-    const ev = data.events.find((e) => e.id === focusEventId);
-    if (ev) focusedRef.current = true;
+    if (data.events.some((e) => e.id === focusEventId)) focusedRef.current = true;
   }, [focusEventId, data]);
 
   async function save(event: EventRow, answers: { answer: Answer; departmentIds?: string[] }[]) {

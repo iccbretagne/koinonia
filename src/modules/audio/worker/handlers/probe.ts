@@ -1,8 +1,8 @@
-import { writeFile, mkdtemp, rm } from "fs/promises";
-import { tmpdir } from "os";
-import path from "path";
-import { execFile } from "child_process";
-import { promisify } from "util";
+import { writeFile, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import type { AudioJob } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { downloadFile } from "@/modules/storage";
@@ -45,7 +45,7 @@ export async function probeHandler(job: AudioJob): Promise<void> {
         localPath,
       ]);
       const parsed = JSON.parse(stdout) as FfprobeOutput;
-      const durationSeconds = parseFloat(parsed.format?.duration ?? "0");
+      const durationSeconds = Number.parseFloat(parsed.format?.duration ?? "0");
 
       const durationMs = Math.round(durationSeconds * 1000);
       await prisma.audioSource.update({
