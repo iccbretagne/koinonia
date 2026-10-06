@@ -67,9 +67,9 @@ export async function serveLocalFile(s3Key: string): Promise<{ buffer: Buffer; m
   try {
     const buffer = await fs.readFile(localPath);
     const ext = path.extname(localPath).toLowerCase();
-    const mimeType = ext === ".pdf" ? "application/pdf"
-      : ext === ".png" ? "image/png"
-      : "image/jpeg";
+    let mimeType = "image/jpeg";
+    if (ext === ".pdf") mimeType = "application/pdf";
+    else if (ext === ".png") mimeType = "image/png";
     return { buffer, mimeType };
   } catch {
     return null;

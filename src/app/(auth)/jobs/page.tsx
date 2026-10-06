@@ -18,7 +18,9 @@ export default async function JobsPage({
   if (!session?.user) redirect("/");
 
   const { tab } = await searchParams;
-  const activeTab = tab === "seekers" ? "seekers" : tab === "freelance" ? "freelance" : "offers";
+  let activeTab: "offers" | "seekers" | "freelance" = "offers";
+  if (tab === "seekers") activeTab = "seekers";
+  else if (tab === "freelance") activeTab = "freelance";
 
   const now = new Date();
 
@@ -88,12 +90,12 @@ export default async function JobsPage({
     updatedAt:     p.updatedAt.toISOString(),
   }));
 
-  const subtitle =
-    activeTab === "offers"
-      ? "Offres d'emploi, stages et alternances de la communauté"
-      : activeTab === "seekers"
-        ? "Membres de la communauté en recherche d'emploi"
-        : "Missions à confier et freelances disponibles dans la communauté";
+  const SUBTITLES = {
+    offers: "Offres d'emploi, stages et alternances de la communauté",
+    seekers: "Membres de la communauté en recherche d'emploi",
+    freelance: "Missions à confier et freelances disponibles dans la communauté",
+  } as const;
+  const subtitle = SUBTITLES[activeTab];
 
   return (
     <div className="max-w-3xl mx-auto">

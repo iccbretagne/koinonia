@@ -211,6 +211,7 @@ function JobCard({
   const deadlineDate = job.deadline ? new Date(job.deadline) : null;
   const createdDate  = new Date(job.createdAt);
   const isArchived = job.status === "ARCHIVED";
+  const toggleLabel = isArchived ? "Republier" : "Retirer";
   const isExpiringSoon = deadlineDate
     ? deadlineDate.getTime() - nowMs < 7 * 24 * 60 * 60 * 1000
     : false;
@@ -276,7 +277,7 @@ function JobCard({
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
-            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+            {loading ? "…" : toggleLabel}
           </button>
         </div>
       )}

@@ -51,16 +51,20 @@ function PageLink({
   readonly onNavigate?: () => void;
 }) {
   // `touch` : ligne d'un bloc groupé du panneau « Plus » (page active en `brand-soft`, trait à gauche).
-  const className =
-    size === "touch"
-      ? `flex min-h-12 w-full items-center gap-2 px-3.5 text-left text-base transition-colors duration-120
-    focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-      active ? "bg-brand-soft font-semibold text-brand-text shadow-[inset_3px_0_0_var(--color-brand)]" : "text-ink hover:bg-surface"
-    }`
-      : `flex min-h-9 w-full items-center gap-2 rounded-chip px-3 text-left text-sm transition-colors duration-120
-    focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
-      active ? "font-semibold text-brand-text" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
-    }`;
+  let className: string;
+  if (size === "touch") {
+    const stateClass = active
+      ? "bg-brand-soft font-semibold text-brand-text shadow-[inset_3px_0_0_var(--color-brand)]"
+      : "text-ink hover:bg-surface";
+    className = `flex min-h-12 w-full items-center gap-2 px-3.5 text-left text-base transition-colors duration-120
+    focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${stateClass}`;
+  } else {
+    const stateClass = active
+      ? "font-semibold text-brand-text"
+      : "text-ink-muted hover:bg-surface-sunken hover:text-ink";
+    className = `flex min-h-9 w-full items-center gap-2 rounded-chip px-3 text-left text-sm transition-colors duration-120
+    focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${stateClass}`;
+  }
   const tour = withTour ? page.dataTour : undefined;
 
   if (page.external) {

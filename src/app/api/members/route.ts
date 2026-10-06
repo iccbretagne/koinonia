@@ -36,14 +36,19 @@ export async function GET(request: Request) {
       throw new ApiError(403, "Accès refusé à ce département");
     }
 
+    let departmentFilter;
+    if (departmentId) {
+      departmentFilter = { departmentId };
+    } else if (scopedDeptIds) {
+      departmentFilter = { departmentId: { in: scopedDeptIds } };
+    } else {
+      departmentFilter = { department: { ministry: { churchId } } };
+    }
+
     const members = await prisma.member.findMany({
       where: {
         departments: {
-          some: departmentId
-            ? { departmentId }
-            : scopedDeptIds
-              ? { departmentId: { in: scopedDeptIds } }
-              : { department: { ministry: { churchId } } },
+          some: departmentFilter,
         },
       },
       include: memberDepartmentsInclude,

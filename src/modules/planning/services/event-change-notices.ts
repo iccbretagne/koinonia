@@ -215,12 +215,18 @@ export function buildEventChangeNotices(
     // notification : celle d'encadrant (lien vers la grille).
     const onlyMoved = r.kinds.size === 1 && r.kinds.has("MOVED");
     const onlyCancelled = r.kinds.size === 1 && r.kinds.has("CANCELLED");
-    const type: PendingNotice["type"] = onlyMoved ? "EVENT_RESCHEDULED" : onlyCancelled ? "EVENT_CANCELLED" : "EVENT_CHANGES";
+    let type: PendingNotice["type"] = "EVENT_CHANGES";
+    let changedWord = "modifiés";
+    if (onlyMoved) {
+      type = "EVENT_RESCHEDULED";
+      changedWord = "déplacés";
+    } else if (onlyCancelled) {
+      type = "EVENT_CANCELLED";
+      changedWord = "annulés";
+    }
     const n = r.lines.length;
-    const title =
-      n === 1
-        ? `${onlyMoved ? "Événement déplacé" : "Événement annulé"} : ${r.titles[0]}`
-        : `${n} événements ${onlyMoved ? "déplacés" : onlyCancelled ? "annulés" : "modifiés"}`;
+    const singleLabel = onlyMoved ? "Événement déplacé" : "Événement annulé";
+    const title = n === 1 ? `${singleLabel} : ${r.titles[0]}` : `${n} événements ${changedWord}`;
     let tail = "";
     if (!r.lead) {
       if (onlyMoved) tail = " Vous êtes toujours planifié. Si vous ne pouvez plus servir, prévenez votre responsable.";

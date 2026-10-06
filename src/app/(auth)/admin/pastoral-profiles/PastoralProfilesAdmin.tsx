@@ -86,6 +86,10 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
 
   const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
 
+  let saveLabel = "Créer le profil";
+  if (submitting) saveLabel = "Enregistrement...";
+  else if (editId) saveLabel = "Mettre à jour";
+
   return (
     <div className="space-y-6">
       {/* Formulaire */}
@@ -137,7 +141,7 @@ export default function PastoralProfilesAdmin({ churchId, profiles: initial, use
         </div>
         <div className="flex gap-2">
           <Button size="sm" onClick={save} disabled={submitting}>
-            {submitting ? "Enregistrement..." : editId ? "Mettre à jour" : "Créer le profil"}
+            {saveLabel}
           </Button>
           {editId && <Button size="sm" variant="secondary" onClick={cancelEdit}>Annuler</Button>}
         </div>

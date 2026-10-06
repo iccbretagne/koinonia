@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button-classes";
+function progressTextClass(pct: number): string {
+  if (pct === 100) return "text-success";
+  return pct > 50 ? "text-brand-text" : "text-warning";
+}
+
+function progressBarClass(pct: number): string {
+  if (pct === 100) return "bg-success";
+  return pct > 50 ? "bg-brand" : "bg-warning";
+}
+
 function fmt(d: Date) {
   return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
 }
@@ -154,7 +164,7 @@ export default async function PastoralEventsPage() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className={`text-xs font-medium ${
-                            progress.pct === 100 ? "text-success" : progress.pct > 50 ? "text-brand-text" : "text-warning"
+                            progressTextClass(progress.pct)
                           }`}>
                             {progress.deptsWithStar} / {progress.totalDepts} département{progress.totalDepts > 1 ? "s" : ""} prêt{progress.totalDepts > 1 ? "s" : ""}
                           </span>
@@ -165,7 +175,7 @@ export default async function PastoralEventsPage() {
                         <div className="w-full bg-surface-sunken rounded-full h-1">
                           <div
                             className={`h-1 rounded-full transition-all ${
-                              progress.pct === 100 ? "bg-success" : progress.pct > 50 ? "bg-brand" : "bg-warning"
+                              progressBarClass(progress.pct)
                             }`}
                             style={{ width: `${progress.pct}%` }}
                           />

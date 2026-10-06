@@ -736,7 +736,9 @@ export function filterByQuery<T>(items: readonly T[], query: string, text: (item
     const hay = normalizeText(text(item));
     if (!tokens.every((t) => hay.includes(t))) return;
     const label = normalizeText(primary(item));
-    const score = label.startsWith(q) ? 0 : label.split(/[\s'’-]+/).some((w) => w.startsWith(tokens[0])) ? 1 : 2;
+    let score = 2;
+    if (label.startsWith(q)) score = 0;
+    else if (label.split(/[\s'’-]+/).some((w) => w.startsWith(tokens[0]))) score = 1;
     scored.push({ item, score, index });
   });
   return scored.sort((a, b) => a.score - b.score || a.index - b.index).map((s) => s.item);

@@ -277,9 +277,10 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
 
         {linkedProject && (req.status === "EN_COURS" || req.status === "LIVRE") && (() => {
           const shareToken = linkedProject.shareTokens[0];
-          const shareUrl = shareToken
-            ? (shareToken.type === "GALLERY" ? `/media/g/${shareToken.token}` : `/media/d/${shareToken.token}`)
-            : null;
+          let shareUrl: string | null = null;
+          if (shareToken) {
+            shareUrl = shareToken.type === "GALLERY" ? `/media/g/${shareToken.token}` : `/media/d/${shareToken.token}`;
+          }
           return (
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <a

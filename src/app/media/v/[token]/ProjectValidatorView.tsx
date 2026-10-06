@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -157,6 +157,79 @@ function ImageLightbox({ file, token, onClose }: { readonly file: ProjectFile; r
   );
 }
 
+function VideoPreview({
+  mimeType,
+  fileUrl,
+  fileUrlLoading,
+}: {
+  readonly mimeType: string;
+  readonly fileUrl: string | null;
+  readonly fileUrlLoading: boolean;
+}) {
+  let content: ReactNode;
+  if (fileUrlLoading) {
+    content = (
+      <div className="h-48 sm:h-56 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
+      </div>
+    );
+  } else if (fileUrl) {
+    content = (
+      <video
+        controls
+        src={fileUrl}
+        className="w-full max-h-[48vh] sm:max-h-[58vh] rounded-lg shadow-overlay bg-scrim"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      />
+    );
+  } else {
+    content = (
+      <div className="h-40 flex flex-col items-center justify-center gap-2">
+        <FileTypeIcon mimeType={mimeType} />
+        <p className="text-ink-muted text-sm">Impossible de charger la vidéo</p>
+      </div>
+    );
+  }
+  return <div className="w-full max-w-[90vw] sm:max-w-[70vw]">{content}</div>;
+}
+
+function PdfPreview({
+  mimeType,
+  fileUrl,
+  fileUrlLoading,
+}: {
+  readonly mimeType: string;
+  readonly fileUrl: string | null;
+  readonly fileUrlLoading: boolean;
+}) {
+  let content: ReactNode = null;
+  if (fileUrlLoading) {
+    content = (
+      <div className="w-5 h-5 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
+    );
+  } else if (fileUrl) {
+    content = (
+      <a
+        href={fileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="px-4 py-2 bg-ink/10 hover:bg-ink/20 rounded-xl text-sm text-ink/80 transition-colors"
+      >
+        Ouvrir le PDF ↗
+      </a>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-4 py-6">
+      <FileTypeIcon mimeType={mimeType} className="w-20 h-20" />
+      {content}
+    </div>
+  );
+}
+
 // ── Action drawer (reject / revision) ────────────────────────────────────────
 
 function ActionDrawer({
@@ -179,6 +252,9 @@ function ActionDrawer({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isRevision = type === "revision";
   const canConfirm = !saving && (!isRevision || comment.trim().length > 0);
+  const rejectTitle = isPrevalidator ? "Écarter ce fichier" : "Rejeter ce fichier";
+  const rejectLabel = isPrevalidator ? "Écarter" : "Rejeter";
+  const confirmLabel = isRevision ? "Demander révision" : rejectLabel;
 
   useEffect(() => {
     const t = setTimeout(() => textareaRef.current?.focus(), 50);
@@ -201,9 +277,7 @@ function ActionDrawer({
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
       >
         <p className="font-semibold text-ink text-base">
-          {isRevision
-            ? "Demande de révision"
-            : isPrevalidator ? "Écarter ce fichier" : "Rejeter ce fichier"}
+          {isRevision ? "Demande de révision" : rejectTitle}
         </p>
         <div>
           <label className="block text-sm text-ink-subtle mb-1.5">
@@ -238,11 +312,7 @@ function ActionDrawer({
                 : "bg-danger hover:bg-danger/90 text-on-danger"
             }`}
           >
-            {saving
-              ? "…"
-              : isRevision
-                ? "Demander révision"
-                : isPrevalidator ? "Écarter" : "Rejeter"}
+            {saving ? "…" : confirmLabel}
           </button>
         </div>
       </div>
@@ -588,6 +658,43 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
     ? { approve: "Pré-valider", reject: "Écarter", revision: "Révision" }
     : { approve: "Approuver",   reject: "Rejeter",  revision: "Révision" };
 
+  let filePreview: ReactNode = null;
+  if (currentFile) {
+    if (currentFile.mimeType.startsWith("image/")) {
+      filePreview = (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentFile.thumbnailUrl ?? ""}
+                alt={currentFile.filename}
+                className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-overlay"
+                draggable={false}
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowLightbox(true); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                HD
+              </button>
+            </div>
+      );
+    } else if (currentFile.mimeType.startsWith("video/")) {
+      filePreview = <VideoPreview mimeType={currentFile.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
+    } else if (currentFile.mimeType === "application/pdf") {
+      filePreview = <PdfPreview mimeType={currentFile.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
+    } else {
+      filePreview = (
+            <div className="flex flex-col items-center gap-2 py-8">
+              <FileTypeIcon mimeType={currentFile.mimeType} />
+            </div>
+      );
+    }
+  }
+
   return (
     <div data-theme="dark" className="contents">
       {showLightbox && currentFile && (
@@ -654,70 +761,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
             >
               {/* File preview */}
               <div className="w-full flex items-center justify-center mb-3">
-                {currentFile.mimeType.startsWith("image/") ? (
-                  <div className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={currentFile.thumbnailUrl ?? ""}
-                      alt={currentFile.filename}
-                      className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-overlay"
-                      draggable={false}
-                    />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowLightbox(true); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      HD
-                    </button>
-                  </div>
-                ) : currentFile.mimeType.startsWith("video/") ? (
-                  <div className="w-full max-w-[90vw] sm:max-w-[70vw]">
-                    {fileUrlLoading ? (
-                      <div className="h-48 sm:h-56 flex items-center justify-center">
-                        <div className="w-8 h-8 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
-                      </div>
-                    ) : fileUrl ? (
-                      <video
-                        controls
-                        src={fileUrl}
-                        className="w-full max-h-[48vh] sm:max-h-[58vh] rounded-lg shadow-overlay bg-scrim"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      />
-                    ) : (
-                      <div className="h-40 flex flex-col items-center justify-center gap-2">
-                        <FileTypeIcon mimeType={currentFile.mimeType} />
-                        <p className="text-ink-muted text-sm">Impossible de charger la vidéo</p>
-                      </div>
-                    )}
-                  </div>
-                ) : currentFile.mimeType === "application/pdf" ? (
-                  <div className="flex flex-col items-center gap-4 py-6">
-                    <FileTypeIcon mimeType={currentFile.mimeType} className="w-20 h-20" />
-                    {fileUrlLoading ? (
-                      <div className="w-5 h-5 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
-                    ) : fileUrl ? (
-                      <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="px-4 py-2 bg-ink/10 hover:bg-ink/20 rounded-xl text-sm text-ink/80 transition-colors"
-                      >
-                        Ouvrir le PDF ↗
-                      </a>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-8">
-                    <FileTypeIcon mimeType={currentFile.mimeType} />
-                  </div>
-                )}
+                {filePreview}
               </div>
 
               {/* File info */}

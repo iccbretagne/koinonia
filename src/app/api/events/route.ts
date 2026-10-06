@@ -204,11 +204,12 @@ export async function POST(request: Request) {
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
     const useOffset = data.deadlineOffset && !data.planningDeadline;
-    const deadline = useOffset
-      ? computeDeadlineFromOffset(new Date(data.date), data.deadlineOffset!)
-      : data.planningDeadline
-        ? new Date(data.planningDeadline)
-        : null;
+    let deadline: Date | null = null;
+    if (useOffset) {
+      deadline = computeDeadlineFromOffset(new Date(data.date), data.deadlineOffset!);
+    } else if (data.planningDeadline) {
+      deadline = new Date(data.planningDeadline);
+    }
 
     // If recurrence is set, create parent + children in a transaction
     if (data.recurrenceRule && data.recurrenceEnd) {

@@ -6,7 +6,9 @@ import type { ModuleRegistry, NotificationDomainDescriptor } from "./module-regi
  * sur des chaînes ASCII l'est déjà).
  */
 function compareCodePoint(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
 }
 
 /**

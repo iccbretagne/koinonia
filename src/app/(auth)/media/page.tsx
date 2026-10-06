@@ -4,6 +4,14 @@ import { resolveMediaSpaceAccess, buildMediaSpaceCards, getMediaSpaceCounters } 
 import { countActiveShares } from "@/modules/media";
 import MediaHomeClient from "./MediaHomeClient";
 
+function pendingStats(title: string, counters: Awaited<ReturnType<typeof getMediaSpaceCounters>>): string[] | undefined {
+  let count: number | undefined;
+  if (title === "Photos") count = counters.photos;
+  else if (title === "Visuels") count = counters.visuals;
+  else if (title === "Réseaux sociaux") count = counters.social;
+  return count === undefined ? undefined : [`${count} en attente`];
+}
+
 /**
  * Accueil de l'espace « Communication & Production » (spec 049) : une carte par activité
  * accessible, redirection directe s'il n'y en a qu'une, bouton « Partages » si le périmètre
@@ -19,14 +27,7 @@ export default async function MediaIndexPage() {
   const counters = await getMediaSpaceCounters(churchId, access);
   const cards = buildMediaSpaceCards(access).map((card) => ({
     ...card,
-    stats:
-      card.title === "Photos" && counters.photos !== undefined
-        ? [`${counters.photos} en attente`]
-        : card.title === "Visuels" && counters.visuals !== undefined
-          ? [`${counters.visuals} en attente`]
-          : card.title === "Réseaux sociaux" && counters.social !== undefined
-            ? [`${counters.social} en attente`]
-            : undefined,
+    stats: pendingStats(card.title, counters),
   }));
 
   if (cards.length === 0) return <p>Aucun accès à cet espace.</p>;

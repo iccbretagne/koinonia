@@ -374,15 +374,11 @@ export default function StarViewClient({ eventId }: Props) {
                     {ministry.name}
                   </h2>
                   <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {ministry.departments.map((dept) =>
-                      dept.members.length > 0 ? (
-                        <StaffedCard key={dept.id} dept={dept} />
-                      ) : gapIds.has(dept.id) ? (
-                        <GapCard key={dept.id} dept={dept} action={gapAction} />
-                      ) : (
-                        <UnstaffedCard key={dept.id} dept={dept} />
-                      )
-                    )}
+                    {ministry.departments.map((dept) => {
+                      if (dept.members.length > 0) return <StaffedCard key={dept.id} dept={dept} />;
+                      if (gapIds.has(dept.id)) return <GapCard key={dept.id} dept={dept} action={gapAction} />;
+                      return <UnstaffedCard key={dept.id} dept={dept} />;
+                    })}
                   </div>
                 </section>
               ))}

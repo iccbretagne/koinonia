@@ -116,22 +116,26 @@ export default async function TodayPage() {
     prisma.church.findUnique({ where: { id: churchId }, select: { name: true } }),
   ]);
 
+  const loadChurchEvents = () => {
+    if (canEvents) {
+      // Même périmètre que l'agenda de l'église (/events, `where: { churchId }`), bornée à
+      // partir d'aujourd'hui et limitée au nombre affiché : la page n'a besoin d'aucun
+      // événement passé, inutile de tous les charger pour n'en montrer que MAX_EVENTS.
+      return prisma.event.findMany({
+        where: { churchId, date: { gte: startOfToday } },
+        orderBy: { date: "asc" },
+        take: MAX_EVENTS,
+        select: { id: true, title: true, type: true, date: true },
+      });
+    }
+    // Même requête que l'agenda STAR de la semaine (/planning/events).
+    if (canPlanning) return prisma.event.findMany(buildWeekEventsQuery(churchId, now));
+    return null;
+  };
+
   const [myPlanning, churchEvents, myRequests] = await Promise.all([
     canPlanning ? loadMyPlanning(session.user.id, churchId) : null,
-    canEvents
-      ? // Même périmètre que l'agenda de l'église (/events, `where: { churchId }`), bornée à
-        // partir d'aujourd'hui et limitée au nombre affiché : la page n'a besoin d'aucun
-        // événement passé, inutile de tous les charger pour n'en montrer que MAX_EVENTS.
-        prisma.event.findMany({
-          where: { churchId, date: { gte: startOfToday } },
-          orderBy: { date: "asc" },
-          take: MAX_EVENTS,
-          select: { id: true, title: true, type: true, date: true },
-        })
-      : canPlanning
-        ? // Même requête que l'agenda STAR de la semaine (/planning/events).
-          prisma.event.findMany(buildWeekEventsQuery(churchId, now))
-        : null,
+    loadChurchEvents(),
     canRequests ? loadMyRequests(session.user.id, churchId) : null,
   ]);
 
@@ -186,16 +190,18 @@ export default async function TodayPage() {
   const unstaffed = gapViewer ? await countUnstaffedDepartments(upcomingEvents, gapViewer, now) : new Map<string, number>();
   const openRequests = (myRequests ?? []).filter((r) => OPEN_REQUEST_STATUSES.has(r.status));
 
+  let agendaShortcut: Shortcut[] = [];
+  if (canEvents) {
+    agendaShortcut = [{ href: "/events", label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
+  } else if (canPlanning) {
+    agendaShortcut = [{ href: "/planning/events", label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
+  }
   const shortcuts: Shortcut[] = [
     ...(myPlanning ? [{ href: "/planning", label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
     ...(canDepartment
       ? [{ href: "/dashboard", label: "Planning", description: "Saisir le planning d'un département", icon: LayoutGrid }]
       : []),
-    ...(canEvents
-      ? [{ href: "/events", label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }]
-      : canPlanning
-        ? [{ href: "/planning/events", label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }]
-        : []),
+    ...agendaShortcut,
     ...(canRequests ? [{ href: "/requests", label: "Mes demandes", description: "Annonces, visuels, événements", icon: Inbox }] : []),
     ...(canAudio ? [{ href: "/audio", label: "Audio", description: "Réécouter les cultes", icon: Headphones }] : []),
     { href: "/profile", label: "Mon profil", description: "Compte, apparence, notifications", icon: UserRound },

@@ -153,6 +153,12 @@ export async function listMyRequests(userId: string, churchId: string) {
  * d'une orientation (T41) est créé ici : c'est le seul endroit qui a déjà l'identité et le
  * dossier de parcours de la demande sous la main.
  */
+function historyNote(body: AppointmentPatchBody) {
+  if (body.action === "handback") return body.reason;
+  if (body.action === "validate") return body.note ?? null;
+  return null;
+}
+
 export async function applyAppointmentTransition(params: {
   id: string;
   churchId: string;
@@ -170,11 +176,10 @@ export async function applyAppointmentTransition(params: {
 
   const currentAssigneeUserId = existing.assignedMemberId ?? existing.assignedTo?.userId ?? null;
   const isCurrentAssignee = !!currentAssigneeUserId && currentAssigneeUserId === actorId;
-  const currentAssigneeHasAccount = existing.assignedMemberId
-    ? true
-    : existing.assignedToId
-      ? !!existing.assignedTo?.userId
-      : true;
+  // Pas de compte requis quand l'accompagnant est un membre (ou qu'il n'y a pas d'accompagnant) ;
+  // sinon le profil pastoral doit être lié à un utilisateur.
+  const currentAssigneeHasAccount =
+    !!existing.assignedMemberId || !existing.assignedToId || !!existing.assignedTo?.userId;
 
   const actor: AppointmentActor = { isReferent, isCurrentAssignee, currentAssigneeHasAccount };
 
@@ -215,7 +220,7 @@ export async function applyAppointmentTransition(params: {
     from: existing.status,
     to: typeof result.data.status === "string" ? result.data.status : existing.status,
     assignee: assignee?.name ?? null,
-    note: body.action === "handback" ? body.reason : body.action === "validate" ? body.note ?? null : null,
+    note: historyNote(body),
   });
 
   if (result.notifyAssigned) {

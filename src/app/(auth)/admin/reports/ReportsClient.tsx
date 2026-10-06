@@ -33,6 +33,17 @@ interface Props {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function reportStatus(report: EventReport | null): "none" | "done" | "empty" {
+  if (!report) return "none";
+  return report.hasContent ? "done" : "empty";
+}
+
+const STATUS_DOT_CLASS = {
+  done: "bg-success",
+  empty: "bg-warning",
+  none: "bg-surface-sunken",
+} as const;
+
 function norm(s: string) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
@@ -136,8 +147,7 @@ export default function ReportsClient({ events, churchId }: Props) {
     }
     if (statusFilter !== "all") {
       filtered = filtered.filter((e) => {
-        const status = !e.report ? "none" : e.report.hasContent ? "done" : "empty";
-        return status === statusFilter;
+        return reportStatus(e.report) === statusFilter;
       });
     }
     if (searchQuery.trim()) {
@@ -291,18 +301,14 @@ export default function ReportsClient({ events, churchId }: Props) {
           {/* Liste */}
           <div className="space-y-3">
             {filteredListEvents.map((event) => {
-              const status = !event.report
-                ? "none"
-                : event.report.hasContent
-                ? "done"
-                : "empty";
+              const status = reportStatus(event.report);
 
               const accueil = event.report ? getAccueilStats(event.report.sections) : null;
 
               return (
                 <div key={event.id} className="bg-surface rounded-lg border border-line shadow-card px-5 py-4 flex items-center gap-4 flex-wrap">
                   {/* Statut */}
-                  <span className={`shrink-0 w-2 h-2 rounded-full ${status === "done" ? "bg-success-soft0" : status === "empty" ? "bg-warning" : "bg-surface-sunken"}`} />
+                  <span className={`shrink-0 w-2 h-2 rounded-full ${STATUS_DOT_CLASS[status]}`} />
 
                   {/* Infos événement */}
                   <div className="flex-1 min-w-0">

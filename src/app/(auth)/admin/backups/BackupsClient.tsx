@@ -269,13 +269,12 @@ export default function BackupsClient() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="p-8 text-center text-sm text-ink-subtle">Chargement…</div>
-        ) : error ? (
-          <div className="p-8 text-center text-sm text-danger">{error}</div>
-        ) : backups.length === 0 ? (
+        {loading && <div className="p-8 text-center text-sm text-ink-subtle">Chargement…</div>}
+        {!loading && error && <div className="p-8 text-center text-sm text-danger">{error}</div>}
+        {!loading && !error && backups.length === 0 && (
           <div className="p-8 text-center text-sm text-ink-subtle">Aucune sauvegarde disponible.</div>
-        ) : (
+        )}
+        {!loading && !error && backups.length > 0 && (
           <ul className="divide-y divide-line">
             {backups.map((b) => (
               <li key={b.key} className="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-surface-sunken transition-colors">

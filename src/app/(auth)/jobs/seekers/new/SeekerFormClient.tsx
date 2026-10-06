@@ -28,6 +28,7 @@ export default function SeekerFormClient({
   const router = useRouter();
   const uid = useId();
   const isEdit = !!initial;
+  const submitLabel = isEdit ? "Enregistrer" : "Publier mon profil";
 
   const [title,          setTitle]          = useState(initial?.title          ?? "");
   const [wantEmploi,     setWantEmploi]     = useState(initial?.wantEmploi     ?? false);
@@ -229,7 +230,7 @@ export default function SeekerFormClient({
           disabled={saving}
           className="px-5 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
         >
-          {saving ? "Publication…" : isEdit ? "Enregistrer" : "Publier mon profil"}
+          {saving ? "Publication…" : submitLabel}
         </button>
         <button
           type="button"

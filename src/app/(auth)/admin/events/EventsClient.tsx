@@ -322,6 +322,10 @@ export default function EventsClient({ initialEvents, churches }: Props) {
   const allSelected = filteredEvents.length > 0 && selectedIds.size === filteredEvents.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
+  let modalTitle = "Nouvel événement";
+  if (seriesStep) modalTitle = "Modifier un événement récurrent";
+  else if (editing) modalTitle = "Modifier l'événement";
+
   return (
     <>
       {/* Toolbar */}
@@ -455,7 +459,7 @@ export default function EventsClient({ initialEvents, churches }: Props) {
       <Modal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setSeriesStep(false); }}
-        title={seriesStep ? "Modifier un événement récurrent" : editing ? "Modifier l'événement" : "Nouvel événement"}
+        title={modalTitle}
       >
         {seriesStep ? (
           <div>

@@ -83,12 +83,12 @@ async function notifySubscribers(job: {
   contactEmail: string | null;
   contactUrl: string | null;
 }) {
-  const typeField =
-    job.type === "EMPLOI"
-      ? { wantEmploi: true }
-      : job.type === "STAGE"
-        ? { wantStage: true }
-        : { wantAlternance: true };
+  const TYPE_FIELDS = {
+    EMPLOI: { wantEmploi: true },
+    STAGE: { wantStage: true },
+    ALTERNANCE: { wantAlternance: true },
+  } as const;
+  const typeField = TYPE_FIELDS[job.type];
 
   const subs = await prisma.jobNotificationSubscription.findMany({
     where: typeField,
@@ -98,7 +98,8 @@ async function notifySubscribers(job: {
   const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const jobUrl = `${appUrl}/jobs/${job.id}`;
 
-  const typeLabel = job.type === "EMPLOI" ? "Emploi" : job.type === "STAGE" ? "Stage" : "Alternance";
+  const TYPE_LABELS = { EMPLOI: "Emploi", STAGE: "Stage", ALTERNANCE: "Alternance" } as const;
+  const typeLabel = TYPE_LABELS[job.type];
 
   await Promise.allSettled(
     subs.map(async (sub) => {

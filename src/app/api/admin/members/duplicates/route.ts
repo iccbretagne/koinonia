@@ -3,6 +3,12 @@ import { requireChurchPermission } from "@/lib/auth";
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
+function compareCodePoint(a: string, b: string): number {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -59,7 +65,7 @@ export async function GET(request: Request) {
     const seen = new Set<string>();
 
     // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
-    const pairKey = (ids: string[]) => [...ids].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join("|");
+    const pairKey = (ids: string[]) => [...ids].sort(compareCodePoint).join("|");
 
     for (const bucket of byName.values()) {
       if (bucket.length < 2) continue;

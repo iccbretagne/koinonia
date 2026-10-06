@@ -89,6 +89,11 @@ function emptySection(dept: Dept, position: number): Section {
   return { departmentId: dept.id, label: dept.name, position, stats: null, notes: "" };
 }
 
+function statsGridClass(fieldCount: number): string {
+  if (fieldCount <= 2) return "grid-cols-2";
+  return fieldCount <= 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3";
+}
+
 function statVal(stats: Record<string, number | null> | null, key: string): number | null {
   return stats?.[key] ?? null;
 }
@@ -397,7 +402,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
               </div>
 
               {statsEnabled && fields && (
-                <div className={`grid gap-3 mb-3 ${fields.length <= 2 ? "grid-cols-2" : fields.length <= 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3"}`}>
+                <div className={`grid gap-3 mb-3 ${statsGridClass(fields.length)}`}>
                   {fields.map(({ key, label, color }) => (
                     <div key={key}>
                       <label className="block text-xs text-ink-muted mb-1">{label}</label>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import BottomSheet from "@/components/ui/BottomSheet";
@@ -171,6 +171,14 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
                     const target = directTarget(s);
                     const hint = hintFor(s);
                     const className = `${rowClass} ${isActive ? "bg-brand-soft" : "text-ink hover:bg-surface"}`;
+                    let trailingIcon: ReactNode;
+                    if (target?.external) {
+                      trailingIcon = <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />;
+                    } else if (target) {
+                      trailingIcon = <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />;
+                    } else {
+                      trailingIcon = <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />;
+                    }
                     const content = (
                       <>
                         <SpaceTile icon={s.icon} active={isActive} />
@@ -183,47 +191,49 @@ export default function MoreSheet({ open, onClose, spaces, active, ...account }:
                           {hint && <span className="block truncate text-[13px] leading-[18px] text-ink-subtle">{hint}</span>}
                         </span>
                         {s.badge !== undefined && <Badge count={s.badge} />}
-                        {target?.external ? (
-                          <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                        ) : target ? (
-                          <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                        ) : (
-                          <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                        )}
+                        {trailingIcon}
                       </>
                     );
+                    let row: ReactNode;
+                    if (!target) {
+                      row = (
+                        <button
+                          ref={(el) => {
+                            if (el) rowRefs.current.set(s.key, el);
+                            else rowRefs.current.delete(s.key);
+                          }}
+                          type="button"
+                          onClick={() => enter(s.key)}
+                          className={className}
+                          aria-current={isActive ? "true" : undefined}
+                        >
+                          {content}
+                        </button>
+                      );
+                    } else if (target.external) {
+                      row = (
+                        <a href={target.href} target="_blank" rel="noopener noreferrer" className={className} onClick={close}>
+                          {content}
+                          <span className="sr-only">(nouvel onglet)</span>
+                        </a>
+                      );
+                    } else {
+                      row = (
+                        <Link
+                          href={target.href}
+                          aria-current={isActive ? "page" : undefined}
+                          className={className}
+                          onClick={close}
+                        >
+                          {content}
+                        </Link>
+                      );
+                    }
                     return (
                       <li key={s.key} className="relative">
                         {/* Filet entre deux espaces, aligné sur le libellé (après la tuile). */}
                         {i > 0 && <span aria-hidden="true" className="absolute left-[60px] right-0 top-0 border-t border-line" />}
-                        {!target ? (
-                          <button
-                            ref={(el) => {
-                              if (el) rowRefs.current.set(s.key, el);
-                              else rowRefs.current.delete(s.key);
-                            }}
-                            type="button"
-                            onClick={() => enter(s.key)}
-                            className={className}
-                            aria-current={isActive ? "true" : undefined}
-                          >
-                            {content}
-                          </button>
-                        ) : target.external ? (
-                          <a href={target.href} target="_blank" rel="noopener noreferrer" className={className} onClick={close}>
-                            {content}
-                            <span className="sr-only">(nouvel onglet)</span>
-                          </a>
-                        ) : (
-                          <Link
-                            href={target.href}
-                            aria-current={isActive ? "page" : undefined}
-                            className={className}
-                            onClick={close}
-                          >
-                            {content}
-                          </Link>
-                        )}
+                        {row}
                       </li>
                     );
                   })}

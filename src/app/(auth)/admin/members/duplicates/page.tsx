@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
 import { buttonClasses } from "@/components/ui/button-classes";
+function compareCodePoint(a: string, b: string): number {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
 export default async function DuplicatesPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -60,7 +66,7 @@ export default async function DuplicatesPage() {
   }
 
   // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
-  const pairKey = (ids: string[]) => [...ids].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join("|");
+  const pairKey = (ids: string[]) => [...ids].sort(compareCodePoint).join("|");
   const groups: DuplicateGroup[] = [];
   const seen = new Set<string>();
 

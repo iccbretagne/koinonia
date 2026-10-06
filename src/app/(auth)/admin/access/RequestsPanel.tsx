@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
 
@@ -176,6 +176,15 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
           ? `${req.member.firstName} ${req.member.lastName}`
           : `${req.firstName ?? ""} ${req.lastName ?? ""}`.trim();
 
+        let starCard: ReactNode;
+        if (req.member) {
+          starCard = <span className="text-success font-medium">{displayName} <span className="text-xs text-success">(existante)</span></span>;
+        } else if (displayName) {
+          starCard = <span className="text-ink-muted font-medium">{displayName} <span className="text-xs text-ink-subtle">(nouvelle)</span></span>;
+        } else {
+          starCard = <span className="text-ink-subtle italic text-xs">Sans fiche STAR</span>;
+        }
+
         return (
           <div key={req.id} className="bg-surface rounded-xl border border-line shadow-card p-5 space-y-3">
             <div className="flex items-start justify-between gap-3">
@@ -194,13 +203,7 @@ export default function RequestsPanel({ pendingRequests, rejectedRequests, minis
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <p className="text-xs text-ink-subtle mb-0.5">Fiche STAR</p>
-                {req.member ? (
-                  <span className="text-success font-medium">{displayName} <span className="text-xs text-success">(existante)</span></span>
-                ) : displayName ? (
-                  <span className="text-ink-muted font-medium">{displayName} <span className="text-xs text-ink-subtle">(nouvelle)</span></span>
-                ) : (
-                  <span className="text-ink-subtle italic text-xs">Sans fiche STAR</span>
-                )}
+                {starCard}
               </div>
               {(req.department || req.ministry) && (
                 <div>

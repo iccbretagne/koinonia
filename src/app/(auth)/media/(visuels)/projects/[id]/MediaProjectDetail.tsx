@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useId } from "react";
+import { useState, useRef, useEffect, useCallback, useId, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
@@ -673,6 +673,23 @@ function NewVersionUpload({ fileId, onDone }: { readonly fileId: string; readonl
 
 // ─── Panneau détail fichier ───────────────────────────────────────────────────
 
+const FILE_ICON_PATH = {
+  video: "M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z",
+  pdf: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  image: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z",
+} as const;
+
+function FileTypeIcon({ type, mimeType }: { readonly type: string; readonly mimeType: string }) {
+  let d: string = FILE_ICON_PATH.image;
+  if (type === "VIDEO") d = FILE_ICON_PATH.video;
+  else if (mimeType === "application/pdf") d = FILE_ICON_PATH.pdf;
+  return (
+    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d={d} />
+    </svg>
+  );
+}
+
 function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, canReview, canManage, onClose, onReviewFile, onDelete, onRefresh }: {
   readonly file: MediaFile;
   readonly allFiles: MediaFile[];
@@ -749,6 +766,38 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
   }
 
   const latestVersion = versions[0] ?? file.versions[0];
+
+  let preview: ReactNode;
+  if (file.type === "VIDEO" && loadingVersions) {
+    preview = (
+      <div className="w-full h-full flex items-center justify-center">
+        {/* eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo/photo toujours sombre */}
+        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  } else if (file.type === "VIDEO" && versions[0]?.streamUrl) {
+    preview = <VideoPlayer src={versions[0].streamUrl} thumbnail={file.thumbnailUrl ?? undefined} onExpired={loadVersions} />;
+  } else if (file.type === "VIDEO") {
+    preview = (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-ink-subtle p-4">
+        <svg className="w-10 h-10 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        <p className="text-sm text-ink-muted text-center">Vidéo non disponible<br/><span className="text-xs text-ink-subtle">Vérifiez la configuration S3</span></p>
+      </div>
+    );
+  } else if (file.thumbnailUrl && file.mimeType.startsWith("image/")) {
+    preview = (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
+    );
+  } else {
+    preview = (
+      <div className="w-full h-full flex items-center justify-center text-ink-muted">
+        <p className="text-sm">Aucun aperçu disponible</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -829,30 +878,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
         {/* Aperçu média toujours sombre (cadre vidéo/photo), indépendant du thème */}
         {/* eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo/photo toujours sombre */}
         <div className="shrink-0 bg-black h-44 md:h-56 relative overflow-hidden">
-          {file.type === "VIDEO" ? (
-            loadingVersions ? (
-              <div className="w-full h-full flex items-center justify-center">
-                {/* eslint-disable-next-line no-restricted-syntax -- visionneuse vidéo/photo toujours sombre */}
-                <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              </div>
-            ) : versions[0]?.streamUrl ? (
-              <VideoPlayer src={versions[0].streamUrl} thumbnail={file.thumbnailUrl ?? undefined} onExpired={loadVersions} />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-ink-subtle p-4">
-                <svg className="w-10 h-10 text-ink-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm text-ink-muted text-center">Vidéo non disponible<br/><span className="text-xs text-ink-subtle">Vérifiez la configuration S3</span></p>
-              </div>
-            )
-          ) : file.thumbnailUrl && file.mimeType.startsWith("image/") ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={file.thumbnailUrl} alt={file.filename} className="w-full h-full object-contain" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-ink-muted">
-              <p className="text-sm">Aucun aperçu disponible</p>
-            </div>
-          )}
+          {preview}
         </div>
 
         {/* Actions review */}
@@ -897,11 +923,11 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
               {canUpload && (
                 <NewVersionUpload fileId={file.id} onDone={() => { void loadVersions(); onRefresh(); }} />
               )}
-              {loadingVersions ? (
-                <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
-              ) : versions.length === 0 ? (
+              {loadingVersions && <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>}
+              {!loadingVersions && versions.length === 0 && (
                 <p className="text-xs text-ink-subtle text-center py-4">Aucune version enregistrée.</p>
-              ) : (
+              )}
+              {!loadingVersions && versions.length > 0 && (
                 versions.map((v, idx) => (
                   <div key={v.id} className={`p-3 rounded-xl border ${idx === 0 ? "border-brand/30 bg-brand-soft" : "border-line bg-surface-sunken"}`}>
                     <div className="flex items-center justify-between">
@@ -922,12 +948,13 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
             </div>
           )}
 
-          {activeTab === "comments" && (
-            loadingComments ? (
-              <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
-            ) : comments.length === 0 ? (
-              <p className="text-xs text-ink-subtle text-center py-4">Aucun commentaire.</p>
-            ) : (
+          {activeTab === "comments" && loadingComments && (
+            <p className="text-xs text-ink-subtle text-center py-4">Chargement…</p>
+          )}
+          {activeTab === "comments" && !loadingComments && comments.length === 0 && (
+            <p className="text-xs text-ink-subtle text-center py-4">Aucun commentaire.</p>
+          )}
+          {activeTab === "comments" && !loadingComments && comments.length > 0 && (
               <div className="space-y-2">
                 {comments.map((c) => (
                   <div key={c.id} className="space-y-2">
@@ -959,7 +986,6 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
                   </div>
                 ))}
               </div>
-            )
           )}
         </div>
 
@@ -1360,19 +1386,7 @@ export default function MediaProjectDetail({
                           <img src={thumb} alt={file.filename} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-ink-subtle">
-                            {file.type === "VIDEO" ? (
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                            ) : file.mimeType === "application/pdf" ? (
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            ) : (
-                              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            )}
+                            <FileTypeIcon type={file.type} mimeType={file.mimeType} />
                           </div>
                         )}
                         {/* Badge version */}

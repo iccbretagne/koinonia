@@ -283,9 +283,8 @@ export default function WeeklyPlanningView({
         <ExportBar exporting={exporting} onCopy={copyImage} onDownload={downloadImage} onPdf={exportPdf} />
       )}
 
-      {loading ? (
-        <SkeletonList rows={3} label="Chargement du planning de la semaine…" className="mx-auto w-full max-w-2xl" />
-      ) : !hasContent ? (
+      {loading && <SkeletonList rows={3} label="Chargement du planning de la semaine…" className="mx-auto w-full max-w-2xl" />}
+      {!loading && !hasContent && (
         <div className="mx-auto w-full max-w-2xl rounded-card border border-line bg-surface">
           <EmptyState
             icon={CalendarX2}
@@ -294,7 +293,8 @@ export default function WeeklyPlanningView({
             size="sm"
           />
         </div>
-      ) : (
+      )}
+      {!loading && hasContent && (
         /* Zone exportée (image, PDF) : passée en thème clair le temps de la capture. */
         <div
           ref={printRef}

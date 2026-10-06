@@ -87,11 +87,7 @@ export async function GET(request: Request) {
         churchId,
         parentRequestId: null,
         ...(type ? { type: type as never } : {}),
-        ...(submittedByMe === "true"
-          ? { submittedById: session.user.id }
-          : canManage
-            ? {}
-            : { submittedById: session.user.id }),
+        ...(submittedByMe === "true" || !canManage ? { submittedById: session.user.id } : {}),
       },
       include: {
         submittedBy: { select: { id: true, name: true, displayName: true } },

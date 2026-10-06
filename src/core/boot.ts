@@ -7,7 +7,8 @@ import { ModuleRegistry, type ModuleManifest } from "./module-registry";
  * ce comparateur explicite le documente sans changer le résultat.
  */
 function compareCodePoint(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
 }
 
 export interface BootOptions {

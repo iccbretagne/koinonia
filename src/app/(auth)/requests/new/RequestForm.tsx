@@ -207,9 +207,12 @@ function initFromEditData(editData: EditData): {
   const isAnnouncement = !!editData.announcement;
   const isDemand = DEMAND_TYPE_KEYS.includes(editData.type);
   const p = editData.payload;
+  let category: RequestCategory = null;
+  if (isAnnouncement) category = "announcement";
+  else if (isDemand) category = "demand";
 
   return {
-    category: isAnnouncement ? "announcement" : isDemand ? "demand" : null,
+    category,
     demandType: isDemand ? (editData.type as DemandType) : null,
     // announcement
     annTitle: editData.announcement?.title ?? "",
@@ -478,11 +481,10 @@ export default function RequestForm({
     setError(null);
 
     try {
-      const res = category === "announcement"
-        ? await submitAnnouncement()
-        : category === "visual"
-        ? await submitVisual()
-        : await submitDemand();
+      let submit: () => ReturnType<typeof submitDemand> = submitDemand;
+      if (category === "announcement") submit = submitAnnouncement;
+      else if (category === "visual") submit = submitVisual;
+      const res = await submit();
 
       if (!res) return;
 
@@ -567,6 +569,10 @@ export default function RequestForm({
   }
 
   // Step 2: Form
+  let submitLabel = "Envoyer la demande";
+  if (submitting) submitLabel = "Envoi…";
+  else if (isEditMode) submitLabel = "Enregistrer";
+
   return (
     <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-5">
       {/* Retour au choix du type de demande — en édition, il n'y a pas d'étape 1 à regagner */}
@@ -1114,7 +1120,7 @@ export default function RequestForm({
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={submitting}>
-          {submitting ? "Envoi…" : isEditMode ? "Enregistrer" : "Envoyer la demande"}
+          {submitLabel}
         </Button>
         <Button type="button" variant="secondary" onClick={() => isEditMode ? router.push("/requests") : reset()}>
           Annuler

@@ -505,23 +505,19 @@ export async function createMediaShareToken(options: CreateTokenWithTarget & { b
   const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
     : null;
-  const config =
-    type === "GALLERY"
-      ? { onlyApproved: onlyApproved ?? false }
-      : type === "COLLECTION" && collectionConfig
-        ? collectionConfig
-        : null;
+  let config: typeof collectionConfig | { onlyApproved: boolean } | null = null;
+  if (type === "GALLERY") config = { onlyApproved: onlyApproved ?? false };
+  else if (type === "COLLECTION" && collectionConfig) config = collectionConfig;
 
   // Prisma requires exactly one of mediaEventId / mediaProjectId / neither (for COLLECTION)
   // We must build the data object with a concrete shape to satisfy the union type.
   const configValue = config as unknown as Prisma.InputJsonValue;
   const baseData = { token, type, label, expiresAt, churchId, ...(config ? { config: configValue } : {}) };
+  let shareData: typeof baseData | (typeof baseData & { mediaEventId: string }) | (typeof baseData & { mediaProjectId: string }) = baseData;
+  if (mediaEventId) shareData = { ...baseData, mediaEventId };
+  else if (mediaProjectId) shareData = { ...baseData, mediaProjectId };
   const shareToken = await prisma.mediaShareToken.create({
-    data: mediaEventId
-      ? { ...baseData, mediaEventId }
-      : mediaProjectId
-        ? { ...baseData, mediaProjectId }
-        : baseData,
+    data: shareData,
   });
 
   const baseUrl = callerBaseUrl ?? process.env.APP_URL ?? process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";

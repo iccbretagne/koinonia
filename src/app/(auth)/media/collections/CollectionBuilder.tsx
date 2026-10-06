@@ -19,6 +19,19 @@ type ProjectItem = {
 
 type Scope = "photos" | "files" | "both";
 
+const SCOPE_LABEL: Record<Scope, string> = {
+  both: "Photos + Visuels",
+  photos: "Photos uniquement",
+  files: "Visuels uniquement",
+};
+
+function selectionSummary(selected: number, total: number, noun: string): string {
+  if (selected <= 0) return "Tout sélectionner";
+  const selectedPlural = selected > 1 ? "s" : "";
+  const totalPlural = total === 1 ? "" : "s";
+  return `${selected} sélectionné${selectedPlural} · ${total} ${noun}${totalPlural}`;
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -170,7 +183,7 @@ export default function CollectionBuilder({
                     : "bg-surface text-ink-muted border-line hover:border-brand/40 hover:bg-brand-soft"
                 }`}
               >
-                {s === "both" ? "Photos + Visuels" : s === "photos" ? "Photos uniquement" : "Visuels uniquement"}
+                {SCOPE_LABEL[s]}
               </button>
             ))}
           </div>
@@ -246,9 +259,7 @@ export default function CollectionBuilder({
                   className="w-4 h-4 rounded border-control-line accent-brand"
                 />
                 <span className="text-xs text-ink-muted">
-                  {selectedEvents.size > 0
-                    ? `${selectedEvents.size} sélectionné${selectedEvents.size > 1 ? "s" : ""} · ${totalPhotos} photo${totalPhotos !== 1 ? "s" : ""}`
-                    : "Tout sélectionner"}
+                  {selectionSummary(selectedEvents.size, totalPhotos, "photo")}
                 </span>
               </div>
               <ul className="max-h-64 overflow-y-auto divide-y divide-line">
@@ -298,9 +309,7 @@ export default function CollectionBuilder({
                   className="w-4 h-4 rounded border-control-line accent-brand"
                 />
                 <span className="text-xs text-ink-muted">
-                  {selectedProjects.size > 0
-                    ? `${selectedProjects.size} sélectionné${selectedProjects.size > 1 ? "s" : ""} · ${totalFiles} visuel${totalFiles !== 1 ? "s" : ""}`
-                    : "Tout sélectionner"}
+                  {selectionSummary(selectedProjects.size, totalFiles, "visuel")}
                 </span>
               </div>
               <ul className="max-h-64 overflow-y-auto divide-y divide-line">

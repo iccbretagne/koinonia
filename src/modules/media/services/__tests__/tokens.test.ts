@@ -10,7 +10,7 @@
  * Ces fonctions sont partagées entre les routes API et les pages SSR publiques
  * pour éviter toute divergence entre les deux.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 // `tokens.ts` importe `@/lib/prisma` au niveau module (instancie un vrai client sinon).
@@ -21,7 +21,7 @@ vi.mock("@/modules/storage", () => ({
   isTokenExpired: (expiresAt: Date | null) => !!expiresAt && new Date() > expiresAt,
 }));
 
-const { collectionPhotoWhere, resolveDownloadData, resolveGalleryData, resolveCollectionData, resolveValidatorData } = await import("../tokens");
+const { collectionPhotoWhere, createMediaShareToken, resolveDownloadData, resolveGalleryData, resolveCollectionData, resolveValidatorData } = await import("../tokens");
 type CollectionConfig = Parameters<typeof collectionPhotoWhere>[0];
 
 const baseConfig: CollectionConfig = {
@@ -228,5 +228,34 @@ describe("resolveValidatorData — événement vs projet (VALIDATOR/PREVALIDATOR
       mediaProject: null,
     } as never);
     expect(data).toBeNull();
+  });
+});
+
+describe("createMediaShareToken — cible et configuration", () => {
+  const created = () => prismaMock.mediaShareToken.create.mock.calls.at(-1)![0].data;
+
+  beforeEach(() => {
+    prismaMock.mediaShareToken.create.mockImplementation(((args: { data: object }) =>
+      Promise.resolve({ id: "share-1", ...args.data })) as never);
+  });
+
+  it("rattache un partage galerie à son événement avec onlyApproved par défaut à false", async () => {
+    const res = await createMediaShareToken({ churchId: "c1", type: "GALLERY", mediaEventId: "evt-1", baseUrl: "https://k" });
+    expect(created()).toMatchObject({ mediaEventId: "evt-1", config: { onlyApproved: false } });
+    expect(created()).not.toHaveProperty("mediaProjectId");
+    expect(res.url).toBe("https://k/media/g/test-token");
+  });
+
+  it("rattache un partage à son projet média", async () => {
+    await createMediaShareToken({ churchId: "c1", type: "MEDIA", mediaProjectId: "prj-1", baseUrl: "https://k" });
+    expect(created()).toMatchObject({ mediaProjectId: "prj-1" });
+    expect(created()).not.toHaveProperty("config");
+  });
+
+  it("stocke la configuration d'une collection sans cible", async () => {
+    await createMediaShareToken({ churchId: "c1", type: "COLLECTION", collectionConfig: baseConfig, baseUrl: "https://k" });
+    expect(created()).toMatchObject({ config: baseConfig });
+    expect(created()).not.toHaveProperty("mediaEventId");
+    expect(created()).not.toHaveProperty("mediaProjectId");
   });
 });

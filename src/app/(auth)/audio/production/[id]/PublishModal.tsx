@@ -58,6 +58,8 @@ export default function PublishModal({
     }
   }
 
+  const confirmLabel = action === "publish" ? "Publier" : "Dépublier";
+
   return (
     <Modal open={open} onClose={onClose} title={action === "publish" ? "Publier ce culte" : "Dépublier ce culte"}>
       {action === "publish" ? (
@@ -97,7 +99,7 @@ export default function PublishModal({
           Annuler
         </Button>
         <Button variant={action === "unpublish" ? "danger" : "primary"} onClick={confirm} disabled={submitting}>
-          {submitting ? "…" : action === "publish" ? "Publier" : "Dépublier"}
+          {submitting ? "…" : confirmLabel}
         </Button>
       </div>
     </Modal>

@@ -363,11 +363,10 @@ export default function ValidatorView({ token, data }: { readonly token: string;
   const toggleDecision = useCallback(async (photoId: string) => {
     const photo = photos.find((p) => p.id === photoId);
     if (!photo) return;
-    const newStatus =
-      photo.status === approveStatus ? rejectStatus :
-      photo.status === rejectStatus  ? "PENDING"    :
-      photo.status === "PENDING"     ? approveStatus :
-      photo.status;
+    let newStatus = photo.status;
+    if (photo.status === approveStatus) newStatus = rejectStatus;
+    else if (photo.status === rejectStatus) newStatus = "PENDING";
+    else if (photo.status === "PENDING") newStatus = approveStatus;
     setPhotos((prev) => prev.map((p) => p.id === photoId ? { ...p, status: newStatus } : p));
     void saveStatus(photoId, newStatus);
   }, [photos, approveStatus, rejectStatus, saveStatus]);
@@ -398,6 +397,9 @@ export default function ValidatorView({ token, data }: { readonly token: string;
     });
 
     const dk = summaryDark;
+    const inactiveFilterClass = dk
+      ? "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60 hover:border-ink/20"
+      : "bg-transparent text-ink-subtle border-line hover:text-ink-muted hover:border-control-line";
 
     const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
       { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-ink/20 text-ink border-transparent"           : "bg-surface-sunken text-ink border-transparent",        dot: "" },
@@ -470,11 +472,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
                 key={key}
                 onClick={() => setSummaryFilter(key)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
-                  summaryFilter === key
-                    ? activeClass
-                    : dk
-                      ? "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60 hover:border-ink/20"
-                      : "bg-transparent text-ink-subtle border-line hover:text-ink-muted hover:border-control-line"
+                  summaryFilter === key ? activeClass : inactiveFilterClass
                 }`}
               >
                 {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}

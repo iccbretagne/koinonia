@@ -104,6 +104,7 @@ function MissionCard({ mission, canManage }: { readonly mission: Mission; readon
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isArchived = mission.status === "ARCHIVED";
+  const toggleLabel = isArchived ? "Republier" : "Retirer";
 
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
@@ -162,7 +163,7 @@ function MissionCard({ mission, canManage }: { readonly mission: Mission; readon
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
-            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+            {loading ? "…" : toggleLabel}
           </button>
         </div>
       )}
@@ -174,6 +175,7 @@ function FreelanceProfileCard({ profile, canManage }: { readonly profile: Freela
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const isArchived = profile.status === "ARCHIVED";
+  const toggleLabel = isArchived ? "Republier" : "Retirer";
   const availableLabel = profile.availableFrom
     ? `Dispo le ${new Date(profile.availableFrom).toLocaleDateString("fr-FR")}`
     : "Disponible";
@@ -233,7 +235,7 @@ function FreelanceProfileCard({ profile, canManage }: { readonly profile: Freela
             disabled={loading}
             className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors"
           >
-            {loading ? "…" : isArchived ? "Republier" : "Retirer"}
+            {loading ? "…" : toggleLabel}
           </button>
         </div>
       )}

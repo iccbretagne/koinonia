@@ -1,5 +1,6 @@
 import { auth, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import NoAccessClient from "./NoAccessClient";
 
@@ -44,6 +45,23 @@ export default async function NoAccessPage() {
     orderBy: { name: "asc" },
   });
 
+  let accessContent: ReactNode = null;
+  if (churches.length > 0) {
+    accessContent = (
+        <NoAccessClient
+          churches={churches}
+          ministries={ministries.map((m) => ({
+            id: m.id,
+            name: m.name,
+            churchId: m.churchId,
+            departments: m.departments,
+          }))}
+        />
+    );
+  } else if (pendingRequests.length === 0) {
+    accessContent = <p className="text-sm text-ink-subtle text-center">Aucune église disponible.</p>;
+  }
+
   return (
     <div className="min-h-screen bg-surface-sunken flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-surface rounded-lg border border-line p-8">
@@ -75,19 +93,7 @@ export default async function NoAccessPage() {
           </div>
         )}
 
-        {churches.length > 0 ? (
-          <NoAccessClient
-            churches={churches}
-            ministries={ministries.map((m) => ({
-              id: m.id,
-              name: m.name,
-              churchId: m.churchId,
-              departments: m.departments,
-            }))}
-          />
-        ) : pendingRequests.length === 0 ? (
-          <p className="text-sm text-ink-subtle text-center">Aucune église disponible.</p>
-        ) : null}
+        {accessContent}
 
         <div className="mt-6 pt-4 border-t border-line text-center">
           <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>

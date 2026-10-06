@@ -47,6 +47,11 @@ export default function BottomNav({ destinations, active, moreBadge, moreOpen = 
   const pathname = usePathname();
   const activeKey = destinations.find((d) => isDestinationActive(d, active, pathname))?.key ?? null;
   const moreActive = moreOpen || activeKey === null;
+  let moreLabel = "Plus";
+  if (moreBadge) {
+    const plural = moreBadge > 1 ? "s" : "";
+    moreLabel = `Plus, ${moreBadge} nouveauté${plural}`;
+  }
 
   return (
     <nav
@@ -74,7 +79,7 @@ export default function BottomNav({ destinations, active, moreBadge, moreOpen = 
           onClick={onMoreOpen}
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
-          aria-label={moreBadge ? `Plus, ${moreBadge} nouveauté${moreBadge > 1 ? "s" : ""}` : "Plus"}
+          aria-label={moreLabel}
           className={`${itemClass} ${moreActive ? "text-brand-text" : "text-ink-subtle hover:text-ink"}`}
         >
           <Item icon={Ellipsis} label="Plus" active={moreActive} badge={moreBadge} />

@@ -4,6 +4,18 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
+const CHILD_STATUS_DOT_CLASS: Record<string, string> = {
+  EN_ATTENTE: "bg-warning",
+  EN_COURS: "bg-info",
+  LIVRE: "bg-success",
+};
+
+const CATEGORY_LABELS = {
+  all: "Tout",
+  announcements: "Annonces",
+  demands: "Demandes",
+} as const;
+
 const DESTRUCTIVE_STATUSES = new Set(["REFUSEE", "ANNULE"]);
 
 const ANNOUNCEMENT_TYPES = new Set(["DIFFUSION_INTERNE", "RESEAUX_SOCIAUX", "VISUEL"]);
@@ -180,6 +192,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
     if (req.type === "AJOUT_EVENEMENT") {
       const deptIds = p.departmentIds as string[] | undefined;
       const deptCount = Array.isArray(deptIds) ? deptIds.length : 0;
+      const deptPlural = deptCount === 1 ? "" : "s";
       const recurrence = p.recurrenceRule as string | undefined;
       const recurrenceLabels: Record<string, string> = {
         weekly: "Hebdo",
@@ -189,7 +202,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
       const parts = [
         `${p.eventType ?? ""}`,
         p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : "",
-        deptCount > 0 ? `${deptCount} département${deptCount !== 1 ? "s" : ""}` : null,
+        deptCount > 0 ? `${deptCount} département${deptPlural}` : null,
         recurrence ? `Récurrence : ${recurrenceLabels[recurrence] ?? recurrence}` : null,
       ].filter(Boolean);
       return parts.join(" — ");
@@ -295,13 +308,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
               <div key={child.id} className="flex items-center gap-2 text-xs text-ink-muted">
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
-                    child.status === "EN_ATTENTE"
-                      ? "bg-warning"
-                      : child.status === "EN_COURS"
-                        ? "bg-info"
-                        : child.status === "LIVRE"
-                          ? "bg-success"
-                          : "bg-control-line"
+                    CHILD_STATUS_DOT_CLASS[child.status] ?? "bg-control-line"
                   }`}
                 />
                 <span>{TYPE_LABEL[child.type] ?? child.type}</span>
@@ -420,7 +427,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
                   : "text-ink-muted hover:bg-surface-sunken"
               }`}
             >
-              {cat === "all" ? "Tout" : cat === "announcements" ? "Annonces" : "Demandes"}
+              {CATEGORY_LABELS[cat]}
             </button>
           ))}
         </div>

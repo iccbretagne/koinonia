@@ -27,6 +27,11 @@ export interface DataTableSort {
   dir: "asc" | "desc";
 }
 
+function ariaSort(sortKey: string | undefined, sort: DataTableSort | undefined): "ascending" | "descending" | undefined {
+  if (!sortKey || sort?.key !== sortKey) return undefined;
+  return sort.dir === "asc" ? "ascending" : "descending";
+}
+
 interface DataTableProps<T> {
   readonly columns: Column<T>[];
   readonly data: T[];
@@ -274,13 +279,7 @@ export default function DataTable<T extends { id: string }>({
                     <th
                       key={i}
                       scope="col"
-                      aria-sort={
-                        col.sortKey && sort?.key === col.sortKey
-                          ? sort.dir === "asc"
-                            ? "ascending"
-                            : "descending"
-                          : undefined
-                      }
+                      aria-sort={ariaSort(col.sortKey, sort)}
                       className={`whitespace-nowrap px-4 py-2.5 font-display text-xs font-semibold uppercase leading-4 tracking-[0.04em] text-ink-muted ${
                         col.align === "right" ? "text-right" : "text-left"
                       }`}

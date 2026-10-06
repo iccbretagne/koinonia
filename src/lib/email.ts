@@ -1,5 +1,10 @@
 import nodemailer from "nodemailer";
 
+function jobTypeLabel(type: string): string {
+  if (type === "EMPLOI") return "Emploi";
+  return type === "STAGE" ? "Stage" : "Alternance";
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -392,10 +397,12 @@ export function buildAccountingStatusEmail(params: {
 
   const priorityNoteHtml = params.priorityNote ? ` : <em>${escapeHtml(params.priorityNote)}</em>` : "";
   const rejectionHtml = params.rejectionReason ? `<br><br>Motif : <em>${escapeHtml(params.rejectionReason)}</em>` : "";
-  const intros: Record<string, string> = {
-    PROCESSING: params.priority === "URGENT"
+  const processingIntro =
+    params.priority === "URGENT"
       ? `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement en priorité urgente${priorityNoteHtml}.`
-      : `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement. Elle sera traitée dans les meilleurs délais.`,
+      : `Votre demande <strong>« ${label} »</strong> (${amount}) est en cours de traitement. Elle sera traitée dans les meilleurs délais.`;
+  const intros: Record<string, string> = {
+    PROCESSING: processingIntro,
     APPROVED:   `Votre demande <strong>« ${label} »</strong> (${amount}) a été validée. Consultez le plan de paiement pour connaître les dates de remise.`,
     REJECTED:   `Votre demande <strong>« ${label} »</strong> (${amount}) n'a malheureusement pas pu être retenue.${rejectionHtml}`,
     CANCELLED:  `Votre demande <strong>« ${label} »</strong> (${amount}) a été annulée.`,
@@ -486,18 +493,19 @@ export function buildJobOfferEmail(params: {
   contactUrl: string | null;
   jobUrl: string;
 }) {
-  const typeLabel = params.type === "EMPLOI" ? "Emploi" : params.type === "STAGE" ? "Stage" : "Alternance";
+  const typeLabel = jobTypeLabel(params.type);
   const title = escapeHtml(params.jobTitle);
   const company = escapeHtml(params.company);
   const location = params.location ? `<tr><td style="padding:6px 0;color:#6b7280;width:130px;">Lieu</td><td style="padding:6px 0;">${escapeHtml(params.location)}</td></tr>` : "";
   const duration = params.duration ? `<tr><td style="padding:6px 0;color:#6b7280;">Durée</td><td style="padding:6px 0;">${escapeHtml(params.duration)}</td></tr>` : "";
   const deadlineStr = params.deadline ? new Date(params.deadline).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : null;
   const deadline = deadlineStr ? `<tr><td style="padding:6px 0;color:#6b7280;">Date limite</td><td style="padding:6px 0;">${deadlineStr}</td></tr>` : "";
-  const contact = params.contactEmail
-    ? `<p style="margin-top:16px;font-size:14px;">Candidature : <a href="mailto:${escapeHtml(params.contactEmail)}" style="color:#5E17EB;">${escapeHtml(params.contactEmail)}</a></p>`
-    : params.contactUrl
-      ? `<p style="margin-top:16px;font-size:14px;"><a href="${escapeHtml(params.contactUrl)}" style="color:#5E17EB;">Postuler en ligne →</a></p>`
-      : "";
+  let contact = "";
+  if (params.contactEmail) {
+    contact = `<p style="margin-top:16px;font-size:14px;">Candidature : <a href="mailto:${escapeHtml(params.contactEmail)}" style="color:#5E17EB;">${escapeHtml(params.contactEmail)}</a></p>`;
+  } else if (params.contactUrl) {
+    contact = `<p style="margin-top:16px;font-size:14px;"><a href="${escapeHtml(params.contactUrl)}" style="color:#5E17EB;">Postuler en ligne →</a></p>`;
+  }
   const greeting = params.subscriberName ? `<p>Bonjour <strong>${escapeHtml(params.subscriberName)}</strong>,</p>` : "<p>Bonjour,</p>";
 
   return {

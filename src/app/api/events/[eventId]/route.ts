@@ -165,6 +165,11 @@ export async function PUT(
       return successResponse({ ...event, seriesUpdated: seriesEvents.length, notified });
     }
 
+    let nextPlanningDeadline: Date | null | undefined;
+    if (data.planningDeadline !== undefined) {
+      nextPlanningDeadline = data.planningDeadline ? new Date(data.planningDeadline) : null;
+    }
+
     const { event, notices } = await prisma.$transaction(async (tx) => {
     const before = await tx.event.findUnique({ where: { id: eventId }, select: { date: true } });
     const updated = await tx.event.update({
@@ -173,12 +178,7 @@ export async function PUT(
         title: data.title,
         type: data.type,
         date: new Date(data.date),
-        planningDeadline:
-          data.planningDeadline !== undefined
-            ? data.planningDeadline
-              ? new Date(data.planningDeadline)
-              : null
-            : undefined,
+        planningDeadline: nextPlanningDeadline,
       },
       include: {
         church: { select: { id: true, name: true } },

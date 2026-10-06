@@ -220,9 +220,8 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
         <ExportBar exporting={exporting} onCopy={copyImage} onDownload={downloadImage} onPdf={exportPdf} />
       )}
 
-      {loading ? (
-        <SkeletonList rows={4} label="Chargement du planning du mois…" className="mx-auto w-full max-w-2xl" />
-      ) : events.length === 0 ? (
+      {loading && <SkeletonList rows={4} label="Chargement du planning du mois…" className="mx-auto w-full max-w-2xl" />}
+      {!loading && events.length === 0 && (
         <div className="mx-auto w-full max-w-2xl rounded-card border border-line bg-surface">
           <EmptyState
             icon={CalendarX2}
@@ -231,7 +230,8 @@ export default function MonthlyPlanningView({ departmentId, departmentName, chur
             size="sm"
           />
         </div>
-      ) : (
+      )}
+      {!loading && events.length > 0 && (
         /* Zone exportée (image, PDF) : passée en thème clair le temps de la capture. */
         <div
           ref={printRef}
