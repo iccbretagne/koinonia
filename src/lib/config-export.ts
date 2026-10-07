@@ -125,8 +125,10 @@ export async function exportConfig(
   const churchConfigs: ChurchConfig[] = await Promise.all(
     churches.map(async (church) => {
       const churchMinistries = ministriesByChurch.get(church.id) ?? [];
+      // Sans la structure, les départements de l'église n'ont pas été chargés
+      const loadedMinistries = includeStructure ? churchMinistries : null;
       const members = includeMembers
-        ? await exportMembers(await churchDepartmentIds(church.id, includeStructure ? churchMinistries : null))
+        ? await exportMembers(await churchDepartmentIds(church.id, loadedMinistries))
         : [];
       const { userLinks, userRoles } = includeLinks
         ? await exportLinksAndRoles(church.id)
