@@ -157,6 +157,86 @@ interface Recipient {
   titles: string[];
 }
 
+/** Changement à annoncer : événement connu avec des planifiés, encore à venir, réellement déplacé. */
+function isNotifiable(change: EventChange, audience: EventAudience | undefined, now: Date): audience is EventAudience {
+  if (!audience || audience.departments.size === 0) return false;
+  const originDate = change.kind === "MOVED" ? change.previousDate : audience.date;
+  if (originDate.getTime() < now.getTime()) return false;
+  return !(change.kind === "MOVED" && change.previousDate.getTime() === change.newDate.getTime());
+}
+
+/** Encadrants : départements supervisés (responsable ou ministère) ayant des planifiés. */
+function leadDepartments(audience: EventAudience, leaders: Leaders): Map<string, DeptCount[]> {
+  const leadDepts = new Map<string, DeptCount[]>();
+  const add = (userId: string, dept: DeptCount) => {
+    const list = leadDepts.get(userId) ?? [];
+    if (!list.includes(dept)) leadDepts.set(userId, [...list, dept]);
+  };
+  for (const [deptId, dept] of audience.departments) {
+    for (const [userId, depts] of leaders.heads) if (depts.has(deptId)) add(userId, dept);
+    for (const [userId, ministries] of leaders.ministers) if (ministries.has(dept.ministryId)) add(userId, dept);
+  }
+  return leadDepts;
+}
+
+function record(r: Recipient, line: string, change: EventChange, audience: EventAudience) {
+  r.lines.push(line);
+  r.kinds.add(change.kind);
+  r.titles.push(audience.title);
+}
+
+/** Type, verbe du titre groupé et phrase finale selon la nature des changements reçus. */
+function noticeWording(r: Recipient): { type: PendingNotice["type"]; changedWord: string; singleLabel: string; tail: string } {
+  const onlyMoved = r.kinds.size === 1 && r.kinds.has("MOVED");
+  const onlyCancelled = r.kinds.size === 1 && r.kinds.has("CANCELLED");
+  const singleLabel = onlyMoved ? "Événement déplacé" : "Événement annulé";
+  if (onlyMoved) {
+    const tail = r.lead ? "" : " Vous êtes toujours planifié. Si vous ne pouvez plus servir, prévenez votre responsable.";
+    return { type: "EVENT_RESCHEDULED", changedWord: "déplacés", singleLabel, tail };
+  }
+  if (onlyCancelled) {
+    let tail = "";
+    if (!r.lead) tail = r.lines.length === 1 ? " Votre service est retiré de votre planning." : " Vos services sont retirés de votre planning.";
+    return { type: "EVENT_CANCELLED", changedWord: "annulés", singleLabel, tail };
+  }
+  return { type: "EVENT_CHANGES", changedWord: "modifiés", singleLabel, tail: "" };
+}
+
+function toNotice(userId: string, r: Recipient): PendingNotice {
+  // Un encadrant aussi planifié comme STAR sur un autre événement du lot garde une seule
+  // notification : celle d'encadrant (lien vers la grille).
+  const { type, changedWord, singleLabel, tail } = noticeWording(r);
+  const n = r.lines.length;
+  return {
+    userId,
+    type,
+    title: n === 1 ? `${singleLabel} : ${r.titles[0]}` : `${n} événements ${changedWord}`,
+    message: `${r.lines.join(" ")}${tail}`,
+    link: r.lead ? "/dashboard" : "/planning",
+  };
+}
+
+/** Répartit un changement entre ses encadrants (avec le détail des départements) et ses planifiés. */
+function dispatchChange(
+  change: EventChange,
+  audience: EventAudience,
+  leaders: Leaders,
+  recipient: (userId: string) => Recipient
+) {
+  const line = changeLine(change, audience);
+  const leadDepts = leadDepartments(audience, leaders);
+  for (const [userId, depts] of leadDepts) {
+    const r = recipient(userId);
+    r.lead = true;
+    const summary = depts.map((d) => `${d.name} (${d.count})`).join(", ");
+    const self = audience.plannedUserIds.has(userId) ? " Vous êtes vous-même planifié." : "";
+    record(r, `${line}. Personnes concernées : ${summary}.${self}`, change, audience);
+  }
+  for (const userId of audience.plannedUserIds) {
+    if (!leadDepts.has(userId)) record(recipient(userId), `${line}.`, change, audience);
+  }
+}
+
 export function buildEventChangeNotices(
   changes: EventChange[],
   audiences: Map<string, EventAudience>,
@@ -172,73 +252,12 @@ export function buildEventChangeNotices(
 
   for (const change of changes) {
     const audience = audiences.get(change.eventId);
-    if (!audience || audience.departments.size === 0) continue;
-    const originDate = change.kind === "MOVED" ? change.previousDate : audience.date;
-    if (originDate.getTime() < opts.now.getTime()) continue;
-    if (change.kind === "MOVED" && change.previousDate.getTime() === change.newDate.getTime()) continue;
-
-    const line = changeLine(change, audience);
-
-    // Encadrants : départements supervisés (responsable ou ministère) ayant des planifiés.
-    const leadDepts = new Map<string, DeptCount[]>();
-    for (const [deptId, dept] of audience.departments) {
-      for (const [userId, depts] of leaders.heads) if (depts.has(deptId)) leadDepts.set(userId, [...(leadDepts.get(userId) ?? []), dept]);
-      for (const [userId, ministries] of leaders.ministers) {
-        if (!ministries.has(dept.ministryId)) continue;
-        const list = leadDepts.get(userId) ?? [];
-        if (!list.includes(dept)) leadDepts.set(userId, [...list, dept]);
-      }
-    }
-
-    for (const [userId, depts] of leadDepts) {
-      const r = recipient(userId);
-      r.lead = true;
-      const summary = depts.map((d) => `${d.name} (${d.count})`).join(", ");
-      const self = audience.plannedUserIds.has(userId) ? " Vous êtes vous-même planifié." : "";
-      r.lines.push(`${line}. Personnes concernées : ${summary}.${self}`);
-      r.kinds.add(change.kind);
-      r.titles.push(audience.title);
-    }
-    for (const userId of audience.plannedUserIds) {
-      if (leadDepts.has(userId)) continue;
-      const r = recipient(userId);
-      r.lines.push(`${line}.`);
-      r.kinds.add(change.kind);
-      r.titles.push(audience.title);
-    }
+    if (isNotifiable(change, audience, opts.now)) dispatchChange(change, audience, leaders, recipient);
   }
 
   const items: PendingNotice[] = [];
   for (const [userId, r] of recipients) {
-    if (userId === opts.actorId || r.lines.length === 0) continue;
-    // Un encadrant aussi planifié comme STAR sur un autre événement du lot garde une seule
-    // notification : celle d'encadrant (lien vers la grille).
-    const onlyMoved = r.kinds.size === 1 && r.kinds.has("MOVED");
-    const onlyCancelled = r.kinds.size === 1 && r.kinds.has("CANCELLED");
-    let type: PendingNotice["type"] = "EVENT_CHANGES";
-    let changedWord = "modifiés";
-    if (onlyMoved) {
-      type = "EVENT_RESCHEDULED";
-      changedWord = "déplacés";
-    } else if (onlyCancelled) {
-      type = "EVENT_CANCELLED";
-      changedWord = "annulés";
-    }
-    const n = r.lines.length;
-    const singleLabel = onlyMoved ? "Événement déplacé" : "Événement annulé";
-    const title = n === 1 ? `${singleLabel} : ${r.titles[0]}` : `${n} événements ${changedWord}`;
-    let tail = "";
-    if (!r.lead) {
-      if (onlyMoved) tail = " Vous êtes toujours planifié. Si vous ne pouvez plus servir, prévenez votre responsable.";
-      else if (onlyCancelled) tail = n === 1 ? " Votre service est retiré de votre planning." : " Vos services sont retirés de votre planning.";
-    }
-    items.push({
-      userId,
-      type,
-      title,
-      message: `${r.lines.join(" ")}${tail}`,
-      link: r.lead ? "/dashboard" : "/planning",
-    });
+    if (userId !== opts.actorId && r.lines.length > 0) items.push(toNotice(userId, r));
   }
   return { items };
 }

@@ -331,54 +331,65 @@ export async function validateBackupTargets(
   }
 
   for (const backup of backups) {
-    if (backup.type === "STAR") {
-      if (!backup.memberId) throw new ApiError(400, "memberId requis pour un backup STAR");
-      const memberScope = await getMemberScope(backup.memberId, db);
-      const allowed = memberScope?.departmentIds.some((id) => scope.departmentIds.includes(id)) ?? false;
-      if (!allowed) throw new ApiError(403, "Ce backup STAR n'appartient pas à votre périmètre");
-      continue;
-    }
+    if (backup.type === "STAR") await assertStarBackup(backup, scope, db);
+    else await assertResponsibleBackup(backup, scope, declarerUserId, churchId, db);
+  }
+}
 
-    if (!backup.userChurchRoleId) throw new ApiError(400, "userChurchRoleId requis pour un backup responsable");
-    const target = await db.userChurchRole.findUnique({
-      where: { id: backup.userChurchRoleId },
-      select: {
-        userId: true,
-        role: true,
-        churchId: true,
-        ministryId: true,
-        departments: { select: { department: { select: { ministryId: true } } } },
-      },
-    });
-    if (target?.churchId !== churchId) throw new ApiError(403, "Backup introuvable");
-    if (target.userId === declarerUserId) {
-      throw new ApiError(403, "Vous ne pouvez pas vous désigner vous-même en backup");
-    }
+type BackupScope = Awaited<ReturnType<typeof getDeclarerBackupScope>>;
 
-    if (target.role !== "MINISTER" && target.role !== "DEPARTMENT_HEAD") {
-      throw new ApiError(403, "Ce backup n'appartient pas à votre périmètre");
-    }
+async function assertStarBackup(backup: BackupInput, scope: BackupScope, db: DbClient) {
+  if (!backup.memberId) throw new ApiError(400, "memberId requis pour un backup STAR");
+  const memberScope = await getMemberScope(backup.memberId, db);
+  const allowed = memberScope?.departmentIds.some((id) => scope.departmentIds.includes(id)) ?? false;
+  if (!allowed) throw new ApiError(403, "Ce backup STAR n'appartient pas à votre périmètre");
+}
 
-    // Ministre → uniquement un autre Ministre de l'église (déjà exclu : lui-même).
-    if (target.role === "MINISTER" && scope.isMinister) continue;
-
-    // Resp. département → le Ministre de son ministère, ou un autre Resp. département du même
-    // ministère (comparaison via les départements couverts par le déclarant).
-    if (scope.isDepartmentHead) {
-      const declarerMinistries = await db.department.findMany({
-        where: { id: { in: scope.departmentIds } },
-        select: { ministryId: true },
-      });
-      const declarerMinistryIds = new Set(declarerMinistries.map((d) => d.ministryId));
-      const targetMinistryIds =
-        target.role === "MINISTER"
-          ? [target.ministryId].filter((id): id is string => !!id)
-          : target.departments.map((d) => d.department.ministryId);
-      if (targetMinistryIds.some((id) => declarerMinistryIds.has(id))) continue;
-    }
-
+async function assertResponsibleBackup(
+  backup: BackupInput,
+  scope: BackupScope,
+  declarerUserId: string,
+  churchId: string,
+  db: DbClient
+) {
+  if (!backup.userChurchRoleId) throw new ApiError(400, "userChurchRoleId requis pour un backup responsable");
+  const target = await db.userChurchRole.findUnique({
+    where: { id: backup.userChurchRoleId },
+    select: {
+      userId: true,
+      role: true,
+      churchId: true,
+      ministryId: true,
+      departments: { select: { department: { select: { ministryId: true } } } },
+    },
+  });
+  if (target?.churchId !== churchId) throw new ApiError(403, "Backup introuvable");
+  if (target.userId === declarerUserId) {
+    throw new ApiError(403, "Vous ne pouvez pas vous désigner vous-même en backup");
+  }
+  if (target.role !== "MINISTER" && target.role !== "DEPARTMENT_HEAD") {
     throw new ApiError(403, "Ce backup n'appartient pas à votre périmètre");
   }
+
+  // Ministre → uniquement un autre Ministre de l'église (déjà exclu : lui-même).
+  if (target.role === "MINISTER" && scope.isMinister) return;
+
+  // Resp. département → le Ministre de son ministère, ou un autre Resp. département du même
+  // ministère (comparaison via les départements couverts par le déclarant).
+  if (scope.isDepartmentHead) {
+    const declarerMinistries = await db.department.findMany({
+      where: { id: { in: scope.departmentIds } },
+      select: { ministryId: true },
+    });
+    const declarerMinistryIds = new Set(declarerMinistries.map((d) => d.ministryId));
+    const targetMinistryIds =
+      target.role === "MINISTER"
+        ? [target.ministryId].filter((id): id is string => !!id)
+        : target.departments.map((d) => d.department.ministryId);
+    if (targetMinistryIds.some((id) => declarerMinistryIds.has(id))) return;
+  }
+
+  throw new ApiError(403, "Ce backup n'appartient pas à votre périmètre");
 }
 
 /** Résout les utilisateurs à notifier pour une liste de backups (STAR via lien compte, sinon direct). */
@@ -404,6 +415,27 @@ async function resolveBackupRecipients(
     }
   }
   return recipients;
+}
+
+/** Cibles enregistrées avec l'absence : départements (sauf « tous ») et événements (absence par événements). */
+function absenceTargetsData(
+  kind: AbsenceKind,
+  allDepartments: boolean,
+  departmentIds: string[],
+  events: { eventId: string; title: string; date: Date }[]
+) {
+  return {
+    ...(allDepartments
+      ? {}
+      : { targetDepartments: { createMany: { data: departmentIds.map((departmentId) => ({ departmentId })) } } }),
+    ...(kind === "EVENTS"
+      ? {
+          targetEvents: {
+            createMany: { data: events.map((e) => ({ eventId: e.eventId, eventTitle: e.title, eventDate: e.date })) },
+          },
+        }
+      : {}),
+  };
 }
 
 interface DeclareAbsenceParams {
@@ -501,16 +533,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
         allDepartments,
         reason: reason ?? null,
         createdById,
-        ...(allDepartments
-          ? {}
-          : { targetDepartments: { createMany: { data: departmentIds.map((departmentId) => ({ departmentId })) } } }),
-        ...(kind === "EVENTS"
-          ? {
-              targetEvents: {
-                createMany: { data: events.map((e) => ({ eventId: e.eventId, eventTitle: e.title, eventDate: e.date })) },
-              },
-            }
-          : {}),
+        ...absenceTargetsData(kind, allDepartments, departmentIds, events),
       },
     });
 
@@ -579,7 +602,7 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
           domain: "planning",
           type: "ABSENCE_CONFLICT",
           title: "Conflit planning / absence",
-          message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+          message: `L'absence de ${memberName} (${when}) chevauche ${plannedServicesLabel(plural)}.`,
           link: "/absences",
         },
         { tx }
@@ -746,6 +769,73 @@ interface UpdateAbsenceParams {
   declarerScope?: DeclarerScope;
 }
 
+const isoOrNull = (date: Date | null) => (date ? date.toISOString() : null);
+
+/** « un service déjà planifié » ou « des services déjà planifiés ». */
+function plannedServicesLabel(plural: boolean): string {
+  return plural ? "des services déjà planifiés" : "un service déjà planifié";
+}
+
+type EditableAbsence = Parameters<typeof lastEffectiveDate>[0] & {
+  churchId: string;
+  status: string;
+  kind: AbsenceKind;
+  startDate: Date | null;
+};
+
+/** Absence modifiable : de l'église, non annulée, pas encore passée. */
+function assertAbsenceEditable(absence: EditableAbsence | null, churchId: string, now: Date): asserts absence is EditableAbsence {
+  if (!absence) throw new ApiError(404, "Absence introuvable");
+  if (absence.churchId !== churchId) throw new ApiError(403, "Absence hors périmètre");
+  if (absence.status === "CANCELLED") throw new ApiError(409, "Absence annulée, non modifiable");
+  const lastDateBefore = lastEffectiveDate(absence);
+  if (lastDateBefore === null || isAbsencePast(lastDateBefore, now)) {
+    throw new ApiError(409, "Absence déjà passée, non modifiable");
+  }
+}
+
+/** Une période déjà commencée ne peut pas voir son début reculé. */
+function assertStartNotMovedBack(absence: EditableAbsence, newKind: AbsenceKind, startDate: Date | undefined, now: Date) {
+  const started = absence.kind === "PERIOD" && absence.startDate !== null && absence.startDate <= now;
+  if (newKind === "PERIOD" && startDate && started && startDate < absence.startDate!) {
+    throw new ApiError(400, "La date de début d'une absence déjà commencée ne peut pas être reculée");
+  }
+}
+
+/** Remplace les départements et événements ciblés par une absence. */
+async function rewriteAbsenceTargets(
+  tx: DbClient,
+  absenceId: string,
+  target: { kind: AbsenceKind; allDepartments: boolean; departmentIds: string[]; events: TargetEventSnapshot[] }
+) {
+  await tx.absenceDepartment.deleteMany({ where: { absenceId } });
+  if (!target.allDepartments) {
+    await tx.absenceDepartment.createMany({
+      data: target.departmentIds.map((departmentId) => ({ absenceId, departmentId })),
+    });
+  }
+  await tx.absenceEvent.deleteMany({ where: { absenceId } });
+  if (target.kind === "EVENTS") {
+    await tx.absenceEvent.createMany({
+      data: target.events.map((e) => ({ absenceId, eventId: e.eventId, eventTitle: e.title, eventDate: e.date })),
+    });
+  }
+}
+
+/** Remplace les backups d'une absence et renvoie les comptes à prévenir. */
+async function replaceAbsenceBackups(tx: DbClient, absenceId: string, churchId: string, backups: BackupInput[]) {
+  const rows = backups.map((b) => ({
+    type: b.type,
+    memberId: b.type === "STAR" ? (b.memberId ?? null) : null,
+    userChurchRoleId: b.type === "RESPONSIBLE" ? (b.userChurchRoleId ?? null) : null,
+  }));
+  await tx.absenceBackup.deleteMany({ where: { absenceId } });
+  if (rows.length > 0) {
+    await tx.absenceBackup.createMany({ data: rows.map((b) => ({ absenceId, ...b })) });
+  }
+  return resolveBackupRecipients(rows, churchId, tx);
+}
+
 /**
  * Modifie une absence active tant qu'elle n'est pas passée (dernier jour de la période, ou
  * dernier événement ciblé encore existant), recalcule les conflits sur le nouveau ciblage et
@@ -782,23 +872,12 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         targetEvents: { select: { eventId: true, eventTitle: true, eventDate: true } },
       },
     });
-    if (!absence) throw new ApiError(404, "Absence introuvable");
-    if (absence.churchId !== churchId) throw new ApiError(403, "Absence hors périmètre");
-    if (absence.status === "CANCELLED") throw new ApiError(409, "Absence annulée, non modifiable");
-
     const now = new Date();
-    const lastDateBefore = lastEffectiveDate(absence);
-    if (lastDateBefore === null || isAbsencePast(lastDateBefore, now)) {
-      throw new ApiError(409, "Absence déjà passée, non modifiable");
-    }
+    assertAbsenceEditable(absence, churchId, now);
 
-    const targetingChanged =
-      kind !== undefined ||
-      startDate !== undefined ||
-      endDate !== undefined ||
-      eventIds !== undefined ||
-      allDepartments !== undefined ||
-      departmentIds !== undefined;
+    const targetingChanged = [kind, startDate, endDate, eventIds, allDepartments, departmentIds].some(
+      (value) => value !== undefined
+    );
 
     const newKind = kind ?? absence.kind;
     const newStartDate = startDate ?? absence.startDate ?? undefined;
@@ -808,16 +887,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
     const newEventIds =
       eventIds ?? absence.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
 
-    if (
-      newKind === "PERIOD" &&
-      startDate &&
-      absence.kind === "PERIOD" &&
-      absence.startDate &&
-      absence.startDate <= now &&
-      startDate < absence.startDate
-    ) {
-      throw new ApiError(400, "La date de début d'une absence déjà commencée ne peut pas être reculée");
-    }
+    assertStartNotMovedBack(absence, newKind, startDate, now);
 
     const priorDepartmentIds = absence.targetDepartments.map((d) => d.departmentId);
     const priorEventIds = absence.targetEvents.map((e) => e.eventId).filter((id): id is string => id !== null);
@@ -849,20 +919,12 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         declarerScope,
       });
       newEventSnapshots = validated.events;
-
-      await tx.absenceDepartment.deleteMany({ where: { absenceId } });
-      if (!newAllDepartments) {
-        await tx.absenceDepartment.createMany({
-          data: newDepartmentIds.map((departmentId) => ({ absenceId, departmentId })),
-        });
-      }
-
-      await tx.absenceEvent.deleteMany({ where: { absenceId } });
-      if (newKind === "EVENTS") {
-        await tx.absenceEvent.createMany({
-          data: newEventSnapshots.map((e) => ({ absenceId, eventId: e.eventId, eventTitle: e.title, eventDate: e.date })),
-        });
-      }
+      await rewriteAbsenceTargets(tx, absenceId, {
+        kind: newKind,
+        allDepartments: newAllDepartments,
+        departmentIds: newDepartmentIds,
+        events: newEventSnapshots,
+      });
     }
 
     const updated = await tx.absence.update({
@@ -911,29 +973,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
 
     const priorBackupRecipients = await resolveBackupRecipients(absence.backups, churchId, tx);
 
-    let newBackupRecipients: string[] = [];
-    if (backups !== undefined) {
-      await tx.absenceBackup.deleteMany({ where: { absenceId } });
-      if (backups.length > 0) {
-        await tx.absenceBackup.createMany({
-          data: backups.map((b) => ({
-            absenceId,
-            type: b.type,
-            memberId: b.type === "STAR" ? b.memberId : null,
-            userChurchRoleId: b.type === "RESPONSIBLE" ? b.userChurchRoleId : null,
-          })),
-        });
-      }
-      newBackupRecipients = await resolveBackupRecipients(
-        backups.map((b) => ({
-          type: b.type,
-          memberId: b.type === "STAR" ? (b.memberId ?? null) : null,
-          userChurchRoleId: b.type === "RESPONSIBLE" ? (b.userChurchRoleId ?? null) : null,
-        })),
-        churchId,
-        tx
-      );
-    }
+    const newBackupRecipients = backups === undefined ? [] : await replaceAbsenceBackups(tx, absenceId, churchId, backups);
 
     const memberName = `${absence.member.firstName} ${absence.member.lastName}`;
     const when = formatWhen(targetingAfter, newEventSnapshots);
@@ -977,7 +1017,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
           domain: "planning",
           type: "ABSENCE_CONFLICT",
           title: "Conflit planning / absence",
-          message: `L'absence de ${memberName} (${when}) chevauche ${plural ? "des services" : "un service"} déjà planifié${plural ? "s" : ""}.`,
+          message: `L'absence de ${memberName} (${when}) chevauche ${plannedServicesLabel(plural)}.`,
           link: "/absences",
         },
         { tx }
@@ -993,8 +1033,8 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
         memberId: absence.memberId,
         updatedById,
         kind: newKind,
-        startDate: updated.startDate ? updated.startDate.toISOString() : null,
-        endDate: updated.endDate ? updated.endDate.toISOString() : null,
+        startDate: isoOrNull(updated.startDate),
+        endDate: isoOrNull(updated.endDate),
         allDepartments: newAllDepartments,
         departmentIds: newDepartmentIds,
         eventIds: newEventIds,

@@ -149,163 +149,189 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.isSuperAdmin = dbUser?.isSuperAdmin || isBootstrapSuperAdminEmail(user.email ?? "");
       session.user.hasSeenTour = dbUser?.hasSeenTour ?? false;
 
-      const churchRoles = await prisma.userChurchRole.findMany({
-        where: { userId: user.id },
-        include: {
-          church: { select: { id: true, name: true, slug: true } },
-          ministry: { select: { id: true } },
-          departments: {
-            include: {
-              department: { select: { id: true, name: true } },
-            },
-          },
-        },
-      });
+      const churchRoles = await loadChurchRoles(user.id);
+      const ministerDeptMap = await loadMinisterDepartments(churchRoles);
+      const { starDeptMap, secretariatChurchIds } = await loadLinkedDepartments(user.id, churchRoles);
 
-      // For MINISTER roles with a ministryId, load all departments of the ministry
-      const ministerDeptMap = new Map<string, { id: string; name: string }[]>();
-      const ministerRoles = churchRoles.filter((cr) => cr.role === "MINISTER" && cr.ministryId);
-      const ministerDepts = await Promise.all(
-        ministerRoles.map((cr) =>
-          prisma.department.findMany({
-            where: { ministryId: cr.ministryId! },
-            select: { id: true, name: true },
-          })
-        )
-      );
-      ministerRoles.forEach((cr, i) => ministerDeptMap.set(cr.id, ministerDepts[i]));
+      const pastoral = await loadPastoralAccess(user.id, user.email);
+      session.user.pastoralProfileId = pastoral.pastoralProfileId;
+      session.user.pastoralChurchIds = pastoral.pastoralChurchIds;
 
-      // For STAR roles, load departments from the member link. Cette même liaison sert
-      // aussi à détecter l'appartenance à l'équipe Secrétariat (spec 045), indépendamment
-      // du rôle détenu : un Faiseur de Disciples ou un Reporter membre de ce département
-      // doit être détecté au même titre qu'un STAR — d'où une résolution par église
-      // (et non filtrée sur `role === "STAR"`) plutôt qu'un second `starDeptMap`.
-      const starDeptMap = new Map<string, { id: string; name: string }[]>();
-      const secretariatChurchIds = new Set<string>();
-      const distinctChurchIds = Array.from(new Set(churchRoles.map((cr) => cr.churchId)));
-      const links = await Promise.all(
-        distinctChurchIds.map((churchId) =>
-          prisma.memberUserLink.findUnique({
-            where: { userId_churchId: { userId: user.id, churchId } },
-            include: {
-              member: {
-                include: {
-                  departments: {
-                    include: {
-                      department: { select: { id: true, name: true, function: true } },
-                    },
-                  },
-                },
-              },
-            },
-          })
-        )
-      );
-      for (const [i, churchId] of distinctChurchIds.entries()) {
-        const link = links[i];
-        if (!link) continue;
-
-        const departments = link.member.departments.map((d) => d.department);
-        const starRole = churchRoles.find(
-          (cr) => cr.role === "STAR" && cr.churchId === churchId
-        );
-        if (starRole) {
-          starDeptMap.set(
-            starRole.id,
-            departments.map(({ id, name }) => ({ id, name }))
-          );
-        }
-        if (departments.some((d) => d.function === DEPT_FN.SECRETARIAT)) {
-          secretariatChurchIds.add(churchId);
-        }
-      }
-
-      // Détection des profils pastoraux (multi-église) : par userId, puis par email (auto-liaison)
-      const pastoralProfiles = await prisma.pastoralProfile.findMany({
-        where: { userId: user.id },
-        select: { id: true, churchId: true },
-      });
-      if (user.email) {
-        const unlinkedByEmail = await prisma.pastoralProfile.findMany({
-          where: { email: user.email, userId: null },
-          select: { id: true, churchId: true },
-        });
-        if (unlinkedByEmail.length > 0) {
-          await prisma.pastoralProfile.updateMany({
-            where: { id: { in: unlinkedByEmail.map((p) => p.id) } },
-            data: { userId: user.id },
-          });
-          const existingIds = new Set(pastoralProfiles.map((p) => p.id));
-          for (const p of unlinkedByEmail) {
-            if (!existingIds.has(p.id)) pastoralProfiles.push(p);
-          }
-        }
-      }
-      // Inclure également les églises supervisées par les profils de cet utilisateur
-      const profileIds = pastoralProfiles.map((p) => p.id);
-      const supervisedChurchIds = profileIds.length > 0
-        ? (await prisma.church.findMany({
-            where: { supervisorProfileId: { in: profileIds } },
-            select: { id: true },
-          })).map((c) => c.id)
-        : [];
-      const directChurchIds = new Set(pastoralProfiles.map((p) => p.churchId));
-      const allPastoralChurchIds = [
-        ...directChurchIds,
-        ...supervisedChurchIds.filter((id) => !directChurchIds.has(id)),
-      ];
-
-      session.user.pastoralProfileId = pastoralProfiles[0]?.id ?? null;
-      session.user.pastoralChurchIds = allPastoralChurchIds;
-
-      session.user.churchRoles = churchRoles.map((cr) => {
-        const extraDepts = ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id);
-        const departments = cr.departments.map((d) => ({ department: d.department }));
-        if (extraDepts) {
-          const existingIds = new Set(departments.map((d) => d.department.id));
-          for (const dept of extraDepts) {
-            if (!existingIds.has(dept.id)) {
-              departments.push({ department: dept });
-            }
-          }
-        }
-        return {
-          ...cr,
-          ministryId: cr.ministry?.id ?? null,
-          departments,
-        };
-      });
-
-      // Parité des droits de l'équipe Secrétariat (spec 045, étape 1/2) : une entrée de
-      // rôle SECRETARY non persistée, ajoutée pour chaque église où l'appartenance a été
-      // détectée ci-dessus, sauf si un rôle SECRETARY réel existe déjà (idempotence). Elle
-      // ne porte ni ministryId ni départements : elle n'existe que pour la matrice de
-      // permissions (voir ADR-0014, plan.md).
-      for (const churchId of secretariatChurchIds) {
-        const hasRealSecretaryRole = session.user.churchRoles.some(
-          (cr) => cr.churchId === churchId && cr.role === "SECRETARY"
-        );
-        if (hasRealSecretaryRole) continue;
-
-        const churchInfo = session.user.churchRoles.find((cr) => cr.churchId === churchId)?.church
-          ?? churchRoles.find((cr) => cr.churchId === churchId)?.church;
-        if (!churchInfo) continue;
-
-        session.user.churchRoles.push({
-          id: `virtual-secretariat-${churchId}`,
-          churchId,
-          role: "SECRETARY",
-          ministryId: null,
-          church: churchInfo,
-          departments: [],
-          virtual: true,
-        });
-      }
+      session.user.churchRoles = churchRoles.map((cr) => ({
+        ...cr,
+        ministryId: cr.ministry?.id ?? null,
+        departments: withExtraDepartments(cr.departments, ministerDeptMap.get(cr.id) ?? starDeptMap.get(cr.id)),
+      }));
+      addVirtualSecretaryRoles(session.user.churchRoles, churchRoles, secretariatChurchIds);
 
       return session;
     },
   },
 });
+
+// ── Construction de la session (callback `session` ci-dessus) ─────────────────
+
+type SessionDept = { id: string; name: string };
+
+function loadChurchRoles(userId: string) {
+  return prisma.userChurchRole.findMany({
+    where: { userId },
+    include: {
+      church: { select: { id: true, name: true, slug: true } },
+      ministry: { select: { id: true } },
+      departments: {
+        include: {
+          department: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+}
+
+type ChurchRoleRow = Awaited<ReturnType<typeof loadChurchRoles>>[number];
+
+/** Rôles MINISTER rattachés à un ministère : tous les départements de ce ministère. */
+async function loadMinisterDepartments(churchRoles: ChurchRoleRow[]): Promise<Map<string, SessionDept[]>> {
+  const ministerDeptMap = new Map<string, SessionDept[]>();
+  const ministerRoles = churchRoles.filter((cr) => cr.role === "MINISTER" && cr.ministryId);
+  const ministerDepts = await Promise.all(
+    ministerRoles.map((cr) =>
+      prisma.department.findMany({
+        where: { ministryId: cr.ministryId! },
+        select: { id: true, name: true },
+      })
+    )
+  );
+  ministerRoles.forEach((cr, i) => ministerDeptMap.set(cr.id, ministerDepts[i]));
+  return ministerDeptMap;
+}
+
+/**
+ * Départements de la fiche STAR liée, par église. Ils complètent le rôle STAR, et la même
+ * liaison détecte l'appartenance à l'équipe Secrétariat (spec 045), indépendamment du rôle
+ * détenu : un Faiseur de Disciples ou un Reporter membre de ce département doit être détecté
+ * au même titre qu'un STAR — d'où une résolution par église (et non filtrée sur
+ * `role === "STAR"`).
+ */
+async function loadLinkedDepartments(
+  userId: string,
+  churchRoles: ChurchRoleRow[]
+): Promise<{ starDeptMap: Map<string, SessionDept[]>; secretariatChurchIds: Set<string> }> {
+  const starDeptMap = new Map<string, SessionDept[]>();
+  const secretariatChurchIds = new Set<string>();
+  const distinctChurchIds = Array.from(new Set(churchRoles.map((cr) => cr.churchId)));
+  const links = await Promise.all(
+    distinctChurchIds.map((churchId) =>
+      prisma.memberUserLink.findUnique({
+        where: { userId_churchId: { userId, churchId } },
+        include: {
+          member: {
+            include: {
+              departments: {
+                include: {
+                  department: { select: { id: true, name: true, function: true } },
+                },
+              },
+            },
+          },
+        },
+      })
+    )
+  );
+  for (const [i, churchId] of distinctChurchIds.entries()) {
+    const link = links[i];
+    if (!link) continue;
+    const departments = link.member.departments.map((d) => d.department);
+    const starRole = churchRoles.find((cr) => cr.role === "STAR" && cr.churchId === churchId);
+    if (starRole) starDeptMap.set(starRole.id, departments.map(({ id, name }) => ({ id, name })));
+    if (departments.some((d) => d.function === DEPT_FN.SECRETARIAT)) secretariatChurchIds.add(churchId);
+  }
+  return { starDeptMap, secretariatChurchIds };
+}
+
+/**
+ * Profils pastoraux (multi-église) : par userId, puis par email (auto-liaison), plus les
+ * églises supervisées par ces profils.
+ */
+async function loadPastoralAccess(
+  userId: string,
+  email: string | null | undefined
+): Promise<{ pastoralProfileId: string | null; pastoralChurchIds: string[] }> {
+  const pastoralProfiles = await prisma.pastoralProfile.findMany({
+    where: { userId },
+    select: { id: true, churchId: true },
+  });
+  if (email) {
+    const unlinkedByEmail = await prisma.pastoralProfile.findMany({
+      where: { email, userId: null },
+      select: { id: true, churchId: true },
+    });
+    if (unlinkedByEmail.length > 0) {
+      await prisma.pastoralProfile.updateMany({
+        where: { id: { in: unlinkedByEmail.map((p) => p.id) } },
+        data: { userId },
+      });
+      const existingIds = new Set(pastoralProfiles.map((p) => p.id));
+      pastoralProfiles.push(...unlinkedByEmail.filter((p) => !existingIds.has(p.id)));
+    }
+  }
+  const profileIds = pastoralProfiles.map((p) => p.id);
+  const supervisedChurchIds = profileIds.length > 0
+    ? (await prisma.church.findMany({
+        where: { supervisorProfileId: { in: profileIds } },
+        select: { id: true },
+      })).map((c) => c.id)
+    : [];
+  const directChurchIds = new Set(pastoralProfiles.map((p) => p.churchId));
+  return {
+    pastoralProfileId: pastoralProfiles[0]?.id ?? null,
+    pastoralChurchIds: [...directChurchIds, ...supervisedChurchIds.filter((id) => !directChurchIds.has(id))],
+  };
+}
+
+/** Départements d'un rôle, complétés (sans doublon) par ceux du ministère ou de la fiche STAR. */
+function withExtraDepartments(
+  roleDepartments: ChurchRoleRow["departments"],
+  extraDepts: SessionDept[] | undefined
+): { department: SessionDept }[] {
+  const departments = roleDepartments.map((d) => ({ department: d.department }));
+  if (!extraDepts) return departments;
+  const existingIds = new Set(departments.map((d) => d.department.id));
+  for (const dept of extraDepts) {
+    if (!existingIds.has(dept.id)) departments.push({ department: dept });
+  }
+  return departments;
+}
+
+/**
+ * Parité des droits de l'équipe Secrétariat (spec 045, étape 1/2) : une entrée de rôle
+ * SECRETARY non persistée, ajoutée pour chaque église où l'appartenance a été détectée, sauf
+ * si un rôle SECRETARY réel existe déjà (idempotence). Elle ne porte ni ministryId ni
+ * départements : elle n'existe que pour la matrice de permissions (voir ADR-0014, plan.md).
+ */
+function addVirtualSecretaryRoles(
+  sessionRoles: Session["user"]["churchRoles"],
+  churchRoles: ChurchRoleRow[],
+  secretariatChurchIds: Set<string>
+) {
+  for (const churchId of secretariatChurchIds) {
+    const hasRealSecretaryRole = sessionRoles.some((cr) => cr.churchId === churchId && cr.role === "SECRETARY");
+    if (hasRealSecretaryRole) continue;
+    const churchInfo =
+      sessionRoles.find((cr) => cr.churchId === churchId)?.church ??
+      churchRoles.find((cr) => cr.churchId === churchId)?.church;
+    if (!churchInfo) continue;
+    sessionRoles.push({
+      id: `virtual-secretariat-${churchId}`,
+      churchId,
+      role: "SECRETARY",
+      ministryId: null,
+      church: churchInfo,
+      departments: [],
+      virtual: true,
+    });
+  }
+}
 
 export async function requireAuth() {
   const session = await auth();
@@ -514,129 +540,76 @@ export async function requireChurchAccess(churchId: string) {
   return session;
 }
 
+type ChurchResourceType =
+  | "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry"
+  | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent";
+
+const byId = (id: string) => ({ where: { id }, select: { churchId: true } }) as const;
+
+/**
+ * Pour chaque type de ressource : lecture de son église (`undefined` si la ressource n'existe
+ * pas) et message 404. Le membre est traité à part : son église est celle de son département
+ * principal.
+ */
+const CHURCH_RESOLVERS: Record<
+  Exclude<ChurchResourceType, "member">,
+  { notFound: string; load: (id: string) => Promise<string | undefined> }
+> = {
+  event: { notFound: "Événement introuvable", load: async (id) => (await prisma.event.findUnique(byId(id)))?.churchId },
+  department: {
+    notFound: "Département introuvable",
+    load: async (id) =>
+      (await prisma.department.findUnique({ where: { id }, include: { ministry: { select: { churchId: true } } } }))
+        ?.ministry.churchId,
+  },
+  request: { notFound: "Demande introuvable", load: async (id) => (await prisma.request.findUnique(byId(id)))?.churchId },
+  memberLinkRequest: {
+    notFound: "Demande de liaison introuvable",
+    load: async (id) => (await prisma.memberLinkRequest.findUnique(byId(id)))?.churchId,
+  },
+  announcement: { notFound: "Annonce introuvable", load: async (id) => (await prisma.announcement.findUnique(byId(id)))?.churchId },
+  ministry: { notFound: "Ministère introuvable", load: async (id) => (await prisma.ministry.findUnique(byId(id)))?.churchId },
+  mediaEvent: { notFound: "Événement média introuvable", load: async (id) => (await prisma.mediaEvent.findUnique(byId(id)))?.churchId },
+  mediaProject: { notFound: "Projet média introuvable", load: async (id) => (await prisma.mediaProject.findUnique(byId(id)))?.churchId },
+  appointmentRequest: {
+    notFound: "Demande de RDV introuvable",
+    load: async (id) => (await prisma.appointmentRequest.findUnique(byId(id)))?.churchId,
+  },
+  agendaEntry: { notFound: "Entrée agenda introuvable", load: async (id) => (await prisma.agendaEntry.findUnique(byId(id)))?.churchId },
+  pastoralProfile: {
+    notFound: "Profil pastoral introuvable",
+    load: async (id) => (await prisma.pastoralProfile.findUnique(byId(id)))?.churchId,
+  },
+  teamEvent: { notFound: "Événement d'équipe introuvable", load: async (id) => (await prisma.teamEvent.findUnique(byId(id)))?.churchId },
+};
+
 /**
  * Résout le churchId d'une ressource à partir de son type et de son identifiant.
  * Lève une ApiError 404 si la ressource n'existe pas.
  */
-export async function resolveChurchId(
-  resourceType: "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry" | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent",
-  resourceId: string
-): Promise<string> {
+export async function resolveChurchId(resourceType: ChurchResourceType, resourceId: string): Promise<string> {
   const { ApiError } = await import("./api-utils");
 
-  switch (resourceType) {
-    case "event": {
-      const event = await prisma.event.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!event) throw new ApiError(404, "Événement introuvable");
-      return event.churchId;
-    }
-    case "department": {
-      const dept = await prisma.department.findUnique({
-        where: { id: resourceId },
-        include: { ministry: { select: { churchId: true } } },
-      });
-      if (!dept) throw new ApiError(404, "Département introuvable");
-      return dept.ministry.churchId;
-    }
-    case "member": {
-      const member = await prisma.member.findUnique({
-        where: { id: resourceId },
-        include: {
-          departments: {
-            where: { isPrimary: true },
-            include: { department: { include: { ministry: { select: { churchId: true } } } } },
-          },
+  if (resourceType === "member") {
+    const member = await prisma.member.findUnique({
+      where: { id: resourceId },
+      include: {
+        departments: {
+          where: { isPrimary: true },
+          include: { department: { include: { ministry: { select: { churchId: true } } } } },
         },
-      });
-      if (!member) throw new ApiError(404, "Membre introuvable");
-      const primary = member.departments[0];
-      if (!primary) throw new ApiError(404, "Membre sans département principal");
-      return primary.department.ministry.churchId;
-    }
-    case "request": {
-      const req = await prisma.request.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!req) throw new ApiError(404, "Demande introuvable");
-      return req.churchId;
-    }
-    case "memberLinkRequest": {
-      const mlr = await prisma.memberLinkRequest.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!mlr) throw new ApiError(404, "Demande de liaison introuvable");
-      return mlr.churchId;
-    }
-    case "announcement": {
-      const ann = await prisma.announcement.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!ann) throw new ApiError(404, "Annonce introuvable");
-      return ann.churchId;
-    }
-    case "ministry": {
-      const ministry = await prisma.ministry.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!ministry) throw new ApiError(404, "Ministère introuvable");
-      return ministry.churchId;
-    }
-    case "mediaEvent": {
-      const me = await prisma.mediaEvent.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!me) throw new ApiError(404, "Événement média introuvable");
-      return me.churchId;
-    }
-    case "mediaProject": {
-      const mp = await prisma.mediaProject.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!mp) throw new ApiError(404, "Projet média introuvable");
-      return mp.churchId;
-    }
-    case "appointmentRequest": {
-      const ar = await prisma.appointmentRequest.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!ar) throw new ApiError(404, "Demande de RDV introuvable");
-      return ar.churchId;
-    }
-    case "agendaEntry": {
-      const ae = await prisma.agendaEntry.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!ae) throw new ApiError(404, "Entrée agenda introuvable");
-      return ae.churchId;
-    }
-    case "pastoralProfile": {
-      const pp = await prisma.pastoralProfile.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!pp) throw new ApiError(404, "Profil pastoral introuvable");
-      return pp.churchId;
-    }
-    case "teamEvent": {
-      const te = await prisma.teamEvent.findUnique({
-        where: { id: resourceId },
-        select: { churchId: true },
-      });
-      if (!te) throw new ApiError(404, "Événement d'équipe introuvable");
-      return te.churchId;
-    }
+      },
+    });
+    if (!member) throw new ApiError(404, "Membre introuvable");
+    const primary = member.departments[0];
+    if (!primary) throw new ApiError(404, "Membre sans département principal");
+    return primary.department.ministry.churchId;
   }
+
+  const { notFound, load } = CHURCH_RESOLVERS[resourceType];
+  const churchId = await load(resourceId);
+  if (!churchId) throw new ApiError(404, notFound);
+  return churchId;
 }
 
 // ── Media access helpers ──────────────────────────────────────────────────────

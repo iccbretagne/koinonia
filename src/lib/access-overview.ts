@@ -108,53 +108,31 @@ async function loadDepartmentsByUser(
  * Accès hérités d'un mécanisme autre qu'un rôle d'église, pour chaque personne de `userIds`.
  * Une requête par source, pas une par personne (spec 054, plan.md).
  */
-export async function listInheritedAccess(
-  churchId: string,
-  userIds: string[]
-): Promise<Map<string, InheritedAccess[]>> {
-  const result = new Map<string, InheritedAccess[]>();
-  if (userIds.length === 0) return result;
+type AddAccess = (userId: string, access: InheritedAccess) => void;
 
-  const add = (userId: string, access: InheritedAccess) => {
-    const list = result.get(userId) ?? [];
-    list.push(access);
-    result.set(userId, list);
-  };
-
-  // ── Fonctions de département (ADR-0014) ─────────────────────────────────────────────────
-  const { any: deptsByUser, asHead: headDeptsByUser } = await loadDepartmentsByUser(churchId, userIds);
+/**
+ * Fonctions de département (ADR-0014) : une entrée par fonction donnant un accès dans un module
+ * actif, au plus une fois par personne. `headOnly` lit le libellé réservé aux responsables.
+ */
+function addFunctionAccess(deptsByUser: Map<string, DeptRow[]>, add: AddAccess, headOnly: boolean) {
   for (const [userId, depts] of deptsByUser) {
     const seenFunctions = new Set<string>();
     for (const dept of depts) {
       const fn = dept.function as DeptFunction | null;
       if (!fn || seenFunctions.has(fn)) continue;
       const entry = FUNCTION_ACCESS[fn];
-      if (!entry || !registry.has(entry.module)) continue;
+      const label = headOnly ? entry?.headLabel : entry?.label;
+      if (!entry || !label || !registry.has(entry.module)) continue;
       seenFunctions.add(fn);
-      add(userId, {
-        source: "department-function",
-        label: entry.label,
-        origin: `Membre d'un département de fonction ${fn}`,
-      });
+      add(userId, headOnly
+        ? { source: "department-head-function", label, origin: `Responsable d'un département de fonction ${fn}` }
+        : { source: "department-function", label, origin: `Membre d'un département de fonction ${fn}` });
     }
   }
-  for (const [userId, depts] of headDeptsByUser) {
-    const seenFunctions = new Set<string>();
-    for (const dept of depts) {
-      const fn = dept.function as DeptFunction | null;
-      if (!fn || seenFunctions.has(fn)) continue;
-      const entry = FUNCTION_ACCESS[fn];
-      if (!entry?.headLabel || !registry.has(entry.module)) continue;
-      seenFunctions.add(fn);
-      add(userId, {
-        source: "department-head-function",
-        label: entry.headLabel,
-        origin: `Responsable d'un département de fonction ${fn}`,
-      });
-    }
-  }
+}
 
-  // ── Équipe Secrétariat (spec 045) : rôle Secrétaire virtuel, non retirable ─────────────────
+/** Équipe Secrétariat (spec 045) : rôle Secrétaire virtuel, non retirable. */
+function addSecretariatAccess(deptsByUser: Map<string, DeptRow[]>, add: AddAccess) {
   for (const [userId, depts] of deptsByUser) {
     if (depts.some((d) => d.function === "SECRETARIAT")) {
       add(userId, {
@@ -164,8 +142,10 @@ export async function listInheritedAccess(
       });
     }
   }
+}
 
-  // ── Profil pastoral lié (lecture seule) ──────────────────────────────────────────────────
+/** Profil pastoral lié (lecture seule). */
+async function addPastoralAccess(churchId: string, userIds: string[], add: AddAccess) {
   const pastoralProfiles = await prisma.pastoralProfile.findMany({
     where: { churchId, userId: { in: userIds } },
     select: { userId: true, name: true },
@@ -178,8 +158,10 @@ export async function listInheritedAccess(
       origin: `Profil pastoral lié (${profile.name})`,
     });
   }
+}
 
-  // ── Berger / co-berger de famille ────────────────────────────────────────────────────────
+/** Berger / co-berger de famille. */
+async function addFamilyLeaderAccess(churchId: string, userIds: string[], add: AddAccess) {
   const assignments = await prisma.familyLeaderAssignment.findMany({
     where: { churchId, userId: { in: userIds } },
     select: { userId: true, familyId: true },
@@ -195,44 +177,71 @@ export async function listInheritedAccess(
       origin: `Berger/co-berger de ${count} famille${count > 1 ? "s" : ""}`,
     });
   }
+}
 
-  // ── Accompagnant en charge d'un suivi pastoral ouvert (spec 052) ────────────────────────
-  if (registry.has("care")) {
-    const [openAppointments, openFollowUps] = await Promise.all([
-      prisma.appointmentRequest.findMany({
-        where: {
-          churchId,
-          status: { in: ["PENDING", "VALIDATED", "SCHEDULED"] },
-          OR: [{ assignedMemberId: { in: userIds } }, { assignedTo: { userId: { in: userIds } } }],
-        },
-        select: { assignedMemberId: true, assignedTo: { select: { userId: true } } },
-      }),
-      prisma.msdpFollowUp.findMany({
-        where: {
-          churchId,
-          status: { in: ["SUBMITTED", "ASSIGNED", "CONTACTED", "IN_FORMATION"] },
-          OR: [{ assignedConseillerMsdpId: { in: userIds } }, { assignedProfile: { userId: { in: userIds } } }],
-        },
-        select: { assignedConseillerMsdpId: true, assignedProfile: { select: { userId: true } } },
-      }),
-    ]);
-    const careUserIds = new Set<string>();
-    for (const a of openAppointments) {
-      if (a.assignedMemberId) careUserIds.add(a.assignedMemberId);
-      if (a.assignedTo?.userId) careUserIds.add(a.assignedTo.userId);
-    }
-    for (const f of openFollowUps) {
-      if (f.assignedConseillerMsdpId) careUserIds.add(f.assignedConseillerMsdpId);
-      if (f.assignedProfile?.userId) careUserIds.add(f.assignedProfile.userId);
-    }
-    for (const userId of careUserIds) {
-      add(userId, {
-        source: "care-assignment",
-        label: "Ses demandes de rendez-vous pastoral / suivis en cours, uniquement",
-        origin: "Accompagnant en charge d'un suivi pastoral ouvert",
-      });
-    }
+/** Accompagnant en charge d'un suivi pastoral ouvert (spec 052). */
+async function addCareAccess(churchId: string, userIds: string[], add: AddAccess) {
+  const [openAppointments, openFollowUps] = await Promise.all([
+    prisma.appointmentRequest.findMany({
+      where: {
+        churchId,
+        status: { in: ["PENDING", "VALIDATED", "SCHEDULED"] },
+        OR: [{ assignedMemberId: { in: userIds } }, { assignedTo: { userId: { in: userIds } } }],
+      },
+      select: { assignedMemberId: true, assignedTo: { select: { userId: true } } },
+    }),
+    prisma.msdpFollowUp.findMany({
+      where: {
+        churchId,
+        status: { in: ["SUBMITTED", "ASSIGNED", "CONTACTED", "IN_FORMATION"] },
+        OR: [{ assignedConseillerMsdpId: { in: userIds } }, { assignedProfile: { userId: { in: userIds } } }],
+      },
+      select: { assignedConseillerMsdpId: true, assignedProfile: { select: { userId: true } } },
+    }),
+  ]);
+  const careUserIds = new Set<string>();
+  const addId = (id: string | null | undefined) => { if (id) careUserIds.add(id); };
+  for (const a of openAppointments) {
+    addId(a.assignedMemberId);
+    addId(a.assignedTo?.userId);
   }
+  for (const f of openFollowUps) {
+    addId(f.assignedConseillerMsdpId);
+    addId(f.assignedProfile?.userId);
+  }
+  for (const userId of careUserIds) {
+    add(userId, {
+      source: "care-assignment",
+      label: "Ses demandes de rendez-vous pastoral / suivis en cours, uniquement",
+      origin: "Accompagnant en charge d'un suivi pastoral ouvert",
+    });
+  }
+}
+
+/**
+ * Accès hérités d'un mécanisme autre qu'un rôle d'église, pour chaque personne de `userIds`.
+ * Une requête par source, pas une par personne (spec 054, plan.md).
+ */
+export async function listInheritedAccess(
+  churchId: string,
+  userIds: string[]
+): Promise<Map<string, InheritedAccess[]>> {
+  const result = new Map<string, InheritedAccess[]>();
+  if (userIds.length === 0) return result;
+
+  const add: AddAccess = (userId, access) => {
+    const list = result.get(userId) ?? [];
+    list.push(access);
+    result.set(userId, list);
+  };
+
+  const { any: deptsByUser, asHead: headDeptsByUser } = await loadDepartmentsByUser(churchId, userIds);
+  addFunctionAccess(deptsByUser, add, false);
+  addFunctionAccess(headDeptsByUser, add, true);
+  addSecretariatAccess(deptsByUser, add);
+  await addPastoralAccess(churchId, userIds, add);
+  await addFamilyLeaderAccess(churchId, userIds, add);
+  if (registry.has("care")) await addCareAccess(churchId, userIds, add);
 
   return result;
 }
