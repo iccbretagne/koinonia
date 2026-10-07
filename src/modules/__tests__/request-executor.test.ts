@@ -47,14 +47,18 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects MINISTER without ministryId", async () => {
+  it.each([
+    ["MINISTER without ministryId", { role: "MINISTER" }, "ministryId requis"],
+    ["DEPARTMENT_HEAD without departmentIds", { role: "DEPARTMENT_HEAD" }, "departmentIds requis"],
+    ["DEPARTMENT_HEAD with empty departmentIds", { role: "DEPARTMENT_HEAD", departmentIds: [] }, "departmentIds requis"],
+  ])("rejects %s", async (_label, request, expectedError) => {
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "MINISTER",
+      ...request,
     }, "approver-1");
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("ministryId requis");
+    expect(result.error).toContain(expectedError);
   });
 
   it("rejects MINISTER with cross-tenant ministryId", async () => {
@@ -81,27 +85,6 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     }, "approver-1");
 
     expect(result.success).toBe(true);
-  });
-
-  it("rejects DEPARTMENT_HEAD without departmentIds", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "DEPARTMENT_HEAD",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("departmentIds requis");
-  });
-
-  it("rejects DEPARTMENT_HEAD with empty departmentIds", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "DEPARTMENT_HEAD",
-      departmentIds: [],
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("departmentIds requis");
   });
 
   it("rejects DEPARTMENT_HEAD with cross-tenant departmentIds", async () => {

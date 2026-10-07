@@ -231,10 +231,10 @@ export default function ParcoursView({ churchId, initialJourneys }: Props) {
               </div>
               <div className="mt-2">
                 <div className="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-surface-sunken">
-                  {[...new Array(milestoneCount(j))].map((_, i) => (
+                  {Array.from({ length: milestoneCount(j) }, (_, i) => (
                     <div key={i} className="flex-1 bg-brand" />
                   ))}
-                  {[...new Array(4 - milestoneCount(j))].map((_, i) => (
+                  {Array.from({ length: 4 - milestoneCount(j) }, (_, i) => (
                     <div key={i} className="flex-1" />
                   ))}
                 </div>
