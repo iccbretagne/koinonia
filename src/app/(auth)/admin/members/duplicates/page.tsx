@@ -5,11 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import DuplicatesView from "./DuplicatesView";
 import { buttonClasses } from "@/components/ui/button-classes";
-function compareCodePoint(a: string, b: string): number {
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
-}
+import { duplicateGroups } from "@/lib/member-duplicates";
 
 export default async function DuplicatesPage() {
   const session = await requireAuth();
@@ -44,51 +40,9 @@ export default async function DuplicatesPage() {
     },
   });
 
-  // Détection doublons : même nom normalisé ou même email
   type MemberRow = (typeof members)[number];
-  type DuplicateGroup = { reason: "same_name" | "same_email" | "both"; members: MemberRow[] };
-
-  const byName = new Map<string, MemberRow[]>();
-  for (const m of members) {
-    const key = `${m.firstName.trim().toLowerCase()} ${m.lastName.trim().toLowerCase()}`;
-    const b = byName.get(key) ?? [];
-    b.push(m);
-    byName.set(key, b);
-  }
-
-  const byEmail = new Map<string, MemberRow[]>();
-  for (const m of members) {
-    if (!m.email) continue;
-    const key = m.email.trim().toLowerCase();
-    const b = byEmail.get(key) ?? [];
-    b.push(m);
-    byEmail.set(key, b);
-  }
-
-  // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
-  const pairKey = (ids: string[]) => [...ids].sort(compareCodePoint).join("|");
-  const groups: DuplicateGroup[] = [];
-  const seen = new Set<string>();
-
-  for (const bucket of byName.values()) {
-    if (bucket.length < 2) continue;
-    const key = pairKey(bucket.map((m) => m.id));
-    if (seen.has(key)) continue;
-    seen.add(key);
-    groups.push({ reason: "same_name", members: bucket });
-  }
-
-  for (const bucket of byEmail.values()) {
-    if (bucket.length < 2) continue;
-    const key = pairKey(bucket.map((m) => m.id));
-    const existing = groups.find((g) => pairKey(g.members.map((m) => m.id)) === key);
-    if (existing) {
-      existing.reason = "both";
-    } else if (!seen.has(key)) {
-      seen.add(key);
-      groups.push({ reason: "same_email", members: bucket });
-    }
-  }
+  // Détection doublons : même nom normalisé ou même email
+  const groups = duplicateGroups(members);
 
   function serializeMember(m: MemberRow) {
     return {

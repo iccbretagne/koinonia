@@ -1,0 +1,1314 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre église 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+    {
+      "id": "church-2",
+      "name": "Brest",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/churches/church-1",
+      "label": "Paramètres de l'église",
+    },
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/rooms",
+      "label": "Salles",
+    },
+    {
+      "href": "/admin/users",
+      "label": "Utilisateurs",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+    {
+      "href": "/admin/pastoral-profiles",
+      "label": "Profils pastoraux",
+    },
+    {
+      "href": "/admin/audit-logs",
+      "label": "Historique",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-a",
+      "ministryName": "Service",
+      "name": "Accueil",
+    },
+    {
+      "id": "d-b",
+      "ministryName": "Louange",
+      "name": "Choristes",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": true,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": true,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+    {
+      "href": "/secretariat/requests",
+      "label": "Traitement des demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "ADMIN",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin choisie 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+    {
+      "id": "church-P",
+      "name": "Pastorale",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/churches/church-1",
+      "label": "Paramètres de l'église",
+    },
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/rooms",
+      "label": "Salles",
+    },
+    {
+      "href": "/admin/users",
+      "label": "Utilisateurs",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+    {
+      "href": "/admin/pastoral-profiles",
+      "label": "Profils pastoraux",
+    },
+    {
+      "href": "/admin/audit-logs",
+      "label": "Historique",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-a",
+      "ministryName": "Service",
+      "name": "Accueil",
+    },
+    {
+      "id": "d-b",
+      "ministryName": "Louange",
+      "name": "Choristes",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": true,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": true,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": true,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+    {
+      "href": "/secretariat/requests",
+      "label": "Traitement des demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "ADMIN",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/churches/church-1",
+      "label": "Paramètres de l'église",
+    },
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/rooms",
+      "label": "Salles",
+    },
+    {
+      "href": "/admin/users",
+      "label": "Utilisateurs",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+    {
+      "href": "/admin/pastoral-profiles",
+      "label": "Profils pastoraux",
+    },
+    {
+      "href": "/admin/audit-logs",
+      "label": "Historique",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-a",
+      "ministryName": "Service",
+      "name": "Accueil",
+    },
+    {
+      "id": "d-b",
+      "ministryName": "Louange",
+      "name": "Choristes",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": true,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": true,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": true,
+  "hasPlanningAccess": true,
+  "hasReports": true,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+    {
+      "href": "/secretariat/requests",
+      "label": "Traitement des demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "ADMIN",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Comptable 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Rennes",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": false,
+  "hasEventsAccess": false,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": false,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "ACCOUNTANT",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Ministre 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "dept-1",
+      "name": "Choristes",
+    },
+    {
+      "id": "dept-2",
+      "name": "Musiciens",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": false,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "MINISTER",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Pasteur seul (profil pastoral, vue pastorale) 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda/pp-1",
+      "label": "Mon agenda",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-P",
+      "name": "Pastorale",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": false,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": false,
+  "hasJobs": false,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#123456",
+  "homeHref": "/pastoral",
+  "integrationLinks": [],
+  "isPastoral": true,
+  "mediaLinks": [],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "DEPARTMENT_HEAD",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Resp. département Communication, Photos repliées sur Production Média 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-com",
+      "name": "Com",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": false,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "DEPARTMENT_HEAD",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Resp. département Production Média et Intégration 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-prod",
+      "name": "Prod",
+    },
+    {
+      "id": "d-int",
+      "name": "Int",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": false,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "DEPARTMENT_HEAD",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Référent soins pastoraux 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": false,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": false,
+  "hasEventsAccess": false,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": false,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "PASTORAL_CARE_REFERENT",
+}
+`;
+
+exports[`AuthLayout — props de navigation > STAR du Protocole 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": false,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": false,
+  "hasEventsAccess": false,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": false,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/agenda/request",
+      "label": "Demande RDV pastoral",
+    },
+  ],
+  "showStarEvents": true,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "STAR",
+}
+`;
+
+exports[`AuthLayout — props de navigation > STAR lié, berger de famille 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [],
+  "currentChurchId": "church-1",
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": false,
+  "hasAvailability": true,
+  "hasBothRoles": false,
+  "hasDiscipleship": false,
+  "hasEventsAccess": false,
+  "hasEventsManage": false,
+  "hasJobs": true,
+  "hasMembersAccess": false,
+  "hasMyPlanning": true,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/agenda/request",
+      "label": "Demande RDV pastoral",
+    },
+  ],
+  "showStarEvents": true,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "STAR",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral propre 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda/pp-1",
+      "label": "Mon agenda",
+    },
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-a",
+      "ministryName": "Service",
+      "name": "Accueil",
+    },
+    {
+      "id": "d-b",
+      "ministryName": "Louange",
+      "name": "Choristes",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": false,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": true,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": true,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+    {
+      "href": "/secretariat/requests",
+      "label": "Traitement des demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "SECRETARY",
+}
+`;
+
+exports[`AuthLayout — props de navigation > Super Admin 1`] = `
+{
+  "agendaLinks": [
+    {
+      "href": "/agenda",
+      "label": "Vue agenda",
+    },
+    {
+      "href": "/agenda/schedule",
+      "label": "Planification",
+    },
+    {
+      "href": "/care",
+      "label": "Suivi pastoral",
+    },
+  ],
+  "churchName": "Rennes",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/churches",
+      "label": "Églises",
+    },
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/rooms",
+      "label": "Salles",
+    },
+    {
+      "href": "/admin/users",
+      "label": "Utilisateurs",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+    {
+      "href": "/admin/pastoral-profiles",
+      "label": "Profils pastoraux",
+    },
+    {
+      "href": "/admin/audit-logs",
+      "label": "Historique",
+    },
+    {
+      "href": "/admin/backups",
+      "label": "Sauvegardes",
+    },
+  ],
+  "currentChurchId": "church-1",
+  "departments": [
+    {
+      "id": "d-a",
+      "ministryName": "Service",
+      "name": "Accueil",
+    },
+    {
+      "id": "d-b",
+      "ministryName": "Louange",
+      "name": "Choristes",
+    },
+  ],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": true,
+  "hasAccounting": true,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": true,
+  "hasEventsAccess": true,
+  "hasEventsManage": true,
+  "hasJobs": true,
+  "hasMembersAccess": true,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": true,
+  "hasReports": true,
+  "hasRooms": true,
+  "headerColor": "#123456",
+  "homeHref": "/accueil",
+  "integrationLinks": [
+    {
+      "href": "/integration/requests",
+      "label": "Intégration",
+    },
+    {
+      "href": "/integration/leaders",
+      "label": "Bergers de famille",
+    },
+    {
+      "href": "/integration/parcours",
+      "label": "Parcours d'intégration",
+    },
+    {
+      "href": "/integration/stats",
+      "label": "Statistiques intégration",
+    },
+    {
+      "href": "/integration/parametres",
+      "label": "Paramètres intégration",
+    },
+  ],
+  "isPastoral": false,
+  "mediaLinks": [
+    {
+      "href": "/media",
+      "label": "Communication & Production",
+      "matchPrefixes": [
+        "/media",
+        "/communication",
+      ],
+    },
+    {
+      "href": "/audio",
+      "label": "Audio",
+    },
+  ],
+  "requestLinks": [
+    {
+      "href": "/requests",
+      "label": "Mes demandes",
+    },
+    {
+      "href": "/secretariat/requests",
+      "label": "Traitement des demandes",
+    },
+  ],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "SUPER_ADMIN",
+}
+`;
+
+exports[`AuthLayout — props de navigation > sans église courante, ni départements d'admin ni sections d'église 1`] = `
+{
+  "agendaLinks": [],
+  "churchName": "Église",
+  "churches": [
+    {
+      "id": "church-1",
+      "name": "Test Church",
+    },
+  ],
+  "configLinks": [
+    {
+      "href": "/admin/churches",
+      "label": "Églises",
+    },
+    {
+      "href": "/admin/ministries",
+      "label": "Ministères",
+    },
+    {
+      "href": "/admin/departments",
+      "label": "Départements",
+    },
+    {
+      "href": "/admin/departments/functions",
+      "label": "Fonctions dép.",
+    },
+    {
+      "href": "/admin/rooms",
+      "label": "Salles",
+    },
+    {
+      "href": "/admin/users",
+      "label": "Utilisateurs",
+    },
+    {
+      "href": "/admin/access",
+      "label": "Accès & rôles",
+    },
+    {
+      "href": "/admin/pastoral-profiles",
+      "label": "Profils pastoraux",
+    },
+    {
+      "href": "/admin/audit-logs",
+      "label": "Historique",
+    },
+    {
+      "href": "/admin/backups",
+      "label": "Sauvegardes",
+    },
+  ],
+  "currentChurchId": null,
+  "departments": [],
+  "famillesUrl": "https://familles.iccrennes.fr",
+  "hasAbsences": false,
+  "hasAccounting": false,
+  "hasAvailability": false,
+  "hasBothRoles": false,
+  "hasDiscipleship": false,
+  "hasEventsAccess": false,
+  "hasEventsManage": true,
+  "hasJobs": false,
+  "hasMembersAccess": false,
+  "hasMyPlanning": false,
+  "hasPlanningAccess": false,
+  "hasReports": false,
+  "hasRooms": false,
+  "headerColor": "#5E17EB",
+  "homeHref": "/accueil",
+  "integrationLinks": [],
+  "isPastoral": false,
+  "mediaLinks": [],
+  "requestLinks": [],
+  "showStarEvents": false,
+  "user": {
+    "email": "test@example.com",
+    "image": null,
+    "name": "Test User",
+  },
+  "userRole": "DEPARTMENT_HEAD",
+}
+`;

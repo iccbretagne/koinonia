@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import type { Session } from "next-auth";
 import { auth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
 import { rolePermissions } from "@/lib/registry";
 import { isPastoralView } from "@/lib/view-mode";
@@ -31,6 +32,106 @@ function SelectPrompt({ needsDepartment }: { readonly needsDepartment: boolean }
       />
     </div>
   );
+}
+
+type DashboardView = string;
+const DEPARTMENT_VIEWS = new Set(["week", "tasks", "month", "team"]);
+
+/** Département proposé par défaut : le premier de l'église pour l'administration, sinon le sien. */
+async function defaultDepartmentId(session: Session, churchId: string) {
+  const isAdmin = session.user.churchRoles.some(
+    (r) =>
+      r.churchId === churchId &&
+      (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
+  );
+  if (isAdmin) {
+    const firstDept = await prisma.department.findFirst({
+      where: { ministry: { churchId } },
+      orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
+      select: { id: true },
+    });
+    return firstDept?.id;
+  }
+  const userDepts = session.user.churchRoles
+    .filter((r) => r.churchId === churchId)
+    .flatMap((r) => r.departments);
+  return userDepts[0]?.department?.id;
+}
+
+/**
+ * URL de redirection, s'il en faut une : choisir un département quand aucun n'est indiqué, ou
+ * relancer la page avec la visite guidée lors d'une première venue.
+ */
+async function dashboardRedirect(
+  session: Session,
+  churchId: string,
+  params: { dept?: string; event?: string; view: DashboardView; tour?: string },
+  shouldTriggerTour: boolean
+) {
+  const { dept, event, view, tour } = params;
+  // Auto-select first department when none is specified
+  if (!dept) {
+    const firstDeptId = await defaultDepartmentId(session, churchId);
+    if (!firstDeptId) return null;
+    const qs = new URLSearchParams({ dept: firstDeptId });
+    if (view !== "event") qs.set("view", view);
+    if (tour) qs.set("tour", tour);
+    if (shouldTriggerTour) qs.set("tour", "1");
+    return `/dashboard?${qs.toString()}`;
+  }
+  // If dept is already selected but tour hasn't been seen, redirect with tour=1
+  if (!shouldTriggerTour) return null;
+  const qs = new URLSearchParams();
+  qs.set("dept", dept);
+  if (event) qs.set("event", event);
+  if (view !== "event") qs.set("view", view);
+  qs.set("tour", "1");
+  return `/dashboard?${qs.toString()}`;
+}
+
+/** Contenu principal selon la vue : planning hebdo/mensuel, tâches, équipe, ou grille d'un événement. */
+function dashboardContent({
+  view,
+  churchId,
+  deptId,
+  eventId,
+  departmentName,
+  churchName,
+  canEdit,
+}: {
+  view: DashboardView;
+  churchId: string;
+  deptId?: string;
+  eventId?: string;
+  departmentName?: string;
+  churchName?: string;
+  canEdit: boolean;
+}): ReactNode {
+  if (DEPARTMENT_VIEWS.has(view) && !deptId) return <SelectPrompt needsDepartment />;
+  if (deptId) {
+    switch (view) {
+      case "week":
+        return (
+          <WeeklyPlanningView
+            churchId={churchId}
+            departmentId={deptId}
+            departmentName={departmentName}
+            churchName={churchName}
+            canEdit={canEdit}
+          />
+        );
+      case "tasks":
+        return <DepartmentTasksView departmentId={deptId} departmentName={departmentName} readOnly={!canEdit} />;
+      case "month":
+        return <MonthlyPlanningView departmentId={deptId} departmentName={departmentName} churchName={churchName} />;
+      case "team":
+        return <TeamEventsView departmentId={deptId} departmentName={departmentName} canEdit={canEdit} />;
+    }
+  }
+  if (eventId && deptId) {
+    return <PlanningGrid eventId={eventId} departmentId={deptId} readOnly={!canEdit} />;
+  }
+  return <SelectPrompt needsDepartment={!deptId} />;
 }
 
 interface DashboardProps {
@@ -87,47 +188,13 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     !tour &&
     session.user.churchRoles.length > 0;
 
-  // Auto-select first department when none is specified
-  if (!selectedDeptId) {
-    const isAdmin = session.user.churchRoles.some(
-      (r) =>
-        r.churchId === currentChurchId &&
-        (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
-    );
-
-    let firstDeptId: string | undefined;
-    if (isAdmin) {
-      const firstDept = await prisma.department.findFirst({
-        where: { ministry: { churchId: currentChurchId } },
-        orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-        select: { id: true },
-      });
-      firstDeptId = firstDept?.id;
-    } else {
-      const userDepts = session.user.churchRoles
-        .filter((r) => r.churchId === currentChurchId)
-        .flatMap((r) => r.departments);
-      firstDeptId = userDepts[0]?.department?.id;
-    }
-
-    if (firstDeptId) {
-      const qs = new URLSearchParams({ dept: firstDeptId });
-      if (view !== "event") qs.set("view", view);
-      if (tour) qs.set("tour", tour);
-      if (shouldTriggerTour) qs.set("tour", "1");
-      redirect(`/dashboard?${qs.toString()}`);
-    }
-  }
-
-  // If dept is already selected but tour hasn't been seen, redirect with tour=1
-  if (shouldTriggerTour && selectedDeptId) {
-    const qs = new URLSearchParams();
-    qs.set("dept", selectedDeptId);
-    if (selectedEventId) qs.set("event", selectedEventId);
-    if (view !== "event") qs.set("view", view);
-    qs.set("tour", "1");
-    redirect(`/dashboard?${qs.toString()}`);
-  }
+  const redirectUrl = await dashboardRedirect(
+    session,
+    currentChurchId,
+    { dept: selectedDeptId, event: selectedEventId, view, tour },
+    shouldTriggerTour
+  );
+  if (redirectUrl) redirect(redirectUrl);
 
   // Get church name for the current church
   const hasCurrentChurchRole = session.user.churchRoles.some(
@@ -142,7 +209,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
 
   // Fetch department name (for month, tasks and week views)
   const selectedDepartment =
-    (view === "month" || view === "tasks" || view === "week" || view === "team") && selectedDeptId
+    DEPARTMENT_VIEWS.has(view) && selectedDeptId
       ? await prisma.department.findUnique({
           where: { id: selectedDeptId },
           select: { name: true },
@@ -174,50 +241,15 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
     selectedDepartment?.name ??
     events.flatMap((e) => e.eventDepts).find((ed) => ed.departmentId === selectedDeptId)?.department.name;
 
-  let content: ReactNode;
-  if (view === "week" && selectedDeptId) {
-    content = (
-      <WeeklyPlanningView
-        churchId={currentChurchId}
-        departmentId={selectedDeptId}
-        departmentName={selectedDepartment?.name}
-        churchName={churchName}
-        canEdit={canEditPlanning}
-      />
-    );
-  } else if (view === "tasks" && selectedDeptId) {
-    content = (
-      <DepartmentTasksView
-        departmentId={selectedDeptId}
-        departmentName={selectedDepartment?.name}
-        readOnly={!canEditPlanning}
-      />
-    );
-  } else if (view === "month" && selectedDeptId) {
-    content = (
-      <MonthlyPlanningView departmentId={selectedDeptId} departmentName={selectedDepartment?.name} churchName={churchName} />
-    );
-  } else if (view === "team" && selectedDeptId) {
-    content = (
-      <TeamEventsView
-        departmentId={selectedDeptId}
-        departmentName={selectedDepartment?.name}
-        canEdit={canEditPlanning}
-      />
-    );
-  } else if (view === "week" || view === "tasks" || view === "month" || view === "team") {
-    content = <SelectPrompt needsDepartment />;
-  } else if (selectedEventId && selectedDeptId) {
-    content = (
-      <PlanningGrid
-        eventId={selectedEventId}
-        departmentId={selectedDeptId}
-        readOnly={!canEditPlanning}
-      />
-    );
-  } else {
-    content = <SelectPrompt needsDepartment={!selectedDeptId} />;
-  }
+  const content = dashboardContent({
+    view,
+    churchId: currentChurchId,
+    deptId: selectedDeptId,
+    eventId: selectedEventId,
+    departmentName: selectedDepartment?.name,
+    churchName,
+    canEdit: canEditPlanning,
+  });
 
   return (
     <div className="flex flex-col gap-6">
