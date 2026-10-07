@@ -22,6 +22,92 @@ function getPeriodRange(period: Period): { from: Date; to: Date } {
   return { from, to };
 }
 
+type StatsPayment = { amount: unknown; releasedAt: Date | null; releasedAmount: unknown };
+type StatsRequest = {
+  status: string;
+  type: string;
+  amount: unknown;
+  departmentId: string | null;
+  department: { name: string } | null;
+  payments: StatsPayment[];
+};
+
+const sumAmounts = (requests: StatsRequest[]) => requests.reduce((s, r) => s + Number(r.amount), 0);
+
+/** Montant effectivement versé : le montant libéré s'il diffère, sinon le montant prévu. */
+const releasedTotal = (payments: StatsPayment[]) =>
+  payments
+    .filter((p) => p.releasedAt !== null)
+    .reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0);
+
+function overview(requests: StatsRequest[]) {
+  const withStatus = (...statuses: string[]) => requests.filter((r) => statuses.includes(r.status));
+  const eligibleCount = requests.length - withStatus("CANCELLED").length;
+  return {
+    totalRequests: requests.length,
+    totalAmount: sumAmounts(requests.filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")),
+    approvedAmount: sumAmounts(withStatus("APPROVED")),
+    releasedAmount: releasedTotal(requests.flatMap((r) => r.payments)),
+    pendingAmount: sumAmounts(withStatus("SUBMITTED", "PROCESSING")),
+    rejectedCount: withStatus("REJECTED").length,
+    cancelledCount: withStatus("CANCELLED").length,
+    approvalRate:
+      eligibleCount > 0 ? Math.round((withStatus("APPROVED").length / eligibleCount) * 100) : null,
+  };
+}
+
+/** Nombre et montant par valeur de clé, dans l'ordre de première apparition. */
+function countAndAmountBy(requests: StatsRequest[], keyOf: (r: StatsRequest) => string) {
+  const totals = new Map<string, { count: number; amount: number }>();
+  for (const r of requests) {
+    const entry = totals.get(keyOf(r)) ?? { count: 0, amount: 0 };
+    entry.count++;
+    entry.amount += Number(r.amount);
+    totals.set(keyOf(r), entry);
+  }
+  return [...totals];
+}
+
+function byDepartment(requests: StatsRequest[]) {
+  const deptMap = new Map<string, { name: string; count: number; amount: number; released: number }>();
+  for (const r of requests) {
+    const key = r.departmentId ?? "__personal__";
+    const entry = deptMap.get(key) ?? { name: r.department?.name ?? "Personnel", count: 0, amount: 0, released: 0 };
+    entry.count++;
+    entry.amount += Number(r.amount);
+    entry.released += releasedTotal(r.payments);
+    deptMap.set(key, entry);
+  }
+  return [...deptMap.values()].sort((a, b) => b.amount - a.amount);
+}
+
+const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+/** Montants soumis et versés sur les 12 mois commençant à `since`. */
+function monthlyTrend(
+  since: Date,
+  trendRequests: { createdAt: Date; amount: unknown }[],
+  trendPayments: StatsPayment[]
+) {
+  const months = new Map<string, { submitted: number; released: number }>();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(since);
+    d.setMonth(d.getMonth() + i);
+    months.set(monthKey(d), { submitted: 0, released: 0 });
+  }
+  for (const r of trendRequests) {
+    const entry = months.get(monthKey(r.createdAt));
+    if (entry) entry.submitted += Number(r.amount);
+  }
+  for (const p of trendPayments) {
+    const entry = p.releasedAt ? months.get(monthKey(p.releasedAt)) : undefined;
+    if (entry) entry.released += Number(p.releasedAmount ?? p.amount);
+  }
+  return [...months]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, v]) => ({ month, ...v }));
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -46,67 +132,6 @@ export async function GET(request: Request) {
       },
     });
 
-    // ── Vue d'ensemble ────────────────────────────────────────────────────────
-    const allPayments = requests.flatMap((r) => r.payments);
-    const releasedAmount = allPayments
-      .filter((p) => p.releasedAt !== null)
-      .reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0);
-
-    const totalAmount = requests
-      .filter((r) => r.status !== "CANCELLED" && r.status !== "REJECTED")
-      .reduce((s, r) => s + Number(r.amount), 0);
-
-    const approvedAmount = requests
-      .filter((r) => r.status === "APPROVED")
-      .reduce((s, r) => s + Number(r.amount), 0);
-
-    const pendingAmount = requests
-      .filter((r) => r.status === "SUBMITTED" || r.status === "PROCESSING")
-      .reduce((s, r) => s + Number(r.amount), 0);
-
-    const rejectedCount = requests.filter((r) => r.status === "REJECTED").length;
-    const cancelledCount = requests.filter((r) => r.status === "CANCELLED").length;
-    const eligibleCount = requests.filter((r) => r.status !== "CANCELLED").length;
-    const approvalRate =
-      eligibleCount > 0
-        ? Math.round(
-            (requests.filter((r) => r.status === "APPROVED").length / eligibleCount) * 100
-          )
-        : null;
-
-    // ── Par statut ────────────────────────────────────────────────────────────
-    const statusMap: Record<string, { count: number; amount: number }> = {};
-    for (const r of requests) {
-      if (!statusMap[r.status]) statusMap[r.status] = { count: 0, amount: 0 };
-      statusMap[r.status].count++;
-      statusMap[r.status].amount += Number(r.amount);
-    }
-    const byStatus = Object.entries(statusMap).map(([status, v]) => ({ status, ...v }));
-
-    // ── Par type ──────────────────────────────────────────────────────────────
-    const typeMap: Record<string, { count: number; amount: number }> = {};
-    for (const r of requests) {
-      if (!typeMap[r.type]) typeMap[r.type] = { count: 0, amount: 0 };
-      typeMap[r.type].count++;
-      typeMap[r.type].amount += Number(r.amount);
-    }
-    const byType = Object.entries(typeMap).map(([type, v]) => ({ type, ...v }));
-
-    // ── Par département ───────────────────────────────────────────────────────
-    const deptMap: Record<string, { name: string; count: number; amount: number; released: number }> =
-      {};
-    for (const r of requests) {
-      const key = r.departmentId ?? "__personal__";
-      const name = r.department?.name ?? "Personnel";
-      if (!deptMap[key]) deptMap[key] = { name, count: 0, amount: 0, released: 0 };
-      deptMap[key].count++;
-      deptMap[key].amount += Number(r.amount);
-      deptMap[key].released += r.payments
-        .filter((p) => p.releasedAt !== null)
-        .reduce((s, p) => s + Number(p.releasedAmount ?? p.amount), 0);
-    }
-    const byDepartment = Object.values(deptMap).sort((a, b) => b.amount - a.amount);
-
     // ── Tendance mensuelle (12 derniers mois, indépendant de la période) ──────
     const trendSince = new Date();
     trendSince.setMonth(trendSince.getMonth() - 11);
@@ -126,28 +151,6 @@ export async function GET(request: Request) {
         select: { releasedAt: true, releasedAmount: true, amount: true },
       }),
     ]);
-
-    const monthSubmitted: Record<string, number> = {};
-    const monthReleased: Record<string, number> = {};
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(trendSince);
-      d.setMonth(d.getMonth() + i);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      monthSubmitted[key] = 0;
-      monthReleased[key] = 0;
-    }
-    for (const r of trendRequests) {
-      const key = `${r.createdAt.getFullYear()}-${String(r.createdAt.getMonth() + 1).padStart(2, "0")}`;
-      if (key in monthSubmitted) monthSubmitted[key] += Number(r.amount);
-    }
-    for (const p of trendPayments) {
-      if (!p.releasedAt) continue;
-      const key = `${p.releasedAt.getFullYear()}-${String(p.releasedAt.getMonth() + 1).padStart(2, "0")}`;
-      if (key in monthReleased) monthReleased[key] += Number(p.releasedAmount ?? p.amount);
-    }
-    const byMonth = Object.keys(monthSubmitted)
-      .sort((a, b) => a.localeCompare(b))
-      .map((month) => ({ month, submitted: monthSubmitted[month], released: monthReleased[month] }));
 
     // ── Paiements en retard ───────────────────────────────────────────────────
     const overdueRaw = await prisma.financialPayment.findMany({
@@ -170,20 +173,11 @@ export async function GET(request: Request) {
     return successResponse({
       period,
       dateRange: { from: from.toISOString(), to: to.toISOString() },
-      overview: {
-        totalRequests: requests.length,
-        totalAmount,
-        approvedAmount,
-        releasedAmount,
-        pendingAmount,
-        rejectedCount,
-        cancelledCount,
-        approvalRate,
-      },
-      byStatus,
-      byType,
-      byDepartment,
-      byMonth,
+      overview: overview(requests),
+      byStatus: countAndAmountBy(requests, (r) => r.status).map(([status, v]) => ({ status, ...v })),
+      byType: countAndAmountBy(requests, (r) => r.type).map(([type, v]) => ({ type, ...v })),
+      byDepartment: byDepartment(requests),
+      byMonth: monthlyTrend(trendSince, trendRequests, trendPayments),
       overduePayments,
     });
   } catch (error) {

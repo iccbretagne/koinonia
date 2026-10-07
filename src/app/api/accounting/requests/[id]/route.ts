@@ -81,6 +81,104 @@ export async function GET(
   }
 }
 
+type PatchBody = z.infer<typeof patchSchema>;
+type ExistingRequest = NonNullable<Awaited<ReturnType<typeof prisma.financialRequest.findUnique>>>;
+type ActionContext = { id: string; existing: ExistingRequest; userId: string; churchId: string };
+
+/** Seul le demandeur peut annuler, seulement si SUBMITTED. */
+async function cancelRequest({ id, existing, userId, churchId }: ActionContext) {
+  if (existing.submittedById !== userId) throw new ApiError(403, "Accès refusé");
+  if (existing.status !== "SUBMITTED") throw new ApiError(400, "Seule une demande en attente peut être annulée");
+
+  const updated = await prisma.financialRequest.update({
+    where: { id },
+    data: { status: "CANCELLED" },
+  });
+  await notifySubmitter(existing, "CANCELLED", churchId);
+  return updated;
+}
+
+async function processRequest(
+  { id, existing, userId, churchId }: ActionContext,
+  body: Extract<PatchBody, { action: "process" }>
+) {
+  if (existing.status !== "SUBMITTED") throw new ApiError(400, "La demande n'est pas en attente");
+  const updated = await prisma.financialRequest.update({
+    where: { id },
+    data: {
+      status:       "PROCESSING",
+      priority:     body.priority,
+      priorityNote: body.priorityNote,
+      processedById: userId,
+      processedAt:  new Date(),
+    },
+  });
+  await notifySubmitter(existing, "PROCESSING", churchId, body.priority, body.priorityNote);
+  return updated;
+}
+
+async function approveRequest(
+  { id, existing, churchId }: ActionContext,
+  body: Extract<PatchBody, { action: "approve" }>
+) {
+  if (existing.status !== "PROCESSING") throw new ApiError(400, "La demande n'est pas en cours de traitement");
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const req = await tx.financialRequest.update({
+      where: { id },
+      data: { status: "APPROVED" },
+    });
+    await tx.financialPayment.createMany({
+      data: body.payments.map((p) => ({
+        requestId:     id,
+        amount:        p.amount,
+        scheduledDate: new Date(p.scheduledDate),
+        note:          p.note,
+      })),
+    });
+    // Si demande récurrente : créer l'occurrence suivante
+    if (existing.seriesId) {
+      await createNextOccurrence(tx, existing);
+    }
+    return req;
+  });
+
+  await notifySubmitter(existing, "APPROVED", churchId);
+  return updated;
+}
+
+async function rejectRequest(
+  { id, existing, userId, churchId }: ActionContext,
+  body: Extract<PatchBody, { action: "reject" }>
+) {
+  if (!["SUBMITTED", "PROCESSING"].includes(existing.status)) {
+    throw new ApiError(400, "Cette demande ne peut plus être rejetée");
+  }
+  const updated = await prisma.financialRequest.update({
+    where: { id },
+    data: {
+      status:          "REJECTED",
+      rejectionReason: body.rejectionReason,
+      processedById:   userId,
+      processedAt:     new Date(),
+    },
+  });
+  await notifySubmitter(existing, "REJECTED", churchId, undefined, undefined, body.rejectionReason);
+  return updated;
+}
+
+/** Actions de la comptabilité, toutes soumises à accounting:manage. */
+function manageAction(context: ActionContext, body: Exclude<PatchBody, { action: "cancel" }>) {
+  switch (body.action) {
+    case "process":
+      return processRequest(context, body);
+    case "approve":
+      return approveRequest(context, body);
+    case "reject":
+      return rejectRequest(context, body);
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -98,84 +196,13 @@ export async function PATCH(
     if (existing?.churchId !== churchId) throw new ApiError(404, "Demande introuvable");
 
     const body = patchSchema.parse(await request.json());
+    const context: ActionContext = { id, existing, userId: session.user.id!, churchId };
 
-    if (body.action === "cancel") {
-      // Seul le demandeur peut annuler, seulement si SUBMITTED
-      if (existing.submittedById !== session.user.id!) throw new ApiError(403, "Accès refusé");
-      if (existing.status !== "SUBMITTED") throw new ApiError(400, "Seule une demande en attente peut être annulée");
-
-      const updated = await prisma.financialRequest.update({
-        where: { id },
-        data: { status: "CANCELLED" },
-      });
-      await notifySubmitter(existing, "CANCELLED", churchId);
-      return successResponse(updated);
-    }
+    if (body.action === "cancel") return successResponse(await cancelRequest(context));
 
     // Les autres actions requièrent accounting:manage
     if (!hasPermission(perms, "accounting:manage")) throw new ApiError(403, "Accès refusé");
-
-    if (body.action === "process") {
-      if (existing.status !== "SUBMITTED") throw new ApiError(400, "La demande n'est pas en attente");
-      const updated = await prisma.financialRequest.update({
-        where: { id },
-        data: {
-          status:       "PROCESSING",
-          priority:     body.priority,
-          priorityNote: body.priorityNote,
-          processedById: session.user.id!,
-          processedAt:  new Date(),
-        },
-      });
-      await notifySubmitter(existing, "PROCESSING", churchId, body.priority, body.priorityNote);
-      return successResponse(updated);
-    }
-
-    if (body.action === "approve") {
-      if (existing.status !== "PROCESSING") throw new ApiError(400, "La demande n'est pas en cours de traitement");
-
-      const updated = await prisma.$transaction(async (tx) => {
-        const req = await tx.financialRequest.update({
-          where: { id },
-          data: { status: "APPROVED" },
-        });
-        await tx.financialPayment.createMany({
-          data: body.payments.map((p) => ({
-            requestId:     id,
-            amount:        p.amount,
-            scheduledDate: new Date(p.scheduledDate),
-            note:          p.note,
-          })),
-        });
-        // Si demande récurrente : créer l'occurrence suivante
-        if (existing.seriesId) {
-          await createNextOccurrence(tx, existing);
-        }
-        return req;
-      });
-
-      await notifySubmitter(existing, "APPROVED", churchId);
-      return successResponse(updated);
-    }
-
-    if (body.action === "reject") {
-      if (!["SUBMITTED", "PROCESSING"].includes(existing.status)) {
-        throw new ApiError(400, "Cette demande ne peut plus être rejetée");
-      }
-      const updated = await prisma.financialRequest.update({
-        where: { id },
-        data: {
-          status:          "REJECTED",
-          rejectionReason: body.rejectionReason,
-          processedById:   session.user.id!,
-          processedAt:     new Date(),
-        },
-      });
-      await notifySubmitter(existing, "REJECTED", churchId, undefined, undefined, body.rejectionReason);
-      return successResponse(updated);
-    }
-
-    throw new ApiError(400, "Action inconnue");
+    return successResponse(await manageAction(context, body));
   } catch (error) {
     return errorResponse(error);
   }

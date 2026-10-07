@@ -56,6 +56,58 @@ function sortedSections(sections: ReportExportData["sections"]) {
   return [...sections].sort((a, b) => a.position - b.position);
 }
 
+/** Une statistique : libellé court (WhatsApp), libellé complet (PDF) et valeur. */
+type StatItem = { short: string; long: string; value: number | null };
+
+const sum = (a: number | null, b: number | null) => (a !== null && b !== null ? a + b : null);
+
+/**
+ * Statistiques d'une section, groupées par ligne WhatsApp. Accueil, Sainte-Cène et Intégration
+ * ont une présentation dédiée ; les autres départements listent leurs clés une par ligne.
+ */
+function statRows(label: string, stats: Record<string, number | null>): StatItem[][] {
+  const stat = (key: string) => stats[key] ?? null;
+  const item = (short: string, value: number | null, long = short): StatItem => ({ short, long, value });
+
+  switch (getDeptType(label)) {
+    case "accueil": {
+      const totalAdultes = sum(stat("hommes"), stat("femmes"));
+      return [
+        [item("Hommes", stat("hommes")), item("Femmes", stat("femmes")), item("Enfants", stat("enfants"))],
+        [item("Total adultes", totalAdultes), item("Total général", sum(totalAdultes, stat("enfants")))],
+      ];
+    }
+    case "sainte-cene":
+      return [[
+        item("Supports utilisés", stat("supportsUtilises")),
+        item("Restants", stat("supportsRestants"), "Supports restants"),
+      ]];
+    case "integration":
+      return [
+        [item("Hommes", stat("hommes")), item("Femmes", stat("femmes"))],
+        [
+          item("De passage", stat("passage")),
+          item("Convertis", stat("convertis"), "Nouveaux convertis"),
+          item("Voeux", stat("voeux"), "Renouvellement de vœux"),
+        ],
+      ];
+    default:
+      return Object.entries(stats).map(([key, value]) => [item(key, value)]);
+  }
+}
+
+/** Sections à exporter, dans l'ordre : celles qui n'ont ni statistiques ni notes sont omises. */
+function exportedSections(sections: ReportExportData["sections"]) {
+  return sortedSections(sections).flatMap((section) => {
+    const hasStats = section.stats !== null && Object.keys(section.stats).length > 0;
+    const notes = section.notes !== null && section.notes.trim() !== "" ? section.notes : null;
+    if (!hasStats && !notes) return [];
+    return [{ label: section.label, rows: hasStats ? statRows(section.label, section.stats!) : [], notes }];
+  });
+}
+
+const filled = (text: string | null): text is string => text !== null && text.trim() !== "";
+
 // ─── WhatsApp export ─────────────────────────────────────────────────────────
 
 export function formatReportWhatsApp(data: ReportExportData): string {
@@ -63,56 +115,19 @@ export function formatReportWhatsApp(data: ReportExportData): string {
 
   lines.push(`*Compte rendu — ${data.event.title}*`, formatDateFR(data.event.date));
 
-  for (const section of sortedSections(data.sections)) {
-    const deptType = getDeptType(section.label);
-    const hasStats = section.stats !== null && Object.keys(section.stats).length > 0;
-    const hasNotes = section.notes !== null && section.notes.trim() !== "";
-
-    if (!hasStats && !hasNotes) continue;
-
+  for (const section of exportedSections(data.sections)) {
     lines.push("", `*${section.label.toUpperCase()}*`);
-
-    if (hasStats && deptType === "accueil") {
-      const h = section.stats!["hommes"] ?? null;
-      const f = section.stats!["femmes"] ?? null;
-      const e = section.stats!["enfants"] ?? null;
-      const totalAdultes = h !== null && f !== null ? h + f : null;
-      const totalGeneral = totalAdultes !== null && e !== null ? totalAdultes + e : null;
-
-      lines.push(
-        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)} | Enfants : ${statDisplay(e)}`,
-        `Total adultes : ${statDisplay(totalAdultes)} | Total général : ${statDisplay(totalGeneral)}`
-      );
-    } else if (hasStats && deptType === "sainte-cene") {
-      const used = section.stats!["supportsUtilises"] ?? null;
-      const remaining = section.stats!["supportsRestants"] ?? null;
-
-      lines.push(`Supports utilisés : ${statDisplay(used)} | Restants : ${statDisplay(remaining)}`);
-    } else if (hasStats && deptType === "integration") {
-      const h = section.stats!["hommes"] ?? null;
-      const f = section.stats!["femmes"] ?? null;
-      const passage = section.stats!["passage"] ?? null;
-      const convertis = section.stats!["convertis"] ?? null;
-      const voeux = section.stats!["voeux"] ?? null;
-
-      lines.push(
-        `Hommes : ${statDisplay(h)} | Femmes : ${statDisplay(f)}`,
-        `De passage : ${statDisplay(passage)} | Convertis : ${statDisplay(convertis)} | Voeux : ${statDisplay(voeux)}`
-      );
-    } else if (hasStats) {
-      for (const [key, value] of Object.entries(section.stats!)) {
-        lines.push(`${key} : ${statDisplay(value)}`);
-      }
+    for (const row of section.rows) {
+      lines.push(row.map((i) => `${i.short} : ${statDisplay(i.value)}`).join(" | "));
     }
-
-    if (hasNotes) lines.push(section.notes!);
+    if (section.notes) lines.push(section.notes);
   }
 
-  if (data.notes && data.notes.trim() !== "") {
+  if (filled(data.notes)) {
     lines.push("", `*OBSERVATIONS GENERALES*`, data.notes);
   }
 
-  if (data.decisions && data.decisions.trim() !== "") {
+  if (filled(data.decisions)) {
     lines.push("", `*DECISIONS / ACTIONS*`, data.decisions);
   }
 
@@ -210,73 +225,32 @@ export function generateReportPDF(data: ReportExportData): void {
 
   // ── Sections ─────────────────────────────────────────────────────────────
 
-  for (const section of sortedSections(data.sections)) {
-    const deptType = getDeptType(section.label);
-    const hasStats = section.stats !== null && Object.keys(section.stats).length > 0;
-    const hasNotes = section.notes !== null && section.notes.trim() !== "";
-
-    if (!hasStats && !hasNotes) continue;
-
+  for (const section of exportedSections(data.sections)) {
     addSectionTitle(section.label);
-
-    if (hasStats && deptType === "accueil") {
-      const h = section.stats!["hommes"] ?? null;
-      const f = section.stats!["femmes"] ?? null;
-      const e = section.stats!["enfants"] ?? null;
-      const totalAdultes = h !== null && f !== null ? h + f : null;
-      const totalGeneral = totalAdultes !== null && e !== null ? totalAdultes + e : null;
-
-      addKeyValue("Hommes", statDisplay(h));
-      addKeyValue("Femmes", statDisplay(f));
-      addKeyValue("Enfants", statDisplay(e));
-      addKeyValue("Total adultes", statDisplay(totalAdultes));
-      addKeyValue("Total général", statDisplay(totalGeneral));
-    } else if (hasStats && deptType === "sainte-cene") {
-      const used = section.stats!["supportsUtilises"] ?? null;
-      const remaining = section.stats!["supportsRestants"] ?? null;
-
-      addKeyValue("Supports utilisés", statDisplay(used));
-      addKeyValue("Supports restants", statDisplay(remaining));
-    } else if (hasStats && deptType === "integration") {
-      const h = section.stats!["hommes"] ?? null;
-      const f = section.stats!["femmes"] ?? null;
-      const passage = section.stats!["passage"] ?? null;
-      const convertis = section.stats!["convertis"] ?? null;
-      const voeux = section.stats!["voeux"] ?? null;
-
-      addKeyValue("Hommes", statDisplay(h));
-      addKeyValue("Femmes", statDisplay(f));
-      addKeyValue("De passage", statDisplay(passage));
-      addKeyValue("Nouveaux convertis", statDisplay(convertis));
-      addKeyValue("Renouvellement de vœux", statDisplay(voeux));
-    } else if (hasStats) {
-      // Generic stats display
-      for (const [key, value] of Object.entries(section.stats!)) {
-        addKeyValue(key, statDisplay(value));
-      }
+    for (const i of section.rows.flat()) {
+      addKeyValue(i.long, statDisplay(i.value));
     }
-
-    if (hasNotes) {
+    if (section.notes) {
       checkPageBreak(8);
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(100, 100, 100);
       doc.text("Observations :", MARGIN + 2, y);
       y += 4;
-      addNotes(section.notes!);
+      addNotes(section.notes);
     }
   }
 
   // ── Global notes ─────────────────────────────────────────────────────────
 
-  if (data.notes && data.notes.trim() !== "") {
+  if (filled(data.notes)) {
     addSectionTitle("Observations générales");
     addNotes(data.notes);
   }
 
   // ── Decisions ────────────────────────────────────────────────────────────
 
-  if (data.decisions && data.decisions.trim() !== "") {
+  if (filled(data.decisions)) {
     addSectionTitle("Décisions / Actions");
     addNotes(data.decisions);
   }
