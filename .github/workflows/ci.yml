@@ -12,7 +12,7 @@ permissions:
 jobs:
   lint-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
@@ -26,7 +26,28 @@ jobs:
           cache: "npm"
       # requis par src/modules/audio/worker/handlers/__tests__/render.test.ts (T043) — vrai
       # ffmpeg, pas de binaire mocké ; absent de l'image ubuntu-latest par défaut.
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # Les ~100 Mo de paquets sont mis en cache (clé renouvelée chaque mois) : un miroir apt
+      # lent ou bloqué consommait jusqu'ici tout le timeout du job avant le moindre test.
+      # Délai court par requête apt : une connexion muette est abandonnée puis reprise.
+      - name: Cache key for ffmpeg packages
+        id: apt-month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ~/apt-archives
+          key: apt-ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ steps.apt-month.outputs.month }}
+          restore-keys: apt-ffmpeg-${{ runner.os }}-${{ runner.arch }}-
+      - name: Install ffmpeg
+        timeout-minutes: 9
+        run: |
+          mkdir -p ~/apt-archives/partial
+          apt_opts=(-o Dir::Cache::Archives="$HOME/apt-archives" -o Acquire::Retries=5
+                    -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+          sudo apt-get "${apt_opts[@]}" update -qq
+          sudo apt-get "${apt_opts[@]}" install -y -qq --no-install-recommends ffmpeg
+          # Fichiers d'apt (root) rendus lisibles par l'enregistrement du cache en fin de job.
+          sudo rm -rf ~/apt-archives/partial ~/apt-archives/lock
+          sudo chown -R "$(id -u):$(id -g)" ~/apt-archives
       - run: npm ci
       - run: npx prisma generate
       - run: npm run typecheck
@@ -105,7 +126,7 @@ jobs:
   build:
     needs: lint-test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
