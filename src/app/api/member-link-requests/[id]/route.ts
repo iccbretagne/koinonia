@@ -7,6 +7,7 @@ import { findDuplicateCandidates } from "@/lib/onboarding";
 import { admitToChurch } from "@/lib/admission";
 import { createNotification } from "@/lib/notifications";
 import { z } from "zod";
+import type { Session } from "next-auth";
 
 const schema = z.object({
   action: z.enum(["approve", "reject", "reconsider"]),
@@ -14,6 +15,75 @@ const schema = z.object({
   departmentId: z.string().optional(), // override admin si besoin
   confirmDuplicate: z.boolean().optional(),
 });
+
+type LinkRequest = {
+  id: string;
+  userId: string;
+  status: string;
+  departmentId: string | null;
+  ministryId: string | null;
+  member: { departments: { departmentId: string }[] } | null;
+};
+
+/** La demande (et le département imposé, le cas échéant) doit relever du périmètre de l'appelant. */
+async function assertRequestInScope(
+  session: Session,
+  churchId: string,
+  linkRequest: LinkRequest,
+  adminDeptOverride: string | undefined
+) {
+  const memberScope = await resolveMemberDepartmentScope(session, churchId);
+  const ministryScope = getUserMinistryScope(session, churchId);
+  const inScope = isLinkRequestInScope(
+    memberScope,
+    ministryScope.scoped ? ministryScope.ministryIds : [],
+    { departmentId: linkRequest.departmentId, ministryId: linkRequest.ministryId },
+    linkRequest.member?.departments.map((d) => d.departmentId) ?? []
+  );
+  if (!inScope) throw new ApiError(403, "Cette demande est hors de votre périmètre");
+  if (adminDeptOverride && memberScope.scoped && !memberScope.departmentIds.includes(adminDeptOverride)) {
+    throw new ApiError(403, "Ce département est hors de votre périmètre");
+  }
+}
+
+async function reconsiderRequest(linkRequest: LinkRequest, userId: string, churchId: string) {
+  if (linkRequest.status !== "REJECTED") {
+    throw new ApiError(409, "Seules les demandes refusées peuvent être reconsidérées");
+  }
+  const updated = await prisma.memberLinkRequest.update({
+    where: { id: linkRequest.id },
+    data: { status: "PENDING", rejectReason: null, reviewedAt: null, reviewedById: null },
+  });
+  await logAudit({ userId, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: linkRequest.id, details: { action: "reconsider" } });
+  return updated;
+}
+
+/** Refus, motivé ou non, notifié au demandeur. */
+async function rejectRequest(linkRequest: LinkRequest, rejectReason: string | undefined, userId: string, churchId: string) {
+  const updated = await prisma.memberLinkRequest.update({
+    where: { id: linkRequest.id },
+    data: {
+      status: "REJECTED",
+      rejectReason: rejectReason ?? null,
+      reviewedAt: new Date(),
+      reviewedById: userId,
+    },
+  });
+  await logAudit({ userId, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: linkRequest.id, details: { action: "reject" } });
+
+  // Notify the requester that their request was rejected
+  await createNotification({
+    userId: linkRequest.userId,
+    domain: "account",
+    type: "MEMBER_LINK_REJECTED",
+    title: "Demande de liaison refusée",
+    message: rejectReason
+      ? `Votre demande de liaison a été refusée : ${rejectReason}`
+      : "Votre demande de liaison compte STAR a été refusée.",
+    link: "/profile",
+  });
+  return updated;
+}
 
 export async function PATCH(
   request: Request,
@@ -42,66 +112,16 @@ export async function PATCH(
     });
     if (!linkRequest) throw new ApiError(404, "Demande introuvable");
 
-    const memberScope = await resolveMemberDepartmentScope(session, churchId);
-    const ministryScope = getUserMinistryScope(session, churchId);
-    const inScope = isLinkRequestInScope(
-      memberScope,
-      ministryScope.scoped ? ministryScope.ministryIds : [],
-      { departmentId: linkRequest.departmentId, ministryId: linkRequest.ministryId },
-      linkRequest.member?.departments.map((d) => d.departmentId) ?? []
-    );
-    if (!inScope) throw new ApiError(403, "Cette demande est hors de votre périmètre");
-    if (
-      adminDeptOverride &&
-      memberScope.scoped &&
-      !memberScope.departmentIds.includes(adminDeptOverride)
-    ) {
-      throw new ApiError(403, "Ce département est hors de votre périmètre");
-    }
+    await assertRequestInScope(session, churchId, linkRequest, adminDeptOverride);
 
     // Reconsidérer une demande refusée → repasser en PENDING
-    if (action === "reconsider") {
-      if (linkRequest.status !== "REJECTED") {
-        throw new ApiError(409, "Seules les demandes refusées peuvent être reconsidérées");
-      }
-      const updated = await prisma.memberLinkRequest.update({
-        where: { id },
-        data: { status: "PENDING", rejectReason: null, reviewedAt: null, reviewedById: null },
-      });
-      await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reconsider" } });
-      return successResponse(updated);
-    }
+    if (action === "reconsider") return successResponse(await reconsiderRequest(linkRequest, session.user.id, churchId));
 
     if (linkRequest.status !== "PENDING") {
       throw new ApiError(409, "Cette demande a déjà été traitée");
     }
 
-    if (action === "reject") {
-      const updated = await prisma.memberLinkRequest.update({
-        where: { id },
-        data: {
-          status: "REJECTED",
-          rejectReason: rejectReason ?? null,
-          reviewedAt: new Date(),
-          reviewedById: session.user.id,
-        },
-      });
-      await logAudit({ userId: session.user.id, churchId, action: "UPDATE", entityType: "MemberLinkRequest", entityId: id, details: { action: "reject" } });
-
-      // Notify the requester that their request was rejected
-      await createNotification({
-        userId: linkRequest.userId,
-        domain: "account",
-        type: "MEMBER_LINK_REJECTED",
-        title: "Demande de liaison refusée",
-        message: rejectReason
-          ? `Votre demande de liaison a été refusée : ${rejectReason}`
-          : "Votre demande de liaison compte STAR a été refusée.",
-        link: "/profile",
-      });
-
-      return successResponse(updated);
-    }
+    if (action === "reject") return successResponse(await rejectRequest(linkRequest, rejectReason, session.user.id, churchId));
 
     // ── Approbation ────────────────────────────────────────────────────────────
 

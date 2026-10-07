@@ -113,6 +113,53 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * Département, ministère et événements visés doivent être de l'église ; chaque canal demandé
+ * exige que le département qui le traite (Secrétariat, Communication) soit configuré.
+ */
+async function assertAnnouncementTargets(data: z.infer<typeof createSchema>) {
+  // Validate departmentId belongs to churchId
+  if (data.departmentId) {
+    const dept = await prisma.department.findFirst({
+      where: { id: data.departmentId, ministry: { churchId: data.churchId } },
+      select: { id: true },
+    });
+    if (!dept) throw new ApiError(400, "Département invalide ou hors périmètre");
+  }
+
+  // Validate ministryId belongs to churchId
+  if (data.ministryId) {
+    const ministry = await prisma.ministry.findFirst({
+      where: { id: data.ministryId, churchId: data.churchId },
+      select: { id: true },
+    });
+    if (!ministry) throw new ApiError(400, "Ministère invalide ou hors périmètre");
+  }
+
+  // Validate targetEventIds belong to churchId
+  if (data.targetEventIds.length > 0) {
+    const validEvents = await prisma.event.count({
+      where: { id: { in: data.targetEventIds }, churchId: data.churchId },
+    });
+    if (validEvents !== data.targetEventIds.length) {
+      throw new ApiError(400, "Événements cibles invalides ou hors périmètre");
+    }
+  }
+
+  if (data.channelInterne) {
+    const secretariatDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.SECRETARIAT);
+    if (secretariatDeptIds.length === 0) {
+      throw new ApiError(400, "Le département Secrétariat n'est pas configuré. Contactez un administrateur.");
+    }
+  }
+  if (data.channelExterne) {
+    const communicationDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.COMMUNICATION);
+    if (communicationDeptIds.length === 0) {
+      throw new ApiError(400, "Le département Communication n'est pas configuré. Contactez un administrateur.");
+    }
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -120,49 +167,10 @@ export async function POST(request: Request) {
     const session = await requireChurchPermission("members:view", data.churchId);
     requireRateLimit(request, { prefix: `mut:${session.user.id}`, ...RATE_LIMIT_MUTATION });
 
-    // Validate departmentId belongs to churchId
-    if (data.departmentId) {
-      const dept = await prisma.department.findFirst({
-        where: { id: data.departmentId, ministry: { churchId: data.churchId } },
-        select: { id: true },
-      });
-      if (!dept) throw new ApiError(400, "Département invalide ou hors périmètre");
-    }
-
-    // Validate ministryId belongs to churchId
-    if (data.ministryId) {
-      const ministry = await prisma.ministry.findFirst({
-        where: { id: data.ministryId, churchId: data.churchId },
-        select: { id: true },
-      });
-      if (!ministry) throw new ApiError(400, "Ministère invalide ou hors périmètre");
-    }
-
-    // Validate targetEventIds belong to churchId
-    if (data.targetEventIds.length > 0) {
-      const validEvents = await prisma.event.count({
-        where: { id: { in: data.targetEventIds }, churchId: data.churchId },
-      });
-      if (validEvents !== data.targetEventIds.length) {
-        throw new ApiError(400, "Événements cibles invalides ou hors périmètre");
-      }
-    }
+    await assertAnnouncementTargets(data);
 
     const eventDate = data.eventDate ? new Date(data.eventDate) : null;
     const saveTheDate = eventDate ? computeIsSaveTheDate(eventDate) : false;
-
-    if (data.channelInterne) {
-      const secretariatDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.SECRETARIAT);
-      if (secretariatDeptIds.length === 0) {
-        throw new ApiError(400, "Le département Secrétariat n'est pas configuré. Contactez un administrateur.");
-      }
-    }
-    if (data.channelExterne) {
-      const communicationDeptIds = await getFunctionDepartmentIds(data.churchId, DEPT_FN.COMMUNICATION);
-      if (communicationDeptIds.length === 0) {
-        throw new ApiError(400, "Le département Communication n'est pas configuré. Contactez un administrateur.");
-      }
-    }
 
     const announcement = await prisma.$transaction(async (tx) => {
       const ann = await tx.announcement.create({

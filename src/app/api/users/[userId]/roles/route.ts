@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
-import type { Role } from "@/generated/prisma/client";
+import type { Prisma, Role } from "@/generated/prisma/client";
 import { z } from "zod";
 
 // { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
@@ -91,6 +91,71 @@ function normalizeDepts(
   return undefined;
 }
 
+async function assertMinistryInChurch(ministryId: string, churchId: string) {
+  const ministry = await prisma.ministry.findUnique({ where: { id: ministryId }, select: { churchId: true } });
+  if (ministry?.churchId !== churchId) {
+    throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
+  }
+}
+
+/**
+ * Ministères des départements demandés, après avoir vérifié qu'ils existent tous et
+ * appartiennent à l'église. `order` reproduit l'ordre historique des deux contrôles de chaque
+ * route : il décide du message quand les deux échouent.
+ */
+async function deptMinistryIdsInChurch(
+  depts: { id: string }[],
+  churchId: string,
+  order: "count-first" | "church-first"
+): Promise<string[]> {
+  const deptRecords = await prisma.department.findMany({
+    where: { id: { in: depts.map((d) => d.id) } },
+    include: { ministry: { select: { churchId: true } } },
+  });
+  const assertCount = () => {
+    if (deptRecords.length !== depts.length) {
+      throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
+    }
+  };
+  if (order === "count-first") assertCount();
+  const foreign = deptRecords.find((dept) => dept.ministry.churchId !== churchId);
+  if (foreign) throw new ApiError(400, `Le département "${foreign.name}" n'appartient pas à cette église`);
+  if (order === "church-first") assertCount();
+  return deptRecords.map((d) => d.ministryId);
+}
+
+/**
+ * Un Ministre au périmètre restreint ne peut toucher que les rôles déjà dans son ministère
+ * (état courant) — vérifié avant toute donnée nouvelle (spec 031).
+ */
+async function assertCurrentRoleInScope(
+  scope: MinistryScope,
+  existing: { id: string; role: Role; ministryId: string | null }
+) {
+  let currentDeptMinistryIds: string[] = [];
+  if (existing.role === "DEPARTMENT_HEAD") {
+    const currentDepts = await prisma.userDepartment.findMany({
+      where: { userChurchRoleId: existing.id },
+      select: { department: { select: { ministryId: true } } },
+    });
+    currentDeptMinistryIds = currentDepts.map((d) => d.department.ministryId);
+  }
+  assertRoleWithinMinistryScope(scope, existing.role, existing.ministryId, currentDeptMinistryIds);
+}
+
+async function replaceRoleDepartments(
+  tx: Prisma.TransactionClient,
+  roleId: string,
+  depts: { id: string; isDeputy: boolean }[]
+) {
+  await tx.userDepartment.deleteMany({ where: { userChurchRoleId: roleId } });
+  if (depts.length > 0) {
+    await tx.userDepartment.createMany({
+      data: depts.map(({ id: departmentId, isDeputy }) => ({ userChurchRoleId: roleId, departmentId, isDeputy })),
+    });
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
@@ -114,15 +179,7 @@ export async function POST(
     }
 
     // Vérifier que le ministryId appartient à cette église
-    if (ministryId) {
-      const ministry = await prisma.ministry.findUnique({
-        where: { id: ministryId },
-        select: { churchId: true },
-      });
-      if (ministry?.churchId !== churchId) {
-        throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
-      }
-    }
+    if (ministryId) await assertMinistryInChurch(ministryId, churchId);
 
     // Scope enforcement: MINISTER must have a ministry, DEPARTMENT_HEAD must have departments
     if (role === "MINISTER" && !ministryId) {
@@ -136,22 +193,7 @@ export async function POST(
     }
 
     // Vérifier que les départements appartiennent à cette église
-    let deptMinistryIds: string[] = [];
-    if (depts?.length) {
-      const deptRecords = await prisma.department.findMany({
-        where: { id: { in: depts.map((d) => d.id) } },
-        include: { ministry: { select: { churchId: true } } },
-      });
-      if (deptRecords.length !== depts.length) {
-        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
-      }
-      for (const dept of deptRecords) {
-        if (dept.ministry.churchId !== churchId) {
-          throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
-        }
-      }
-      deptMinistryIds = deptRecords.map((d) => d.ministryId);
-    }
+    const deptMinistryIds = depts?.length ? await deptMinistryIdsInChurch(depts, churchId, "count-first") : [];
 
     // Un Ministre au périmètre restreint ne peut attribuer que des rôles rattachables,
     // dans son propre ministère (spec 031, issue #467)
@@ -232,93 +274,35 @@ export async function PATCH(
     // Un Ministre au périmètre restreint ne peut toucher que les rôles déjà dans son
     // ministère (état courant) — vérifié avant toute donnée nouvelle (spec 031)
     const ministryScope = getUserMinistryScope(patchSession, existing.churchId);
-    if (ministryScope.scoped) {
-      let currentDeptMinistryIds: string[] = [];
-      if (existing.role === "DEPARTMENT_HEAD") {
-        const currentDepts = await prisma.userDepartment.findMany({
-          where: { userChurchRoleId: roleId },
-          select: { department: { select: { ministryId: true } } },
-        });
-        currentDeptMinistryIds = currentDepts.map((d) => d.department.ministryId);
-      }
-      assertRoleWithinMinistryScope(
-        ministryScope,
-        existing.role,
-        existing.ministryId,
-        currentDeptMinistryIds
-      );
-    }
+    if (ministryScope.scoped) await assertCurrentRoleInScope(ministryScope, existing);
 
     // Vérifier que le ministryId appartient à cette église
-    if (ministryId) {
-      const ministry = await prisma.ministry.findUnique({
-        where: { id: ministryId },
-        select: { churchId: true },
-      });
-      if (ministry?.churchId !== existing.churchId) {
-        throw new ApiError(400, "Ce ministère n'appartient pas à cette église");
-      }
-    }
+    if (ministryId) await assertMinistryInChurch(ministryId, existing.churchId);
 
     const depts = normalizeDepts(departments, departmentIds);
 
     // Vérifier que les départements appartiennent à cette église
-    let newDeptMinistryIds: string[] = [];
-    if (depts?.length) {
-      const deptRecords = await prisma.department.findMany({
-        where: { id: { in: depts.map((d) => d.id) } },
-        include: { ministry: { select: { churchId: true } } },
-      });
-      for (const dept of deptRecords) {
-        if (dept.ministry.churchId !== existing.churchId) {
-          throw new ApiError(400, `Le département "${dept.name}" n'appartient pas à cette église`);
-        }
-      }
-      if (deptRecords.length !== depts.length) {
-        throw new ApiError(400, "Un ou plusieurs départements sont introuvables");
-      }
-      newDeptMinistryIds = deptRecords.map((d) => d.ministryId);
-    }
+    const newDeptMinistryIds = depts?.length
+      ? await deptMinistryIdsInChurch(depts, existing.churchId, "church-first")
+      : [];
 
     // Le résultat de la modification doit lui aussi rester dans le périmètre — un Ministre
     // ne peut pas déplacer un responsable vers un ministère qui n'est pas le sien. Seuls les
     // champs effectivement modifiés sont revérifiés ; un champ non touché reste régi par le
     // contrôle sur l'état courant fait plus haut.
-    if (ministryScope.scoped) {
-      if (ministryId !== undefined) {
-        assertRoleWithinMinistryScope(ministryScope, existing.role, ministryId, []);
-      }
-      if (depts !== undefined) {
-        assertRoleWithinMinistryScope(ministryScope, existing.role, undefined, newDeptMinistryIds);
-      }
+    if (ministryScope.scoped && ministryId !== undefined) {
+      assertRoleWithinMinistryScope(ministryScope, existing.role, ministryId, []);
+    }
+    if (ministryScope.scoped && depts !== undefined) {
+      assertRoleWithinMinistryScope(ministryScope, existing.role, undefined, newDeptMinistryIds);
     }
 
     const updated = await prisma.$transaction(async (tx) => {
       if (ministryId !== undefined) {
-        await tx.userChurchRole.update({
-          where: { id: roleId },
-          data: { ministryId },
-        });
+        await tx.userChurchRole.update({ where: { id: roleId }, data: { ministryId } });
       }
-
-      if (depts !== undefined) {
-        await tx.userDepartment.deleteMany({ where: { userChurchRoleId: roleId } });
-
-        if (depts.length > 0) {
-          await tx.userDepartment.createMany({
-            data: depts.map(({ id: departmentId, isDeputy }) => ({
-              userChurchRoleId: roleId,
-              departmentId,
-              isDeputy,
-            })),
-          });
-        }
-      }
-
-      return tx.userChurchRole.findUnique({
-        where: { id: roleId },
-        include: roleInclude,
-      });
+      if (depts !== undefined) await replaceRoleDepartments(tx, roleId, depts);
+      return tx.userChurchRole.findUnique({ where: { id: roleId }, include: roleInclude });
     });
 
     await logAudit({ userId: patchSession.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "UserRole", entityId: roleId, details: { targetUserId: userId, ministryId } });

@@ -2,6 +2,88 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 
+/** Période : `from`/`to` explicites, sinon les `months` derniers mois. */
+function statsRange(fromParam: string | null, toParam: string | null, months: number): { since: Date; until?: Date } {
+  if (fromParam) return { since: new Date(fromParam), until: toParam ? new Date(toParam) : undefined };
+  const since = new Date();
+  since.setMonth(since.getMonth() - months);
+  return { since };
+}
+
+type MemberStat = { name: string; services: number; indisponible: number };
+type StatsEventDept = {
+  event: { date: Date };
+  plannings: { status: string | null; member: { id: string; firstName: string; lastName: string } }[];
+};
+
+const monthKeyOf = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+/** Services et indisponibilités par STAR, et taux de service par mois. */
+function serviceStats(eventDepts: StatsEventDept[]) {
+  const memberStats = new Map<string, MemberStat>();
+  const monthlyTrend = new Map<string, { month: string; enService: number; totalSlots: number }>();
+
+  for (const ed of eventDepts) {
+    const monthKey = monthKeyOf(ed.event.date);
+    const trend = monthlyTrend.get(monthKey) ?? { month: monthKey, enService: 0, totalSlots: 0 };
+    monthlyTrend.set(monthKey, trend);
+
+    for (const planning of ed.plannings) {
+      const member = planning.member;
+      const stats = memberStats.get(member.id) ?? { name: `${member.firstName} ${member.lastName}`, services: 0, indisponible: 0 };
+      memberStats.set(member.id, stats);
+      trend.totalSlots++;
+      if (planning.status === "EN_SERVICE" || planning.status === "EN_SERVICE_DEBRIEF") {
+        stats.services++;
+        trend.enService++;
+      } else if (planning.status === "INDISPONIBLE") {
+        stats.indisponible++;
+      }
+    }
+  }
+
+  const trend = Array.from(monthlyTrend.values()).sort((a, b) => a.month.localeCompare(b.month));
+  return { memberStats, trend };
+}
+
+/** Nombre d'affectations par tâche, et répartition par STAR. */
+function taskStats(
+  taskAssignments: { task: { id: string; name: string }; member: { id: string } }[],
+  memberStats: Map<string, MemberStat>
+) {
+  const taskCounts = new Map<string, { name: string; count: number }>();
+  const memberTaskMap = new Map<string, Map<string, number>>();
+
+  for (const ta of taskAssignments) {
+    const taskCount = taskCounts.get(ta.task.id) ?? { name: ta.task.name, count: 0 };
+    taskCount.count++;
+    taskCounts.set(ta.task.id, taskCount);
+
+    const mtMap = memberTaskMap.get(ta.member.id) ?? new Map<string, number>();
+    mtMap.set(ta.task.id, (mtMap.get(ta.task.id) || 0) + 1);
+    memberTaskMap.set(ta.member.id, mtMap);
+  }
+
+  const tasks = Array.from(taskCounts.entries())
+    .map(([id, t]) => ({ id, name: t.name, count: t.count }))
+    .sort((a, b) => b.count - a.count);
+
+  const memberTasks = Array.from(memberTaskMap.entries())
+    .map(([memberId, taskMap]) => ({
+      id: memberId,
+      name: memberStats.get(memberId)?.name ?? memberId,
+      tasks: Array.from(taskMap.entries()).map(([taskId, count]) => ({
+        taskId,
+        taskName: taskCounts.get(taskId)?.name ?? taskId,
+        count,
+      })),
+      totalAssignments: Array.from(taskMap.values()).reduce((a, b) => a + b, 0),
+    }))
+    .sort((a, b) => b.totalAssignments - a.totalAssignments);
+
+  return { tasks, memberTasks };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ departmentId: string }> }
@@ -25,17 +107,7 @@ export async function GET(
       throw new ApiError(404, "Département introuvable");
     }
 
-    // Get all events for this department in the time range
-    let since: Date;
-    let until: Date | undefined;
-
-    if (fromParam) {
-      since = new Date(fromParam);
-      until = toParam ? new Date(toParam) : undefined;
-    } else {
-      since = new Date();
-      since.setMonth(since.getMonth() - months);
-    }
+    const { since, until } = statsRange(fromParam, toParam, months);
 
     const eventDepts = await prisma.eventDepartment.findMany({
       where: {
@@ -59,57 +131,7 @@ export async function GET(
     });
 
     const totalEvents = eventDepts.length;
-
-    // Per-member stats
-    const memberStats = new Map<
-      string,
-      { name: string; services: number; indisponible: number }
-    >();
-
-    // Monthly trend
-    const monthlyTrend = new Map<
-      string,
-      { month: string; enService: number; totalSlots: number }
-    >();
-
-    for (const ed of eventDepts) {
-      const monthKey = `${ed.event.date.getFullYear()}-${String(ed.event.date.getMonth() + 1).padStart(2, "0")}`;
-
-      if (!monthlyTrend.has(monthKey)) {
-        monthlyTrend.set(monthKey, {
-          month: monthKey,
-          enService: 0,
-          totalSlots: 0,
-        });
-      }
-      const trend = monthlyTrend.get(monthKey)!;
-
-      for (const planning of ed.plannings) {
-        const memberId = planning.member.id;
-        if (!memberStats.has(memberId)) {
-          memberStats.set(memberId, {
-            name: `${planning.member.firstName} ${planning.member.lastName}`,
-            services: 0,
-            indisponible: 0,
-          });
-        }
-
-        const stats = memberStats.get(memberId)!;
-        trend.totalSlots++;
-
-        if (
-          planning.status === "EN_SERVICE" ||
-          planning.status === "EN_SERVICE_DEBRIEF"
-        ) {
-          stats.services++;
-          trend.enService++;
-        } else if (planning.status === "INDISPONIBLE") {
-          stats.indisponible++;
-        }
-      }
-    }
-
-    // Build response
+    const { memberStats, trend } = serviceStats(eventDepts);
     const members = Array.from(memberStats.entries())
       .map(([id, stats]) => ({
         id,
@@ -120,15 +142,10 @@ export async function GET(
       }))
       .sort((a, b) => b.services - a.services);
 
-    const trend = Array.from(monthlyTrend.values()).sort((a, b) =>
-      a.month.localeCompare(b.month)
-    );
-
     // Task assignment stats
-    const eventIds = eventDepts.map((ed) => ed.event.id);
     const taskAssignments = await prisma.taskAssignment.findMany({
       where: {
-        eventId: { in: eventIds },
+        eventId: { in: eventDepts.map((ed) => ed.event.id) },
         task: { departmentId },
       },
       include: {
@@ -136,46 +153,7 @@ export async function GET(
         member: { select: { id: true, firstName: true, lastName: true } },
       },
     });
-
-    // Per-task counts and per-member task breakdown
-    const taskCounts = new Map<string, { name: string; count: number }>();
-    const memberTaskMap = new Map<string, Map<string, number>>();
-
-    for (const ta of taskAssignments) {
-      // Task totals
-      if (!taskCounts.has(ta.task.id)) {
-        taskCounts.set(ta.task.id, { name: ta.task.name, count: 0 });
-      }
-      taskCounts.get(ta.task.id)!.count++;
-
-      // Per-member breakdown
-      const memberId = ta.member.id;
-      if (!memberTaskMap.has(memberId)) {
-        memberTaskMap.set(memberId, new Map());
-      }
-      const mtMap = memberTaskMap.get(memberId)!;
-      mtMap.set(ta.task.id, (mtMap.get(ta.task.id) || 0) + 1);
-    }
-
-    const tasks = Array.from(taskCounts.entries())
-      .map(([id, t]) => ({ id, name: t.name, count: t.count }))
-      .sort((a, b) => b.count - a.count);
-
-    const memberTasks = Array.from(memberTaskMap.entries())
-      .map(([memberId, taskMap]) => {
-        const mStat = memberStats.get(memberId);
-        return {
-          id: memberId,
-          name: mStat?.name ?? memberId,
-          tasks: Array.from(taskMap.entries()).map(([taskId, count]) => ({
-            taskId,
-            taskName: taskCounts.get(taskId)?.name ?? taskId,
-            count,
-          })),
-          totalAssignments: Array.from(taskMap.values()).reduce((a, b) => a + b, 0),
-        };
-      })
-      .sort((a, b) => b.totalAssignments - a.totalAssignments);
+    const { tasks, memberTasks } = taskStats(taskAssignments, memberStats);
 
     return successResponse({
       department,
