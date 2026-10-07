@@ -163,6 +163,104 @@ function requireWaitingRight(origin: FamilyIntegrationStatus | null, actor: Fami
 
 // ─── Machine à états ──────────────────────────────────────────────────────────
 
+type FamilyTransitionBody = Exclude<FamilyPatchBody, { action: "reopen" }>;
+type FamilyBodyOf<A extends FamilyTransitionBody["action"]> = Extract<FamilyTransitionBody, { action: A }>;
+
+/** Étapes d'intégration franchies une à une par le berger assigné ou l'équipe. */
+const STEPS = {
+  contact: { from: "ASSIGNED", to: "CONTACTED", stamp: "contactedAt" },
+  whatsapp: { from: "CONTACTED", to: "WHATSAPP_ADDED", stamp: "whatsappAddedAt" },
+  integrate: { from: "WHATSAPP_ADDED", to: "INTEGRATED", stamp: "integratedAt" },
+} as const satisfies Record<string, { from: FamilyIntegrationStatus; to: FamilyIntegrationStatus; stamp: string }>;
+
+function stepData(step: keyof typeof STEPS, current: FamilyRequestState, actor: FamilyActor, now: Date) {
+  const { from, to, stamp } = STEPS[step];
+  requireBergerOrIntegrationMember(actor);
+  if (current.status !== from) throw new ApiError(400, `Transition invalide : la demande doit être ${from}`);
+  return { status: to, [stamp]: now };
+}
+
+function assignTransition(body: FamilyBodyOf<"assign">, current: FamilyRequestState, actor: FamilyActor, now: Date, result: FamilyTransitionResult) {
+  requireIntegrationMember(actor);
+  if (current.status !== "SUBMITTED" && current.status !== "ASSIGNED")
+    throw new ApiError(400, "Transition invalide : la demande doit être SUBMITTED ou ASSIGNED");
+  result.data = {
+    status: "ASSIGNED",
+    assignedFamilyId: body.assignedFamilyId,
+    assignedFamilyName: body.assignedFamilyName,
+    assignedBergerId: body.assignedBergerId,
+    assignedAt: now,
+  };
+  result.notifyAssignedBergerId = body.assignedBergerId;
+  if (current.assignedBergerId && current.assignedBergerId !== body.assignedBergerId)
+    result.notifyUnassignedBergerId = current.assignedBergerId;
+}
+
+function abandonData(body: FamilyBodyOf<"abandon">, current: FamilyRequestState, actor: FamilyActor, now: Date) {
+  requireBergerOrIntegrationMember(actor);
+  if (current.status === "INTEGRATED")
+    throw new ApiError(400, "Impossible d'abandonner une demande déjà intégrée");
+  // Les champs d'attente sont conservés : une réouverture peut ramener la demande dans
+  // l'attente qu'elle occupait avant l'abandon.
+  return {
+    status: "ABANDONED",
+    abandonedAt: now,
+    abandonReasonCode: body.abandonReasonCode,
+    abandonReason: body.abandonReason || null,
+  };
+}
+
+function waitData(body: FamilyBodyOf<"wait">, current: FamilyRequestState, actor: FamilyActor, now: Date) {
+  if (!WAITING_ENTRY_STATUSES.has(current.status))
+    throw new ApiError(
+      400,
+      "Transition invalide : seule une demande reçue, affectée ou au premier contact établi peut être mise en attente"
+    );
+  requireWaitingRight(current.status, actor);
+  // La transmission au département mission reste une décision de l'équipe intégration.
+  if (body.waitingKind === "MISSION") requireIntegrationMember(actor);
+  return {
+    status: body.waitingKind === "RECONTACT" ? "WAITING_RECONTACT" : "WAITING_MISSION",
+    waitingFrom: current.status,
+    waitingSince: now,
+    lastRelanceAt: null,
+  };
+}
+
+function resumeData(current: FamilyRequestState, actor: FamilyActor) {
+  if (!isWaitingStatus(current.status) || !current.waitingFrom)
+    throw new ApiError(400, "Transition invalide : la demande n'est pas en attente");
+  requireWaitingRight(current.waitingFrom, actor);
+  // Reprise à l'étape qui suit le point d'arrêt : depuis SUBMITTED, l'affectation d'une
+  // famille ; depuis ASSIGNED, le premier contact ; depuis CONTACTED, l'ajout au groupe —
+  // dans tous les cas, l'état d'origine.
+  return { status: current.waitingFrom, waitingFrom: null, waitingSince: null, lastRelanceAt: null };
+}
+
+function handbackTransition(current: FamilyRequestState, actor: FamilyActor, result: FamilyTransitionResult) {
+  requireBergerOrIntegrationMember(actor);
+  if (!HANDBACK_STATUSES.has(current.status))
+    throw new ApiError(
+      400,
+      "Transition invalide : seule une demande affectée ou au premier contact établi peut être renvoyée à l'équipe intégration"
+    );
+  result.data = { ...DETACH_TO_SUBMITTED };
+  // Renvoi fait par l'équipe à la place du berger : celui-ci est dessaisi, il en est informé.
+  if (!actor.isAssignedBerger) result.notifyUnassignedBergerId = current.assignedBergerId;
+}
+
+/** Champs d'identité modifiés : seuls ceux transmis, les chaînes vides des champs facultatifs deviennent `null`. */
+function editData(body: FamilyBodyOf<"edit">) {
+  const data: Record<string, unknown> = {};
+  for (const key of ["firstName", "lastName", "ageRange", "churchStatus"] as const) {
+    if (body[key] !== undefined) data[key] = body[key];
+  }
+  for (const key of ["phone", "email", "address"] as const) {
+    if (body[key] !== undefined) data[key] = body[key] || null;
+  }
+  return data;
+}
+
 /**
  * Calcule la mise à jour d'une demande d'intégration pour une action donnée.
  * Fonction pure : lève `ApiError` (400 transition invalide, 403 droit insuffisant).
@@ -170,7 +268,7 @@ function requireWaitingRight(origin: FamilyIntegrationStatus | null, actor: Fami
  */
 export function computeFamilyTransitionData(
   current: FamilyRequestState,
-  body: Exclude<FamilyPatchBody, { action: "reopen" }>,
+  body: FamilyTransitionBody,
   actor: FamilyActor,
   now: Date
 ): FamilyTransitionResult {
@@ -182,125 +280,41 @@ export function computeFamilyTransitionData(
 
   switch (body.action) {
     case "assign":
-      requireIntegrationMember(actor);
-      if (current.status !== "SUBMITTED" && current.status !== "ASSIGNED")
-        throw new ApiError(400, "Transition invalide : la demande doit être SUBMITTED ou ASSIGNED");
-      result.data = {
-        status: "ASSIGNED",
-        assignedFamilyId: body.assignedFamilyId,
-        assignedFamilyName: body.assignedFamilyName,
-        assignedBergerId: body.assignedBergerId,
-        assignedAt: now,
-      };
-      result.notifyAssignedBergerId = body.assignedBergerId;
-      if (current.assignedBergerId && current.assignedBergerId !== body.assignedBergerId)
-        result.notifyUnassignedBergerId = current.assignedBergerId;
-      return result;
-
+      assignTransition(body, current, actor, now, result);
+      break;
     case "contact":
-      requireBergerOrIntegrationMember(actor);
-      if (current.status !== "ASSIGNED")
-        throw new ApiError(400, "Transition invalide : la demande doit être ASSIGNED");
-      result.data = { status: "CONTACTED", contactedAt: now };
-      return result;
-
     case "whatsapp":
-      requireBergerOrIntegrationMember(actor);
-      if (current.status !== "CONTACTED")
-        throw new ApiError(400, "Transition invalide : la demande doit être CONTACTED");
-      result.data = { status: "WHATSAPP_ADDED", whatsappAddedAt: now };
-      return result;
-
     case "integrate":
-      requireBergerOrIntegrationMember(actor);
-      if (current.status !== "WHATSAPP_ADDED")
-        throw new ApiError(400, "Transition invalide : la demande doit être WHATSAPP_ADDED");
-      result.data = { status: "INTEGRATED", integratedAt: now };
-      return result;
-
+      result.data = stepData(body.action, current, actor, now);
+      break;
     case "abandon":
-      requireBergerOrIntegrationMember(actor);
-      if (current.status === "INTEGRATED")
-        throw new ApiError(400, "Impossible d'abandonner une demande déjà intégrée");
-      // Les champs d'attente sont conservés : une réouverture peut ramener la demande dans
-      // l'attente qu'elle occupait avant l'abandon.
-      result.data = {
-        status: "ABANDONED",
-        abandonedAt: now,
-        abandonReasonCode: body.abandonReasonCode,
-        abandonReason: body.abandonReason || null,
-      };
-      return result;
-
+      result.data = abandonData(body, current, actor, now);
+      break;
     case "wait":
-      if (!WAITING_ENTRY_STATUSES.has(current.status))
-        throw new ApiError(
-          400,
-          "Transition invalide : seule une demande reçue, affectée ou au premier contact établi peut être mise en attente"
-        );
-      requireWaitingRight(current.status, actor);
-      // La transmission au département mission reste une décision de l'équipe intégration.
-      if (body.waitingKind === "MISSION") requireIntegrationMember(actor);
-      result.data = {
-        status: body.waitingKind === "RECONTACT" ? "WAITING_RECONTACT" : "WAITING_MISSION",
-        waitingFrom: current.status,
-        waitingSince: now,
-        lastRelanceAt: null,
-      };
-      return result;
-
+      result.data = waitData(body, current, actor, now);
+      break;
     case "resume":
-      if (!isWaitingStatus(current.status) || !current.waitingFrom)
-        throw new ApiError(400, "Transition invalide : la demande n'est pas en attente");
-      requireWaitingRight(current.waitingFrom, actor);
-      // Reprise à l'étape qui suit le point d'arrêt : depuis SUBMITTED, l'affectation d'une
-      // famille ; depuis ASSIGNED, le premier contact ; depuis CONTACTED, l'ajout au groupe —
-      // dans tous les cas, l'état d'origine.
-      result.data = {
-        status: current.waitingFrom,
-        waitingFrom: null,
-        waitingSince: null,
-        lastRelanceAt: null,
-      };
-      return result;
-
+      result.data = resumeData(current, actor);
+      break;
     case "handback":
-      requireBergerOrIntegrationMember(actor);
-      if (!HANDBACK_STATUSES.has(current.status))
-        throw new ApiError(
-          400,
-          "Transition invalide : seule une demande affectée ou au premier contact établi peut être renvoyée à l'équipe intégration"
-        );
-      result.data = { ...DETACH_TO_SUBMITTED };
-      // Renvoi fait par l'équipe à la place du berger : celui-ci est dessaisi, il en est informé.
-      if (!actor.isAssignedBerger) result.notifyUnassignedBergerId = current.assignedBergerId;
-      return result;
-
+      handbackTransition(current, actor, result);
+      break;
     case "relance":
       if (!isWaitingStatus(current.status))
         throw new ApiError(400, "Seule une demande en attente peut être relancée");
       requireWaitingRight(current.waitingFrom, actor);
       result.data = { lastRelanceAt: now };
-      return result;
-
+      break;
     case "note":
       requireBergerOrIntegrationMember(actor);
       result.data = { notes: body.notes };
-      return result;
-
+      break;
     case "edit":
       requireBergerOrIntegrationMember(actor);
-      result.data = {
-        ...(body.firstName    !== undefined && { firstName:    body.firstName }),
-        ...(body.lastName     !== undefined && { lastName:     body.lastName }),
-        ...(body.phone        !== undefined && { phone:        body.phone || null }),
-        ...(body.email        !== undefined && { email:        body.email || null }),
-        ...(body.address      !== undefined && { address:      body.address || null }),
-        ...(body.ageRange     !== undefined && { ageRange:     body.ageRange }),
-        ...(body.churchStatus !== undefined && { churchStatus: body.churchStatus }),
-      };
-      return result;
+      result.data = editData(body);
+      break;
   }
+  return result;
 }
 
 // ─── Réouverture ──────────────────────────────────────────────────────────────

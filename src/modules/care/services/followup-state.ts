@@ -69,6 +69,71 @@ function requireCurrentAssignee(actor: FollowupActor) {
 
 const BASE_RESULT = { notifyAssigned: null, notifyPreviousAssignee: false, notifyReferents: false } as const;
 
+function requireAssigneeOrReferent(actor: FollowupActor) {
+  if (!actor.isCurrentAssignee && !actor.isReferent)
+    throw new ApiError(403, "Cette action est réservée à l'accompagnant en charge ou au référent");
+}
+
+/** Étapes d'accompagnement, franchies une à une par l'accompagnant en charge. */
+const STEPS = {
+  contact: { from: "ASSIGNED", to: "CONTACTED", stamp: "contactedAt" },
+  in_formation: { from: "CONTACTED", to: "IN_FORMATION", stamp: "inFormationAt" },
+  complete: { from: "IN_FORMATION", to: "COMPLETED", stamp: "completedAt" },
+} as const satisfies Record<string, { from: MsdpStatus; to: MsdpStatus; stamp: string }>;
+
+function stepTransition(step: keyof typeof STEPS, current: FollowupState, actor: FollowupActor, now: Date) {
+  const { from, to, stamp } = STEPS[step];
+  requireCurrentAssignee(actor);
+  if (current.status !== from) throw new ApiError(400, `Transition invalide : le suivi doit être ${from}`);
+  return { ...BASE_RESULT, data: { status: to, [stamp]: now } };
+}
+
+/** Affectation initiale (`assign`) ou changement d'accompagnant (`reassign`) par le référent. */
+function assignTransition(
+  reassign: boolean,
+  current: FollowupState,
+  actor: FollowupActor,
+  now: Date,
+  actorId: string,
+  assignee: ResolvedAssignee | null
+): FollowupTransitionResult {
+  requireReferent(actor);
+  if (reassign && !ACTIVE_STATUSES.has(current.status))
+    throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
+  if (!reassign && current.status !== "SUBMITTED")
+    throw new ApiError(400, "Transition invalide : le suivi doit être reçu (non affecté)");
+  if (!assignee) throw new ApiError(400, "Accompagnant requis");
+  return {
+    ...BASE_RESULT,
+    data: {
+      ...(reassign ? {} : { status: "ASSIGNED" }),
+      assignedProfileId: assignee.kind === "PROFILE" ? assignee.id : null,
+      assignedConseillerMsdpId: assignee.kind === "MEMBER" ? assignee.id : null,
+      assignedById: actorId,
+      assignedAt: now,
+    },
+    notifyAssigned: assignee,
+    notifyPreviousAssignee: reassign,
+  };
+}
+
+function handbackTransition(current: FollowupState, actor: FollowupActor): FollowupTransitionResult {
+  requireCurrentAssignee(actor);
+  if (!ACTIVE_STATUSES.has(current.status))
+    throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
+  return {
+    ...BASE_RESULT,
+    data: {
+      status: "SUBMITTED",
+      assignedProfileId: null,
+      assignedConseillerMsdpId: null,
+      assignedById: null,
+      assignedAt: null,
+    },
+    notifyReferents: true,
+  };
+}
+
 export function computeFollowupTransitionData(
   current: FollowupState,
   body: FollowupPatchBody,
@@ -78,99 +143,30 @@ export function computeFollowupTransitionData(
   assignee: ResolvedAssignee | null
 ): FollowupTransitionResult {
   switch (body.action) {
-    case "assign": {
-      requireReferent(actor);
-      if (current.status !== "SUBMITTED")
-        throw new ApiError(400, "Transition invalide : le suivi doit être reçu (non affecté)");
-      if (!assignee) throw new ApiError(400, "Accompagnant requis");
-      return {
-        ...BASE_RESULT,
-        data: {
-          status: "ASSIGNED",
-          assignedProfileId: assignee.kind === "PROFILE" ? assignee.id : null,
-          assignedConseillerMsdpId: assignee.kind === "MEMBER" ? assignee.id : null,
-          assignedById: actorId,
-          assignedAt: now,
-        },
-        notifyAssigned: assignee,
-      };
-    }
+    case "assign":
+    case "reassign":
+      return assignTransition(body.action === "reassign", current, actor, now, actorId, assignee);
 
-    case "reassign": {
-      requireReferent(actor);
-      if (!ACTIVE_STATUSES.has(current.status))
-        throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
-      if (!assignee) throw new ApiError(400, "Accompagnant requis");
-      return {
-        ...BASE_RESULT,
-        data: {
-          assignedProfileId: assignee.kind === "PROFILE" ? assignee.id : null,
-          assignedConseillerMsdpId: assignee.kind === "MEMBER" ? assignee.id : null,
-          assignedById: actorId,
-          assignedAt: now,
-        },
-        notifyAssigned: assignee,
-        notifyPreviousAssignee: true,
-      };
-    }
+    case "contact":
+    case "in_formation":
+    case "complete":
+      return stepTransition(body.action, current, actor, now);
 
-    case "contact": {
-      requireCurrentAssignee(actor);
-      if (current.status !== "ASSIGNED")
-        throw new ApiError(400, "Transition invalide : le suivi doit être ASSIGNED");
-      return { ...BASE_RESULT, data: { status: "CONTACTED", contactedAt: now } };
-    }
-
-    case "in_formation": {
-      requireCurrentAssignee(actor);
-      if (current.status !== "CONTACTED")
-        throw new ApiError(400, "Transition invalide : le suivi doit être CONTACTED");
-      return { ...BASE_RESULT, data: { status: "IN_FORMATION", inFormationAt: now } };
-    }
-
-    case "complete": {
-      requireCurrentAssignee(actor);
-      if (current.status !== "IN_FORMATION")
-        throw new ApiError(400, "Transition invalide : le suivi doit être IN_FORMATION");
-      return { ...BASE_RESULT, data: { status: "COMPLETED", completedAt: now } };
-    }
-
-    case "abandon": {
-      if (!actor.isCurrentAssignee && !actor.isReferent)
-        throw new ApiError(403, "Cette action est réservée à l'accompagnant en charge ou au référent");
-      if (current.status === "COMPLETED")
-        throw new ApiError(400, "Impossible d'abandonner un suivi terminé");
+    case "abandon":
+      requireAssigneeOrReferent(actor);
+      if (current.status === "COMPLETED") throw new ApiError(400, "Impossible d'abandonner un suivi terminé");
       return { ...BASE_RESULT, data: { status: "ABANDONED", abandonedAt: now } };
-    }
 
-    case "reopen": {
+    case "reopen":
       requireReferent(actor);
-      if (current.status !== "ABANDONED")
-        throw new ApiError(400, "Seul un suivi abandonné peut être rouvert");
+      if (current.status !== "ABANDONED") throw new ApiError(400, "Seul un suivi abandonné peut être rouvert");
       return { ...BASE_RESULT, data: { status: "SUBMITTED", abandonedAt: null } };
-    }
 
-    case "handback": {
-      requireCurrentAssignee(actor);
-      if (!ACTIVE_STATUSES.has(current.status))
-        throw new ApiError(400, "Transition invalide : le suivi doit être en cours d'accompagnement");
-      return {
-        ...BASE_RESULT,
-        data: {
-          status: "SUBMITTED",
-          assignedProfileId: null,
-          assignedConseillerMsdpId: null,
-          assignedById: null,
-          assignedAt: null,
-        },
-        notifyReferents: true,
-      };
-    }
+    case "handback":
+      return handbackTransition(current, actor);
 
-    case "note": {
-      if (!actor.isCurrentAssignee && !actor.isReferent)
-        throw new ApiError(403, "Cette action est réservée à l'accompagnant en charge ou au référent");
+    case "note":
+      requireAssigneeOrReferent(actor);
       return { ...BASE_RESULT, data: { notes: body.notes } };
-    }
   }
 }

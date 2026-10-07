@@ -73,6 +73,137 @@ function authorizeCron(request: Request) {
 // Envoie les rappels J-1 et J-3 aux membres en service.
 // Ne s'exécute qu'une fois par jour par église (reminderLastSentAt).
 
+type ReminderCounts = { emailsSent: number; notificationsCreated: number };
+
+type ReminderEvent = Awaited<ReturnType<typeof loadReminderEvents>>[number];
+type ReminderEventDept = ReminderEvent["eventDepts"][number];
+type ReminderPlanning = ReminderEventDept["plannings"][number];
+
+function loadReminderEvents(churchId: string, startOfDay: Date, endOfDay: Date) {
+  return prisma.event.findMany({
+    where: {
+      churchId,
+      date: { gte: startOfDay, lt: endOfDay },
+    },
+    include: {
+      eventDepts: {
+        include: {
+          department: true,
+          plannings: {
+            where: { status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] } },
+            include: { member: true },
+          },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Batch-lookup des comptes utilisateurs liés aux membres concernés (spec 053) : un membre
+ * avec un compte lié reçoit son rappel via le mécanisme de préférence (domaine "planning") ;
+ * un membre sans compte reste sur l'email direct à `member.email`, inchangé (T26).
+ */
+async function linkedUserIdsByMember(events: ReminderEvent[]): Promise<Map<string, string>> {
+  const allMemberIds = events.flatMap((e) => e.eventDepts.flatMap((ed) => ed.plannings.map((p) => p.memberId)));
+  if (allMemberIds.length === 0) return new Map();
+  const memberLinks = await prisma.memberUserLink.findMany({
+    where: { memberId: { in: allMemberIds }, validatedAt: { not: null } },
+    select: { memberId: true, userId: true },
+  });
+  return new Map(memberLinks.map((l) => [l.memberId, l.userId]));
+}
+
+/** Rappel au STAR en service : notification (et email selon ses préférences) s'il a un compte, sinon email direct. */
+async function remindServingMember(
+  event: ReminderEvent,
+  eventDept: ReminderEventDept,
+  planning: ReminderPlanning,
+  daysAhead: number,
+  whenLabel: string,
+  linkedUserId: string | null,
+  counts: ReminderCounts
+) {
+  const member = planning.member;
+  const { subject, html } = buildReminderEmail({
+    memberName: `${member.firstName} ${member.lastName}`,
+    eventTitle: event.title,
+    eventDate: event.date.toISOString(),
+    departmentName: eventDept.department.name,
+    daysUntil: daysAhead,
+  });
+
+  if (linkedUserId) {
+    await createNotification(
+      {
+        userId: linkedUserId,
+        domain: "planning",
+        type: "PLANNING_REMINDER",
+        title: `Rappel : ${event.title}`,
+        message: `Vous êtes en service pour ${eventDept.department.name} ${whenLabel}.`,
+        link: `/dashboard`,
+      },
+      member.email ? { email: { subject, html } } : undefined
+    ).catch((err) => {
+      console.error("Failed to notify serving member (recipient redacted):", err instanceof Error ? err.message : err);
+    });
+    counts.emailsSent++;
+    counts.notificationsCreated++;
+  } else if (process.env.SMTP_HOST && member.email) {
+    try {
+      await sendEmail({ to: member.email, subject, html });
+      counts.emailsSent++;
+    } catch (err) {
+      console.error("Failed to send reminder email (recipient redacted):", err instanceof Error ? err.message : err);
+    }
+  }
+}
+
+/** Rappel aux responsables du département : qui est en service et quand. */
+async function remindDeptHeads(
+  event: ReminderEvent,
+  eventDept: ReminderEventDept,
+  planning: ReminderPlanning,
+  whenLabel: string,
+  counts: ReminderCounts
+) {
+  const deptHeads = await prisma.userDepartment.findMany({
+    where: { departmentId: eventDept.departmentId },
+    include: { userChurchRole: { select: { userId: true } } },
+  });
+  if (deptHeads.length === 0) return;
+  await notifyUsers(deptHeads.map((d) => d.userChurchRole.userId), {
+    domain: "planning",
+    type: "PLANNING_REMINDER",
+    title: `Rappel : ${event.title}`,
+    message: `${planning.member.firstName} ${planning.member.lastName} est en service pour ${eventDept.department.name} ${whenLabel}`,
+    link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
+  });
+  counts.notificationsCreated += deptHeads.length;
+}
+
+/** Rappels des services d'une église pour le jour situé `daysAhead` jours après `now`. */
+async function remindDay(churchId: string, now: Date, daysAhead: number, counts: ReminderCounts) {
+  const targetDate = new Date(now);
+  const whenLabel = daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`;
+  targetDate.setDate(targetDate.getDate() + daysAhead);
+  const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const endOfDay = new Date(startOfDay.getTime() + 86400000);
+
+  const events = await loadReminderEvents(churchId, startOfDay, endOfDay);
+  const linkedUserIdByMember = await linkedUserIdsByMember(events);
+
+  for (const event of events) {
+    for (const eventDept of event.eventDepts) {
+      for (const planning of eventDept.plannings) {
+        const linkedUserId = linkedUserIdByMember.get(planning.member.id) ?? null;
+        await remindServingMember(event, eventDept, planning, daysAhead, whenLabel, linkedUserId, counts);
+        await remindDeptHeads(event, eventDept, planning, whenLabel, counts);
+      }
+    }
+  }
+}
+
 async function runReminders() {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -86,211 +217,123 @@ async function runReminders() {
     },
   });
 
-  let emailsSent = 0;
-  let notificationsCreated = 0;
-
+  const counts: ReminderCounts = { emailsSent: 0, notificationsCreated: 0 };
   for (const church of churches) {
-    const reminders = [1, 3];
-
-    for (const daysAhead of reminders) {
-      const targetDate = new Date(now);
-      const whenLabel = daysAhead === 1 ? "demain" : `dans ${daysAhead} jours`;
-      targetDate.setDate(targetDate.getDate() + daysAhead);
-      const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 86400000);
-
-      const events = await prisma.event.findMany({
-        where: {
-          churchId: church.id,
-          date: { gte: startOfDay, lt: endOfDay },
-        },
-        include: {
-          eventDepts: {
-            include: {
-              department: true,
-              plannings: {
-                where: { status: { in: ["EN_SERVICE", "EN_SERVICE_DEBRIEF"] } },
-                include: { member: true },
-              },
-            },
-          },
-        },
-      });
-
-      // Batch-lookup des comptes utilisateurs liés aux membres concernés (spec 053) : un membre
-      // avec un compte lié reçoit son rappel via le mécanisme de préférence (domaine
-      // "planning") ; un membre sans compte reste sur l'email direct à `member.email`, inchangé
-      // (T26).
-      const allMemberIds = events.flatMap((e) =>
-        e.eventDepts.flatMap((ed) => ed.plannings.map((p) => p.memberId))
-      );
-      const memberLinks = allMemberIds.length > 0
-        ? await prisma.memberUserLink.findMany({
-            where: { memberId: { in: allMemberIds }, validatedAt: { not: null } },
-            select: { memberId: true, userId: true },
-          })
-        : [];
-      const linkedUserIdByMember = new Map(memberLinks.map((l) => [l.memberId, l.userId]));
-
-      for (const event of events) {
-        for (const eventDept of event.eventDepts) {
-          for (const planning of eventDept.plannings) {
-            const member = planning.member;
-            const memberName = `${member.firstName} ${member.lastName}`;
-            const { subject, html } = buildReminderEmail({
-              memberName,
-              eventTitle: event.title,
-              eventDate: event.date.toISOString(),
-              departmentName: eventDept.department.name,
-              daysUntil: daysAhead,
-            });
-
-            const linkedUserId = linkedUserIdByMember.get(member.id) ?? null;
-            if (linkedUserId) {
-              await createNotification(
-                {
-                  userId: linkedUserId,
-                  domain: "planning",
-                  type: "PLANNING_REMINDER",
-                  title: `Rappel : ${event.title}`,
-                  message: `Vous êtes en service pour ${eventDept.department.name} ${whenLabel}.`,
-                  link: `/dashboard`,
-                },
-                member.email ? { email: { subject, html } } : undefined
-              ).catch((err) => {
-                console.error("Failed to notify serving member (recipient redacted):", err instanceof Error ? err.message : err);
-              });
-              emailsSent++;
-              notificationsCreated++;
-            } else if (process.env.SMTP_HOST && member.email) {
-              try {
-                await sendEmail({ to: member.email, subject, html });
-                emailsSent++;
-              } catch (err) {
-                console.error("Failed to send reminder email (recipient redacted):", err instanceof Error ? err.message : err);
-              }
-            }
-
-            const deptHeads = await prisma.userDepartment.findMany({
-              where: { departmentId: eventDept.departmentId },
-              include: { userChurchRole: { select: { userId: true } } },
-            });
-
-            if (deptHeads.length > 0) {
-              await notifyUsers(
-                deptHeads.map((d) => d.userChurchRole.userId),
-                {
-                  domain: "planning",
-                  type: "PLANNING_REMINDER",
-                  title: `Rappel : ${event.title}`,
-                  message: `${memberName} est en service pour ${eventDept.department.name} ${whenLabel}`,
-                  link: `/dashboard?dept=${eventDept.departmentId}&event=${event.id}`,
-                }
-              );
-              notificationsCreated += deptHeads.length;
-            }
-          }
-        }
-      }
-    }
-
+    for (const daysAhead of [1, 3]) await remindDay(church.id, now, daysAhead, counts);
     await prisma.church.update({
       where: { id: church.id },
       data: { reminderLastSentAt: now },
     });
   }
 
-  return { emailsSent, notificationsCreated };
+  return counts;
 }
 
 // ─── Task: planning digest ────────────────────────────────────────────────────
 // Envoie un digest des modifications de planning au secrétariat.
 // S'exécute à chaque appel si des changements ont eu lieu depuis le dernier envoi.
 
+type DigestEventDept = {
+  id: string;
+  event: { title: string; date: Date };
+  department: { name: string };
+  plannings: { status: string | null; member: { firstName: string; lastName: string } }[];
+};
+
+/** Changements à présenter dans le digest : l'état courant de chaque département modifié. */
+function digestChanges(
+  auditEntries: { entityId: string; user: { displayName: string | null; name: string | null } }[],
+  eventDepts: DigestEventDept[]
+) {
+  return auditEntries.flatMap((entry) => {
+    const eventDept = eventDepts.find((ed) => ed.id === entry.entityId);
+    if (!eventDept) return [];
+    const modifiedBy = entry.user.displayName ?? entry.user.name ?? "Inconnu";
+    return eventDept.plannings.map((planning) => ({
+      memberName: `${planning.member.firstName} ${planning.member.lastName}`,
+      departmentName: eventDept.department.name,
+      eventTitle: eventDept.event.title,
+      eventDate: eventDept.event.date.toISOString(),
+      changeType: "updated" as const,
+      newStatus: planning.status,
+      modifiedBy,
+    }));
+  });
+}
+
+type DigestChurch = { id: string; name: string; secretariatEmails: string | null; planningDigestLastSentAt: Date | null };
+
+/**
+ * Digest d'une église : les changements de planning depuis le dernier envoi. Renvoie `true` si
+ * l'email est parti ; la date d'envoi n'avance que s'il y avait des changements à présenter.
+ */
+async function sendChurchDigest(church: DigestChurch, now: Date): Promise<boolean> {
+  const emails = parseEmailList(church.secretariatEmails);
+  if (emails.length === 0) return false;
+
+  const since = church.planningDigestLastSentAt ?? new Date(0);
+
+  // Récupérer les entrées d'audit Planning depuis le dernier digest
+  const auditEntries = await prisma.auditLog.findMany({
+    where: {
+      churchId: church.id,
+      entityType: "Planning",
+      createdAt: { gt: since },
+    },
+    include: { user: { select: { name: true, displayName: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  if (auditEntries.length === 0) return false;
+
+  // Récupérer l'état courant du planning pour les événements/depts concernés
+  const affectedEventDeptIds = [...new Set(auditEntries.map((a) => a.entityId))];
+  const eventDepts = await prisma.eventDepartment.findMany({
+    where: { id: { in: affectedEventDeptIds } },
+    include: {
+      event: true,
+      department: true,
+      plannings: {
+        include: { member: true },
+      },
+    },
+  });
+
+  const changes = digestChanges(auditEntries, eventDepts);
+  if (changes.length === 0) return false;
+
+  const { subject, html } = buildPlanningDigestEmail({
+    churchName: church.name,
+    changes,
+    since,
+  });
+
+  let sent = false;
+  if (process.env.SMTP_HOST) {
+    try {
+      await sendEmail({ to: emails, subject, html });
+      sent = true;
+    } catch (err) {
+      console.error(`Failed to send planning digest for church ${church.id}:`, err instanceof Error ? err.message : err);
+    }
+  }
+
+  await prisma.church.update({
+    where: { id: church.id },
+    data: { planningDigestLastSentAt: now },
+  });
+  return sent;
+}
+
 async function runPlanningDigest() {
   const now = new Date();
-
   const churches = await prisma.church.findMany({
     where: { secretariatEmails: { not: null } },
   });
 
   let digestsSent = 0;
-
   for (const church of churches) {
-    const emails = parseEmailList(church.secretariatEmails);
-    if (emails.length === 0) continue;
-
-    const since = church.planningDigestLastSentAt ?? new Date(0);
-
-    // Récupérer les entrées d'audit Planning depuis le dernier digest
-    const auditEntries = await prisma.auditLog.findMany({
-      where: {
-        churchId: church.id,
-        entityType: "Planning",
-        createdAt: { gt: since },
-      },
-      include: { user: { select: { name: true, displayName: true } } },
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (auditEntries.length === 0) continue;
-
-    // Récupérer l'état courant du planning pour les événements/depts concernés
-    const affectedEventDeptIds = [...new Set(auditEntries.map((a) => a.entityId))];
-
-    const eventDepts = await prisma.eventDepartment.findMany({
-      where: { id: { in: affectedEventDeptIds } },
-      include: {
-        event: true,
-        department: true,
-        plannings: {
-          include: { member: true },
-        },
-      },
-    });
-
-    // Construire les changements pour le template
-    const changes = auditEntries.flatMap((entry) => {
-      const eventDept = eventDepts.find((ed) => ed.id === entry.entityId);
-      if (!eventDept) return [];
-
-      const modifiedBy =
-        entry.user.displayName ?? entry.user.name ?? "Inconnu";
-
-      return eventDept.plannings.map((planning) => ({
-        memberName: `${planning.member.firstName} ${planning.member.lastName}`,
-        departmentName: eventDept.department.name,
-        eventTitle: eventDept.event.title,
-        eventDate: eventDept.event.date.toISOString(),
-        changeType: "updated" as const,
-        newStatus: planning.status,
-        modifiedBy,
-      }));
-    });
-
-    if (changes.length === 0) continue;
-
-    const { subject, html } = buildPlanningDigestEmail({
-      churchName: church.name,
-      changes,
-      since,
-    });
-
-    if (process.env.SMTP_HOST) {
-      try {
-        await sendEmail({ to: emails, subject, html });
-        digestsSent++;
-      } catch (err) {
-        console.error(`Failed to send planning digest for church ${church.id}:`, err instanceof Error ? err.message : err);
-      }
-    }
-
-    await prisma.church.update({
-      where: { id: church.id },
-      data: { planningDigestLastSentAt: now },
-    });
+    if (await sendChurchDigest(church, now)) digestsSent++;
   }
-
   return { digestsSent };
 }
 

@@ -78,12 +78,18 @@ function entityOf(item: RelanceItem): { entityType: string; entityId: string } {
   return { entityType: item.kind === "requests" ? "AppointmentRequest" : "MsdpFollowUp", entityId: item.id };
 }
 
-export async function runCareRelances(): Promise<{
-  unassignedNotified: number;
-  unscheduledNotified: number;
-}> {
-  const now = new Date();
+type FollowUpNames = {
+  firstName: string | null;
+  lastName: string | null;
+  request: { firstName: string; lastName: string } | null;
+};
 
+function followUpName(f: FollowUpNames): string {
+  return `${f.firstName ?? f.request?.firstName ?? ""} ${f.lastName ?? f.request?.lastName ?? ""}`.trim();
+}
+
+/** Demandes et suivis en attente d'un accompagnant (`unassigned`) ou d'une date (`unscheduled`). */
+async function loadRelanceItems(): Promise<{ unassignedItems: RelanceItem[]; unscheduledItems: RelanceItem[] }> {
   const [pendingRequests, validatedRequests, submittedFollowUps, assignedFollowUps] = await Promise.all([
     prisma.appointmentRequest.findMany({
       where: { status: "PENDING" },
@@ -132,12 +138,7 @@ export async function runCareRelances(): Promise<{
     }),
   ]);
 
-  const followUpName = (f: {
-    firstName: string | null;
-    lastName: string | null;
-    request: { firstName: string; lastName: string } | null;
-  }) => `${f.firstName ?? f.request?.firstName ?? ""} ${f.lastName ?? f.request?.lastName ?? ""}`.trim();
-
+  const unassigned = { assignedAt: null, memberUserId: null, profile: null };
   const unassignedItems: RelanceItem[] = [
     ...pendingRequests.map((r) => ({
       kind: "requests" as const,
@@ -146,9 +147,7 @@ export async function runCareRelances(): Promise<{
       status: r.status,
       personName: `${r.firstName} ${r.lastName}`,
       createdAt: r.createdAt,
-      assignedAt: null,
-      memberUserId: null,
-      profile: null,
+      ...unassigned,
     })),
     ...submittedFollowUps.map((f) => ({
       kind: "followups" as const,
@@ -157,9 +156,7 @@ export async function runCareRelances(): Promise<{
       status: f.status,
       personName: followUpName(f),
       createdAt: f.createdAt,
-      assignedAt: null,
-      memberUserId: null,
-      profile: null,
+      ...unassigned,
     })),
   ];
   const unscheduledItems: RelanceItem[] = [
@@ -186,7 +183,88 @@ export async function runCareRelances(): Promise<{
       profile: f.assignedProfile,
     })),
   ];
+  return { unassignedItems, unscheduledItems };
+}
 
+/** Date de la dernière relance par `type:lien` (la plus récente). */
+async function lastRelanceDates(links: string[]): Promise<Map<string, Date>> {
+  const lastNotifiedAt = new Map<string, Date>();
+  if (links.length === 0) return lastNotifiedAt;
+  const existingNotifs = await prisma.notification.findMany({
+    where: { type: { in: [RELANCE_TYPE_UNASSIGNED, RELANCE_TYPE_UNSCHEDULED] }, link: { in: links } },
+    select: { link: true, type: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  });
+  for (const n of existingNotifs) {
+    const key = `${n.type}:${n.link}`;
+    if (!lastNotifiedAt.has(key)) lastNotifiedAt.set(key, n.createdAt); // le plus récent d'abord
+  }
+  return lastNotifiedAt;
+}
+
+/** Relance « à confier » : aux référents de chaque église, une notification par demande ou suivi. */
+async function notifyUnassigned(items: RelanceItem[]): Promise<number> {
+  const byChurch = new Map<string, RelanceItem[]>();
+  for (const r of items) byChurch.set(r.churchId, [...(byChurch.get(r.churchId) ?? []), r]);
+  let notified = 0;
+  for (const [churchId, churchItems] of byChurch) {
+    const referents = await prisma.userChurchRole.findMany({
+      where: { churchId, role: { in: ["SUPER_ADMIN", "ADMIN", "PASTORAL_CARE_REFERENT"] } },
+      select: { userId: true },
+    });
+    const userIds = Array.from(new Set(referents.map((r) => r.userId)));
+    if (userIds.length === 0) continue;
+    for (const r of churchItems) {
+      const isRequest = r.kind === "requests";
+      await notifyUsers(userIds, {
+        domain: "care",
+        type: RELANCE_TYPE_UNASSIGNED,
+        title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
+        message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
+        link: linkOf(r),
+        ...entityOf(r),
+      });
+      notified++;
+    }
+  }
+  return notified;
+}
+
+/**
+ * Relance « à planifier » : au membre du MSDP en charge ; pour un RDV confié à un profil
+ * pastoral, au protocole qui le planifie ; pour un suivi confié à un profil pastoral, à son
+ * compte s'il en a un. Renvoie `true` si quelqu'un a été prévenu.
+ */
+async function notifyUnscheduled(r: RelanceItem): Promise<boolean> {
+  const isRequest = r.kind === "requests";
+  const notification = {
+    domain: "care",
+    type: RELANCE_TYPE_UNSCHEDULED,
+    title: isRequest ? "Rendez-vous pastoral à planifier" : "Suivi de nouveau converti sans premier contact",
+    message: `${r.personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, ${
+      isRequest ? "toujours sans date" : "toujours sans premier contact"
+    }.`,
+    link: linkOf(r),
+    ...entityOf(r),
+  };
+  const recipientUserId = r.memberUserId ?? (isRequest ? null : r.profile?.userId ?? null);
+  if (recipientUserId) {
+    await createNotification({ userId: recipientUserId, ...notification }).catch(() => {});
+    return true;
+  }
+  if (isRequest && r.profile) {
+    await notifyDeptMembers(r.churchId, DEPT_FN.PROTOCOLE, notification).catch(() => {});
+    return true;
+  }
+  return false;
+}
+
+export async function runCareRelances(): Promise<{
+  unassignedNotified: number;
+  unscheduledNotified: number;
+}> {
+  const now = new Date();
+  const { unassignedItems, unscheduledItems } = await loadRelanceItems();
   if (unassignedItems.length === 0 && unscheduledItems.length === 0) {
     return { unassignedNotified: 0, unscheduledNotified: 0 };
   }
@@ -203,80 +281,20 @@ export async function runCareRelances(): Promise<{
   const dueUnassigned = unassignedItems.filter((r) => isUnassignedDue(r, delaysFor(r.churchId), now));
   const dueUnscheduled = unscheduledItems.filter((r) => isUnscheduledDue(r, delaysFor(r.churchId), now));
 
-  const relevantLinks = [...dueUnassigned, ...dueUnscheduled].map(linkOf);
-  const existingNotifs = relevantLinks.length
-    ? await prisma.notification.findMany({
-        where: {
-          type: { in: [RELANCE_TYPE_UNASSIGNED, RELANCE_TYPE_UNSCHEDULED] },
-          link: { in: relevantLinks },
-        },
-        select: { link: true, type: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
-  const lastNotifiedAt = new Map<string, Date>();
-  for (const n of existingNotifs) {
-    const key = `${n.type}:${n.link}`;
-    if (!lastNotifiedAt.has(key)) lastNotifiedAt.set(key, n.createdAt); // le plus récent d'abord
-  }
-  function shouldNotify(type: string, link: string, delayDays: number): boolean {
-    const last = lastNotifiedAt.get(`${type}:${link}`);
+  const lastNotifiedAt = await lastRelanceDates([...dueUnassigned, ...dueUnscheduled].map(linkOf));
+  const shouldNotify = (type: string, r: RelanceItem, delayDays: number) => {
+    const last = lastNotifiedAt.get(`${type}:${linkOf(r)}`);
     return !last || now.getTime() - last.getTime() >= delayDays * 86_400_000;
-  }
+  };
 
-  let unassignedNotified = 0;
-  const byChurch = new Map<string, RelanceItem[]>();
-  for (const r of dueUnassigned) {
-    if (!shouldNotify(RELANCE_TYPE_UNASSIGNED, linkOf(r), delaysFor(r.churchId).unassignedDelayDays)) continue;
-    if (!byChurch.has(r.churchId)) byChurch.set(r.churchId, []);
-    byChurch.get(r.churchId)!.push(r);
-  }
-  for (const [churchId, items] of byChurch) {
-    const referents = await prisma.userChurchRole.findMany({
-      where: { churchId, role: { in: ["SUPER_ADMIN", "ADMIN", "PASTORAL_CARE_REFERENT"] } },
-      select: { userId: true },
-    });
-    const userIds = Array.from(new Set(referents.map((r) => r.userId)));
-    if (userIds.length === 0) continue;
-    for (const r of items) {
-      const isRequest = r.kind === "requests";
-      await notifyUsers(userIds, {
-        domain: "care",
-        type: RELANCE_TYPE_UNASSIGNED,
-        title: isRequest ? "Demande de RDV pastoral à confier" : "Suivi de nouveau converti à confier",
-        message: `${r.personName} — en attente depuis le ${r.createdAt.toLocaleDateString("fr-FR")}.`,
-        link: linkOf(r),
-        ...entityOf(r),
-      });
-      unassignedNotified++;
-    }
-  }
+  const unassignedNotified = await notifyUnassigned(
+    dueUnassigned.filter((r) => shouldNotify(RELANCE_TYPE_UNASSIGNED, r, delaysFor(r.churchId).unassignedDelayDays))
+  );
 
   let unscheduledNotified = 0;
   for (const r of dueUnscheduled) {
-    const link = linkOf(r);
-    if (!shouldNotify(RELANCE_TYPE_UNSCHEDULED, link, delaysFor(r.churchId).unscheduledDelayDays)) continue;
-    const isRequest = r.kind === "requests";
-    const notification = {
-      domain: "care",
-      type: RELANCE_TYPE_UNSCHEDULED,
-      title: isRequest ? "Rendez-vous pastoral à planifier" : "Suivi de nouveau converti sans premier contact",
-      message: `${r.personName} — confié le ${r.assignedAt!.toLocaleDateString("fr-FR")}, ${
-        isRequest ? "toujours sans date" : "toujours sans premier contact"
-      }.`,
-      link,
-      ...entityOf(r),
-    };
-    // Qui relancer : le membre du MSDP en charge ; pour un RDV confié à un profil pastoral, le
-    // protocole qui le planifie ; pour un suivi confié à un profil pastoral, son compte s'il en a un.
-    const recipientUserId = r.memberUserId ?? (!isRequest ? r.profile?.userId ?? null : null);
-    if (recipientUserId) {
-      await createNotification({ userId: recipientUserId, ...notification }).catch(() => {});
-      unscheduledNotified++;
-    } else if (isRequest && r.profile) {
-      await notifyDeptMembers(r.churchId, DEPT_FN.PROTOCOLE, notification).catch(() => {});
-      unscheduledNotified++;
-    }
+    if (!shouldNotify(RELANCE_TYPE_UNSCHEDULED, r, delaysFor(r.churchId).unscheduledDelayDays)) continue;
+    if (await notifyUnscheduled(r)) unscheduledNotified++;
   }
 
   return { unassignedNotified, unscheduledNotified };

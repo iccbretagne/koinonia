@@ -138,33 +138,34 @@ function matchesText(row: AudioServiceRow, text: string): boolean {
   );
 }
 
+/**
+ * Critère orateur ou série : `none` (sentinelle) exige un champ vide, une valeur exige
+ * l'égalité, l'absence de critère accepte tout.
+ */
+function matchesOptional(value: string | null | undefined, criterion: string, none: string): boolean {
+  if (criterion === none) return !value?.trim();
+  return !criterion || value === criterion;
+}
+
+function matchesDate(serviceDate: string, c: QueueCriteria): boolean {
+  const day = serviceDate.slice(0, 10); // AAAA-MM-JJ
+  if (c.year && day.slice(0, 4) !== c.year) return false;
+  if (c.from && day < c.from) return false;
+  return !c.to || day <= c.to;
+}
+
 /** Intersection de tous les critères actifs. Plage incohérente → `[]`. */
 export function filterQueue(rows: AudioServiceRow[], c: QueueCriteria): AudioServiceRow[] {
   if (!isRangeValid(c)) return [];
-  return rows.filter((row) => {
-    if (c.status && row.status !== c.status) return false;
-    if (c.type && row.type !== c.type) return false;
-
-    const day = row.serviceDate.slice(0, 10); // AAAA-MM-JJ
-    if (c.year && day.slice(0, 4) !== c.year) return false;
-    if (c.from && day < c.from) return false;
-    if (c.to && day > c.to) return false;
-
-    if (c.speaker === NO_SPEAKER) {
-      if (row.speaker?.trim()) return false;
-    } else if (c.speaker && row.speaker !== c.speaker) {
-      return false;
-    }
-
-    if (c.series === NO_SERIES) {
-      if (row.series?.trim()) return false;
-    } else if (c.series && row.series !== c.series) {
-      return false;
-    }
-
-    if (!matchesText(row, c.text)) return false;
-    return true;
-  });
+  return rows.filter(
+    (row) =>
+      (!c.status || row.status === c.status) &&
+      (!c.type || row.type === c.type) &&
+      matchesDate(row.serviceDate, c) &&
+      matchesOptional(row.speaker, c.speaker, NO_SPEAKER) &&
+      matchesOptional(row.series, c.series, NO_SERIES) &&
+      matchesText(row, c.text)
+  );
 }
 
 function sortValue(row: AudioServiceRow, key: SortKey): number | string {

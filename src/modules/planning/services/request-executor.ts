@@ -108,6 +108,21 @@ function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
 
 // ─── Exécuteurs par type ──────────────────────────────────────────────────────
 
+/** Contrôles de forme d'une demande d'ajout d'événement ; `null` si elle est exploitable. */
+function ajoutEvenementError(title: unknown, type: unknown, date: unknown, recurrenceEnd: string | null | undefined): string | null {
+  if (!title || !type || !date) return "Données manquantes : eventTitle, eventType, eventDate";
+  if (Number.isNaN(new Date(date as string).getTime())) return "eventDate invalide";
+  if (recurrenceEnd && Number.isNaN(new Date(recurrenceEnd).getTime())) return "recurrenceEnd invalide";
+  return null;
+}
+
+async function linkDepartments(tx: TxClient, eventId: string, departmentIds: string[]) {
+  if (departmentIds.length === 0) return;
+  await tx.eventDepartment.createMany({
+    data: departmentIds.map((departmentId) => ({ eventId, departmentId })),
+  });
+}
+
 async function executeAjoutEvenement(
   tx: TxClient,
   churchId: string,
@@ -118,24 +133,15 @@ async function executeAjoutEvenement(
   const date = payload.eventDate as string;
   const planningDeadlineRaw = payload.planningDeadline as string | null | undefined;
   const deadlineOffset = payload.deadlineOffset as string | null | undefined;
-  const departmentIds = payload.departmentIds as string[] | undefined;
+  const departmentIds = (payload.departmentIds as string[] | undefined) ?? [];
   const recurrenceRule = payload.recurrenceRule as string | null | undefined;
   const recurrenceEnd = payload.recurrenceEnd as string | null | undefined;
 
-  if (!title || !type || !date) {
-    return { success: false, error: "Données manquantes : eventTitle, eventType, eventDate" };
-  }
-
+  const error = ajoutEvenementError(title, type, date, recurrenceEnd);
+  if (error) return { success: false, error };
   const eventDate = new Date(date);
-  if (Number.isNaN(eventDate.getTime())) {
-    return { success: false, error: "eventDate invalide" };
-  }
 
-  if (recurrenceEnd && Number.isNaN(new Date(recurrenceEnd).getTime())) {
-    return { success: false, error: "recurrenceEnd invalide" };
-  }
-
-  if (departmentIds && departmentIds.length > 0) {
+  if (departmentIds.length > 0) {
     const validDepts = await tx.department.count({
       where: { id: { in: departmentIds }, ministry: { churchId } },
     });
@@ -144,38 +150,24 @@ async function executeAjoutEvenement(
     }
   }
 
-  const useOffset = !!deadlineOffset && !planningDeadlineRaw;
-  let deadline: Date | null = null;
-  if (useOffset) {
-    deadline = computeDeadlineFromOffset(eventDate, deadlineOffset!);
-  } else if (planningDeadlineRaw) {
-    deadline = new Date(planningDeadlineRaw);
-  }
+  // Un décalage (« 48h », « 3d ») s'applique à chaque occurrence ; une date fixe vaut pour toutes.
+  const fixedDeadline = planningDeadlineRaw ? new Date(planningDeadlineRaw) : null;
+  const deadlineFor = (d: Date) =>
+    deadlineOffset && !planningDeadlineRaw ? computeDeadlineFromOffset(d, deadlineOffset) : fixedDeadline;
 
   if (recurrenceRule && recurrenceEnd) {
-    const endDate = new Date(recurrenceEnd);
-    const { dates: childDates, truncated } = generateRecurrenceDates(eventDate, recurrenceRule, endDate);
+    const { dates: childDates, truncated } = generateRecurrenceDates(eventDate, recurrenceRule, new Date(recurrenceEnd));
 
     const parent = await tx.event.create({
-      data: { title, type, date: eventDate, churchId, planningDeadline: deadline, recurrenceRule, isRecurrenceParent: true },
+      data: { title, type, date: eventDate, churchId, planningDeadline: deadlineFor(eventDate), recurrenceRule, isRecurrenceParent: true },
     });
-
-    if (departmentIds && departmentIds.length > 0) {
-      await tx.eventDepartment.createMany({
-        data: departmentIds.map((departmentId) => ({ eventId: parent.id, departmentId })),
-      });
-    }
+    await linkDepartments(tx, parent.id, departmentIds);
 
     for (const childDate of childDates) {
-      const childDeadline = useOffset ? computeDeadlineFromOffset(childDate, deadlineOffset!) : deadline;
       const child = await tx.event.create({
-        data: { title, type, date: childDate, churchId, planningDeadline: childDeadline, recurrenceRule, seriesId: parent.id },
+        data: { title, type, date: childDate, churchId, planningDeadline: deadlineFor(childDate), recurrenceRule, seriesId: parent.id },
       });
-      if (departmentIds && departmentIds.length > 0) {
-        await tx.eventDepartment.createMany({
-          data: departmentIds.map((departmentId) => ({ eventId: child.id, departmentId })),
-        });
-      }
+      await linkDepartments(tx, child.id, departmentIds);
     }
 
     return {
@@ -187,14 +179,9 @@ async function executeAjoutEvenement(
   }
 
   const event = await tx.event.create({
-    data: { title, type, date: eventDate, churchId, planningDeadline: deadline },
+    data: { title, type, date: eventDate, churchId, planningDeadline: deadlineFor(eventDate) },
   });
-
-  if (departmentIds && departmentIds.length > 0) {
-    await tx.eventDepartment.createMany({
-      data: departmentIds.map((departmentId) => ({ eventId: event.id, departmentId })),
-    });
-  }
+  await linkDepartments(tx, event.id, departmentIds);
 
   return { success: true, resourceId: event.id };
 }
@@ -330,6 +317,45 @@ const DEMANDE_ACCES_ALLOWED_ROLES = [
   "REPORTER",
 ] as const;
 
+/** Contrôles de forme d'une demande d'accès : rôle autorisé et rattachement requis fourni. */
+function demandeAccesError(
+  targetUserId: string,
+  role: string,
+  ministryId: string | undefined,
+  departmentIds: string[] | undefined
+): string | null {
+  if (!targetUserId || !role) return "Données manquantes : targetUserId, role";
+  if (!DEMANDE_ACCES_ALLOWED_ROLES.includes(role as typeof DEMANDE_ACCES_ALLOWED_ROLES[number])) {
+    return `Rôle non autorisé via demande d'accès : ${role}`;
+  }
+  if (role === "MINISTER" && !ministryId) return "ministryId requis pour le rôle MINISTER";
+  if (role === "DEPARTMENT_HEAD" && !departmentIds?.length) return "departmentIds requis pour le rôle DEPARTMENT_HEAD";
+  return null;
+}
+
+/** Utilisateur existant ; ministère et départements de l'église. */
+async function demandeAccesScopeError(
+  tx: TxClient,
+  churchId: string,
+  targetUserId: string,
+  ministryId: string | undefined,
+  departmentIds: string[] | undefined
+): Promise<string | null> {
+  const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
+  if (!user) return "Utilisateur cible introuvable";
+  if (ministryId) {
+    const validMinistry = await tx.ministry.count({ where: { id: ministryId, churchId } });
+    if (validMinistry === 0) return "Ministère invalide ou hors périmètre";
+  }
+  if (departmentIds && departmentIds.length > 0) {
+    const validDepts = await tx.department.count({
+      where: { id: { in: departmentIds }, ministry: { churchId } },
+    });
+    if (validDepts !== departmentIds.length) return "Départements invalides ou hors périmètre";
+  }
+  return null;
+}
+
 async function executeDemandeAcces(
   tx: TxClient,
   churchId: string,
@@ -340,37 +366,10 @@ async function executeDemandeAcces(
   const ministryId = payload.ministryId as string | undefined;
   const departmentIds = payload.departmentIds as string[] | undefined;
 
-  if (!targetUserId || !role) {
-    return { success: false, error: "Données manquantes : targetUserId, role" };
-  }
-
-  if (!DEMANDE_ACCES_ALLOWED_ROLES.includes(role as typeof DEMANDE_ACCES_ALLOWED_ROLES[number])) {
-    return { success: false, error: `Rôle non autorisé via demande d'accès : ${role}` };
-  }
-
-  if (role === "MINISTER" && !ministryId) {
-    return { success: false, error: "ministryId requis pour le rôle MINISTER" };
-  }
-  if (role === "DEPARTMENT_HEAD" && (!departmentIds || departmentIds.length === 0)) {
-    return { success: false, error: "departmentIds requis pour le rôle DEPARTMENT_HEAD" };
-  }
-
-  const user = await tx.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
-  if (!user) return { success: false, error: "Utilisateur cible introuvable" };
-
-  if (ministryId) {
-    const validMinistry = await tx.ministry.count({ where: { id: ministryId, churchId } });
-    if (validMinistry === 0) return { success: false, error: "Ministère invalide ou hors périmètre" };
-  }
-
-  if (departmentIds && departmentIds.length > 0) {
-    const validDepts = await tx.department.count({
-      where: { id: { in: departmentIds }, ministry: { churchId } },
-    });
-    if (validDepts !== departmentIds.length) {
-      return { success: false, error: "Départements invalides ou hors périmètre" };
-    }
-  }
+  const error =
+    demandeAccesError(targetUserId, role, ministryId, departmentIds) ??
+    (await demandeAccesScopeError(tx, churchId, targetUserId, ministryId, departmentIds));
+  if (error) return { success: false, error };
 
   const ucr = await tx.userChurchRole.create({
     data: {

@@ -174,6 +174,32 @@ export interface AnswerInput {
 
 const PLANNED_STATUSES = ["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT"] as const;
 
+type AnswerEvent = { id: string; title: string; date: Date; eventDepts: { departmentId: string }[] };
+
+/**
+ * Départements concernés par une réponse : ceux demandés (par défaut, tous ceux du STAR qui
+ * servent l'événement), à condition que l'événement soit de l'église, à venir, et servi par
+ * chacun d'eux.
+ */
+function answerTargets(
+  event: AnswerEvent | undefined,
+  requested: string[] | undefined,
+  memberDeptIds: Set<string>,
+  now: Date
+): { event: AnswerEvent; targets: string[] } {
+  if (!event) throw new ApiError(400, "Événement introuvable dans cette église");
+  if (event.date.getTime() < now.getTime()) throw new ApiError(400, "Cet événement est déjà passé");
+
+  const serving = event.eventDepts.map((d) => d.departmentId).filter((id) => memberDeptIds.has(id));
+  if (serving.length === 0) throw new ApiError(400, "Aucun de vos départements ne sert cet événement");
+
+  const targets = requested ?? serving;
+  if (targets.length === 0 || targets.some((id) => !serving.includes(id))) {
+    throw new ApiError(400, "Département invalide pour cet événement");
+  }
+  return { event, targets };
+}
+
 /**
  * Enregistre les réponses d'un STAR. « Tous mes départements » est déplié ici sur les
  * départements du STAR qui servent l'événement. Quand un STAR déjà planifié passe « Pas
@@ -209,17 +235,7 @@ export async function saveResponses({
     const eventById = new Map(events.map((e) => [e.id, e]));
 
     for (const a of answers) {
-      const event = eventById.get(a.eventId);
-      if (!event) throw new ApiError(400, "Événement introuvable dans cette église");
-      if (event.date.getTime() < now.getTime()) throw new ApiError(400, "Cet événement est déjà passé");
-
-      const serving = event.eventDepts.map((d) => d.departmentId).filter((id) => memberDeptIds.has(id));
-      if (serving.length === 0) throw new ApiError(400, "Aucun de vos départements ne sert cet événement");
-
-      const targets = a.departmentIds ?? serving;
-      if (targets.length === 0 || targets.some((id) => !serving.includes(id))) {
-        throw new ApiError(400, "Département invalide pour cet événement");
-      }
+      const { event, targets } = answerTargets(eventById.get(a.eventId), a.departmentIds, memberDeptIds, now);
 
       for (const departmentId of targets) {
         await tx.availabilityResponse.upsert({

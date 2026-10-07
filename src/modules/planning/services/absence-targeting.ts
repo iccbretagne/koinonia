@@ -135,6 +135,36 @@ interface ValidateTargetingParams {
   declarerScope: DeclarerScope;
 }
 
+/** Départements ciblés : au moins un, tous du STAR, et dans le périmètre d'un déclarant restreint. */
+function assertDepartmentTargets(departmentIds: string[], memberDepartmentIds: string[], declarerScope: DeclarerScope) {
+  if (departmentIds.length === 0) {
+    throw new ApiError(400, "Au moins un département doit être ciblé");
+  }
+  if (departmentIds.some((id) => !memberDepartmentIds.includes(id))) {
+    throw new ApiError(400, "Un département ciblé n'appartient pas à ce STAR");
+  }
+  if (declarerScope.scoped && departmentIds.some((id) => !declarerScope.departmentIds.includes(id))) {
+    throw new ApiError(403, "Un département ciblé est hors de votre périmètre");
+  }
+}
+
+/** Événements ciblés : à venir, et attendant au moins un des départements visés. */
+function assertEventsAttendable(
+  events: { title: string; date: Date; eventDepts: { departmentId: string }[] }[],
+  effectiveIds: string[],
+  now: Date
+) {
+  for (const event of events) {
+    if (event.date < now) {
+      throw new ApiError(400, `L'événement « ${event.title} » est déjà passé`);
+    }
+    const attended = new Set(event.eventDepts.map((d) => d.departmentId));
+    if (!effectiveIds.some((id) => attended.has(id))) {
+      throw new ApiError(400, `Aucun département visé n'est attendu sur « ${event.title} »`);
+    }
+  }
+}
+
 /**
  * Valide le ciblage d'une déclaration/modification d'absence : départements dans le périmètre du
  * STAR (et du déclarant s'il est restreint), événements de la même église, à venir, et attendant
@@ -151,19 +181,7 @@ export async function validateTargeting(
     await db.memberDepartment.findMany({ where: { memberId }, select: { departmentId: true } })
   ).map((d) => d.departmentId);
 
-  if (!allDepartments) {
-    if (departmentIds.length === 0) {
-      throw new ApiError(400, "Au moins un département doit être ciblé");
-    }
-    const notOwned = departmentIds.filter((id) => !memberDepartmentIds.includes(id));
-    if (notOwned.length > 0) {
-      throw new ApiError(400, "Un département ciblé n'appartient pas à ce STAR");
-    }
-    if (declarerScope.scoped) {
-      const outOfScope = departmentIds.some((id) => !declarerScope.departmentIds.includes(id));
-      if (outOfScope) throw new ApiError(403, "Un département ciblé est hors de votre périmètre");
-    }
-  }
+  if (!allDepartments) assertDepartmentTargets(departmentIds, memberDepartmentIds, declarerScope);
 
   if (kind !== "EVENTS") return { events: [] };
 
@@ -179,17 +197,7 @@ export async function validateTargeting(
     throw new ApiError(400, "Un événement ciblé est invalide ou hors périmètre");
   }
 
-  const effectiveIds = allDepartments ? memberDepartmentIds : departmentIds;
-  const now = new Date();
-  for (const event of events) {
-    if (event.date < now) {
-      throw new ApiError(400, `L'événement « ${event.title} » est déjà passé`);
-    }
-    const attended = new Set(event.eventDepts.map((d) => d.departmentId));
-    if (!effectiveIds.some((id) => attended.has(id))) {
-      throw new ApiError(400, `Aucun département visé n'est attendu sur « ${event.title} »`);
-    }
-  }
+  assertEventsAttendable(events, allDepartments ? memberDepartmentIds : departmentIds, new Date());
 
   return { events: events.map((e) => ({ eventId: e.id, title: e.title, date: e.date })) };
 }
