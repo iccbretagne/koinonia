@@ -46,3 +46,4 @@ prisma/scripts/migrate-audiobookshelf/.ledger.jsonl
 # configuration (emails des participants). Genere par
 # prisma/scripts/build-training-fixture.ts — jamais commite.
 prisma/fixtures/training-real.*
+sonar-report/
