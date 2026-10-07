@@ -134,3 +134,7 @@ if step_summary := os.environ.get("GITHUB_STEP_SUMMARY"):
     with open(step_summary, "a") as f:
         f.write(text + "\n")
 print(text)
+# Détail dans le journal du run (lisible sans télécharger l'artefact), trié par règle puis fichier.
+print("\n### Détail\n")
+for r in sorted(rows, key=lambda r: (r["rule"], r["file"], r["line"] or 0)):
+    print(f"{r['rule']} {r['file']}:{r['line']} {r['message']}")
