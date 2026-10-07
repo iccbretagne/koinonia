@@ -16,7 +16,7 @@ import { clearAuthCookies } from "@/lib/auth-cookies";
  *
  * Située sous `/api/auth/*`, elle est hors du matcher de `src/proxy.ts`.
  */
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   // Location **relative** (RFC 7231 §7.1.2) et non `new URL("/", request.url)` :
   // derrière Traefik, `request.url` porte l'adresse interne du service
   // (`https://0.0.0.0:3001`), que le navigateur ne peut pas joindre. Constaté en

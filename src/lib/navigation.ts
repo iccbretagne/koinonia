@@ -517,7 +517,7 @@ const SUBPAGE_LABELS: Record<string, string> = {
 };
 
 function subpageLabel(pathname: string): string {
-  const last = pathname.split("/").filter(Boolean).pop() ?? "";
+  const last = pathname.split("/").findLast(Boolean) ?? "";
   return SUBPAGE_LABELS[last] ?? "Détail";
 }
 
@@ -741,5 +741,5 @@ export function filterByQuery<T>(items: readonly T[], query: string, text: (item
     else if (label.split(/[\s'’-]+/).some((w) => w.startsWith(tokens[0]))) score = 1;
     scored.push({ item, score, index });
   });
-  return scored.sort((a, b) => a.score - b.score || a.index - b.index).map((s) => s.item);
+  return scored.toSorted((a, b) => a.score - b.score || a.index - b.index).map((s) => s.item);
 }

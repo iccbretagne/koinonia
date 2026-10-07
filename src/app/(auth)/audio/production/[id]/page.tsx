@@ -5,6 +5,13 @@ import { getOrCreatePrimaryShareToken, buildPublicAudioUrl } from "@/modules/aud
 import AudioServiceClient from "./AudioServiceClient";
 import ServiceInfoEditor from "./ServiceInfoEditor";
 
+/** Segment visé par un job audio, s'il figure dans son payload JSON. */
+function payloadSegmentId(payload: unknown): string {
+  if (!payload || typeof payload !== "object" || !("segmentId" in payload)) return "";
+  const { segmentId } = payload as { segmentId?: unknown };
+  return typeof segmentId === "string" ? segmentId : "";
+}
+
 export default async function AudioServicePage({
   params,
 }: {
@@ -74,10 +81,7 @@ export default async function AudioServicePage({
             .map((j) => ({
               id: j.id,
               error: j.error,
-              segmentId:
-                j.payload && typeof j.payload === "object" && "segmentId" in j.payload
-                  ? String((j.payload as { segmentId?: unknown }).segmentId ?? "")
-                  : "",
+              segmentId: payloadSegmentId(j.payload),
             })),
           // Le statut READY seul ne dit pas si un rendu tourne réellement : après un redépôt
           // suite à un échec, le statut reste READY mais les jobs PENDING/RUNNING peuvent avoir

@@ -85,7 +85,6 @@ export default async function AccountingRequestDetailPage({
         request={serialized}
         canManage={canManage}
         isOwn={isOwn}
-        currentUserId={session.user.id!}
       />
     </div>
   );

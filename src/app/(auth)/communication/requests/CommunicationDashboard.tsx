@@ -236,7 +236,7 @@ export default function CommunicationDashboard({ requests: initial }: Props) {
       {pending.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
-            En attente
+            <span>En attente</span>
             <span className="bg-brand text-on-brand text-xs font-bold px-2 py-0.5 rounded-full">
               {pending.length}
             </span>

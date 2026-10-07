@@ -23,7 +23,7 @@ export default function MemberAudioPlayer({ serviceId, service }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(segmentId ? { segmentId } : {}),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { url } = (await res.json()) as { url: string };
 
       if (typeof navigator !== "undefined" && navigator.share) {

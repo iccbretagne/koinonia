@@ -168,7 +168,7 @@ export default function DataTable<T extends { id: string }>({
       {sortableColumns.length > 0 && sort && onSortChange && (
         <div className="mb-3 flex items-end gap-2 md:hidden">
           <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-display text-[13px] font-semibold leading-[18px] text-ink">
-            Trier par
+            <span>Trier par</span>
             <span className="relative">
               <select
                 value={sort.key}

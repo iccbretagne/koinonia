@@ -26,7 +26,7 @@ export async function GET(_request: Request) {
     const families = items
       .map((f) => {
         const item = f as Record<string, unknown>;
-        return { id: Number(item.id), name: String(item.name ?? "") };
+        return { id: Number(item.id), name: typeof item.name === "string" ? item.name : "" };
       })
       .filter((f) => f.id && f.name)
       .sort((a, b) => a.name.localeCompare(b.name, "fr"));

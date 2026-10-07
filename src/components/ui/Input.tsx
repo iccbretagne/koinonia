@@ -21,7 +21,7 @@ export default function Input({
   "aria-describedby": describedBy,
   "aria-invalid": ariaInvalid,
   ...props
-}: InputProps) {
+}: Readonly<InputProps>) {
   const { controlId, messageId, ariaDescribedBy } = useFieldIds({ id, hint, error, describedBy });
 
   return (

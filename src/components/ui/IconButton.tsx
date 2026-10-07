@@ -30,7 +30,7 @@ export default function IconButton({
   type = "button",
   title,
   ...props
-}: IconButtonProps) {
+}: Readonly<IconButtonProps>) {
   return (
     <button
       type={type}

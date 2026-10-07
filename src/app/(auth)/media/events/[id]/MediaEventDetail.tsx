@@ -492,7 +492,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
 
   // Advance to next photo or close when the current one is removed
   useEffect(() => {
-    if (!photos.find((p) => p === photo)) {
+    if (!photos.includes(photo)) {
       if (hasNext) go(1);
       else onClose();
     }

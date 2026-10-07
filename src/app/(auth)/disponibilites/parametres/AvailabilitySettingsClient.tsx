@@ -60,7 +60,7 @@ export default function AvailabilitySettingsClient({
     <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-4">
       <label className="flex items-center gap-3 min-h-[44px] text-sm text-ink">
         <input type="checkbox" className="h-5 w-5" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-        Collecte automatique activée
+        <span>Collecte automatique activée</span>
       </label>
       <Input
         label="Ouverture : combien de mois avant le mois concerné"

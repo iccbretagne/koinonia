@@ -265,11 +265,11 @@ export default function RoomChecklistsClient({ initialReservations }: { readonly
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={closedProperly} onChange={(e) => setClosedProperly(e.target.checked)} />
-                    Constaté : salle correctement fermée
+                    <span>Constaté : salle correctement fermée</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={cleaned} onChange={(e) => setCleaned(e.target.checked)} />
-                    Constaté : salle nettoyée
+                    <span>Constaté : salle nettoyée</span>
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -277,7 +277,7 @@ export default function RoomChecklistsClient({ initialReservations }: { readonly
                       checked={validatedEquipmentOk}
                       onChange={(e) => setValidatedEquipmentOk(e.target.checked)}
                     />
-                    Constaté : salle/matériel en bon état
+                    <span>Constaté : salle/matériel en bon état</span>
                   </label>
                 </div>
                 <Textarea

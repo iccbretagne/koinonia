@@ -107,6 +107,11 @@ interface Props {
   readonly canManage?: boolean;
 }
 
+/** Valeur libre du payload affichable telle quelle ; un objet ou une absence donnent `fallback`. */
+function asText(value: unknown, fallback: string): string {
+  return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
+}
+
 export default function RequestsDashboard({ requests: initial, canManage = false }: Props) {
   const toast = useToast();
   const [requests, setRequests] = useState(initial);
@@ -200,7 +205,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
         monthly: "Mensuel",
       };
       const parts = [
-        `${p.eventType ?? ""}`,
+        asText(p.eventType, ""),
         p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : "",
         deptCount > 0 ? `${deptCount} département${deptPlural}` : null,
         recurrence ? `Récurrence : ${recurrenceLabels[recurrence] ?? recurrence}` : null,
@@ -208,7 +213,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
       return parts.join(" — ");
     }
     if (req.type === "ANNULATION_EVENEMENT") {
-      return `Raison : ${p.reason ?? "—"}`;
+      return `Raison : ${asText(p.reason, "—")}`;
     }
     if (req.type === "MODIFICATION_PLANNING") {
       const deptIds = p.departmentIds as string[] | undefined;
@@ -216,7 +221,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
       return `${count} département${count !== 1 ? "s" : ""} sélectionné${count !== 1 ? "s" : ""}`;
     }
     if (req.type === "DEMANDE_ACCES") {
-      return `Rôle : ${p.role ?? "—"}`;
+      return `Rôle : ${asText(p.role, "—")}`;
     }
     return null;
   }

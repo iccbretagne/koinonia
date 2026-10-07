@@ -48,7 +48,6 @@ interface Props {
   readonly pendingRequests: PendingRequest[];
   readonly rejectedRequests: RejectedRequest[];
   readonly ministries: Ministry[];
-  readonly onCountChange?: (count: number) => void;
 }
 
 function Avatar({ user, size = 32 }: { readonly user: { name: string; image: string | null }; readonly size?: number }) {

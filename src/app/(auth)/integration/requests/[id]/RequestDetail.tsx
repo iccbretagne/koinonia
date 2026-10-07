@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/ui/Modal";
 import HistoryTimeline from "@/components/HistoryTimeline";
 
+type DateLike = Date | string;
+
 const HISTORY_ACTION_LABELS: Record<string, string> = {
   relance: "Relance consignée",
   handback: "Renvoyée à l'intégration",
@@ -95,13 +97,13 @@ type MilestoneKey = (typeof MILESTONES)[number]["key"];
 interface PersonJourneyData {
   id: string;
   integratedInFamily: boolean;
-  familyIntegratedAt: Date | string | null;
+  familyIntegratedAt: DateLike | null;
   followsPcnc: boolean;
-  pcncStartedAt: Date | string | null;
+  pcncStartedAt: DateLike | null;
   isStar: boolean;
-  starSince: Date | string | null;
+  starSince: DateLike | null;
   inDiscipleship: boolean;
-  discipleshipSince: Date | string | null;
+  discipleshipSince: DateLike | null;
 }
 
 interface MsdpFollowUpType {
@@ -110,13 +112,13 @@ interface MsdpFollowUpType {
   assignedConseillerMsdpId: string | null;
   assignedConseillerMsdp: { id: string; name: string | null; email: string | null } | null;
   assignedProfile: { id: string; name: string } | null;
-  assignedAt: Date | string | null;
-  contactedAt: Date | string | null;
-  inFormationAt: Date | string | null;
-  completedAt: Date | string | null;
-  abandonedAt: Date | string | null;
+  assignedAt: DateLike | null;
+  contactedAt: DateLike | null;
+  inFormationAt: DateLike | null;
+  completedAt: DateLike | null;
+  abandonedAt: DateLike | null;
   notes: string | null;
-  createdAt: Date | string;
+  createdAt: DateLike;
 }
 
 interface Request {
@@ -130,17 +132,17 @@ interface Request {
   ageRange: string;
   churchStatus: string;
   status: string;
-  submittedAt: Date | string;
-  assignedAt: Date | string | null;
-  contactedAt: Date | string | null;
-  whatsappAddedAt: Date | string | null;
-  integratedAt: Date | string | null;
-  abandonedAt: Date | string | null;
+  submittedAt: DateLike;
+  assignedAt: DateLike | null;
+  contactedAt: DateLike | null;
+  whatsappAddedAt: DateLike | null;
+  integratedAt: DateLike | null;
+  abandonedAt: DateLike | null;
   abandonReason: string | null;
   abandonReasonCode: string | null;
   waitingFrom: string | null;
-  waitingSince: Date | string | null;
-  lastRelanceAt: Date | string | null;
+  waitingSince: DateLike | null;
+  lastRelanceAt: DateLike | null;
   suggestedFamilyName: string | null;
   assignedFamilyId: number | null;
   assignedFamilyName: string | null;
@@ -178,12 +180,12 @@ interface Props {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmt(d: Date | string | null) {
+function fmt(d: DateLike | null) {
   if (!d) return null;
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-function fmtShort(d: Date | string | null) {
+function fmtShort(d: DateLike | null) {
   if (!d) return null;
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
@@ -195,7 +197,7 @@ interface StepData {
   label: string;
   done: boolean;
   current: boolean;
-  ts: Date | string | null;
+  ts: DateLike | null;
 }
 
 const TRACK_THEME = {
@@ -293,7 +295,7 @@ function TrackTimeline({ steps, theme = "violet" }: { readonly steps: StepData[]
           {steps.find((s) => s.current)?.label ??
             (steps.every((s) => s.done)
               ? "Terminé ✓"
-              : steps.filter((s) => s.done).at(-1)?.label ?? "—")}
+              : steps.findLast((s) => s.done)?.label ?? "—")}
         </span>
       </div>
     </>

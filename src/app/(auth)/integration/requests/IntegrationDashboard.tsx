@@ -156,7 +156,7 @@ export default function IntegrationDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ churchId, requestIds: filtered.map((r) => r.id) }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -178,7 +178,7 @@ export default function IntegrationDashboard({
         <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
           <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-            À traiter
+            <span>À traiter</span>
             <span className="text-brand-text/60 font-normal">({actionable.length})</span>
           </h2>
           <div className="space-y-1.5">
@@ -224,7 +224,7 @@ export default function IntegrationDashboard({
         <div className="bg-warning-soft border border-warning/30 rounded-xl p-4 space-y-3">
           <h2 className="text-sm font-semibold text-warning flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-warning" />
-            À relancer
+            <span>À relancer</span>
             <span className="text-warning/60 font-normal">({toRelance.length})</span>
           </h2>
           <div className="space-y-1.5">

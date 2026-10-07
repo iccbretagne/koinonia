@@ -58,11 +58,9 @@ export async function POST(request: Request) {
       if (adminEmail) {
         let user = await tx.user.findUnique({ where: { email: adminEmail } });
 
-        if (!user) {
-          user = await tx.user.create({
-            data: { email: adminEmail },
-          });
-        }
+        user ??= await tx.user.create({
+          data: { email: adminEmail },
+        });
 
         await tx.userChurchRole.create({
           data: {

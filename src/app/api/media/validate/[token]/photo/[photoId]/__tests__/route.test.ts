@@ -38,42 +38,27 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
     vi.clearAllMocks();
   });
 
-  it("VALIDATOR peut corriger APPROVED → REJECTED (correction d'erreur)", async () => {
+  it.each([
+    ["corriger APPROVED → REJECTED (correction d'erreur)", "REJECTED", 0],
+    ["corriger REJECTED → APPROVED (correction d'erreur)", "APPROVED", 1],
+    ["transitionner PREVALIDATED → APPROVED", "APPROVED", 1],
+  ])("VALIDATOR peut %s", async (_label, status, eventsUpdated) => {
     mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
 
     prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
 
     prismaMock.mediaPhoto.count.mockResolvedValue(0);
-    prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 0 } as never);
+    prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: eventsUpdated } as never);
 
     const request = new Request("http://localhost/api/media/validate/tok/photo/photo-1", {
       method: "PATCH",
-      body: JSON.stringify({ status: "REJECTED" }),
+      body: JSON.stringify({ status }),
     });
 
     const res = await PATCH(request, { params: makeParams("tok", "photo-1") });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.status).toBe("REJECTED");
-  });
-
-  it("VALIDATOR peut corriger REJECTED → APPROVED (correction d'erreur)", async () => {
-    mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
-
-    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
-
-    prismaMock.mediaPhoto.count.mockResolvedValue(0);
-    prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 1 } as never);
-
-    const request = new Request("http://localhost/api/media/validate/tok/photo/photo-1", {
-      method: "PATCH",
-      body: JSON.stringify({ status: "APPROVED" }),
-    });
-
-    const res = await PATCH(request, { params: makeParams("tok", "photo-1") });
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.status).toBe("APPROVED");
+    expect(body.status).toBe(status);
   });
 
   it("PREVALIDATOR peut transitionner PENDING → PREVALIDATED", async () => {
@@ -102,25 +87,6 @@ describe("HIGH-2 : PATCH photo/[photoId] — machine d'état", () => {
 
     const res = await PATCH(request, { params: makeParams("tok", "photo-1") });
     expect(res.status).toBe(403);
-  });
-
-  it("VALIDATOR peut transitionner PREVALIDATED → APPROVED", async () => {
-    mockValidateMediaShareToken.mockResolvedValue(baseValidatorToken);
-
-    prismaMock.mediaPhoto.updateMany.mockResolvedValue({ count: 1 } as never);
-
-    prismaMock.mediaPhoto.count.mockResolvedValue(0);
-    prismaMock.mediaEvent.updateMany.mockResolvedValue({ count: 1 } as never);
-
-    const request = new Request("http://localhost/api/media/validate/tok/photo/photo-1", {
-      method: "PATCH",
-      body: JSON.stringify({ status: "APPROVED" }),
-    });
-
-    const res = await PATCH(request, { params: makeParams("tok", "photo-1") });
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.status).toBe("APPROVED");
   });
 
   it("retourne 404 si la photo est introuvable", async () => {

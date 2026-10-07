@@ -400,7 +400,7 @@ function groupByMinistry(departments: DepartmentItem[]): { name: string; departm
   }
   return [...byName.entries()]
     .sort(([a], [b]) => a.localeCompare(b, "fr"))
-    .map(([name, list]) => ({ name, departments: list.sort((a, b) => a.name.localeCompare(b.name, "fr")) }));
+    .map(([name, list]) => ({ name, departments: list.toSorted((a, b) => a.name.localeCompare(b.name, "fr")) }));
 }
 
 function StaffedCard({ dept }: { readonly dept: DepartmentItem }) {

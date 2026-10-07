@@ -55,28 +55,14 @@ describe("POST /api/accounting/requests — autorisation des pièces jointes", (
     });
   });
 
-  it("refuse une pièce déposée par quelqu'un d'autre — aucune demande créée", async () => {
+  it.each([
+    ["déposée par quelqu'un d'autre", "att-of-someone-else"],
+    ["déjà rattachée à une autre demande", "att-already-linked"],
+    ["d'une autre église", "att-other-church"],
+  ])("refuse une pièce %s — aucune demande créée", async (_label, attachmentId) => {
     prismaMock.financialAttachment.count.mockResolvedValue(0);
 
-    const res = await postRequest(requestBody(["att-of-someone-else"]));
-
-    expect(res.status).toBe(403);
-    expect(prismaMock.financialRequest.create).not.toHaveBeenCalled();
-  });
-
-  it("refuse une pièce déjà rattachée à une autre demande", async () => {
-    prismaMock.financialAttachment.count.mockResolvedValue(0);
-
-    const res = await postRequest(requestBody(["att-already-linked"]));
-
-    expect(res.status).toBe(403);
-    expect(prismaMock.financialRequest.create).not.toHaveBeenCalled();
-  });
-
-  it("refuse une pièce d'une autre église", async () => {
-    prismaMock.financialAttachment.count.mockResolvedValue(0);
-
-    const res = await postRequest(requestBody(["att-other-church"]));
+    const res = await postRequest(requestBody([attachmentId]));
 
     expect(res.status).toBe(403);
     expect(prismaMock.financialRequest.create).not.toHaveBeenCalled();

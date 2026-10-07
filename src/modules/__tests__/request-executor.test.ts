@@ -13,53 +13,22 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" });
   });
 
-  it("rejects SUPER_ADMIN role", async () => {
+  it.each(["SUPER_ADMIN", "ADMIN", "SECRETARY"])("rejects %s role", async (role) => {
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "SUPER_ADMIN",
+      role,
     }, "approver-1");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("non autorisé");
   });
 
-  it("rejects ADMIN role", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "ADMIN",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("non autorisé");
-  });
-
-  it("rejects SECRETARY role", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "SECRETARY",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("non autorisé");
-  });
-
-  it("allows DISCIPLE_MAKER role", async () => {
+  it.each(["DISCIPLE_MAKER", "REPORTER"])("allows %s role", async (role) => {
     prismaMock.userChurchRole.create.mockResolvedValue({ id: "role-1" });
 
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "DISCIPLE_MAKER",
-    }, "approver-1");
-
-    expect(result.success).toBe(true);
-  });
-
-  it("allows REPORTER role", async () => {
-    prismaMock.userChurchRole.create.mockResolvedValue({ id: "role-1" });
-
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "REPORTER",
+      role,
     }, "approver-1");
 
     expect(result.success).toBe(true);

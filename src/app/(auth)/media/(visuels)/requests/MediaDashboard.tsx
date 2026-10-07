@@ -326,12 +326,12 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
                   {projects.length > 0 && (
                     <label className="flex items-center gap-1.5 cursor-pointer">
                       <input type="radio" checked={projectMode === "existing"} onChange={() => setProjectMode("existing")} />
-                      Projet existant
+                      <span>Projet existant</span>
                     </label>
                   )}
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="radio" checked={projectMode === "new"} onChange={() => setProjectMode("new")} />
-                    Nouveau projet
+                    <span>Nouveau projet</span>
                   </label>
                 </div>
                 {projectMode === "existing" && projects.length > 0 && (
@@ -417,7 +417,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
       {pending.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
-            En attente
+            <span>En attente</span>
             <span className="bg-brand text-on-brand text-xs font-bold px-2 py-0.5 rounded-full">
               {pending.length}
             </span>

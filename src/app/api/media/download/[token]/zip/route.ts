@@ -29,7 +29,7 @@ export async function POST(
 
     // Résout les entrées à zipper (photos d'événement ou fichiers de projet).
     let entries: { filename: string; originalKey: string }[] = [];
-    let zipBaseName = "medias";
+    let zipBaseName: string;
 
     if (shareToken.mediaEvent) {
       const event = shareToken.mediaEvent;

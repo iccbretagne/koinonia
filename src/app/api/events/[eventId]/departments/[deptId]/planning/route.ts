@@ -249,11 +249,9 @@ export async function PUT(
       },
     });
 
-    if (!eventDept) {
-      eventDept = await prisma.eventDepartment.create({
-        data: { eventId, departmentId },
-      });
-    }
+    eventDept ??= await prisma.eventDepartment.create({
+      data: { eventId, departmentId },
+    });
 
     // Validate: all members must belong to this department
     const memberIds = plannings.map((p) => p.memberId);

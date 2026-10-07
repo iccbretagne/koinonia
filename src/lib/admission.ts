@@ -21,7 +21,7 @@ export interface AdmitToChurchInput {
     phone?: string | null;
     departmentId: string;
   };
-  requestedRole?: RequestedRole | undefined;
+  requestedRole?: RequestedRole;
   departmentId?: string | null;
   ministryId?: string | null;
 }

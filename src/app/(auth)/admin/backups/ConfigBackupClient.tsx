@@ -6,6 +6,11 @@ import type { ImportPreview, ImportResult, MergeStrategy } from "@/lib/config-ba
 
 type ConfigCategory = "structure" | "members" | "links";
 
+/** Ajoute ou retire une catégorie de la sélection (export et import partagent la même logique). */
+function toggled(list: ConfigCategory[], cat: ConfigCategory): ConfigCategory[] {
+  return list.includes(cat) ? list.filter((c) => c !== cat) : [...list, cat];
+}
+
 const CATEGORY_LABELS: Record<ConfigCategory, string> = {
   structure: "Structure (églises, ministères, départements)",
   members: "Membres",
@@ -37,7 +42,7 @@ type Church = { id: string; name: string };
 function ExportSection() {
   const [churches, setChurches] = useState<Church[]>([]);
   const [churchesLoaded, setChurchesLoaded] = useState(false);
-  const [scope, setScope] = useState<"all" | string>("all");
+  const [scope, setScope] = useState<string>("all"); // "all" ou l'id d'une église
   const [categories, setCategories] = useState<ConfigCategory[]>(["structure", "members", "links"]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,9 +58,7 @@ function ExportSection() {
   }
 
   function toggleCategory(cat: ConfigCategory) {
-    setCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
+    setCategories((prev) => toggled(prev, cat));
   }
 
   async function handleExport() {
@@ -81,7 +84,7 @@ function ExportSection() {
       }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
-      const match = disposition.match(/filename="(.+?)"/);
+      const match = /filename="(.+?)"/.exec(disposition);
       const filename = match?.[1] ?? "koinonia-config.json";
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -89,7 +92,7 @@ function ExportSection() {
       a.download = filename;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       URL.revokeObjectURL(url);
     } finally {
       setLoading(false);
@@ -110,7 +113,7 @@ function ExportSection() {
               onChange={() => setScope("all")}
               className="text-brand-text focus:ring-focus"
             />
-            Toutes les églises
+            <span>Toutes les églises</span>
           </label>
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
@@ -121,7 +124,7 @@ function ExportSection() {
               onChange={() => { loadChurches().catch(() => undefined); setScope(churches[0]?.id ?? ""); }}
               className="text-brand-text focus:ring-focus"
             />
-            Une église spécifique
+            <span>Une église spécifique</span>
           </label>
         </div>
         {scope !== "all" && (
@@ -251,9 +254,7 @@ function ImportSection() {
   }
 
   function toggleCategory(cat: ConfigCategory) {
-    setCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
+    setCategories((prev) => toggled(prev, cat));
   }
 
   return (

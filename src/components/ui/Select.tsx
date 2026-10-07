@@ -31,7 +31,7 @@ export default function Select({
   "aria-invalid": ariaInvalid,
   "aria-label": ariaLabel,
   ...props
-}: SelectProps) {
+}: Readonly<SelectProps>) {
   const { controlId, messageId, ariaDescribedBy } = useFieldIds({ id, hint, error, describedBy });
   const multiple = Boolean(props.multiple);
 

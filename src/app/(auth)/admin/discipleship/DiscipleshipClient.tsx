@@ -5,6 +5,9 @@ import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 
+/** Membre existant (id) ou nouveau disciple saisi par son nom. */
+type DiscipleSelection = string | { firstName: string; lastName: string } | null;
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type DeptInfo = Array<{ department: { name: string; ministry: { name: string } } }>;
@@ -164,8 +167,8 @@ function DiscipleCombobox({
   onChange,
 }: {
   readonly options: MemberOption[];
-  readonly value: string | { firstName: string; lastName: string } | null;
-  readonly onChange: (v: string | { firstName: string; lastName: string } | null) => void;
+  readonly value: DiscipleSelection;
+  readonly onChange: (v: DiscipleSelection) => void;
 }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -311,7 +314,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
   // Modal: nouvelle relation
   const [createModal, setCreateModal] = useState(false);
   // discipleSelection: existing member id OR { firstName, lastName } for a new member
-  const [discipleSelection, setDiscipleSelection] = useState<string | { firstName: string; lastName: string } | null>(null);
+  const [discipleSelection, setDiscipleSelection] = useState<DiscipleSelection>(null);
   const [newMakerId, setNewMakerId] = useState(linkedMemberId ?? members[0]?.id ?? "");
   const [createError, setCreateError] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);

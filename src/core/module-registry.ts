@@ -77,7 +77,7 @@ export function defineModule(manifest: ModuleManifest): ModuleManifest {
 }
 
 export class ModuleRegistry {
-  private modules = new Map<string, ModuleManifest>();
+  private readonly modules = new Map<string, ModuleManifest>();
 
   register(mod: ModuleManifest): void {
     if (this.modules.has(mod.name)) {

@@ -72,7 +72,7 @@ async function evictIfOverBudget(): Promise<void> {
 
     // Éviction LRU : les fichiers les moins récemment servis (mtime/atime rafraîchi à chaque
     // accès autorisé) partent en premier.
-    const sorted = stats.sort((a, b) => a.atimeMs - b.atimeMs);
+    const sorted = stats.toSorted((a, b) => a.atimeMs - b.atimeMs);
     for (const entry of sorted) {
       if (total <= MAX_BYTES) break;
       await rm(entry.filePath, { force: true });

@@ -48,7 +48,7 @@ export default function HistoryTimeline({ fetchUrl, statusLabels, actionLabels, 
   useEffect(() => {
     let cancelled = false;
     fetch(fetchUrl)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error())))
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((json: HistoryEntry[] | { entries: HistoryEntry[] }) => {
         if (cancelled) return;
         setEntries(Array.isArray(json) ? json : json.entries);

@@ -233,7 +233,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
   const [photos, setPhotos] = useState<Photo[]>(data.photos ?? []);
   const [currentIndex, setCurrentIndex] = useState(() => {
     const first = (data.photos ?? []).findIndex((p) => p.status === "PENDING");
-    return first >= 0 ? first : 0;
+    return Math.max(first, 0);
   });
   const [showSummary, setShowSummary] = useState(false);
   const [summaryFilter, setSummaryFilter] = useState<SummaryFilter>("ALL");
@@ -276,7 +276,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
     }
   }, [token]);
 
-  const makeDecision = useCallback(async (status: string) => {
+  const makeDecision = useCallback((status: string) => {
     if (!currentPhoto) return;
     const prevStatus = currentPhoto.status;
     setPhotos((prev) => prev.map((p) => p.id === currentPhoto.id ? { ...p, status } : p));
@@ -320,8 +320,8 @@ export default function ValidatorView({ token, data }: { readonly token: string;
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
       if (showSummary) return;
-      if (e.key === "ArrowRight" || e.key === "v") void makeDecision(approveStatus);
-      else if (e.key === "ArrowLeft" || e.key === "x") void makeDecision(rejectStatus);
+      if (e.key === "ArrowRight" || e.key === "v") makeDecision(approveStatus);
+      else if (e.key === "ArrowLeft" || e.key === "x") makeDecision(rejectStatus);
       else if (e.key === " " || e.key === "ArrowDown") { e.preventDefault(); skipPhoto(); }
       else if (e.key === "h" || e.key === "Enter") setShowHdLightbox(true);
     }
@@ -356,11 +356,11 @@ export default function ValidatorView({ token, data }: { readonly token: string;
     setDragging(false);
     setDragX(0);
     pointerIdRef.current = null;
-    if (Math.abs(delta) >= 80) void makeDecision(delta > 0 ? approveStatus : rejectStatus);
+    if (Math.abs(delta) >= 80) makeDecision(delta > 0 ? approveStatus : rejectStatus);
   }, [dragging, dragX, makeDecision, approveStatus, rejectStatus]);
 
   // Toggle decision in summary view
-  const toggleDecision = useCallback(async (photoId: string) => {
+  const toggleDecision = useCallback((photoId: string) => {
     const photo = photos.find((p) => p.id === photoId);
     if (!photo) return;
     let newStatus = photo.status;
@@ -419,7 +419,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             <button
               onClick={() => {
                 const firstPending = photos.findIndex((p) => p.status === "PENDING");
-                setCurrentIndex(firstPending >= 0 ? firstPending : 0);
+                setCurrentIndex(Math.max(firstPending, 0));
                 setShowSummary(false);
                 setSummaryFilter("ALL");
               }}
@@ -491,7 +491,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             return (
               <button
                 key={photo.id}
-                onClick={() => void toggleDecision(photo.id)}
+                onClick={() => toggleDecision(photo.id)}
                 className="relative aspect-square overflow-hidden rounded-sm bg-surface-sunken"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -676,7 +676,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
         >
           <button
-            onClick={() => void makeDecision(rejectStatus)}
+            onClick={() => makeDecision(rejectStatus)}
             disabled={!!saving[currentPhoto?.id ?? ""]}
             className="w-16 h-16 rounded-full bg-danger text-on-danger flex items-center justify-center text-2xl hover:bg-danger/90 active:scale-95 transition-all disabled:opacity-50 shadow-float"
             aria-label="Rejeter"
@@ -691,7 +691,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             Passer
           </button>
           <button
-            onClick={() => void makeDecision(approveStatus)}
+            onClick={() => makeDecision(approveStatus)}
             disabled={!!saving[currentPhoto?.id ?? ""]}
             className="w-16 h-16 rounded-full bg-success text-surface flex items-center justify-center text-2xl hover:bg-success/90 active:scale-95 transition-all disabled:opacity-50 shadow-float"
             aria-label="Valider"

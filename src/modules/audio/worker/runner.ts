@@ -16,12 +16,8 @@ const MAX_ATTEMPTS = 3;
 const handlers: Record<AudioJobType, (job: AudioJob) => Promise<void>> = {
   PROBE: probeHandler,
   RENDER: renderHandler,
-  ALIGN: async () => {
-    throw new Error("Job ALIGN non implémenté (P1.5)");
-  },
-  TRANSCRIBE: async () => {
-    throw new Error("Job TRANSCRIBE non implémenté (P1.5)");
-  },
+  ALIGN: () => Promise.reject(new Error("Job ALIGN non implémenté (P1.5)")),
+  TRANSCRIBE: () => Promise.reject(new Error("Job TRANSCRIBE non implémenté (P1.5)")),
 };
 
 /**
