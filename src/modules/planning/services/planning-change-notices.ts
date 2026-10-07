@@ -223,21 +223,8 @@ export async function flushPlanningChangeNotices(
   // 1. Prise en charge : lecture puis suppression conditionnelle, annulée si une modification s'est glissée.
   const claimed: NoticeRow[][] = [];
   for (const { churchId, memberId } of due) {
-    try {
-      const rows = await prisma.$transaction(async (tx) => {
-        const found = (await tx.planningChangeNotice.findMany({ where: { churchId, memberId } })) as NoticeRow[];
-        if (found.length === 0) return found;
-        const snapshot = new Date(Math.max(...found.map((r) => r.lastChangedAt.getTime())));
-        const { count } = await tx.planningChangeNotice.deleteMany({
-          where: { churchId, memberId, id: { in: found.map((r) => r.id) }, lastChangedAt: { lte: snapshot } },
-        });
-        if (count !== found.length) throw new ConcurrentChange();
-        return found;
-      });
-      if (rows.length > 0) claimed.push(rows);
-    } catch (error) {
-      if (!(error instanceof ConcurrentChange)) console.error("[planning-change-notices] prise en charge impossible", memberId, error);
-    }
+    const rows = await claimNoticeRows(prisma, churchId, memberId);
+    if (rows.length > 0) claimed.push(rows);
   }
   if (claimed.length === 0) return { notified: 0, members: 0 };
 
@@ -262,46 +249,91 @@ export async function flushPlanningChangeNotices(
   const eventById = new Map(events.map((e) => [e.id, e]));
   const deptById = new Map(departments.map((d) => [d.id, d]));
 
-  const { createNotification } = await import("@/lib/notifications");
-  const { buildPlanningChangesEmail } = await import("@/lib/email");
-
+  const ctx: DigestContext = { eventById, deptById, plannings, links };
   let notified = 0;
   let members = 0;
   for (const rows of claimed) {
-    const { churchId, memberId } = rows[0];
-    // Événement disparu ou passé (déjà traité par la spec 059) ou département disparu : rien à dire.
-    const usable = rows.filter((r) => eventById.has(r.eventId) && deptById.has(r.departmentId));
-    const current = new Map<string, ServiceStatus | null>(
-      plannings
-        .filter((p) => p.memberId === memberId)
-        .map((p) => [planningKey(p.eventDepartment.eventId, p.eventDepartment.departmentId), p.status])
-    );
-    const net = computeNetChanges(usable, current);
-    if (net.length === 0) continue;
-
-    const userIds = links.filter((l) => l.memberId === memberId && l.churchId === churchId).map((l) => l.userId);
-    if (userIds.length === 0) continue;
-
-    const digest = buildPlanningDigest(
-      net.map((c) => ({
-        ...c,
-        eventTitle: eventById.get(c.eventId)!.title,
-        eventDate: eventById.get(c.eventId)!.date,
-        departmentName: deptById.get(c.departmentId)!.name,
-      }))
-    );
+    const sent = await sendMemberDigest(rows, ctx);
+    if (sent === null) continue;
     members += 1;
-    for (const userId of userIds) {
-      try {
-        await createNotification(
-          { userId, domain: "planning", type: PLANNING_DIGEST_TYPE, title: digest.title, message: digest.message, link: digest.link },
-          { email: buildPlanningChangesEmail({ title: digest.title, lines: digest.lines, link: digest.link }) }
-        );
-        notified += 1;
-      } catch (error) {
-        console.error("[planning-change-notices] envoi impossible", userId, error);
-      }
-    }
+    notified += sent;
   }
   return { notified, members };
+}
+
+type DigestContext = {
+  eventById: Map<string, { title: string; date: Date }>;
+  deptById: Map<string, { name: string }>;
+  plannings: { memberId: string; status: ServiceStatus | null; eventDepartment: { eventId: string; departmentId: string } }[];
+  links: { memberId: string; churchId: string; userId: string }[];
+};
+
+/**
+ * Lit puis supprime les lignes d'un STAR, à condition qu'aucune n'ait changé entre-temps ;
+ * renvoie `[]` si une modification s'est glissée (on y reviendra au passage suivant).
+ */
+async function claimNoticeRows(
+  prisma: Awaited<typeof import("@/lib/prisma")>["prisma"],
+  churchId: string,
+  memberId: string
+): Promise<NoticeRow[]> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const found = (await tx.planningChangeNotice.findMany({ where: { churchId, memberId } })) as NoticeRow[];
+      if (found.length === 0) return found;
+      const snapshot = new Date(Math.max(...found.map((r) => r.lastChangedAt.getTime())));
+      const { count } = await tx.planningChangeNotice.deleteMany({
+        where: { churchId, memberId, id: { in: found.map((r) => r.id) }, lastChangedAt: { lte: snapshot } },
+      });
+      if (count !== found.length) throw new ConcurrentChange();
+      return found;
+    });
+  } catch (error) {
+    if (!(error instanceof ConcurrentChange)) console.error("[planning-change-notices] prise en charge impossible", memberId, error);
+    return [];
+  }
+}
+
+/**
+ * Récapitulatif d'un STAR : changement net de son planning, envoyé à chacun de ses comptes.
+ * Renvoie le nombre de notifications créées, ou `null` s'il n'y avait rien à annoncer.
+ */
+async function sendMemberDigest(rows: NoticeRow[], ctx: DigestContext): Promise<number | null> {
+  const { churchId, memberId } = rows[0];
+  // Événement disparu ou passé (déjà traité par la spec 059) ou département disparu : rien à dire.
+  const usable = rows.filter((r) => ctx.eventById.has(r.eventId) && ctx.deptById.has(r.departmentId));
+  const current = new Map<string, ServiceStatus | null>(
+    ctx.plannings
+      .filter((p) => p.memberId === memberId)
+      .map((p) => [planningKey(p.eventDepartment.eventId, p.eventDepartment.departmentId), p.status])
+  );
+  const net = computeNetChanges(usable, current);
+  if (net.length === 0) return null;
+
+  const userIds = ctx.links.filter((l) => l.memberId === memberId && l.churchId === churchId).map((l) => l.userId);
+  if (userIds.length === 0) return null;
+
+  const digest = buildPlanningDigest(
+    net.map((c) => ({
+      ...c,
+      eventTitle: ctx.eventById.get(c.eventId)!.title,
+      eventDate: ctx.eventById.get(c.eventId)!.date,
+      departmentName: ctx.deptById.get(c.departmentId)!.name,
+    }))
+  );
+  const { createNotification } = await import("@/lib/notifications");
+  const { buildPlanningChangesEmail } = await import("@/lib/email");
+  let notified = 0;
+  for (const userId of userIds) {
+    try {
+      await createNotification(
+        { userId, domain: "planning", type: PLANNING_DIGEST_TYPE, title: digest.title, message: digest.message, link: digest.link },
+        { email: buildPlanningChangesEmail({ title: digest.title, lines: digest.lines, link: digest.link }) }
+      );
+      notified += 1;
+    } catch (error) {
+      console.error("[planning-change-notices] envoi impossible", userId, error);
+    }
+  }
+  return notified;
 }

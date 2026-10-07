@@ -103,28 +103,27 @@ export interface CreateReservationResult {
   truncated: boolean;
 }
 
-/**
- * Crée une réservation (occurrence unique, série liée à un événement récurrent, ou
- * série autonome). Chaque occurrence est vérifiée et écrite indépendamment : une
- * occurrence en conflit est omise sans faire échouer les autres (signalée dans
- * `conflicts`).
- */
-export async function createReservation(params: CreateReservationParams): Promise<CreateReservationResult> {
-  const { churchId, roomId, eventId, title, startAt, endAt, recurrenceRule, recurrenceEnd, createdById } = params;
-  const { prisma } = await import("@/lib/prisma");
-
-  const room = await prisma.room.findUnique({
-    where: { id: roomId },
-    select: { id: true, isActive: true, churchId: true, sharedWith: { select: { churchId: true } } },
-  });
+function assertRoomBookable(
+  room: { isActive: boolean; churchId: string; sharedWith: { churchId: string }[] } | null,
+  churchId: string
+): asserts room is NonNullable<typeof room> {
   if (!room) throw new ApiError(404, "Salle introuvable");
   if (!room.isActive) throw new ApiError(403, "Cette salle n'est plus active");
   const authorized = room.churchId === churchId || room.sharedWith.some((a) => a.churchId === churchId);
   if (!authorized) throw new ApiError(403, "Votre église n'est pas autorisée à réserver cette salle");
+}
 
+/**
+ * Occurrences à réserver : la première, puis celles de l'événement récurrent lié (même horaire
+ * chaque jour de la série) ou celles de la récurrence propre à la réservation.
+ */
+async function resolveOccurrences(
+  prisma: Awaited<typeof import("@/lib/prisma")>["prisma"],
+  params: CreateReservationParams
+): Promise<{ occurrences: Occurrence[]; truncated: boolean }> {
+  const { churchId, eventId, startAt, endAt, recurrenceRule, recurrenceEnd } = params;
   const durationMs = endAt.getTime() - startAt.getTime();
-  let occurrences: Occurrence[] = [{ startAt, endAt }];
-  let truncated = false;
+  const first = { startAt, endAt };
 
   if (eventId) {
     const event = await prisma.event.findUnique({
@@ -133,30 +132,48 @@ export async function createReservation(params: CreateReservationParams): Promis
     });
     if (!event) throw new ApiError(404, "Événement introuvable");
     if (event.churchId !== churchId) throw new ApiError(403, "Événement hors périmètre");
+    if (!event.isRecurrenceParent) return { occurrences: [first], truncated: false };
 
-    if (event.isRecurrenceParent) {
-      const children = await prisma.event.findMany({
-        where: { seriesId: event.id },
-        select: { date: true },
-        orderBy: { date: "asc" },
-      });
-      occurrences = [
-        { startAt, endAt },
-        ...children.map((c) => {
-          const occStart = new Date(c.date);
-          occStart.setHours(startAt.getHours(), startAt.getMinutes(), startAt.getSeconds(), 0);
-          return { startAt: occStart, endAt: new Date(occStart.getTime() + durationMs) };
-        }),
-      ];
-    }
-  } else if (recurrenceRule && recurrenceEnd) {
-    const generated = generateRoomRecurrenceDates(startAt, recurrenceRule, recurrenceEnd);
-    truncated = generated.truncated;
-    occurrences = [
-      { startAt, endAt },
-      ...generated.dates.map((d) => ({ startAt: d, endAt: new Date(d.getTime() + durationMs) })),
-    ];
+    const children = await prisma.event.findMany({
+      where: { seriesId: event.id },
+      select: { date: true },
+      orderBy: { date: "asc" },
+    });
+    const childOccurrences = children.map((c) => {
+      const occStart = new Date(c.date);
+      occStart.setHours(startAt.getHours(), startAt.getMinutes(), startAt.getSeconds(), 0);
+      return { startAt: occStart, endAt: new Date(occStart.getTime() + durationMs) };
+    });
+    return { occurrences: [first, ...childOccurrences], truncated: false };
   }
+
+  if (recurrenceRule && recurrenceEnd) {
+    const generated = generateRoomRecurrenceDates(startAt, recurrenceRule, recurrenceEnd);
+    return {
+      occurrences: [first, ...generated.dates.map((d) => ({ startAt: d, endAt: new Date(d.getTime() + durationMs) }))],
+      truncated: generated.truncated,
+    };
+  }
+  return { occurrences: [first], truncated: false };
+}
+
+/**
+ * Crée une réservation (occurrence unique, série liée à un événement récurrent, ou
+ * série autonome). Chaque occurrence est vérifiée et écrite indépendamment : une
+ * occurrence en conflit est omise sans faire échouer les autres (signalée dans
+ * `conflicts`).
+ */
+export async function createReservation(params: CreateReservationParams): Promise<CreateReservationResult> {
+  const { churchId, roomId, eventId, title, recurrenceRule, createdById } = params;
+  const { prisma } = await import("@/lib/prisma");
+
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { id: true, isActive: true, churchId: true, sharedWith: { select: { churchId: true } } },
+  });
+  assertRoomBookable(room, churchId);
+
+  const { occurrences, truncated } = await resolveOccurrences(prisma, params);
 
   const isSeries = occurrences.length > 1;
   const created: RoomReservation[] = [];

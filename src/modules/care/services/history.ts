@@ -54,50 +54,44 @@ export async function recordCareHistory(params: {
   });
 }
 
-export function toCareHistory(
-  logs: {
-    id: string;
-    details: unknown;
-    createdAt: Date;
-    user: { name: string | null; displayName: string | null } | null;
-  }[]
-): CareHistoryEntry[] {
-  const entries: CareHistoryEntry[] = [];
-  for (const log of logs) {
-    const details = (log.details ?? {}) as Record<string, unknown>;
-    const author = log.user?.displayName ?? log.user?.name ?? null;
+type CareLog = {
+  id: string;
+  details: unknown;
+  createdAt: Date;
+  user: { name: string | null; displayName: string | null } | null;
+};
 
-    if (typeof details.action === "string") {
-      // Lot 2 : { action, from, to, assignee?, note? } — ou lot 1 MSDP : { action } seul.
-      entries.push({
-        id: log.id,
-        action: details.action,
-        from: typeof details.from === "string" ? details.from : null,
-        to: typeof details.to === "string" ? details.to : null,
-        assignee: typeof details.assignee === "string" ? details.assignee : null,
-        note: typeof details.note === "string" ? details.note : null,
-        at: log.createdAt,
-        author,
-      });
-      continue;
-    }
+const stringOrNull = (value: unknown) => (typeof value === "string" ? value : null);
 
-    if (typeof details.transition === "string") {
-      // Lot 1 : { transition: "PENDING→VALIDATED", … }
-      const [from, to] = details.transition.split("→");
-      entries.push({
-        id: log.id,
-        action: null,
-        from: from ?? null,
-        to: to ?? null,
-        assignee: null,
-        note: null,
-        at: log.createdAt,
-        author,
-      });
-    }
+/** Entrée d'historique d'un journal d'audit, selon le format de son époque ; `null` si illisible. */
+function toCareHistoryEntry(log: CareLog): CareHistoryEntry | null {
+  const details = (log.details ?? {}) as Record<string, unknown>;
+  const base = { id: log.id, at: log.createdAt, author: log.user?.displayName ?? log.user?.name ?? null };
+
+  if (typeof details.action === "string") {
+    // Lot 2 : { action, from, to, assignee?, note? } — ou lot 1 MSDP : { action } seul.
+    return {
+      ...base,
+      action: details.action,
+      from: stringOrNull(details.from),
+      to: stringOrNull(details.to),
+      assignee: stringOrNull(details.assignee),
+      note: stringOrNull(details.note),
+    };
   }
-  return entries.sort((a, b) => a.at.getTime() - b.at.getTime());
+  if (typeof details.transition === "string") {
+    // Lot 1 : { transition: "PENDING→VALIDATED", … }
+    const [from, to] = details.transition.split("→");
+    return { ...base, action: null, from: from ?? null, to: to ?? null, assignee: null, note: null };
+  }
+  return null;
+}
+
+export function toCareHistory(logs: CareLog[]): CareHistoryEntry[] {
+  return logs
+    .map(toCareHistoryEntry)
+    .filter((entry): entry is CareHistoryEntry => entry !== null)
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 export async function getCareHistory(kind: CareItemKind, itemId: string): Promise<CareHistoryEntry[]> {

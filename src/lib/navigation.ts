@@ -254,27 +254,22 @@ function buildPastoralSpaces(input: NavigationInput): NavSpace[] {
   return spaces.filter((s): s is NavSpace => s !== null);
 }
 
-/**
- * Les espaces du rôle, dans l'ordre de `10-navigation.md` : Accueil, Planning, Agenda, Personnes,
- * Demandes, Médias, Ressources, Administration. Un espace sans page n'apparaît pas.
- */
-export function buildSpaces(input: NavigationInput): NavSpace[] {
-  if (input.isPastoral) return buildPastoralSpaces(input);
-
-  const { carePages, agendaPages } = pastoralPages(input);
-
-  const planningPages: NavPage[] = [];
-  if (input.hasMyPlanning) planningPages.push({ href: "/planning", label: "Mon planning" });
+function planningPagesFor(input: NavigationInput): NavPage[] {
+  const pages: NavPage[] = [];
+  if (input.hasMyPlanning) pages.push({ href: "/planning", label: "Mon planning" });
   // Une seule entrée : « Disponibilités » (réponses du STAR), ou la vue d'ensemble pour qui n'a pas de fiche liée.
   // Les deux écrans se rejoignent par des onglets (AvailabilityTabs).
-  if (input.hasAvailability) planningPages.push({ href: "/disponibilites", label: "Disponibilités" });
-  else if (input.hasAbsences) planningPages.push({ href: "/absences", label: "Disponibilités" });
+  if (input.hasAvailability) pages.push({ href: "/disponibilites", label: "Disponibilités" });
+  else if (input.hasAbsences) pages.push({ href: "/absences", label: "Disponibilités" });
   if (input.hasPlanningAccess) {
     for (const d of input.departments) {
-      planningPages.push({ href: `/dashboard?dept=${d.id}`, label: d.name, deptId: d.id, group: d.ministryName || undefined });
+      pages.push({ href: `/dashboard?dept=${d.id}`, label: d.name, deptId: d.id, group: d.ministryName || undefined });
     }
   }
+  return pages;
+}
 
+function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage[] {
   const agenda: NavPage[] = [];
   // Pages de l'église : bloc « Église » de la sidebar desktop, face à « Agenda pastoral ».
   const church = "Église";
@@ -301,7 +296,10 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
     }
   }
   agenda.push(...agendaPages);
+  return agenda;
+}
 
+function peoplePagesFor(input: NavigationInput, carePages: NavPage[]): NavPage[] {
   const people: NavPage[] = [];
   if (input.hasMembersAccess) people.push({ href: "/admin/members", label: "STAR" });
   if (input.hasDiscipleship) people.push({ href: "/admin/discipleship", label: "Discipolat" });
@@ -310,21 +308,42 @@ export function buildSpaces(input: NavigationInput): NavSpace[] {
   }
   people.push(...carePages);
   if (input.famillesUrl) people.push({ href: input.famillesUrl, label: "Familles", external: true });
+  return people;
+}
 
+function requestPagesFor(input: NavigationInput): NavPage[] {
   const requests: NavPage[] = input.requestLinks.map((l) => ({ href: l.href, label: l.label }));
   if (input.hasAccounting) {
     requests.push({ href: "/accounting/requests", label: "Comptabilité", matchPrefixes: ["/accounting"] });
   }
+  return requests;
+}
 
+function resourcePagesFor(input: NavigationInput): NavPage[] {
+  const resources: NavPage[] = [];
+  if (input.hasRooms) resources.push({ href: "/rooms", label: "Salles" });
+  if (input.hasJobs) resources.push(jobsPage(input));
+  return resources;
+}
+
+/**
+ * Les espaces du rôle, dans l'ordre de `10-navigation.md` : Accueil, Planning, Agenda, Personnes,
+ * Demandes, Médias, Ressources, Administration. Un espace sans page n'apparaît pas.
+ */
+export function buildSpaces(input: NavigationInput): NavSpace[] {
+  if (input.isPastoral) return buildPastoralSpaces(input);
+
+  const { carePages, agendaPages } = pastoralPages(input);
+  const planningPages = planningPagesFor(input);
+  const agenda = agendaPagesFor(input, agendaPages);
+  const people = peoplePagesFor(input, carePages);
+  const requests = requestPagesFor(input);
   const media: NavPage[] = input.mediaLinks.map((l) => ({
     href: l.href,
     label: l.label,
     matchPrefixes: l.matchPrefixes,
   }));
-
-  const resources: NavPage[] = [];
-  if (input.hasRooms) resources.push({ href: "/rooms", label: "Salles" });
-  if (input.hasJobs) resources.push(jobsPage(input));
+  const resources = resourcePagesFor(input);
 
   const spaces = [
     homeSpace(input.homeHref),
@@ -442,6 +461,24 @@ function pathOf(href: string): string {
   return href.split("?")[0];
 }
 
+function pagePrefixes(page: NavPage): readonly string[] {
+  return page.matchPrefixes && page.matchPrefixes.length > 0 ? page.matchPrefixes : [pathOf(page.href)];
+}
+
+/**
+ * Longueur du préfixe par lequel une page correspond à l'URL (la plus longue l'emporte), ou
+ * `null`. Une page de département ne correspond qu'à `/dashboard` avec son `?dept`, et prime
+ * alors sur tout préfixe.
+ */
+function matchLength(page: NavPage, pathname: string, dept: string | null): number | null {
+  if (page.external) return null;
+  if (page.deptId) {
+    return matchesPath(pathname, "/dashboard") && dept === page.deptId ? "/dashboard".length + 1000 : null;
+  }
+  const lengths = pagePrefixes(page).filter((prefix) => matchesPath(pathname, prefix)).map((prefix) => prefix.length);
+  return lengths.length > 0 ? Math.max(...lengths) : null;
+}
+
 /**
  * Espace et page actifs pour l'URL courante : la page la plus spécifique l'emporte parmi toutes
  * celles de la navigation (`/planning/events` n'allume pas « Mon planning »). Les départements
@@ -453,20 +490,8 @@ export function resolveActive(spaces: readonly NavSpace[], pathname: string, dep
 
   for (const s of spaces) {
     for (const p of s.pages) {
-      if (p.external) continue;
-      if (p.deptId) {
-        if (matchesPath(pathname, "/dashboard") && dept === p.deptId) {
-          const len = "/dashboard".length + 1000; // le département choisi prime sur tout préfixe
-          if (!best || len > best.len) best = { space: s.key, page: p.href, len };
-        }
-        continue;
-      }
-      const prefixes = p.matchPrefixes && p.matchPrefixes.length > 0 ? p.matchPrefixes : [pathOf(p.href)];
-      for (const prefix of prefixes) {
-        if (matchesPath(pathname, prefix) && (!best || prefix.length > best.len)) {
-          best = { space: s.key, page: p.href, len: prefix.length };
-        }
-      }
+      const len = matchLength(p, pathname, dept);
+      if (len !== null && (!best || len > best.len)) best = { space: s.key, page: p.href, len };
     }
   }
   if (best) return { space: best.space, page: best.page };
@@ -530,8 +555,7 @@ function findPage(spaces: readonly NavSpace[], active: ActiveNav): { space: NavS
 /** Le chemin courant descend-il sous la page de navigation (page de détail) ? */
 function isDeeper(pathname: string, page: NavPage): boolean {
   if (page.deptId) return false;
-  const prefixes = page.matchPrefixes && page.matchPrefixes.length > 0 ? page.matchPrefixes : [pathOf(page.href)];
-  return !prefixes.includes(pathname) && pathname !== pathOf(page.href);
+  return !pagePrefixes(page).includes(pathname) && pathname !== pathOf(page.href);
 }
 
 /**

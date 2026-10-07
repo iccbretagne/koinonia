@@ -41,6 +41,30 @@ export function proxy(request: NextRequest) {
   return response;
 }
 
+/** Adresses joignables sans session ; toutes les autres exigent d'être connecté. */
+function isOpenWithoutSession(pathname: string, method: string): boolean {
+  return (
+    // Le cron est authentifié par jeton porteur dans le route handler, pas par session
+    // — ce n'est pas une adresse de module (NOYAU_ROUTES), donc pas déclarable via
+    // `routes.public` d'un manifeste.
+    pathname.startsWith("/api/cron") ||
+    // Rapports de violation CSP : envoyés par le navigateur, session ou non (ADR-0022).
+    pathname === CSP_REPORT_PATH ||
+    // NextAuth gère sa propre poignée de main (signin, callback, csrf, session) : ces
+    // endpoints DOIVENT rester joignables sans session. Le matcher élargi de spec 038
+    // les fait désormais traverser le proxy (avant : exclus par `/api/((?!auth).*)`).
+    pathname.startsWith("/api/auth") ||
+    // La page de connexion se rend elle-même sans session (formulaire de connexion) —
+    // la rediriger vers elle-même serait une boucle. Même raisonnement pour le matcher
+    // élargi : "/" n'était pas intercepté avant spec 038.
+    pathname === "/" ||
+    // Adresses publiques par jeton d'un module actif (partage média, écoute audio,
+    // formulaire agenda/intégration…) — dérivées de `routes.public` des manifestes,
+    // plus de liste blanche codée en dur ici (spec 038).
+    isPublicRoute(pathname, method)
+  );
+}
+
 function route(request: NextRequest, forwarded?: Headers): NextResponse {
   const pathname = request.nextUrl.pathname;
   const next = () => (forwarded ? NextResponse.next({ request: { headers: forwarded } }) : NextResponse.next());
@@ -77,34 +101,7 @@ function route(request: NextRequest, forwarded?: Headers): NextResponse {
   ).some(Boolean);
 
   if (!sessionToken) {
-    // Le cron est authentifié par jeton porteur dans le route handler, pas par session
-    // — ce n'est pas une adresse de module (NOYAU_ROUTES), donc pas déclarable via
-    // `routes.public` d'un manifeste.
-    if (pathname.startsWith("/api/cron")) {
-      return next();
-    }
-    // Rapports de violation CSP : envoyés par le navigateur, session ou non (ADR-0022).
-    if (pathname === CSP_REPORT_PATH) {
-      return next();
-    }
-    // NextAuth gère sa propre poignée de main (signin, callback, csrf, session) : ces
-    // endpoints DOIVENT rester joignables sans session. Le matcher élargi de spec 038
-    // les fait désormais traverser le proxy (avant : exclus par `/api/((?!auth).*)`).
-    if (pathname.startsWith("/api/auth")) {
-      return next();
-    }
-    // La page de connexion se rend elle-même sans session (formulaire de connexion) —
-    // la rediriger vers elle-même serait une boucle. Même raisonnement pour le matcher
-    // élargi : "/" n'était pas intercepté avant spec 038.
-    if (pathname === "/") {
-      return next();
-    }
-    // Adresses publiques par jeton d'un module actif (partage média, écoute audio,
-    // formulaire agenda/intégration…) — dérivées de `routes.public` des manifestes,
-    // plus de liste blanche codée en dur ici (spec 038).
-    if (isPublicRoute(pathname, request.method)) {
-      return next();
-    }
+    if (isOpenWithoutSession(pathname, request.method)) return next();
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
