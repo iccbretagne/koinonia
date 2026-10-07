@@ -1,0 +1,112 @@
+[
+  {
+    "rule": "css:S8776",
+    "files": ["src/app/globals.css"],
+    "max": 2,
+    "reason": "Directive @custom-variant de Tailwind CSS 4, inconnue de l'analyseur CSS standard (#539, #650)."
+  },
+  {
+    "rule": "typescript:S3516",
+    "files": ["src/lib/auth.ts"],
+    "max": 1,
+    "reason": "Callback NextAuth signIn : renvoyer toujours true est voulu, la connexion est autorisée puis le rôle résolu ailleurs (#539, #650)."
+  },
+  {
+    "rule": "typescript:S6478",
+    "files": [
+      "src/app/(auth)/absences/AbsencesClient.tsx",
+      "src/app/(auth)/audio/production/AudioQueueClient.tsx",
+      "src/app/(auth)/admin/rooms/RoomsAdminClient.tsx",
+      "src/app/(auth)/rooms/RoomsBookingClient.tsx",
+      "src/app/(auth)/rooms/checklists/RoomChecklistsClient.tsx",
+      "src/app/(auth)/admin/churches/ChurchesClient.tsx",
+      "src/app/(auth)/admin/departments/DepartmentsClient.tsx"
+    ],
+    "max": 20,
+    "reason": "Render prop de colonne DataTable (accessor/actions), appelée comme fonction et non montée comme composant : pas de remontage ni de perte d'état (#539, #653)."
+  },
+  {
+    "rule": "typescript:S6479",
+    "files": [
+      "src/components/ui/DataTable.tsx",
+      "src/app/(auth)/integration/parcours/ParcoursView.tsx",
+      "src/components/SidebarPageTree.tsx",
+      "src/components/NavPageList.tsx",
+      "src/components/Breadcrumb.tsx",
+      "src/app/(auth)/integration/requests/[id]/RequestDetail.tsx",
+      "src/app/(auth)/absences/AbsencesTimeline.tsx",
+      "src/app/(auth)/loading-skeletons.tsx"
+    ],
+    "max": 20,
+    "reason": "Liste statique, jamais réordonnée ni filtrée : l'index est une clé stable (#539, #653)."
+  },
+  {
+    "rule": "typescript:S9382",
+    "files": [
+      "src/lib/config-import.ts",
+      "src/app/api/admin/members/merge/route.ts",
+      "src/app/api/members/route.ts",
+      "src/app/api/members/[memberId]/route.ts",
+      "src/app/api/events/route.ts",
+      "src/app/api/events/[eventId]/route.ts",
+      "src/app/api/events/[eventId]/departments/route.ts",
+      "src/app/api/events/[eventId]/report/route.ts",
+      "src/app/api/events/[eventId]/duplicate-planning/route.ts",
+      "src/app/api/churches/route.ts",
+      "src/app/api/ministries/route.ts",
+      "src/app/api/departments/route.ts",
+      "src/modules/integration/services/family-service.ts",
+      "src/modules/planning/services/absence.service.ts",
+      "src/core/event-bus.ts",
+      "src/modules/planning/services/request-executor.ts",
+      "src/modules/planning/services/event.service.ts"
+    ],
+    "max": 95,
+    "reason": "Transaction Prisma interactive : connexion unique, opérations ordonnées (#539, #655)."
+  },
+  {
+    "rule": "typescript:S9382",
+    "files": [
+      "src/app/api/cron/route.ts",
+      "src/modules/planning/services/availability/collection.ts",
+      "src/modules/planning/services/availability/responses.ts",
+      "src/modules/planning/services/availability/asks.ts",
+      "src/modules/care/services/relances.ts",
+      "src/modules/care/services/followups.ts",
+      "src/modules/planning/services/planning-change-notices.ts",
+      "src/modules/planning/services/event-change-notices.ts",
+      "src/modules/jobs/services/lifecycle-service.ts",
+      "src/modules/rooms/services/reservation.service.ts"
+    ],
+    "max": 55,
+    "reason": "Envois séquentiels volontaires : débit SMTP, erreurs isolées, marquage unitaire de chaque envoi (#539, #655)."
+  },
+  {
+    "rule": "typescript:S9382",
+    "files": [
+      "src/app/(auth)/media/events/[id]/MediaEventDetail.tsx",
+      "src/app/(auth)/media/(visuels)/projects/[id]/MediaProjectDetail.tsx",
+      "src/app/(auth)/accounting/components/AttachmentManager.tsx",
+      "src/app/(auth)/audio/production/[id]/AudioServiceClient.tsx",
+      "src/app/api/media-events/[id]/photos/route.ts",
+      "src/app/api/media/download/[token]/zip/route.ts",
+      "src/app/api/media/collection/[token]/zip/route.ts",
+      "src/modules/media/services/tokens.ts"
+    ],
+    "max": 25,
+    "reason": "Traitement séquentiel volontaire : progression et bande passante des uploads, ZIP en flux à mémoire bornée (#539, #655)."
+  },
+  {
+    "rule": "typescript:S9382",
+    "files": [
+      "src/modules/audio/worker/runner.ts",
+      "src/modules/audio/worker/handlers/probe.ts",
+      "src/modules/audio/services/rendition-cache.ts",
+      "src/modules/storage/services/s3.ts",
+      "src/lib/s3.ts",
+      "src/lib/auth.ts"
+    ],
+    "max": 12,
+    "reason": "Séquentiel voulu : boucle de polling du worker, éviction de cache, suppression S3 par lots de 1 000, initialisation unique du premier Super Admin (#539, #655)."
+  }
+]

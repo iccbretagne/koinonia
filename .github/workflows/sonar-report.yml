@@ -1,0 +1,37 @@
+# Export de l'etat SonarCloud (mesures, Quality Gate, issues ouvertes), en lecture seule.
+#
+# Permet de consulter l'analyse depuis un environnement qui n'atteint pas sonarcloud.io
+# (session cloud, mobile) : le resume s'affiche dans le run, et l'artefact « sonar-report »
+# contient summary.md, measures.json, issues.json et issues.csv. Ne modifie rien dans
+# SonarCloud ; voir docs/sonar.md.
+
+name: Sonar report
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branche analysee dans SonarCloud"
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Export SonarCloud state
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_BRANCH: ${{ inputs.branch }}
+        run: python3 scripts/sonar-report.py sonar-report
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sonar-report
+          path: sonar-report/
+          retention-days: 14
