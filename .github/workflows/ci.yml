@@ -12,7 +12,7 @@ permissions:
 jobs:
   lint-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 18
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
@@ -26,7 +26,21 @@ jobs:
           cache: "npm"
       # requis par src/modules/audio/worker/handlers/__tests__/render.test.ts (T043) — vrai
       # ffmpeg, pas de binaire mocké ; absent de l'image ubuntu-latest par défaut.
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # Un miroir apt qui cesse de répondre bloquait l'étape jusqu'au timeout du job, avant
+      # le moindre test : délai court par requête, deux tentatives bornées, étape plafonnée.
+      - name: Install ffmpeg
+        timeout-minutes: 9
+        run: |
+          apt_opts=(-o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20)
+          for attempt in 1 2; do
+            if timeout 120 sudo apt-get "${apt_opts[@]}" update -qq \
+              && timeout 120 sudo apt-get "${apt_opts[@]}" install -y -qq --no-install-recommends ffmpeg; then
+              exit 0
+            fi
+            echo "::warning::Installation de ffmpeg : tentative $attempt échouée"
+            sleep 10
+          done
+          exit 1
       - run: npm ci
       - run: npx prisma generate
       - run: npm run typecheck
@@ -105,7 +119,7 @@ jobs:
   build:
     needs: lint-test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: "mysql://dummy:dummy@localhost/dummy"
