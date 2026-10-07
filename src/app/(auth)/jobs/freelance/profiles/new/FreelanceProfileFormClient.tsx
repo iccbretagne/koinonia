@@ -3,13 +3,15 @@
 import { SubmitEvent, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Modality = "REMOTE" | "ONSITE" | "HYBRID";
+
 interface ProfileInitial {
   id: string;
   title: string;
   domain: string;
   dailyRate: string | null;
   hourlyRate: string | null;
-  modality: "REMOTE" | "ONSITE" | "HYBRID";
+  modality: Modality;
   location: string | null;
   availableFrom: string | null;
   description: string;
@@ -33,7 +35,7 @@ export default function FreelanceProfileFormClient({
   const [domain,       setDomain]       = useState(initial?.domain       ?? "");
   const [dailyRate,    setDailyRate]    = useState(initial?.dailyRate    ?? "");
   const [hourlyRate,   setHourlyRate]   = useState(initial?.hourlyRate   ?? "");
-  const [modality,     setModality]     = useState<"REMOTE" | "ONSITE" | "HYBRID">(initial?.modality ?? "REMOTE");
+  const [modality,     setModality]     = useState<Modality>(initial?.modality ?? "REMOTE");
   const [location,     setLocation]     = useState(initial?.location     ?? "");
   const [availableFrom, setAvailableFrom] = useState(
     initial?.availableFrom ? new Date(initial.availableFrom).toISOString().slice(0, 10) : ""
@@ -118,7 +120,7 @@ export default function FreelanceProfileFormClient({
           <select
             id={`${uid}-f3`}
             value={modality}
-            onChange={(e) => setModality(e.target.value as "REMOTE" | "ONSITE" | "HYBRID")}
+            onChange={(e) => setModality(e.target.value as Modality)}
             className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
           >
             <option value="REMOTE">Full remote</option>

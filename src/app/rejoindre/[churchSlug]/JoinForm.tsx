@@ -432,7 +432,7 @@ export default function JoinForm({ churchId, churchName, showPastoralCare, turns
         {familySuggestion.loading && (
           <div className="flex items-center gap-2 text-sm text-ink-muted">
             <span className="inline-block w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin shrink-0" />
-            Recherche de ta famille en cours…
+            <span>Recherche de ta famille en cours…</span>
           </div>
         )}
         {!familySuggestion.loading && familySuggestion.familyName && (

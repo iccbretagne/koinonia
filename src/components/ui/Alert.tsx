@@ -33,7 +33,7 @@ export default function Alert({
   className = "",
   children,
   ...props
-}: AlertProps) {
+}: Readonly<AlertProps>) {
   const { box, icon: iconColor, Icon: DefaultIcon } = toneClasses[tone];
   const Icon = icon ?? DefaultIcon;
 

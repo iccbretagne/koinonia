@@ -36,7 +36,7 @@ export default function StatusChip({
   className = "",
   children,
   ...props
-}: StatusChipProps) {
+}: Readonly<StatusChipProps>) {
   return (
     <span
       className={`inline-flex h-6 max-w-full items-center gap-1 whitespace-nowrap rounded-chip px-2 font-sans text-xs font-semibold leading-4 tracking-[0.01em] ${statusToneClasses[tone]} ${className}`}

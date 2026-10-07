@@ -106,7 +106,7 @@ export default async function PastoralReportsPage() {
         <div>
           <h2 className="text-sm font-semibold text-warning mb-2 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-warning inline-block" />
-            Comptes rendus manquants
+            <span>Comptes rendus manquants</span>
           </h2>
           <div className="space-y-1.5">
             {withoutReport.map((e) => (
@@ -132,7 +132,7 @@ export default async function PastoralReportsPage() {
         <div>
           <h2 className="text-sm font-semibold text-ink-muted mb-2 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-success inline-block" />
-            Comptes rendus rédigés
+            <span>Comptes rendus rédigés</span>
           </h2>
           <div className="bg-surface border border-line rounded-xl overflow-hidden">
             <table className="w-full text-sm">

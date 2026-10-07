@@ -48,3 +48,40 @@ describe("POST /api/churches/onboard — crée le ministère système", () => {
     });
   });
 });
+
+describe("POST /api/churches/onboard — Admin désigné par email", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue(createSuperAdminSession());
+    prismaMock.church.findUnique.mockResolvedValue(null);
+    prismaMock.church.create.mockResolvedValue({ id: "church-new" } as never);
+    prismaMock.ministry.create.mockResolvedValue({ id: "sys-min" } as never);
+    prismaMock.userChurchRole.create.mockResolvedValue({} as never);
+    prismaMock.userChurchRole.upsert.mockResolvedValue({} as never);
+  });
+
+  it("crée le compte s'il n'existe pas encore, puis lui donne le rôle Admin", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue({ id: "user-new" } as never);
+
+    const res = await POST(makeRequest({ name: "Nouvelle église", slug: "nouvelle-eglise", adminEmail: "admin@eglise.fr" }));
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.user.create).toHaveBeenCalledWith({ data: { email: "admin@eglise.fr" } });
+    expect(prismaMock.userChurchRole.create).toHaveBeenCalledWith({
+      data: { userId: "user-new", churchId: "church-new", role: "ADMIN" },
+    });
+  });
+
+  it("réutilise un compte existant", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" } as never);
+
+    const res = await POST(makeRequest({ name: "Nouvelle église", slug: "nouvelle-eglise", adminEmail: "admin@eglise.fr" }));
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
+    expect(prismaMock.userChurchRole.create).toHaveBeenCalledWith({
+      data: { userId: "user-1", churchId: "church-new", role: "ADMIN" },
+    });
+  });
+});

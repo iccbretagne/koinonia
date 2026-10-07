@@ -6,7 +6,7 @@ import type { HTMLAttributes } from "react";
  * par `className` (`h-4 w-40`, `size-8 rounded-full`…). Décoratif : masqué aux lecteurs d'écran,
  * c'est le conteneur (`PageSkeleton`, `SkeletonList`) qui porte `aria-busy`.
  */
-export default function Skeleton({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
+export default function Skeleton({ className = "", ...props }: Readonly<HTMLAttributes<HTMLDivElement>>) {
   // Rayon par défaut seulement si l'appelant n'en fournit pas : deux utilitaires `rounded-*` se
   // départagent par l'ordre de la feuille générée, pas par celui de la chaîne.
   const radius = /(^|\s)rounded(-|\s|$)/.test(className) ? "" : "rounded-chip";

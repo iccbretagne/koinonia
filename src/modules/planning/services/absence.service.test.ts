@@ -146,7 +146,7 @@ describe("resolveResponsibleUserIds", () => {
     const ids = await resolveResponsibleUserIds("member-1", "church-1");
 
     expect(new Set(ids)).toEqual(new Set(["user-resp1", "user-resp2"]));
-    expect(ids.length).toBe(2);
+    expect(ids).toHaveLength(2);
   });
 
   it("scope systématiquement les requêtes sur le churchId fourni (pas de fuite cross-église)", async () => {

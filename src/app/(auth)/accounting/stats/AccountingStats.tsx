@@ -237,7 +237,7 @@ export default function AccountingStats({
           ) : (
             <div className="space-y-3">
               {byStatus
-                .sort((a, b) => b.count - a.count)
+                .toSorted((a, b) => b.count - a.count)
                 .map((s) => (
                   <div key={s.status} className="flex items-center gap-3">
                     <div

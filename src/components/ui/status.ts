@@ -30,7 +30,7 @@ export const SERVICE_STATUS_ORDER: readonly ServiceStatus[] = [
 ];
 
 export function isServiceStatus(value: unknown): value is ServiceStatus {
-  return typeof value === "string" && Object.prototype.hasOwnProperty.call(SERVICE_STATUS, value);
+  return typeof value === "string" && Object.hasOwn(SERVICE_STATUS, value);
 }
 
 /** Descripteur d'un statut reçu de l'API, ou `null` si le STAR n'a pas de statut (non planifié). */

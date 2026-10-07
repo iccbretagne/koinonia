@@ -23,7 +23,7 @@ function formatDate(iso: string) {
 
 function keyToLabel(key: string) {
   // key = "backups/2026-04-23T14-30-00Z/db.sql.gz"
-  const match = key.match(/backups\/(.+?)\/db\.sql\.gz$/);
+  const match = /backups\/(.+?)\/db\.sql\.gz$/.exec(key);
   if (!match) return key;
   return match[1].replace(/T(\d{2})-(\d{2})-(\d{2})Z$/, " $1:$2:$3 UTC");
 }
@@ -156,19 +156,24 @@ export default function BackupsClient() {
 
   useEffect(() => {
     let mounted = true;
-    fetch("/api/admin/backups")
-      .then(async (res) => {
+    async function load() {
+      try {
+        const res = await fetch("/api/admin/backups");
         if (!mounted) return;
-        if (!res.ok) {
-          const json = await res.json().catch(() => ({}));
-          if (mounted) setError(json.error ?? "Impossible de charger les sauvegardes");
-        } else {
+        if (res.ok) {
           const data = await res.json();
           if (mounted) setBackups(data);
+        } else {
+          const json = await res.json().catch(() => ({}));
+          if (mounted) setError(json.error ?? "Impossible de charger les sauvegardes");
         }
-      })
-      .catch(() => { if (mounted) setError("Impossible de charger les sauvegardes"); })
-      .finally(() => { if (mounted) setLoading(false); });
+      } catch {
+        if (mounted) setError("Impossible de charger les sauvegardes");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    void load();
     return () => { mounted = false; };
   }, [refreshKey]);
 
@@ -200,7 +205,7 @@ export default function BackupsClient() {
     a.download = "";
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
   }
 
   async function confirmRestore() {

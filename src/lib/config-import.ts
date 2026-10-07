@@ -67,9 +67,7 @@ export async function applyImport(
       // ── Upsert church ────────────────────────────────────────
       // Recherche par ID d'abord, puis par slug (cas cross-instance où l'ID diffère)
       let existingChurch = await tx.church.findUnique({ where: { id: church.id }, select: { id: true } });
-      if (!existingChurch) {
-        existingChurch = await tx.church.findUnique({ where: { slug: church.slug }, select: { id: true } });
-      }
+      existingChurch ??= await tx.church.findUnique({ where: { slug: church.slug }, select: { id: true } });
       // L'ID effectif utilisé pour les opérations suivantes (structure, membres, liens)
       const effectiveChurchId = existingChurch?.id ?? church.id;
 

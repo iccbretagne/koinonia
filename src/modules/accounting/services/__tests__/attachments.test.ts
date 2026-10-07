@@ -37,36 +37,17 @@ describe("assertAttachmentsAssignable", () => {
     });
   });
 
-  it("rejette une pièce déposée par quelqu'un d'autre", async () => {
+  it.each([
+    // Pour une pièce déjà rattachée, requestId n'est plus null → hors du filtre → count divergent.
+    ["une pièce déposée par quelqu'un d'autre", "att-of-someone-else"],
+    ["une pièce déjà rattachée à une autre demande", "att-already-linked"],
+    ["une pièce d'une autre église", "att-other-church"],
+    ["un identifiant inexistant", "nonexistent"],
+  ])("rejette %s", async (_label, attachmentId) => {
     prismaMock.financialAttachment.count.mockResolvedValue(0);
 
     await expect(
-      assertAttachmentsAssignable(["att-of-someone-else"], { userId: "user-1", churchId: "church-1" })
-    ).rejects.toThrow();
-  });
-
-  it("rejette une pièce déjà rattachée à une autre demande", async () => {
-    // La pièce existe mais requestId n'est plus null → hors du filtre → count divergent.
-    prismaMock.financialAttachment.count.mockResolvedValue(0);
-
-    await expect(
-      assertAttachmentsAssignable(["att-already-linked"], { userId: "user-1", churchId: "church-1" })
-    ).rejects.toThrow();
-  });
-
-  it("rejette une pièce d'une autre église", async () => {
-    prismaMock.financialAttachment.count.mockResolvedValue(0);
-
-    await expect(
-      assertAttachmentsAssignable(["att-other-church"], { userId: "user-1", churchId: "church-1" })
-    ).rejects.toThrow();
-  });
-
-  it("rejette un identifiant inexistant", async () => {
-    prismaMock.financialAttachment.count.mockResolvedValue(0);
-
-    await expect(
-      assertAttachmentsAssignable(["nonexistent"], { userId: "user-1", churchId: "church-1" })
+      assertAttachmentsAssignable([attachmentId], { userId: "user-1", churchId: "church-1" })
     ).rejects.toThrow();
   });
 

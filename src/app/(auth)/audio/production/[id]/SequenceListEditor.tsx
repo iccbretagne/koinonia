@@ -250,7 +250,7 @@ export default function SequenceListEditor({
                 checked={row.discarded}
                 onChange={(e) => updateRow(index, { discarded: e.target.checked })}
               />
-              Non diffusé
+              <span>Non diffusé</span>
             </label>
             <button
               type="button"

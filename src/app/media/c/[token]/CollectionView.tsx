@@ -241,7 +241,7 @@ export default function CollectionView({ token, data }: { readonly token: string
                   {zipping ? (
                     <>
                       <span className="w-4 h-4 border-2 border-on-brand/30 border-t-on-brand rounded-full animate-spin" />
-                      Préparation…
+                      <span>Préparation…</span>
                     </>
                   ) : (
                     <>

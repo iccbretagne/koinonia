@@ -118,7 +118,7 @@ export default function AccountingDashboard({ requests, stats, canManage, curren
         <div className="bg-brand-soft border border-brand/20 rounded-xl p-4 space-y-3">
           <h2 className="text-sm font-semibold text-brand-text flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-            À traiter
+            <span>À traiter</span>
             <span className="text-brand-text/60 font-normal">({actionable.length})</span>
           </h2>
           <div className="space-y-1.5">

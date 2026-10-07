@@ -34,7 +34,7 @@ const SCHEMA_ROLES: Role[] = [
 describe("src/lib/roles.ts — source unique (spec 054)", () => {
   it("ALL_ROLES contient exactement les rôles de l'enum Prisma, sans doublon", () => {
     expect(new Set(ALL_ROLES)).toEqual(new Set(SCHEMA_ROLES));
-    expect(ALL_ROLES.length).toBe(SCHEMA_ROLES.length);
+    expect(ALL_ROLES).toHaveLength(SCHEMA_ROLES.length);
   });
 
   it.each(SCHEMA_ROLES)("%s a un libellé, un libellé court, une description et une catégorie", (role) => {

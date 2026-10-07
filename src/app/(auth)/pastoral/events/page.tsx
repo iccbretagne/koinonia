@@ -131,7 +131,7 @@ export default async function PastoralEventsPage() {
           <p className="text-2xl font-bold text-brand-text">{totalThisYear}</p>
           <p className="text-xs text-ink-muted mt-1">Événements {now.getFullYear()}</p>
         </div>
-        {yearStats.sort((a, b) => b._count - a._count).slice(0, 3).map((g) => (
+        {yearStats.toSorted((a, b) => b._count - a._count).slice(0, 3).map((g) => (
           <div key={g.type} className="bg-surface border border-line rounded-xl p-4 text-center">
             <p className="text-2xl font-bold text-ink">{g._count}</p>
             <p className="text-xs text-ink-muted mt-1">{EVENT_TYPE_LABELS[g.type] ?? g.type}</p>

@@ -20,7 +20,7 @@ export type EventHandler<TPayload> = (
  * par l'appelant.
  */
 export class EventBus<TEvents extends Record<string, unknown>> {
-  private handlers = new Map<keyof TEvents, EventHandler<unknown>[]>();
+  private readonly handlers = new Map<keyof TEvents, EventHandler<unknown>[]>();
 
   on<K extends keyof TEvents>(event: K, handler: EventHandler<TEvents[K]>): void {
     const existing = this.handlers.get(event) ?? [];

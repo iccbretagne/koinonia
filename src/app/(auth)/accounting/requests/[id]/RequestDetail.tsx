@@ -6,6 +6,8 @@ import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import AttachmentManager from "@/app/(auth)/accounting/components/AttachmentManager";
 
+type DateLike = string | Date;
+
 const TYPE_LABELS: Record<string, string> = {
   EXPENSE_REPORT: "Note de frais",
   BUDGET_ADVANCE: "Avance de budget",
@@ -29,8 +31,8 @@ const RECURRENCE_LABELS: Record<string, string> = { WEEK: "semaine(s)", MONTH: "
 interface Payment {
   id: string;
   amount: number | string;
-  scheduledDate: string | Date;
-  releasedAt: string | Date | null;
+  scheduledDate: DateLike;
+  releasedAt: DateLike | null;
   releasedAmount: number | string | null;
   releasedBy: { id: string; name: string | null } | null;
   note: string | null;
@@ -46,8 +48,8 @@ interface Request {
   priority: string | null;
   priorityNote: string | null;
   rejectionReason: string | null;
-  createdAt: string | Date;
-  processedAt: string | Date | null;
+  createdAt: DateLike;
+  processedAt: DateLike | null;
   department: { id: string; name: string; ministry: { name: string } } | null;
   submittedBy: { id: string; name: string | null; email: string | null };
   processedBy: { id: string; name: string | null } | null;
@@ -55,17 +57,16 @@ interface Request {
   attachments: { id: string; filename: string; mimeType: string; size: number; s3Key?: string }[];
   series: { id: string; label: string; recurrenceEvery: number; recurrenceUnit: string; status: string } | null;
   correctionOf: { id: string; label: string; status: string } | null;
-  corrections: { id: string; label: string; status: string; createdAt: string | Date }[];
+  corrections: { id: string; label: string; status: string; createdAt: DateLike }[];
 }
 
 interface Props {
   readonly request: Request;
   readonly canManage: boolean;
   readonly isOwn: boolean;
-  readonly currentUserId: string;
 }
 
-function fmt(d: Date | string | null) {
+function fmt(d: DateLike | null) {
   if (!d) return null;
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }

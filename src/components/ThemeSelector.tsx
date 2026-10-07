@@ -15,8 +15,8 @@ const OPTIONS: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
 
 function applyToDocument(choice: ThemeChoice) {
   const root = document.documentElement;
-  if (choice === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", choice);
+  if (choice === "system") delete root.dataset.theme;
+  else root.dataset.theme = choice;
 }
 
 function readChoice(): ThemeChoice {

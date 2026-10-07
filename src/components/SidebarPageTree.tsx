@@ -97,7 +97,7 @@ function Ministry({
   readonly onNavigate?: () => void;
 }) {
   const hasActive = ministry.entries.some((e) => e.page.href === activePage);
-  const [openState, setOpen] = useState<boolean | null>(null);
+  const [openState, setOpenState] = useState<boolean | null>(null);
   // Ouvert s'il contient la page active ; le choix de l'utilisateur prime ensuite.
   const open = openState ?? hasActive;
   const count = ministry.entries.length;
@@ -106,7 +106,7 @@ function Ministry({
     <li>
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpenState(!open)}
         aria-expanded={open}
         aria-label={`${ministry.name}, ${count} département${count > 1 ? "s" : ""}`}
         className="flex min-h-8 w-full cursor-pointer items-center gap-1.5 rounded-control pl-2 pr-3 text-left text-[13px] font-semibold leading-5 text-ink-muted

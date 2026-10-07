@@ -22,7 +22,7 @@ export default function Textarea({
   "aria-describedby": describedBy,
   "aria-invalid": ariaInvalid,
   ...props
-}: TextareaProps) {
+}: Readonly<TextareaProps>) {
   const { controlId, messageId, ariaDescribedBy } = useFieldIds({ id, hint, error, describedBy });
 
   return (

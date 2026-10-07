@@ -18,8 +18,8 @@ describe("sanitizeExcelValue", () => {
     const d = new Date("2026-09-01");
     expect(sanitizeExcelValue(42)).toBe(42);
     expect(sanitizeExcelValue(true)).toBe(true);
-    expect(sanitizeExcelValue(null)).toBe(null);
-    expect(sanitizeExcelValue(undefined)).toBe(undefined);
+    expect(sanitizeExcelValue(null)).toBeNull();
+    expect(sanitizeExcelValue(undefined)).toBeUndefined();
     expect(sanitizeExcelValue(d)).toBe(d);
   });
 });

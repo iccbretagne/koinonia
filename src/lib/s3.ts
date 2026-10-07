@@ -21,7 +21,7 @@ function makeClient(vars: {
     endpoint: vars.endpoint,
     region: vars.region || "us-east-1",
     forcePathStyle: true,
-    credentials: async () => ({ accessKeyId, secretAccessKey }),
+    credentials: () => Promise.resolve({ accessKeyId, secretAccessKey }),
   });
 }
 

@@ -920,7 +920,7 @@ export default function RoomsBookingClient({
             </div>
             <label className="flex items-center gap-2 text-sm text-ink-muted sm:self-end sm:pb-2.5">
               <input type="checkbox" checked={filterMine} onChange={(e) => setFilterMine(e.target.checked)} />
-              Mes réservations uniquement
+              <span>Mes réservations uniquement</span>
             </label>
           </div>
 
@@ -1064,15 +1064,15 @@ export default function RoomsBookingClient({
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={closedProperly} onChange={(e) => setClosedProperly(e.target.checked)} />
-                  Salle correctement fermée
+                  <span>Salle correctement fermée</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={cleaned} onChange={(e) => setCleaned(e.target.checked)} />
-                  Salle nettoyée
+                  <span>Salle nettoyée</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={equipmentOk} onChange={(e) => setEquipmentOk(e.target.checked)} />
-                  Salle/matériel en bon état
+                  <span>Salle/matériel en bon état</span>
                 </label>
                 {!equipmentOk && (
                   <Textarea

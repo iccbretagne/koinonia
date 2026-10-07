@@ -486,7 +486,7 @@ export default function CalendarClient({ events }: Props) {
       {mode === "multi" && (
         <div className="flex flex-wrap items-end justify-center gap-4 print:hidden">
           <label className="flex flex-col gap-1.5 font-display text-[13px] font-semibold text-ink">
-            Du
+            <span>Du</span>
             <input
               type="month"
               value={startMonth}
@@ -496,7 +496,7 @@ export default function CalendarClient({ events }: Props) {
             />
           </label>
           <label className="flex flex-col gap-1.5 font-display text-[13px] font-semibold text-ink">
-            Au
+            <span>Au</span>
             <input
               type="month"
               value={endMonth}

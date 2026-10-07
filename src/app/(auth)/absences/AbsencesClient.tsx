@@ -205,7 +205,7 @@ export default function AbsencesClient({
       if (departmentFilter) params.set("departmentId", departmentFilter);
       if (roleFilter) params.set("role", roleFilter);
       const res = await fetch(`/api/absences?${params.toString()}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAllAbsences(data.absences);
       setResponses(data.responses ?? []);
@@ -297,7 +297,7 @@ export default function AbsencesClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "cancel" }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await fetchAll();
     } catch {
       setError("Erreur lors de l'annulation.");
@@ -316,7 +316,7 @@ export default function AbsencesClient({
           responseIds: displayedResponses.map((r) => r.id),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

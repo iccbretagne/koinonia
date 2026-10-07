@@ -464,7 +464,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
   const [files, setFiles] = useState<ProjectFile[]>(data.files);
   const [currentIndex, setCurrentIndex] = useState(() => {
     const first = data.files.findIndex((f) => isActionable(f.status, isPrevalidator, hasPrevalidator));
-    return first >= 0 ? first : 0;
+    return Math.max(first, 0);
   });
   const [showSummary, setShowSummary] = useState(false);
   const [drawer, setDrawer] = useState<"reject" | "revision" | null>(null);
@@ -646,7 +646,7 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
         projectName={project.name}
         onBack={() => {
           const first = files.findIndex((f) => isActionable(f.status, isPrevalidator, hasPrevalidator));
-          setCurrentIndex(first >= 0 ? first : 0);
+          setCurrentIndex(Math.max(first, 0));
           setShowSummary(false);
         }}
         onGoTo={(idx) => { setCurrentIndex(idx); setShowSummary(false); }}

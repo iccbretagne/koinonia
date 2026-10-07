@@ -13,7 +13,7 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "typ
  * en aplat `brand` avec coche `on-brand`. Elle ne porte pas de libellé : la placer dans un
  * `<label>` de 44px de haut (voir `CheckboxGroup`) ou lui donner un `aria-label`.
  */
-export default function Checkbox({ indeterminate = false, className = "", ...props }: CheckboxProps) {
+export default function Checkbox({ indeterminate = false, className = "", ...props }: Readonly<CheckboxProps>) {
   return (
     <span className={`relative inline-grid size-5 shrink-0 place-items-center ${className}`}>
       <input

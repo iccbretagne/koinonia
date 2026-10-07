@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     const seekers = await prisma.jobSeeker.findMany({
       where: {
         status: "ACTIVE",
-        ...(typeFilter ?? {}),
+        ...typeFilter,
       },
       include: {
         author: { select: { id: true, name: true, displayName: true, image: true } },

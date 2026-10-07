@@ -97,7 +97,7 @@ export async function executeRequest(
 
 function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   const result = new Date(eventDate);
-  const match = offset.match(/^(\d+)(h|d)$/);
+  const match = /^(\d+)([hd])$/.exec(offset);
   if (!match) return result;
   const value = Number.parseInt(match[1], 10);
   const unit = match[2];

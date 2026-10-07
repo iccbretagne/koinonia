@@ -22,7 +22,7 @@ export function resolveRequestReaderAccess(params: {
   canQualify: boolean;
   currentUserId: string;
   assignedToUserId: string | null | undefined;
-  assignedMemberId?: string | null | undefined;
+  assignedMemberId?: string | null;
 }): RequestReaderAccess {
   const { canQualify, currentUserId, assignedToUserId, assignedMemberId } = params;
   const isCurrentAssignee =

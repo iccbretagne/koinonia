@@ -57,7 +57,7 @@ describe("buildMonthDays", () => {
     expect(days.length % 7).toBe(0);
     expect(days[0].dateStr).toBe("2026-08-31");
     expect(days[0].inMonth).toBe(false);
-    expect(days.filter((d) => d.inMonth).length).toBe(30);
+    expect(days.filter((d) => d.inMonth)).toHaveLength(30);
     expect(days.at(-1)!.inMonth).toBe(false);
   });
 

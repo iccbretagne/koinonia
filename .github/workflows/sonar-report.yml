@@ -15,6 +15,11 @@ on:
         required: false
         default: main
         type: string
+      pull_request:
+        description: "Numero de PR a analyser a la place de la branche (optionnel)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_BRANCH: ${{ inputs.branch }}
+          SONAR_PULL_REQUEST: ${{ inputs.pull_request }}
         run: python3 scripts/sonar-report.py sonar-report
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

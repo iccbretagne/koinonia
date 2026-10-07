@@ -66,9 +66,13 @@ describe("proxy — contrôle de module (spec 038)", () => {
     expect(res.status).toBe(404);
   });
 
-  it("laisse passer un lien public par jeton d'un module actif, sans session (comportement préservé)", async () => {
-    const { proxy } = await loadProxy(undefined);
-    const res = proxy(req("/api/media/gallery/some-token"));
+  it.each([
+    ["un lien public par jeton d'un module actif (comportement préservé)", undefined, "/api/media/gallery/some-token", "GET"],
+    ["un POST sur /api/integration/requests (formulaire public, comportement préservé)", undefined, "/api/integration/requests", "POST"],
+    ["le cron, même avec une liste de modules réduite", "core", "/api/cron", "GET"],
+  ])("laisse passer sans session %s", async (_label, enabledModules, path, method) => {
+    const { proxy } = await loadProxy(enabledModules);
+    const res = proxy(req(path, { method }));
     expect(res.status).toBe(200);
   });
 
@@ -88,22 +92,10 @@ describe("proxy — contrôle de module (spec 038)", () => {
     expect(res.status).toBe(401);
   });
 
-  it("un POST non authentifié sur /api/integration/requests passe (formulaire public, comportement préservé)", async () => {
-    const { proxy } = await loadProxy(undefined);
-    const res = proxy(req("/api/integration/requests", { method: "POST" }));
-    expect(res.status).toBe(200);
-  });
-
   it("les routes du noyau restent servies quelle que soit la liste de modules actifs", async () => {
     const { proxy } = await loadProxy("core");
     const res = proxy(req("/api/health"));
     expect(res.status).not.toBe(404);
-  });
-
-  it("le cron reste joignable sans session même avec une liste de modules réduite", async () => {
-    const { proxy } = await loadProxy("core");
-    const res = proxy(req("/api/cron"));
-    expect(res.status).toBe(200);
   });
 
   it("redirige vers / un utilisateur non authentifié sur une page protégée d'un module actif (comportement préservé)", async () => {

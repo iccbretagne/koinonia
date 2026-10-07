@@ -13,53 +13,22 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: "user-1" });
   });
 
-  it("rejects SUPER_ADMIN role", async () => {
+  it.each(["SUPER_ADMIN", "ADMIN", "SECRETARY"])("rejects %s role", async (role) => {
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "SUPER_ADMIN",
+      role,
     }, "approver-1");
 
     expect(result.success).toBe(false);
     expect(result.error).toContain("non autorisé");
   });
 
-  it("rejects ADMIN role", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "ADMIN",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("non autorisé");
-  });
-
-  it("rejects SECRETARY role", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "SECRETARY",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("non autorisé");
-  });
-
-  it("allows DISCIPLE_MAKER role", async () => {
+  it.each(["DISCIPLE_MAKER", "REPORTER"])("allows %s role", async (role) => {
     prismaMock.userChurchRole.create.mockResolvedValue({ id: "role-1" });
 
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "DISCIPLE_MAKER",
-    }, "approver-1");
-
-    expect(result.success).toBe(true);
-  });
-
-  it("allows REPORTER role", async () => {
-    prismaMock.userChurchRole.create.mockResolvedValue({ id: "role-1" });
-
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "REPORTER",
+      role,
     }, "approver-1");
 
     expect(result.success).toBe(true);
@@ -78,14 +47,18 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects MINISTER without ministryId", async () => {
+  it.each([
+    ["MINISTER without ministryId", { role: "MINISTER" }, "ministryId requis"],
+    ["DEPARTMENT_HEAD without departmentIds", { role: "DEPARTMENT_HEAD" }, "departmentIds requis"],
+    ["DEPARTMENT_HEAD with empty departmentIds", { role: "DEPARTMENT_HEAD", departmentIds: [] }, "departmentIds requis"],
+  ])("rejects %s", async (_label, request, expectedError) => {
     const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
       targetUserId: "user-1",
-      role: "MINISTER",
+      ...request,
     }, "approver-1");
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain("ministryId requis");
+    expect(result.error).toContain(expectedError);
   });
 
   it("rejects MINISTER with cross-tenant ministryId", async () => {
@@ -112,27 +85,6 @@ describe("executeDemandeAcces — privilege escalation prevention", () => {
     }, "approver-1");
 
     expect(result.success).toBe(true);
-  });
-
-  it("rejects DEPARTMENT_HEAD without departmentIds", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "DEPARTMENT_HEAD",
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("departmentIds requis");
-  });
-
-  it("rejects DEPARTMENT_HEAD with empty departmentIds", async () => {
-    const result = await executeRequest(tx, "req-1", "church-1", "DEMANDE_ACCES", {
-      targetUserId: "user-1",
-      role: "DEPARTMENT_HEAD",
-      departmentIds: [],
-    }, "approver-1");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("departmentIds requis");
   });
 
   it("rejects DEPARTMENT_HEAD with cross-tenant departmentIds", async () => {
@@ -208,6 +160,30 @@ describe("executeAjoutEvenement — date validation / DoS prevention", () => {
     expect(result.maxOccurrences).toBe(104);
     // Total event.create calls: 1 (parent) + at most 104 (children)
     expect(prismaMock.event.create.mock.calls.length).toBeLessThanOrEqual(105);
+  });
+});
+
+describe("executeAjoutEvenement — échéance de planning par décalage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.event.create.mockResolvedValue({ id: "evt-1" });
+  });
+
+  it.each([
+    ["48h", "2026-03-13T10:00:00.000Z"],
+    ["3d", "2026-03-12T10:00:00.000Z"],
+    ["deux jours", "2026-03-15T10:00:00.000Z"], // format invalide : échéance = date de l'événement
+  ])("décalage %s → échéance %s", async (deadlineOffset, expected) => {
+    const result = await executeRequest(tx, "req-1", "church-1", "AJOUT_EVENEMENT", {
+      eventTitle: "Culte",
+      eventType: "CULTE",
+      eventDate: "2026-03-15T10:00:00.000Z",
+      deadlineOffset,
+    }, "approver-1");
+
+    expect(result.success).toBe(true);
+    const data = prismaMock.event.create.mock.calls[0][0].data as { planningDeadline: Date };
+    expect(data.planningDeadline.toISOString()).toBe(expected);
   });
 });
 

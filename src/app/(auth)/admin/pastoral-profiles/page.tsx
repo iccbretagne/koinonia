@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireChurchPermission, getCurrentChurchId } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PastoralProfilesAdmin from "./PastoralProfilesAdmin";
 

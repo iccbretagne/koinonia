@@ -33,6 +33,9 @@ MAX_RESULTS = 10_000  # plafond de pagination de l'API issues/search
 
 out_dir = sys.argv[1] if len(sys.argv) > 1 else "sonar-report"
 branch = os.environ.get("SONAR_BRANCH") or "main"
+# Une PR se lit par son numéro (pullRequest), à la place de la branche.
+pull_request = os.environ.get("SONAR_PULL_REQUEST") or ""
+scope = {"pullRequest": pull_request} if pull_request else {"branch": branch}
 token = os.environ.get("SONAR_TOKEN") or getpass.getpass("SonarCloud token: ")
 authorization = "Basic " + base64.b64encode((token + ":").encode()).decode()
 
@@ -58,14 +61,14 @@ def relative(component):
 known = {m["key"] for m in api("metrics/search", {"ps": 500})["metrics"]}
 measures = api("measures/component", {
     "component": PROJECT,
-    "branch": branch,
+    **scope,
     "metricKeys": ",".join(m for m in METRICS if m in known),
 })["component"]["measures"]
 values = {}
 for m in measures:
     value = m.get("value") or (m.get("period") or {}).get("value")
     values[m["metric"]] = RATINGS.get(value, value) if m["metric"].endswith("_rating") else value
-gate = api("qualitygates/project_status", {"projectKey": PROJECT, "branch": branch})["projectStatus"]
+gate = api("qualitygates/project_status", {"projectKey": PROJECT, **scope})["projectStatus"]
 
 issues, rules = [], {}
 page = 1
@@ -73,7 +76,7 @@ while True:
     result = api("issues/search", {
         "componentKeys": PROJECT,
         "organization": ORGANIZATION,
-        "branch": branch,
+        **scope,
         "resolved": "false",
         "additionalFields": "rules",
         "ps": PAGE_SIZE,
@@ -102,7 +105,7 @@ rows = [{
 
 os.makedirs(out_dir, exist_ok=True)
 with open(os.path.join(out_dir, "measures.json"), "w") as f:
-    json.dump({"branch": branch, "measures": values, "quality_gate": gate}, f, indent=2)
+    json.dump({**scope, "measures": values, "quality_gate": gate}, f, indent=2)
 with open(os.path.join(out_dir, "issues.json"), "w") as f:
     json.dump(rows, f, indent=2, ensure_ascii=False)
 with open(os.path.join(out_dir, "issues.csv"), "w", newline="") as f:
@@ -118,7 +121,8 @@ def table(title, counter, label, limit=None, names=None):
     return lines + [""]
 
 
-summary = [f"## SonarCloud — `{PROJECT}` (branche `{branch}`)", "",
+target = f"PR #{pull_request}" if pull_request else f"branche `{branch}`"
+summary = [f"## SonarCloud — `{PROJECT}` ({target})", "",
            f"Quality Gate : **{gate['status']}**", "", "| Mesure | Valeur |", "| --- | --- |"]
 summary += [f"| {k} | {values[k]} |" for k in METRICS if k in values]
 summary += ["", f"**{len(rows)} issues ouvertes**"
@@ -134,3 +138,7 @@ if step_summary := os.environ.get("GITHUB_STEP_SUMMARY"):
     with open(step_summary, "a") as f:
         f.write(text + "\n")
 print(text)
+# Détail dans le journal du run (lisible sans télécharger l'artefact), trié par règle puis fichier.
+print("\n### Détail\n")
+for r in sorted(rows, key=lambda r: (r["rule"], r["file"], r["line"] or 0)):
+    print(f"{r['rule']} {r['file']}:{r['line']} {r['message']}")

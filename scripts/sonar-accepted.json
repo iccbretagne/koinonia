@@ -1,13 +1,17 @@
 [
   {
     "rule": "css:S8776",
-    "files": ["src/app/globals.css"],
+    "files": [
+      "src/app/globals.css"
+    ],
     "max": 2,
     "reason": "Directive @custom-variant de Tailwind CSS 4, inconnue de l'analyseur CSS standard (#539, #650)."
   },
   {
     "rule": "typescript:S3516",
-    "files": ["src/lib/auth.ts"],
+    "files": [
+      "src/lib/auth.ts"
+    ],
     "max": 1,
     "reason": "Callback NextAuth signIn : renvoyer toujours true est voulu, la connexion est autorisée puis le rôle résolu ailleurs (#539, #650)."
   },
@@ -20,7 +24,8 @@
       "src/app/(auth)/rooms/RoomsBookingClient.tsx",
       "src/app/(auth)/rooms/checklists/RoomChecklistsClient.tsx",
       "src/app/(auth)/admin/churches/ChurchesClient.tsx",
-      "src/app/(auth)/admin/departments/DepartmentsClient.tsx"
+      "src/app/(auth)/admin/departments/DepartmentsClient.tsx",
+      "src/app/(auth)/admin/ministries/MinistriesClient.tsx"
     ],
     "max": 20,
     "reason": "Render prop de colonne DataTable (accessor/actions), appelée comme fonction et non montée comme composant : pas de remontage ni de perte d'état (#539, #653)."
@@ -108,5 +113,66 @@
     ],
     "max": 12,
     "reason": "Séquentiel voulu : boucle de polling du worker, éviction de cache, suppression S3 par lots de 1 000, initialisation unique du premier Super Admin (#539, #655)."
+  },
+  {
+    "rule": "typescript:S4084",
+    "files": [
+      "src/app/(auth)/media/(visuels)/projects/[id]/MediaProjectDetail.tsx",
+      "src/app/media/v/[token]/ProjectValidatorView.tsx"
+    ],
+    "max": 2,
+    "reason": "Aperçu d'une vidéo en cours de production, soumise à validation : aucun sous-titre n'existe à ce stade (#539)."
+  },
+  {
+    "rule": "typescript:S6819",
+    "files": [
+      "src/app/(auth)/media/events/[id]/MediaEventDetail.tsx",
+      "src/app/media/d/[token]/DownloadView.tsx"
+    ],
+    "max": 2,
+    "reason": "Carte cliquable contenant un contrôle de sélection : un <button> ne peut pas contenir d'élément interactif, d'où role=\"button\" avec tabIndex et Entrée/Espace (#539, #651)."
+  },
+  {
+    "rule": "typescript:S9379",
+    "files": [
+      "src/app/(auth)/jobs/JobsListClient.tsx",
+      "src/app/(auth)/media/(visuels)/requests/MediaDashboard.tsx",
+      "src/components/CommandPalette.tsx"
+    ],
+    "max": 3,
+    "reason": "Focus déplacé en réponse à une action de l'utilisateur (palette de recherche, champ révélé par un choix, texte à copier) : c'est le comportement attendu (#539)."
+  },
+  {
+    "rule": "typescript:S6564",
+    "files": [
+      "src/core/module-registry.ts"
+    ],
+    "max": 2,
+    "reason": "Alias de domaine (Permission, RoleName) exportés et utilisés dans tout le noyau : ils documentent l'intention, pas un type redondant (#539)."
+  },
+  {
+    "rule": "typescript:S7780",
+    "files": [
+      "src/proxy.ts"
+    ],
+    "max": 1,
+    "reason": "config.matcher de Next.js doit être un littéral de chaîne, analysé statiquement à la compilation : String.raw n'y est pas pris en charge (#539)."
+  },
+  {
+    "rule": "typescript:S6754",
+    "files": [
+      "src/components/NavPageList.tsx"
+    ],
+    "max": 1,
+    "reason": "Panneau « Plus » mobile volontairement figé (aucune modification sans demande explicite) ; nom de setter purement cosmétique (#539)."
+  },
+  {
+    "rule": "typescript:S7759",
+    "files": [
+      "src/app/(auth)/media/events/new/page.tsx",
+      "src/app/(auth)/planning/MyPlanningView.tsx"
+    ],
+    "max": 2,
+    "reason": "Calcul pendant le rendu : la règle ESLint react-hooks/purity du projet refuse Date.now() à cet endroit (#539)."
   }
 ]

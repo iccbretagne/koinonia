@@ -161,7 +161,7 @@ const RECURRENCE_RULES = [
 
 function computeDeadlineFromOffset(eventDate: string, offset: string): string {
   if (!eventDate || !offset) return "";
-  const match = offset.match(/^(\d+)(h|d)$/);
+  const match = /^(\d+)([hd])$/.exec(offset);
   if (!match) return "";
   const d = new Date(eventDate);
   const value = Number.parseInt(match[1], 10);
