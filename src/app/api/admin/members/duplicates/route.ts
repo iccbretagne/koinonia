@@ -9,6 +9,47 @@ function compareCodePoint(a: string, b: string): number {
   return 0;
 }
 
+type Candidate = { id: string; firstName: string; lastName: string; email: string | null };
+
+type DuplicateGroup<T> = {
+  reason: "same_name" | "same_email" | "both";
+  members: T[];
+};
+
+/** Regroupe par clé, en ignorant les éléments sans clé. */
+function groupBy<T>(items: T[], keyOf: (item: T) => string | null) {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    if (key === null) continue;
+    const bucket = groups.get(key) ?? [];
+    bucket.push(item);
+    groups.set(key, bucket);
+  }
+  return [...groups.values()].filter((bucket) => bucket.length >= 2);
+}
+
+// Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
+const pairKey = (members: Candidate[]) => members.map((m) => m.id).sort(compareCodePoint).join("|");
+
+/** Groupes de doublons : même nom normalisé, même email, ou les deux pour le même ensemble. */
+function duplicateGroups<T extends Candidate>(members: T[]): DuplicateGroup<T>[] {
+  const groups = new Map<string, DuplicateGroup<T>>();
+  for (const bucket of groupBy(members, (m) => `${m.firstName.trim().toLowerCase()} ${m.lastName.trim().toLowerCase()}`)) {
+    const key = pairKey(bucket);
+    if (!groups.has(key)) groups.set(key, { reason: "same_name", members: bucket });
+  }
+  for (const bucket of groupBy(members, (m) => (m.email ? m.email.trim().toLowerCase() : null))) {
+    const existing = groups.get(pairKey(bucket));
+    if (existing) {
+      existing.reason = "both";
+    } else {
+      groups.set(pairKey(bucket), { reason: "same_email", members: bucket });
+    }
+  }
+  return [...groups.values()];
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -37,57 +78,7 @@ export async function GET(request: Request) {
       },
     });
 
-    // Group by normalized name
-    const byName = new Map<string, typeof members>();
-    for (const m of members) {
-      const key = `${m.firstName.trim().toLowerCase()} ${m.lastName.trim().toLowerCase()}`;
-      const bucket = byName.get(key) ?? [];
-      bucket.push(m);
-      byName.set(key, bucket);
-    }
-
-    // Group by email (non-null)
-    const byEmail = new Map<string, typeof members>();
-    for (const m of members) {
-      if (!m.email) continue;
-      const key = m.email.trim().toLowerCase();
-      const bucket = byEmail.get(key) ?? [];
-      bucket.push(m);
-      byEmail.set(key, bucket);
-    }
-
-    type DuplicateGroup = {
-      reason: "same_name" | "same_email" | "both";
-      members: typeof members;
-    };
-
-    const groups: DuplicateGroup[] = [];
-    const seen = new Set<string>();
-
-    // Clé de déduplication : ordre strictement point de code (peu importe, tant qu'il est stable)
-    const pairKey = (ids: string[]) => [...ids].sort(compareCodePoint).join("|");
-
-    for (const bucket of byName.values()) {
-      if (bucket.length < 2) continue;
-      const key = pairKey(bucket.map((m) => m.id));
-      if (seen.has(key)) continue;
-      seen.add(key);
-      groups.push({ reason: "same_name", members: bucket });
-    }
-
-    for (const bucket of byEmail.values()) {
-      if (bucket.length < 2) continue;
-      const key = pairKey(bucket.map((m) => m.id));
-      const existing = groups.find((g) => pairKey(g.members.map((m) => m.id)) === key);
-      if (existing) {
-        existing.reason = "both";
-      } else {
-        seen.add(key);
-        groups.push({ reason: "same_email", members: bucket });
-      }
-    }
-
-    return successResponse(groups);
+    return successResponse(duplicateGroups(members));
   } catch (error) {
     return errorResponse(error);
   }

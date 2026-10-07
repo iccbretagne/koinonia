@@ -39,6 +39,76 @@ const createSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+type CreateInput = z.infer<typeof createSchema>;
+
+/** Une seule demande en attente, et aucun lien déjà établi, par compte et par église. */
+async function assertCanRequest(userId: string, churchId: string) {
+  const existing = await prisma.memberLinkRequest.findFirst({
+    where: { userId, churchId, status: "PENDING" },
+  });
+  if (existing) {
+    throw new ApiError(409, "Une demande est déjà en attente pour votre compte dans cette église");
+  }
+  const existingLink = await prisma.memberUserLink.findFirst({ where: { userId, churchId } });
+  if (existingLink) {
+    throw new ApiError(409, "Votre compte est déjà lié à un STAR dans cette église");
+  }
+}
+
+/** STAR existant : introuvable, déjà lié ou d'une autre église sont refusés. */
+async function assertLinkableMember(memberId: string, churchId: string) {
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+    include: {
+      userLinks: { where: { churchId } },
+      departments: {
+        where: { isPrimary: true },
+        include: { department: { include: { ministry: { select: { churchId: true } } } } },
+      },
+    },
+  });
+  if (!member) throw new ApiError(404, "STAR introuvable");
+  if (member.userLinks.length > 0) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
+
+  const primaryChurchId = member.departments[0]?.department.ministry.churchId;
+  if (primaryChurchId !== churchId) {
+    throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
+  }
+}
+
+/** Champs propres au type de demande : rien, le STAR visé, ou l'identité du nouveau STAR. */
+async function typeFields(data: CreateInput) {
+  if (data.type === "no_star") return {};
+  if (data.type === "existing") {
+    await assertLinkableMember(data.memberId, data.churchId);
+    return { memberId: data.memberId };
+  }
+  return { firstName: data.firstName, lastName: data.lastName, phone: data.phone ?? undefined };
+}
+
+/** Prévient l'administration et le secrétariat de l'église. */
+async function notifyChurchAdmins(churchId: string, requesterName: string | null | undefined) {
+  const adminRoles = await prisma.userChurchRole.findMany({
+    where: {
+      churchId,
+      role: { in: ["SUPER_ADMIN", "ADMIN", "SECRETARY"] },
+    },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+  if (adminRoles.length === 0) return;
+  await notifyUsers(
+    adminRoles.map((r) => r.userId),
+    {
+      domain: "account",
+      type: "MEMBER_LINK_REQUEST",
+      title: "Nouvelle demande de liaison",
+      message: `${requesterName} a soumis une demande de liaison compte STAR.`,
+      link: "/admin/access",
+    }
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -48,92 +118,26 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = createSchema.parse(body);
 
-    // Vérifier qu'il n'y a pas déjà une demande PENDING pour cet utilisateur dans cette église
-    const existing = await prisma.memberLinkRequest.findFirst({
-      where: { userId: session.user.id, churchId: data.churchId, status: "PENDING" },
-    });
-    if (existing) {
-      throw new ApiError(409, "Une demande est déjà en attente pour votre compte dans cette église");
-    }
-
-    // Vérifier qu'un lien n'existe pas déjà pour cet utilisateur dans cette église
-    const existingLink = await prisma.memberUserLink.findFirst({
-      where: { userId: session.user.id, churchId: data.churchId },
-    });
-    if (existingLink) {
-      throw new ApiError(409, "Votre compte est déjà lié à un STAR dans cette église");
-    }
+    await assertCanRequest(session.user.id, data.churchId);
 
     const commonFields = {
       userId: session.user.id,
       churchId: data.churchId,
-      requestedRole: ("requestedRole" in data ? data.requestedRole : null) ?? null,
-      notes: ("notes" in data ? data.notes : undefined) ?? undefined,
+      requestedRole: data.requestedRole ?? null,
+      notes: data.notes ?? undefined,
       departmentId: ("departmentId" in data ? data.departmentId : undefined) ?? undefined,
       ministryId: ("ministryId" in data ? data.ministryId : undefined) ?? undefined,
     };
 
-    let req;
-
-    if (data.type === "no_star") {
-      req = await prisma.memberLinkRequest.create({ data: commonFields });
-    } else if (data.type === "existing") {
-      const member = await prisma.member.findUnique({
-        where: { id: data.memberId },
-        include: {
-          userLinks: { where: { churchId: data.churchId } },
-          departments: {
-            where: { isPrimary: true },
-            include: { department: { include: { ministry: { select: { churchId: true } } } } },
-          },
-        },
-      });
-      if (!member) throw new ApiError(404, "STAR introuvable");
-      if (member.userLinks.length > 0) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
-
-      const primaryChurchId = member.departments[0]?.department.ministry.churchId;
-      if (primaryChurchId !== data.churchId) {
-        throw new ApiError(400, "Ce STAR n'appartient pas à cette église");
-      }
-
-      req = await prisma.memberLinkRequest.create({
-        data: { ...commonFields, memberId: data.memberId },
-      });
-    } else {
-      // type === "new"
-      req = await prisma.memberLinkRequest.create({
-        data: {
-          ...commonFields,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone ?? undefined,
-        },
-      });
-    }
+    const req = await prisma.memberLinkRequest.create({
+      data: { ...commonFields, ...(await typeFields(data)) },
+    });
 
     // Notify all admins/secretaries in the church about the new link request
-    const requesterName =
-      session.user.displayName || session.user.name || session.user.email;
-    const adminRoles = await prisma.userChurchRole.findMany({
-      where: {
-        churchId: data.churchId,
-        role: { in: ["SUPER_ADMIN", "ADMIN", "SECRETARY"] },
-      },
-      select: { userId: true },
-      distinct: ["userId"],
-    });
-    if (adminRoles.length > 0) {
-      await notifyUsers(
-        adminRoles.map((r) => r.userId),
-        {
-          domain: "account",
-          type: "MEMBER_LINK_REQUEST",
-          title: "Nouvelle demande de liaison",
-          message: `${requesterName} a soumis une demande de liaison compte STAR.`,
-          link: "/admin/access",
-        }
-      );
-    }
+    await notifyChurchAdmins(
+      data.churchId,
+      session.user.displayName || session.user.name || session.user.email
+    );
 
     return successResponse(req, 201);
   } catch (error) {
