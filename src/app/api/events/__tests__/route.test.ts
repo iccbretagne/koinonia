@@ -106,6 +106,26 @@ describe("POST /api/events", () => {
     expect(body.title).toBe("Culte du dimanche");
   });
 
+  it("calcule l'échéance de planning à partir d'un décalage en heures", async () => {
+    prismaMock.event.create.mockResolvedValue({ id: "evt-new", eventDepts: [] });
+
+    const request = new Request("http://localhost/api/events", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Culte du dimanche",
+        type: "CULTE",
+        date: "2026-03-15T10:00:00.000Z",
+        churchId: "church-1",
+        deadlineOffset: "24h",
+      }),
+    });
+    const res = await POST(request);
+
+    expect(res.status).toBe(201);
+    const data = prismaMock.event.create.mock.calls[0][0].data as { planningDeadline: Date };
+    expect(data.planningDeadline.toISOString()).toBe("2026-03-14T10:00:00.000Z");
+  });
+
   it("creates recurring events", async () => {
     const parent = {
       id: "evt-parent",

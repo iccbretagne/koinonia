@@ -180,6 +180,30 @@ describe("executeAjoutEvenement — date validation / DoS prevention", () => {
   });
 });
 
+describe("executeAjoutEvenement — échéance de planning par décalage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.event.create.mockResolvedValue({ id: "evt-1" });
+  });
+
+  it.each([
+    ["48h", "2026-03-13T10:00:00.000Z"],
+    ["3d", "2026-03-12T10:00:00.000Z"],
+    ["deux jours", "2026-03-15T10:00:00.000Z"], // format invalide : échéance = date de l'événement
+  ])("décalage %s → échéance %s", async (deadlineOffset, expected) => {
+    const result = await executeRequest(tx, "req-1", "church-1", "AJOUT_EVENEMENT", {
+      eventTitle: "Culte",
+      eventType: "CULTE",
+      eventDate: "2026-03-15T10:00:00.000Z",
+      deadlineOffset,
+    }, "approver-1");
+
+    expect(result.success).toBe(true);
+    const data = prismaMock.event.create.mock.calls[0][0].data as { planningDeadline: Date };
+    expect(data.planningDeadline.toISOString()).toBe(expected);
+  });
+});
+
 describe("événements modifiés ou annulés par demande — notifications (spec 059)", () => {
   const oldDate = new Date("2099-03-01T09:00:00Z");
   const newDate = new Date("2099-03-01T10:00:00Z");
