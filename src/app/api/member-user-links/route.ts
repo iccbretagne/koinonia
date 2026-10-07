@@ -68,6 +68,8 @@ async function assertTargetInScope(
   }
 }
 
+type TargetUser = { kind: "existing"; userId: string } | { kind: "create" } | { kind: "confirm" };
+
 /**
  * Compte cible : par identifiant, ou par email. Un email inconnu demande confirmation
  * (`"confirm"`) avant la création d'un compte dormant (`"create"`).
@@ -76,15 +78,15 @@ async function resolveTargetUser(
   inputUserId: string | undefined,
   email: string | undefined,
   confirmCreate: boolean | undefined
-): Promise<string | "create" | "confirm"> {
+): Promise<TargetUser> {
   if (inputUserId) {
     const user = await prisma.user.findUnique({ where: { id: inputUserId } });
     if (!user) throw new ApiError(404, "Utilisateur introuvable");
-    return user.id;
+    return { kind: "existing", userId: user.id };
   }
   const existing = await prisma.user.findUnique({ where: { email: email! } });
-  if (existing) return existing.id;
-  return confirmCreate ? "create" : "confirm";
+  if (existing) return { kind: "existing", userId: existing.id };
+  return { kind: confirmCreate ? "create" : "confirm" };
 }
 
 /** Un seul lien par STAR et par compte dans une église. */
@@ -117,9 +119,9 @@ export async function POST(request: Request) {
     // Résoudre le compte cible. Aucune exigence de rattachement préalable à cette église : c'est
     // précisément la condition que ce rattachement crée (spec 037).
     const target = await resolveTargetUser(inputUserId, email, confirmCreate);
-    if (target === "confirm") return successResponse({ accountNotFound: true }, 409);
+    if (target.kind === "confirm") return successResponse({ accountNotFound: true }, 409);
     // Compte inconnu et création confirmée : il est créé dans la transaction ci-dessous.
-    let targetUserId = target === "create" ? "" : target;
+    let targetUserId = target.kind === "existing" ? target.userId : "";
 
     await assertNotAlreadyLinked(memberId, targetUserId, churchId);
 

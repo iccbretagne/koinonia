@@ -252,28 +252,39 @@ async function applyUpdate(
   if (data.status === "ANNULE" && isParent) {
     await tx.request.updateMany({ where: { parentRequestId: id }, data: { status: "ANNULE" } });
   }
-  if (data.status === undefined) return result;
+  if (data.status !== undefined) {
+    await propagateStatusChange(tx, existing, data.status, isParent, userId);
+  }
+  return result;
+}
 
+/** Changement de statut : statut de l'annonce liée (demande parente) puis événement du bus. */
+async function propagateStatusChange(
+  tx: PatchTx,
+  existing: ExistingRequest,
+  newStatus: NonNullable<PatchData["status"]>,
+  isParent: boolean,
+  userId: string
+) {
   // Sync announcement status when a parent request changes status
   if (existing.announcementId && isParent) {
-    await syncAnnouncementStatus(tx, existing.announcementId, id, data.status);
+    await syncAnnouncementStatus(tx, existing.announcementId, existing.id, newStatus);
   }
   // Emit status_changed event for cross-module integrations (e.g. media module)
   await planningBus.emit(
     "planning:request:status_changed",
     { tx, churchId: existing.churchId, userId },
     {
-      requestId: id,
+      requestId: existing.id,
       requestType: existing.type,
       churchId: existing.churchId,
       oldStatus: existing.status,
-      newStatus: data.status,
+      newStatus,
       updatedById: userId,
       title: existing.title,
       payload: (existing.payload as Record<string, unknown>) ?? {},
     }
   );
-  return result;
 }
 
 /** Prévient le demandeur de l'approbation ou du refus (pas s'il s'agit de lui-même). */
