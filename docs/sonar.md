@@ -103,6 +103,20 @@ n'atteint pas `sonarcloud.io` (session cloud, mobile). En local :
 SONAR_BRANCH=main python3 scripts/sonar-report.py sonar-report
 ```
 
+## Faux positifs acceptés
+
+Les issues relues comme volontaires (#539) sont listées dans `scripts/sonar-accepted.json` :
+règle, fichiers, justification publiée en commentaire, et plafond. Le workflow manuel
+**Sonar accept** les passe à l'état « Accepté » en lot ; sans l'option `apply`, il ne fait que
+lister les issues concernées et celles laissées ouvertes. Un groupe qui dépasse son plafond
+arrête tout avant la moindre modification : une règle qui gagne du code nouveau n'est jamais
+acceptée sans relecture. Le jeton `SONAR_TOKEN` doit avoir le droit **Administer Issues**.
+
+```bash
+python3 scripts/sonar-accept.py           # simulation
+python3 scripts/sonar-accept.py --apply   # acceptation
+```
+
 ## Scan local
 
 La configuration locale utilise `docker-compose.sonar.yml` et `.env.sonar`.

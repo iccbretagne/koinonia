@@ -1,0 +1,42 @@
+# Acceptation en lot des issues SonarCloud relues comme volontaires (#539).
+#
+# La liste fait foi : scripts/sonar-accepted.json (regle, fichiers, justification, plafond).
+# Sans « apply », simple simulation : le run liste les issues concernees. Un groupe qui depasse
+# son plafond arrete tout avant la moindre modification. Le jeton SONAR_TOKEN doit avoir le
+# droit « Administer Issues » sur le projet. Voir docs/sonar.md.
+
+name: Sonar accept
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Accepter reellement (sinon simulation)"
+        required: false
+        default: false
+        type: boolean
+      branch:
+        description: "Branche analysee dans SonarCloud"
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-accept
+  cancel-in-progress: false
+
+jobs:
+  accept:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Accept reviewed issues
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_BRANCH: ${{ inputs.branch }}
+          APPLY: ${{ inputs.apply && '--apply' || '' }}
+        run: python3 scripts/sonar-accept.py $APPLY
