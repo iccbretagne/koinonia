@@ -9,6 +9,96 @@ import type {
   UserRoleConfig,
 } from "./config-backup-types";
 
+type MinistryWithDepartments = Awaited<ReturnType<typeof loadMinistries>>[number];
+
+/** Ministères et départements, chargés en une requête puis répartis par église. */
+async function loadMinistries(churchIds: string[]) {
+  return prisma.ministry.findMany({
+    where: { churchId: { in: churchIds } },
+    include: { departments: true },
+    orderBy: { name: "asc" },
+  });
+}
+
+function toMinistryConfig(m: MinistryWithDepartments): MinistryConfig {
+  return {
+    id: m.id,
+    name: m.name,
+    isSystem: m.isSystem,
+    departments: m.departments.map((d) => ({
+      id: d.id,
+      name: d.name,
+      isSystem: d.isSystem,
+      function: d.function ?? null,
+    })),
+  };
+}
+
+/** STAR des départements donnés, un par personne avec tous ses départements. */
+async function exportMembers(deptIds: string[]): Promise<MemberConfig[]> {
+  if (deptIds.length === 0) return [];
+  const memberDepts = await prisma.memberDepartment.findMany({
+    where: { departmentId: { in: deptIds } },
+    include: { member: true },
+  });
+
+  // Deduplicate members (a member can be in multiple depts)
+  const memberMap = new Map<string, MemberConfig>();
+  for (const md of memberDepts) {
+    const member = memberMap.get(md.memberId) ?? {
+      id: md.member.id,
+      firstName: md.member.firstName,
+      lastName: md.member.lastName,
+      email: md.member.email ?? null,
+      phone: md.member.phone ?? null,
+      departmentIds: [],
+      isPrimaryDeptId: null,
+    };
+    member.departmentIds.push(md.departmentId);
+    if (md.isPrimary) member.isPrimaryDeptId = md.departmentId;
+    memberMap.set(md.memberId, member);
+  }
+  return Array.from(memberMap.values());
+}
+
+/** Départements de l'église : ceux de la structure déjà chargée, sinon relus. */
+async function churchDepartmentIds(churchId: string, ministries: MinistryWithDepartments[] | null) {
+  if (ministries) return ministries.flatMap((m) => m.departments.map((d) => d.id));
+  const depts = await prisma.department.findMany({
+    where: { ministry: { churchId } },
+    select: { id: true },
+  });
+  return depts.map((d) => d.id);
+}
+
+async function exportLinksAndRoles(churchId: string): Promise<{ userLinks: UserLinkConfig[]; userRoles: UserRoleConfig[] }> {
+  const links = await prisma.memberUserLink.findMany({
+    where: { churchId },
+    include: { user: { select: { email: true } } },
+  });
+  const roles = await prisma.userChurchRole.findMany({
+    where: { churchId },
+    include: {
+      user: { select: { email: true } },
+      departments: { select: { departmentId: true, isDeputy: true } },
+    },
+  });
+  return {
+    userLinks: links.map((l) => ({
+      memberId: l.memberId,
+      userEmail: l.user.email,
+      churchId: l.churchId,
+      validatedAt: l.validatedAt?.toISOString() ?? null,
+    })),
+    userRoles: roles.map((r) => ({
+      userEmail: r.user.email,
+      role: r.role,
+      ministryId: r.ministryId ?? null,
+      departmentIds: r.departments.map((d) => d.departmentId),
+    })),
+  };
+}
+
 export async function exportConfig(
   scope: "all" | string[],
   categories: ConfigCategory[],
@@ -26,113 +116,21 @@ export async function exportConfig(
   });
 
   // Load ministries+departments separately to avoid conditional-include typing issues
-  const allMinistriesWithDepts = includeStructure
-    ? await prisma.ministry.findMany({
-        where: { churchId: { in: churches.map((c) => c.id) } },
-        include: { departments: true },
-        orderBy: { name: "asc" },
-      })
-    : [];
-
-  const ministriesByChurch = new Map<string, typeof allMinistriesWithDepts>();
+  const allMinistriesWithDepts = includeStructure ? await loadMinistries(churches.map((c) => c.id)) : [];
+  const ministriesByChurch = new Map<string, MinistryWithDepartments[]>();
   for (const m of allMinistriesWithDepts) {
-    const list = ministriesByChurch.get(m.churchId) ?? [];
-    list.push(m);
-    ministriesByChurch.set(m.churchId, list);
+    ministriesByChurch.set(m.churchId, [...(ministriesByChurch.get(m.churchId) ?? []), m]);
   }
 
   const churchConfigs: ChurchConfig[] = await Promise.all(
     churches.map(async (church) => {
-      // ── Structure ────────────────────────────────────────────
       const churchMinistries = ministriesByChurch.get(church.id) ?? [];
-      const ministries: MinistryConfig[] = churchMinistries.map((m) => ({
-        id: m.id,
-        name: m.name,
-        isSystem: m.isSystem,
-        departments: m.departments.map((d) => ({
-          id: d.id,
-          name: d.name,
-          isSystem: d.isSystem,
-          function: d.function ?? null,
-        })),
-      }));
-
-      // Collect all dept IDs for this church (needed for member queries)
-      const churchDeptIds = churchMinistries.flatMap((m) =>
-        m.departments.map((d) => d.id)
-      );
-
-      // ── Members ──────────────────────────────────────────────
-      let members: MemberConfig[] = [];
-      if (includeMembers) {
-        // Find all dept IDs for this church (may not have loaded if !includeStructure)
-        let deptIds = churchDeptIds;
-        if (!includeStructure) {
-          const depts = await prisma.department.findMany({
-            where: { ministry: { churchId: church.id } },
-            select: { id: true },
-          });
-          deptIds = depts.map((d) => d.id);
-        }
-
-        if (deptIds.length > 0) {
-          const memberDepts = await prisma.memberDepartment.findMany({
-            where: { departmentId: { in: deptIds } },
-            include: { member: true },
-          });
-
-          // Deduplicate members (a member can be in multiple depts)
-          const memberMap = new Map<string, MemberConfig>();
-          for (const md of memberDepts) {
-            const existing = memberMap.get(md.memberId);
-            if (existing) {
-              existing.departmentIds.push(md.departmentId);
-              if (md.isPrimary) existing.isPrimaryDeptId = md.departmentId;
-            } else {
-              memberMap.set(md.memberId, {
-                id: md.member.id,
-                firstName: md.member.firstName,
-                lastName: md.member.lastName,
-                email: md.member.email ?? null,
-                phone: md.member.phone ?? null,
-                departmentIds: [md.departmentId],
-                isPrimaryDeptId: md.isPrimary ? md.departmentId : null,
-              });
-            }
-          }
-          members = Array.from(memberMap.values());
-        }
-      }
-
-      // ── Links & roles ────────────────────────────────────────
-      let userLinks: UserLinkConfig[] = [];
-      let userRoles: UserRoleConfig[] = [];
-      if (includeLinks) {
-        const links = await prisma.memberUserLink.findMany({
-          where: { churchId: church.id },
-          include: { user: { select: { email: true } } },
-        });
-        userLinks = links.map((l) => ({
-          memberId: l.memberId,
-          userEmail: l.user.email,
-          churchId: l.churchId,
-          validatedAt: l.validatedAt?.toISOString() ?? null,
-        }));
-
-        const roles = await prisma.userChurchRole.findMany({
-          where: { churchId: church.id },
-          include: {
-            user: { select: { email: true } },
-            departments: { select: { departmentId: true, isDeputy: true } },
-          },
-        });
-        userRoles = roles.map((r) => ({
-          userEmail: r.user.email,
-          role: r.role,
-          ministryId: r.ministryId ?? null,
-          departmentIds: r.departments.map((d) => d.departmentId),
-        }));
-      }
+      const members = includeMembers
+        ? await exportMembers(await churchDepartmentIds(church.id, includeStructure ? churchMinistries : null))
+        : [];
+      const { userLinks, userRoles } = includeLinks
+        ? await exportLinksAndRoles(church.id)
+        : { userLinks: [], userRoles: [] };
 
       return {
         id: church.id,
@@ -141,7 +139,7 @@ export async function exportConfig(
         secretariatEmails: church.secretariatEmails ?? null,
         accountingEmails: church.accountingEmails ?? null,
         primaryColor: church.primaryColor,
-        ministries,
+        ministries: churchMinistries.map(toMinistryConfig),
         members,
         userLinks,
         userRoles,

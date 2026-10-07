@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import type { Role } from "@/generated/prisma/client";
 import type {
   KoinoniaConfigExport,
   ConfigCategory,
@@ -6,7 +7,13 @@ import type {
   ImportPreview,
   ImportResult,
   ChurchConfig,
+  MemberConfig,
+  MinistryConfig,
+  UserLinkConfig,
+  UserRoleConfig,
 } from "./config-backup-types";
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export async function previewImport(data: KoinoniaConfigExport): Promise<ImportPreview> {
   if (data._meta.schemaVersion !== 1) {
@@ -64,42 +71,7 @@ export async function applyImport(
 
   await prisma.$transaction(async (tx) => {
     for (const church of data.churches) {
-      // ── Upsert church ────────────────────────────────────────
-      // Recherche par ID d'abord, puis par slug (cas cross-instance où l'ID diffère)
-      let existingChurch = await tx.church.findUnique({ where: { id: church.id }, select: { id: true } });
-      existingChurch ??= await tx.church.findUnique({ where: { slug: church.slug }, select: { id: true } });
-      // L'ID effectif utilisé pour les opérations suivantes (structure, membres, liens)
-      const effectiveChurchId = existingChurch?.id ?? church.id;
-
-      if (existingChurch) {
-        if (strategy !== "SKIP") {
-          await tx.church.update({
-            where: { id: existingChurch.id },
-            data: {
-              name: church.name,
-              slug: church.slug,
-              secretariatEmails: church.secretariatEmails,
-              accountingEmails: church.accountingEmails,
-              primaryColor: church.primaryColor,
-            },
-          });
-          result.updated++;
-        } else {
-          result.skipped++;
-        }
-      } else {
-        await tx.church.create({
-          data: {
-            id: church.id,
-            name: church.name,
-            slug: church.slug,
-            secretariatEmails: church.secretariatEmails,
-            accountingEmails: church.accountingEmails,
-            primaryColor: church.primaryColor,
-          },
-        });
-        result.created++;
-      }
+      const effectiveChurchId = await upsertChurch(tx, church, strategy, result);
 
       // Réécrit church.id avec l'ID effectif pour les opérations suivantes
       const churchWithEffectiveId = { ...church, id: effectiveChurchId };
@@ -124,332 +96,253 @@ export async function applyImport(
   return result;
 }
 
-// ─── Structure ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function applyStructure(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  church: ChurchConfig,
+/**
+ * Crée l'élément absent ; met à jour l'existant, sauf en SKIP où il est laissé tel quel.
+ * Tient le compte du résultat et renvoie ce qui a été fait.
+ */
+async function createOrUpdate(
+  exists: boolean,
   strategy: MergeStrategy,
+  result: ImportResult,
+  ops: { create: () => Promise<unknown>; update: () => Promise<unknown> }
+): Promise<"created" | "updated" | "skipped"> {
+  if (!exists) {
+    await ops.create();
+    result.created++;
+    return "created";
+  }
+  if (strategy === "SKIP") {
+    result.skipped++;
+    return "skipped";
+  }
+  await ops.update();
+  result.updated++;
+  return "updated";
+}
+
+/** Supprime ce que le fichier ne contient plus ; une suppression refusée devient un avertissement. */
+async function deleteOrphans<T extends { id: string; name: string }>(
+  items: T[],
+  keepIds: Set<string>,
+  remove: (item: T) => Promise<unknown>,
+  warning: (item: T) => string,
   result: ImportResult
 ) {
-  const fileMinistryIds = new Set(church.ministries.map((m) => m.id));
-  const fileDeptIds = new Set(
-    church.ministries.flatMap((m) => m.departments.map((d) => d.id))
-  );
-
-  for (const ministry of church.ministries) {
-    const exists = await tx.ministry.findUnique({ where: { id: ministry.id }, select: { id: true } });
-    if (exists) {
-      if (strategy !== "SKIP") {
-        await tx.ministry.update({
-          where: { id: ministry.id },
-          data: { name: ministry.name, isSystem: ministry.isSystem, churchId: church.id },
-        });
-        result.updated++;
-      } else {
-        result.skipped++;
-      }
-    } else {
-      await tx.ministry.create({
-        data: { id: ministry.id, name: ministry.name, isSystem: ministry.isSystem, churchId: church.id },
-      });
-      result.created++;
-    }
-
-    for (const dept of ministry.departments) {
-      const deptExists = await tx.department.findUnique({ where: { id: dept.id }, select: { id: true } });
-      if (deptExists) {
-        if (strategy !== "SKIP") {
-          await tx.department.update({
-            where: { id: dept.id },
-            data: { name: dept.name, isSystem: dept.isSystem, function: dept.function, ministryId: ministry.id },
-          });
-          result.updated++;
-        } else {
-          result.skipped++;
-        }
-      } else {
-        await tx.department.create({
-          data: { id: dept.id, name: dept.name, isSystem: dept.isSystem, function: dept.function, ministryId: ministry.id },
-        });
-        result.created++;
-      }
+  for (const item of items) {
+    if (keepIds.has(item.id)) continue;
+    try {
+      await remove(item);
+      result.updated++;
+    } catch {
+      result.warnings.push(warning(item));
+      result.skipped++;
     }
   }
+}
+
+async function departmentExists(tx: Tx, id: string) {
+  return (await tx.department.findUnique({ where: { id }, select: { id: true } })) !== null;
+}
+
+/** Compte de l'instance cible par email ; absent, l'élément est ignoré avec un avertissement. */
+async function findImportUser(tx: Tx, email: string, ignored: string, result: ImportResult) {
+  const user = await tx.user.findUnique({ where: { email }, select: { id: true } });
+  if (!user) {
+    result.warnings.push(`${ignored} : utilisateur « ${email} » introuvable sur cette instance`);
+    result.skipped++;
+  }
+  return user;
+}
+
+// ─── Church ───────────────────────────────────────────────────────────────────
+
+/** Recherche par ID d'abord, puis par slug (cas cross-instance où l'ID diffère) ; renvoie l'ID effectif. */
+async function upsertChurch(tx: Tx, church: ChurchConfig, strategy: MergeStrategy, result: ImportResult) {
+  let existingChurch = await tx.church.findUnique({ where: { id: church.id }, select: { id: true } });
+  existingChurch ??= await tx.church.findUnique({ where: { slug: church.slug }, select: { id: true } });
+  const fields = {
+    name: church.name,
+    slug: church.slug,
+    secretariatEmails: church.secretariatEmails,
+    accountingEmails: church.accountingEmails,
+    primaryColor: church.primaryColor,
+  };
+  await createOrUpdate(existingChurch !== null, strategy, result, {
+    create: () => tx.church.create({ data: { id: church.id, ...fields } }),
+    update: () => tx.church.update({ where: { id: existingChurch!.id }, data: fields }),
+  });
+  // L'ID effectif utilisé pour les opérations suivantes (structure, membres, liens)
+  return existingChurch?.id ?? church.id;
+}
+
+// ─── Structure ────────────────────────────────────────────────────────────────
+
+async function upsertMinistry(tx: Tx, ministry: MinistryConfig, churchId: string, strategy: MergeStrategy, result: ImportResult) {
+  const exists = await tx.ministry.findUnique({ where: { id: ministry.id }, select: { id: true } });
+  const fields = { name: ministry.name, isSystem: ministry.isSystem, churchId };
+  await createOrUpdate(exists !== null, strategy, result, {
+    create: () => tx.ministry.create({ data: { id: ministry.id, ...fields } }),
+    update: () => tx.ministry.update({ where: { id: ministry.id }, data: fields }),
+  });
+
+  for (const dept of ministry.departments) {
+    const deptFields = { name: dept.name, isSystem: dept.isSystem, function: dept.function, ministryId: ministry.id };
+    await createOrUpdate(await departmentExists(tx, dept.id), strategy, result, {
+      create: () => tx.department.create({ data: { id: dept.id, ...deptFields } }),
+      update: () => tx.department.update({ where: { id: dept.id }, data: deptFields }),
+    });
+  }
+}
+
+async function applyStructure(tx: Tx, church: ChurchConfig, strategy: MergeStrategy, result: ImportResult) {
+  for (const ministry of church.ministries) {
+    await upsertMinistry(tx, ministry, church.id, strategy, result);
+  }
+  if (strategy !== "REPLACE") return;
 
   // REPLACE: delete orphaned departments/ministries (absent from file)
-  if (strategy === "REPLACE") {
-    const existingDepts = await tx.department.findMany({
-      where: { ministry: { churchId: church.id } },
-      select: { id: true, name: true },
-    });
-    for (const dept of existingDepts) {
-      if (!fileDeptIds.has(dept.id)) {
-        try {
-          // Clean up FK dependencies before deleting
-          await tx.memberDepartment.deleteMany({ where: { departmentId: dept.id } });
-          await tx.userDepartment.deleteMany({ where: { departmentId: dept.id } });
-          await tx.department.delete({ where: { id: dept.id } });
-          result.updated++;
-        } catch {
-          result.warnings.push(
-            `Département « ${dept.name} » (${dept.id}) ignoré : des données opérationnelles y sont rattachées`
-          );
-          result.skipped++;
-        }
-      }
-    }
-
-    const existingMinistries = await tx.ministry.findMany({
-      where: { churchId: church.id },
-      select: { id: true, name: true },
-    });
-    for (const ministry of existingMinistries) {
-      if (!fileMinistryIds.has(ministry.id)) {
-        try {
-          await tx.ministry.delete({ where: { id: ministry.id } });
-          result.updated++;
-        } catch {
-          result.warnings.push(
-            `Ministère « ${ministry.name} » (${ministry.id}) ignoré : des données y sont rattachées`
-          );
-          result.skipped++;
-        }
-      }
-    }
-  }
+  await deleteOrphans(
+    await tx.department.findMany({ where: { ministry: { churchId: church.id } }, select: { id: true, name: true } }),
+    new Set(church.ministries.flatMap((m) => m.departments.map((d) => d.id))),
+    async (dept) => {
+      // Clean up FK dependencies before deleting
+      await tx.memberDepartment.deleteMany({ where: { departmentId: dept.id } });
+      await tx.userDepartment.deleteMany({ where: { departmentId: dept.id } });
+      await tx.department.delete({ where: { id: dept.id } });
+    },
+    (dept) => `Département « ${dept.name} » (${dept.id}) ignoré : des données opérationnelles y sont rattachées`,
+    result
+  );
+  await deleteOrphans(
+    await tx.ministry.findMany({ where: { churchId: church.id }, select: { id: true, name: true } }),
+    new Set(church.ministries.map((m) => m.id)),
+    (ministry) => tx.ministry.delete({ where: { id: ministry.id } }),
+    (ministry) => `Ministère « ${ministry.name} » (${ministry.id}) ignoré : des données y sont rattachées`,
+    result
+  );
 }
 
 // ─── Members ──────────────────────────────────────────────────────────────────
 
-async function applyMembers(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  church: ChurchConfig,
-  strategy: MergeStrategy,
-  result: ImportResult
-) {
-  const fileMemberIds = new Set(church.members.map((m) => m.id));
+async function upsertMember(tx: Tx, member: MemberConfig, strategy: MergeStrategy, result: ImportResult) {
+  const exists = await tx.member.findUnique({ where: { id: member.id }, select: { id: true } });
+  const fields = { firstName: member.firstName, lastName: member.lastName, email: member.email, phone: member.phone };
+  const outcome = await createOrUpdate(exists !== null, strategy, result, {
+    create: () => tx.member.create({ data: { id: member.id, ...fields } }),
+    update: () => tx.member.update({ where: { id: member.id }, data: fields }),
+  });
+  if (outcome === "skipped") return;
 
-  for (const member of church.members) {
-    const exists = await tx.member.findUnique({ where: { id: member.id }, select: { id: true } });
-    if (exists) {
-      if (strategy !== "SKIP") {
-        await tx.member.update({
-          where: { id: member.id },
-          data: {
-            firstName: member.firstName,
-            lastName: member.lastName,
-            email: member.email,
-            phone: member.phone,
-          },
-        });
-        result.updated++;
-      } else {
-        result.skipped++;
-        continue;
-      }
-    } else {
-      await tx.member.create({
-        data: {
-          id: member.id,
-          firstName: member.firstName,
-          lastName: member.lastName,
-          email: member.email,
-          phone: member.phone,
-        },
-      });
-      result.created++;
-    }
-
-    // Upsert MemberDepartment links
-    for (const deptId of member.departmentIds) {
-      const deptExists = await tx.department.findUnique({ where: { id: deptId }, select: { id: true } });
-      if (!deptExists) continue;
-      await tx.memberDepartment.upsert({
-        where: { memberId_departmentId: { memberId: member.id, departmentId: deptId } },
-        create: {
-          memberId: member.id,
-          departmentId: deptId,
-          isPrimary: member.isPrimaryDeptId === deptId,
-        },
-        update: strategy !== "SKIP"
-          ? { isPrimary: member.isPrimaryDeptId === deptId }
-          : {},
-      });
-    }
+  // Upsert MemberDepartment links
+  for (const deptId of member.departmentIds) {
+    if (!(await departmentExists(tx, deptId))) continue;
+    const isPrimary = member.isPrimaryDeptId === deptId;
+    await tx.memberDepartment.upsert({
+      where: { memberId_departmentId: { memberId: member.id, departmentId: deptId } },
+      create: { memberId: member.id, departmentId: deptId, isPrimary },
+      update: strategy === "SKIP" ? {} : { isPrimary },
+    });
   }
+}
+
+async function applyMembers(tx: Tx, church: ChurchConfig, strategy: MergeStrategy, result: ImportResult) {
+  for (const member of church.members) {
+    await upsertMember(tx, member, strategy, result);
+  }
+  if (strategy !== "REPLACE") return;
 
   // REPLACE: remove MemberDepartment for church depts not in file members
-  if (strategy === "REPLACE") {
-    const churchDeptIds = (
-      await tx.department.findMany({
-        where: { ministry: { churchId: church.id } },
-        select: { id: true },
-      })
-    ).map((d) => d.id);
+  const churchDeptIds = (
+    await tx.department.findMany({ where: { ministry: { churchId: church.id } }, select: { id: true } })
+  ).map((d) => d.id);
+  if (churchDeptIds.length === 0) return;
 
-    if (churchDeptIds.length > 0) {
-      // Remove links for members not in the file
-      await tx.memberDepartment.deleteMany({
-        where: {
-          departmentId: { in: churchDeptIds },
-          memberId: { notIn: Array.from(fileMemberIds) },
-        },
-      });
-      result.updated++;
-    }
-  }
+  // Remove links for members not in the file
+  await tx.memberDepartment.deleteMany({
+    where: {
+      departmentId: { in: churchDeptIds },
+      memberId: { notIn: church.members.map((m) => m.id) },
+    },
+  });
+  result.updated++;
 }
 
 // ─── Links & roles ────────────────────────────────────────────────────────────
 
-async function applyLinks(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  church: ChurchConfig,
-  strategy: MergeStrategy,
-  result: ImportResult
-) {
-  // REPLACE: wipe existing links/roles for this church
-  if (strategy === "REPLACE") {
-    await tx.memberUserLink.deleteMany({ where: { churchId: church.id } });
-    const roleIds = (
-      await tx.userChurchRole.findMany({
-        where: { churchId: church.id },
-        select: { id: true },
-      })
-    ).map((r) => r.id);
-    if (roleIds.length > 0) {
-      await tx.userDepartment.deleteMany({ where: { userChurchRoleId: { in: roleIds } } });
-    }
-    await tx.userChurchRole.deleteMany({ where: { churchId: church.id } });
+/** REPLACE: wipe existing links/roles for this church. */
+async function wipeLinksAndRoles(tx: Tx, churchId: string) {
+  await tx.memberUserLink.deleteMany({ where: { churchId } });
+  const roleIds = (await tx.userChurchRole.findMany({ where: { churchId }, select: { id: true } })).map((r) => r.id);
+  if (roleIds.length > 0) {
+    await tx.userDepartment.deleteMany({ where: { userChurchRoleId: { in: roleIds } } });
   }
+  await tx.userChurchRole.deleteMany({ where: { churchId } });
+}
+
+async function importUserLink(tx: Tx, link: UserLinkConfig, churchId: string, strategy: MergeStrategy, result: ImportResult) {
+  const user = await findImportUser(tx, link.userEmail, "Liaison membre ignorée", result);
+  if (!user) return;
+
+  const memberExists = await tx.member.findUnique({ where: { id: link.memberId }, select: { id: true } });
+  if (!memberExists) {
+    result.warnings.push(`Liaison membre ignorée : membre ${link.memberId} introuvable`);
+    result.skipped++;
+    return;
+  }
+
+  const validatedAt = link.validatedAt ? new Date(link.validatedAt) : null;
+  // Après un REPLACE, la liaison vient d'être effacée : inutile de la chercher
+  const exists =
+    strategy === "REPLACE"
+      ? null
+      : await tx.memberUserLink.findFirst({ where: { memberId: link.memberId, churchId } });
+  await createOrUpdate(exists !== null, strategy, result, {
+    create: () => tx.memberUserLink.create({ data: { memberId: link.memberId, userId: user.id, churchId, validatedAt } }),
+    update: () => tx.memberUserLink.update({ where: { id: exists!.id }, data: { validatedAt } }),
+  });
+}
+
+async function importUserRole(tx: Tx, roleData: UserRoleConfig, churchId: string, strategy: MergeStrategy, result: ImportResult) {
+  const user = await findImportUser(tx, roleData.userEmail, "Rôle ignoré", result);
+  if (!user) return;
+
+  const role = roleData.role as Role;
+  // Après un REPLACE, les rôles viennent d'être effacés : inutile de les chercher
+  const existingRole =
+    strategy === "REPLACE"
+      ? null
+      : await tx.userChurchRole.findUnique({ where: { userId_churchId_role: { userId: user.id, churchId, role } } });
+
+  await createOrUpdate(existingRole !== null, strategy, result, {
+    create: async () => {
+      const created = await tx.userChurchRole.create({
+        data: { userId: user.id, churchId, role, ministryId: roleData.ministryId },
+      });
+      for (const deptId of roleData.departmentIds) {
+        if (!(await departmentExists(tx, deptId))) continue;
+        const ids = { userChurchRoleId: created.id, departmentId: deptId };
+        if (strategy === "REPLACE") {
+          await tx.userDepartment.create({ data: ids });
+        } else {
+          await tx.userDepartment.upsert({ where: { userChurchRoleId_departmentId: ids }, create: ids, update: {} });
+        }
+      }
+    },
+    update: () => tx.userChurchRole.update({ where: { id: existingRole!.id }, data: { ministryId: roleData.ministryId } }),
+  });
+}
+
+async function applyLinks(tx: Tx, church: ChurchConfig, strategy: MergeStrategy, result: ImportResult) {
+  if (strategy === "REPLACE") await wipeLinksAndRoles(tx, church.id);
 
   // MemberUserLinks
   for (const link of church.userLinks) {
-    const user = await tx.user.findUnique({
-      where: { email: link.userEmail },
-      select: { id: true },
-    });
-    if (!user) {
-      result.warnings.push(
-        `Liaison membre ignorée : utilisateur « ${link.userEmail} » introuvable sur cette instance`
-      );
-      result.skipped++;
-      continue;
-    }
-
-    const memberExists = await tx.member.findUnique({ where: { id: link.memberId }, select: { id: true } });
-    if (!memberExists) {
-      result.warnings.push(
-        `Liaison membre ignorée : membre ${link.memberId} introuvable`
-      );
-      result.skipped++;
-      continue;
-    }
-
-    if (strategy === "REPLACE") {
-      await tx.memberUserLink.create({
-        data: {
-          memberId: link.memberId,
-          userId: user.id,
-          churchId: church.id,
-          validatedAt: link.validatedAt ? new Date(link.validatedAt) : null,
-        },
-      });
-      result.created++;
-    } else {
-      const exists = await tx.memberUserLink.findFirst({
-        where: { memberId: link.memberId, churchId: church.id },
-      });
-      if (exists) {
-        if (strategy === "UPDATE") {
-          await tx.memberUserLink.update({
-            where: { id: exists.id },
-            data: { validatedAt: link.validatedAt ? new Date(link.validatedAt) : null },
-          });
-          result.updated++;
-        } else {
-          result.skipped++;
-        }
-      } else {
-        await tx.memberUserLink.create({
-          data: {
-            memberId: link.memberId,
-            userId: user.id,
-            churchId: church.id,
-            validatedAt: link.validatedAt ? new Date(link.validatedAt) : null,
-          },
-        });
-        result.created++;
-      }
-    }
+    await importUserLink(tx, link, church.id, strategy, result);
   }
-
   // UserChurchRoles
   for (const roleData of church.userRoles) {
-    const user = await tx.user.findUnique({
-      where: { email: roleData.userEmail },
-      select: { id: true },
-    });
-    if (!user) {
-      result.warnings.push(
-        `Rôle ignoré : utilisateur « ${roleData.userEmail} » introuvable sur cette instance`
-      );
-      result.skipped++;
-      continue;
-    }
-
-    if (strategy === "REPLACE") {
-      const role = await tx.userChurchRole.create({
-        data: {
-          userId: user.id,
-          churchId: church.id,
-          role: roleData.role as import("@/generated/prisma/client").Role,
-          ministryId: roleData.ministryId,
-        },
-      });
-      for (const deptId of roleData.departmentIds) {
-        const deptExists = await tx.department.findUnique({ where: { id: deptId }, select: { id: true } });
-        if (!deptExists) continue;
-        await tx.userDepartment.create({
-          data: { userChurchRoleId: role.id, departmentId: deptId },
-        });
-      }
-      result.created++;
-    } else {
-      const existingRole = await tx.userChurchRole.findUnique({
-        where: { userId_churchId_role: { userId: user.id, churchId: church.id, role: roleData.role as import("@/generated/prisma/client").Role } },
-      });
-      if (existingRole) {
-        if (strategy !== "SKIP") {
-          await tx.userChurchRole.update({
-            where: { id: existingRole.id },
-            data: { ministryId: roleData.ministryId },
-          });
-          result.updated++;
-        } else {
-          result.skipped++;
-        }
-      } else {
-        const role = await tx.userChurchRole.create({
-          data: {
-            userId: user.id,
-            churchId: church.id,
-            role: roleData.role as import("@/generated/prisma/client").Role,
-            ministryId: roleData.ministryId,
-          },
-        });
-        for (const deptId of roleData.departmentIds) {
-          const deptExists = await tx.department.findUnique({ where: { id: deptId }, select: { id: true } });
-          if (!deptExists) continue;
-          await tx.userDepartment.upsert({
-            where: { userChurchRoleId_departmentId: { userChurchRoleId: role.id, departmentId: deptId } },
-            create: { userChurchRoleId: role.id, departmentId: deptId },
-            update: {},
-          });
-        }
-        result.created++;
-      }
-    }
+    await importUserRole(tx, roleData, church.id, strategy, result);
   }
 }
