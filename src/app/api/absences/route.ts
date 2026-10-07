@@ -93,6 +93,54 @@ export async function assertBackupsAllowed(
   await validateBackupTargets(subjectUserId, churchId, backups);
 }
 
+type AbsenceVisibility = {
+  /** Réponse immédiate quand l'appelant ne peut rien voir. */
+  empty?: Record<string, unknown[]>;
+  memberIdFilter?: string[];
+  visibilityWhere?: ReturnType<typeof absenceVisibilityWhere>;
+  deptScopeIds: string[] | null;
+};
+
+/** scope=self : les fiches STAR liées au compte appelant. */
+async function selfVisibility(churchId: string): Promise<AbsenceVisibility> {
+  const session = await requireAuth();
+  const links = await prisma.memberUserLink.findMany({
+    where: { userId: session.user.id, churchId },
+    select: { memberId: true },
+  });
+  const memberIdFilter = links.map((l) => l.memberId);
+  if (memberIdFilter.length === 0) return { empty: { absences: [] }, deptScopeIds: null };
+  return { memberIdFilter, deptScopeIds: null };
+}
+
+/**
+ * scope=all : périmètre de départements de l'appelant. Une absence « tous départements » d'un
+ * membre du périmètre, ou une absence ciblée touchant au moins un des départements du
+ * périmètre — jamais une absence ciblée uniquement hors périmètre (spec 050 : changement
+ * volontaire par rapport à avant).
+ */
+async function churchVisibility(churchId: string): Promise<AbsenceVisibility> {
+  const session = await requireChurchPermission("absences:view", churchId);
+  const deptScope = getUserDepartmentScope(session, churchId);
+  if (!deptScope.scoped) return { deptScopeIds: null };
+  if (deptScope.departmentIds.length === 0) return { empty: { absences: [], responses: [] }, deptScopeIds: null };
+  return { deptScopeIds: deptScope.departmentIds, visibilityWhere: absenceVisibilityWhere(deptScope.departmentIds) };
+}
+
+/** Absences déclarées par une personne qui détient le rôle demandé dans l'église. */
+async function filterByCreatorRole<T extends { createdById: string }>(absences: T[], churchId: string, role: string): Promise<T[]> {
+  const createdByIds = Array.from(new Set(absences.map((a) => a.createdById)));
+  const roles = await prisma.userChurchRole.findMany({
+    where: { userId: { in: createdByIds }, churchId },
+    select: { userId: true, role: true },
+  });
+  const rolesByUser = new Map<string, string[]>();
+  for (const r of roles) {
+    rolesByUser.set(r.userId, [...(rolesByUser.get(r.userId) ?? []), r.role]);
+  }
+  return absences.filter((a) => (rolesByUser.get(a.createdById) ?? []).includes(role));
+}
+
 /**
  * GET /api/absences?churchId=...&scope=self|all&ministryId=&departmentId=&role=
  *
@@ -110,30 +158,9 @@ export async function GET(request: Request) {
 
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    let memberIdFilter: string[] | undefined;
-    let visibilityWhere: ReturnType<typeof absenceVisibilityWhere> | undefined;
-    let deptScopeIds: string[] | null = null;
-
-    if (scope === "self") {
-      const session = await requireAuth();
-      const links = await prisma.memberUserLink.findMany({
-        where: { userId: session.user.id, churchId },
-        select: { memberId: true },
-      });
-      memberIdFilter = links.map((l) => l.memberId);
-      if (memberIdFilter.length === 0) return successResponse({ absences: [] });
-    } else {
-      const session = await requireChurchPermission("absences:view", churchId);
-      const deptScope = getUserDepartmentScope(session, churchId);
-      if (deptScope.scoped) {
-        if (deptScope.departmentIds.length === 0) return successResponse({ absences: [], responses: [] });
-        deptScopeIds = deptScope.departmentIds;
-        // Une absence « tous départements » d'un membre du périmètre, ou une absence ciblée
-        // touchant au moins un des départements du périmètre — jamais une absence ciblée
-        // uniquement hors périmètre (spec 050 : changement volontaire par rapport à avant).
-        visibilityWhere = absenceVisibilityWhere(deptScope.departmentIds);
-      }
-    }
+    const visibility = scope === "self" ? await selfVisibility(churchId) : await churchVisibility(churchId);
+    if (visibility.empty) return successResponse(visibility.empty);
+    const { memberIdFilter, visibilityWhere, deptScopeIds } = visibility;
 
     const filterWhere = absenceDepartmentFilterWhere({ departmentId, ministryId });
     const andClauses = [visibilityWhere, filterWhere].filter((c): c is NonNullable<typeof c> => !!c);
@@ -170,19 +197,7 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    let result = absences;
-    if (roleFilter) {
-      const createdByIds = Array.from(new Set(absences.map((a) => a.createdById)));
-      const roles = await prisma.userChurchRole.findMany({
-        where: { userId: { in: createdByIds }, churchId },
-        select: { userId: true, role: true },
-      });
-      const rolesByUser = new Map<string, string[]>();
-      for (const r of roles) {
-        rolesByUser.set(r.userId, [...(rolesByUser.get(r.userId) ?? []), r.role]);
-      }
-      result = absences.filter((a) => (rolesByUser.get(a.createdById) ?? []).includes(roleFilter));
-    }
+    const result = roleFilter ? await filterByCreatorRole(absences, churchId, roleFilter) : absences;
 
     const enriched = await Promise.all(
       result.map(async (a) => {

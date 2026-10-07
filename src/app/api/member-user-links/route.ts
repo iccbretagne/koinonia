@@ -41,6 +41,68 @@ const deleteSchema = z.object({
   churchId: z.string(),
 });
 
+type MemberScope = Awaited<ReturnType<typeof resolveMemberDepartmentScope>>;
+
+/**
+ * La fiche visée doit être de l'église et dans le périmètre de l'appelant ; une nouvelle fiche,
+ * dans un de ses départements. Une nouvelle fiche n'a par définition aucun lien existant.
+ */
+async function assertTargetInScope(
+  memberId: string | undefined,
+  newMember: { departmentId: string } | undefined,
+  churchId: string,
+  memberScope: MemberScope
+) {
+  if (memberId) {
+    const member = await prisma.member.findFirst({
+      where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
+      include: { departments: { select: { departmentId: true } } },
+    });
+    if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
+    if (!isMemberInScope(memberScope, member.departments.map((d) => d.departmentId))) {
+      throw new ApiError(403, "Ce STAR est hors de votre périmètre");
+    }
+  }
+  if (newMember && memberScope.scoped && !memberScope.departmentIds.includes(newMember.departmentId)) {
+    throw new ApiError(403, "Ce département est hors de votre périmètre");
+  }
+}
+
+type TargetUser = { kind: "existing"; userId: string } | { kind: "create" } | { kind: "confirm" };
+
+/**
+ * Compte cible : par identifiant, ou par email. Un email inconnu demande confirmation
+ * (`"confirm"`) avant la création d'un compte dormant (`"create"`).
+ */
+async function resolveTargetUser(
+  inputUserId: string | undefined,
+  email: string | undefined,
+  confirmCreate: boolean | undefined
+): Promise<TargetUser> {
+  if (inputUserId) {
+    const user = await prisma.user.findUnique({ where: { id: inputUserId } });
+    if (!user) throw new ApiError(404, "Utilisateur introuvable");
+    return { kind: "existing", userId: user.id };
+  }
+  const existing = await prisma.user.findUnique({ where: { email: email! } });
+  if (existing) return { kind: "existing", userId: existing.id };
+  return { kind: confirmCreate ? "create" : "confirm" };
+}
+
+/** Un seul lien par STAR et par compte dans une église. */
+async function assertNotAlreadyLinked(memberId: string | undefined, userId: string, churchId: string) {
+  if (memberId) {
+    const existingByMember = await prisma.memberUserLink.findUnique({
+      where: { memberId_churchId: { memberId, churchId } },
+    });
+    if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
+  }
+  if (userId) {
+    const existingByUser = await prisma.memberUserLink.findFirst({ where: { userId, churchId } });
+    if (existingByUser) throw new ApiError(409, "Cet utilisateur est déjà lié à un STAR dans cette église");
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -52,54 +114,16 @@ export async function POST(request: Request) {
     requireRateLimit(request, { prefix: `link:${session.user.id}`, ...RATE_LIMIT_SENSITIVE });
     const memberScope = await resolveMemberDepartmentScope(session, churchId);
 
-    // Une nouvelle fiche STAR n'a par définition aucun lien existant à vérifier : les contrôles
-    // ci-dessous (appartenance à l'église, doublon de lien) ne concernent que `memberId`.
-    if (memberId) {
-      const member = await prisma.member.findFirst({
-        where: { id: memberId, departments: { some: { department: { ministry: { churchId } } } } },
-        include: { departments: { select: { departmentId: true } } },
-      });
-      if (!member) throw new ApiError(404, "STAR introuvable dans cette église");
-      if (!isMemberInScope(memberScope, member.departments.map((d) => d.departmentId))) {
-        throw new ApiError(403, "Ce STAR est hors de votre périmètre");
-      }
-    }
-    if (newMember && memberScope.scoped && !memberScope.departmentIds.includes(newMember.departmentId)) {
-      throw new ApiError(403, "Ce département est hors de votre périmètre");
-    }
+    await assertTargetInScope(memberId, newMember, churchId, memberScope);
 
     // Résoudre le compte cible. Aucune exigence de rattachement préalable à cette église : c'est
     // précisément la condition que ce rattachement crée (spec 037).
-    let targetUserId = "";
-    if (inputUserId) {
-      const user = await prisma.user.findUnique({ where: { id: inputUserId } });
-      if (!user) throw new ApiError(404, "Utilisateur introuvable");
-      targetUserId = user.id;
-    } else {
-      const existing = await prisma.user.findUnique({ where: { email: email! } });
-      if (existing) {
-        targetUserId = existing.id;
-      } else if (!confirmCreate) {
-        return successResponse({ accountNotFound: true }, 409);
-      }
-      // targetUserId reste vide : le compte est créé dans la transaction ci-dessous.
-    }
+    const target = await resolveTargetUser(inputUserId, email, confirmCreate);
+    if (target.kind === "confirm") return successResponse({ accountNotFound: true }, 409);
+    // Compte inconnu et création confirmée : il est créé dans la transaction ci-dessous.
+    let targetUserId = target.kind === "existing" ? target.userId : "";
 
-    // Vérifier qu'il n'y a pas déjà un lien pour ce membre dans cette église (sans objet pour une
-    // nouvelle fiche, qui ne peut par définition avoir aucun lien).
-    if (memberId) {
-      const existingByMember = await prisma.memberUserLink.findUnique({
-        where: { memberId_churchId: { memberId, churchId } },
-      });
-      if (existingByMember) throw new ApiError(409, "Ce STAR est déjà lié à un compte dans cette église");
-    }
-
-    if (targetUserId) {
-      const existingByUser = await prisma.memberUserLink.findFirst({
-        where: { userId: targetUserId, churchId },
-      });
-      if (existingByUser) throw new ApiError(409, "Cet utilisateur est déjà lié à un STAR dans cette église");
-    }
+    await assertNotAlreadyLinked(memberId, targetUserId, churchId);
 
     const link = await prisma.$transaction(async (tx) => {
       if (!targetUserId) {

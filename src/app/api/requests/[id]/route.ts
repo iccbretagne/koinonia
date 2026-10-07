@@ -120,6 +120,198 @@ export async function GET(
   }
 }
 
+type PatchData = z.infer<typeof patchSchema>;
+type PatchTx = Prisma.TransactionClient;
+
+interface PatchActor {
+  userId: string;
+  canManage: boolean;
+  isAssignedDeptMember: boolean;
+  isOwner: boolean;
+}
+
+interface ExistingRequest {
+  id: string;
+  submittedById: string | null;
+  churchId: string;
+  type: string;
+  status: string;
+  title: string;
+  announcementId: string | null;
+  payload: Prisma.JsonValue;
+}
+
+const PARENT_TYPES = new Set(["DIFFUSION_INTERNE", "RESEAUX_SOCIAUX"]);
+
+/** Droits d'édition : le demandeur seul n'annule ou ne corrige que sa demande en attente. */
+function assertPatchAllowed(data: PatchData, actor: PatchActor, isPending: boolean) {
+  const handles = actor.canManage || actor.isAssignedDeptMember;
+  if (actor.isOwner && !handles) {
+    // Owner can only edit their own pending requests
+    if (!isPending) {
+      throw new ApiError(403, "Le demandeur ne peut modifier que ses demandes en attente");
+    }
+    // Owner can only change status to ANNULE
+    if (data.status !== undefined && data.status !== "ANNULE") {
+      throw new ApiError(403, "Le demandeur ne peut qu'annuler sa propre demande");
+    }
+    // Owner cannot set reviewNotes
+    if (data.reviewNotes !== undefined) {
+      throw new ApiError(403, "Le demandeur ne peut pas ajouter de notes de révision");
+    }
+  }
+  if (data.status !== undefined && data.status !== "ANNULE" && !handles) {
+    throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
+  }
+  // Refusal requires a note
+  if (data.status === "REFUSEE" && !data.reviewNotes) {
+    throw new ApiError(400, "Une note est obligatoire pour refuser une demande");
+  }
+}
+
+/** Payload fusionné avec les champs modifiés, ou `undefined` s'il ne change pas. */
+function mergedPayloadFor(data: PatchData, currentPayload: Record<string, unknown>) {
+  const payloadUpdates: Record<string, unknown> = {};
+  for (const key of ["deliveryLink", "format", "brief", "deadline"] as const) {
+    if (data[key] !== undefined) payloadUpdates[key] = data[key];
+  }
+  // Owner payload update (full payload object merge)
+  if (data.payload !== undefined) Object.assign(payloadUpdates, data.payload);
+  return Object.keys(payloadUpdates).length > 0 ? { ...currentPayload, ...payloadUpdates } : undefined;
+}
+
+/** Statut d'une annonce d'après ceux de ses demandes de diffusion. */
+function announcementStatusFor(statuses: string[]): "EN_ATTENTE" | "EN_COURS" | "TRAITEE" | "ANNULEE" {
+  if (statuses.every((s) => s === "ANNULE")) return "ANNULEE";
+  if (statuses.every((s) => s === "LIVRE" || s === "ANNULE")) return "TRAITEE";
+  if (statuses.some((s) => s === "EN_COURS" || s === "LIVRE")) return "EN_COURS";
+  return "EN_ATTENTE";
+}
+
+async function syncAnnouncementStatus(tx: PatchTx, announcementId: string, requestId: string, status: string) {
+  const siblingStatuses = await tx.request.findMany({
+    where: { announcementId, parentRequestId: null, id: { not: requestId } },
+    select: { status: true },
+  });
+  await tx.announcement.update({
+    where: { id: announcementId },
+    data: { status: announcementStatusFor([status, ...siblingStatuses.map((s) => s.status)]) },
+  });
+}
+
+/** Approbation d'un type exécutable : exécution automatique, puis statut EXECUTEE ou ERREUR. */
+async function approveExecutable(
+  tx: PatchTx,
+  existing: ExistingRequest,
+  data: PatchData,
+  payload: Record<string, unknown>,
+  userId: string
+) {
+  const execResult = await executeRequest(tx, existing.id, existing.churchId, existing.type, payload, userId);
+  const result = await tx.request.update({
+    where: { id: existing.id },
+    data: {
+      status: execResult.success ? "EXECUTEE" : "ERREUR",
+      reviewedBy: { connect: { id: userId } },
+      reviewedAt: new Date(),
+      ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
+      ...(execResult.success && { executedAt: new Date() }),
+      ...(!execResult.success && { executionError: execResult.error }),
+    },
+    select: { id: true, type: true, status: true, executionError: true },
+  });
+  return { result, notices: execResult.notices };
+}
+
+/** Mise à jour ordinaire, avec ses effets : annulation en cascade, statut de l'annonce, bus. */
+async function applyUpdate(
+  tx: PatchTx,
+  existing: ExistingRequest,
+  data: PatchData,
+  mergedPayload: Record<string, unknown> | undefined,
+  userId: string
+) {
+  const id = existing.id;
+  const result = await tx.request.update({
+    where: { id },
+    data: {
+      ...(data.status && { status: data.status }),
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
+      ...(mergedPayload && { payload: mergedPayload as Prisma.InputJsonValue }),
+      ...(data.status !== undefined && {
+        reviewedBy: { connect: { id: userId } },
+        reviewedAt: new Date(),
+      }),
+    },
+    select: { id: true, type: true, status: true },
+  });
+  const isParent = PARENT_TYPES.has(result.type);
+
+  // Cascade cancellation: when parent request is cancelled, cancel children
+  if (data.status === "ANNULE" && isParent) {
+    await tx.request.updateMany({ where: { parentRequestId: id }, data: { status: "ANNULE" } });
+  }
+  if (data.status !== undefined) {
+    await propagateStatusChange(tx, existing, data.status, isParent, userId);
+  }
+  return result;
+}
+
+/** Changement de statut : statut de l'annonce liée (demande parente) puis événement du bus. */
+async function propagateStatusChange(
+  tx: PatchTx,
+  existing: ExistingRequest,
+  newStatus: NonNullable<PatchData["status"]>,
+  isParent: boolean,
+  userId: string
+) {
+  // Sync announcement status when a parent request changes status
+  if (existing.announcementId && isParent) {
+    await syncAnnouncementStatus(tx, existing.announcementId, existing.id, newStatus);
+  }
+  // Emit status_changed event for cross-module integrations (e.g. media module)
+  await planningBus.emit(
+    "planning:request:status_changed",
+    { tx, churchId: existing.churchId, userId },
+    {
+      requestId: existing.id,
+      requestType: existing.type,
+      churchId: existing.churchId,
+      oldStatus: existing.status,
+      newStatus,
+      updatedById: userId,
+      title: existing.title,
+      payload: (existing.payload as Record<string, unknown>) ?? {},
+    }
+  );
+}
+
+/** Prévient le demandeur de l'approbation ou du refus (pas s'il s'agit de lui-même). */
+function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStatus: string, userId: string) {
+  if (!existing.submittedById || existing.submittedById === userId) return;
+  if (data.status === "APPROUVEE" || updatedStatus === "EXECUTEE") {
+    createNotification({
+      userId: existing.submittedById,
+      domain: "requests",
+      type: "REQUEST_APPROVED",
+      title: "Demande approuvée",
+      message: `Votre demande « ${existing.title} » a été approuvée.`,
+      link: `/requests`,
+    }).catch(() => {});
+  } else if (data.status === "REFUSEE") {
+    const rejectionReason = data.reviewNotes ? ` Motif : ${data.reviewNotes}` : "";
+    createNotification({
+      userId: existing.submittedById,
+      domain: "requests",
+      type: "REQUEST_REJECTED",
+      title: "Demande refusée",
+      message: `Votre demande « ${existing.title} » a été refusée.${rejectionReason}`,
+      link: `/requests`,
+    }).catch(() => {});
+  }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -143,216 +335,46 @@ export async function PATCH(
     if (!existing) throw new ApiError(404, "Demande introuvable");
 
     const session = await requireChurchPermission("members:view", existing.churchId);
-
-    const userPermissions = new Set(
-      session.user.churchRoles
-        .filter((r) => r.churchId === existing.churchId)
-        .flatMap((r) => rolePermissions[r.role] ?? [])
-    );
-    const canManage =
-      session.user.isSuperAdmin || userPermissions.has("events:manage");
-
-    const userDeptIds = session.user.churchRoles
-      .filter((r) => r.churchId === existing.churchId)
-      .flatMap((r) => r.departments.map((d) => d.department.id));
-    const isAssignedDeptMember = await isMemberOfFunction(
-      userDeptIds,
-      existing.churchId,
-      functionForRequestType(existing.type)
-    );
-
-    const isOwner = existing.submittedById === session.user.id;
-
-    if (!canManage && !isAssignedDeptMember && !isOwner) {
+    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === existing.churchId);
+    const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
+    const actor: PatchActor = {
+      userId: session.user.id,
+      canManage: session.user.isSuperAdmin || userPermissions.has("events:manage"),
+      isAssignedDeptMember: await isMemberOfFunction(
+        churchRoles.flatMap((r) => r.departments.map((d) => d.department.id)),
+        existing.churchId,
+        functionForRequestType(existing.type)
+      ),
+      isOwner: existing.submittedById === session.user.id,
+    };
+    if (!actor.canManage && !actor.isAssignedDeptMember && !actor.isOwner) {
       throw new ApiError(403, "Accès refusé");
     }
 
-    const body = await request.json();
-    const data = patchSchema.parse(body);
+    const data = patchSchema.parse(await request.json());
+    assertPatchAllowed(data, actor, existing.status === "EN_ATTENTE");
 
-    const isPending = existing.status === "EN_ATTENTE";
-
-    if (isOwner && !canManage && !isAssignedDeptMember) {
-      // Owner can only edit their own pending requests
-      if (!isPending) {
-        throw new ApiError(403, "Le demandeur ne peut modifier que ses demandes en attente");
-      }
-      // Owner can only change status to ANNULE
-      if (data.status !== undefined && data.status !== "ANNULE") {
-        throw new ApiError(403, "Le demandeur ne peut qu'annuler sa propre demande");
-      }
-      // Owner cannot set reviewNotes
-      if (data.reviewNotes !== undefined) {
-        throw new ApiError(403, "Le demandeur ne peut pas ajouter de notes de révision");
-      }
-    }
-
-    if (data.status !== undefined && data.status !== "ANNULE" && !canManage && !isAssignedDeptMember) {
-      throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
-    }
-
-    // Refusal requires a note
-    if (data.status === "REFUSEE" && !data.reviewNotes) {
-      throw new ApiError(400, "Une note est obligatoire pour refuser une demande");
-    }
-
-    // Merge payload fields updates
     const currentPayload = (existing.payload as Record<string, unknown>) ?? {};
-    const payloadUpdates: Record<string, unknown> = {};
-    if (data.deliveryLink !== undefined) payloadUpdates.deliveryLink = data.deliveryLink;
-    if (data.format !== undefined) payloadUpdates.format = data.format;
-    if (data.brief !== undefined) payloadUpdates.brief = data.brief;
-    if (data.deadline !== undefined) payloadUpdates.deadline = data.deadline;
-    // Owner payload update (full payload object merge)
-    if (data.payload !== undefined) Object.assign(payloadUpdates, data.payload);
-    const hasPayloadUpdates = Object.keys(payloadUpdates).length > 0;
-    const mergedPayload = hasPayloadUpdates
-      ? { ...currentPayload, ...payloadUpdates }
-      : undefined;
-
-    const isExecutableType = EXECUTABLE_TYPES.has(existing.type);
+    const mergedPayload = mergedPayloadFor(data, currentPayload);
 
     // Notifications de changement d'événement (spec 059), envoyées après le commit.
     let eventNotices: EventChangeNotices | undefined;
     const updated = await prisma.$transaction(async (tx) => {
-      // For executable types approved → run auto-execution
-      if (data.status === "APPROUVEE" && isExecutableType) {
-        // Execute using the effective payload (merged updates take precedence over stored payload)
-        const effectivePayload = mergedPayload ?? currentPayload;
-        const execResult = await executeRequest(
-          tx,
-          id,
-          existing.churchId,
-          existing.type,
-          effectivePayload,
-          session.user.id
-        );
-        eventNotices = execResult.notices;
-
-        const result = await tx.request.update({
-          where: { id },
-          data: {
-            status: execResult.success ? "EXECUTEE" : "ERREUR",
-            reviewedBy: { connect: { id: session.user.id } },
-            reviewedAt: new Date(),
-            ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
-            ...(execResult.success && { executedAt: new Date() }),
-            ...(!execResult.success && { executionError: execResult.error }),
-          },
-          select: { id: true, type: true, status: true, executionError: true },
-        });
-
-        return result;
+      // For executable types approved → run auto-execution, using the effective payload
+      // (merged updates take precedence over stored payload).
+      if (data.status === "APPROUVEE" && EXECUTABLE_TYPES.has(existing.type)) {
+        const approved = await approveExecutable(tx, existing, data, mergedPayload ?? currentPayload, actor.userId);
+        eventNotices = approved.notices;
+        return approved.result;
       }
-
-      const result = await tx.request.update({
-        where: { id },
-        data: {
-          ...(data.status && { status: data.status }),
-          ...(data.title !== undefined && { title: data.title }),
-          ...(data.reviewNotes !== undefined && { reviewNotes: data.reviewNotes }),
-          ...(mergedPayload && { payload: mergedPayload as Prisma.InputJsonValue }),
-          ...(data.status !== undefined && {
-            reviewedBy: { connect: { id: session.user.id } },
-            reviewedAt: new Date(),
-          }),
-        },
-        select: { id: true, type: true, status: true },
-      });
-
-      // Cascade cancellation: when parent request is cancelled, cancel children
-      if (
-        data.status === "ANNULE" &&
-        (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
-      ) {
-        await tx.request.updateMany({
-          where: { parentRequestId: id },
-          data: { status: "ANNULE" },
-        });
-      }
-
-      // Sync announcement status when a parent request changes status
-      if (
-        data.status !== undefined &&
-        existing.announcementId &&
-        (result.type === "DIFFUSION_INTERNE" || result.type === "RESEAUX_SOCIAUX")
-      ) {
-        const siblingStatuses = await tx.request.findMany({
-          where: {
-            announcementId: existing.announcementId,
-            parentRequestId: null,
-            id: { not: id },
-          },
-          select: { status: true },
-        });
-
-        const allStatuses = [data.status, ...siblingStatuses.map((s) => s.status)];
-
-        let announcementStatus: "EN_ATTENTE" | "EN_COURS" | "TRAITEE" | "ANNULEE";
-        if (allStatuses.every((s) => s === "ANNULE")) {
-          announcementStatus = "ANNULEE";
-        } else if (allStatuses.every((s) => s === "LIVRE" || s === "ANNULE")) {
-          announcementStatus = "TRAITEE";
-        } else if (allStatuses.some((s) => s === "EN_COURS" || s === "LIVRE")) {
-          announcementStatus = "EN_COURS";
-        } else {
-          announcementStatus = "EN_ATTENTE";
-        }
-
-        await tx.announcement.update({
-          where: { id: existing.announcementId },
-          data: { status: announcementStatus },
-        });
-      }
-
-      // Emit status_changed event for cross-module integrations (e.g. media module)
-      if (data.status !== undefined) {
-        await planningBus.emit(
-          "planning:request:status_changed",
-          { tx, churchId: existing.churchId, userId: session.user.id },
-          {
-            requestId: id,
-            requestType: existing.type,
-            churchId: existing.churchId,
-            oldStatus: existing.status,
-            newStatus: data.status,
-            updatedById: session.user.id,
-            title: existing.title,
-            payload: currentPayload,
-          }
-        );
-      }
-
-      return result;
+      return applyUpdate(tx, existing, data, mergedPayload, actor.userId);
     });
 
     const { notified } = eventNotices ? await sendEventChangeNotices(eventNotices) : { notified: 0 };
 
     await logAudit({ userId: session.user.id, churchId: existing.churchId, action: "UPDATE", entityType: "Request", entityId: id, details: { status: data.status, type: existing.type } });
 
-    // Notify demandeur on approval / refusal
-    if (existing.submittedById && existing.submittedById !== session.user.id) {
-      if (data.status === "APPROUVEE" || updated.status === "EXECUTEE") {
-        createNotification({
-          userId: existing.submittedById,
-          domain: "requests",
-          type: "REQUEST_APPROVED",
-          title: "Demande approuvée",
-          message: `Votre demande « ${existing.title} » a été approuvée.`,
-          link: `/requests`,
-        }).catch(() => {});
-      } else if (data.status === "REFUSEE") {
-        const rejectionReason = data.reviewNotes ? ` Motif : ${data.reviewNotes}` : "";
-        createNotification({
-          userId: existing.submittedById,
-          domain: "requests",
-          type: "REQUEST_REJECTED",
-          title: "Demande refusée",
-          message: `Votre demande « ${existing.title} » a été refusée.${rejectionReason}`,
-          link: `/requests`,
-        }).catch(() => {});
-      }
-    }
+    notifySubmitter(existing, data, updated.status, session.user.id);
 
     return successResponse({ ...updated, notified });
   } catch (error) {

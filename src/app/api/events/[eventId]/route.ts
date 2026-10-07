@@ -52,6 +52,99 @@ const updateSchema = z.object({
   removeFromSeries: z.boolean().optional(),
 });
 
+/**
+ * Modification de toute la série : même titre et même type, nouvelle heure appliquée au jour
+ * de chaque occurrence, échéance de planning décalée d'autant que sur l'occurrence modifiée.
+ */
+async function updateSeries(eventId: string, churchId: string, data: z.infer<typeof updateSchema>, userId: string) {
+  // Resolve the parent ID of the series
+  const current = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true, seriesId: true, isRecurrenceParent: true },
+  });
+
+  if (!current) {
+    throw new ApiError(404, "Événement introuvable");
+  }
+
+  const parentId = current.isRecurrenceParent
+    ? current.id
+    : current.seriesId;
+
+  if (!parentId) {
+    throw new ApiError(400, "Cet événement ne fait pas partie d'une série");
+  }
+
+  // Fetch all events in the series
+  const seriesEvents = await prisma.event.findMany({
+    where: { OR: [{ id: parentId }, { seriesId: parentId }] },
+    select: { id: true, date: true },
+  });
+
+  // Extract time from the submitted date to propagate to all events
+  // Use local time methods so DST transitions are handled correctly
+  const submittedDate = new Date(data.date);
+  const newHours = submittedDate.getHours();
+  const newMinutes = submittedDate.getMinutes();
+
+  // Calculate deadline offset relative to the submitted event date
+  const submittedDeadline = data.planningDeadline
+    ? new Date(data.planningDeadline)
+    : null;
+  const deadlineOffsetMs = submittedDeadline
+    ? submittedDeadline.getTime() - submittedDate.getTime()
+    : null;
+
+  // Update each event individually: propagate time + relative deadline
+  const notices = await prisma.$transaction(async (tx) => {
+    const changes: EventChange[] = [];
+    for (const ev of seriesEvents) {
+      const eventDate = new Date(ev.date);
+      // Keep the event's own date (day) but apply the new time
+      eventDate.setHours(newHours, newMinutes, 0, 0);
+
+      // Calculate this event's deadline relative to its own date
+      const eventDeadline =
+        deadlineOffsetMs !== null
+          ? new Date(eventDate.getTime() + deadlineOffsetMs)
+          : null;
+
+      await tx.event.update({
+        where: { id: ev.id },
+        data: {
+          title: data.title,
+          type: data.type,
+          date: eventDate,
+          planningDeadline: eventDeadline,
+        },
+      });
+      await planningBus.emit(
+        "planning:event:rescheduled",
+        { tx, churchId, userId: userId },
+        { eventId: ev.id, churchId, previousDate: ev.date.toISOString(), newDate: eventDate.toISOString() }
+      );
+      changes.push({ kind: "MOVED", eventId: ev.id, previousDate: ev.date, newDate: eventDate });
+    }
+    return collectEventChangeNotices(tx, churchId, changes, { actorId: userId });
+  });
+  const { notified } = await sendEventChangeNotices(notices);
+
+  // Re-fetch the current event for UI update
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      church: { select: { id: true, name: true } },
+      eventDepts: {
+        include: { department: { select: { id: true, name: true } } },
+      },
+    },
+  });
+
+  await logAudit({ userId, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title, seriesUpdated: seriesEvents.length } });
+
+  return { ...event, seriesUpdated: seriesEvents.length, notified };
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ eventId: string }> }
@@ -76,94 +169,7 @@ export async function PUT(
       return successResponse(updated);
     }
 
-    if (data.applyToSeries) {
-      // Resolve the parent ID of the series
-      const current = await prisma.event.findUnique({
-        where: { id: eventId },
-        select: { id: true, seriesId: true, isRecurrenceParent: true },
-      });
-
-      if (!current) {
-        throw new ApiError(404, "Événement introuvable");
-      }
-
-      const parentId = current.isRecurrenceParent
-        ? current.id
-        : current.seriesId;
-
-      if (!parentId) {
-        throw new ApiError(400, "Cet événement ne fait pas partie d'une série");
-      }
-
-      // Fetch all events in the series
-      const seriesEvents = await prisma.event.findMany({
-        where: { OR: [{ id: parentId }, { seriesId: parentId }] },
-        select: { id: true, date: true },
-      });
-
-      // Extract time from the submitted date to propagate to all events
-      // Use local time methods so DST transitions are handled correctly
-      const submittedDate = new Date(data.date);
-      const newHours = submittedDate.getHours();
-      const newMinutes = submittedDate.getMinutes();
-
-      // Calculate deadline offset relative to the submitted event date
-      const submittedDeadline = data.planningDeadline
-        ? new Date(data.planningDeadline)
-        : null;
-      const deadlineOffsetMs = submittedDeadline
-        ? submittedDeadline.getTime() - submittedDate.getTime()
-        : null;
-
-      // Update each event individually: propagate time + relative deadline
-      const notices = await prisma.$transaction(async (tx) => {
-        const changes: EventChange[] = [];
-        for (const ev of seriesEvents) {
-          const eventDate = new Date(ev.date);
-          // Keep the event's own date (day) but apply the new time
-          eventDate.setHours(newHours, newMinutes, 0, 0);
-
-          // Calculate this event's deadline relative to its own date
-          const eventDeadline =
-            deadlineOffsetMs !== null
-              ? new Date(eventDate.getTime() + deadlineOffsetMs)
-              : null;
-
-          await tx.event.update({
-            where: { id: ev.id },
-            data: {
-              title: data.title,
-              type: data.type,
-              date: eventDate,
-              planningDeadline: eventDeadline,
-            },
-          });
-          await planningBus.emit(
-            "planning:event:rescheduled",
-            { tx, churchId, userId: putSession.user.id },
-            { eventId: ev.id, churchId, previousDate: ev.date.toISOString(), newDate: eventDate.toISOString() }
-          );
-          changes.push({ kind: "MOVED", eventId: ev.id, previousDate: ev.date, newDate: eventDate });
-        }
-        return collectEventChangeNotices(tx, churchId, changes, { actorId: putSession.user.id });
-      });
-      const { notified } = await sendEventChangeNotices(notices);
-
-      // Re-fetch the current event for UI update
-      const event = await prisma.event.findUnique({
-        where: { id: eventId },
-        include: {
-          church: { select: { id: true, name: true } },
-          eventDepts: {
-            include: { department: { select: { id: true, name: true } } },
-          },
-        },
-      });
-
-      await logAudit({ userId: putSession.user.id, churchId, action: "UPDATE", entityType: "Event", entityId: eventId, details: { title: data.title, seriesUpdated: seriesEvents.length } });
-
-      return successResponse({ ...event, seriesUpdated: seriesEvents.length, notified });
-    }
+    if (data.applyToSeries) return successResponse(await updateSeries(eventId, churchId, data, putSession.user.id));
 
     let nextPlanningDeadline: Date | null | undefined;
     if (data.planningDeadline !== undefined) {

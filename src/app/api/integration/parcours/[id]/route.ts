@@ -16,6 +16,31 @@ const patchSchema = z.object({
   notes: z.string().max(10000).optional().nullable(),
 });
 
+type JourneyPatch = z.infer<typeof patchSchema>;
+
+/** Étapes du parcours : l'indicateur et sa date, posée à maintenant si l'étape est cochée sans date. */
+const MILESTONES = [
+  ["integratedInFamily", "familyIntegratedAt"],
+  ["followsPcnc", "pcncStartedAt"],
+  ["isStar", "starSince"],
+  ["inDiscipleship", "discipleshipSince"],
+] as const;
+
+function journeyUpdateData(body: JourneyPatch, now: Date): Record<string, unknown> {
+  const data: Record<string, unknown> = {};
+  for (const [flag, dateKey] of MILESTONES) {
+    const checked = body[flag];
+    const date = body[dateKey];
+    if (checked !== undefined) {
+      data[flag] = checked;
+      if (checked && date === undefined) data[dateKey] = now;
+    }
+    if (date !== undefined) data[dateKey] = date ? new Date(date) : null;
+  }
+  if (body.notes !== undefined) data.notes = body.notes;
+  return data;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -60,40 +85,8 @@ export async function PATCH(
     const { session } = await requireIntegrationFullAccess(journey.churchId);
 
     const body = patchSchema.parse(await request.json());
-    const now = new Date();
 
-    const data: Record<string, unknown> = {};
-
-    if (body.integratedInFamily !== undefined) {
-      data.integratedInFamily = body.integratedInFamily;
-      if (body.integratedInFamily && body.familyIntegratedAt === undefined)
-        data.familyIntegratedAt = now;
-    }
-    if (body.familyIntegratedAt !== undefined)
-      data.familyIntegratedAt = body.familyIntegratedAt ? new Date(body.familyIntegratedAt) : null;
-
-    if (body.followsPcnc !== undefined) {
-      data.followsPcnc = body.followsPcnc;
-      if (body.followsPcnc && body.pcncStartedAt === undefined) data.pcncStartedAt = now;
-    }
-    if (body.pcncStartedAt !== undefined)
-      data.pcncStartedAt = body.pcncStartedAt ? new Date(body.pcncStartedAt) : null;
-
-    if (body.isStar !== undefined) {
-      data.isStar = body.isStar;
-      if (body.isStar && body.starSince === undefined) data.starSince = now;
-    }
-    if (body.starSince !== undefined)
-      data.starSince = body.starSince ? new Date(body.starSince) : null;
-
-    if (body.inDiscipleship !== undefined) {
-      data.inDiscipleship = body.inDiscipleship;
-      if (body.inDiscipleship && body.discipleshipSince === undefined) data.discipleshipSince = now;
-    }
-    if (body.discipleshipSince !== undefined)
-      data.discipleshipSince = body.discipleshipSince ? new Date(body.discipleshipSince) : null;
-
-    if (body.notes !== undefined) data.notes = body.notes;
+    const data = journeyUpdateData(body, new Date());
 
     const updated = await prisma.personJourney.update({
       where: { id },

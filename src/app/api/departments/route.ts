@@ -52,6 +52,37 @@ const bulkSchema = z.object({
   }).optional(),
 });
 
+/** Un Ministre ne modifie que les départements de ses ministères, et ne les déplace que vers eux. */
+async function assertWithinMinistries(ids: string[], allowedMinistries: string[], targetMinistryId?: string) {
+  const targetDepts = await prisma.department.findMany({
+    where: { id: { in: ids } },
+    select: { ministryId: true },
+  });
+  if (!targetDepts.every((d) => allowedMinistries.includes(d.ministryId))) {
+    throw new ApiError(403, "Vous ne pouvez modifier que les départements de votre ministère");
+  }
+  if (targetMinistryId && !allowedMinistries.includes(targetMinistryId)) {
+    throw new ApiError(403, "Vous ne pouvez déplacer un département que vers votre ministère");
+  }
+}
+
+/** Suppression avec tout ce qui en dépend : planning, appartenances, rattachements. */
+async function deleteDepartments(ids: string[]) {
+  await prisma.$transaction(async (tx) => {
+    const eventDeptIds = (
+      await tx.eventDepartment.findMany({
+        where: { departmentId: { in: ids } },
+        select: { id: true },
+      })
+    ).map((ed) => ed.id);
+    await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
+    await tx.memberDepartment.deleteMany({ where: { departmentId: { in: ids } } });
+    await tx.eventDepartment.deleteMany({ where: { departmentId: { in: ids } } });
+    await tx.userDepartment.deleteMany({ where: { departmentId: { in: ids } } });
+    await tx.department.deleteMany({ where: { id: { in: ids } } });
+  });
+}
+
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
@@ -73,34 +104,10 @@ export async function PATCH(request: Request) {
     const session = await requireChurchPermission("departments:manage", deptChurchId);
 
     const allowedMinistries = getMinisterMinistryIds(session, deptChurchId);
-    if (allowedMinistries !== null) {
-      const targetDepts = await prisma.department.findMany({
-        where: { id: { in: ids } },
-        select: { ministryId: true },
-      });
-      const allAllowed = targetDepts.every((d) => allowedMinistries.includes(d.ministryId));
-      if (!allAllowed) {
-        throw new ApiError(403, "Vous ne pouvez modifier que les départements de votre ministère");
-      }
-      if (data?.ministryId && !allowedMinistries.includes(data.ministryId)) {
-        throw new ApiError(403, "Vous ne pouvez déplacer un département que vers votre ministère");
-      }
-    }
+    if (allowedMinistries !== null) await assertWithinMinistries(ids, allowedMinistries, data?.ministryId);
 
     if (action === "delete") {
-      await prisma.$transaction(async (tx) => {
-        const eventDeptIds = (
-          await tx.eventDepartment.findMany({
-            where: { departmentId: { in: ids } },
-            select: { id: true },
-          })
-        ).map((ed) => ed.id);
-        await tx.planning.deleteMany({ where: { eventDepartmentId: { in: eventDeptIds } } });
-        await tx.memberDepartment.deleteMany({ where: { departmentId: { in: ids } } });
-        await tx.eventDepartment.deleteMany({ where: { departmentId: { in: ids } } });
-        await tx.userDepartment.deleteMany({ where: { departmentId: { in: ids } } });
-        await tx.department.deleteMany({ where: { id: { in: ids } } });
-      });
+      await deleteDepartments(ids);
       for (const id of ids) {
         await logAudit({ userId: session.user.id, churchId: deptChurchId, action: "DELETE", entityType: "Department", entityId: id });
       }
