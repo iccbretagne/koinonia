@@ -34,7 +34,6 @@ function SelectPrompt({ needsDepartment }: { readonly needsDepartment: boolean }
   );
 }
 
-type DashboardView = string;
 const DEPARTMENT_VIEWS = new Set(["week", "tasks", "month", "team"]);
 
 /** Département proposé par défaut : le premier de l'église pour l'administration, sinon le sien. */
@@ -65,7 +64,7 @@ async function defaultDepartmentId(session: Session, churchId: string) {
 async function dashboardRedirect(
   session: Session,
   churchId: string,
-  params: { dept?: string; event?: string; view: DashboardView; tour?: string },
+  params: { dept?: string; event?: string; view: string; tour?: string },
   shouldTriggerTour: boolean
 ) {
   const { dept, event, view, tour } = params;
@@ -99,7 +98,7 @@ function dashboardContent({
   churchName,
   canEdit,
 }: {
-  view: DashboardView;
+  view: string;
   churchId: string;
   deptId?: string;
   eventId?: string;
