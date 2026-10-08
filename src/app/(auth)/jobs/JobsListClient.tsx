@@ -6,6 +6,7 @@ import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { buildWhatsAppRecap } from "./whatsapp-recap";
+import { changeJobStatus } from "./job-status";
 
 type JobType = "EMPLOI" | "STAGE" | "ALTERNANCE";
 type JobStatus = "PUBLISHED" | "ARCHIVED";
@@ -219,19 +220,7 @@ function JobCard({
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setLoading(true);
-    try {
-      const newStatus = isArchived ? "PUBLISHED" : "ARCHIVED";
-      const res = await fetch(`/api/jobs/${job.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/${job.id}`, isArchived ? "PUBLISHED" : "ARCHIVED", { setLoading, refresh: () => router.refresh() });
   }
 
   return (

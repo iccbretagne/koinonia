@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { changeJobStatus } from "./job-status";
 
 type ContractType = "EMPLOI" | "STAGE" | "ALTERNANCE";
 type SeekerStatus = "ACTIVE" | "FOUND" | "ARCHIVED";
@@ -171,19 +172,7 @@ function SeekerCard({
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setLoading(true);
-    try {
-      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
-      const res = await fetch(`/api/jobs/seekers/${seeker.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/seekers/${seeker.id}`, isArchived ? "ACTIVE" : "ARCHIVED", { setLoading, refresh: () => router.refresh() });
   }
 
   const contractBadges = (
