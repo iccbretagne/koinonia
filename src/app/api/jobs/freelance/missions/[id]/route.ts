@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
+import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator } from "@/modules/jobs";
 
 const patchMissionSchema = z.object({
   title:        z.string().min(1).max(200).optional(),
@@ -17,15 +18,6 @@ const patchMissionSchema = z.object({
   status:       z.enum(["ACTIVE", "FILLED", "ARCHIVED"]).optional(),
 });
 
-function canManageJobs(session: { user: { isSuperAdmin: boolean; churchRoles?: { role: string }[] } }) {
-  return (
-    session.user.isSuperAdmin ||
-    session.user.churchRoles?.some((r) =>
-      ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-    )
-  );
-}
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,15 +28,12 @@ export async function GET(
 
     const mission = await prisma.freelanceMission.findUnique({
       where: { id },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const isAuthor  = mission.authorId === session.user.id;
-    const canManage = canManageJobs(session);
+    const { isAuthor, canManage } = jobsAccess(session, mission.authorId);
 
     if (mission.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Mission introuvable");
@@ -71,10 +60,7 @@ export async function PATCH(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const isAuthor  = mission.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    const { canManage } = requireJobsAuthorOrModerator(session, mission.authorId);
 
     const data = patchMissionSchema.parse(await request.json());
 
@@ -85,9 +71,7 @@ export async function PATCH(
     const updated = await prisma.freelanceMission.update({
       where: { id },
       data,
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     return successResponse(updated);
@@ -111,10 +95,7 @@ export async function DELETE(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const isAuthor  = mission.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    requireJobsAuthorOrModerator(session, mission.authorId);
 
     await prisma.freelanceMission.delete({ where: { id } });
 
