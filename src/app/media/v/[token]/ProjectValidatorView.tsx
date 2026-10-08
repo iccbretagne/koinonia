@@ -452,14 +452,77 @@ function SummaryView({
   );
 }
 
+/** Aperçu du fichier courant : image (avec accès HD), vidéo, PDF, ou icône de type. */
+function FilePreview({
+  file,
+  fileUrl,
+  fileUrlLoading,
+  onOpenLightbox,
+}: {
+  readonly file: ProjectFile;
+  readonly fileUrl: string | null;
+  readonly fileUrlLoading: boolean;
+  readonly onOpenLightbox: () => void;
+}) {
+  if (file.mimeType.startsWith("image/")) {
+    return (
+      <div className="relative">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={file.thumbnailUrl ?? ""}
+          alt={file.filename}
+          className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-overlay"
+          draggable={false}
+        />
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenLightbox(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          HD
+        </button>
+      </div>
+    );
+  }
+  if (file.mimeType.startsWith("video/")) {
+    return <VideoPreview mimeType={file.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
+  }
+  if (file.mimeType === "application/pdf") {
+    return <PdfPreview mimeType={file.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
+  }
+  return (
+    <div className="flex flex-col items-center gap-2 py-8">
+      <FileTypeIcon mimeType={file.mimeType} />
+    </div>
+  );
+}
+
+/** Statuts et libellés d'action selon le rôle du lien : prévalidation ou validation finale. */
+function validatorMode(isPrevalidator: boolean) {
+  if (isPrevalidator) {
+    return {
+      approveStatus: "PREVALIDATED",
+      rejectStatus: "PREREJECTED",
+      labels: { approve: "Pré-valider", reject: "Écarter", revision: "Révision" },
+    };
+  }
+  return {
+    approveStatus: "APPROVED",
+    rejectStatus: "REJECTED",
+    labels: { approve: "Approuver", reject: "Rejeter", revision: "Révision" },
+  };
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ProjectValidatorView({ token, data }: { readonly token: string; readonly data: ProjectValidationData }) {
   const { project } = data;
   const isPrevalidator = data.token.type === "PREVALIDATOR";
   const hasPrevalidator = project.hasPrevalidator;
-  const approveStatus = isPrevalidator ? "PREVALIDATED" : "APPROVED";
-  const rejectStatus  = isPrevalidator ? "PREREJECTED"  : "REJECTED";
+  const { approveStatus, rejectStatus, labels } = validatorMode(isPrevalidator);
 
   const [files, setFiles] = useState<ProjectFile[]>(data.files);
   const [currentIndex, setCurrentIndex] = useState(() => {
@@ -654,46 +717,15 @@ export default function ProjectValidatorView({ token, data }: { readonly token: 
     );
   }
 
-  const labels = isPrevalidator
-    ? { approve: "Pré-valider", reject: "Écarter", revision: "Révision" }
-    : { approve: "Approuver",   reject: "Rejeter",  revision: "Révision" };
 
-  let filePreview: ReactNode = null;
-  if (currentFile) {
-    if (currentFile.mimeType.startsWith("image/")) {
-      filePreview = (
-            <div className="relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentFile.thumbnailUrl ?? ""}
-                alt={currentFile.filename}
-                className="max-w-[90vw] max-h-[48vh] sm:max-h-[58vh] object-contain rounded-lg shadow-overlay"
-                draggable={false}
-              />
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowLightbox(true); }}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="absolute bottom-2 right-2 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2 py-1 flex items-center gap-1 transition-colors"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                HD
-              </button>
-            </div>
-      );
-    } else if (currentFile.mimeType.startsWith("video/")) {
-      filePreview = <VideoPreview mimeType={currentFile.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
-    } else if (currentFile.mimeType === "application/pdf") {
-      filePreview = <PdfPreview mimeType={currentFile.mimeType} fileUrl={fileUrl} fileUrlLoading={fileUrlLoading} />;
-    } else {
-      filePreview = (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <FileTypeIcon mimeType={currentFile.mimeType} />
-            </div>
-      );
-    }
-  }
+  const filePreview: ReactNode = currentFile ? (
+    <FilePreview
+      file={currentFile}
+      fileUrl={fileUrl}
+      fileUrlLoading={fileUrlLoading}
+      onOpenLightbox={() => setShowLightbox(true)}
+    />
+  ) : null;
 
   return (
     <div data-theme="dark" className="contents">

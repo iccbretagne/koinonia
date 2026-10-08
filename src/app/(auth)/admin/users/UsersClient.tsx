@@ -38,6 +38,20 @@ interface Props {
   readonly canManageRoles: boolean;
 }
 
+/** Remplace le ministère et les départements d'un rôle d'un utilisateur. */
+function withUpdatedRole(
+  users: UserItem[],
+  userId: string | null,
+  roleId: string,
+  update: Pick<UserRole, "ministry" | "departments">
+): UserItem[] {
+  return users.map((u) =>
+    u.id === userId
+      ? { ...u, churchRoles: u.churchRoles.map((r) => (r.id === roleId ? { ...r, ...update } : r)) }
+      : u
+  );
+}
+
 export default function UsersClient({
   churchId,
   initialUsers,
@@ -144,28 +158,13 @@ export default function UsersClient({
 
       const saved = await res.json();
 
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === editUserId
-            ? {
-                ...u,
-                churchRoles: u.churchRoles.map((r) =>
-                  r.id === editRole.id
-                    ? {
-                        ...r,
-                        ministry: saved.ministry || null,
-                        departments: (saved.departments || []).map(
-                          (d: {
-                            department: { id: string; name: string };
-                          }) => d.department
-                        ),
-                      }
-                    : r
-                ),
-              }
-            : u
-        )
-      );
+      const updatedRole = {
+        ministry: saved.ministry || null,
+        departments: (saved.departments || []).map(
+          (d: { department: { id: string; name: string } }) => d.department
+        ),
+      };
+      setUsers((prev) => withUpdatedRole(prev, editUserId, editRole.id, updatedRole));
 
       setEditModalOpen(false);
     } catch (err) {

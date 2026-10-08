@@ -9,6 +9,8 @@ interface Dept { id: string; name: string; ministryName: string }
 
 interface Section {
   id?: string;
+  /** Clé de rendu stable côté client (une section peut être retirée) — jamais envoyée au serveur. */
+  clientKey: string;
   departmentId: string | null;
   label: string;
   position: number;
@@ -18,7 +20,7 @@ interface Section {
 }
 
 // Section telle que reçue du serveur (stats est JsonValue de Prisma, typé unknown)
-interface SectionData extends Omit<Section, "stats"> {
+interface SectionData extends Omit<Section, "stats" | "clientKey"> {
   stats: unknown;
 }
 
@@ -85,8 +87,14 @@ const DEPT_FIELDS: Record<Exclude<DeptType, null>, FieldConfig[]> = {
   ],
 };
 
+let sectionKeySeq = 0;
+function newSectionKey() {
+  sectionKeySeq += 1;
+  return `section-${sectionKeySeq}`;
+}
+
 function emptySection(dept: Dept, position: number): Section {
-  return { departmentId: dept.id, label: dept.name, position, stats: null, notes: "" };
+  return { clientKey: newSectionKey(), departmentId: dept.id, label: dept.name, position, stats: null, notes: "" };
 }
 
 function statsGridClass(fieldCount: number): string {
@@ -136,7 +144,11 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
 
   const initSections = (): Section[] => {
     if (existingReport?.sections.length) {
-      return existingReport.sections.map((s) => ({ ...s, stats: (s.stats as Record<string, number | null> | null) ?? null }));
+      return existingReport.sections.map((s) => ({
+        ...s,
+        clientKey: s.id ?? newSectionKey(),
+        stats: (s.stats as Record<string, number | null> | null) ?? null,
+      }));
     }
     return eventDepts.map((d, i) => emptySection(d, i));
   };
@@ -188,7 +200,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           messageTitle: messageTitleRef.current || null,
           notes: notesRef.current || null,
           decisions: decisionsRef.current || null,
-          sections: sectionsRef.current,
+          sections: sectionsRef.current.map(({ clientKey: _clientKey, ...section }) => section),
         }),
       });
       const json = await res.json();
@@ -237,7 +249,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   function addSection() {
     setSections((prev) => [
       ...prev,
-      { departmentId: null, label: "Section libre", position: prev.length, stats: null, notes: "" },
+      { clientKey: newSectionKey(), departmentId: null, label: "Section libre", position: prev.length, stats: null, notes: "" },
     ]);
     scheduleSave();
   }
@@ -382,7 +394,7 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
           const deptType = getDeptType(section.label);
           const fields = deptType ? DEPT_FIELDS[deptType] : null;
           return (
-            <div key={i} className="bg-surface rounded-lg border border-line p-4">
+            <div key={section.clientKey} className="bg-surface rounded-lg border border-line p-4">
               <div className="flex items-center gap-3 mb-3">
                 <input
                   type="text"

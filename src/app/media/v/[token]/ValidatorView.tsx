@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
 
 type Photo = {
   id: string;
@@ -219,16 +219,298 @@ function ProgressBar({
   );
 }
 
+/** Photo courante, avec le retour visuel du glissement et le badge de décision. */
+function PhotoCard({
+  photo,
+  dragX,
+  dragging,
+  onOpenHd,
+}: {
+  readonly photo: Photo;
+  readonly dragX: number;
+  readonly dragging: boolean;
+  readonly onOpenHd: () => void;
+}) {
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{
+        transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
+        transition: dragging ? "none" : "transform 150ms ease-out",
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={photo.thumbnailUrl}
+        alt={photo.filename}
+        className="max-w-[90vw] max-h-[65vh] object-contain"
+        draggable={false}
+      />
+
+      {/* Swipe feedback */}
+      {dragX !== 0 && (
+        <div
+          className={`absolute inset-0 flex items-start ${dragX > 0 ? "justify-start" : "justify-end"}`}
+          style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}
+        >
+          <div
+            className={`m-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-on-danger ${
+              dragX > 0 ? "bg-success" : "bg-danger"
+            }`}
+          >
+            {dragX > 0 ? "✓" : "✗"}
+          </div>
+        </div>
+      )}
+
+      {/* Decision badge */}
+      {dragX === 0 && photo.status !== "PENDING" && (
+        <div className="absolute top-3 left-3">
+          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGE[photo.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
+            {STATUS_LABELS[photo.status] ?? photo.status}
+          </span>
+        </div>
+      )}
+
+      {/* HD button — tap opens lightbox */}
+      <button
+        onClick={onOpenHd}
+        className="absolute bottom-3 right-3 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+        </svg>
+        HD
+      </button>
+    </div>
+  );
+}
+
+/** Libellé du toast d'annulation, selon la décision qui vient d'être prise. */
+function undoLabel(status: string | undefined, labels: ValidatorLabels) {
+  if (status === "APPROVED" || status === "PREVALIDATED") return labels.approved;
+  if (status === "REJECTED" || status === "PREREJECTED") return labels.rejected;
+  return "Annulé";
+}
+
+type ValidatorLabels = ReturnType<typeof validatorMode>["labels"];
+
+/** Statuts et libellés selon le rôle du lien : prévalidation (garder/écarter) ou validation. */
+function validatorMode(isPrevalidator: boolean) {
+  if (isPrevalidator) {
+    return {
+      approveStatus: "PREVALIDATED",
+      rejectStatus: "PREREJECTED",
+      labels: { approved: "Gardée", rejected: "Écartée", approvedPlural: "gardées", rejectedPlural: "écartées" },
+    };
+  }
+  return {
+    approveStatus: "APPROVED",
+    rejectStatus: "REJECTED",
+    labels: { approved: "Validée", rejected: "Rejetée", approvedPlural: "validées", rejectedPlural: "rejetées" },
+  };
+}
+
+/** Pastilles de filtre du récapitulatif (libellé, compteur, couleur selon le thème). */
+function summaryFilters(
+  dk: boolean,
+  isPrevalidator: boolean,
+  counts: { total: number; approved: number; rejected: number; pending: number }
+) {
+  const inactiveFilterClass = dk
+    ? "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60 hover:border-ink/20"
+    : "bg-transparent text-ink-subtle border-line hover:text-ink-muted hover:border-control-line";
+
+  const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
+    { key: "ALL",      label: "Toutes",                                 count: counts.total, activeClass: dk ? "bg-ink/20 text-ink border-transparent"           : "bg-surface-sunken text-ink border-transparent",        dot: "" },
+    { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: counts.approved, activeClass: dk ? "bg-success/30 text-success border-transparent"   : "bg-success-soft text-success border-transparent", dot: "bg-success" },
+    { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: counts.rejected, activeClass: dk ? "bg-danger/30 text-danger border-transparent"       : "bg-danger-soft text-danger border-transparent",     dot: "bg-danger" },
+    { key: "PENDING",  label: "En attente",                             count: counts.pending, activeClass: dk ? "bg-warning/20 text-warning border-transparent" : "bg-warning-soft text-warning border-transparent", dot: "bg-warning" },
+  ];
+  return { inactiveFilterClass, filterConfig };
+}
+
+/** Compteurs gardées/validées, en attente, écartées/rejetées. */
+function SummaryStats({
+  dark,
+  approvedCount,
+  pendingCount,
+  rejectedCount,
+  labels,
+}: {
+  readonly dark: boolean;
+  readonly approvedCount: number;
+  readonly pendingCount: number;
+  readonly rejectedCount: number;
+  readonly labels: ValidatorLabels;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
+        <p className={`text-2xl font-bold tabular-nums text-success`}>{approvedCount}</p>
+        <p className={`text-xs mt-0.5 ${dark ? "text-success/70" : "text-success"}`}>{labels.approvedPlural}</p>
+      </div>
+      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
+        <p className={`text-2xl font-bold tabular-nums ${dark ? "text-ink/50" : "text-ink-subtle"}`}>{pendingCount}</p>
+        <p className={`text-xs mt-0.5 ${dark ? "text-ink/30" : "text-ink-subtle"}`}>en attente</p>
+      </div>
+      <div className={`rounded-xl px-3 py-2.5 text-center border ${dark ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
+        <p className={`text-2xl font-bold tabular-nums text-danger`}>{rejectedCount}</p>
+        <p className={`text-xs mt-0.5 ${dark ? "text-danger/70" : "text-danger"}`}>{labels.rejectedPlural}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Bascule clair/sombre du récapitulatif. */
+function ThemeToggle({ dark, onToggle }: { readonly dark: boolean; readonly onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dark ? "bg-ink/10 hover:bg-ink/20 text-ink/70" : "bg-surface-sunken hover:bg-surface-sunken text-ink-muted"}`}
+      aria-label="Basculer le thème"
+    >
+      {dark ? (
+        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+        </svg>
+      ) : (
+        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+/** Récapitulatif : compteurs, filtres et grille des photos, où un clic fait tourner la décision. */
+function SummaryView({
+  photos,
+  eventName,
+  totalPhotos,
+  approvedCount,
+  rejectedCount,
+  pendingCount,
+  isPrevalidator,
+  labels,
+  dark,
+  setDark,
+  onBack,
+  onToggle,
+}: {
+  readonly photos: Photo[];
+  readonly eventName: string;
+  readonly totalPhotos: number;
+  readonly approvedCount: number;
+  readonly rejectedCount: number;
+  readonly pendingCount: number;
+  readonly isPrevalidator: boolean;
+  readonly labels: ValidatorLabels;
+  readonly dark: boolean;
+  readonly setDark: Dispatch<SetStateAction<boolean>>;
+  readonly onBack: () => void;
+  readonly onToggle: (photoId: string) => void;
+}) {
+  const [filter, setFilter] = useState<SummaryFilter>("ALL");
+  const filteredPhotos = photos.filter((p) => {
+    if (filter === "ALL") return true;
+    if (filter === "APPROVED") return p.status === "APPROVED" || p.status === "PREVALIDATED";
+    if (filter === "REJECTED") return p.status === "REJECTED"  || p.status === "PREREJECTED";
+    return p.status === "PENDING";
+  });
+
+  const dk = dark;
+  const { inactiveFilterClass, filterConfig } = summaryFilters(dk, isPrevalidator, {
+    total: totalPhotos,
+    approved: approvedCount,
+    rejected: rejectedCount,
+    pending: pendingCount,
+  });
+
+  return (
+    <div data-theme={dk ? "dark" : undefined} className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-bg text-ink" : "bg-surface-sunken"}`}>
+      {/* Progress bar */}
+      <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
+
+      {/* Header */}
+      <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-bg/95" : "bg-surface border-b border-line"}`}>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={onBack}
+            className={`text-sm transition-colors ${dk ? "text-ink/70 hover:text-ink" : "text-ink-muted hover:text-ink"}`}
+          >
+            ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
+          </button>
+          <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-ink/80" : "text-ink"}`}>{eventName}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-sm tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{totalPhotos} photos</span>
+            {/* Theme toggle */}
+            <ThemeToggle dark={dk} onToggle={() => setDark((v) => !v)} />
+          </div>
+        </div>
+
+        {/* Stats cards */}
+        <SummaryStats dark={dk} approvedCount={approvedCount} pendingCount={pendingCount} rejectedCount={rejectedCount} labels={labels} />
+
+        {/* Filter pills */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {filterConfig.map(({ key, label, count, activeClass, dot }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
+                filter === key ? activeClass : inactiveFilterClass
+              }`}
+            >
+              {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
+              {label}
+              <span className="tabular-nums opacity-70">({count})</span>
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Grid */}
+      <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-surface-sunken"}`}>
+        {filteredPhotos.map((photo) => {
+          const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
+          const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
+          return (
+            <button
+              key={photo.id}
+              onClick={() => onToggle(photo.id)}
+              className="relative aspect-square overflow-hidden rounded-sm bg-surface-sunken"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
+              {/* Corner badge */}
+              {isApproved && (
+                <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center shadow-float">
+                  <span className="text-surface text-[10px] font-bold leading-none">✓</span>
+                </div>
+              )}
+              {isRejected && (
+                <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-danger flex items-center justify-center shadow-float">
+                  <span className="text-on-danger text-[10px] font-bold leading-none">✗</span>
+                </div>
+              )}
+              {photo.status === "PENDING" && (
+                <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-warning shadow-float" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ValidatorView({ token, data }: { readonly token: string; readonly data: ValidationData }) {
   const { event } = data;
   const isPrevalidator = data.token.type === "PREVALIDATOR";
-  const approveStatus = isPrevalidator ? "PREVALIDATED" : "APPROVED";
-  const rejectStatus  = isPrevalidator ? "PREREJECTED"  : "REJECTED";
-  const labels = isPrevalidator
-    ? { approved: "Gardée", rejected: "Écartée", approvedPlural: "gardées", rejectedPlural: "écartées" }
-    : { approved: "Validée", rejected: "Rejetée", approvedPlural: "validées", rejectedPlural: "rejetées" };
+  const { approveStatus, rejectStatus, labels } = validatorMode(isPrevalidator);
 
   const [photos, setPhotos] = useState<Photo[]>(data.photos ?? []);
   const [currentIndex, setCurrentIndex] = useState(() => {
@@ -236,10 +518,10 @@ export default function ValidatorView({ token, data }: { readonly token: string;
     return Math.max(first, 0);
   });
   const [showSummary, setShowSummary] = useState(false);
-  const [summaryFilter, setSummaryFilter] = useState<SummaryFilter>("ALL");
   const [undoAction, setUndoAction] = useState<{ photoId: string; prevStatus: string } | null>(null);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showHdLightbox, setShowHdLightbox] = useState(false);
+  // Thème du récapitulatif : conservé d'une ouverture à l'autre
   const [summaryDark, setSummaryDark] = useState(true);
 
   // Swipe gesture state
@@ -389,132 +671,25 @@ export default function ValidatorView({ token, data }: { readonly token: string;
 
   // ── Summary view ─────────────────────────────────────────────────────────────
   if (showSummary) {
-    const filteredPhotos = photos.filter((p) => {
-      if (summaryFilter === "ALL") return true;
-      if (summaryFilter === "APPROVED") return p.status === "APPROVED" || p.status === "PREVALIDATED";
-      if (summaryFilter === "REJECTED") return p.status === "REJECTED"  || p.status === "PREREJECTED";
-      return p.status === "PENDING";
-    });
-
-    const dk = summaryDark;
-    const inactiveFilterClass = dk
-      ? "bg-transparent text-ink/40 border-ink/10 hover:text-ink/60 hover:border-ink/20"
-      : "bg-transparent text-ink-subtle border-line hover:text-ink-muted hover:border-control-line";
-
-    const filterConfig: { key: SummaryFilter; label: string; count: number; activeClass: string; dot: string }[] = [
-      { key: "ALL",      label: "Toutes",                                 count: totalPhotos,   activeClass: dk ? "bg-ink/20 text-ink border-transparent"           : "bg-surface-sunken text-ink border-transparent",        dot: "" },
-      { key: "APPROVED", label: isPrevalidator ? "Gardées" : "Validées",  count: approvedCount, activeClass: dk ? "bg-success/30 text-success border-transparent"   : "bg-success-soft text-success border-transparent", dot: "bg-success" },
-      { key: "REJECTED", label: isPrevalidator ? "Écartées" : "Rejetées", count: rejectedCount, activeClass: dk ? "bg-danger/30 text-danger border-transparent"       : "bg-danger-soft text-danger border-transparent",     dot: "bg-danger" },
-      { key: "PENDING",  label: "En attente",                             count: pendingCount,  activeClass: dk ? "bg-warning/20 text-warning border-transparent" : "bg-warning-soft text-warning border-transparent", dot: "bg-warning" },
-    ];
-
     return (
-      <div data-theme={dk ? "dark" : undefined} className={`min-h-screen flex flex-col transition-colors duration-300 ${dk ? "bg-bg text-ink" : "bg-surface-sunken"}`}>
-        {/* Progress bar */}
-        <ProgressBar total={totalPhotos} approved={approvedCount} rejected={rejectedCount} />
-
-        {/* Header */}
-        <header className={`px-4 pt-4 pb-3 sticky top-0 z-10 transition-colors duration-300 ${dk ? "bg-bg/95" : "bg-surface border-b border-line"}`}>
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => {
-                const firstPending = photos.findIndex((p) => p.status === "PENDING");
-                setCurrentIndex(Math.max(firstPending, 0));
-                setShowSummary(false);
-                setSummaryFilter("ALL");
-              }}
-              className={`text-sm transition-colors ${dk ? "text-ink/70 hover:text-ink" : "text-ink-muted hover:text-ink"}`}
-            >
-              ← {pendingCount > 0 ? `${pendingCount} en attente` : "Retour"}
-            </button>
-            <span className={`text-sm font-medium truncate max-w-[35%] ${dk ? "text-ink/80" : "text-ink"}`}>{event.name}</span>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={`text-sm tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{totalPhotos} photos</span>
-              {/* Theme toggle */}
-              <button
-                onClick={() => setSummaryDark((v) => !v)}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dk ? "bg-ink/10 hover:bg-ink/20 text-ink/70" : "bg-surface-sunken hover:bg-surface-sunken text-ink-muted"}`}
-                aria-label="Basculer le thème"
-              >
-                {dk ? (
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Stats cards */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-success/15 border-success/30" : "bg-success-soft border-success/30"}`}>
-              <p className={`text-2xl font-bold tabular-nums text-success`}>{approvedCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-success/70" : "text-success"}`}>{labels.approvedPlural}</p>
-            </div>
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-ink/5 border-ink/10" : "bg-surface-sunken border-line"}`}>
-              <p className={`text-2xl font-bold tabular-nums ${dk ? "text-ink/50" : "text-ink-subtle"}`}>{pendingCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-ink/30" : "text-ink-subtle"}`}>en attente</p>
-            </div>
-            <div className={`rounded-xl px-3 py-2.5 text-center border ${dk ? "bg-danger/15 border-danger/30" : "bg-danger-soft border-danger/30"}`}>
-              <p className={`text-2xl font-bold tabular-nums text-danger`}>{rejectedCount}</p>
-              <p className={`text-xs mt-0.5 ${dk ? "text-danger/70" : "text-danger"}`}>{labels.rejectedPlural}</p>
-            </div>
-          </div>
-
-          {/* Filter pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {filterConfig.map(({ key, label, count, activeClass, dot }) => (
-              <button
-                key={key}
-                onClick={() => setSummaryFilter(key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 border transition-colors ${
-                  summaryFilter === key ? activeClass : inactiveFilterClass
-                }`}
-              >
-                {dot && <span className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />}
-                {label}
-                <span className="tabular-nums opacity-70">({count})</span>
-              </button>
-            ))}
-          </div>
-        </header>
-
-        {/* Grid */}
-        <div className={`grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1 p-2 flex-1 ${dk ? "" : "bg-surface-sunken"}`}>
-          {filteredPhotos.map((photo) => {
-            const isApproved = photo.status === "APPROVED" || photo.status === "PREVALIDATED";
-            const isRejected = photo.status === "REJECTED"  || photo.status === "PREREJECTED";
-            return (
-              <button
-                key={photo.id}
-                onClick={() => toggleDecision(photo.id)}
-                className="relative aspect-square overflow-hidden rounded-sm bg-surface-sunken"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photo.thumbnailUrl} alt={photo.filename} className="w-full h-full object-cover" />
-                {/* Corner badge */}
-                {isApproved && (
-                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-success flex items-center justify-center shadow-float">
-                    <span className="text-surface text-[10px] font-bold leading-none">✓</span>
-                  </div>
-                )}
-                {isRejected && (
-                  <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-danger flex items-center justify-center shadow-float">
-                    <span className="text-on-danger text-[10px] font-bold leading-none">✗</span>
-                  </div>
-                )}
-                {photo.status === "PENDING" && (
-                  <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-warning shadow-float" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <SummaryView
+        photos={photos}
+        eventName={event.name}
+        totalPhotos={totalPhotos}
+        approvedCount={approvedCount}
+        rejectedCount={rejectedCount}
+        pendingCount={pendingCount}
+        isPrevalidator={isPrevalidator}
+        labels={labels}
+        dark={summaryDark}
+        setDark={setSummaryDark}
+        onBack={() => {
+          const firstPending = photos.findIndex((p) => p.status === "PENDING");
+          setCurrentIndex(Math.max(firstPending, 0));
+          setShowSummary(false);
+        }}
+        onToggle={toggleDecision}
+      />
     );
   }
 
@@ -597,57 +772,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
           style={{ touchAction: "pan-y" }}
         >
           {currentPhoto && (
-            <div
-              className="relative flex items-center justify-center"
-              style={{
-                transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
-                transition: dragging ? "none" : "transform 150ms ease-out",
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentPhoto.thumbnailUrl}
-                alt={currentPhoto.filename}
-                className="max-w-[90vw] max-h-[65vh] object-contain"
-                draggable={false}
-              />
-
-              {/* Swipe feedback */}
-              {dragX !== 0 && (
-                <div
-                  className={`absolute inset-0 flex items-start ${dragX > 0 ? "justify-start" : "justify-end"}`}
-                  style={{ opacity: Math.min(Math.abs(dragX) / 100, 1) }}
-                >
-                  <div
-                    className={`m-4 w-14 h-14 rounded-full flex items-center justify-center text-2xl text-on-danger ${
-                      dragX > 0 ? "bg-success" : "bg-danger"
-                    }`}
-                  >
-                    {dragX > 0 ? "✓" : "✗"}
-                  </div>
-                </div>
-              )}
-
-              {/* Decision badge */}
-              {dragX === 0 && currentPhoto.status !== "PENDING" && (
-                <div className="absolute top-3 left-3">
-                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGE[currentPhoto.status] ?? "bg-surface-sunken text-ink-subtle"}`}>
-                    {STATUS_LABELS[currentPhoto.status] ?? currentPhoto.status}
-                  </span>
-                </div>
-              )}
-
-              {/* HD button — tap opens lightbox */}
-              <button
-                onClick={() => setShowHdLightbox(true)}
-                className="absolute bottom-3 right-3 text-xs text-on-brand/60 hover:text-on-brand bg-scrim hover:bg-scrim rounded-lg px-2.5 py-1.5 transition-colors flex items-center gap-1"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                </svg>
-                HD
-              </button>
-            </div>
+            <PhotoCard photo={currentPhoto} dragX={dragX} dragging={dragging} onOpenHd={() => setShowHdLightbox(true)} />
           )}
         </div>
 
@@ -715,13 +840,7 @@ export default function ValidatorView({ token, data }: { readonly token: string;
             style={{ bottom: "calc(7rem + env(safe-area-inset-bottom))" }}
           >
             <span className="text-sm">
-              {(() => {
-                const photo = photos.find((p) => p.id === undoAction.photoId);
-                const s = photo?.status;
-                if (s === "APPROVED" || s === "PREVALIDATED") return labels.approved;
-                if (s === "REJECTED" || s === "PREREJECTED") return labels.rejected;
-                return "Annulé";
-              })()}
+              {undoLabel(photos.find((p) => p.id === undoAction.photoId)?.status, labels)}
             </span>
             <button onClick={undo} className="text-brand-text font-bold text-sm ml-4">
               ANNULER

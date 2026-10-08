@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 
@@ -11,13 +11,18 @@ interface Department {
   linked: boolean;
 }
 
-type PendingAction =
-  | { type: "allowAnnouncements" }
-  | { type: "trackedForDiscipleship" }
-  | { type: "reportEnabled" }
-  | { type: "statsEnabled" }
-  | { type: "welcomeDutyEnabled" }
-  | { type: "department"; dept: Department };
+type ToggleField = "allowAnnouncements" | "trackedForDiscipleship" | "reportEnabled" | "statsEnabled" | "welcomeDutyEnabled";
+
+type PendingAction = { type: ToggleField } | { type: "department"; dept: Department };
+
+/** Objet de chaque réglage, pour le libellé « activer/désactiver … » de la confirmation. */
+const TOGGLE_LABELS: Record<ToggleField, string> = {
+  allowAnnouncements: "les annonces",
+  trackedForDiscipleship: "le suivi discipolat",
+  reportEnabled: "le compte rendu",
+  statsEnabled: "les statistiques",
+  welcomeDutyEnabled: "le service d'accueil",
+};
 
 interface Props {
   readonly eventId: string;
@@ -56,78 +61,48 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
     }
   }
 
+  const toggles: Record<ToggleField, { value: boolean; set: Dispatch<SetStateAction<boolean>>; setSaving: (saving: boolean) => void }> = {
+    allowAnnouncements: { value: allowAnnouncements, set: setAllowAnnouncements, setSaving: setSavingAnnouncements },
+    trackedForDiscipleship: { value: trackedForDiscipleship, set: setTrackedForDiscipleship, setSaving: setSavingDiscipleship },
+    reportEnabled: { value: reportEnabled, set: setReportEnabled, setSaving: setSavingReport },
+    statsEnabled: { value: statsEnabled, set: setStatsEnabled, setSaving: setSavingStats },
+    welcomeDutyEnabled: { value: welcomeDutyEnabled, set: setWelcomeDutyEnabled, setSaving: setSavingWelcomeDuty },
+  };
+
+  /** Bascule un réglage de l'événement (ou de la série). */
+  async function patchToggle(field: ToggleField, applyToSeries: boolean) {
+    const toggle = toggles[field];
+    toggle.setSaving(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: !toggle.value, applyToSeries }),
+      });
+      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      toggle.set((v) => !v);
+    } catch { alert("Erreur"); } finally { toggle.setSaving(false); }
+  }
+
+  /** Ajoute ou retire un département de l'événement (ou de la série). */
+  async function toggleDepartment(dept: Department, applyToSeries: boolean) {
+    setLoading(dept.id);
+    try {
+      const method = dept.linked ? "DELETE" : "POST";
+      const res = await fetch(`/api/events/${eventId}/departments`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ departmentId: dept.id, applyToSeries }),
+      });
+      if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
+      setDepts((prev) => prev.map((d) => d.id === dept.id ? { ...d, linked: !d.linked } : d));
+    } catch { alert("Erreur"); } finally { setLoading(null); }
+  }
+
   async function executeAction(action: PendingAction, applyToSeries: boolean) {
     setPendingAction(null);
-
-    if (action.type === "allowAnnouncements") {
-      setSavingAnnouncements(true);
-      try {
-        const res = await fetch(`/api/events/${eventId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ allowAnnouncements: !allowAnnouncements, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setAllowAnnouncements((v) => !v);
-      } catch { alert("Erreur"); } finally { setSavingAnnouncements(false); }
-    } else if (action.type === "trackedForDiscipleship") {
-      setSavingDiscipleship(true);
-      try {
-        const res = await fetch(`/api/events/${eventId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ trackedForDiscipleship: !trackedForDiscipleship, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setTrackedForDiscipleship((v) => !v);
-      } catch { alert("Erreur"); } finally { setSavingDiscipleship(false); }
-    } else if (action.type === "reportEnabled") {
-      setSavingReport(true);
-      try {
-        const res = await fetch(`/api/events/${eventId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reportEnabled: !reportEnabled, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setReportEnabled((v) => !v);
-      } catch { alert("Erreur"); } finally { setSavingReport(false); }
-    } else if (action.type === "statsEnabled") {
-      setSavingStats(true);
-      try {
-        const res = await fetch(`/api/events/${eventId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ statsEnabled: !statsEnabled, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setStatsEnabled((v) => !v);
-      } catch { alert("Erreur"); } finally { setSavingStats(false); }
-    } else if (action.type === "welcomeDutyEnabled") {
-      setSavingWelcomeDuty(true);
-      try {
-        const res = await fetch(`/api/events/${eventId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ welcomeDutyEnabled: !welcomeDutyEnabled, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setWelcomeDutyEnabled((v) => !v);
-      } catch { alert("Erreur"); } finally { setSavingWelcomeDuty(false); }
-    } else if (action.type === "department") {
-      const dept = action.dept;
-      setLoading(dept.id);
-      try {
-        const method = dept.linked ? "DELETE" : "POST";
-        const res = await fetch(`/api/events/${eventId}/departments`, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ departmentId: dept.id, applyToSeries }),
-        });
-        if (!res.ok) { const data = await res.json(); alert(data.error || "Erreur"); return; }
-        setDepts((prev) => prev.map((d) => d.id === dept.id ? { ...d, linked: !d.linked } : d));
-      } catch { alert("Erreur"); } finally { setLoading(null); }
-    }
+    if (action.type === "department") await toggleDepartment(action.dept, applyToSeries);
+    else await patchToggle(action.type, applyToSeries);
   }
 
   const grouped = depts.reduce(
@@ -140,13 +115,8 @@ export default function EventDetailClient({ eventId, isRecurring, allowAnnouncem
   );
 
   function actionLabel(action: PendingAction): string {
-    if (action.type === "allowAnnouncements") return allowAnnouncements ? "désactiver les annonces" : "activer les annonces";
-    if (action.type === "trackedForDiscipleship") return trackedForDiscipleship ? "désactiver le suivi discipolat" : "activer le suivi discipolat";
-    if (action.type === "reportEnabled") return reportEnabled ? "désactiver le compte rendu" : "activer le compte rendu";
-    if (action.type === "statsEnabled") return statsEnabled ? "désactiver les statistiques" : "activer les statistiques";
-    if (action.type === "welcomeDutyEnabled") return welcomeDutyEnabled ? "désactiver le service d'accueil" : "activer le service d'accueil";
     if (action.type === "department") return action.dept.linked ? `retirer le département «\u00a0${action.dept.name}\u00a0»` : `ajouter le département «\u00a0${action.dept.name}\u00a0»`;
-    return "";
+    return `${toggles[action.type].value ? "désactiver" : "activer"} ${TOGGLE_LABELS[action.type]}`;
   }
 
   return (

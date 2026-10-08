@@ -112,6 +112,50 @@ function asText(value: unknown, fallback: string): string {
   return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
 }
 
+const RECURRENCE_SHORT_LABELS: Record<string, string> = {
+  weekly: "Hebdo",
+  biweekly: "Bihebdo",
+  monthly: "Mensuel",
+};
+
+function departmentCount(p: Record<string, unknown>) {
+  const deptIds = p.departmentIds as string[] | undefined;
+  return Array.isArray(deptIds) ? deptIds.length : 0;
+}
+
+/** Résumé d'une demande d'ajout d'événement : type, date, départements, récurrence. */
+function addEventSummary(p: Record<string, unknown>) {
+  const deptCount = departmentCount(p);
+  const deptPlural = deptCount === 1 ? "" : "s";
+  const recurrence = p.recurrenceRule as string | undefined;
+  const parts = [
+    asText(p.eventType, ""),
+    p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : "",
+    deptCount > 0 ? `${deptCount} département${deptPlural}` : null,
+    recurrence ? `Récurrence : ${RECURRENCE_SHORT_LABELS[recurrence] ?? recurrence}` : null,
+  ].filter(Boolean);
+  return parts.join(" — ");
+}
+
+/** Résumé du contenu d'une demande (hors annonce), selon son type. */
+function renderPayloadSummary(req: RequestItem) {
+  const p = ((req.payload ?? {}) as Record<string, unknown>);
+  switch (req.type) {
+    case "AJOUT_EVENEMENT":
+      return addEventSummary(p);
+    case "ANNULATION_EVENEMENT":
+      return `Raison : ${asText(p.reason, "—")}`;
+    case "MODIFICATION_PLANNING": {
+      const count = departmentCount(p);
+      return `${count} département${count !== 1 ? "s" : ""} sélectionné${count !== 1 ? "s" : ""}`;
+    }
+    case "DEMANDE_ACCES":
+      return `Rôle : ${asText(p.role, "—")}`;
+    default:
+      return null;
+  }
+}
+
 export default function RequestsDashboard({ requests: initial, canManage = false }: Props) {
   const toast = useToast();
   const [requests, setRequests] = useState(initial);
@@ -189,41 +233,6 @@ export default function RequestsDashboard({ requests: initial, canManage = false
     } finally {
       setProcessing(null);
     }
-  }
-
-  function renderPayloadSummary(req: RequestItem) {
-    const p = ((req.payload ?? {}) as Record<string, unknown>);
-
-    if (req.type === "AJOUT_EVENEMENT") {
-      const deptIds = p.departmentIds as string[] | undefined;
-      const deptCount = Array.isArray(deptIds) ? deptIds.length : 0;
-      const deptPlural = deptCount === 1 ? "" : "s";
-      const recurrence = p.recurrenceRule as string | undefined;
-      const recurrenceLabels: Record<string, string> = {
-        weekly: "Hebdo",
-        biweekly: "Bihebdo",
-        monthly: "Mensuel",
-      };
-      const parts = [
-        asText(p.eventType, ""),
-        p.eventDate ? new Date(p.eventDate as string).toLocaleDateString("fr-FR") : "",
-        deptCount > 0 ? `${deptCount} département${deptPlural}` : null,
-        recurrence ? `Récurrence : ${recurrenceLabels[recurrence] ?? recurrence}` : null,
-      ].filter(Boolean);
-      return parts.join(" — ");
-    }
-    if (req.type === "ANNULATION_EVENEMENT") {
-      return `Raison : ${asText(p.reason, "—")}`;
-    }
-    if (req.type === "MODIFICATION_PLANNING") {
-      const deptIds = p.departmentIds as string[] | undefined;
-      const count = Array.isArray(deptIds) ? deptIds.length : 0;
-      return `${count} département${count !== 1 ? "s" : ""} sélectionné${count !== 1 ? "s" : ""}`;
-    }
-    if (req.type === "DEMANDE_ACCES") {
-      return `Rôle : ${asText(p.role, "—")}`;
-    }
-    return null;
   }
 
   function renderRequest(req: RequestItem) {

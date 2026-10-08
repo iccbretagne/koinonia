@@ -45,6 +45,79 @@ function toLocalDatetime(input: string | Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Ligne d'un événement d'équipe : date, horaire, lieu, description et actions de gestion. */
+function TeamEventRow({
+  ev,
+  canEdit,
+  onEdit,
+  onDelete,
+}: {
+  readonly ev: TeamEventItem;
+  readonly canEdit: boolean;
+  readonly onEdit: (ev: TeamEventItem) => void;
+  readonly onDelete: (ev: TeamEventItem) => void;
+}) {
+  const start = new Date(ev.startsAt);
+  const end = new Date(ev.endsAt);
+  const dateLabel = start.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const timeLabel = `${start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+
+  return (
+    <li
+      className="flex flex-col gap-3 border-t border-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-center"
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <DateTile date={start} />
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-ink">
+            {ev.title}
+            {ev.seriesId && (
+              <span className="inline-flex items-center gap-1 text-[13px] font-normal text-ink-muted" title="Fait partie d'une série récurrente">
+                <Repeat aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+                <span className="sr-only sm:not-sr-only">Récurrent</span>
+              </span>
+            )}
+          </p>
+          <p className="text-[13px] leading-[18px] text-ink-muted">
+            {dateLabel} · {timeLabel}
+          </p>
+          {ev.location && (
+            <p className="inline-flex items-center gap-1 text-[13px] leading-[18px] text-ink-muted">
+              <MapPin aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+              {ev.location}
+            </p>
+          )}
+          {ev.description && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">{ev.description}</p>}
+        </div>
+      </div>
+      {canEdit && (
+        <div className="flex shrink-0 justify-end gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
+            <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Modifier
+          </Button>
+          <button
+            type="button"
+            onClick={() => onDelete(ev)}
+            className={ghostDangerClasses}
+            aria-label={`Supprimer « ${ev.title} »`}
+          >
+            <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
+            Supprimer
+          </button>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function modalTitleFor(scopeStep: "edit" | "delete" | null, editing: TeamEventItem | null) {
+  if (scopeStep === "edit") return "Modifier un événement récurrent";
+  if (scopeStep) return "Supprimer un événement récurrent";
+  if (editing) return "Modifier l'événement d'équipe";
+  return "Nouvel événement d'équipe";
+}
+
 export default function TeamEventsView({ departmentId, departmentName, canEdit }: TeamEventsViewProps) {
   const toast = useToast();
   const [period, setPeriod] = useState<"upcoming" | "past">("upcoming");
@@ -210,11 +283,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
     }
   }
 
-  let modalTitle: string;
-  if (scopeStep === "edit") modalTitle = "Modifier un événement récurrent";
-  else if (scopeStep) modalTitle = "Supprimer un événement récurrent";
-  else if (editing) modalTitle = "Modifier l'événement d'équipe";
-  else modalTitle = "Nouvel événement d'équipe";
+  const modalTitle = modalTitleFor(scopeStep, editing);
   const submitLabel = editing ? "Enregistrer" : "Créer l'événement";
 
   const periodOptions = [
@@ -285,61 +354,9 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
       )}
       {!loading && events.length > 0 && (
         <ul className="overflow-hidden rounded-card border border-line bg-surface">
-          {events.map((ev) => {
-            const start = new Date(ev.startsAt);
-            const end = new Date(ev.endsAt);
-            const dateLabel = start.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-            const timeLabel = `${start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} – ${end.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
-
-            return (
-              <li
-                key={ev.id}
-                className="flex flex-col gap-3 border-t border-line px-4 py-3 first:border-t-0 sm:flex-row sm:items-center"
-              >
-                <div className="flex min-w-0 flex-1 items-start gap-3">
-                  <DateTile date={start} />
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-1.5 text-[15px] font-semibold leading-[22px] text-ink">
-                      {ev.title}
-                      {ev.seriesId && (
-                        <span className="inline-flex items-center gap-1 text-[13px] font-normal text-ink-muted" title="Fait partie d'une série récurrente">
-                          <Repeat aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
-                          <span className="sr-only sm:not-sr-only">Récurrent</span>
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-[13px] leading-[18px] text-ink-muted">
-                      {dateLabel} · {timeLabel}
-                    </p>
-                    {ev.location && (
-                      <p className="inline-flex items-center gap-1 text-[13px] leading-[18px] text-ink-muted">
-                        <MapPin aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
-                        {ev.location}
-                      </p>
-                    )}
-                    {ev.description && <p className="mt-1 text-[13px] leading-[18px] text-ink-muted">{ev.description}</p>}
-                  </div>
-                </div>
-                {canEdit && (
-                  <div className="flex shrink-0 justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(ev)} aria-label={`Modifier « ${ev.title} »`}>
-                      <Pencil aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                      Modifier
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(ev)}
-                      className={ghostDangerClasses}
-                      aria-label={`Supprimer « ${ev.title} »`}
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                      Supprimer
-                    </button>
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {events.map((ev) => (
+            <TeamEventRow key={ev.id} ev={ev} canEdit={canEdit} onEdit={openEdit} onDelete={handleDeleteClick} />
+          ))}
         </ul>
       )}
 

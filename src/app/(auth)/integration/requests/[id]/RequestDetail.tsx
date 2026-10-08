@@ -449,6 +449,653 @@ function MsdpActions({ followUp, onFollowUpChange, requestId, churchId, canAct, 
   );
 }
 
+/** Droits de l'appelant sur la demande et étape affichée dans la frise (spec 051). */
+function requestPermissions(req: Request, isScoped: boolean, currentUserId: string) {
+  const isIntegrationMember = !isScoped;
+  const isAssignedBerger = req.assignedBerger?.id === currentUserId;
+  const canActAsBerger = isIntegrationMember || isAssignedBerger;
+  const isAbandoned = req.status === "ABANDONED";
+  const isWaiting = req.status === "WAITING_RECONTACT" || req.status === "WAITING_MISSION";
+  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
+  // « premier contact établi ». Lever/relancer : même règle, calculée sur le point d'entrée.
+  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
+  // « famille affectée » / « premier contact établi ». Lever/relancer : même règle, calculée sur
+  // le point d'entrée. Le département mission reste une décision de l'équipe (spec 051).
+  const isBergerStage = req.status === "ASSIGNED" || req.status === "CONTACTED";
+  const canWaitRecontact =
+    (req.status === "SUBMITTED" && isIntegrationMember) || (isBergerStage && canActAsBerger);
+  const canSendToMission = isIntegrationMember && (req.status === "SUBMITTED" || isBergerStage);
+  const canLiftWait =
+    isWaiting &&
+    (req.waitingFrom === "ASSIGNED" || req.waitingFrom === "CONTACTED" ? canActAsBerger : isIntegrationMember);
+  // Renvoi à l'équipe : action du berger en charge ; l'équipe, elle, réaffecte directement.
+  const canHandback = isBergerStage && isAssignedBerger;
+  // Pendant une attente, la frise reste positionnée sur l'étape d'où l'on vient.
+  const trackStatus = isWaiting && req.waitingFrom ? req.waitingFrom : req.status;
+  const isOpen = req.status !== "INTEGRATED" && req.status !== "ABANDONED";
+  return {
+    canAssign: isIntegrationMember && (req.status === "SUBMITTED" || req.status === "ASSIGNED"),
+    canReopen: isIntegrationMember && req.status === "ABANDONED",
+    // Modifier la fiche ou l'abandonner : tant que la demande est en cours
+    canEditOrAbandon: canActAsBerger && isOpen,
+    isIntegrationMember,
+    isAssignedBerger,
+    canActAsBerger,
+    isAbandoned,
+    isWaiting,
+    canWaitRecontact,
+    canSendToMission,
+    canLiftWait,
+    canHandback,
+    trackStatus,
+  };
+}
+
+/** Frise d'intégration famille, positionnée sur l'étape courante (ou d'origine d'une attente). */
+function integrationStepsFor(req: Request, trackStatus: string): StepData[] {
+  return [
+    { label: "Soumise",     done: true,                                                                    current: trackStatus === "SUBMITTED",      ts: req.submittedAt },
+    { label: "Assignée",    done: ["ASSIGNED","CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus), current: trackStatus === "ASSIGNED",   ts: req.assignedAt },
+    { label: "Contacté·e",  done: ["CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),        current: trackStatus === "CONTACTED",      ts: req.contactedAt },
+    { label: "WhatsApp",    done: ["WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),                    current: trackStatus === "WHATSAPP_ADDED", ts: req.whatsappAddedAt },
+    { label: "Intégré·e",   done: trackStatus === "INTEGRATED",                                            current: trackStatus === "INTEGRATED",     ts: req.integratedAt },
+  ];
+}
+
+/** Frise du suivi MSDP (nouveaux convertis). */
+function msdpStepsFor(msdpFollowUp: MsdpFollowUpType): StepData[] {
+  return [
+    { label: "Reçu",       done: true,                                                                             current: msdpFollowUp.status === "SUBMITTED",    ts: msdpFollowUp.createdAt },
+    { label: "Référent",   done: ["ASSIGNED","CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status), current: msdpFollowUp.status === "ASSIGNED",    ts: msdpFollowUp.assignedAt },
+    { label: "Contact",    done: ["CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),           current: msdpFollowUp.status === "CONTACTED",    ts: msdpFollowUp.contactedAt },
+    { label: "Formation",  done: ["IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),                       current: msdpFollowUp.status === "IN_FORMATION", ts: msdpFollowUp.inFormationAt },
+    { label: "Terminé",    done: msdpFollowUp.status === "COMPLETED",                                              current: msdpFollowUp.status === "COMPLETED",    ts: msdpFollowUp.completedAt },
+  ];
+}
+
+/** En-tête : identité, date, appel au salut / soin pastoral, lien parcours, modification. */
+function RequestHeader({
+  req,
+  hasJourney,
+  canEdit,
+  onEdit,
+}: {
+  readonly req: Request;
+  readonly hasJourney: boolean;
+  readonly canEdit: boolean;
+  readonly onEdit: () => void;
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-surface rounded-xl border border-line p-4 md:p-5">
+      <div className="space-y-1">
+        <h1 className="text-xl font-bold text-ink">{req.firstName} {req.lastName}</h1>
+        <p className="text-sm text-ink-subtle">{fmt(req.submittedAt)}</p>
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {req.salvationCall && (
+            <span className="text-xs text-brand-text bg-brand-soft px-2 py-0.5 rounded-full border border-brand/30">
+              Appel au salut
+            </span>
+          )}
+          {req.pastoralCareRequested && (
+            <span className="text-xs text-warning bg-warning-soft px-2 py-0.5 rounded-full border border-warning/30">
+              Soin pastoral
+            </span>
+          )}
+        </div>
+        {hasJourney && (
+          <a href="/integration/parcours" className="inline-flex items-center gap-1 text-xs text-brand-text hover:underline mt-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Voir le dossier parcours
+          </a>
+        )}
+      </div>
+      <div className="flex items-center gap-2 self-start">
+        {canEdit && (
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Modifier
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Avancement de l'intégration : frise ou abandon, attente en cours, famille et berger. */
+function IntegrationProgress({
+  req,
+  steps,
+  isAbandoned,
+  isWaiting,
+  relanceDue,
+}: {
+  readonly req: Request;
+  readonly steps: StepData[];
+  readonly isAbandoned: boolean;
+  readonly isWaiting: boolean;
+  readonly relanceDue: boolean;
+}) {
+  return (
+    <>
+      {isAbandoned ? (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sm text-danger">
+            <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
+            Abandonné{req.abandonedAt ? ` le ${fmt(req.abandonedAt)}` : ""}
+          </div>
+          {req.abandonReasonCode && (
+            <p className="text-xs text-ink-muted pl-7">
+              Motif&nbsp;: {ABANDON_REASON_LABELS[req.abandonReasonCode] ?? req.abandonReasonCode}
+            </p>
+          )}
+          {req.abandonReason && (
+            <p className="text-xs text-ink-subtle pl-7">{req.abandonReason}</p>
+          )}
+        </div>
+      ) : (
+        <TrackTimeline steps={steps} theme="violet" />
+      )}
+
+      {isWaiting && (
+        <div className="text-xs bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 space-y-0.5">
+          <p className="text-warning font-medium">
+            {req.status === "WAITING_MISSION"
+              ? "En attente de la décision du département mission"
+              : "En attente de recontact"}
+            {req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}
+          </p>
+          {req.lastRelanceAt && (
+            <p className="text-warning">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
+          )}
+          {relanceDue && (
+            <p className="text-warning font-semibold">
+              À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}
+            </p>
+          )}
+        </div>
+      )}
+
+      {(req.assignedFamilyName || req.assignedBerger?.name) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted pt-2 border-t border-line">
+          {req.assignedFamilyName && (
+            <span>Famille&nbsp;: <strong className="text-ink-muted">{req.assignedFamilyName}</strong></span>
+          )}
+          {req.assignedBerger?.name && (
+            <span>Berger&nbsp;: <strong className="text-ink-muted">{req.assignedBerger.name}</strong></span>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Étape suivante proposée au berger selon le statut, avec sa confirmation. */
+const NEXT_TRANSITION: Record<string, { action: string; label: string; button: string; description: (req: Request) => string }> = {
+  ASSIGNED: {
+    action: "contact",
+    label: "Marquer contacté·e",
+    button: "Marquer contacté",
+    description: (req) => `Confirmer que ${req.firstName} ${req.lastName} a été contacté·e ?`,
+  },
+  CONTACTED: {
+    action: "whatsapp",
+    label: "Ajouté dans le groupe WhatsApp",
+    button: "Ajouté dans le groupe WhatsApp",
+    description: (req) => `Confirmer que ${req.firstName} ${req.lastName} a été ajouté·e dans le groupe WhatsApp famille ?`,
+  },
+  WHATSAPP_ADDED: {
+    action: "integrate",
+    label: "Marquer intégré·e",
+    button: "Marquer intégré ✓",
+    description: (req) => `Confirmer l'intégration de ${req.firstName} ${req.lastName} dans la famille ? Cette étape est définitive.`,
+  },
+};
+
+type TransitionRequest = { action: string; label: string; description: string; variant?: "danger" };
+
+/** Actions disponibles sur la demande, selon les droits de l'appelant. */
+function IntegrationActions({
+  req,
+  loading,
+  showBergerNotice,
+  canAssign,
+  canReopen,
+  canActAsBerger,
+  canLiftWait,
+  canWaitRecontact,
+  canSendToMission,
+  canHandback,
+  canAbandon,
+  onAssign,
+  onReopen,
+  onTransition,
+  onRelance,
+  onWait,
+  onHandback,
+  onAbandon,
+}: {
+  readonly req: Request;
+  readonly loading: boolean;
+  readonly showBergerNotice: boolean;
+  readonly canAssign: boolean;
+  readonly canReopen: boolean;
+  readonly canActAsBerger: boolean;
+  readonly canLiftWait: boolean;
+  readonly canWaitRecontact: boolean;
+  readonly canSendToMission: boolean;
+  readonly canHandback: boolean;
+  readonly canAbandon: boolean;
+  readonly onAssign: () => void;
+  readonly onReopen: () => void;
+  readonly onTransition: (t: TransitionRequest) => void;
+  readonly onRelance: () => void;
+  readonly onWait: (kind: "RECONTACT" | "MISSION") => void;
+  readonly onHandback: () => void;
+  readonly onAbandon: () => void;
+}) {
+  const transition = canActAsBerger ? NEXT_TRANSITION[req.status] : undefined;
+  return (
+    <div className="space-y-2 pt-1">
+      {showBergerNotice && (
+        <div className="flex items-center gap-2 text-xs text-brand-text bg-brand-soft border border-brand/20 rounded-lg px-3 py-2">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Vous êtes le berger assigné à cette demande.
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {canAssign && (
+          <button onClick={onAssign} disabled={loading}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
+            {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
+          </button>
+        )}
+        {canReopen && (
+          <button
+            onClick={onReopen}
+            disabled={loading}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            Rouvrir
+          </button>
+        )}
+        {transition && (
+          <button
+            onClick={() => onTransition({
+              action: transition.action,
+              label: transition.label,
+              description: transition.description(req),
+            })}
+            disabled={loading}
+            className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {transition.button}
+          </button>
+        )}
+        {canLiftWait && (
+          <>
+            <button
+              onClick={onRelance}
+              disabled={loading}
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              J&apos;ai relancé
+            </button>
+            <button
+              onClick={() => onTransition({
+                action: "resume",
+                label: "Reprendre le suivi",
+                description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${resumeHint(req.waitingFrom)}`,
+              })}
+              disabled={loading}
+              className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              Reprendre le suivi
+            </button>
+          </>
+        )}
+        {canWaitRecontact && (
+          <button onClick={() => onWait("RECONTACT")} disabled={loading}
+            className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
+            À recontacter plus tard
+          </button>
+        )}
+        {canSendToMission && (
+          <button onClick={() => onWait("MISSION")} disabled={loading}
+            className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
+            Transmettre au département mission
+          </button>
+        )}
+        {canHandback && (
+          <button onClick={onHandback} disabled={loading}
+            className="px-4 py-2 bg-surface text-ink-muted border border-control-line text-sm font-medium rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors">
+            Renvoyer à l&apos;intégration
+          </button>
+        )}
+        {canAbandon && (
+          <button onClick={onAbandon} disabled={loading}
+            className="px-4 py-2 bg-surface text-danger border border-danger/30 text-sm font-medium rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors">
+            Abandonner
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Onglet « Contact » de la fiche. */
+function ContactTab({ req }: { readonly req: Request }) {
+  return (
+    <div className="space-y-3">
+      {req.phone ? (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Téléphone</span>
+          <a href={`tel:${req.phone}`} className="text-sm text-brand-text hover:underline">{req.phone}</a>
+        </div>
+      ) : null}
+      {req.email ? (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Email</span>
+          <a href={`mailto:${req.email}`} className="text-sm text-brand-text hover:underline">{req.email}</a>
+        </div>
+      ) : null}
+      {req.address && (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Adresse</span>
+          <span className="text-sm text-ink">{req.address}</span>
+        </div>
+      )}
+      {req.member && (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Membre Koinonia</span>
+          <span className="text-sm text-ink">{req.member.firstName} {req.member.lastName}</span>
+        </div>
+      )}
+      {!req.phone && !req.email && !req.address && !req.member && (
+        <p className="text-sm text-ink-subtle italic">Aucune information de contact renseignée.</p>
+      )}
+    </div>
+  );
+}
+
+/** Onglet « Profil » de la fiche. */
+function ProfileTab({ req, appointmentRequest }: { readonly req: Request; readonly appointmentRequest: Props["appointmentRequest"] }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Tranche d&apos;âge</span>
+        <span className="text-sm text-ink">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Situation</span>
+        <span className="text-sm text-ink">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Appel au salut</span>
+        <span className="text-sm text-ink">
+          {req.salvationCall ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-brand shrink-0" />Oui
+            </span>
+          ) : "Non"}
+        </span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Soin pastoral</span>
+        <span className="text-sm text-ink">
+          {req.pastoralCareRequested ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
+              Demandé
+              {appointmentRequest && (
+                <span className="text-xs text-ink-subtle ml-1">({appointmentRequest.status})</span>
+              )}
+            </span>
+          ) : "Non"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Onglet « Famille » de la fiche. */
+function FamilyTab({ req }: { readonly req: Request }) {
+  return (
+    <div className="space-y-3">
+      {req.suggestedFamilyName && (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Suggestion géo</span>
+          <span className="text-sm text-ink-muted italic">{req.suggestedFamilyName}</span>
+        </div>
+      )}
+      {req.lat && req.lng && (
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+          <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Carte familles</span>
+          <a
+            href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? [req.lat, req.lng].join(", "))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-brand-text hover:underline"
+          >
+            Voir sur la carte familles ↗
+          </a>
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Famille assignée</span>
+        <span className="text-sm font-medium text-brand-text">
+          {req.assignedFamilyName ?? <span className="text-ink-subtle font-normal">—</span>}
+        </span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
+        <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Berger</span>
+        <span className="text-sm text-ink">
+          {req.assignedBerger?.name ?? <span className="text-ink-subtle">—</span>}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Onglet « Notes » : modifiable par l'équipe et le berger, en lecture seule sinon. */
+function NotesTab({
+  canEdit,
+  notes,
+  savedNotes,
+  saving,
+  onNotesChange,
+  onSave,
+}: {
+  readonly canEdit: boolean;
+  readonly notes: string;
+  readonly savedNotes: string | null;
+  readonly saving: boolean;
+  readonly onNotesChange: (value: string) => void;
+  readonly onSave: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {canEdit ? (
+        <>
+          <textarea
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            rows={5}
+            placeholder="Notes visibles uniquement par l'équipe intégration…"
+            className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
+          />
+          <div className="flex justify-end">
+            <button onClick={onSave} disabled={saving}
+              className="px-4 py-1.5 bg-surface-sunken hover:bg-surface-sunken text-ink-muted text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
+              {saving ? "Sauvegarde…" : "Enregistrer les notes"}
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="text-sm text-ink-muted">{savedNotes || <span className="italic text-ink-subtle">Aucune note</span>}</p>
+      )}
+    </div>
+  );
+}
+
+/** Confirmation d'activation ou de désactivation d'un jalon du parcours. */
+function MilestoneConfirmModal({
+  milestone,
+  personName,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  readonly milestone: { key: MilestoneKey; label: string; currentValue: boolean } | null;
+  readonly personName: string;
+  readonly loading: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
+}) {
+  return (
+    <Modal
+      open={milestone !== null}
+      onClose={onClose}
+      title={milestone?.currentValue ? "Désactiver le jalon" : "Activer le jalon"}
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-ink-muted">
+          {milestone?.currentValue
+            ? `Désactiver le jalon "${milestone.label}" pour ${personName} ?`
+            : `Activer le jalon "${milestone?.label}" pour ${personName} ?`}
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
+              milestone?.currentValue
+                ? "border border-control-line text-ink hover:bg-surface-sunken"
+                : "bg-brand text-on-brand"
+            }`}
+          >
+            {loading ? "Enregistrement…" : "Confirmer"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/** Confirmation d'une étape du workflow d'intégration. */
+function TransitionConfirmModal({
+  transition,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  readonly transition: TransitionRequest | null;
+  readonly loading: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
+}) {
+  return (
+    <Modal
+      open={transition !== null}
+      onClose={onClose}
+      title={transition?.label ?? ""}
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-ink-muted">{transition?.description}</p>
+        <div className="flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-ink-muted hover:text-ink"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
+              transition?.variant === "danger" ? "bg-danger text-on-danger" : "bg-brand text-on-brand"
+            }`}
+          >
+            {loading ? "Enregistrement…" : "Confirmer"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/** Avancement du suivi MSDP : frise, ou abandon daté. */
+function MsdpProgress({ steps, followUp }: { readonly steps: StepData[]; readonly followUp: MsdpFollowUpType | null }) {
+  return (
+    followUp?.status === "ABANDONED" ? (
+      <div className="flex items-center gap-2 text-sm text-danger">
+        <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
+        Abandonné{followUp.abandonedAt ? ` le ${fmt(followUp.abandonedAt)}` : ""}
+      </div>
+    ) : (
+      <TrackTimeline steps={steps} theme="purple" />
+    )
+  );
+}
+
+/** Étapes clés du parcours : jalons (modifiables par l'équipe) ou création du dossier. */
+function JourneyCard({
+  journey,
+  isIntegrationMember,
+  creating,
+  error,
+  onCreate,
+  onToggleMilestone,
+}: {
+  readonly journey: PersonJourneyData | null;
+  readonly isIntegrationMember: boolean;
+  readonly creating: boolean;
+  readonly error: string | null;
+  readonly onCreate: () => void;
+  readonly onToggleMilestone: (key: MilestoneKey, currentValue: boolean) => void;
+}) {
+  return (
+    <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink-muted">Étapes clés du parcours</h2>
+        {journey && (
+          <a href="/integration/parcours" className="text-xs text-brand-text hover:underline">
+            Dossier complet →
+          </a>
+        )}
+      </div>
+      <MilestoneChips
+        journey={journey}
+        canToggle={isIntegrationMember && journey !== null}
+        onToggle={onToggleMilestone}
+      />
+      {!journey && isIntegrationMember && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onCreate}
+            disabled={creating}
+            className="text-xs text-brand-text hover:underline disabled:opacity-50"
+          >
+            {creating ? "Création…" : "+ Créer le dossier parcours"}
+          </button>
+          {error && <span className="text-xs text-danger">{error}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 type TabId = "contact" | "profil" | "famille" | "notes";
@@ -687,45 +1334,26 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
 
   // ── Role helpers ─────────────────────────────────────────────────────────────
 
-  const isIntegrationMember = !isScoped;
-  const isAssignedBerger = req.assignedBerger?.id === currentUserId;
-  const canActAsBerger = isIntegrationMember || isAssignedBerger;
-  const isAbandoned = req.status === "ABANDONED";
-  const isWaiting = req.status === "WAITING_RECONTACT" || req.status === "WAITING_MISSION";
-  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
-  // « premier contact établi ». Lever/relancer : même règle, calculée sur le point d'entrée.
-  // Poser une attente : équipe seule depuis « demande reçue », berger ou équipe depuis
-  // « famille affectée » / « premier contact établi ». Lever/relancer : même règle, calculée sur
-  // le point d'entrée. Le département mission reste une décision de l'équipe (spec 051).
-  const isBergerStage = req.status === "ASSIGNED" || req.status === "CONTACTED";
-  const canWaitRecontact =
-    (req.status === "SUBMITTED" && isIntegrationMember) || (isBergerStage && canActAsBerger);
-  const canSendToMission = isIntegrationMember && (req.status === "SUBMITTED" || isBergerStage);
-  const canLiftWait =
-    isWaiting &&
-    (req.waitingFrom === "ASSIGNED" || req.waitingFrom === "CONTACTED" ? canActAsBerger : isIntegrationMember);
-  // Renvoi à l'équipe : action du berger en charge ; l'équipe, elle, réaffecte directement.
-  const canHandback = isBergerStage && isAssignedBerger;
-  // Pendant une attente, la frise reste positionnée sur l'étape d'où l'on vient.
-  const trackStatus = isWaiting && req.waitingFrom ? req.waitingFrom : req.status;
+  const {
+    canAssign,
+    canReopen,
+    canEditOrAbandon,
+    isIntegrationMember,
+    isAssignedBerger,
+    canActAsBerger,
+    isAbandoned,
+    isWaiting,
+    canWaitRecontact,
+    canSendToMission,
+    canLiftWait,
+    canHandback,
+    trackStatus,
+  } = requestPermissions(req, isScoped, currentUserId);
 
   // ── Timeline steps ───────────────────────────────────────────────────────────
 
-  const integrationSteps: StepData[] = [
-    { label: "Soumise",     done: true,                                                                    current: trackStatus === "SUBMITTED",      ts: req.submittedAt },
-    { label: "Assignée",    done: ["ASSIGNED","CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus), current: trackStatus === "ASSIGNED",   ts: req.assignedAt },
-    { label: "Contacté·e",  done: ["CONTACTED","WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),        current: trackStatus === "CONTACTED",      ts: req.contactedAt },
-    { label: "WhatsApp",    done: ["WHATSAPP_ADDED","INTEGRATED"].includes(trackStatus),                    current: trackStatus === "WHATSAPP_ADDED", ts: req.whatsappAddedAt },
-    { label: "Intégré·e",   done: trackStatus === "INTEGRATED",                                            current: trackStatus === "INTEGRATED",     ts: req.integratedAt },
-  ];
-
-  const msdpSteps: StepData[] | null = msdpFollowUp ? [
-    { label: "Reçu",       done: true,                                                                             current: msdpFollowUp.status === "SUBMITTED",    ts: msdpFollowUp.createdAt },
-    { label: "Référent",   done: ["ASSIGNED","CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status), current: msdpFollowUp.status === "ASSIGNED",    ts: msdpFollowUp.assignedAt },
-    { label: "Contact",    done: ["CONTACTED","IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),           current: msdpFollowUp.status === "CONTACTED",    ts: msdpFollowUp.contactedAt },
-    { label: "Formation",  done: ["IN_FORMATION","COMPLETED"].includes(msdpFollowUp.status),                       current: msdpFollowUp.status === "IN_FORMATION", ts: msdpFollowUp.inFormationAt },
-    { label: "Terminé",    done: msdpFollowUp.status === "COMPLETED",                                              current: msdpFollowUp.status === "COMPLETED",    ts: msdpFollowUp.completedAt },
-  ] : null;
+  const integrationSteps = integrationStepsFor(req, trackStatus);
+  const msdpSteps = msdpFollowUp ? msdpStepsFor(msdpFollowUp) : null;
 
   // ── Tabs config ──────────────────────────────────────────────────────────────
 
@@ -746,52 +1374,19 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
     <div className="space-y-4 max-w-3xl">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 bg-surface rounded-xl border border-line p-4 md:p-5">
-        <div className="space-y-1">
-          <h1 className="text-xl font-bold text-ink">{req.firstName} {req.lastName}</h1>
-          <p className="text-sm text-ink-subtle">{fmt(req.submittedAt)}</p>
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {req.salvationCall && (
-              <span className="text-xs text-brand-text bg-brand-soft px-2 py-0.5 rounded-full border border-brand/30">
-                Appel au salut
-              </span>
-            )}
-            {req.pastoralCareRequested && (
-              <span className="text-xs text-warning bg-warning-soft px-2 py-0.5 rounded-full border border-warning/30">
-                Soin pastoral
-              </span>
-            )}
-          </div>
-          {journey && (
-            <a href="/integration/parcours" className="inline-flex items-center gap-1 text-xs text-brand-text hover:underline mt-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              Voir le dossier parcours
-            </a>
-          )}
-        </div>
-        <div className="flex items-center gap-2 self-start">
-          {canActAsBerger && req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
-            <button
-              onClick={() => {
-                setEditForm({
-                  firstName: req.firstName, lastName: req.lastName,
-                  phone: req.phone ?? "", email: req.email ?? "",
-                  address: req.address ?? "", ageRange: req.ageRange, churchStatus: req.churchStatus,
-                });
-                setEditOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-line rounded-lg text-ink-muted hover:bg-surface-sunken transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Modifier
-            </button>
-          )}
-        </div>
-      </div>
+      <RequestHeader
+        req={req}
+        hasJourney={Boolean(journey)}
+        canEdit={canEditOrAbandon}
+        onEdit={() => {
+          setEditForm({
+            firstName: req.firstName, lastName: req.lastName,
+            phone: req.phone ?? "", email: req.email ?? "",
+            address: req.address ?? "", ageRange: req.ageRange, churchStatus: req.churchStatus,
+          });
+          setEditOpen(true);
+        }}
+      />
 
       {error && (
         <p className="text-sm text-danger bg-danger-soft border border-danger/30 rounded-lg px-4 py-3">{error}</p>
@@ -806,168 +1401,29 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           </span>
         </div>
 
-        {isAbandoned ? (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-sm text-danger">
-              <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
-              Abandonné{req.abandonedAt ? ` le ${fmt(req.abandonedAt)}` : ""}
-            </div>
-            {req.abandonReasonCode && (
-              <p className="text-xs text-ink-muted pl-7">
-                Motif&nbsp;: {ABANDON_REASON_LABELS[req.abandonReasonCode] ?? req.abandonReasonCode}
-              </p>
-            )}
-            {req.abandonReason && (
-              <p className="text-xs text-ink-subtle pl-7">{req.abandonReason}</p>
-            )}
-          </div>
-        ) : (
-          <TrackTimeline steps={integrationSteps} theme="violet" />
-        )}
-
-        {isWaiting && (
-          <div className="text-xs bg-warning-soft border border-warning/30 rounded-lg px-3 py-2 space-y-0.5">
-            <p className="text-warning font-medium">
-              {req.status === "WAITING_MISSION"
-                ? "En attente de la décision du département mission"
-                : "En attente de recontact"}
-              {req.waitingSince ? ` depuis le ${fmt(req.waitingSince)}` : ""}
-            </p>
-            {req.lastRelanceAt && (
-              <p className="text-warning">Dernière relance consignée le {fmt(req.lastRelanceAt)}</p>
-            )}
-            {relanceDue && (
-              <p className="text-warning font-semibold">
-                À relancer : {req.status === "WAITING_MISSION" ? "le département mission" : "la personne"}
-              </p>
-            )}
-          </div>
-        )}
-
-        {(req.assignedFamilyName || req.assignedBerger?.name) && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted pt-2 border-t border-line">
-            {req.assignedFamilyName && (
-              <span>Famille&nbsp;: <strong className="text-ink-muted">{req.assignedFamilyName}</strong></span>
-            )}
-            {req.assignedBerger?.name && (
-              <span>Berger&nbsp;: <strong className="text-ink-muted">{req.assignedBerger.name}</strong></span>
-            )}
-          </div>
-        )}
+        <IntegrationProgress req={req} steps={integrationSteps} isAbandoned={isAbandoned} isWaiting={isWaiting} relanceDue={relanceDue} />
 
         {canActAsBerger && (
-          <div className="space-y-2 pt-1">
-            {isAssignedBerger && !isIntegrationMember && (
-              <div className="flex items-center gap-2 text-xs text-brand-text bg-brand-soft border border-brand/20 rounded-lg px-3 py-2">
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Vous êtes le berger assigné à cette demande.
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {isIntegrationMember && (req.status === "SUBMITTED" || req.status === "ASSIGNED") && (
-                <button onClick={openAssignModal} disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity">
-                  {req.status === "ASSIGNED" ? "Réaffecter" : "Assigner"}
-                </button>
-              )}
-              {isIntegrationMember && req.status === "ABANDONED" && (
-                <button
-                  onClick={() => setReopenOpen(true)}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  Rouvrir
-                </button>
-              )}
-              {canActAsBerger && req.status === "ASSIGNED" && (
-                <button
-                  onClick={() => setPendingTransition({
-                    action: "contact",
-                    label: "Marquer contacté·e",
-                    description: `Confirmer que ${req.firstName} ${req.lastName} a été contacté·e ?`,
-                  })}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  Marquer contacté
-                </button>
-              )}
-              {canActAsBerger && req.status === "CONTACTED" && (
-                <button
-                  onClick={() => setPendingTransition({
-                    action: "whatsapp",
-                    label: "Ajouté dans le groupe WhatsApp",
-                    description: `Confirmer que ${req.firstName} ${req.lastName} a été ajouté·e dans le groupe WhatsApp famille ?`,
-                  })}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  Ajouté dans le groupe WhatsApp
-                </button>
-              )}
-              {canActAsBerger && req.status === "WHATSAPP_ADDED" && (
-                <button
-                  onClick={() => setPendingTransition({
-                    action: "integrate",
-                    label: "Marquer intégré·e",
-                    description: `Confirmer l'intégration de ${req.firstName} ${req.lastName} dans la famille ? Cette étape est définitive.`,
-                  })}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  Marquer intégré ✓
-                </button>
-              )}
-              {canLiftWait && (
-                <button
-                  onClick={() => setRelanceOpen(true)}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  J&apos;ai relancé
-                </button>
-              )}
-              {canLiftWait && (
-                <button
-                  onClick={() => setPendingTransition({
-                    action: "resume",
-                    label: "Reprendre le suivi",
-                    description: `Reprendre le suivi de ${req.firstName} ${req.lastName} ? ${resumeHint(req.waitingFrom)}`,
-                  })}
-                  disabled={loading}
-                  className="px-4 py-2 bg-brand text-on-brand text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  Reprendre le suivi
-                </button>
-              )}
-              {canWaitRecontact && (
-                <button onClick={() => { setWaitKind("RECONTACT"); setWaitOpen(true); }} disabled={loading}
-                  className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
-                  À recontacter plus tard
-                </button>
-              )}
-              {canSendToMission && (
-                <button onClick={() => { setWaitKind("MISSION"); setWaitOpen(true); }} disabled={loading}
-                  className="px-4 py-2 bg-surface text-warning border border-warning/30 text-sm font-medium rounded-lg hover:bg-warning-soft disabled:opacity-50 transition-colors">
-                  Transmettre au département mission
-                </button>
-              )}
-              {canHandback && (
-                <button onClick={() => setHandbackOpen(true)} disabled={loading}
-                  className="px-4 py-2 bg-surface text-ink-muted border border-control-line text-sm font-medium rounded-lg hover:bg-surface-sunken disabled:opacity-50 transition-colors">
-                  Renvoyer à l&apos;intégration
-                </button>
-              )}
-              {canActAsBerger && req.status !== "INTEGRATED" && req.status !== "ABANDONED" && (
-                <button onClick={() => setAbandonOpen(true)} disabled={loading}
-                  className="px-4 py-2 bg-surface text-danger border border-danger/30 text-sm font-medium rounded-lg hover:bg-danger-soft disabled:opacity-50 transition-colors">
-                  Abandonner
-                </button>
-              )}
-            </div>
-          </div>
+          <IntegrationActions
+            req={req}
+            loading={loading}
+            showBergerNotice={isAssignedBerger && !isIntegrationMember}
+            canAssign={canAssign}
+            canReopen={canReopen}
+            canActAsBerger={canActAsBerger}
+            canLiftWait={canLiftWait}
+            canWaitRecontact={canWaitRecontact}
+            canSendToMission={canSendToMission}
+            canHandback={canHandback}
+            canAbandon={canEditOrAbandon}
+            onAssign={openAssignModal}
+            onReopen={() => setReopenOpen(true)}
+            onTransition={setPendingTransition}
+            onRelance={() => setRelanceOpen(true)}
+            onWait={(kind) => { setWaitKind(kind); setWaitOpen(true); }}
+            onHandback={() => setHandbackOpen(true)}
+            onAbandon={() => setAbandonOpen(true)}
+          />
         )}
       </div>
 
@@ -993,16 +1449,7 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
           )}
         </div>
 
-        {msdpSteps && (
-          msdpFollowUp?.status === "ABANDONED" ? (
-            <div className="flex items-center gap-2 text-sm text-danger">
-              <span className="w-5 h-5 rounded-full bg-danger-soft flex items-center justify-center text-xs font-bold">✕</span>
-              Abandonné{msdpFollowUp.abandonedAt ? ` le ${fmt(msdpFollowUp.abandonedAt)}` : ""}
-            </div>
-          ) : (
-            <TrackTimeline steps={msdpSteps} theme="purple" />
-          )
-        )}
+        {msdpSteps && <MsdpProgress steps={msdpSteps} followUp={msdpFollowUp} />}
 
         <MsdpActions
           followUp={msdpFollowUp}
@@ -1015,36 +1462,17 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       </div>
 
       {/* ── Card 3 : Étapes clés du parcours ── */}
-      <div className="bg-surface rounded-xl border border-line p-4 md:p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-muted">Étapes clés du parcours</h2>
-          {journey && (
-            <a href="/integration/parcours" className="text-xs text-brand-text hover:underline">
-              Dossier complet →
-            </a>
-          )}
-        </div>
-        <MilestoneChips
-          journey={journey}
-          canToggle={isIntegrationMember && journey !== null}
-          onToggle={(key, currentValue) => {
-            const milestone = MILESTONES.find((m) => m.key === key)!;
-            setMilestoneModal({ key, label: milestone.label, currentValue });
-          }}
-        />
-        {!journey && isIntegrationMember && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={createJourney}
-              disabled={journeyLoading}
-              className="text-xs text-brand-text hover:underline disabled:opacity-50"
-            >
-              {journeyLoading ? "Création…" : "+ Créer le dossier parcours"}
-            </button>
-            {journeyError && <span className="text-xs text-danger">{journeyError}</span>}
-          </div>
-        )}
-      </div>
+      <JourneyCard
+        journey={journey}
+        isIntegrationMember={isIntegrationMember}
+        creating={journeyLoading}
+        error={journeyError}
+        onCreate={createJourney}
+        onToggleMilestone={(key, currentValue) => {
+          const milestone = MILESTONES.find((m) => m.key === key)!;
+          setMilestoneModal({ key, label: milestone.label, currentValue });
+        }}
+      />
 
       {/* ── Onglets ── */}
       <div className="bg-surface rounded-xl border border-line overflow-hidden">
@@ -1069,136 +1497,24 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
         <div className="p-4 md:p-5">
 
           {/* Contact */}
-          {activeTab === "contact" && (
-            <div className="space-y-3">
-              {req.phone ? (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Téléphone</span>
-                  <a href={`tel:${req.phone}`} className="text-sm text-brand-text hover:underline">{req.phone}</a>
-                </div>
-              ) : null}
-              {req.email ? (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Email</span>
-                  <a href={`mailto:${req.email}`} className="text-sm text-brand-text hover:underline">{req.email}</a>
-                </div>
-              ) : null}
-              {req.address && (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Adresse</span>
-                  <span className="text-sm text-ink">{req.address}</span>
-                </div>
-              )}
-              {req.member && (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Membre Koinonia</span>
-                  <span className="text-sm text-ink">{req.member.firstName} {req.member.lastName}</span>
-                </div>
-              )}
-              {!req.phone && !req.email && !req.address && !req.member && (
-                <p className="text-sm text-ink-subtle italic">Aucune information de contact renseignée.</p>
-              )}
-            </div>
-          )}
+          {activeTab === "contact" && <ContactTab req={req} />}
 
           {/* Profil */}
-          {activeTab === "profil" && (
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Tranche d&apos;âge</span>
-                <span className="text-sm text-ink">{AGE_LABELS[req.ageRange] ?? req.ageRange}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Situation</span>
-                <span className="text-sm text-ink">{CHURCH_STATUS_LABELS[req.churchStatus] ?? req.churchStatus}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Appel au salut</span>
-                <span className="text-sm text-ink">
-                  {req.salvationCall ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-brand shrink-0" />Oui
-                    </span>
-                  ) : "Non"}
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Soin pastoral</span>
-                <span className="text-sm text-ink">
-                  {req.pastoralCareRequested ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-warning shrink-0" />
-                      Demandé
-                      {appointmentRequest && (
-                        <span className="text-xs text-ink-subtle ml-1">({appointmentRequest.status})</span>
-                      )}
-                    </span>
-                  ) : "Non"}
-                </span>
-              </div>
-            </div>
-          )}
+          {activeTab === "profil" && <ProfileTab req={req} appointmentRequest={appointmentRequest} />}
 
           {/* Famille */}
-          {activeTab === "famille" && (
-            <div className="space-y-3">
-              {req.suggestedFamilyName && (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Suggestion géo</span>
-                  <span className="text-sm text-ink-muted italic">{req.suggestedFamilyName}</span>
-                </div>
-              )}
-              {req.lat && req.lng && (
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                  <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Carte familles</span>
-                  <a
-                    href={`https://familles.iccrennes.fr/carte?lat=${req.lat}&lng=${req.lng}&label=${encodeURIComponent(req.address ?? [req.lat, req.lng].join(", "))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-brand-text hover:underline"
-                  >
-                    Voir sur la carte familles ↗
-                  </a>
-                </div>
-              )}
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Famille assignée</span>
-                <span className="text-sm font-medium text-brand-text">
-                  {req.assignedFamilyName ?? <span className="text-ink-subtle font-normal">—</span>}
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3">
-                <span className="text-xs text-ink-subtle sm:w-28 shrink-0">Berger</span>
-                <span className="text-sm text-ink">
-                  {req.assignedBerger?.name ?? <span className="text-ink-subtle">—</span>}
-                </span>
-              </div>
-            </div>
-          )}
+          {activeTab === "famille" && <FamilyTab req={req} />}
 
           {/* Notes */}
           {activeTab === "notes" && (
-            <div className="space-y-3">
-              {canActAsBerger ? (
-                <>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={5}
-                    placeholder="Notes visibles uniquement par l'équipe intégration…"
-                    className="w-full border border-control-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <button onClick={saveNotes} disabled={notesLoading}
-                      className="px-4 py-1.5 bg-surface-sunken hover:bg-surface-sunken text-ink-muted text-sm font-medium rounded-lg disabled:opacity-50 transition-colors">
-                      {notesLoading ? "Sauvegarde…" : "Enregistrer les notes"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-ink-muted">{req.notes || <span className="italic text-ink-subtle">Aucune note</span>}</p>
-              )}
-            </div>
+            <NotesTab
+              canEdit={canActAsBerger}
+              notes={notes}
+              savedNotes={req.notes}
+              saving={notesLoading}
+              onNotesChange={setNotes}
+              onSave={saveNotes}
+            />
           )}
 
         </div>
@@ -1207,69 +1523,27 @@ export default function RequestDetail({ request: initial, appointmentRequest, ms
       {/* ── Modals ── */}
 
       {/* Confirmation transition workflow */}
-      <Modal
-        open={pendingTransition !== null}
+      <TransitionConfirmModal
+        transition={pendingTransition}
+        loading={transitionLoading}
         onClose={() => setPendingTransition(null)}
-        title={pendingTransition?.label ?? ""}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">{pendingTransition?.description}</p>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setPendingTransition(null)}
-              className="px-4 py-2 text-sm text-ink-muted hover:text-ink"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={async () => {
-                if (!pendingTransition) return;
-                setTransitionLoading(true);
-                await patch({ action: pendingTransition.action });
-                setTransitionLoading(false);
-                setPendingTransition(null);
-              }}
-              disabled={transitionLoading}
-              className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-                pendingTransition?.variant === "danger" ? "bg-danger text-on-danger" : "bg-brand text-on-brand"
-              }`}
-            >
-              {transitionLoading ? "Enregistrement…" : "Confirmer"}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={async () => {
+          if (!pendingTransition) return;
+          setTransitionLoading(true);
+          await patch({ action: pendingTransition.action });
+          setTransitionLoading(false);
+          setPendingTransition(null);
+        }}
+      />
 
       {/* Milestone toggle */}
-      <Modal
-        open={milestoneModal !== null}
+      <MilestoneConfirmModal
+        milestone={milestoneModal}
+        personName={`${req.firstName} ${req.lastName}`}
+        loading={milestoneLoading}
         onClose={() => setMilestoneModal(null)}
-        title={milestoneModal?.currentValue ? "Désactiver le jalon" : "Activer le jalon"}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-ink-muted">
-            {milestoneModal?.currentValue
-              ? `Désactiver le jalon "${milestoneModal.label}" pour ${req.firstName} ${req.lastName} ?`
-              : `Activer le jalon "${milestoneModal?.label}" pour ${req.firstName} ${req.lastName} ?`}
-          </p>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setMilestoneModal(null)} className="px-4 py-2 text-sm text-ink-muted hover:text-ink">
-              Annuler
-            </button>
-            <button
-              onClick={confirmMilestoneToggle}
-              disabled={milestoneLoading}
-              className={`px-4 py-2 text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity ${
-                milestoneModal?.currentValue
-                  ? "border border-control-line text-ink hover:bg-surface-sunken"
-                  : "bg-brand text-on-brand"
-              }`}
-            >
-              {milestoneLoading ? "Enregistrement…" : "Confirmer"}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        onConfirm={confirmMilestoneToggle}
+      />
 
       {/* Assigner famille/berger */}
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Assigner la demande">

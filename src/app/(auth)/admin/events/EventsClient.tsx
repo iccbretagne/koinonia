@@ -80,6 +80,160 @@ function defaultMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** Filtre persisté dans le navigateur (localStorage), avec sa valeur par défaut. */
+function storedFilter(key: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return localStorage.getItem(key) ?? fallback;
+}
+
+function matchesQuery(e: EventItem, q: string) {
+  return (
+    e.title.toLowerCase().includes(q) ||
+    e.type.toLowerCase().includes(q) ||
+    e.church.name.toLowerCase().includes(q) ||
+    e.eventDepts.some((ed) => ed.department.name.toLowerCase().includes(q))
+  );
+}
+
+/** Événements du mois et de la recherche, du plus ancien au plus récent. */
+function filterEvents(events: EventItem[], monthFilter: string, searchQuery: string) {
+  let result = [...events];
+  if (monthFilter) result = result.filter((e) => localDateStr(new Date(e.date)).startsWith(monthFilter));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter((e) => matchesQuery(e, q));
+  }
+  // Sort ascending by date
+  return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+/**
+ * Champs de récurrence du formulaire : création (église + récurrence), événement d'une série
+ * (retrait de la série) ou événement isolé (ajout d'une récurrence).
+ */
+function RecurrenceFields({
+  editing,
+  churches,
+  churchId,
+  onChurchChange,
+  recurrenceRule,
+  onRuleChange,
+  recurrenceEnd,
+  onEndChange,
+  removeFromSeries,
+  onRemoveFromSeriesChange,
+}: {
+  readonly editing: EventItem | null;
+  readonly churches: Props["churches"];
+  readonly churchId: string;
+  readonly onChurchChange: (value: string) => void;
+  readonly recurrenceRule: string;
+  readonly onRuleChange: (value: string) => void;
+  readonly recurrenceEnd: string;
+  readonly onEndChange: (value: string) => void;
+  readonly removeFromSeries: boolean;
+  readonly onRemoveFromSeriesChange: (value: boolean) => void;
+}) {
+  return (
+    <>
+      {!editing && (
+        <>
+          <Select
+            label="Église"
+            value={churchId}
+            onChange={(e) => onChurchChange(e.target.value)}
+            options={churches.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <Select
+            label="Récurrence"
+            value={recurrenceRule}
+            onChange={(e) => onRuleChange(e.target.value)}
+            options={[{ value: "weekly", label: "Hebdomadaire" }, { value: "biweekly", label: "Bi-hebdomadaire" }, { value: "monthly", label: "Mensuel" }]}
+            placeholder="Aucune (événement unique)"
+          />
+          {recurrenceRule && (
+            <Input label="Fin de récurrence" type="date" value={recurrenceEnd} onChange={(e) => onEndChange(e.target.value)} required />
+          )}
+        </>
+      )}
+
+      {editing && (editing.seriesId || editing.isRecurrenceParent) && (
+        <div className="rounded-lg border border-warning/30 bg-warning-soft p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-warning uppercase tracking-wide">Récurrence</span>
+            {editing.recurrenceRule && (
+              <span className="text-xs bg-warning-soft text-warning px-2 py-0.5 rounded-full font-medium">
+                {RECURRENCE_LABELS[editing.recurrenceRule] ?? editing.recurrenceRule}
+              </span>
+            )}
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={removeFromSeries}
+              onChange={(e) => onRemoveFromSeriesChange(e.target.checked)}
+              className="h-4 w-4 rounded border-control-line text-danger focus:ring-danger"
+            />
+            <span className="text-sm text-ink-muted">Retirer cet événement de la série (le rendre indépendant)</span>
+          </label>
+        </div>
+      )}
+
+      {editing && !editing.seriesId && !editing.isRecurrenceParent && (
+        <div className="space-y-3">
+          <Select
+            label="Ajouter une récurrence"
+            value={recurrenceRule}
+            onChange={(e) => onRuleChange(e.target.value)}
+            options={[{ value: "weekly", label: "Hebdomadaire" }, { value: "biweekly", label: "Bi-hebdomadaire" }, { value: "monthly", label: "Mensuel" }]}
+            placeholder="Aucune (événement unique)"
+          />
+          {recurrenceRule && (
+            <Input label="Fin de récurrence" type="date" value={recurrenceEnd} onChange={(e) => onEndChange(e.target.value)} required />
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Choix de portée d'une modification dans une série : cet événement seul ou toute la série. */
+function SeriesScopeChoice({
+  seriesCount,
+  error,
+  loading,
+  onChoose,
+  onBack,
+}: {
+  readonly seriesCount: number;
+  readonly error: string;
+  readonly loading: boolean;
+  readonly onChoose: (wholeSeries: boolean) => void;
+  readonly onBack: () => void;
+}) {
+  return (
+    <div>
+      <p className="text-sm text-ink-muted mb-6">
+        Cet événement fait partie d&apos;une série de{" "}
+        <span className="font-semibold">{seriesCount} événement(s)</span>.
+        Que souhaitez-vous modifier ?
+      </p>
+      {error && <p className="text-sm text-danger mb-4">{error}</p>}
+      <div className="flex flex-col gap-3">
+        <Button onClick={() => onChoose(false)} disabled={loading} variant="secondary">
+          {loading ? "Enregistrement..." : "Cet événement seul"}
+        </Button>
+        <Button onClick={() => onChoose(true)} disabled={loading}>
+          {loading ? "Enregistrement..." : `Toute la série (${seriesCount} événements)`}
+        </Button>
+        <button type="button" onClick={onBack} className="text-sm text-ink-muted hover:text-ink-muted underline mt-1">
+          Retour au formulaire
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function EventsClient({ initialEvents, churches }: Props) {
   const [events, setEvents] = useState(initialEvents);
   const [modalOpen, setModalOpen] = useState(false);
@@ -112,35 +266,13 @@ export default function EventsClient({ initialEvents, churches }: Props) {
   const [seriesCount, setSeriesCount] = useState(0);
 
   // Persisted filters via localStorage
-  const [monthFilter, setMonthFilter] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("eventsMonthFilter") ?? defaultMonth();
-    }
-    return defaultMonth();
-  });
-  const [searchQuery, setSearchQuery] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("eventsSearchQuery") ?? "";
-    }
-    return "";
-  });
+  const [monthFilter, setMonthFilter] = useState<string>(() => storedFilter("eventsMonthFilter", defaultMonth()));
+  const [searchQuery, setSearchQuery] = useState<string>(() => storedFilter("eventsSearchQuery", ""));
 
-  const filteredEvents = useMemo(() => {
-    let result = [...events];
-    if (monthFilter) result = result.filter((e) => localDateStr(new Date(e.date)).startsWith(monthFilter));
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.type.toLowerCase().includes(q) ||
-          e.church.name.toLowerCase().includes(q) ||
-          e.eventDepts.some((ed) => ed.department.name.toLowerCase().includes(q))
-      );
-    }
-    // Sort ascending by date
-    return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [events, monthFilter, searchQuery]);
+  const filteredEvents = useMemo(
+    () => filterEvents(events, monthFilter, searchQuery),
+    [events, monthFilter, searchQuery]
+  );
 
   function getSeriesCount(ev: EventItem): number {
     const parentId = ev.isRecurrenceParent ? ev.id : ev.seriesId;
@@ -462,25 +594,13 @@ export default function EventsClient({ initialEvents, churches }: Props) {
         title={modalTitle}
       >
         {seriesStep ? (
-          <div>
-            <p className="text-sm text-ink-muted mb-6">
-              Cet événement fait partie d&apos;une série de{" "}
-              <span className="font-semibold">{seriesCount} événement(s)</span>.
-              Que souhaitez-vous modifier ?
-            </p>
-            {error && <p className="text-sm text-danger mb-4">{error}</p>}
-            <div className="flex flex-col gap-3">
-              <Button onClick={() => doSubmit(false)} disabled={loading} variant="secondary">
-                {loading ? "Enregistrement..." : "Cet événement seul"}
-              </Button>
-              <Button onClick={() => doSubmit(true)} disabled={loading}>
-                {loading ? "Enregistrement..." : `Toute la série (${seriesCount} événements)`}
-              </Button>
-              <button type="button" onClick={() => setSeriesStep(false)} className="text-sm text-ink-muted hover:text-ink-muted underline mt-1">
-                Retour au formulaire
-              </button>
-            </div>
-          </div>
+          <SeriesScopeChoice
+            seriesCount={seriesCount}
+            error={error}
+            loading={loading}
+            onChoose={doSubmit}
+            onBack={() => setSeriesStep(false)}
+          />
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input label="Titre" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -514,63 +634,18 @@ export default function EventsClient({ initialEvents, churches }: Props) {
             />
 
             {/* Récurrence */}
-            {!editing && (
-              <>
-                <Select
-                  label="Église"
-                  value={churchId}
-                  onChange={(e) => setChurchId(e.target.value)}
-                  options={churches.map((c) => ({ value: c.id, label: c.name }))}
-                />
-                <Select
-                  label="Récurrence"
-                  value={recurrenceRule}
-                  onChange={(e) => setRecurrenceRule(e.target.value)}
-                  options={[{ value: "weekly", label: "Hebdomadaire" }, { value: "biweekly", label: "Bi-hebdomadaire" }, { value: "monthly", label: "Mensuel" }]}
-                  placeholder="Aucune (événement unique)"
-                />
-                {recurrenceRule && (
-                  <Input label="Fin de récurrence" type="date" value={recurrenceEnd} onChange={(e) => setRecurrenceEnd(e.target.value)} required />
-                )}
-              </>
-            )}
-
-            {editing && (editing.seriesId || editing.isRecurrenceParent) && (
-              <div className="rounded-lg border border-warning/30 bg-warning-soft p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-warning uppercase tracking-wide">Récurrence</span>
-                  {editing.recurrenceRule && (
-                    <span className="text-xs bg-warning-soft text-warning px-2 py-0.5 rounded-full font-medium">
-                      {RECURRENCE_LABELS[editing.recurrenceRule] ?? editing.recurrenceRule}
-                    </span>
-                  )}
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={removeFromSeries}
-                    onChange={(e) => setRemoveFromSeries(e.target.checked)}
-                    className="h-4 w-4 rounded border-control-line text-danger focus:ring-danger"
-                  />
-                  <span className="text-sm text-ink-muted">Retirer cet événement de la série (le rendre indépendant)</span>
-                </label>
-              </div>
-            )}
-
-            {editing && !editing.seriesId && !editing.isRecurrenceParent && (
-              <div className="space-y-3">
-                <Select
-                  label="Ajouter une récurrence"
-                  value={recurrenceRule}
-                  onChange={(e) => setRecurrenceRule(e.target.value)}
-                  options={[{ value: "weekly", label: "Hebdomadaire" }, { value: "biweekly", label: "Bi-hebdomadaire" }, { value: "monthly", label: "Mensuel" }]}
-                  placeholder="Aucune (événement unique)"
-                />
-                {recurrenceRule && (
-                  <Input label="Fin de récurrence" type="date" value={recurrenceEnd} onChange={(e) => setRecurrenceEnd(e.target.value)} required />
-                )}
-              </div>
-            )}
+            <RecurrenceFields
+              editing={editing}
+              churches={churches}
+              churchId={churchId}
+              onChurchChange={setChurchId}
+              recurrenceRule={recurrenceRule}
+              onRuleChange={setRecurrenceRule}
+              recurrenceEnd={recurrenceEnd}
+              onEndChange={setRecurrenceEnd}
+              removeFromSeries={removeFromSeries}
+              onRemoveFromSeriesChange={setRemoveFromSeries}
+            />
 
             {error && <p className="text-sm text-danger">{error}</p>}
             <div className="flex justify-end gap-2">
