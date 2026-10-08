@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { buttonClasses } from "@/components/ui/button-classes";
+import { changeJobStatus } from "../job-status";
 type Author = { id: string; name: string | null; displayName: string | null; image: string | null };
 
 type MissionStatus = "ACTIVE" | "FILLED" | "ARCHIVED";
@@ -109,19 +110,7 @@ function MissionCard({ mission, canManage }: { readonly mission: Mission; readon
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setLoading(true);
-    try {
-      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
-      const res = await fetch(`/api/jobs/freelance/missions/${mission.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/freelance/missions/${mission.id}`, isArchived ? "ACTIVE" : "ARCHIVED", { setLoading, refresh: () => router.refresh() });
   }
 
   return (
@@ -183,19 +172,7 @@ function FreelanceProfileCard({ profile, canManage }: { readonly profile: Freela
   async function toggleStatus(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    setLoading(true);
-    try {
-      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
-      const res = await fetch(`/api/jobs/freelance/profiles/${profile.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/freelance/profiles/${profile.id}`, isArchived ? "ACTIVE" : "ARCHIVED", { setLoading, refresh: () => router.refresh() });
   }
 
   return (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { changeJobStatus } from "../../../job-status";
 
 interface Mission {
   id: string;
@@ -44,34 +45,11 @@ export default function MissionDetailClient({
   const toggleLabel = isArchived ? "Republier" : "Archiver";
 
   async function markFilled() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/jobs/freelance/missions/${mission.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "FILLED" }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/freelance/missions/${mission.id}`, "FILLED", { setLoading, refresh: () => router.refresh() });
   }
 
   async function toggleArchive() {
-    setLoading(true);
-    try {
-      const newStatus = isArchived ? "ACTIVE" : "ARCHIVED";
-      const res = await fetch(`/api/jobs/freelance/missions/${mission.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) { const d = await res.json(); alert(d.error || "Erreur"); return; }
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
+    await changeJobStatus(`/api/jobs/freelance/missions/${mission.id}`, isArchived ? "ACTIVE" : "ARCHIVED", { setLoading, refresh: () => router.refresh() });
   }
 
   async function handleDelete() {

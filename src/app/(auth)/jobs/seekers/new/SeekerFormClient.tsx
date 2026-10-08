@@ -1,7 +1,12 @@
 "use client";
 
-import { SubmitEvent, useId, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
+import Alert from "@/components/ui/Alert";
+import JobFormActions from "../../JobFormActions";
+import JobContactFields from "../../JobContactFields";
 
 interface SeekerInitial {
   id: string;
@@ -26,7 +31,6 @@ export default function SeekerFormClient({
   readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
-  const uid = useId();
   const isEdit = !!initial;
   const submitLabel = isEdit ? "Enregistrer" : "Publier mon profil";
 
@@ -90,23 +94,19 @@ export default function SeekerFormClient({
   return (
     <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
       {error && (
-        <div className="bg-danger-soft text-danger text-sm px-4 py-3 rounded-lg">{error}</div>
+        <Alert tone="danger">{error}</Alert>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label htmlFor={`${uid}-title`} className="block text-sm font-semibold text-ink-muted mb-1.5">
-            Titre de la recherche *
-          </label>
-          <input
-            id={`${uid}-title`}
+          <Input
+            label="Titre de la recherche *"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
             maxLength={200}
             placeholder="Ex: Développeur React en recherche de CDI"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
           />
         </div>
 
@@ -136,31 +136,23 @@ export default function SeekerFormClient({
           )}
         </fieldset>
 
-        <div>
-          <label htmlFor={`${uid}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Secteur / Domaine</label>
-          <input
-            id={`${uid}-f1`}
-            type="text"
-            value={sector}
-            onChange={(e) => setSector(e.target.value)}
-            maxLength={150}
-            placeholder="Ex: Informatique, Finance, RH..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <Input
+          label="Secteur / Domaine"
+          type="text"
+          value={sector}
+          onChange={(e) => setSector(e.target.value)}
+          maxLength={150}
+          placeholder="Ex: Informatique, Finance, RH..."
+        />
 
-        <div>
-          <label htmlFor={`${uid}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation souhaitée</label>
-          <input
-            id={`${uid}-f2`}
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            maxLength={150}
-            placeholder="Ville, région..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <Input
+          label="Localisation souhaitée"
+          type="text"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          maxLength={150}
+          placeholder="Ville, région..."
+        />
 
         <div className="flex items-center gap-3">
           <input
@@ -175,71 +167,35 @@ export default function SeekerFormClient({
           </label>
         </div>
 
-        <div>
-          <label htmlFor={`${uid}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
-          <input
-            id={`${uid}-f3`}
-            type="date"
-            value={availableFrom}
-            onChange={(e) => setAvailableFrom(e.target.value)}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <Input
+          label="Disponible à partir du"
+          type="date"
+          value={availableFrom}
+          onChange={(e) => setAvailableFrom(e.target.value)}
+        />
 
         <div className="col-span-2">
-          <label htmlFor={`${uid}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
-          <textarea
-            id={`${uid}-f4`}
+          <Textarea
+            label="Présentation *"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={6}
             placeholder="Présentez votre profil, vos compétences, vos expériences et ce que vous recherchez..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand resize-y"
           />
         </div>
 
-        <div>
-          <label htmlFor={`${uid}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
-          <input
-            id={`${uid}-f5`}
-            type="email"
-            value={contactEmail}
-            onChange={(e) => setContactEmail(e.target.value)}
-            placeholder="votre@email.fr"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
-
-        <div>
-          <label htmlFor={`${uid}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
-          <input
-            id={`${uid}-f6`}
-            type="url"
-            value={contactUrl}
-            onChange={(e) => setContactUrl(e.target.value)}
-            placeholder="https://linkedin.com/in/..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <JobContactFields
+          email={contactEmail}
+          onEmailChange={setContactEmail}
+          urlPlaceholder="https://linkedin.com/in/..."
+          url={contactUrl}
+          onUrlChange={setContactUrl}
+          urlLabel="LinkedIn / Portfolio"
+        />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
-        >
-          {saving ? "Publication…" : submitLabel}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="px-5 py-2 border border-line text-ink-muted text-sm font-semibold rounded-lg hover:bg-surface-sunken transition-colors"
-        >
-          Annuler
-        </button>
-      </div>
+      <JobFormActions saving={saving} label={saving ? "Publication…" : submitLabel} />
     </form>
   );
 }

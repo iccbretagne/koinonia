@@ -1,7 +1,14 @@
 "use client";
 
-import { SubmitEvent, useId, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
+import Select from "@/components/ui/Select";
+import Alert from "@/components/ui/Alert";
+import JobFormActions from "../../../JobFormActions";
+import FreelanceRateFields from "../../FreelanceRateFields";
+import JobContactFields from "../../../JobContactFields";
 
 type Modality = "REMOTE" | "ONSITE" | "HYBRID";
 
@@ -27,7 +34,6 @@ export default function FreelanceProfileFormClient({
   readonly defaultEmail?: string | null;
 }) {
   const router = useRouter();
-  const uid = useId();
   const isEdit = !!initial;
   const submitLabel = isEdit ? "Enregistrer" : "Publier mon profil freelance";
 
@@ -83,158 +89,83 @@ export default function FreelanceProfileFormClient({
   return (
     <form onSubmit={handleSubmit} className="bg-surface rounded-lg border border-line p-6 space-y-5">
       {error && (
-        <div className="bg-danger-soft text-danger text-sm px-4 py-3 rounded-lg">{error}</div>
+        <Alert tone="danger">{error}</Alert>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label htmlFor={`${uid}-f1`} className="block text-sm font-semibold text-ink-muted mb-1.5">Titre *</label>
-          <input
-            id={`${uid}-f1`}
+          <Input
+            label="Titre *"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
             maxLength={200}
             placeholder="Ex: Développeur React disponible pour missions"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
           />
         </div>
 
         <div className="col-span-2">
-          <label htmlFor={`${uid}-f2`} className="block text-sm font-semibold text-ink-muted mb-1.5">Domaine / Stack technique *</label>
-          <input
-            id={`${uid}-f2`}
+          <Input
+            label="Domaine / Stack technique *"
             type="text"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             required
             maxLength={150}
             placeholder="Ex: Développement web, Design, Comptabilité..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
           />
         </div>
 
-        <div>
-          <label htmlFor={`${uid}-f3`} className="block text-sm font-semibold text-ink-muted mb-1.5">Modalité *</label>
-          <select
-            id={`${uid}-f3`}
-            value={modality}
-            onChange={(e) => setModality(e.target.value as Modality)}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          >
-            <option value="REMOTE">Full remote</option>
-            <option value="ONSITE">Présentiel</option>
-            <option value="HYBRID">Hybride</option>
-          </select>
-        </div>
+        <Select
+          label="Modalité *"
+          value={modality}
+          onChange={(e) => setModality(e.target.value as Modality)}
+          options={[
+            { value: "REMOTE", label: "Full remote" },
+            { value: "ONSITE", label: "Présentiel" },
+            { value: "HYBRID", label: "Hybride" },
+          ]}
+        />
 
-        <div>
-          <label htmlFor={`${uid}-f4`} className="block text-sm font-semibold text-ink-muted mb-1.5">Disponible à partir du</label>
-          <input
-            id={`${uid}-f4`}
-            type="date"
-            value={availableFrom}
-            onChange={(e) => setAvailableFrom(e.target.value)}
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <Input
+          label="Disponible à partir du"
+          type="date"
+          value={availableFrom}
+          onChange={(e) => setAvailableFrom(e.target.value)}
+        />
 
-        <div>
-          <label htmlFor={`${uid}-f5`} className="block text-sm font-semibold text-ink-muted mb-1.5">TJM (taux journalier)</label>
-          <input
-            id={`${uid}-f5`}
-            type="text"
-            value={dailyRate}
-            onChange={(e) => setDailyRate(e.target.value)}
-            maxLength={100}
-            placeholder="Ex: 400€, 300-500€, à définir"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
-
-        <div>
-          <label htmlFor={`${uid}-f6`} className="block text-sm font-semibold text-ink-muted mb-1.5">Taux horaire</label>
-          <input
-            id={`${uid}-f6`}
-            type="text"
-            value={hourlyRate}
-            onChange={(e) => setHourlyRate(e.target.value)}
-            maxLength={100}
-            placeholder="Ex: 50€, 40-60€"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
-
-        {modality !== "REMOTE" && (
-          <div className="col-span-2">
-            <label htmlFor={`${uid}-f7`} className="block text-sm font-semibold text-ink-muted mb-1.5">Localisation</label>
-            <input
-              id={`${uid}-f7`}
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              maxLength={150}
-              placeholder="Ville, région..."
-              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-            />
-          </div>
-        )}
+        <FreelanceRateFields
+          dailyRate={dailyRate}
+          onDailyRateChange={setDailyRate}
+          hourlyRate={hourlyRate}
+          onHourlyRateChange={setHourlyRate}
+          remote={modality === "REMOTE"}
+          location={location}
+          onLocationChange={setLocation}
+        />
 
         <div className="col-span-2">
-          <label htmlFor={`${uid}-f8`} className="block text-sm font-semibold text-ink-muted mb-1.5">Présentation *</label>
-          <textarea
-            id={`${uid}-f8`}
+          <Textarea
+            label="Présentation *"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={6}
             placeholder="Présentez vos compétences, expériences et ce que vous proposez..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand resize-y"
           />
         </div>
 
-        <div>
-          <label htmlFor={`${uid}-f9`} className="block text-sm font-semibold text-ink-muted mb-1.5">Email de contact</label>
-          <input
-            id={`${uid}-f9`}
-            type="email"
-            value={contactEmail}
-            onChange={(e) => setContactEmail(e.target.value)}
-            placeholder="votre@email.fr"
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
-
-        <div>
-          <label htmlFor={`${uid}-f10`} className="block text-sm font-semibold text-ink-muted mb-1.5">LinkedIn / Portfolio</label>
-          <input
-            id={`${uid}-f10`}
-            type="url"
-            value={contactUrl}
-            onChange={(e) => setContactUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-focus/40 focus:border-brand"
-          />
-        </div>
+        <JobContactFields
+          email={contactEmail}
+          onEmailChange={setContactEmail}
+          url={contactUrl}
+          onUrlChange={setContactUrl}
+          urlLabel="LinkedIn / Portfolio"
+        />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
-        >
-          {saving ? "Publication…" : submitLabel}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="px-5 py-2 border border-line text-ink-muted text-sm font-semibold rounded-lg hover:bg-surface-sunken transition-colors"
-        >
-          Annuler
-        </button>
-      </div>
+      <JobFormActions saving={saving} label={saving ? "Publication…" : submitLabel} />
     </form>
   );
 }
