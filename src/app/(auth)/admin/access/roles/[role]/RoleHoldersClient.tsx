@@ -137,84 +137,94 @@ export default function RoleHoldersClient({ churchId, role, label, description, 
     }
   }
 
+  /** Ministre : change le ministère du titulaire existant, sinon lui attribue le rôle. */
+  async function submitMinister(selection: ResponsibilitySelection) {
+    const ministry = ministries.find((m) => m.id === selection.targetId);
+    const existingForUser = holders.find((h) => h.user.id === selection.userId);
+    if (existingForUser) {
+      const res = await fetch(`/api/users/${selection.userId}/roles`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId: existingForUser.roleId, ministryId: selection.targetId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      setHolders((prev) =>
+        prev.map((h) =>
+          h.roleId === existingForUser.roleId ? { ...h, ministryId: selection.targetId, ministryName: ministry?.name ?? null } : h
+        )
+      );
+    } else {
+      const res = await fetch(`/api/users/${selection.userId}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId, role: "MINISTER", ministryId: selection.targetId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      const data = await res.json();
+      const user = addableUsers.find((u) => u.id === selection.userId);
+      setHolders((prev) => [
+        ...prev,
+        {
+          roleId: data.id,
+          user: { id: selection.userId, name: user?.name ?? "", email: "", image: null },
+          ministryId: selection.targetId,
+          ministryName: ministry?.name ?? null,
+          departments: [],
+        },
+      ]);
+    }
+  }
+
+  /** Resp. département : ajoute le département au titulaire existant, sinon lui attribue le rôle. */
+  async function submitDepartmentHead(selection: ResponsibilitySelection) {
+    const dept = ministries.flatMap((m) => m.departments).find((d) => d.id === selection.targetId);
+    const existingForUser = holders.find((h) => h.user.id === selection.userId);
+    const newEntry = { id: selection.targetId, isDeputy: selection.isDeputy };
+    if (existingForUser) {
+      const merged = [
+        ...existingForUser.departments.filter((d) => d.id !== selection.targetId).map((d) => ({ id: d.id, isDeputy: d.isDeputy })),
+        newEntry,
+      ];
+      const res = await fetch(`/api/users/${selection.userId}/roles`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId: existingForUser.roleId, departments: merged }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      setHolders((prev) =>
+        prev.map((h) =>
+          h.roleId === existingForUser.roleId
+            ? { ...h, departments: merged.map((d) => ({ id: d.id, isDeputy: d.isDeputy, name: dept?.name ?? "" })) }
+            : h
+        )
+      );
+    } else {
+      const res = await fetch(`/api/users/${selection.userId}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD", departments: [newEntry] }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      const data = await res.json();
+      const user = addableUsers.find((u) => u.id === selection.userId);
+      setHolders((prev) => [
+        ...prev,
+        {
+          roleId: data.id,
+          user: { id: selection.userId, name: user?.name ?? "", email: "", image: null },
+          ministryId: null,
+          ministryName: null,
+          departments: [{ id: selection.targetId, isDeputy: selection.isDeputy, name: dept?.name ?? "" }],
+        },
+      ]);
+    }
+  }
+
   async function handleResponsibilitySubmit(selection: ResponsibilitySelection) {
     if (role === "MINISTER") {
-      const ministry = ministries.find((m) => m.id === selection.targetId);
-      const existingForUser = holders.find((h) => h.user.id === selection.userId);
-      if (existingForUser) {
-        const res = await fetch(`/api/users/${selection.userId}/roles`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roleId: existingForUser.roleId, ministryId: selection.targetId }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        setHolders((prev) =>
-          prev.map((h) =>
-            h.roleId === existingForUser.roleId ? { ...h, ministryId: selection.targetId, ministryName: ministry?.name ?? null } : h
-          )
-        );
-      } else {
-        const res = await fetch(`/api/users/${selection.userId}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "MINISTER", ministryId: selection.targetId }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        const data = await res.json();
-        const user = addableUsers.find((u) => u.id === selection.userId);
-        setHolders((prev) => [
-          ...prev,
-          {
-            roleId: data.id,
-            user: { id: selection.userId, name: user?.name ?? "", email: "", image: null },
-            ministryId: selection.targetId,
-            ministryName: ministry?.name ?? null,
-            departments: [],
-          },
-        ]);
-      }
+      await submitMinister(selection);
     } else {
-      const dept = ministries.flatMap((m) => m.departments).find((d) => d.id === selection.targetId);
-      const existingForUser = holders.find((h) => h.user.id === selection.userId);
-      const newEntry = { id: selection.targetId, isDeputy: selection.isDeputy };
-      if (existingForUser) {
-        const merged = [
-          ...existingForUser.departments.filter((d) => d.id !== selection.targetId).map((d) => ({ id: d.id, isDeputy: d.isDeputy })),
-          newEntry,
-        ];
-        const res = await fetch(`/api/users/${selection.userId}/roles`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roleId: existingForUser.roleId, departments: merged }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        setHolders((prev) =>
-          prev.map((h) =>
-            h.roleId === existingForUser.roleId
-              ? { ...h, departments: merged.map((d) => ({ id: d.id, isDeputy: d.isDeputy, name: dept?.name ?? "" })) }
-              : h
-          )
-        );
-      } else {
-        const res = await fetch(`/api/users/${selection.userId}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD", departments: [newEntry] }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        const data = await res.json();
-        const user = addableUsers.find((u) => u.id === selection.userId);
-        setHolders((prev) => [
-          ...prev,
-          {
-            roleId: data.id,
-            user: { id: selection.userId, name: user?.name ?? "", email: "", image: null },
-            ministryId: null,
-            ministryName: null,
-            departments: [{ id: selection.targetId, isDeputy: selection.isDeputy, name: dept?.name ?? "" }],
-          },
-        ]);
-      }
+      await submitDepartmentHead(selection);
     }
     setModal(null);
     router.refresh();

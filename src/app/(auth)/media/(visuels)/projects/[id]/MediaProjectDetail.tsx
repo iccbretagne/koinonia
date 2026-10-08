@@ -1016,6 +1016,108 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 
+/** Liste vide : projet sans fichier, ou filtres sans résultat (avec réinitialisation). */
+function NoFiles({
+  projectEmpty,
+  filtered,
+  onReset,
+}: {
+  readonly projectEmpty: boolean;
+  readonly filtered: boolean;
+  readonly onReset: () => void;
+}) {
+  return (
+    <div className="text-center py-16 text-ink-subtle">
+      <svg className="w-12 h-12 text-ink-subtle mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+      <p className="text-sm text-ink-subtle">
+        {projectEmpty ? "Aucun fichier dans ce projet" : "Aucun résultat pour ces filtres"}
+      </p>
+      {filtered && (
+        <button
+          onClick={onReset}
+          className="mt-2 text-xs text-brand-text hover:underline"
+        >
+          Réinitialiser les filtres
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Barre de progression : fichiers acceptés (validés ou approuvés), puis refusés. */
+function ValidationProgress({
+  total,
+  accepted,
+  refused,
+  progressPct,
+}: {
+  readonly total: number;
+  readonly accepted: number;
+  readonly refused: number;
+  readonly progressPct: number;
+}) {
+  return (
+    <div className="px-5 pb-4">
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-xs text-ink-muted">Progression de la validation</p>
+        <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
+      </div>
+      <div className="h-2 bg-surface-sunken rounded-full overflow-hidden flex">
+        <div
+          className="h-full bg-success transition-all duration-500"
+          style={{ width: `${total > 0 ? (accepted / total) * 100 : 0}%` }}
+        />
+        <div
+          className="h-full bg-danger transition-all duration-500"
+          style={{ width: `${total > 0 ? (refused / total) * 100 : 0}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+const plural = (n: number) => (n > 1 ? "s" : "");
+
+/** Pastilles de décompte par statut de fichier (seuls les statuts présents sont affichés). */
+function StatusCountPills({
+  counts,
+}: {
+  readonly counts: {
+    inReview: number;
+    revision: number;
+    prevalidated: number;
+    prerejected: number;
+    approved: number;
+    finalApproved: number;
+    rejected: number;
+  };
+}) {
+  const pills = [
+    { key: "inReview", count: counts.inReview, bg: "bg-brand-soft", border: "border-brand/30", dot: "bg-brand", text: "text-brand-text", label: "en révision" },
+    { key: "revision", count: counts.revision, bg: "bg-warning-soft", border: "border-warning/30", dot: "bg-warning", text: "text-warning", label: "révision demandée" },
+    { key: "prevalidated", count: counts.prevalidated, bg: "bg-info-soft", border: "border-info/30", dot: "bg-info", text: "text-info", label: `pré-validé${plural(counts.prevalidated)}` },
+    { key: "prerejected", count: counts.prerejected, bg: "bg-warning-soft", border: "border-warning/30", dot: "bg-warning", text: "text-warning", label: `pré-rejeté${plural(counts.prerejected)}` },
+    { key: "approved", count: counts.approved, bg: "bg-success-soft", border: "border-success/30", dot: "bg-success", text: "text-success", label: `approuvé${plural(counts.approved)}` },
+    { key: "finalApproved", count: counts.finalApproved, bg: "bg-success-soft", border: "border-success/30", dot: "bg-success", text: "text-success", label: `validé${plural(counts.finalApproved)} final` },
+    { key: "rejected", count: counts.rejected, bg: "bg-danger-soft", border: "border-danger/30", dot: "bg-danger", text: "text-danger", label: `rejeté${plural(counts.rejected)}` },
+  ];
+  return (
+    <>
+      {pills
+        .filter((p) => p.count > 0)
+        .map((p) => (
+          <div key={p.key} className={`flex items-center gap-1.5 ${p.bg} border ${p.border} rounded-lg px-3 py-1.5`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${p.dot} shrink-0`} />
+            <span className={`text-xs font-semibold ${p.text}`}>{p.count}</span>
+            <span className={`text-xs ${p.text}`}>{p.label}</span>
+          </div>
+        ))}
+    </>
+  );
+}
+
 export default function MediaProjectDetail({
   project: initialProject,
   thumbnailUrls: initialThumbnailUrls,
@@ -1178,76 +1280,28 @@ export default function MediaProjectDetail({
                 <span className="text-xs font-semibold text-ink-muted">{allFiles.length}</span>
                 <span className="text-xs text-ink-muted">fichier{allFiles.length !== 1 ? "s" : ""}</span>
               </div>
-              {inReviewCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-brand-soft border border-brand/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
-                  <span className="text-xs font-semibold text-brand-text">{inReviewCount}</span>
-                  <span className="text-xs text-brand-text">en révision</span>
-                </div>
-              )}
-              {revisionCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                  <span className="text-xs font-semibold text-warning">{revisionCount}</span>
-                  <span className="text-xs text-warning">révision demandée</span>
-                </div>
-              )}
-              {prevalidatedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-info-soft border border-info/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-info shrink-0" />
-                  <span className="text-xs font-semibold text-info">{prevalidatedCount}</span>
-                  <span className="text-xs text-info">pré-validé{prevalidatedCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {prerejectedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                  <span className="text-xs font-semibold text-warning">{prerejectedCount}</span>
-                  <span className="text-xs text-warning">pré-rejeté{prerejectedCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {approvedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-                  <span className="text-xs font-semibold text-success">{approvedCount}</span>
-                  <span className="text-xs text-success">approuvé{approvedCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
-              {finalApprovedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-                  <span className="text-xs font-semibold text-success">{finalApprovedCount}</span>
-                  <span className="text-xs text-success">validé{finalApprovedCount > 1 ? "s" : ""} final</span>
-                </div>
-              )}
-              {rejectedCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 rounded-lg px-3 py-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
-                  <span className="text-xs font-semibold text-danger">{rejectedCount}</span>
-                  <span className="text-xs text-danger">rejeté{rejectedCount > 1 ? "s" : ""}</span>
-                </div>
-              )}
+              <StatusCountPills
+                counts={{
+                  inReview: inReviewCount,
+                  revision: revisionCount,
+                  prevalidated: prevalidatedCount,
+                  prerejected: prerejectedCount,
+                  approved: approvedCount,
+                  finalApproved: finalApprovedCount,
+                  rejected: rejectedCount,
+                }}
+              />
             </div>
           </div>
 
           {/* Barre de progression */}
           {allFiles.length > 0 && (
-            <div className="px-5 pb-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-xs text-ink-muted">Progression de la validation</p>
-                <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
-              </div>
-              <div className="h-2 bg-surface-sunken rounded-full overflow-hidden flex">
-                <div
-                  className="h-full bg-success transition-all duration-500"
-                  style={{ width: `${allFiles.length > 0 ? ((finalApprovedCount + approvedCount) / allFiles.length) * 100 : 0}%` }}
-                />
-                <div
-                  className="h-full bg-danger transition-all duration-500"
-                  style={{ width: `${allFiles.length > 0 ? ((rejectedCount + prerejectedCount) / allFiles.length) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
+            <ValidationProgress
+              total={allFiles.length}
+              accepted={finalApprovedCount + approvedCount}
+              refused={rejectedCount + prerejectedCount}
+              progressPct={progressPct}
+            />
           )}
         </div>
 
@@ -1350,22 +1404,11 @@ export default function MediaProjectDetail({
           {/* Grille fichiers */}
           <div className="p-4">
             {filteredFiles.length === 0 ? (
-              <div className="text-center py-16 text-ink-subtle">
-                <svg className="w-12 h-12 text-ink-subtle mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.069A1 1 0 0121 8.882v6.236a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <p className="text-sm text-ink-subtle">
-                  {allFiles.length === 0 ? "Aucun fichier dans ce projet" : "Aucun résultat pour ces filtres"}
-                </p>
-                {(statusFilter || typeFilter) && (
-                  <button
-                    onClick={() => { setStatusFilter(""); setTypeFilter(""); }}
-                    className="mt-2 text-xs text-brand-text hover:underline"
-                  >
-                    Réinitialiser les filtres
-                  </button>
-                )}
-              </div>
+              <NoFiles
+                projectEmpty={allFiles.length === 0}
+                filtered={Boolean(statusFilter || typeFilter)}
+                onReset={() => { setStatusFilter(""); setTypeFilter(""); }}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filteredFiles.map((file) => {

@@ -601,6 +601,111 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
 
 type PlanningEventOption = { id: string; title: string; type: string; date: string };
 
+/** Bandeau d'activité : progression de l'upload, ou suppression en cours. */
+function ActivityBanner({ uploadProgress }: { readonly uploadProgress: { done: number; total: number } | null }) {
+  return (
+    <div className="px-5 py-2 border-b border-line bg-warning-soft flex items-center gap-3">
+      <div className="w-3.5 h-3.5 border-2 border-warning border-t-transparent rounded-full animate-spin shrink-0" />
+      {uploadProgress ? (
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-medium text-warning">
+              Upload en cours · {uploadProgress.done}/{uploadProgress.total} photo{uploadProgress.total > 1 ? "s" : ""}
+            </span>
+            <span className="text-xs text-warning">{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
+          </div>
+          <div className="h-1 bg-warning-soft rounded-full overflow-hidden">
+            <div
+              className="h-full bg-warning transition-all duration-300"
+              style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <span className="text-xs font-medium text-warning">Suppression en cours…</span>
+      )}
+    </div>
+  );
+}
+
+/** Pastilles de décompte : total, en attente, approuvées, rejetées. */
+function PhotoStatPills({
+  total,
+  pending,
+  approved,
+  rejected,
+}: {
+  readonly total: number;
+  readonly pending: number;
+  readonly approved: number;
+  readonly rejected: number;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2 mt-4">
+      <div className="flex items-center gap-1.5 bg-surface-sunken border border-line rounded-lg px-3 py-1.5">
+        <svg className="w-3.5 h-3.5 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span className="text-xs font-semibold text-ink-muted">{total}</span>
+        <span className="text-xs text-ink-muted">photo{total !== 1 ? "s" : ""}</span>
+      </div>
+      {pending > 0 && (
+        <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+          <span className="text-xs font-semibold text-warning">{pending}</span>
+          <span className="text-xs text-warning">en attente</span>
+        </div>
+      )}
+      {approved > 0 && (
+        <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
+          <span className="text-xs font-semibold text-success">{approved}</span>
+          <span className="text-xs text-success">approuvée{approved > 1 ? "s" : ""}</span>
+        </div>
+      )}
+      {rejected > 0 && (
+        <div className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 rounded-lg px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+          <span className="text-xs font-semibold text-danger">{rejected}</span>
+          <span className="text-xs text-danger">rejetée{rejected > 1 ? "s" : ""}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Barre de progression de la validation (approuvées puis rejetées). */
+function ValidationProgress({
+  total,
+  approved,
+  rejected,
+  progressPct,
+}: {
+  readonly total: number;
+  readonly approved: number;
+  readonly rejected: number;
+  readonly progressPct: number;
+}) {
+  return (
+    <div className="px-5 pb-4">
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-xs text-ink-muted">Progression de la validation</p>
+        <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
+      </div>
+      <div className="h-2 bg-surface-sunken rounded-full overflow-hidden flex">
+        <div
+          className="h-full bg-success transition-all duration-500"
+          style={{ width: `${total > 0 ? (approved / total) * 100 : 0}%` }}
+        />
+        <div
+          className="h-full bg-danger transition-all duration-500"
+          style={{ width: `${total > 0 ? (rejected / total) * 100 : 0}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function MediaEventDetail({
   event: initialEvent,
   churchId,
@@ -859,56 +964,12 @@ export default function MediaEventDetail({
           )}
 
           {/* Stat pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <div className="flex items-center gap-1.5 bg-surface-sunken border border-line rounded-lg px-3 py-1.5">
-              <svg className="w-3.5 h-3.5 text-ink-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-xs font-semibold text-ink-muted">{allPhotos.length}</span>
-              <span className="text-xs text-ink-muted">photo{allPhotos.length !== 1 ? "s" : ""}</span>
-            </div>
-            {pendingCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-warning-soft border border-warning/30 rounded-lg px-3 py-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
-                <span className="text-xs font-semibold text-warning">{pendingCount}</span>
-                <span className="text-xs text-warning">en attente</span>
-              </div>
-            )}
-            {approvedCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-success-soft border border-success/30 rounded-lg px-3 py-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />
-                <span className="text-xs font-semibold text-success">{approvedCount}</span>
-                <span className="text-xs text-success">approuvée{approvedCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            {rejectedCount > 0 && (
-              <div className="flex items-center gap-1.5 bg-danger-soft border border-danger/30 rounded-lg px-3 py-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
-                <span className="text-xs font-semibold text-danger">{rejectedCount}</span>
-                <span className="text-xs text-danger">rejetée{rejectedCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-          </div>
+          <PhotoStatPills total={allPhotos.length} pending={pendingCount} approved={approvedCount} rejected={rejectedCount} />
         </div>
 
         {/* Progress bar */}
         {allPhotos.length > 0 && (
-          <div className="px-5 pb-4">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs text-ink-muted">Progression de la validation</p>
-              <p className="text-xs font-semibold text-ink-muted">{progressPct}%</p>
-            </div>
-            <div className="h-2 bg-surface-sunken rounded-full overflow-hidden flex">
-              <div
-                className="h-full bg-success transition-all duration-500"
-                style={{ width: `${allPhotos.length > 0 ? (approvedCount / allPhotos.length) * 100 : 0}%` }}
-              />
-              <div
-                className="h-full bg-danger transition-all duration-500"
-                style={{ width: `${allPhotos.length > 0 ? (rejectedCount / allPhotos.length) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
+          <ValidationProgress total={allPhotos.length} approved={approvedCount} rejected={rejectedCount} progressPct={progressPct} />
         )}
       </div>
 
@@ -972,29 +1033,7 @@ export default function MediaEventDetail({
         </div>
 
         {/* Bannière d'activité */}
-        {(uploadProgress || bulkLoading) && (
-          <div className="px-5 py-2 border-b border-line bg-warning-soft flex items-center gap-3">
-            <div className="w-3.5 h-3.5 border-2 border-warning border-t-transparent rounded-full animate-spin shrink-0" />
-            {uploadProgress ? (
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-warning">
-                    Upload en cours · {uploadProgress.done}/{uploadProgress.total} photo{uploadProgress.total > 1 ? "s" : ""}
-                  </span>
-                  <span className="text-xs text-warning">{Math.round((uploadProgress.done / uploadProgress.total) * 100)}%</span>
-                </div>
-                <div className="h-1 bg-warning-soft rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-warning transition-all duration-300"
-                    style={{ width: `${(uploadProgress.done / uploadProgress.total) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <span className="text-xs font-medium text-warning">Suppression en cours…</span>
-            )}
-          </div>
-        )}
+        {(uploadProgress || bulkLoading) && <ActivityBanner uploadProgress={uploadProgress} />}
 
         {/* Upload zone (conditionnelle) */}
         {showUpload && (

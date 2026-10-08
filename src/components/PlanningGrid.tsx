@@ -184,6 +184,71 @@ const COUNT_LABELS: Record<ServiceStatus, [string, string]> = {
   REMPLACANT: ["remplaçant", "remplaçants"],
 };
 
+/** Ligne d'un STAR : disponibilité, autres services, alerte d'indisponibilité et statut. */
+function MemberRow({
+  member,
+  isReadOnly,
+  onStatusChange,
+}: {
+  readonly member: MemberPlanning;
+  readonly isReadOnly: boolean;
+  readonly onStatusChange: (memberId: string, status: string | null) => void;
+}) {
+  const name = `${member.firstName} ${member.lastName}`;
+  const reason = unavailabilityReason(member.availability);
+  const placed = member.status === "EN_SERVICE" || member.status === "EN_SERVICE_DEBRIEF" || member.status === "REMPLACANT";
+  const busy = member.availability?.busyElsewhere ?? [];
+  return (
+    <li
+      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-sunken/60"
+    >
+      <div className="flex min-w-0 flex-col items-start gap-1">
+        <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
+        <AvailabilityChip availability={member.availability} />
+        {busy.length > 0 && (
+          <span className="text-[13px] leading-[18px] text-ink-muted">De service en {busy.join(", ")}</span>
+        )}
+        {member.availability?.enteredByThirdParty && (
+          <span className="text-[13px] leading-[18px] text-ink-subtle">Réponse saisie par un responsable</span>
+        )}
+        {placed && reason && (
+          <Alert tone="warning" className="mt-1 w-full">
+            {reason} : à confirmer avec {member.firstName} avant de valider son service.
+          </Alert>
+        )}
+      </div>
+      {isReadOnly ? (
+        <ReadOnlyStatus status={member.status} />
+      ) : (
+        <StatusSegments
+          memberName={name}
+          status={member.status}
+          onChange={(status) => onStatusChange(member.id, status)}
+        />
+      )}
+    </li>
+  );
+}
+
+/** Échéance de saisie : à venir, ou dépassée (encore modifiable ou non). */
+function DeadlineAlert({
+  deadlineLabel,
+  deadlinePassed,
+  canStillEdit,
+}: {
+  readonly deadlineLabel: string;
+  readonly deadlinePassed: boolean;
+  readonly canStillEdit: boolean;
+}) {
+  if (!deadlinePassed) return <Alert tone="info">Planning à remplir avant le {deadlineLabel}.</Alert>;
+  return (
+    <Alert tone={canStillEdit ? "warning" : "danger"} title="Échéance dépassée.">
+      Le planning devait être rempli avant le {deadlineLabel}.
+      {canStillEdit && " Vous pouvez encore le modifier."}
+    </Alert>
+  );
+}
+
 export default function PlanningGrid({
   eventId,
   departmentId,
@@ -375,15 +440,13 @@ export default function PlanningGrid({
 
   return (
     <div className="flex flex-col gap-4">
-      {deadlineLabel &&
-        (deadlinePassed ? (
-          <Alert tone={canBypassDeadline && !readOnly ? "warning" : "danger"} title="Échéance dépassée.">
-            Le planning devait être rempli avant le {deadlineLabel}.
-            {canBypassDeadline && !readOnly && " Vous pouvez encore le modifier."}
-          </Alert>
-        ) : (
-          <Alert tone="info">Planning à remplir avant le {deadlineLabel}.</Alert>
-        ))}
+      {deadlineLabel && (
+        <DeadlineAlert
+          deadlineLabel={deadlineLabel}
+          deadlinePassed={deadlinePassed}
+          canStillEdit={canBypassDeadline && !readOnly}
+        />
+      )}
 
       {/* Légende (docs/design-system/components/PlanningGrid.md) : le contrôle segmenté
           ci-dessous n'affiche qu'une icône par bouton, illisible sans elle. Lecture seule :
@@ -451,43 +514,9 @@ export default function PlanningGrid({
         </div>
 
         <ul className="divide-y divide-line">
-          {sortedMembers.map((member) => {
-            const name = `${member.firstName} ${member.lastName}`;
-            const reason = unavailabilityReason(member.availability);
-            const placed = member.status === "EN_SERVICE" || member.status === "EN_SERVICE_DEBRIEF" || member.status === "REMPLACANT";
-            const busy = member.availability?.busyElsewhere ?? [];
-            return (
-              <li
-                key={member.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-sunken/60"
-              >
-                <div className="flex min-w-0 flex-col items-start gap-1">
-                  <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
-                  <AvailabilityChip availability={member.availability} />
-                  {busy.length > 0 && (
-                    <span className="text-[13px] leading-[18px] text-ink-muted">De service en {busy.join(", ")}</span>
-                  )}
-                  {member.availability?.enteredByThirdParty && (
-                    <span className="text-[13px] leading-[18px] text-ink-subtle">Réponse saisie par un responsable</span>
-                  )}
-                  {placed && reason && (
-                    <Alert tone="warning" className="mt-1 w-full">
-                      {reason} : à confirmer avec {member.firstName} avant de valider son service.
-                    </Alert>
-                  )}
-                </div>
-                {isReadOnly ? (
-                  <ReadOnlyStatus status={member.status} />
-                ) : (
-                  <StatusSegments
-                    memberName={name}
-                    status={member.status}
-                    onChange={(status) => handleStatusChange(member.id, status)}
-                  />
-                )}
-              </li>
-            );
-          })}
+          {sortedMembers.map((member) => (
+            <MemberRow key={member.id} member={member} isReadOnly={isReadOnly} onStatusChange={handleStatusChange} />
+          ))}
         </ul>
 
         <div className="flex flex-wrap gap-2 border-t border-line bg-surface-sunken px-4 py-3" aria-label="Décompte par statut">

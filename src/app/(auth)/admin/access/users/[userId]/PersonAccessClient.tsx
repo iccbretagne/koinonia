@@ -164,79 +164,118 @@ export default function PersonAccessClient({
     }
   }
 
+  /** Ministre : rattache ou change le ministère du rôle existant, sinon crée le rôle. */
+  async function submitMinister(selection: ResponsibilitySelection) {
+    const existing = roleOf("MINISTER");
+    const ministry = ministries.find((m) => m.id === selection.targetId);
+    if (existing) {
+      const res = await fetch(`/api/users/${person.id}/roles`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId: existing.id, ministryId: selection.targetId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      setRoles((prev) =>
+        prev.map((r) =>
+          r.role === "MINISTER" ? { ...r, ministryId: selection.targetId, ministryName: ministry?.name ?? null } : r
+        )
+      );
+    } else {
+      const res = await fetch(`/api/users/${person.id}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId, role: "MINISTER", ministryId: selection.targetId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      const data = await res.json();
+      setRoles((prev) => [
+        ...prev,
+        { id: data.id, role: "MINISTER", ministryId: selection.targetId, ministryName: ministry?.name ?? null, departments: [] },
+      ]);
+    }
+  }
+
+  /** Resp. département : ajoute le département au rôle existant, sinon crée le rôle. */
+  async function submitDepartmentHead(selection: ResponsibilitySelection) {
+    const existing = roleOf("DEPARTMENT_HEAD");
+    const dept = ministries.flatMap((m) => m.departments).find((d) => d.id === selection.targetId);
+    const newEntry = { id: selection.targetId, isDeputy: selection.isDeputy };
+    if (existing) {
+      const merged = [
+        ...existing.departments.filter((d) => d.id !== selection.targetId).map((d) => ({ id: d.id, isDeputy: d.isDeputy })),
+        newEntry,
+      ];
+      const res = await fetch(`/api/users/${person.id}/roles`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId: existing.id, departments: merged }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      setRoles((prev) =>
+        prev.map((r) =>
+          r.role === "DEPARTMENT_HEAD"
+            ? { ...r, departments: merged.map((d) => ({ id: d.id, isDeputy: d.isDeputy, name: dept?.name ?? "" })) }
+            : r
+        )
+      );
+    } else {
+      const res = await fetch(`/api/users/${person.id}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD", departments: [newEntry] }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
+      const data = await res.json();
+      setRoles((prev) => [
+        ...prev,
+        {
+          id: data.id,
+          role: "DEPARTMENT_HEAD",
+          ministryId: null,
+          ministryName: null,
+          departments: [{ id: selection.targetId, isDeputy: selection.isDeputy, name: dept?.name ?? "" }],
+        },
+      ]);
+    }
+  }
+
   async function handleResponsibilitySubmit(selection: ResponsibilitySelection) {
     if (modal?.mode === "minister") {
-      const existing = roleOf("MINISTER");
-      const ministry = ministries.find((m) => m.id === selection.targetId);
-      if (existing) {
-        const res = await fetch(`/api/users/${person.id}/roles`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roleId: existing.id, ministryId: selection.targetId }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        setRoles((prev) =>
-          prev.map((r) =>
-            r.role === "MINISTER" ? { ...r, ministryId: selection.targetId, ministryName: ministry?.name ?? null } : r
-          )
-        );
-      } else {
-        const res = await fetch(`/api/users/${person.id}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "MINISTER", ministryId: selection.targetId }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        const data = await res.json();
-        setRoles((prev) => [
-          ...prev,
-          { id: data.id, role: "MINISTER", ministryId: selection.targetId, ministryName: ministry?.name ?? null, departments: [] },
-        ]);
-      }
+      await submitMinister(selection);
     } else {
-      const existing = roleOf("DEPARTMENT_HEAD");
-      const dept = ministries.flatMap((m) => m.departments).find((d) => d.id === selection.targetId);
-      const newEntry = { id: selection.targetId, isDeputy: selection.isDeputy };
-      if (existing) {
-        const merged = [
-          ...existing.departments.filter((d) => d.id !== selection.targetId).map((d) => ({ id: d.id, isDeputy: d.isDeputy })),
-          newEntry,
-        ];
-        const res = await fetch(`/api/users/${person.id}/roles`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ roleId: existing.id, departments: merged }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        setRoles((prev) =>
-          prev.map((r) =>
-            r.role === "DEPARTMENT_HEAD"
-              ? { ...r, departments: merged.map((d) => ({ id: d.id, isDeputy: d.isDeputy, name: dept?.name ?? "" })) }
-              : r
-          )
-        );
-      } else {
-        const res = await fetch(`/api/users/${person.id}/roles`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD", departments: [newEntry] }),
-        });
-        if (!res.ok) throw new Error((await res.json()).error ?? "Erreur");
-        const data = await res.json();
-        setRoles((prev) => [
-          ...prev,
-          {
-            id: data.id,
-            role: "DEPARTMENT_HEAD",
-            ministryId: null,
-            ministryName: null,
-            departments: [{ id: selection.targetId, isDeputy: selection.isDeputy, name: dept?.name ?? "" }],
-          },
-        ]);
-      }
+      await submitDepartmentHead(selection);
     }
     setModal(null);
     refresh();
+  }
+
+  /** Retire toutes les responsabilités de département, après confirmation. */
+  function removeAllDepartmentHeads() {
+    if (!confirm("Retirer toutes les responsabilités de département ?")) return;
+    fetch(`/api/users/${person.id}/roles`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD" }),
+    }).then((res) => {
+      if (res.ok) {
+        setRoles((prev) => prev.filter((r) => r.role !== "DEPARTMENT_HEAD"));
+        refresh();
+      }
+    }).catch(() => setError("Erreur"));
+  }
+
+  /** Case d'un rôle : bascule simple, ou choix/retrait d'une responsabilité (Ministre, Resp. département). */
+  function handleRoleToggle(role: Role, has: boolean, needsTarget: boolean) {
+    if (!needsTarget) {
+      void simpleToggle(role);
+      return;
+    }
+    if (!has) {
+      setModal({ mode: role === "MINISTER" ? "minister" : "department-head" });
+      return;
+    }
+    if (role === "MINISTER") void removeMinister();
+    else if (deptHeadRole) removeAllDepartmentHeads();
   }
 
   const ministerRole = roleOf("MINISTER");
@@ -290,31 +329,7 @@ export default function PersonAccessClient({
                           type="checkbox"
                           checked={has}
                           disabled={loading}
-                          onChange={() => {
-                            if (needsTarget) {
-                              if (has) {
-                                if (role === "MINISTER") void removeMinister();
-                                else if (deptHeadRole) {
-                                  if (confirm("Retirer toutes les responsabilités de département ?")) {
-                                    fetch(`/api/users/${person.id}/roles`, {
-                                      method: "DELETE",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ churchId, role: "DEPARTMENT_HEAD" }),
-                                    }).then((res) => {
-                                      if (res.ok) {
-                                        setRoles((prev) => prev.filter((r) => r.role !== "DEPARTMENT_HEAD"));
-                                        refresh();
-                                      }
-                                    }).catch(() => setError("Erreur"));
-                                  }
-                                }
-                              } else {
-                                setModal({ mode: role === "MINISTER" ? "minister" : "department-head" });
-                              }
-                            } else {
-                              void simpleToggle(role);
-                            }
-                          }}
+                          onChange={() => handleRoleToggle(role, has, needsTarget)}
                           className="mt-0.5 rounded border-control-line text-brand-text focus:ring-focus"
                         />
                         <div className="text-sm font-medium text-ink">
