@@ -1,5 +1,7 @@
 "use client";
 
+import { KpiCard, BarChart } from "@/components/StatsWidgets";
+
 const STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Soumise",
   WAITING_RECONTACT: "Attente recontact",
@@ -79,50 +81,6 @@ interface Props {
   readonly byAbandonReason: { reason: string | null; count: number }[];
   readonly byMonth: { month: string; count: number }[];
   readonly pastoralCare: number;
-}
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  readonly label: string;
-  readonly value: string | number;
-  readonly sub?: string;
-  readonly accent?: boolean;
-}) {
-  return (
-    <div className={`bg-surface rounded-xl border p-4 sm:p-5 ${accent ? "border-brand/30 bg-brand-soft" : "border-line"}`}>
-      <p className="text-xs text-ink-muted font-medium mb-1">{label}</p>
-      <p className={`text-3xl font-bold ${accent ? "text-brand-text" : "text-ink"}`}>{value}</p>
-      {sub && <p className="text-xs text-ink-subtle mt-1">{sub}</p>}
-    </div>
-  );
-}
-
-function BarChart({ data, total }: { readonly data: { label: string; count: number }[]; readonly total: number }) {
-  if (total === 0) return <p className="text-sm text-ink-subtle">Aucune donnée</p>;
-  const max = Math.max(...data.map((d) => d.count), 1);
-  return (
-    <div className="space-y-2">
-      {data.map((d) => (
-        <div key={d.label} className="flex items-center gap-2">
-          <span className="text-xs text-ink-muted w-24 shrink-0 truncate">{d.label}</span>
-          <div className="flex-1 bg-surface-sunken rounded-full h-2">
-            <div
-              className="bg-brand rounded-full h-2 transition-all"
-              style={{ width: `${Math.round((d.count / max) * 100)}%` }}
-            />
-          </div>
-          <span className="text-xs font-medium text-ink-muted w-8 text-right shrink-0">{d.count}</span>
-          <span className="text-xs text-ink-subtle w-8 text-right shrink-0">
-            {total > 0 ? `${Math.round((d.count / total) * 100)}%` : "–"}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export default function StatsView({

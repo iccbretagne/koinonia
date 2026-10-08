@@ -3,16 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
-import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
-
-interface DayEvent {
-  id: string;
-  title: string;
-  date: string;
-  hasAudioService: boolean;
-}
+import ServiceEventFields, { type DayEvent } from "../ServiceEventFields";
+import { getEventTypeLabel } from "@/lib/event-types";
 
 export interface ServiceInfo {
   id: string;
@@ -121,30 +114,17 @@ export default function ServiceInfoEditor({ service }: { readonly service: Servi
     <div className="mb-6 border border-line rounded-lg p-4 space-y-3">
       {error && <p className="text-sm text-danger">{error}</p>}
       <Input label="Date du culte" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      <Select
-        label="Événement"
-        placeholder="Aucun — saisie libre"
-        value={eventId}
-        onChange={(e) => {
-          setEventId(e.target.value);
-          const evt = options.find((d) => d.id === e.target.value);
+      <ServiceEventFields
+        events={options}
+        eventId={eventId}
+        onEventChange={(id, evt) => {
+          setEventId(id);
           if (evt) setTitle(evt.title);
         }}
-        options={options.map((e) => {
-          const label = `${e.title} — ${new Date(e.date).toLocaleDateString("fr-FR")}`;
-          return {
-            value: e.id,
-            label: e.hasAudioService && e.id !== service.planningEventId ? `${label} (déjà déposé)` : label,
-          };
-        })}
-      />
-      <Select
-        label="Type de rassemblement"
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        options={EVENT_TYPE_OPTIONS}
-        disabled={linkedToEvent}
-        placeholder={linkedToEvent ? "Déterminé par l'événement rattaché" : "Sélectionner..."}
+        eventPlaceholder="Aucun — saisie libre"
+        currentEventId={service.planningEventId}
+        type={type}
+        onTypeChange={setType}
       />
       <Input label="Titre du message" value={title} onChange={(e) => setTitle(e.target.value)} />
       <Input label="Orateur" value={speaker} onChange={(e) => setSpeaker(e.target.value)} />

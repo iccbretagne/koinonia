@@ -1,11 +1,10 @@
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { rolePermissions, registry } from "@/lib/registry";
-import { prisma } from "@/lib/prisma";
+import { registry } from "@/lib/registry";
 import { Church } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import RequestForm from "./RequestForm";
-import { buildSourceOptions } from "../source-options";
+import { loadRequestFormData } from "../request-form-options";
 
 export default async function NewRequestPage() {
   const session = await requireAuth();
@@ -15,12 +14,7 @@ export default async function NewRequestPage() {
   }
   await requireChurchPermission("members:view", churchId);
 
-  const churchPermissions = new Set(
-    session.user.churchRoles
-      .filter((r) => r.churchId === churchId)
-      .flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-  const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
+  const { churchPermissions, canSubmitDemands, formOptions } = await loadRequestFormData(session, churchId);
 
   // « Autres demandes » (spec 043) : liens vers des formulaires dédiés, conditionnés par
   // l'activation du module et — pour la compta — le même droit de soumission que sa page dédiée.
@@ -31,53 +25,6 @@ export default async function NewRequestPage() {
     registry.has("accounting") &&
     (churchPermissions.has("accounting:submit") || isPastoral);
 
-  const now = new Date();
-  const in90days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-
-  // Events for announcements (only those flagged allowAnnouncements, next 90 days)
-  const announcementEvents = await prisma.event.findMany({
-    where: { churchId, date: { gte: now, lte: in90days }, allowAnnouncements: true },
-    select: { id: true, title: true, type: true, date: true },
-    orderBy: { date: "asc" },
-  });
-
-  // Events for modification/cancellation demands (all future, no restriction)
-  const allFutureEvents = await prisma.event.findMany({
-    where: { churchId, date: { gte: now } },
-    select: { id: true, title: true, type: true, date: true },
-    orderBy: { date: "asc" },
-  });
-
-  // Source options (departments/ministries from user's roles)
-  const churchRoles = session.user.churchRoles.filter(
-    (r) => r.churchId === churchId
-  );
-
-  const sourceOptions = await buildSourceOptions(churchRoles);
-
-  // Departments for planning modification requests
-  const departments = await prisma.department.findMany({
-    where: { ministry: { churchId } },
-    select: { id: true, name: true, ministry: { select: { name: true } } },
-    orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-  });
-
-  // Users for access requests
-  const users = await prisma.user.findMany({
-    where: {
-      churchRoles: { some: { churchId } },
-    },
-    select: { id: true, name: true, displayName: true, email: true },
-    orderBy: { name: "asc" },
-  });
-
-  // Ministries for access requests
-  const ministries = await prisma.ministry.findMany({
-    where: { churchId },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Nouvelle demande" description="Que souhaitez-vous demander ?" />
@@ -86,29 +33,7 @@ export default async function NewRequestPage() {
         canSubmitDemands={canSubmitDemands}
         showCareTile={showCareTile}
         showAccountingTile={showAccountingTile}
-        announcementEvents={announcementEvents.map((e) => ({
-          id: e.id,
-          title: e.title,
-          type: e.type,
-          date: e.date.toISOString(),
-        }))}
-        events={allFutureEvents.map((e) => ({
-          id: e.id,
-          title: e.title,
-          type: e.type,
-          date: e.date.toISOString(),
-        }))}
-        sourceOptions={sourceOptions}
-        departments={departments.map((d) => ({
-          id: d.id,
-          name: d.name,
-          ministryName: d.ministry.name,
-        }))}
-        users={users.map((u) => ({
-          id: u.id,
-          label: u.displayName ?? u.name ?? u.email,
-        }))}
-        ministries={ministries}
+        {...formOptions}
       />
     </div>
   );
