@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
+import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
 
 const patchProfileSchema = z.object({
   title:         z.string().min(1).max(200).optional(),
@@ -17,15 +18,6 @@ const patchProfileSchema = z.object({
   status:        z.enum(["ACTIVE", "UNAVAILABLE", "ARCHIVED"]).optional(),
 });
 
-function canManageJobs(session: { user: { isSuperAdmin: boolean; churchRoles?: { role: string }[] } }) {
-  return (
-    session.user.isSuperAdmin ||
-    session.user.churchRoles?.some((r) =>
-      ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-    )
-  );
-}
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,15 +28,12 @@ export async function GET(
 
     const profile = await prisma.freelanceProfile.findUnique({
       where: { id },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    const isAuthor  = profile.authorId === session.user.id;
-    const canManage = canManageJobs(session);
+    const { isAuthor, canManage } = jobsAccess(session, profile.authorId);
 
     if (profile.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Profil freelance introuvable");
@@ -71,10 +60,7 @@ export async function PATCH(
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    const isAuthor  = profile.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    const { canManage } = requireJobsAuthorOrModerator(session, profile.authorId);
 
     const data = patchProfileSchema.parse(await request.json());
 
@@ -86,13 +72,9 @@ export async function PATCH(
       where: { id },
       data: {
         ...data,
-        ...(data.availableFrom !== undefined
-          ? { availableFrom: data.availableFrom ? new Date(data.availableFrom) : null }
-          : {}),
+        ...patchDate("availableFrom", data.availableFrom),
       },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     return successResponse(updated);
@@ -116,10 +98,7 @@ export async function DELETE(
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    const isAuthor  = profile.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    requireJobsAuthorOrModerator(session, profile.authorId);
 
     await prisma.freelanceProfile.delete({ where: { id } });
 

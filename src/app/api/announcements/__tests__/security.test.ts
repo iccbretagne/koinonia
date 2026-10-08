@@ -165,6 +165,37 @@ describe("POST /api/announcements — cross-tenant validation", () => {
     expect(body.error).toContain("périmètre");
   });
 
+  it("crée par canal une demande de diffusion et son visuel enfant", async () => {
+    prismaMock.request.create
+      .mockResolvedValueOnce({ id: "req-interne" })
+      .mockResolvedValueOnce({ id: "vis-interne" })
+      .mockResolvedValueOnce({ id: "req-externe" })
+      .mockResolvedValueOnce({ id: "vis-externe" });
+
+    const res = await POST(
+      new Request("http://localhost/api/announcements", {
+        method: "POST",
+        body: JSON.stringify({ ...basePostBody, channelExterne: true, eventDate: "2026-11-01T10:00:00.000Z" }),
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const created = prismaMock.request.create.mock.calls.map((c) => c[0].data);
+    expect(created.map((d) => [d.type, d.title, d.parentRequestId ?? null])).toEqual([
+      ["DIFFUSION_INTERNE", "Test announcement", null],
+      ["VISUEL", "Visuel — Test announcement", "req-interne"],
+      ["RESEAUX_SOCIAUX", "Test announcement", null],
+      ["VISUEL", "Visuel réseaux — Test announcement", "req-externe"],
+    ]);
+    expect(created[1].payload).toEqual({
+      brief: "Test content",
+      format: "Slide / Affiche event",
+      deadline: "2026-11-01T10:00:00.000Z",
+    });
+    expect(created[3].payload.format).toBe("Story / Post réseaux sociaux");
+    for (const d of created) expect(d).toMatchObject({ churchId: "church-1", announcementId: "ann-new" });
+  });
+
   it("returns 401 when not authenticated", async () => {
     mockRequirePermission.mockRejectedValue(new Error("UNAUTHORIZED"));
 

@@ -1,6 +1,6 @@
 /**
- * Génération de dates récurrentes, partagée entre les événements d'église
- * (`request-executor.ts`) et les événements d'équipe (`team-event.service.ts`, spec 044).
+ * Génération de dates récurrentes, partagée entre les événements d'église (création directe
+ * et demandes approuvées), les événements d'équipe (spec 044) et les réservations de salle.
  */
 
 export const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires

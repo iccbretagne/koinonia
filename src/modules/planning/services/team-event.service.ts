@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { generateRecurrenceDates } from "./recurrence";
+import { generateRecurrenceDates } from "@/lib/recurrence";
 
 /**
  * Contrairement aux autres services du module (`db?: Prisma.TransactionClient`), ce service

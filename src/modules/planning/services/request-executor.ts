@@ -3,7 +3,7 @@ import { planningBus } from "../bus";
 import { deleteEvents } from "./event.service";
 import { collectEventChangeNotices, type EventChangeNotices } from "./event-change-notices";
 import { recordRemovedPlannings } from "./planning-change-notices";
-import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "./recurrence";
+import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "@/lib/recurrence";
 
 export interface ExecutionResult {
   success: boolean;

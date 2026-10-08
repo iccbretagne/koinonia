@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
+import { JOBS_AUTHOR_INCLUDE, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
 
 export async function GET(
   _request: Request,
@@ -13,9 +14,7 @@ export async function GET(
 
     const job = await prisma.jobOffer.findUnique({
       where: { id },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     if (!job) throw new ApiError(404, "Offre introuvable");
@@ -53,15 +52,7 @@ export async function PATCH(
     const job = await prisma.jobOffer.findUnique({ where: { id }, select: { id: true, authorId: true } });
     if (!job) throw new ApiError(404, "Offre introuvable");
 
-    const isAuthor  = job.authorId === session.user.id;
-    const canManage = session.user.isSuperAdmin ||
-      session.user.churchRoles?.some((r) =>
-        ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-      );
-
-    if (!isAuthor && !canManage) {
-      throw new ApiError(403, "Accès refusé");
-    }
+    requireJobsAuthorOrModerator(session, job.authorId);
 
     const body = await request.json();
     const { renew: _renew, ...data } = patchSchema.parse(body);
@@ -70,15 +61,13 @@ export async function PATCH(
       where: { id },
       data: {
         ...data,
-        ...(data.deadline !== undefined ? { deadline: data.deadline ? new Date(data.deadline) : null } : {}),
+        ...patchDate("deadline", data.deadline),
         // Toute modification vaut confirmation « toujours d'actualité » (spec 034) :
         // remet le compteur à zéro, qu'il s'agisse du bouton dédié, d'une édition
         // ordinaire ou d'une republication.
         renewalRequestedAt: null,
       },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     return successResponse(updated);
@@ -98,15 +87,7 @@ export async function DELETE(
     const job = await prisma.jobOffer.findUnique({ where: { id }, select: { id: true, authorId: true } });
     if (!job) throw new ApiError(404, "Offre introuvable");
 
-    const isAuthor  = job.authorId === session.user.id;
-    const canManage = session.user.isSuperAdmin ||
-      session.user.churchRoles?.some((r) =>
-        ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-      );
-
-    if (!isAuthor && !canManage) {
-      throw new ApiError(403, "Accès refusé");
-    }
+    requireJobsAuthorOrModerator(session, job.authorId);
 
     await prisma.jobOffer.delete({ where: { id } });
 

@@ -102,6 +102,33 @@ export async function GET(
   }
 }
 
+/**
+ * Charge l'annonce et vérifie que l'appelant en est l'auteur ou la gère (events:manage
+ * dans l'église de l'annonce).
+ */
+async function requireOwnerOrManager(id: string) {
+  const announcement = await prisma.announcement.findUnique({
+    where: { id },
+    select: { id: true, submittedById: true, churchId: true },
+  });
+  if (!announcement) throw new ApiError(404, "Annonce introuvable");
+
+  const session = await requireChurchPermission("members:view", announcement.churchId);
+
+  const userPermissions = new Set(
+    session.user.churchRoles
+      .filter((r) => r.churchId === announcement.churchId)
+      .flatMap((r) => rolePermissions[r.role] ?? [])
+  );
+  const canManage =
+    session.user.isSuperAdmin || userPermissions.has("events:manage");
+  const isOwner = announcement.submittedById === session.user.id;
+
+  if (!canManage && !isOwner) throw new ApiError(403, "Accès refusé");
+
+  return { announcement, session, canManage, isOwner };
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -109,24 +136,7 @@ export async function PATCH(
   try {
     const { id } = await params;
 
-    const announcement = await prisma.announcement.findUnique({
-      where: { id },
-      select: { id: true, submittedById: true, churchId: true },
-    });
-    if (!announcement) throw new ApiError(404, "Annonce introuvable");
-
-    const session = await requireChurchPermission("members:view", announcement.churchId);
-
-    const userPermissions = new Set(
-      session.user.churchRoles
-        .filter((r) => r.churchId === announcement.churchId)
-        .flatMap((r) => rolePermissions[r.role] ?? [])
-    );
-    const canManage =
-      session.user.isSuperAdmin || userPermissions.has("events:manage");
-    const isOwner = announcement.submittedById === session.user.id;
-
-    if (!canManage && !isOwner) throw new ApiError(403, "Accès refusé");
+    const { announcement, session, canManage, isOwner } = await requireOwnerOrManager(id);
 
     const body = await request.json();
     const data = patchSchema.parse(body);
@@ -198,24 +208,7 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const announcement = await prisma.announcement.findUnique({
-      where: { id },
-      select: { id: true, submittedById: true, churchId: true },
-    });
-    if (!announcement) throw new ApiError(404, "Annonce introuvable");
-
-    const session = await requireChurchPermission("members:view", announcement.churchId);
-
-    const userPermissions = new Set(
-      session.user.churchRoles
-        .filter((r) => r.churchId === announcement.churchId)
-        .flatMap((r) => rolePermissions[r.role] ?? [])
-    );
-    const canManage =
-      session.user.isSuperAdmin || userPermissions.has("events:manage");
-    const isOwner = announcement.submittedById === session.user.id;
-
-    if (!canManage && !isOwner) throw new ApiError(403, "Accès refusé");
+    const { announcement, session } = await requireOwnerOrManager(id);
 
     await prisma.announcement.delete({ where: { id } });
 

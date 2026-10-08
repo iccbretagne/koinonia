@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { z } from "zod";
+import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
 
 const patchSeekerSchema = z
   .object({
@@ -19,15 +20,6 @@ const patchSeekerSchema = z
     status:         z.enum(["ACTIVE", "FOUND", "ARCHIVED"]).optional(),
   });
 
-function canManageJobs(session: { user: { isSuperAdmin: boolean; churchRoles?: { role: string }[] } }) {
-  return (
-    session.user.isSuperAdmin ||
-    session.user.churchRoles?.some((r) =>
-      ["SUPER_ADMIN", "ADMIN", "SECRETARY"].includes(r.role)
-    )
-  );
-}
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -38,15 +30,12 @@ export async function GET(
 
     const seeker = await prisma.jobSeeker.findUnique({
       where: { id },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const isAuthor  = seeker.authorId === session.user.id;
-    const canManage = canManageJobs(session);
+    const { isAuthor, canManage } = jobsAccess(session, seeker.authorId);
 
     if (seeker.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Profil introuvable");
@@ -73,10 +62,7 @@ export async function PATCH(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const isAuthor  = seeker.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    const { isAuthor, canManage } = requireJobsAuthorOrModerator(session, seeker.authorId);
 
     const data = patchSeekerSchema.parse(await request.json());
 
@@ -93,13 +79,9 @@ export async function PATCH(
       where: { id },
       data: {
         ...data,
-        ...(data.availableFrom !== undefined
-          ? { availableFrom: data.availableFrom ? new Date(data.availableFrom) : null }
-          : {}),
+        ...patchDate("availableFrom", data.availableFrom),
       },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
+      include: JOBS_AUTHOR_INCLUDE,
     });
 
     return successResponse(updated);
@@ -123,10 +105,7 @@ export async function DELETE(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const isAuthor  = seeker.authorId === session.user.id;
-    const canManage = canManageJobs(session);
-
-    if (!isAuthor && !canManage) throw new ApiError(403, "Accès refusé");
+    requireJobsAuthorOrModerator(session, seeker.authorId);
 
     await prisma.jobSeeker.delete({ where: { id } });
 

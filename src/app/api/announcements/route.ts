@@ -7,7 +7,7 @@ import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { DEPT_FN, functionForRequestType } from "@/lib/department-functions";
 import { getFunctionDepartmentIds, getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { z } from "zod";
-import type { RequestType } from "@/generated/prisma/client";
+import type { Prisma, RequestType } from "@/generated/prisma/client";
 
 const createSchema = z
   .object({
@@ -160,6 +160,36 @@ async function assertAnnouncementTargets(data: z.infer<typeof createSchema>) {
   }
 }
 
+/**
+ * Demandes créées par canal de diffusion d'une annonce : une demande de diffusion
+ * et sa demande de visuel enfant.
+ */
+const CHANNEL_REQUESTS = {
+  interne: { type: "DIFFUSION_INTERNE", visualPrefix: "Visuel", visualFormat: "Slide / Affiche event" },
+  externe: { type: "RESEAUX_SOCIAUX", visualPrefix: "Visuel réseaux", visualFormat: "Story / Post réseaux sociaux" },
+} as const;
+
+async function createChannelRequests(
+  tx: Prisma.TransactionClient,
+  base: { churchId: string; submittedById: string; departmentId: string | null; ministryId: string | null; announcementId: string },
+  content: { title: string; brief: string; deadline: string | null },
+  channel: (typeof CHANNEL_REQUESTS)[keyof typeof CHANNEL_REQUESTS]
+) {
+  const { title, brief, deadline } = content;
+  const parent = await tx.request.create({
+    data: { ...base, type: channel.type, title, payload: { brief, deadline } },
+  });
+  await tx.request.create({
+    data: {
+      ...base,
+      type: "VISUEL",
+      parentRequestId: parent.id,
+      title: `${channel.visualPrefix} — ${title}`,
+      payload: { brief, format: channel.visualFormat, deadline },
+    },
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -194,75 +224,16 @@ export async function POST(request: Request) {
         },
       });
 
-      if (data.channelInterne) {
-        const diffusion = await tx.request.create({
-          data: {
-            churchId: data.churchId,
-            type: "DIFFUSION_INTERNE",
-            submittedById: session.user.id,
-            departmentId: data.departmentId ?? null,
-            ministryId: data.ministryId ?? null,
-            announcementId: ann.id,
-            title: data.title,
-            payload: {
-              brief: data.content,
-              deadline: eventDate?.toISOString() ?? null,
-            },
-          },
-        });
-        await tx.request.create({
-          data: {
-            churchId: data.churchId,
-            type: "VISUEL",
-            submittedById: session.user.id,
-            departmentId: data.departmentId ?? null,
-            ministryId: data.ministryId ?? null,
-            announcementId: ann.id,
-            parentRequestId: diffusion.id,
-            title: `Visuel — ${data.title}`,
-            payload: {
-              brief: data.content,
-              format: "Slide / Affiche event",
-              deadline: eventDate?.toISOString() ?? null,
-            },
-          },
-        });
-      }
-
-      if (data.channelExterne) {
-        const social = await tx.request.create({
-          data: {
-            churchId: data.churchId,
-            type: "RESEAUX_SOCIAUX",
-            submittedById: session.user.id,
-            departmentId: data.departmentId ?? null,
-            ministryId: data.ministryId ?? null,
-            announcementId: ann.id,
-            title: data.title,
-            payload: {
-              brief: data.content,
-              deadline: eventDate?.toISOString() ?? null,
-            },
-          },
-        });
-        await tx.request.create({
-          data: {
-            churchId: data.churchId,
-            type: "VISUEL",
-            submittedById: session.user.id,
-            departmentId: data.departmentId ?? null,
-            ministryId: data.ministryId ?? null,
-            announcementId: ann.id,
-            parentRequestId: social.id,
-            title: `Visuel réseaux — ${data.title}`,
-            payload: {
-              brief: data.content,
-              format: "Story / Post réseaux sociaux",
-              deadline: eventDate?.toISOString() ?? null,
-            },
-          },
-        });
-      }
+      const base = {
+        churchId: data.churchId,
+        submittedById: session.user.id,
+        departmentId: data.departmentId ?? null,
+        ministryId: data.ministryId ?? null,
+        announcementId: ann.id,
+      };
+      const content = { title: data.title, brief: data.content, deadline: eventDate?.toISOString() ?? null };
+      if (data.channelInterne) await createChannelRequests(tx, base, content, CHANNEL_REQUESTS.interne);
+      if (data.channelExterne) await createChannelRequests(tx, base, content, CHANNEL_REQUESTS.externe);
 
       return ann;
     });

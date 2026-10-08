@@ -10,7 +10,7 @@
  * Ces fonctions sont partagées entre les routes API et les pages SSR publiques
  * pour éviter toute divergence entre les deux.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
 
 // `tokens.ts` importe `@/lib/prisma` au niveau module (instancie un vrai client sinon).
@@ -119,6 +119,51 @@ describe("resolveGalleryData — projet média (GALLERY)", () => {
 
     expect(data.event?.photoCount).toBe(4);
     expect(data.photos.map((p) => p.id)).toEqual(["f-approved", "f-final", "f-review", "f-pending"]);
+  });
+});
+
+describe("resolveDownloadData / resolveGalleryData — événement (photos)", () => {
+  function eventToken(type: "MEDIA" | "MEDIA_ALL" | "GALLERY", config: unknown = null) {
+    return {
+      id: "tok-3",
+      type,
+      label: "Culte",
+      config,
+      mediaEvent: { id: "evt-1", name: "Culte", date: new Date("2026-07-05") },
+      mediaProject: null,
+    } as never;
+  }
+
+  beforeEach(() => {
+    prismaMock.mediaPhoto.findMany.mockReset();
+    prismaMock.mediaPhoto.findMany.mockResolvedValue([
+      { id: "p1", filename: "p1.jpg", size: 10, width: 800, height: 600, status: "APPROVED", thumbnailKey: "thumb/p1" },
+    ] as never);
+  });
+
+  afterEach(() => prismaMock.mediaPhoto.findMany.mockReset());
+
+  it("MEDIA : ne demande que les photos approuvées de l'événement", async () => {
+    const data = await resolveDownloadData(eventToken("MEDIA"));
+
+    expect(prismaMock.mediaPhoto.findMany).toHaveBeenCalledWith({
+      where: { mediaEventId: "evt-1", status: "APPROVED" },
+      orderBy: { uploadedAt: "asc" },
+    });
+    expect(data.token).toEqual({ id: "tok-3", type: "MEDIA", label: "Culte" });
+    expect(data.event).toMatchObject({ id: "evt-1", name: "Culte", photoCount: 1 });
+    expect(data.photos[0]).toMatchObject({ id: "p1", width: 800, thumbnailUrl: "signed://thumb/p1" });
+  });
+
+  it("MEDIA_ALL et GALLERY sans onlyApproved : toutes les photos de l'événement", async () => {
+    await resolveDownloadData(eventToken("MEDIA_ALL"));
+    const gallery = await resolveGalleryData(eventToken("GALLERY", { onlyApproved: false }));
+
+    for (const call of prismaMock.mediaPhoto.findMany.mock.calls) {
+      expect(call[0]).toMatchObject({ where: { mediaEventId: "evt-1" } });
+      expect(call[0]?.where).not.toHaveProperty("status");
+    }
+    expect(gallery.token).toEqual({ id: "tok-3", type: "GALLERY", label: "Culte", config: { onlyApproved: false } });
   });
 });
 
