@@ -40,7 +40,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^1.49.0",
     "mariadb": "^3.5.4",
-    "next": "^16.3.7",
+    "next": "^16.3.8",
     "next-auth": "5.0.0-beta.32",
     "nodemailer": "^10.0.13",
     "pino": "^10.3.1",
@@ -64,7 +64,7 @@
     "dependency-cruiser": "^17.4.3",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.7",
+    "eslint-config-next": "^16.3.8",
     "tsx": "^4.23.15",
     "typescript": "^5.7.0",
     "vitest": "^4.1.0"
