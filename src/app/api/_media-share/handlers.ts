@@ -4,7 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken, getTokenUrlPath } from "@/modules/media";
 import { z } from "zod";
 
-const SENSITIVE_TOKEN_TYPES: readonly string[] = ["VALIDATOR", "PREVALIDATOR"];
+const SENSITIVE_TOKEN_TYPES: ReadonlySet<string> = new Set(["VALIDATOR", "PREVALIDATOR"]);
 
 const createSchema = z.object({
   type: z.enum(["VALIDATOR", "MEDIA", "MEDIA_ALL", "PREVALIDATOR", "GALLERY"]),
@@ -61,7 +61,7 @@ export function mediaShareHandlers(target: MediaShareTarget) {
 
       return successResponse(
         tokens.map((t) => {
-          const hidden = SENSITIVE_TOKEN_TYPES.includes(t.type) && !canManage;
+          const hidden = SENSITIVE_TOKEN_TYPES.has(t.type) && !canManage;
           return {
             ...t,
             token: hidden ? undefined : t.token,
@@ -84,7 +84,7 @@ export function mediaShareHandlers(target: MediaShareTarget) {
 
       // Les tokens VALIDATOR et PREVALIDATOR donnent accès à des actions d'approbation :
       // exiger media:manage
-      if (SENSITIVE_TOKEN_TYPES.includes(data.type)) {
+      if (SENSITIVE_TOKEN_TYPES.has(data.type)) {
         await requireMediaManageAccess(churchId, domain);
       }
 
@@ -123,7 +123,7 @@ export function mediaShareHandlers(target: MediaShareTarget) {
       if (!existingToken) throw new ApiError(404, "Token introuvable");
 
       // Les tokens sensibles (VALIDATOR/PREVALIDATOR) nécessitent media:manage
-      if (SENSITIVE_TOKEN_TYPES.includes(existingToken.type)) {
+      if (SENSITIVE_TOKEN_TYPES.has(existingToken.type)) {
         await requireMediaManageAccess(churchId, domain);
       }
 
