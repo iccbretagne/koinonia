@@ -667,12 +667,14 @@ export async function isCommunicationMember(session: Session, churchId: string):
 }
 
 /**
- * Autorise l'accès en lecture aux ressources média d'une activité (Photos ou Visuels, spec 049).
- * Passe si : permission `media:view` (ADMIN, SECRETARY…)
- *         OU membre de l'équipe de cette activité (droits complets)
- *         OU membre COMMUNICATION (vue uniquement, les deux activités).
+ * Socle des gardes média : Super Admin, ou rôle dans l'église portant `permission`, ou
+ * appartenance d'équipe vérifiée par `isTeamMember` (évaluée seulement à défaut de permission).
  */
-export async function requireMediaAccess(churchId: string, domain: MediaDomain) {
+async function requireMediaGate(
+  churchId: string,
+  permission: string,
+  isTeamMember: (session: Session) => Promise<boolean>
+) {
   const session = await requireAuth();
   if (session.user.isSuperAdmin) return session;
 
@@ -682,10 +684,21 @@ export async function requireMediaAccess(churchId: string, domain: MediaDomain) 
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:view") || await isMediaTeamMember(session, churchId, domain) || await isCommunicationMember(session, churchId))
-    return session;
+  if (userPerms.has(permission) || (await isTeamMember(session))) return session;
 
   throw new Error("FORBIDDEN");
+}
+
+/**
+ * Autorise l'accès en lecture aux ressources média d'une activité (Photos ou Visuels, spec 049).
+ * Passe si : permission `media:view` (ADMIN, SECRETARY…)
+ *         OU membre de l'équipe de cette activité (droits complets)
+ *         OU membre COMMUNICATION (vue uniquement, les deux activités).
+ */
+export async function requireMediaAccess(churchId: string, domain: MediaDomain) {
+  return requireMediaGate(churchId, "media:view", async (session) =>
+    (await isMediaTeamMember(session, churchId, domain)) || isCommunicationMember(session, churchId)
+  );
 }
 
 /**
@@ -695,19 +708,9 @@ export async function requireMediaAccess(churchId: string, domain: MediaDomain) 
  *         OU membre COMMUNICATION.
  */
 export async function requireMediaUploadAccess(churchId: string, domain: MediaDomain) {
-  const session = await requireAuth();
-  if (session.user.isSuperAdmin) return session;
-
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
-
-  const { rolePermissions } = await import("./registry");
-  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-
-  if (userPerms.has("media:upload") || await isMediaTeamMember(session, churchId, domain) || await isCommunicationMember(session, churchId))
-    return session;
-
-  throw new Error("FORBIDDEN");
+  return requireMediaGate(churchId, "media:upload", async (session) =>
+    (await isMediaTeamMember(session, churchId, domain)) || isCommunicationMember(session, churchId)
+  );
 }
 
 /**
@@ -716,19 +719,7 @@ export async function requireMediaUploadAccess(churchId: string, domain: MediaDo
  * La team Communication n'a pas ce droit.
  */
 export async function requireMediaManageAccess(churchId: string, domain: MediaDomain) {
-  const session = await requireAuth();
-  if (session.user.isSuperAdmin) return session;
-
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
-
-  const { rolePermissions } = await import("./registry");
-  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-
-  if (userPerms.has("media:manage") || await isMediaTeamMember(session, churchId, domain))
-    return session;
-
-  throw new Error("FORBIDDEN");
+  return requireMediaGate(churchId, "media:manage", (session) => isMediaTeamMember(session, churchId, domain));
 }
 
 /**
@@ -736,19 +727,7 @@ export async function requireMediaManageAccess(churchId: string, domain: MediaDo
  * La team Communication n'a pas ce droit.
  */
 export async function requireMediaReviewAccess(churchId: string, domain: MediaDomain) {
-  const session = await requireAuth();
-  if (session.user.isSuperAdmin) return session;
-
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
-
-  const { rolePermissions } = await import("./registry");
-  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-
-  if (userPerms.has("media:review") || await isMediaTeamMember(session, churchId, domain))
-    return session;
-
-  throw new Error("FORBIDDEN");
+  return requireMediaGate(churchId, "media:review", (session) => isMediaTeamMember(session, churchId, domain));
 }
 
 /**
@@ -760,24 +739,14 @@ export async function requireMediaReviewAccess(churchId: string, domain: MediaDo
  * doit pas obtenir — seules les collections lui sont ouvertes, sur demande explicite.
  */
 export async function requireMediaCollectionAccess(churchId: string) {
-  const session = await requireAuth();
-  if (session.user.isSuperAdmin) return session;
-
-  const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-  if (roles.length === 0) throw new Error("FORBIDDEN");
-
-  const { rolePermissions } = await import("./registry");
-  const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
-
-  if (
-    userPerms.has("media:manage") ||
-    (await isMediaTeamMember(session, churchId, "PHOTOS")) ||
-    (await isMediaTeamMember(session, churchId, "VISUELS")) ||
-    (await isCommunicationMember(session, churchId))
-  )
-    return session;
-
-  throw new Error("FORBIDDEN");
+  return requireMediaGate(
+    churchId,
+    "media:manage",
+    async (session) =>
+      (await isMediaTeamMember(session, churchId, "PHOTOS")) ||
+      (await isMediaTeamMember(session, churchId, "VISUELS")) ||
+      isCommunicationMember(session, churchId)
+  );
 }
 
 /**

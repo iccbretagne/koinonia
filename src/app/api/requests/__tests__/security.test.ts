@@ -145,6 +145,39 @@ describe("POST /api/requests — validation", () => {
   });
 });
 
+describe("POST /api/requests — origine dans l'église (cross-tenant)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequirePermission.mockResolvedValue(createAdminSession());
+  });
+
+  const post = (body: object) =>
+    POST(new Request("http://localhost/api/requests", { method: "POST", body: JSON.stringify(body) }));
+
+  it("refuse un département d'une autre église", async () => {
+    prismaMock.department.findUnique.mockResolvedValue({ ministry: { churchId: "church-2" } } as never);
+    const res = await post({ churchId: "church-1", type: "VISUEL", title: "Affiche", departmentId: "dept-x" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("département");
+    expect(prismaMock.request.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse un ministère d'une autre église", async () => {
+    prismaMock.ministry.findUnique.mockResolvedValue({ churchId: "church-2" } as never);
+    const res = await post({ churchId: "church-1", type: "VISUEL", title: "Affiche", ministryId: "min-x" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("ministère");
+  });
+
+  it("accepte un département et un ministère de la même église", async () => {
+    prismaMock.department.findUnique.mockResolvedValue({ ministry: { churchId: "church-1" } } as never);
+    prismaMock.ministry.findUnique.mockResolvedValue({ churchId: "church-1" } as never);
+    prismaMock.request.create.mockResolvedValue({ id: "req-1" } as never);
+    const res = await post({ churchId: "church-1", type: "VISUEL", title: "Affiche", departmentId: "d1", ministryId: "m1" });
+    expect(res.status).toBe(201);
+  });
+});
+
 describe("PATCH /api/requests/[id] — authorization", () => {
   const existingRequest = {
     id: "req-1",

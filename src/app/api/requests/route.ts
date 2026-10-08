@@ -138,11 +138,8 @@ export async function POST(request: Request) {
   }
 }
 
-async function createVisuel(_request: Request, body: unknown) {
-  const data = createVisuelSchema.parse(body);
-  const session = await requireChurchPermission("members:view", data.churchId);
-
-  // Validate cross-tenant references
+/** Refuse un département ou un ministère d'origine qui n'appartient pas à l'église visée. */
+async function assertOriginInChurch(data: { churchId: string; departmentId?: string | null; ministryId?: string | null }) {
   if (data.departmentId) {
     const dept = await prisma.department.findUnique({
       where: { id: data.departmentId },
@@ -161,6 +158,13 @@ async function createVisuel(_request: Request, body: unknown) {
       throw new ApiError(400, "Le ministère n'appartient pas à cette église");
     }
   }
+}
+
+async function createVisuel(_request: Request, body: unknown) {
+  const data = createVisuelSchema.parse(body);
+  const session = await requireChurchPermission("members:view", data.churchId);
+
+  await assertOriginInChurch(data);
 
   const created = await prisma.request.create({
     data: {
@@ -195,25 +199,7 @@ async function createDemand(_request: Request, body: unknown) {
   const data = createDemandSchema.parse(body);
   const session = await requireChurchPermission("planning:edit", data.churchId);
 
-  // Validate cross-tenant references
-  if (data.departmentId) {
-    const dept = await prisma.department.findUnique({
-      where: { id: data.departmentId },
-      select: { ministry: { select: { churchId: true } } },
-    });
-    if (dept?.ministry.churchId !== data.churchId) {
-      throw new ApiError(400, "Le département n'appartient pas à cette église");
-    }
-  }
-  if (data.ministryId) {
-    const ministry = await prisma.ministry.findUnique({
-      where: { id: data.ministryId },
-      select: { churchId: true },
-    });
-    if (ministry?.churchId !== data.churchId) {
-      throw new ApiError(400, "Le ministère n'appartient pas à cette église");
-    }
-  }
+  await assertOriginInChurch(data);
 
   const created = await prisma.request.create({
     data: {

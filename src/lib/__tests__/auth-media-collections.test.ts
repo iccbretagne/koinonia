@@ -17,7 +17,8 @@ vi.mock("@/lib/auth", async (importOriginal) => {
   return { ...original, auth: () => mockAuth() };
 });
 
-const { requireMediaCollectionAccess, requireMediaManageAccess } = await import("@/lib/auth");
+const { requireMediaCollectionAccess, requireMediaManageAccess, requireMediaAccess, requireMediaUploadAccess, requireMediaReviewAccess } =
+  await import("@/lib/auth");
 
 const PROD_MEDIA_DEPT = { id: "dept-prod-media", name: "Production Média" };
 const COMM_DEPT = { id: "dept-comm", name: "Communication" };
@@ -74,5 +75,38 @@ describe("requireMediaManageAccess — non-régression (spec 049)", () => {
     mockAuth.mockResolvedValue(createDepartmentHeadSession([COMM_DEPT], "church-1"));
     prismaMock.department.findMany.mockResolvedValue([]);
     await expect(requireMediaManageAccess("church-1", "PHOTOS")).rejects.toThrow("FORBIDDEN");
+  });
+});
+
+describe("gardes média par activité (socle commun)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.department.findMany.mockResolvedValue([]);
+    prismaMock.department.count.mockResolvedValue(0);
+  });
+
+  it("refuse un utilisateur sans rôle dans l'église visée", async () => {
+    mockAuth.mockResolvedValue(createAdminSession("church-2"));
+    await expect(requireMediaAccess("church-1", "PHOTOS")).rejects.toThrow("FORBIDDEN");
+  });
+
+  it("vue et dépôt : ouverts à la Communication, pas la relecture", async () => {
+    mockAuth.mockResolvedValue(createDepartmentHeadSession([COMM_DEPT], "church-1"));
+    prismaMock.department.count.mockResolvedValue(1); // isCommunicationMember
+    await expect(requireMediaAccess("church-1", "PHOTOS")).resolves.toBeDefined();
+    await expect(requireMediaUploadAccess("church-1", "VISUELS")).resolves.toBeDefined();
+    await expect(requireMediaReviewAccess("church-1", "VISUELS")).rejects.toThrow("FORBIDDEN");
+  });
+
+  it("relecture : ouverte à l'équipe de l'activité", async () => {
+    mockAuth.mockResolvedValue(createDepartmentHeadSession([PROD_MEDIA_DEPT], "church-1"));
+    mockFunctionDepartments("PRODUCTION_MEDIA", [PROD_MEDIA_DEPT.id]);
+    await expect(requireMediaReviewAccess("church-1", "VISUELS")).resolves.toBeDefined();
+  });
+
+  it("la permission du rôle suffit, sans vérifier l'équipe", async () => {
+    mockAuth.mockResolvedValue(createAdminSession("church-1"));
+    await expect(requireMediaReviewAccess("church-1", "PHOTOS")).resolves.toBeDefined();
+    expect(prismaMock.department.findMany).not.toHaveBeenCalled();
   });
 });
