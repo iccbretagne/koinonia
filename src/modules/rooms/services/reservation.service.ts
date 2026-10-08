@@ -1,5 +1,6 @@
 import type { Prisma, RoomReservation } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
+import { generateRecurrenceDates } from "@/lib/recurrence";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -12,33 +13,8 @@ async function defaultDb(): Promise<DbClient> {
   return prisma;
 }
 
-const MAX_RECURRENCE_OCCURRENCES = 104; // ~2 ans hebdomadaires
-
-/**
- * Génère les dates d'occurrence suivantes (hors la première) selon la règle donnée.
- * Dupliquée volontairement de `request-executor.ts` (cf. plan.md § Décisions) : fonction
- * pure non exportée publiquement par `planning`, créer une dépendance de module serait
- * disproportionné pour ~15 lignes.
- */
-export function generateRoomRecurrenceDates(
-  startDate: Date,
-  rule: string,
-  endDate: Date
-): { dates: Date[]; truncated: boolean } {
-  if (Number.isNaN(endDate.getTime())) return { dates: [], truncated: false };
-  const dates: Date[] = [];
-  const current = new Date(startDate);
-  while (dates.length < MAX_RECURRENCE_OCCURRENCES) {
-    if (rule === "weekly") current.setDate(current.getDate() + 7);
-    else if (rule === "biweekly") current.setDate(current.getDate() + 14);
-    else if (rule === "monthly") current.setMonth(current.getMonth() + 1);
-    else break;
-    if (current > endDate) break;
-    dates.push(new Date(current));
-  }
-  const truncated = dates.length === MAX_RECURRENCE_OCCURRENCES && current <= endDate;
-  return { dates, truncated };
-}
+/** Dates d'occurrence suivantes (hors la première) d'une réservation récurrente. */
+export const generateRoomRecurrenceDates = generateRecurrenceDates;
 
 /**
  * Vrai si la salle est libre sur le créneau donné — chevauchement sur `RoomReservation`
