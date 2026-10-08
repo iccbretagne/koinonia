@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import ExpandableText from "@/components/ExpandableText";
 
 const CHILD_STATUS_DOT_CLASS: Record<string, string> = {
   EN_ATTENTE: "bg-warning",
@@ -163,7 +164,6 @@ export default function RequestsDashboard({ requests: initial, canManage = false
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [category, setCategory] = useState<FilterCategory>("all");
   const [showProcessed, setShowProcessed] = useState(false);
-  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   const filtered = requests.filter((r) => {
     if (category === "announcements" && !ANNOUNCEMENT_TYPES.has(r.type)) return false;
@@ -284,31 +284,7 @@ export default function RequestsDashboard({ requests: initial, canManage = false
         </div>
 
         {/* Announcement content */}
-        {req.announcement?.content && (() => {
-          const content = req.announcement.content;
-          const PREVIEW = 150;
-          const isLong = content.length > PREVIEW;
-          const isExpanded = expandedContent.has(req.id);
-          return (
-            <div className="mb-3">
-              <p className="text-sm text-ink-muted whitespace-pre-wrap">
-                {isLong && !isExpanded ? `${content.slice(0, PREVIEW).trimEnd()}…` : content}
-              </p>
-              {isLong && (
-                <button
-                  onClick={() => setExpandedContent((prev) => {
-                    const next = new Set(prev);
-                    if (isExpanded) next.delete(req.id); else next.add(req.id);
-                    return next;
-                  })}
-                  className="mt-1 text-xs text-brand-text hover:underline"
-                >
-                  {isExpanded ? "Voir moins" : "Voir plus"}
-                </button>
-              )}
-            </div>
-          );
-        })()}
+        {req.announcement?.content && <ExpandableText text={req.announcement.content} />}
 
         {/* Demand payload summary */}
         {isDemand && payloadSummary && (

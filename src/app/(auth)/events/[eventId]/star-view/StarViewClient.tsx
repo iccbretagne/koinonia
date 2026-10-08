@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 import { type OpeningClosingData } from "./OpeningClosingManager";
 import { type AnnouncementSheetData } from "./AnnouncementSheetManager";
 import PreparationBanner from "./PreparationBanner";
+import { useSnapshotExport } from "@/components/useSnapshotExport";
 
 interface MemberItem {
   id: string;
@@ -68,7 +69,6 @@ export default function StarViewClient({ eventId }: Props) {
   const toast = useToast();
   const [data, setData] = useState<StarViewData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const [downloadingSheet, setDownloadingSheet] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -93,113 +93,12 @@ export default function StarViewClient({ eventId }: Props) {
     return `STAR-${data?.event.title || "export"}`;
   }
 
-  // Force A4 landscape layout (1122px wide, desktop breakpoints) before html2canvas capture,
-  // regardless of the current mobile viewport — restores original width in all cases.
-  async function captureForExport(): Promise<HTMLCanvasElement | null> {
-    if (!printRef.current) return null;
-    const html2canvas = (await import("html2canvas-pro")).default;
-    const el = printRef.current;
-    const savedWidth = el.style.width;
-    el.style.width = "1122px";
-    // L'image partagée reste en thème clair, quel que soit le thème affiché.
-    el.dataset.theme = "light";
-    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    try {
-      return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
-    } finally {
-      el.style.width = savedWidth;
-      delete el.dataset.theme;
-    }
-  }
-
-  async function copyImage() {
-    if (!printRef.current || exporting) return;
-    setExporting("copy");
-    try {
-      const canvas = await captureForExport();
-      if (!canvas) return;
-
-      try {
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((b) => {
-            if (b) resolve(b);
-            else reject(new Error("toBlob failed"));
-          }, "image/png");
-        });
-
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": blob }),
-        ]);
-        toast.success("Image copiée dans le presse-papiers");
-      } catch {
-        const dataUrl = canvas.toDataURL("image/png");
-        const w = window.open();
-        if (w) {
-          const img = w.document.createElement("img");
-          img.src = dataUrl;
-          w.document.body.append(img);
-          w.document.title = "STAR - copier l'image";
-        } else {
-          toast.error("Impossible de copier l'image. Vérifiez les permissions du navigateur.");
-        }
-      }
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally {
-      setExporting(null);
-    }
-  }
-
-  async function downloadImage() {
-    if (!printRef.current || exporting) return;
-    setExporting("image");
-    try {
-      const canvas = await captureForExport();
-      if (!canvas) return;
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `${getExportFileName()}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally {
-      setExporting(null);
-    }
-  }
-
-  async function exportPdf() {
-    if (!printRef.current || exporting) return;
-    setExporting("pdf");
-    try {
-      const { jsPDF } = await import("jspdf");
-      const canvas = await captureForExport();
-      if (!canvas) return;
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("landscape", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgRatio = canvas.height / canvas.width;
-
-      let renderWidth = pdfWidth;
-      let renderHeight = pdfWidth * imgRatio;
-
-      if (renderHeight > pdfHeight) {
-        renderHeight = pdfHeight;
-        renderWidth = pdfHeight / imgRatio;
-      }
-
-      const offsetX = (pdfWidth - renderWidth) / 2;
-      pdf.addImage(imgData, "PNG", offsetX, 0, renderWidth, renderHeight);
-      pdf.save(`${getExportFileName()}.pdf`);
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally {
-      setExporting(null);
-    }
-  }
+  const { exporting, copyImage, downloadImage, exportPdf } = useSnapshotExport(printRef, {
+    captureWidth: "1122px",
+    orientation: "landscape",
+    fileName: getExportFileName,
+    copyWindowTitle: "STAR - copier l'image",
+  });
 
   async function downloadAnnouncementSheet() {
     if (downloadingSheet) return;

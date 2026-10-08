@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { buttonClasses } from "@/components/ui/button-classes";
+import ExpandableText from "@/components/ExpandableText";
+import RequestStatusSections from "@/components/RequestStatusSections";
 interface ParentRequest {
   id: string;
   type: string;
@@ -83,7 +85,6 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
   const [processing, setProcessing] = useState<string | null>(null);
   const [deliveryLinks, setDeliveryLinks] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [expandedContent, setExpandedContent] = useState<Set<string>>(new Set());
 
   // "Prendre en charge" inline form state
   const [takingCharge, setTakingCharge] = useState<string | null>(null);
@@ -250,30 +251,7 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
           </p>
         )}
 
-        {brief && (() => {
-          const PREVIEW = 150;
-          const isLong = brief.length > PREVIEW;
-          const isExpanded = expandedContent.has(req.id);
-          return (
-            <div className="mb-3">
-              <p className="text-sm text-ink-muted whitespace-pre-wrap">
-                {isLong && !isExpanded ? `${brief.slice(0, PREVIEW).trimEnd()}…` : brief}
-              </p>
-              {isLong && (
-                <button
-                  onClick={() => setExpandedContent((prev) => {
-                    const next = new Set(prev);
-                    if (isExpanded) next.delete(req.id); else next.add(req.id);
-                    return next;
-                  })}
-                  className="mt-1 text-xs text-brand-text hover:underline"
-                >
-                  {isExpanded ? "Voir moins" : "Voir plus"}
-                </button>
-              )}
-            </div>
-          );
-        })()}
+        {brief && <ExpandableText text={brief} />}
 
         {linkedProject && (req.status === "EN_COURS" || req.status === "LIVRE") && (() => {
           const shareToken = linkedProject.shareTokens[0];
@@ -413,35 +391,13 @@ export default function MediaDashboard({ requests: initial, churchId, mediaProje
   }
 
   return (
-    <div className="space-y-8">
-      {pending.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-ink mb-3 flex items-center gap-2">
-            <span>En attente</span>
-            <span className="bg-brand text-on-brand text-xs font-bold px-2 py-0.5 rounded-full">
-              {pending.length}
-            </span>
-          </h2>
-          <div className="space-y-4">{pending.map(renderRequest)}</div>
-        </section>
-      )}
-      {inProgress.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-ink mb-3">En cours</h2>
-          <div className="space-y-4">{inProgress.map(renderRequest)}</div>
-        </section>
-      )}
-      {done.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-ink mb-3">Terminés</h2>
-          <div className="space-y-4">{done.map(renderRequest)}</div>
-        </section>
-      )}
-      {requests.length === 0 && (
-        <div className="text-center py-12 text-ink-subtle">
-          <p className="text-lg">Aucune demande de visuel.</p>
-        </div>
-      )}
-    </div>
+    <RequestStatusSections
+      pending={pending}
+      inProgress={inProgress}
+      done={done}
+      renderItem={renderRequest}
+      total={requests.length}
+      emptyLabel="Aucune demande de visuel."
+    />
   );
 }

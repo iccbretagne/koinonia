@@ -14,6 +14,7 @@ import { eventTypeTone } from "./event-type-tone";
 import ExportBar from "./ExportBar";
 import { ghostDangerClasses } from "./ghost-danger";
 import PeriodNav from "./PeriodNav";
+import { useSnapshotExport } from "@/components/useSnapshotExport";
 
 interface Member {
   id: string;
@@ -98,7 +99,6 @@ export default function WeeklyPlanningView({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pendingNoticeDelete, setPendingNoticeDelete] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<"pdf" | "image" | "copy" | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   const fetchWeek = useCallback(async () => {
@@ -186,85 +186,12 @@ export default function WeeklyPlanningView({
     }
   }
 
-  // Force portrait A4 width (max-w-2xl = 672px) for consistent capture on mobile.
-  async function captureForExport(): Promise<HTMLCanvasElement | null> {
-    if (!printRef.current) return null;
-    const html2canvas = (await import("html2canvas-pro")).default;
-    const el = printRef.current;
-    const savedWidth = el.style.width;
-    el.style.width = "672px";
-    // L'image partagée reste en thème clair, quel que soit le thème affiché.
-    el.dataset.theme = "light";
-    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    try {
-      return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
-    } finally {
-      el.style.width = savedWidth;
-      delete el.dataset.theme;
-    }
-  }
-
-  async function copyImage() {
-    if (!printRef.current || exporting) return;
-    setExporting("copy");
-    try {
-      const canvas = await captureForExport();
-      if (!canvas) return;
-      try {
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob((b: Blob | null) => { if (b) resolve(b); else reject(new Error("failed")); }, "image/png");
-        });
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        toast.success("Image copiée dans le presse-papiers");
-      } catch {
-        const w = window.open();
-        if (w) {
-          const img = w.document.createElement("img");
-          img.src = canvas.toDataURL("image/png");
-          w.document.body.append(img);
-        }
-      }
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally { setExporting(null); }
-  }
-
-  async function downloadImage() {
-    if (!printRef.current || exporting) return;
-    setExporting("image");
-    try {
-      const canvas = await captureForExport();
-      if (!canvas) return;
-      const link = document.createElement("a");
-      link.download = `${getExportFileName(departmentName, weekStart)}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally { setExporting(null); }
-  }
-
-  async function exportPdf() {
-    if (!printRef.current || exporting) return;
-    setExporting("pdf");
-    try {
-      const { jsPDF } = await import("jspdf");
-      const canvas = await captureForExport();
-      if (!canvas) return;
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("portrait", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgRatio = canvas.height / canvas.width;
-      let renderWidth = pdfWidth;
-      let renderHeight = pdfWidth * imgRatio;
-      if (renderHeight > pdfHeight) { renderHeight = pdfHeight; renderWidth = pdfHeight / imgRatio; }
-      pdf.addImage(imgData, "PNG", (pdfWidth - renderWidth) / 2, 0, renderWidth, renderHeight);
-      pdf.save(`${getExportFileName(departmentName, weekStart)}.pdf`);
-    } catch {
-      toast.error("Export impossible. Réessayez dans un instant.");
-    } finally { setExporting(null); }
-  }
+  const { exporting, copyImage, downloadImage, exportPdf } = useSnapshotExport(printRef, {
+    captureWidth: "672px",
+    orientation: "portrait",
+    fileName: () => getExportFileName(departmentName, weekStart),
+    copyWindowTitle: "Planning - copier l'image",
+  });
 
   const hasContent = events.length > 0;
 

@@ -7,6 +7,7 @@ import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import DataTable from "@/components/ui/DataTable";
 import BulkActionBar from "@/components/ui/BulkActionBar";
+import SystemRowActions from "../SystemRowActions";
 
 interface Ministry {
   id: string;
@@ -203,26 +204,15 @@ export default function MinistriesClient({
           selectable={!readOnly}
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
-          actions={readOnly ? undefined : (m) => {
-            const locked = m.isSystem && !isSuperAdmin;
-            return (
-              <div className="flex items-center gap-2 justify-end">
-                {m.isSystem && (
-                  <span title="Ministère système" className="text-ink-subtle">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </span>
-                )}
-                <Button variant="secondary" onClick={() => openEdit(m)} disabled={locked}>
-                  Modifier
-                </Button>
-                <Button variant="danger" onClick={() => handleDelete(m)} disabled={locked}>
-                  Supprimer
-                </Button>
-              </div>
-            );
-          }}
+          actions={readOnly ? undefined : (m) => (
+            <SystemRowActions
+              isSystem={m.isSystem}
+              isSuperAdmin={isSuperAdmin}
+              systemLabel="Ministère système"
+              onEdit={() => openEdit(m)}
+              onDelete={() => handleDelete(m)}
+            />
+          )}
         />
       </div>
 

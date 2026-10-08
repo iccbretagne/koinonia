@@ -1,6 +1,5 @@
-import { auth, getCurrentChurchId } from "@/lib/auth";
+import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button-classes";
 function progressTextClass(pct: number): string {
@@ -30,28 +29,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default async function PastoralEventsPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/");
-  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
-
-  const currentChurchId = await getCurrentChurchId(session);
-
-  let profile = await prisma.pastoralProfile.findFirst({
-    where: {
-      userId: session.user.id,
-      ...(currentChurchId ? { churchId: currentChurchId } : {}),
-    },
-    select: { id: true, churchId: true, responsibleForChurch: { select: { id: true } } },
-  });
-  if (!profile && currentChurchId) {
-    profile = await prisma.pastoralProfile.findFirst({
-      where: { userId: session.user.id, supervisorForChurches: { some: { id: currentChurchId } } },
-      select: { id: true, churchId: true, responsibleForChurch: { select: { id: true } } },
-    });
-  }
-  if (!profile) redirect("/pastoral");
-
-  const activeChurchId = currentChurchId ?? profile.responsibleForChurch?.id ?? profile.churchId;
+  const { activeChurchId } = await requirePastoralActiveChurch();
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
 

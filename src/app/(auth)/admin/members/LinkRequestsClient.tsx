@@ -6,6 +6,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { ROLE_LABELS as ROLE_LABELS_BASE } from "@/lib/roles";
+import RejectedLinkRequests from "../RejectedLinkRequests";
 
 type Department = { id: string; name: string; ministryName: string };
 
@@ -61,7 +62,6 @@ export default function LinkRequestsClient({
 }) {
   const [requests, setRequests] = useState(initialRequests);
   const [rejected, setRejected] = useState(rejectedRequests);
-  const [showRejected, setShowRejected] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [approveModal, setApproveModal] = useState<LinkRequest | null>(null);
   const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? "");
@@ -219,66 +219,13 @@ export default function LinkRequestsClient({
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
       {/* Demandes refusées */}
-      {rejected.length > 0 && (
-        <div className="mt-4">
-          <button
-            onClick={() => setShowRejected((v) => !v)}
-            className="flex items-center gap-2 text-sm text-ink-muted hover:text-ink-muted transition-colors"
-          >
-            <svg
-              className={`w-4 h-4 transition-transform ${showRejected ? "rotate-90" : ""}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            Demandes refusées ({rejected.length})
-          </button>
-
-          {showRejected && (
-            <div className="mt-3 space-y-2">
-              {rejected.map((r) => {
-                const name = r.member
-                  ? `${r.member.firstName} ${r.member.lastName}`
-                  : `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
-                return (
-                  <div key={r.id} className="border border-line rounded-lg p-3 bg-surface-sunken">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-ink-muted truncate">
-                          {r.user.name ?? r.user.email}
-                        </p>
-                        {name && (
-                          <p className="text-xs text-ink-muted truncate">{r.member ? "STAR : " : "Nouveau : "}{name}</p>
-                        )}
-                        {r.requestedRole && (
-                          <span className="inline-block mt-1 text-xs bg-surface-sunken text-ink-muted px-1.5 py-0.5 rounded">
-                            {ROLE_LABELS[r.requestedRole]}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-ink-subtle shrink-0">
-                        {r.reviewedAt ? new Date(r.reviewedAt).toLocaleDateString("fr-FR") : "—"}
-                      </span>
-                    </div>
-                    {r.rejectReason && (
-                      <p className="mt-1.5 text-xs text-ink-muted italic">&ldquo;{r.rejectReason}&rdquo;</p>
-                    )}
-                    <div className="mt-2">
-                      <button
-                        onClick={() => reconsider(r)}
-                        disabled={processing === r.id}
-                        className="text-xs text-brand-text border border-brand/30 rounded-lg px-2.5 py-1 hover:bg-brand-soft disabled:opacity-50 transition-colors"
-                      >
-                        {processing === r.id ? "En cours…" : "↩ Reconsidérer"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      <RejectedLinkRequests
+        rejected={rejected}
+        roleLabels={ROLE_LABELS}
+        busyId={processing}
+        onReconsider={reconsider}
+        className="mt-4"
+      />
 
       {/* Modal approbation */}
       <Modal

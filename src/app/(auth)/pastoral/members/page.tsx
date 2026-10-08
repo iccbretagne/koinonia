@@ -1,40 +1,9 @@
-import { auth, getCurrentChurchId } from "@/lib/auth";
+import { requirePastoralActiveChurch } from "../active-church";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import PastoralMembersClient from "./PastoralMembersClient";
 
 export default async function PastoralMembersPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/");
-  if (!(session.user.pastoralChurchIds ?? []).length) redirect("/dashboard");
-
-  const currentChurchId = await getCurrentChurchId(session);
-
-  // Profil direct dans l'église courante
-  let profile = await prisma.pastoralProfile.findFirst({
-    where: {
-      userId: session.user.id,
-      ...(currentChurchId ? { churchId: currentChurchId } : {}),
-    },
-    select: { id: true, churchId: true, responsibleForChurch: { select: { id: true } } },
-  });
-
-  // Église supervisée : utiliser le profil superviseur
-  if (!profile && currentChurchId) {
-    profile = await prisma.pastoralProfile.findFirst({
-      where: {
-        userId: session.user.id,
-        supervisorForChurches: { some: { id: currentChurchId } },
-      },
-      select: { id: true, churchId: true, responsibleForChurch: { select: { id: true } } },
-    });
-  }
-  if (!profile) redirect("/pastoral");
-
-  // L'église active est l'église courante du contexte (ChurchSwitcher)
-  const activeChurchId = currentChurchId
-    ?? profile.responsibleForChurch?.id
-    ?? profile.churchId;
+  const { activeChurchId } = await requirePastoralActiveChurch();
 
   const [churchData, members] = await Promise.all([
     prisma.church.findUnique({

@@ -12,7 +12,7 @@ import {
 } from "@/modules/care";
 import RequestActions from "./RequestActions";
 import DeleteItemButton from "@/components/DeleteItemButton";
-import HistoryTimeline from "@/components/HistoryTimeline";
+import CareItemFooter from "../../CareItemFooter";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente",
@@ -151,33 +151,13 @@ export default async function CareRequestDetailPage({
         </div>
       )}
 
-      {related.length > 0 && (
-        <div className="bg-surface rounded-xl border border-line p-5 mt-4">
-          <h2 className="text-sm font-semibold text-ink-muted mb-2">Autres demandes de la personne</h2>
-          <ul className="space-y-1.5">
-            {related.map((r) => (
-              <li key={`${r.kind}-${r.id}`}>
-                <Link
-                  href={r.kind === "request" ? `/care/requests/${r.id}` : `/care/followups/${r.id}`}
-                  className="text-sm text-brand-text hover:underline"
-                >
-                  {r.kind === "request" ? "Rendez-vous pastoral" : "Suivi de nouveau converti"} —{" "}
-                  {RELATED_STATUS_LABEL[r.status] ?? r.status}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-4">
-        <HistoryTimeline
-          fetchUrl={`/api/care/items/requests/${id}/history`}
-          statusLabels={STATUS_LABEL}
-          actionLabels={HISTORY_ACTION_LABELS}
-          assigneeLabel="Référent"
-        />
-      </div>
+      <CareItemFooter
+        related={related}
+        relatedStatusLabels={RELATED_STATUS_LABEL}
+        historyUrl={`/api/care/items/requests/${id}/history`}
+        statusLabels={STATUS_LABEL}
+        actionLabels={HISTORY_ACTION_LABELS}
+      />
     </div>
   );
 }

@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
 import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
 import { prisma } from "@/lib/prisma";
 import { Church } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import PageHeader from "@/components/ui/PageHeader";
 import RequestForm, { type EditData } from "../../new/RequestForm";
-import { buildSourceOptions } from "../../source-options";
+import { loadRequestFormData } from "../../request-form-options";
 
 interface Props {
   readonly params: Promise<{ id: string }>;
@@ -50,58 +49,7 @@ export default async function EditRequestPage({ params }: Props) {
     notFound();
   }
 
-  const churchPermissions = new Set(
-    session.user.churchRoles
-      .filter((r) => r.churchId === churchId)
-      .flatMap((r) => rolePermissions[r.role] ?? [])
-  );
-  const canSubmitDemands = churchPermissions.has("planning:edit") || session.user.isSuperAdmin;
-
-  const now = new Date();
-  const in90days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-
-  const announcementEvents = await prisma.event.findMany({
-    where: { churchId, date: { gte: now, lte: in90days }, allowAnnouncements: true },
-    select: { id: true, title: true, type: true, date: true },
-    orderBy: { date: "asc" },
-  });
-
-  // Events for modification/cancellation demands
-  const events = await prisma.event.findMany({
-    where: { churchId, date: { gte: now } },
-    select: { id: true, title: true, type: true, date: true },
-    orderBy: { date: "asc" },
-  });
-
-  // Source options (departments/ministries from user's roles)
-  const churchRoles = session.user.churchRoles.filter(
-    (r) => r.churchId === churchId
-  );
-
-  const sourceOptions = await buildSourceOptions(churchRoles);
-
-  // Departments for planning modification requests
-  const departments = await prisma.department.findMany({
-    where: { ministry: { churchId } },
-    select: { id: true, name: true, ministry: { select: { name: true } } },
-    orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-  });
-
-  // Users for access requests
-  const users = await prisma.user.findMany({
-    where: {
-      churchRoles: { some: { churchId } },
-    },
-    select: { id: true, name: true, displayName: true, email: true },
-    orderBy: { name: "asc" },
-  });
-
-  // Ministries for access requests
-  const ministries = await prisma.ministry.findMany({
-    where: { churchId },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const { canSubmitDemands, formOptions } = await loadRequestFormData(session, churchId);
 
   // Build editData for the form
   const editData: EditData = {
@@ -132,29 +80,7 @@ export default async function EditRequestPage({ params }: Props) {
       <RequestForm
         churchId={churchId}
         canSubmitDemands={canSubmitDemands}
-        announcementEvents={announcementEvents.map((e) => ({
-          id: e.id,
-          title: e.title,
-          type: e.type,
-          date: e.date.toISOString(),
-        }))}
-        events={events.map((e) => ({
-          id: e.id,
-          title: e.title,
-          type: e.type,
-          date: e.date.toISOString(),
-        }))}
-        sourceOptions={sourceOptions}
-        departments={departments.map((d) => ({
-          id: d.id,
-          name: d.name,
-          ministryName: d.ministry.name,
-        }))}
-        users={users.map((u) => ({
-          id: u.id,
-          label: u.displayName ?? u.name ?? u.email,
-        }))}
-        ministries={ministries}
+        {...formOptions}
         editData={editData}
       />
     </div>

@@ -7,6 +7,7 @@ import Select from "@/components/ui/Select";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import ServiceEventFields, { type DayEvent } from "./ServiceEventFields";
 import { EVENT_TYPE_OPTIONS, getEventTypeLabel } from "@/lib/event-types";
 import { eventTypeTone } from "@/components/event-type-tone";
 import StatusChip from "@/components/ui/StatusChip";
@@ -46,13 +47,6 @@ const STATUS_BADGE: Record<AudioServiceRow["status"], string> = {
   PUBLISHED: "bg-success-soft text-success",
   UNPUBLISHED: "bg-danger-soft text-danger",
 };
-
-interface DayEvent {
-  id: string;
-  title: string;
-  date: string;
-  hasAudioService: boolean;
-}
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -114,27 +108,16 @@ function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly o
       <div className="space-y-4">
         {error && <p className="text-sm text-danger">{error}</p>}
         <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Select
-          label="Événement"
-          placeholder={dayEvents.length === 0 ? "Aucun événement ce jour — saisie libre" : "Aucun — saisie libre"}
-          value={eventId}
-          onChange={(e) => {
-            setEventId(e.target.value);
-            const evt = dayEvents.find((d) => d.id === e.target.value);
+        <ServiceEventFields
+          events={dayEvents}
+          eventId={eventId}
+          onEventChange={(id, evt) => {
+            setEventId(id);
             if (evt) setTitle(evt.title);
           }}
-          options={dayEvents.map((e) => {
-            const label = `${e.title} — ${new Date(e.date).toLocaleDateString("fr-FR")}`;
-            return { value: e.id, label: e.hasAudioService ? `${label} (déjà déposé)` : label };
-          })}
-        />
-        <Select
-          label="Type de rassemblement"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          options={EVENT_TYPE_OPTIONS}
-          disabled={linkedToEvent}
-          placeholder={linkedToEvent ? "Déterminé par l'événement rattaché" : "Sélectionner..."}
+          eventPlaceholder={dayEvents.length === 0 ? "Aucun événement ce jour — saisie libre" : "Aucun — saisie libre"}
+          type={type}
+          onTypeChange={setType}
         />
         <Input
           label="Titre du message"
