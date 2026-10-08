@@ -5,6 +5,94 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import NewRequestForm from "./NewRequestForm";
 
+type SelectableDepartment = { id: string; name: string; ministry: { name: string } };
+
+const departmentSelect = { id: true, name: true, ministry: { select: { name: true } } } as const;
+const departmentOrder = [{ ministry: { name: "asc" as const } }, { name: "asc" as const }];
+
+async function churchDepartments(churchId: string): Promise<SelectableDepartment[]> {
+  return prisma.department.findMany({
+    where: { ministry: { churchId } },
+    select: departmentSelect,
+    orderBy: departmentOrder,
+  });
+}
+
+/**
+ * Départements proposés hors administration :
+ * - MINISTER → tous les départements de ses ministères
+ * - DEPARTMENT_HEAD → ses départements assignés uniquement
+ */
+async function assignedDepartments(userId: string, churchId: string, isMinister: boolean): Promise<SelectableDepartment[]> {
+  const userRoles = await prisma.userChurchRole.findMany({
+    where: { userId, churchId },
+    include: {
+      departments: {
+        include: {
+          department: { select: departmentSelect },
+        },
+      },
+    },
+  });
+
+  if (!isMinister) {
+    // DEPARTMENT_HEAD : ses départements assignés
+    return userRoles
+      .flatMap((r) => r.departments.map((d) => d.department))
+      .filter((d, i, arr) => arr.findIndex((x) => x.id === d.id) === i)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  // Ministères assignés à cet utilisateur
+  const ministryIds = userRoles.map((r) => r.ministryId).filter(Boolean) as string[];
+  if (ministryIds.length === 0) return [];
+  return prisma.department.findMany({
+    where: { ministryId: { in: ministryIds } },
+    select: departmentSelect,
+    orderBy: departmentOrder,
+  });
+}
+
+/**
+ * Départements disponibles : tous ceux de l'église pour l'administration ou un profil pastoral,
+ * sinon ceux du rôle — et, à défaut d'en trouver, tous ceux de l'église.
+ */
+async function selectableDepartments(userId: string, churchId: string, isAdmin: boolean, isMinister: boolean) {
+  if (isAdmin) return churchDepartments(churchId);
+  const departments = await assignedDepartments(userId, churchId, isMinister);
+  // Fallback : si aucun département trouvé, tous les départements de l'église
+  return departments.length > 0 ? departments : churchDepartments(churchId);
+}
+
+/**
+ * « Corriger et resoumettre » : pré-remplit le formulaire depuis la demande rejetée —
+ * uniquement la sienne, dans l'église courante, et encore à l'état REJECTED.
+ */
+async function loadCorrection(correctionOf: string | undefined, churchId: string, userId: string) {
+  if (!correctionOf) return null;
+  const original = await prisma.financialRequest.findFirst({
+    where: { id: correctionOf, churchId, submittedById: userId, status: "REJECTED" },
+    select: {
+      id: true,
+      type: true,
+      departmentId: true,
+      label: true,
+      description: true,
+      amount: true,
+      _count: { select: { attachments: true } },
+    },
+  });
+  if (!original) return null;
+  return {
+    id: original.id,
+    type: original.type,
+    departmentId: original.departmentId,
+    label: original.label,
+    description: original.description,
+    amount: original.amount.toString(),
+    attachmentCount: original._count.attachments,
+  };
+}
+
 export default async function NewAccountingRequestPage({
   searchParams,
 }: {
@@ -27,95 +115,10 @@ export default async function NewAccountingRequestPage({
     redirect("/accounting/requests");
   }
 
-  const canManage = perms.has("accounting:manage");
-  const isAdmin = canManage || isPastoral;
-
-  // Départements disponibles :
-  // - ADMIN / SUPER_ADMIN / profil pastoral → tous les départements de l'église
-  // - MINISTER → tous les départements de ses ministères
-  // - DEPARTMENT_HEAD → ses départements assignés uniquement
-  // - Fallback : tous les départements si aucun département assigné trouvé
-  let departments: { id: string; name: string; ministry: { name: string } }[] = [];
-
-  if (isAdmin) {
-    departments = await prisma.department.findMany({
-      where: { ministry: { churchId } },
-      select: { id: true, name: true, ministry: { select: { name: true } } },
-      orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-    });
-  } else {
-    const userRoles = await prisma.userChurchRole.findMany({
-      where: { userId: session.user.id!, churchId },
-      include: {
-        departments: {
-          include: {
-            department: { select: { id: true, name: true, ministry: { select: { name: true } } } },
-          },
-        },
-      },
-    });
-
-    const isMinister = roles.includes("MINISTER");
-
-    if (isMinister) {
-      // Ministères assignés à cet utilisateur
-      const ministryIds = userRoles
-        .map((r) => r.ministryId)
-        .filter(Boolean) as string[];
-
-      if (ministryIds.length > 0) {
-        departments = await prisma.department.findMany({
-          where: { ministryId: { in: ministryIds } },
-          select: { id: true, name: true, ministry: { select: { name: true } } },
-          orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-        });
-      }
-    } else {
-      // DEPARTMENT_HEAD : ses départements assignés
-      departments = userRoles
-        .flatMap((r) => r.departments.map((d) => d.department))
-        .filter((d, i, arr) => arr.findIndex((x) => x.id === d.id) === i)
-        .sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    // Fallback : si aucun département trouvé, tous les départements de l'église
-    if (departments.length === 0) {
-      departments = await prisma.department.findMany({
-        where: { ministry: { churchId } },
-        select: { id: true, name: true, ministry: { select: { name: true } } },
-        orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-      });
-    }
-  }
-
-  // « Corriger et resoumettre » : pré-remplit le formulaire depuis la demande rejetée —
-  // uniquement la sienne, dans l'église courante, et encore à l'état REJECTED.
+  const isAdmin = perms.has("accounting:manage") || isPastoral;
+  const departments = await selectableDepartments(session.user.id!, churchId, isAdmin, roles.includes("MINISTER"));
   const { correctionOf } = await searchParams;
-  const original = correctionOf
-    ? await prisma.financialRequest.findFirst({
-        where: { id: correctionOf, churchId, submittedById: session.user.id!, status: "REJECTED" },
-        select: {
-          id: true,
-          type: true,
-          departmentId: true,
-          label: true,
-          description: true,
-          amount: true,
-          _count: { select: { attachments: true } },
-        },
-      })
-    : null;
-  const correction = original
-    ? {
-        id: original.id,
-        type: original.type,
-        departmentId: original.departmentId,
-        label: original.label,
-        description: original.description,
-        amount: original.amount.toString(),
-        attachmentCount: original._count.attachments,
-      }
-    : null;
+  const correction = await loadCorrection(correctionOf, churchId, session.user.id!);
 
   return (
     <div className="max-w-2xl space-y-6">

@@ -91,6 +91,284 @@ interface Shortcut {
   readonly icon: LucideIcon;
 }
 
+type MyPlanning = NonNullable<Awaited<ReturnType<typeof loadMyPlanning>>>;
+type UpcomingService = MyPlanning["plannings"][number];
+type AgendaRow = {
+  key: string;
+  date: Date;
+  title: string;
+  meta: string;
+  status: ReturnType<typeof serviceStatusDescriptor>;
+  href: string;
+};
+type ChurchEvent = { id: string; title: string; type: string; date: Date };
+type MyRequest = NonNullable<Awaited<ReturnType<typeof loadMyRequests>>>[number];
+
+/** Services à venir (même tri et même filtre que « Mon planning »). */
+function upcomingServicesOf(myPlanning: MyPlanning | null, now: Date) {
+  return (myPlanning?.plannings ?? [])
+    .filter((p) => new Date(p.eventDepartment.event.date) >= now)
+    .sort((a, b) => new Date(a.eventDepartment.event.date).getTime() - new Date(b.eventDepartment.event.date).getTime());
+}
+
+/** Prochains rendez-vous après le prochain service, événements d'équipe inclus. */
+function agendaRowsOf(myPlanning: MyPlanning | null, upcomingServices: UpcomingService[], now: Date): AgendaRow[] {
+  const upcomingTeamEvents = (myPlanning?.teamEvents ?? []).filter((t) => new Date(t.endsAt) >= now);
+  return [
+    ...upcomingServices.slice(1).map((p) => ({
+      key: p.id,
+      date: new Date(p.eventDepartment.event.date),
+      title: p.eventDepartment.event.title,
+      meta: `${formatTime(new Date(p.eventDepartment.event.date))} · ${p.eventDepartment.department.name}`,
+      status: serviceStatusDescriptor(p.status),
+      href: `/events/${p.eventDepartment.event.id}/star-view`,
+    })),
+    ...upcomingTeamEvents.map((t) => {
+      const locationSuffix = t.location ? ` · ${t.location}` : "";
+      return {
+        key: `team-${t.id}`,
+        date: new Date(t.startsAt),
+        title: t.title,
+        meta: `${formatTime(new Date(t.startsAt))} · ${t.department.name}${locationSuffix}`,
+        status: null,
+        href: "/planning",
+      };
+    }),
+  ]
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, MAX_SERVICES);
+}
+
+/** Raccourcis : uniquement vers les sections que les mêmes gardes ouvrent déjà. */
+function shortcutsFor(access: {
+  hasMyPlanning: boolean;
+  canDepartment: boolean;
+  canEvents: boolean;
+  canPlanning: boolean;
+  canRequests: boolean;
+  canAudio: boolean;
+}): Shortcut[] {
+  let agendaShortcut: Shortcut[] = [];
+  if (access.canEvents) {
+    agendaShortcut = [{ href: "/events", label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
+  } else if (access.canPlanning) {
+    agendaShortcut = [{ href: "/planning/events", label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
+  }
+  return [
+    ...(access.hasMyPlanning ? [{ href: "/planning", label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
+    ...(access.canDepartment
+      ? [{ href: "/dashboard", label: "Planning", description: "Saisir le planning d'un département", icon: LayoutGrid }]
+      : []),
+    ...agendaShortcut,
+    ...(access.canRequests ? [{ href: "/requests", label: "Mes demandes", description: "Annonces, visuels, événements", icon: Inbox }] : []),
+    ...(access.canAudio ? [{ href: "/audio", label: "Audio", description: "Réécouter les cultes", icon: Headphones }] : []),
+    { href: "/profile", label: "Mon profil", description: "Compte, apparence, notifications", icon: UserRound },
+  ];
+}
+
+function ServicesSection({
+  myPlanning,
+  nextService,
+  agendaRows,
+}: {
+  readonly myPlanning: MyPlanning;
+  readonly nextService: UpcomingService | undefined;
+  readonly agendaRows: AgendaRow[];
+}) {
+  return (
+    <section aria-label="Mes services" className="flex flex-col gap-3">
+      {nextService ? (
+        <NextServiceCard
+          planning={nextService}
+          tasks={
+            myPlanning.tasksByEvent[
+              `${nextService.eventDepartment.event.id}_${nextService.eventDepartment.department.id}`
+            ] ?? []
+          }
+        />
+      ) : (
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarOff}
+            title="Aucun service à venir"
+            description="Votre responsable de département vous assignera à des événements."
+            size="sm"
+          />
+        </div>
+      )}
+
+      {agendaRows.length > 0 && (
+        <>
+          <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Mon planning" />
+          <ul className="overflow-hidden rounded-card border border-line bg-surface">
+            {agendaRows.map((row) => (
+              <li key={row.key} className="border-t border-line first:border-t-0">
+                <Link href={row.href} className={rowLinkClasses}>
+                  <DateTile date={row.date} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{row.title}</p>
+                    <p className="truncate text-[13px] leading-[18px] text-ink-muted">{row.meta}</p>
+                  </div>
+                  {row.status ? (
+                    <StatusChip tone={row.status.tone} icon={row.status.icon} className="shrink-0">
+                      <span className="hidden sm:inline">{row.status.label}</span>
+                      <span className="sm:hidden">{row.status.tone === "brand" ? "Debrief" : row.status.label}</span>
+                    </StatusChip>
+                  ) : (
+                    <StatusChip tone="neutral" icon={Users} className="shrink-0">
+                      Équipe
+                    </StatusChip>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ChurchEventsSection({
+  canEvents,
+  upcomingEvents,
+  unstaffed,
+}: {
+  readonly canEvents: boolean;
+  readonly upcomingEvents: ChurchEvent[];
+  readonly unstaffed: Map<string, number>;
+}) {
+  return (
+    <section aria-labelledby="today-events" className="flex flex-col gap-3">
+      <div id="today-events">
+        <SectionTitle
+          title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
+          href={canEvents ? "/events" : "/planning/events"}
+          linkLabel="Tout l'agenda"
+        />
+      </div>
+      {upcomingEvents.length === 0 ? (
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={CalendarDays}
+            title={canEvents ? "Aucun événement à venir" : "Plus d'événement cette semaine"}
+            size="sm"
+          />
+        </div>
+      ) : (
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
+          {upcomingEvents.map((event) => (
+            <li key={event.id} className="border-t border-line first:border-t-0">
+              <Link href={`/events/${event.id}/star-view`} className={rowLinkClasses}>
+                <DateTile date={event.date} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
+                  <p className="text-[13px] leading-[18px] text-ink-muted">
+                    {event.date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} ·{" "}
+                    {formatTime(event.date)}
+                  </p>
+                </div>
+                {(unstaffed.get(event.id) ?? 0) > 0 && <UnstaffedChip count={unstaffed.get(event.id)!} />}
+                <StatusChip tone={eventTypeTone(event.type)} className="shrink-0">
+                  {getEventTypeLabel(event.type)}
+                </StatusChip>
+                <ChevronRight aria-hidden="true" className="hidden size-4 shrink-0 text-ink-subtle sm:block" strokeWidth={1.75} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function RequestsSection({ openRequests }: { readonly openRequests: MyRequest[] }) {
+  return (
+    <section aria-labelledby="today-requests" className="flex flex-col gap-3">
+      <div id="today-requests">
+        <SectionTitle title="Mes demandes en cours" href="/requests" linkLabel="Toutes mes demandes" />
+      </div>
+      {openRequests.length === 0 ? (
+        <div className="rounded-card border border-line bg-surface">
+          <EmptyState
+            icon={Inbox}
+            title="Aucune demande en cours"
+            action={
+              <Link href="/requests/new" className={buttonClasses("secondary", "sm")}>
+                <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
+                Nouvelle demande
+              </Link>
+            }
+            size="sm"
+          />
+        </div>
+      ) : (
+        <ul className="overflow-hidden rounded-card border border-line bg-surface">
+          {openRequests.slice(0, MAX_REQUESTS).map((req) => {
+            const Icon = requestTypeIcon(req.type);
+            const status = requestStatus(req.status);
+            return (
+              <li key={req.id} className="border-t border-line first:border-t-0">
+                <Link href="/requests" className={rowLinkClasses}>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
+                    <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
+                      {req.announcement ? req.announcement.title : req.title}
+                    </p>
+                    <p className="truncate text-[13px] leading-[18px] text-ink-muted">
+                      {REQUEST_TYPE_LABEL[req.type] ?? req.type} · envoyée le{" "}
+                      {req.submittedAt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                  <StatusChip tone={status.tone} className="shrink-0">
+                    {status.label}
+                  </StatusChip>
+                </Link>
+              </li>
+            );
+          })}
+          {openRequests.length > MAX_REQUESTS && (
+            <li className="border-t border-line px-4 py-2.5 text-[13px] text-ink-muted">
+              Et {openRequests.length - MAX_REQUESTS} autre{openRequests.length - MAX_REQUESTS > 1 ? "s" : ""} en cours.
+            </li>
+          )}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ShortcutsSection({ shortcuts }: { readonly shortcuts: Shortcut[] }) {
+  return (
+    <section aria-labelledby="today-shortcuts" className="flex flex-col gap-3">
+      <h2 id="today-shortcuts" className="font-display text-[17px] font-semibold leading-6 text-ink">
+        Raccourcis
+      </h2>
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        {shortcuts.map((s) => (
+          <li key={s.href}>
+            <Link
+              href={s.href}
+              className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors duration-120 hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
+                <s.icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold leading-[22px] text-ink">{s.label}</span>
+                <span className="block truncate text-[13px] leading-[18px] text-ink-muted">{s.description}</span>
+              </span>
+              <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default async function TodayPage() {
   const session = await requireAuth();
   const churchId = await getCurrentChurchId(session);
@@ -155,34 +433,9 @@ export default async function TodayPage() {
     pickFirstName(session.user.name);
 
   // Services à venir (même tri et même filtre que « Mon planning »), événements d'équipe inclus.
-  const upcomingServices = (myPlanning?.plannings ?? [])
-    .filter((p) => new Date(p.eventDepartment.event.date) >= now)
-    .sort((a, b) => new Date(a.eventDepartment.event.date).getTime() - new Date(b.eventDepartment.event.date).getTime());
+  const upcomingServices = upcomingServicesOf(myPlanning, now);
   const nextService = upcomingServices[0];
-  const upcomingTeamEvents = (myPlanning?.teamEvents ?? []).filter((t) => new Date(t.endsAt) >= now);
-  const agendaRows = [
-    ...upcomingServices.slice(1).map((p) => ({
-      key: p.id,
-      date: new Date(p.eventDepartment.event.date),
-      title: p.eventDepartment.event.title,
-      meta: `${formatTime(new Date(p.eventDepartment.event.date))} · ${p.eventDepartment.department.name}`,
-      status: serviceStatusDescriptor(p.status),
-      href: `/events/${p.eventDepartment.event.id}/star-view`,
-    })),
-    ...upcomingTeamEvents.map((t) => {
-      const locationSuffix = t.location ? ` · ${t.location}` : "";
-      return {
-      key: `team-${t.id}`,
-      date: new Date(t.startsAt),
-      title: t.title,
-      meta: `${formatTime(new Date(t.startsAt))} · ${t.department.name}${locationSuffix}`,
-      status: null,
-      href: "/planning",
-      };
-    }),
-  ]
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .slice(0, MAX_SERVICES);
+  const agendaRows = agendaRowsOf(myPlanning, upcomingServices, now);
 
   const upcomingEvents = (churchEvents ?? []).filter((e) => e.date >= now).slice(0, MAX_EVENTS);
   // Départements sans STAR planifié, pour qui peut planifier (même repère que l'agenda).
@@ -190,22 +443,14 @@ export default async function TodayPage() {
   const unstaffed = gapViewer ? await countUnstaffedDepartments(upcomingEvents, gapViewer, now) : new Map<string, number>();
   const openRequests = (myRequests ?? []).filter((r) => OPEN_REQUEST_STATUSES.has(r.status));
 
-  let agendaShortcut: Shortcut[] = [];
-  if (canEvents) {
-    agendaShortcut = [{ href: "/events", label: "Agenda de l'église", description: "Calendrier des événements", icon: CalendarDays }];
-  } else if (canPlanning) {
-    agendaShortcut = [{ href: "/planning/events", label: "Agenda de l'église", description: "Les événements de la semaine", icon: CalendarDays }];
-  }
-  const shortcuts: Shortcut[] = [
-    ...(myPlanning ? [{ href: "/planning", label: "Mon planning", description: "Mes services du mois", icon: CalendarCheck }] : []),
-    ...(canDepartment
-      ? [{ href: "/dashboard", label: "Planning", description: "Saisir le planning d'un département", icon: LayoutGrid }]
-      : []),
-    ...agendaShortcut,
-    ...(canRequests ? [{ href: "/requests", label: "Mes demandes", description: "Annonces, visuels, événements", icon: Inbox }] : []),
-    ...(canAudio ? [{ href: "/audio", label: "Audio", description: "Réécouter les cultes", icon: Headphones }] : []),
-    { href: "/profile", label: "Mon profil", description: "Compte, apparence, notifications", icon: UserRound },
-  ];
+  const shortcuts = shortcutsFor({
+    hasMyPlanning: myPlanning !== null,
+    canDepartment,
+    canEvents,
+    canPlanning,
+    canRequests,
+    canAudio,
+  });
 
   const hasAside = canRequests || shortcuts.length > 0;
 
@@ -223,185 +468,16 @@ export default async function TodayPage() {
 
       <div className={`grid grid-cols-1 gap-6 ${hasAside ? "lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-6">
-          {myPlanning && (
-            <section aria-label="Mes services" className="flex flex-col gap-3">
-              {nextService ? (
-                <NextServiceCard
-                  planning={nextService}
-                  tasks={
-                    myPlanning.tasksByEvent[
-                      `${nextService.eventDepartment.event.id}_${nextService.eventDepartment.department.id}`
-                    ] ?? []
-                  }
-                />
-              ) : (
-                <div className="rounded-card border border-line bg-surface">
-                  <EmptyState
-                    icon={CalendarOff}
-                    title="Aucun service à venir"
-                    description="Votre responsable de département vous assignera à des événements."
-                    size="sm"
-                  />
-                </div>
-              )}
+          {myPlanning && <ServicesSection myPlanning={myPlanning} nextService={nextService} agendaRows={agendaRows} />}
 
-              {agendaRows.length > 0 && (
-                <>
-                  <SectionTitle title="Mes prochains rendez-vous" href="/planning" linkLabel="Mon planning" />
-                  <ul className="overflow-hidden rounded-card border border-line bg-surface">
-                    {agendaRows.map((row) => (
-                      <li key={row.key} className="border-t border-line first:border-t-0">
-                        <Link href={row.href} className={rowLinkClasses}>
-                          <DateTile date={row.date} />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{row.title}</p>
-                            <p className="truncate text-[13px] leading-[18px] text-ink-muted">{row.meta}</p>
-                          </div>
-                          {row.status ? (
-                            <StatusChip tone={row.status.tone} icon={row.status.icon} className="shrink-0">
-                              <span className="hidden sm:inline">{row.status.label}</span>
-                              <span className="sm:hidden">{row.status.tone === "brand" ? "Debrief" : row.status.label}</span>
-                            </StatusChip>
-                          ) : (
-                            <StatusChip tone="neutral" icon={Users} className="shrink-0">
-                              Équipe
-                            </StatusChip>
-                          )}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </section>
-          )}
-
-          {churchEvents && (
-            <section aria-labelledby="today-events" className="flex flex-col gap-3">
-              <div id="today-events">
-                <SectionTitle
-                  title={canEvents ? "Prochains événements de l'église" : "Cette semaine à l'église"}
-                  href={canEvents ? "/events" : "/planning/events"}
-                  linkLabel="Tout l'agenda"
-                />
-              </div>
-              {upcomingEvents.length === 0 ? (
-                <div className="rounded-card border border-line bg-surface">
-                  <EmptyState
-                    icon={CalendarDays}
-                    title={canEvents ? "Aucun événement à venir" : "Plus d'événement cette semaine"}
-                    size="sm"
-                  />
-                </div>
-              ) : (
-                <ul className="overflow-hidden rounded-card border border-line bg-surface">
-                  {upcomingEvents.map((event) => (
-                    <li key={event.id} className="border-t border-line first:border-t-0">
-                      <Link href={`/events/${event.id}/star-view`} className={rowLinkClasses}>
-                        <DateTile date={event.date} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">{event.title}</p>
-                          <p className="text-[13px] leading-[18px] text-ink-muted">
-                            {event.date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} ·{" "}
-                            {formatTime(event.date)}
-                          </p>
-                        </div>
-                        {(unstaffed.get(event.id) ?? 0) > 0 && <UnstaffedChip count={unstaffed.get(event.id)!} />}
-                        <StatusChip tone={eventTypeTone(event.type)} className="shrink-0">
-                          {getEventTypeLabel(event.type)}
-                        </StatusChip>
-                        <ChevronRight aria-hidden="true" className="hidden size-4 shrink-0 text-ink-subtle sm:block" strokeWidth={1.75} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
+          {churchEvents && <ChurchEventsSection canEvents={canEvents} upcomingEvents={upcomingEvents} unstaffed={unstaffed} />}
         </div>
 
         {hasAside && (
           <aside className="flex min-w-0 flex-col gap-6">
-            {canRequests && (
-              <section aria-labelledby="today-requests" className="flex flex-col gap-3">
-                <div id="today-requests">
-                  <SectionTitle title="Mes demandes en cours" href="/requests" linkLabel="Toutes mes demandes" />
-                </div>
-                {openRequests.length === 0 ? (
-                  <div className="rounded-card border border-line bg-surface">
-                    <EmptyState
-                      icon={Inbox}
-                      title="Aucune demande en cours"
-                      action={
-                        <Link href="/requests/new" className={buttonClasses("secondary", "sm")}>
-                          <Plus aria-hidden="true" className="size-4" strokeWidth={1.75} />
-                          Nouvelle demande
-                        </Link>
-                      }
-                      size="sm"
-                    />
-                  </div>
-                ) : (
-                  <ul className="overflow-hidden rounded-card border border-line bg-surface">
-                    {openRequests.slice(0, MAX_REQUESTS).map((req) => {
-                      const Icon = requestTypeIcon(req.type);
-                      const status = requestStatus(req.status);
-                      return (
-                        <li key={req.id} className="border-t border-line first:border-t-0">
-                          <Link href="/requests" className={rowLinkClasses}>
-                            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
-                              <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-[15px] font-semibold leading-[22px] text-ink">
-                                {req.announcement ? req.announcement.title : req.title}
-                              </p>
-                              <p className="truncate text-[13px] leading-[18px] text-ink-muted">
-                                {REQUEST_TYPE_LABEL[req.type] ?? req.type} · envoyée le{" "}
-                                {req.submittedAt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
-                              </p>
-                            </div>
-                            <StatusChip tone={status.tone} className="shrink-0">
-                              {status.label}
-                            </StatusChip>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                    {openRequests.length > MAX_REQUESTS && (
-                      <li className="border-t border-line px-4 py-2.5 text-[13px] text-ink-muted">
-                        Et {openRequests.length - MAX_REQUESTS} autre{openRequests.length - MAX_REQUESTS > 1 ? "s" : ""} en cours.
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </section>
-            )}
+            {canRequests && <RequestsSection openRequests={openRequests} />}
 
-            <section aria-labelledby="today-shortcuts" className="flex flex-col gap-3">
-              <h2 id="today-shortcuts" className="font-display text-[17px] font-semibold leading-6 text-ink">
-                Raccourcis
-              </h2>
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                {shortcuts.map((s) => (
-                  <li key={s.href}>
-                    <Link
-                      href={s.href}
-                      className="flex min-h-16 items-center gap-3 rounded-card border border-line bg-surface px-4 py-3 shadow-card transition-colors duration-120 hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                    >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-control bg-brand-soft text-brand-text">
-                        <s.icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[15px] font-semibold leading-[22px] text-ink">{s.label}</span>
-                        <span className="block truncate text-[13px] leading-[18px] text-ink-muted">{s.description}</span>
-                      </span>
-                      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-ink-subtle" strokeWidth={1.75} />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <ShortcutsSection shortcuts={shortcuts} />
           </aside>
         )}
       </div>

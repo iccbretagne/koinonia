@@ -9,6 +9,7 @@ import AuthLayoutShell from "@/components/AuthLayoutShell";
 import type { RoleKey as TourRoleKey } from "@/lib/tour-steps";
 import { landingHref } from "@/lib/navigation";
 import { isPastoralView } from "@/lib/view-mode";
+import type { Session } from "next-auth";
 
 // Liens de la section Configuration (paramétrage — pas les outils quotidiens)
 const configLinksDef = [
@@ -26,6 +27,302 @@ const configLinksDef = [
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
 ];
+
+type NavLink = { href: string; label: string };
+type ChurchRoles = Session["user"]["churchRoles"];
+
+/** Églises du sélecteur : celles des rôles, plus celles où l'utilisateur n'a qu'un profil pastoral. */
+async function switcherChurches(churchRoles: ChurchRoles, pastoralChurchIds: string[]) {
+  const churchMap = new Map(
+    churchRoles.map((r) => [r.churchId, { id: r.churchId, name: r.church.name }])
+  );
+  const pastoralOnlyIds = pastoralChurchIds.filter((id) => !churchMap.has(id));
+  if (pastoralOnlyIds.length > 0) {
+    const pastoralChurchData = await prisma.church.findMany({
+      where: { id: { in: pastoralOnlyIds } },
+      select: { id: true, name: true },
+    });
+    for (const c of pastoralChurchData) churchMap.set(c.id, c);
+  }
+  return Array.from(churchMap.values());
+}
+
+/**
+ * Départements des liens Planning : ceux dont l'utilisateur est responsable, ou tous ceux de
+ * l'église pour l'administration. Le rôle STAR est exclu : son champ `departments` porte le
+ * département d'APPARTENANCE (fiche membre liée, pour "Mon planning"), pas la responsabilité —
+ * sinon on affiche un lien Planning vers un département que l'utilisateur ne gère pas (même
+ * fuite qu'ADR-0013 dans getUserDepartmentScope).
+ */
+async function planningDepartments(churchRoles: ChurchRoles, currentChurchId: string | null | undefined) {
+  // For super admins / admins, show all departments
+  const isAdmin = churchRoles.some(
+    (r) =>
+      r.churchId === currentChurchId &&
+      (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
+  );
+  if (isAdmin && currentChurchId) {
+    const depts = await prisma.department.findMany({
+      where: { ministry: { churchId: currentChurchId }, isSystem: false },
+      include: { ministry: true },
+      orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
+    });
+    return depts.map((d) => ({ id: d.id, name: d.name, ministryName: d.ministry.name }));
+  }
+
+  const userDepartmentIds = churchRoles
+    .filter((r) => (!currentChurchId || r.churchId === currentChurchId) && r.role !== "STAR")
+    .flatMap((r) => r.departments.map((d) => d.department));
+  return Array.from(new Map(userDepartmentIds.map((d) => [d.id, d])).values());
+}
+
+/**
+ * Permissions d'affichage dans l'église COURANTE uniquement : agréger toutes les églises
+ * afficherait les liens d'administration d'une église où l'utilisateur n'est qu'Admin ailleurs
+ * et simple STAR dans celle-ci (isolation inter-églises, spec 024). Le masquage reste un confort
+ * d'affichage — la protection réelle est côté serveur (requireChurchPermission).
+ */
+function displayPermissions(churchRoles: ChurchRoles, currentChurchId: string | null | undefined, isSuperAdmin: boolean, isPastoral: boolean) {
+  const userRoles = churchRoles.filter((r) => r.churchId === currentChurchId).map((r) => r.role);
+  const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
+  // Utilisé par switchToAdminMode (fermeture sur une primitive plutôt que sur le Set — plus
+  // sûr à sérialiser dans une server action).
+  const canAccessDashboard = isSuperAdmin || userPermissions.has("planning:department");
+  // Super admins have all permissions regardless of church roles
+  if (isSuperAdmin) {
+    configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
+  }
+  // Utilisateurs avec un profil pastoral : permissions transversales
+  if (isPastoral) {
+    userPermissions.add("pastoral:view");
+    userPermissions.add("events:view");
+    userPermissions.add("discipleship:view");
+    userPermissions.add("planning:view");
+    userPermissions.add("members:view"); // accès lecture membres + section "Mes demandes"
+  }
+  return { userPermissions, canAccessDashboard };
+}
+
+function configLinks(userPermissions: Set<string>, isSuperAdmin: boolean, currentChurchId: string | null | undefined) {
+  const visibleConfigLinks: NavLink[] = configLinksDef
+    .filter((link) => {
+      if (link.superAdminOnly) return isSuperAdmin;
+      return link.permissions.some((p) => userPermissions.has(p));
+    })
+    .map(({ href, label }) => ({ href, label }));
+  // Sans la liste des églises (church:manage, plateforme), un Admin rejoint directement les
+  // paramètres de la sienne.
+  if (currentChurchId && !userPermissions.has("church:manage") && userPermissions.has("church:settings")) {
+    visibleConfigLinks.unshift({ href: `/admin/churches/${currentChurchId}`, label: "Paramètres de l'église" });
+  }
+  return visibleConfigLinks;
+}
+
+/** Départements de l'utilisateur dans l'église courante (appartenance ou responsabilité). */
+function currentDepartmentIds(churchRoles: ChurchRoles, currentChurchId: string) {
+  return new Set(
+    churchRoles
+      .filter((r) => r.churchId === currentChurchId)
+      .flatMap((r) => r.departments.map((d) => d.department.id))
+  );
+}
+
+/**
+ * Liens issus des équipes de service (Secrétariat, Communication, Production Média, Photos,
+ * Protocole) : traitement des demandes, espace « Communication & Production », RDV pastoral.
+ */
+async function serviceTeamLinks(
+  churchRoles: ChurchRoles,
+  currentChurchId: string,
+  userPermissions: Set<string>,
+  isSuperAdmin: boolean
+) {
+  const requestLinks: NavLink[] = [];
+  const mediaLinks: (NavLink & { matchPrefixes?: string[] })[] = [];
+  const isGlobalManager = isSuperAdmin || userPermissions.has("events:manage");
+
+  // One query for all department functions we need to check
+  const serviceDepts = await prisma.department.findMany({
+    where: {
+      function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE", "PHOTOS"] },
+      ministry: { churchId: currentChurchId },
+    },
+    select: { id: true, function: true },
+  });
+  const userDeptIds = currentDepartmentIds(churchRoles, currentChurchId);
+  const isInTeam = (fn: string) => serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
+  const isMemberOf = (fn: string) => isGlobalManager || isInTeam(fn);
+
+  if (isMemberOf("SECRETARIAT"))
+    requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
+
+  // Espace « Communication & Production » (spec 049, sur le modèle d'Audio — spec 021) :
+  // un seul lien de menu, les cartes réellement affichées à l'accueil dépendent de
+  // l'équipe/permissions — même logique que `resolveMediaSpaceAccess` (@/lib/media-space),
+  // construite ici à partir des données déjà chargées (`serviceDepts`/`isMemberOf`) sans
+  // requête supplémentaire. Repli Photos → Production Média si la fonction "Photos" n'est
+  // configurée sur aucun département de l'église (voir `isMediaTeamMember`, spec 049).
+  const hasPhotoDepts = serviceDepts.some((d) => d.function === "PHOTOS");
+  const isPhotoMember = hasPhotoDepts ? isMemberOf("PHOTOS") : isMemberOf("PRODUCTION_MEDIA");
+  const isVisualMember = isMemberOf("PRODUCTION_MEDIA");
+  const isCommMember = isMemberOf("COMMUNICATION");
+  const mediaSpaceAccess: MediaSpaceAccess = {
+    photos: userPermissions.has("media:view") || isPhotoMember || isCommMember,
+    visuals: userPermissions.has("media:view") || isVisualMember || isCommMember,
+    visualRequests: isGlobalManager || isVisualMember,
+    social: isGlobalManager || isCommMember,
+    share: userPermissions.has("media:manage") || isPhotoMember || isVisualMember || isCommMember,
+  };
+  if (buildMediaSpaceCards(mediaSpaceAccess).length > 0) {
+    mediaLinks.push({
+      href: "/media",
+      label: "Communication & Production",
+      matchPrefixes: ["/media", "/communication"],
+    });
+  }
+
+  // Spec 043 : pour qui a "members:view" (accès à "Mes demandes"), la demande de RDV
+  // pastoral devient une tuile dans /requests/new — lien de menu autonome retiré pour ne
+  // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
+  // il garde ce lien autonome, seul moyen d'accès pour lui.
+  if (!userPermissions.has("members:view")) {
+    requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
+  }
+
+  // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
+  return { requestLinks, mediaLinks, isProtocoleMember: isInTeam("PROTOCOLE") };
+}
+
+/** Nom et couleur de l'église courante, pour l'en-tête. */
+async function churchDisplay(currentChurchId: string | null | undefined) {
+  const currentChurchDb = currentChurchId
+    ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
+    : null;
+  return {
+    churchName: currentChurchDb?.name ?? "Église",
+    churchPrimaryColor: currentChurchDb?.primaryColor ?? "#5E17EB",
+  };
+}
+
+/** Sections « Demandes » (workflow requêtes) et « Médias » (module Media, production, audio). */
+async function requestAndMediaLinks(
+  churchRoles: ChurchRoles,
+  currentChurchId: string | null | undefined,
+  userPermissions: Set<string>,
+  isSuperAdmin: boolean
+) {
+  const requestLinks: NavLink[] = [];
+  const mediaLinks: (NavLink & { matchPrefixes?: string[] })[] = [];
+  let isProtocoleMember = false;
+
+  if (userPermissions.has("members:view")) {
+    requestLinks.push({ href: "/requests", label: "Mes demandes" });
+  }
+  if (currentChurchId && userPermissions.has("planning:view")) {
+    const teamLinks = await serviceTeamLinks(churchRoles, currentChurchId, userPermissions, isSuperAdmin);
+    requestLinks.push(...teamLinks.requestLinks);
+    mediaLinks.push(...teamLinks.mediaLinks);
+    isProtocoleMember = teamLinks.isProtocoleMember;
+  }
+  // Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière)
+  if (currentChurchId && userPermissions.has("audio:listen")) {
+    mediaLinks.push({ href: "/audio", label: "Audio" });
+  }
+  return { requestLinks, mediaLinks, isProtocoleMember };
+}
+
+/** Un des départements donnés de l'église porte l'une des fonctions données. */
+async function hasDepartmentWithFunction(churchId: string, deptIds: string[], functions: string[]) {
+  if (deptIds.length === 0) return false;
+  const count = await prisma.department.count({
+    where: {
+      function: functions.length === 1 ? functions[0] : { in: functions },
+      ministry: { churchId },
+      id: { in: deptIds },
+    },
+  });
+  return count > 0;
+}
+
+/** Section « Intégration familles ». */
+async function integrationLinks(
+  churchRoles: ChurchRoles,
+  currentChurchId: string,
+  userId: string,
+  userPermissions: Set<string>,
+  isSuperAdmin: boolean
+) {
+  const links: NavLink[] = [];
+  // integration:manage — remplace events:manage, qui approximait "Admin/Secrétaire" sans
+  // couvrir la bonne restriction (spec 054/#583, D4)
+  const isIntegrationGlobalManager = isSuperAdmin || userPermissions.has("integration:manage");
+  const isIntegrationMember =
+    isIntegrationGlobalManager ||
+    (await hasDepartmentWithFunction(currentChurchId, [...currentDepartmentIds(churchRoles, currentChurchId)], ["INTEGRATION", "MSDP"]));
+
+  const isBerger = await prisma.familyLeaderAssignment.count({
+    where: { churchId: currentChurchId, userId },
+  }).then((c) => c > 0);
+
+  if (isIntegrationMember || isBerger) {
+    links.push({ href: "/integration/requests", label: "Intégration" });
+  }
+  if (isIntegrationMember) {
+    links.push(
+      { href: "/integration/leaders", label: "Bergers de famille" },
+      { href: "/integration/parcours", label: "Parcours d'intégration" },
+      { href: "/integration/stats", label: "Statistiques intégration" },
+    );
+  }
+  // Réglage des délais de relance (spec 051) : même règle que requireIntegrationSettingsAccess
+  // — Super Admin / events:manage, ou responsable d'un département de fonction INTEGRATION.
+  const headDeptIds = churchRoles
+    .filter((r) => r.churchId === currentChurchId && r.role === "DEPARTMENT_HEAD")
+    .flatMap((r) => r.departments.map((d) => d.department.id));
+  if (isIntegrationGlobalManager || (await hasDepartmentWithFunction(currentChurchId, headDeptIds, ["INTEGRATION"]))) {
+    links.push({ href: "/integration/parametres", label: "Paramètres intégration" });
+  }
+  return links;
+}
+
+/** Section « Agenda pastoral », avec le suivi pastoral (module care). */
+async function agendaLinks(
+  session: Session,
+  currentChurchId: string | null | undefined,
+  userPermissions: Set<string>,
+  isProtocoleMember: boolean
+) {
+  const links: NavLink[] = [];
+
+  // Profil pastoral lié au compte → lien "Mon agenda" en tête de section
+  if (currentChurchId) {
+    const ownProfile = await prisma.pastoralProfile.findFirst({
+      where: { userId: session.user.id, churchId: currentChurchId },
+      select: { id: true },
+    });
+    if (ownProfile) links.push({ href: `/agenda/${ownProfile.id}`, label: "Mon agenda" });
+  }
+
+  if (userPermissions.has("agenda:view") || isProtocoleMember) links.push({ href: "/agenda", label: "Vue agenda" });
+  if (userPermissions.has("agenda:manage") || isProtocoleMember) links.push({ href: "/agenda/schedule", label: "Planification" });
+  // L'ajout direct à l'agenda (/agenda/new) se fait depuis le bouton « Ajouter à l'agenda » de la
+  // vue agenda : ce n'est pas une destination de navigation.
+
+  // Suivi pastoral (spec 052, ADR-0015) : qualification des RDV et suivi des nouveaux
+  // convertis, module `care` — remplace l'ancien lien « Qualification » de l'agenda.
+  // Accès : care:qualify, care:view, ou accompagnant d'au moins une demande/suivi en charge.
+  if (currentChurchId && registry.has("care") && (await hasCareAccess(session, currentChurchId, userPermissions))) {
+    links.push({ href: "/care", label: "Suivi pastoral" });
+  }
+  return links;
+}
+
+async function hasCareAccess(session: Session, churchId: string, userPermissions: Set<string>) {
+  if (userPermissions.has("care:qualify") || userPermissions.has("care:view")) return true;
+  const { getCareAccess } = await import("@/modules/care");
+  const access = await getCareAccess(session, churchId);
+  return access.ownProfileIds.length > 0;
+}
 
 async function signOutAction() {
   "use server";
@@ -67,257 +364,34 @@ export default async function AuthLayout({
   // Double rôle dans l'église courante : profil pastoral + au moins un rôle classique
   const hasBothRoles = isPastoral && hasClassicRole;
 
-  const currentChurchDb = currentChurchId
-    ? await prisma.church.findUnique({ where: { id: currentChurchId }, select: { name: true, primaryColor: true } })
-    : null;
-  const churchName = currentChurchDb?.name ?? "Église";
-  const churchPrimaryColor = currentChurchDb?.primaryColor ?? "#5E17EB";
+  const { churchName, churchPrimaryColor } = await churchDisplay(currentChurchId);
 
-  // Inclure les églises des profils pastoraux dans le switcher
-  const churchMap = new Map(
-    churchRoles.map((r) => [r.churchId, { id: r.churchId, name: r.church.name }])
+  const churches = await switcherChurches(churchRoles, pastoralChurchIds);
+  const allDepartments = await planningDepartments(churchRoles, currentChurchId);
+
+  const { userPermissions, canAccessDashboard } = displayPermissions(
+    churchRoles,
+    currentChurchId,
+    session.user.isSuperAdmin,
+    isPastoral
   );
-  const pastoralOnlyIds = pastoralChurchIds.filter((id) => !churchMap.has(id));
-  if (pastoralOnlyIds.length > 0) {
-    const pastoralChurchData = await prisma.church.findMany({
-      where: { id: { in: pastoralOnlyIds } },
-      select: { id: true, name: true },
-    });
-    for (const c of pastoralChurchData) churchMap.set(c.id, c);
-  }
-  const churches = Array.from(churchMap.values());
+  const visibleConfigLinks = configLinks(userPermissions, session.user.isSuperAdmin, currentChurchId);
 
-  // Get departments the user is responsible for (liens Planning). Le rôle STAR est exclu :
-  // son champ `departments` porte le département d'APPARTENANCE (fiche membre liée, pour
-  // "Mon planning"), pas la responsabilité — sinon on affiche un lien Planning vers un
-  // département que l'utilisateur ne gère pas (même fuite qu'ADR-0013 dans getUserDepartmentScope).
-  const userDepartmentIds = churchRoles
-    .filter((r) => (!currentChurchId || r.churchId === currentChurchId) && r.role !== "STAR")
-    .flatMap((r) => r.departments.map((d) => d.department));
-
-  const departments = Array.from(
-    new Map(userDepartmentIds.map((d) => [d.id, d])).values()
+  // ── Sections "Demandes" et "Médias" ────────────────────────────────────────
+  const { requestLinks, mediaLinks, isProtocoleMember } = await requestAndMediaLinks(
+    churchRoles,
+    currentChurchId,
+    userPermissions,
+    session.user.isSuperAdmin
   );
-
-  // For super admins / admins, show all departments
-  const isAdmin = churchRoles.some(
-    (r) =>
-      r.churchId === currentChurchId &&
-      (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
-  );
-
-  let allDepartments = departments;
-  if (isAdmin && currentChurchId) {
-    const depts = await prisma.department.findMany({
-      where: { ministry: { churchId: currentChurchId }, isSystem: false },
-      include: { ministry: true },
-      orderBy: [{ ministry: { name: "asc" } }, { name: "asc" }],
-    });
-    allDepartments = depts.map((d) => ({ id: d.id, name: d.name, ministryName: d.ministry.name }));
-  }
-
-  // Compute visible config links
-  // Uniquement les rôles détenus dans l'église COURANTE : agréger toutes les églises ici
-  // afficherait les liens d'administration d'une église où l'utilisateur n'est qu'Admin
-  // ailleurs et simple STAR dans celle-ci (isolation inter-églises, spec 024). Le masquage
-  // reste un confort d'affichage — la protection réelle est côté serveur (requireChurchPermission).
-  const userRoles = churchRoles
-    .filter((r) => r.churchId === currentChurchId)
-    .map((r) => r.role);
-  const userPermissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
-  // Utilisé par switchToAdminMode (ci-dessus, fermeture sur une primitive plutôt que sur
-  // le Set — plus sûr à sérialiser dans une server action).
-  const canAccessDashboard = session.user.isSuperAdmin || userPermissions.has("planning:department");
-  // Super admins have all permissions regardless of church roles
-  if (session.user.isSuperAdmin) {
-    configLinksDef.forEach((l) => l.permissions.forEach((p) => userPermissions.add(p)));
-  }
-  // Utilisateurs avec un profil pastoral : permissions transversales
-  if (isPastoral) {
-    userPermissions.add("pastoral:view");
-    userPermissions.add("events:view");
-    userPermissions.add("discipleship:view");
-    userPermissions.add("planning:view");
-    userPermissions.add("members:view"); // accès lecture membres + section "Mes demandes"
-  }
-  const visibleConfigLinks = configLinksDef
-    .filter((link) => {
-      if (link.superAdminOnly) return session.user.isSuperAdmin;
-      return link.permissions.some((p) => userPermissions.has(p));
-    })
-    .map(({ href, label }) => ({ href, label }));
-  // Sans la liste des églises (church:manage, plateforme), un Admin rejoint directement les
-  // paramètres de la sienne.
-  if (currentChurchId && !userPermissions.has("church:manage") && userPermissions.has("church:settings")) {
-    visibleConfigLinks.unshift({ href: `/admin/churches/${currentChurchId}`, label: "Paramètres de l'église" });
-  }
-
-  // ── Section "Demandes" (workflow requêtes) ──────────────────────────────────
-  const requestLinks: { href: string; label: string }[] = [];
-
-  if (userPermissions.has("members:view")) {
-    requestLinks.push({ href: "/requests", label: "Mes demandes" });
-  }
-
-  // ── Section "Médias" (module Media + dashboards production) ─────────────────
-  const mediaLinks: { href: string; label: string; matchPrefixes?: string[] }[] = [];
-  let isProtocoleMember = false;
-
-  if (currentChurchId && userPermissions.has("planning:view")) {
-    const isGlobalManager = session.user.isSuperAdmin || userPermissions.has("events:manage");
-
-    // One query for all department functions we need to check
-    const serviceDepts = await prisma.department.findMany({
-      where: {
-        function: { in: ["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA", "PROTOCOLE", "PHOTOS"] },
-        ministry: { churchId: currentChurchId },
-      },
-      select: { id: true, function: true },
-    });
-
-    const userDeptIds = new Set(
-      churchRoles
-        .filter((r) => r.churchId === currentChurchId)
-        .flatMap((r) => r.departments.map((d) => d.department.id))
-    );
-
-    const isMemberOf = (fn: string) =>
-      isGlobalManager ||
-      serviceDepts.some((d) => d.function === fn && userDeptIds.has(d.id));
-
-    if (isMemberOf("SECRETARIAT"))
-      requestLinks.push({ href: "/secretariat/requests", label: "Traitement des demandes" });
-
-    // Espace « Communication & Production » (spec 049, sur le modèle d'Audio — spec 021) :
-    // un seul lien de menu, les cartes réellement affichées à l'accueil dépendent de
-    // l'équipe/permissions — même logique que `resolveMediaSpaceAccess` (@/lib/media-space),
-    // construite ici à partir des données déjà chargées (`serviceDepts`/`isMemberOf`) sans
-    // requête supplémentaire. Repli Photos → Production Média si la fonction "Photos" n'est
-    // configurée sur aucun département de l'église (voir `isMediaTeamMember`, spec 049).
-    const hasPhotoDepts = serviceDepts.some((d) => d.function === "PHOTOS");
-    const isPhotoMember = hasPhotoDepts ? isMemberOf("PHOTOS") : isMemberOf("PRODUCTION_MEDIA");
-    const isVisualMember = isMemberOf("PRODUCTION_MEDIA");
-    const isCommMember = isMemberOf("COMMUNICATION");
-    const mediaSpaceAccess: MediaSpaceAccess = {
-      photos: userPermissions.has("media:view") || isPhotoMember || isCommMember,
-      visuals: userPermissions.has("media:view") || isVisualMember || isCommMember,
-      visualRequests: isGlobalManager || isVisualMember,
-      social: isGlobalManager || isCommMember,
-      share: userPermissions.has("media:manage") || isPhotoMember || isVisualMember || isCommMember,
-    };
-    if (buildMediaSpaceCards(mediaSpaceAccess).length > 0) {
-      mediaLinks.push({
-        href: "/media",
-        label: "Communication & Production",
-        matchPrefixes: ["/media", "/communication"],
-      });
-    }
-
-    // Protocole check for agenda access (don't inherit from isGlobalManager — role permissions handle that)
-    isProtocoleMember = serviceDepts.some((d) => d.function === "PROTOCOLE" && userDeptIds.has(d.id));
-
-    // Spec 043 : pour qui a "members:view" (accès à "Mes demandes"), la demande de RDV
-    // pastoral devient une tuile dans /requests/new — lien de menu autonome retiré pour ne
-    // pas dupliquer. Le STAR (planning:view sans members:view) n'a pas "Mes demandes" :
-    // il garde ce lien autonome, seul moyen d'accès pour lui.
-    if (!userPermissions.has("members:view")) {
-      requestLinks.push({ href: "/agenda/request", label: "Demande RDV pastoral" });
-    }
-  }
-
-  // ── Lien "Audio" (spec 021 : un seul lien, onglets à droits distincts derrière) ──
-  if (currentChurchId && userPermissions.has("audio:listen")) {
-    mediaLinks.push({ href: "/audio", label: "Audio" });
-  }
 
   // ── Section "Intégration familles" ──────────────────────────────────────────
-  const integrationLinks: { href: string; label: string }[] = [];
-
-  if (currentChurchId) {
-    // integration:manage — remplace events:manage, qui approximait "Admin/Secrétaire" sans
-    // couvrir la bonne restriction (spec 054/#583, D4)
-    const isIntegrationGlobalManager =
-      session.user.isSuperAdmin || userPermissions.has("integration:manage");
-    const userDeptIdsSet = new Set(
-      churchRoles
-        .filter((r) => r.churchId === currentChurchId)
-        .flatMap((r) => r.departments.map((d) => d.department.id))
-    );
-    const isIntegrationMember =
-      isIntegrationGlobalManager ||
-      (userDeptIdsSet.size > 0 &&
-        (await prisma.department.count({
-          where: {
-            function: { in: ["INTEGRATION", "MSDP"] },
-            ministry: { churchId: currentChurchId },
-            id: { in: [...userDeptIdsSet] },
-          },
-        })) > 0);
-
-    const isBerger = await prisma.familyLeaderAssignment.count({
-      where: { churchId: currentChurchId, userId: session.user.id! },
-    }).then((c) => c > 0);
-
-    if (isIntegrationMember || isBerger) {
-      integrationLinks.push({ href: "/integration/requests", label: "Intégration" });
-    }
-    if (isIntegrationMember) {
-      integrationLinks.push(
-        { href: "/integration/leaders", label: "Bergers de famille" },
-        { href: "/integration/parcours", label: "Parcours d'intégration" },
-        { href: "/integration/stats", label: "Statistiques intégration" },
-      );
-    }
-    // Réglage des délais de relance (spec 051) : même règle que requireIntegrationSettingsAccess
-    // — Super Admin / events:manage, ou responsable d'un département de fonction INTEGRATION.
-    const headDeptIds = churchRoles
-      .filter((r) => r.churchId === currentChurchId && r.role === "DEPARTMENT_HEAD")
-      .flatMap((r) => r.departments.map((d) => d.department.id));
-    const isIntegrationHead =
-      headDeptIds.length > 0 &&
-      (await prisma.department.count({
-        where: { function: "INTEGRATION", ministry: { churchId: currentChurchId }, id: { in: headDeptIds } },
-      })) > 0;
-    if (isIntegrationGlobalManager || isIntegrationHead) {
-      integrationLinks.push({ href: "/integration/parametres", label: "Paramètres intégration" });
-    }
-  }
+  const integrationNavLinks = currentChurchId
+    ? await integrationLinks(churchRoles, currentChurchId, session.user.id!, userPermissions, session.user.isSuperAdmin)
+    : [];
 
   // ── Section "Agenda pastoral" ────────────────────────────────────────────────
-  const agendaLinks: { href: string; label: string }[] = [];
-  const hasAgendaView = userPermissions.has("agenda:view") || isProtocoleMember;
-  const hasAgendaManage = userPermissions.has("agenda:manage") || isProtocoleMember;
-
-  // Profil pastoral lié au compte → lien "Mon agenda" en tête de section
-  if (currentChurchId) {
-    const ownProfile = await prisma.pastoralProfile.findFirst({
-      where: { userId: session.user.id, churchId: currentChurchId },
-      select: { id: true },
-    });
-    if (ownProfile) agendaLinks.push({ href: `/agenda/${ownProfile.id}`, label: "Mon agenda" });
-  }
-
-  if (hasAgendaView) agendaLinks.push({ href: "/agenda", label: "Vue agenda" });
-  if (hasAgendaManage) agendaLinks.push({ href: "/agenda/schedule", label: "Planification" });
-  // L'ajout direct à l'agenda (/agenda/new) se fait depuis le bouton « Ajouter à l'agenda » de la
-  // vue agenda : ce n'est pas une destination de navigation.
-
-  // Suivi pastoral (spec 052, ADR-0015) : qualification des RDV et suivi des nouveaux
-  // convertis, module `care` — remplace l'ancien lien « Qualification » de l'agenda.
-  // Accès : care:qualify, care:view, ou accompagnant d'au moins une demande/suivi en charge.
-  if (currentChurchId && registry.has("care")) {
-    const hasCareOverview =
-      userPermissions.has("care:qualify") || userPermissions.has("care:view");
-    let isCareAssignee = false;
-    if (!hasCareOverview) {
-      const { getCareAccess } = await import("@/modules/care");
-      const access = await getCareAccess(session, currentChurchId);
-      isCareAssignee = access.ownProfileIds.length > 0;
-    }
-    if (hasCareOverview || isCareAssignee) {
-      agendaLinks.push({ href: "/care", label: "Suivi pastoral" });
-    }
-  }
+  const agendaNavLinks = await agendaLinks(session, currentChurchId, userPermissions, isProtocoleMember);
 
   const footerContent = (
     <footer className="px-4 py-4 text-center text-xs text-ink-subtle print:hidden">
@@ -405,23 +479,11 @@ export default async function AuthLayout({
   // rôle du tout.
   const hasAnyNavigation =
     session.user.isSuperAdmin ||
-    visibleConfigLinks.length > 0 ||
-    requestLinks.length > 0 ||
-    mediaLinks.length > 0 ||
-    integrationLinks.length > 0 ||
-    agendaLinks.length > 0 ||
-    hasDiscipleship ||
-    hasAccounting ||
-    hasJobs ||
-    hasEventsAccess ||
-    hasPlanningAccess ||
-    hasMembersAccess ||
-    hasReports ||
-    hasRooms ||
-    hasMyPlanning ||
-    showStarEvents ||
-    hasAbsences ||
-    hasAvailability;
+    [visibleConfigLinks, requestLinks, mediaLinks, integrationNavLinks, agendaNavLinks].some((links) => links.length > 0) ||
+    [
+      hasDiscipleship, hasAccounting, hasJobs, hasEventsAccess, hasPlanningAccess, hasMembersAccess,
+      hasReports, hasRooms, hasMyPlanning, showStarEvents, hasAbsences, hasAvailability,
+    ].some(Boolean);
 
   if (!hasAnyNavigation) {
     redirect("/no-access");
@@ -433,8 +495,8 @@ export default async function AuthLayout({
       configLinks={visibleConfigLinks}
       requestLinks={requestLinks}
       mediaLinks={mediaLinks}
-      agendaLinks={agendaLinks}
-      integrationLinks={integrationLinks}
+      agendaLinks={agendaNavLinks}
+      integrationLinks={integrationNavLinks}
       famillesUrl={famillesUrl}
       hasDiscipleship={hasDiscipleship}
       hasAccounting={hasAccounting}
