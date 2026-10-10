@@ -732,6 +732,10 @@ Retourne tous les membres du département avec leur statut.
 }
 ```
 
+Depuis la spec 061, la réponse porte aussi `withdrawals` (désistements en attente de
+remplacement sur ce créneau : `id`, `memberId`, `originalStatus`, `message`) et
+`counts.toReplace` (leur nombre).
+
 **Erreur** : `404` si le lien événement-département n'existe pas.
 
 ### `PUT /api/events/[eventId]/departments/[deptId]/planning`
@@ -763,6 +767,11 @@ Valeurs possibles pour `status` : `"EN_SERVICE"`, `"EN_SERVICE_DEBRIEF"`, `"INDI
 **Erreurs** :
 - `400` si plus d'un `EN_SERVICE_DEBRIEF`
 - `400` si le body ne passe pas la validation Zod
+- `403` après la date limite de planification, sauf Super Admin, Admin ou Secrétaire
+
+**Désistements (spec 061)** : un STAR désisté replacé dans la grille annule son désistement ; un
+membre nouvellement planifié pourvoit le plus ancien désistement en attente du créneau (le STAR
+désisté reçoit la confirmation).
 
 ### `GET /api/events/[eventId]/departments/[deptId]/tasks`
 
@@ -793,6 +802,75 @@ Assigne des membres à une tâche pour un événement. Remplace les assignations
 **Erreurs** :
 - `400` si un membre n'est pas en service pour cet événement
 - `404` si la tâche ou le lien événement-département est introuvable
+
+## Désistements de service (« Je ne peux plus », spec 061)
+
+Un STAR planifié se retire d'un service avant la date limite de planification ; le responsable du
+département (à défaut le ministre) est notifié et choisit un remplaçant. Un désistement est
+`PENDING`, puis `REPLACED`, `CANCELLED` ou `CLOSED`. L'église de référence est toujours celle de
+l'événement ou du désistement, jamais l'église affichée.
+
+### `POST /api/planning/withdrawals`
+
+Désistement par le STAR lui-même, pour sa fiche liée membre du département.
+
+**Permission requise** : `planning:view`
+
+**Body** (Zod) : `{ "eventId": "clx...", "departmentId": "clx...", "message": "facultatif, 500 car. max" }`
+
+**Réponse** : `201` avec le désistement créé. Le service passe à « – », la réponse de
+disponibilité à « Indisponible », et les destinataires sont notifiés avec le nombre de
+remplaçants possibles.
+
+**Erreurs** :
+- `400` date limite passée (« contacte ton responsable ») ou membre non planifié sur ce service
+- `403` aucune fiche STAR liée dans ce département
+- `404` événement introuvable
+- `409` désistement déjà en attente sur ce service
+
+### `GET /api/planning/withdrawals/[id]`
+
+Détail pour l'écran de remplacement : désistement, événement, département, STAR désisté,
+remplaçants possibles (`candidates`, « Disponible » puis « Si besoin », libres ce jour-là),
+`open` (encore à remplacer) et `canReplace`.
+
+**Permission requise** : `planning:department` + département dans le périmètre.
+`canReplace` vaut `true` seulement avec `planning:edit` (le Secrétaire lit sans agir).
+
+### `DELETE /api/planning/withdrawals/[id]`
+
+Annulation par le STAR désisté tant qu'aucun remplaçant n'a été choisi : il reprend son statut
+d'origine et les destinataires sont prévenus.
+
+**Permission requise** : `planning:view` + fiche désistée liée au compte
+
+**Erreurs** : `403` fiche non liée ; `409` service déjà pourvu, clos ou déjà annulé.
+
+### `POST /api/planning/withdrawals/[id]/replace`
+
+Choix d'un remplaçant : placé avec le statut d'origine du désisté ; confirmation au STAR désisté.
+Le premier qui pourvoit l'emporte.
+
+**Permission requise** : `planning:edit` + département dans le périmètre
+
+**Body** (Zod) : `{ "memberId": "clx..." }`
+
+**Erreurs** :
+- `400` l'événement a commencé
+- `409` déjà pourvu (avec le nom du remplaçant), annulé ou clos
+- `422` candidat plus disponible, déjà planifié, ou second debrief sur le créneau
+
+### `POST /api/planning/withdrawals/[id]/close`
+
+« Ne pas remplacer » : le désistement est clos et le STAR informé.
+
+**Permission requise** : `planning:edit` + département dans le périmètre
+
+**Erreurs** : `409` déjà pourvu, annulé ou clos.
+
+L'enregistrement des réponses de disponibilité (`/api/availability`, écran *Mes disponibilités*) crée aussi un désistement
+lorsqu'un STAR planifié se déclare indisponible avant l'échéance ; sa réponse porte alors
+`withdrawals` (après l'échéance, le responsable est seulement alerté comme auparavant).
 
 ## Absences
 
@@ -2387,9 +2465,13 @@ compte rendu de celles qui ont tourné (`null` sinon) :
   "tasks": { "reminders": "not-due", "planning-digest": "ran", "availability": "ran" },
   "reminders": null,
   "planningDigest": { "digestsSent": 1 },
-  "availability": { "opened": 0, "openingNotified": 0, "asksSent": 0, "relances": 0 }
+  "availability": { "opened": 0, "openingNotified": 0, "asksSent": 0, "relances": 0 },
+  "serviceWithdrawalRelances": { "relanced": 0 }
 }
 ```
+
+La tâche `service-withdrawal-relances` (toutes les heures) relance une fois les destinataires d'un
+désistement toujours en attente 48 h avant l'événement (spec 061).
 
 L'échec d'une tâche est consigné (`cron_task_runs.lastError`, journal) sans empêcher les autres
 ni faire échouer l'appel.

@@ -35,7 +35,7 @@ Deux compteurs en tête de grille disent où l'on en est : le nombre de personne
 
 **Les tâches.** Si le département a défini des tâches, un bloc apparaît en bas de la grille de saisie pour les répartir entre les personnes en service sur cet événement. C'est le même écran : on dit d'abord qui est là, puis qui fait quoi.
 
-**L'échéance.** Chaque événement porte une date limite de planification. Une fois dépassée, un bandeau le signale — la modification reste possible, mais elle est visible comme tardive. L'échéance n'est pas un verrou, c'est un engagement collectif : elle existe pour que les autres départements et le secrétariat puissent travailler sur une base stable.
+**L'échéance.** Chaque événement porte une date limite de planification. Une fois dépassée, un bandeau le signale et la grille est **figée pour les responsables** : seuls l'administration et le secrétariat peuvent encore la modifier. Une exception : un service laissé vacant par un désistement (voir ci-dessous) peut toujours être pourvu par le responsable, jusqu'au début de l'événement. L'échéance existe pour que les autres départements et le secrétariat puissent travailler sur une base stable.
 
 **La publication.** Une fois la grille remplie, la vue semaine produit le planning sous forme lisible, à copier en image, télécharger en PNG ou exporter en PDF. On peut y ajouter une **notice** — une consigne particulière pour ce créneau. C'est cet export qui circule, et non plus une capture d'écran d'un tableur.
 
@@ -54,13 +54,22 @@ Deux compteurs en tête de grille disent où l'on en est : le nombre de personne
 ## Les règles à connaître
 
 - **Un STAR laissé à « – » n'est pas une absence**, c'est une case non traitée. La différence compte : l'indisponibilité est une information, le vide est un oubli.
-- **La grille se remplit avant l'échéance.** Après, elle reste modifiable, mais chaque modification tardive se répercute sur les départements qui s'étaient calés dessus.
+- **La grille se remplit avant l'échéance.** Après, elle n'est plus modifiable par les responsables (seuls l'administration et le secrétariat le peuvent), hormis pour pourvoir un désistement.
+- **Un STAR se désiste lui-même avant l'échéance.** Passée cette date, « Je ne peux plus » laisse place aux coordonnées du responsable à joindre directement.
 - **Positionner ne suffit pas toujours.** Une grille remplie sans répartition des tâches laisse l'équipe présente sans savoir qui fait quoi. Les deux se règlent sur le même écran.
 - **Publier ne remplace pas remplir** : l'export reflète l'état de la grille au moment où on le génère.
 
 ## Les cas particuliers
 
 **Une absence déclarée après coup.** Elle remonte dans la grille sous forme de conflit, et le responsable recompose. Voir la fiche *Absences*.
+
+**« Je ne peux plus » : un STAR se désiste.** Depuis *Mon planning* (ou en se déclarant indisponible sur l'écran *Mes disponibilités*), un STAR planifié peut signaler qu'il ne peut plus servir, avec un message facultatif, tant que la date limite n'est pas passée. Il est retiré du service et le responsable du département — à défaut, le ministre — est prévenu tout de suite, avec le nombre de remplaçants possibles : les membres du département disponibles ou « si besoin » pour cet événement et libres ce jour-là. Depuis la notification, le responsable :
+
+- **choisit un remplaçant** dans la liste (« Disponible » d'abord, puis « Si besoin ») : il est placé avec le statut d'origine, et le STAR désisté reçoit la confirmation ;
+- ou place quelqu'un **depuis la grille**, où le service apparaît « À remplacer » : le désistement est alors considéré comme pourvu ;
+- ou décide de **ne pas remplacer** : le STAR est informé que son désistement est pris en compte.
+
+Tant que personne n'a été choisi, le STAR peut **annuler son désistement** et reprendre sa place. Sans réponse, le responsable reçoit une relance 48 h avant l'événement. Le premier qui pourvoit le service l'emporte : un second choix est refusé avec le nom du remplaçant déjà retenu.
 
 **Un remplaçant.** Le statut existe pour dire « mobilisable sans être prévu ». Il évite d'avoir à choisir entre « en service » et « rien », et donne au responsable une réserve visible.
 

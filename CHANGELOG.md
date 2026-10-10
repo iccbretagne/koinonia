@@ -6,6 +6,11 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- « Je ne peux plus » : depuis « Mon planning », un STAR planifié se retire d'un service avant la date limite de planification, avec un message facultatif. Le responsable du département (à défaut le ministre) est prévenu tout de suite, avec le nombre de remplaçants possibles : membres du département disponibles ou « si besoin » pour l'événement, et libres ce jour-là. Depuis la notification, il choisit un remplaçant, placé avec le même statut, ou décide de ne pas remplacer ; le STAR désisté est informé dans les deux cas. Le service apparaît aussi « À remplacer » dans la grille, où placer quelqu'un le pourvoit, même après la date limite et jusqu'au début de l'événement. Tant que personne n'a été choisi, le STAR peut annuler son désistement. Une relance unique part 48 h avant l'événement si le service est toujours à remplacer. Répondre « Pas disponible » sur l'écran Disponibilités pour un service où l'on est planifié a le même effet, après avertissement. Le raccourci « Pas disponible du … au … » garde pour l'instant l'alerte de conflit actuelle (#673). Passé la date limite, le STAR voit les coordonnées de son responsable à joindre (spec 061, #612).
+- « Mon planning » affiche aussi les services où l'on est planifié comme remplaçant.
+
 ### Corrigé
 
 - Trame des annonces : le dépôt et le retrait sont réservés à l'administration et au

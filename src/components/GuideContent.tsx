@@ -185,6 +185,22 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
+    name: "Je ne peux plus servir",
+    description: "Depuis « Mon planning », « Je ne peux plus » vous retire d'un service avant la date limite de planification, avec un message facultatif : votre responsable est prévenu tout de suite et choisit un remplaçant. Vous déclarer « Pas disponible » sur un service où vous êtes planifié a le même effet, après confirmation. Tant que personne n'a été choisi, « Annuler mon désistement » vous rend votre place. Passé la date limite, contactez directement votre responsable : ses coordonnées s'affichent sur le service.",
+    category: "Absences",
+    screenshotTitle: "Je ne peux plus",
+    screenshotFile: "guide-je-ne-peux-plus.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Remplacer un STAR désisté",
+    description: "Quand un STAR se désiste, vous recevez une notification qui ouvre l'écran du service à remplacer : son message et les remplaçants possibles (disponibles d'abord, puis « si besoin », tous libres ce jour-là). « Choisir » le place avec le même statut et le STAR désisté est prévenu ; « Ne pas remplacer » clôt le désistement. Vous pouvez aussi placer quelqu'un depuis la grille, où le service apparaît « À remplacer », même après la date limite, jusqu'au début de l'événement. Sans réponse, une relance arrive 48 h avant.",
+    category: "Absences",
+    screenshotTitle: "Service à remplacer",
+    screenshotFile: "guide-remplacement.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "read", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Régler la collecte",
     description: "L'onglet « Collectes » (menu « Disponibilités ») liste le mois en cours et les suivants avec l'état de leur collecte ; « Ouvrir maintenant » ouvre celle d'un mois à l'avance et notifie aussitôt les STAR. Le lien « Réglages » permet d'activer ou non la collecte automatique et de choisir combien de mois avant l'ouverture, combien de jours avant le début du mois pour la clôture et pour la relance des sans-réponse.",
     category: "Absences",

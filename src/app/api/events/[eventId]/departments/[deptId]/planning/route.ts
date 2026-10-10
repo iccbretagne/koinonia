@@ -6,7 +6,13 @@ import {
   ApiError,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { getPlanningAvailability, recordPlanningChanges } from "@/modules/planning";
+import {
+  getPlanningAvailability,
+  listPendingWithdrawalsForSlot,
+  reconcileWithdrawalsAfterGridEdit,
+  recordPlanningChanges,
+  sendReplacedConfirmation,
+} from "@/modules/planning";
 import { rolePermissions } from "@/lib/registry";
 import { z } from "zod";
 
@@ -137,7 +143,8 @@ export async function GET(
         planningDeadline: event?.planningDeadline ?? null,
         deadlinePassed,
         canBypassDeadline,
-        counts: payload?.counts ?? null,
+        counts: payload ? { ...payload.counts, toReplace: 0 } : null,
+        withdrawals: [],
         canAskTeam,
         manualRelanceAvailable: payload?.manualRelanceAvailable ?? false,
       });
@@ -150,6 +157,9 @@ export async function GET(
       eventDept.department.memberDepts.map(({ member }) => member.id),
       canAskTeam
     );
+
+    // Services rendus vacants par un désistement (spec 061) : bandeau et ligne « à remplacer ».
+    const withdrawals = await listPendingWithdrawalsForSlot(eventId, departmentId);
 
     const members = eventDept.department.memberDepts.map(({ member }) => {
       const planning = eventDept.plannings.find(
@@ -173,7 +183,8 @@ export async function GET(
       planningDeadline: eventDept.event.planningDeadline,
       deadlinePassed,
       canBypassDeadline,
-      counts: payload.counts,
+      counts: { ...payload.counts, toReplace: withdrawals.length },
+      withdrawals,
       canAskTeam,
       manualRelanceAvailable: payload.manualRelanceAvailable,
     });
@@ -312,6 +323,21 @@ export async function PUT(
       entityId: eventDept!.id,
       details: { eventId, departmentId, count: plannings.length },
     });
+
+    // Placer quelqu'un depuis la grille pourvoit un désistement en attente ; replacer le STAR
+    // désisté l'annule (spec 061). Le STAR remplacé reçoit sa confirmation immédiatement.
+    try {
+      const filled = await reconcileWithdrawalsAfterGridEdit(prisma, {
+        eventId,
+        departmentId,
+        before: prevStatusMap,
+        after: plannings,
+        actorId: session.user.id,
+      });
+      for (const f of filled) await sendReplacedConfirmation(prisma, f.withdrawalId, f.replacementName);
+    } catch (error) {
+      console.error("[planning] rapprochement des désistements impossible", error);
+    }
 
     // Les STAR dont le service change sont prévenus en un seul récapitulatif, une fois le délai
     // de l'église écoulé sans nouvelle modification (spec 060) ; rien ne part ici.

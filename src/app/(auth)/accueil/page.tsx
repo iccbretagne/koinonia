@@ -185,6 +185,7 @@ function ServicesSection({
               `${nextService.eventDepartment.event.id}_${nextService.eventDepartment.department.id}`
             ] ?? []
           }
+          contacts={myPlanning.contactsByDepartment[nextService.eventDepartment.department.id] ?? []}
         />
       ) : (
         <div className="rounded-card border border-line bg-surface">

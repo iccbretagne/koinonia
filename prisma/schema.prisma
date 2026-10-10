@@ -123,6 +123,8 @@ model Church {
   responsible               PastoralProfile?           @relation("ChurchResponsibleProfile", fields: [responsibleProfileId], references: [id])
   supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
+  serviceWithdrawals        ServiceWithdrawal[]
+
   @@map("churches")
 }
 
@@ -295,6 +297,8 @@ model Department {
   availabilityResponses AvailabilityResponse[]
   availabilityAsks  AvailabilityAsk[]
 
+  serviceWithdrawals ServiceWithdrawal[]
+
   @@map("departments")
 }
 
@@ -326,6 +330,10 @@ model Member {
 
   // Service d'ouverture/fermeture de l'église (spec 041)
   openingClosingAssignments OpeningClosingAssignment[]
+
+  // Désistements (spec 061)
+  serviceWithdrawals    ServiceWithdrawal[] @relation("WithdrawnMember")
+  serviceReplacements   ServiceWithdrawal[] @relation("ReplacementMember")
 
   @@map("members")
 }
@@ -469,6 +477,8 @@ model Event {
   absenceTargets            AbsenceEvent[]
   availabilityResponses     AvailabilityResponse[]
   availabilityAsks          AvailabilityAsk[]
+
+  serviceWithdrawals        ServiceWithdrawal[]
 
   @@map("events")
 }
@@ -2554,4 +2564,41 @@ model PlanningChangeNotice {
   @@unique([memberId, eventId, departmentId])
   @@index([churchId, lastChangedAt])
   @@map("planning_change_notices")
+}
+
+enum ServiceWithdrawalStatus {
+  PENDING
+  REPLACED
+  CANCELLED
+  CLOSED
+}
+
+/// Désistement d'un STAR sur un service (spec 061). Le STAR est retiré du planning à la création ;
+/// `originalStatus` est le statut repris par le remplaçant, ou restauré à l'annulation.
+model ServiceWithdrawal {
+  id                  String                  @id @default(cuid())
+  churchId            String
+  eventId             String
+  departmentId        String
+  memberId            String
+  originalStatus      ServiceStatus
+  message             String?                 @db.VarChar(500)
+  status              ServiceWithdrawalStatus @default(PENDING)
+  createdById         String?
+  replacementMemberId String?
+  resolvedById        String?
+  resolvedAt          DateTime?
+  relanceSentAt       DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  church              Church                  @relation(fields: [churchId], references: [id])
+  event               Event                   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  department          Department              @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  member              Member                  @relation("WithdrawnMember", fields: [memberId], references: [id], onDelete: Cascade)
+  replacementMember   Member?                 @relation("ReplacementMember", fields: [replacementMemberId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, departmentId, status])
+  @@index([memberId, status])
+  @@index([churchId, status])
+  @@map("service_withdrawals")
 }

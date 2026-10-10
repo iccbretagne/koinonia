@@ -479,6 +479,10 @@ function matchLength(page: NavPage, pathname: string, dept: string | null): numb
   return lengths.length > 0 ? Math.max(...lengths) : null;
 }
 
+/** Écran du service à remplacer (spec 061), sans entrée de navigation propre. */
+const REPLACEMENT_PATH = "/planning/remplacements";
+const REPLACEMENT_LABEL = "Remplacement";
+
 /**
  * Espace et page actifs pour l'URL courante : la page la plus spécifique l'emporte parmi toutes
  * celles de la navigation (`/planning/events` n'allume pas « Mon planning »). Les départements
@@ -486,6 +490,11 @@ function matchLength(page: NavPage, pathname: string, dept: string | null): numb
  * d'un autre espace ne correspond (il peut pointer vers la même URL qu'une autre entrée).
  */
 export function resolveActive(spaces: readonly NavSpace[], pathname: string, dept: string | null = null): ActiveNav {
+  // Service à remplacer (spec 061) : atteint par lien seulement, rattaché à l'espace Planning.
+  if (matchesPath(pathname, REPLACEMENT_PATH) && spaces.some((s) => s.key === "planning")) {
+    return { space: "planning", page: null };
+  }
+
   let best: { space: SpaceKey; page: string; len: number } | null = null;
 
   for (const s of spaces) {
@@ -574,6 +583,9 @@ export function buildBreadcrumb(spaces: readonly NavSpace[], pathname: string, d
 
   const { space: s, page } = found;
   if (s.key === "home") return [{ label: s.label }];
+  if (s.key === "planning" && matchesPath(pathname, REPLACEMENT_PATH)) {
+    return [{ label: s.label, href: s.external ? undefined : s.href }, { label: REPLACEMENT_LABEL }];
+  }
   if (!page) return [{ label: s.label }];
 
   const deeper = isDeeper(pathname, page);
@@ -599,6 +611,9 @@ export function parentLink(spaces: readonly NavSpace[], pathname: string, dept: 
     return account ? { href: account.href, label: account.label } : null;
   }
   const { page } = found;
+  if (found.space.key === "planning" && matchesPath(pathname, REPLACEMENT_PATH)) {
+    return { href: found.space.href, label: found.space.label };
+  }
   if (!page || !isDeeper(pathname, page)) return null;
   return { href: page.href, label: page.label };
 }

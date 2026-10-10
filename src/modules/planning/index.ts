@@ -96,6 +96,29 @@ export { getPlanningAvailability } from "./services/availability/grid";
 export { askTeam, manualRelance, assertEventDepartment } from "./services/availability/asks";
 export { resolveAvailability, countsAsUnavailable, unavailabilityReason } from "./services/availability/state";
 export type { AvailabilityState, ResolvedAvailability } from "./services/availability/state";
+// Désistements et remplacements (spec 061)
+export { withdrawable, replaceable, isPlannedStatus } from "./services/withdrawals/rules";
+export { resolveWithdrawalRecipients } from "./services/withdrawals/recipients";
+export { listReplacementCandidates } from "./services/withdrawals/candidates";
+export type { ReplacementCandidate } from "./services/withdrawals/candidates";
+export {
+  createWithdrawal,
+  withdrawService,
+  sendWithdrawalNotice,
+  resolveOwnMemberForDepartment,
+} from "./services/withdrawals/withdraw";
+export type { WithdrawalInput } from "./services/withdrawals/withdraw";
+export { replaceWithdrawal, sendReplacedConfirmation } from "./services/withdrawals/replace";
+export { cancelWithdrawal, closeWithdrawal } from "./services/withdrawals/resolve";
+export { reconcileWithdrawalsAfterGridEdit } from "./services/withdrawals/reconcile";
+export { runWithdrawalRelances } from "./services/withdrawals/relances";
+export {
+  listPendingWithdrawalsForSlot,
+  listPendingWithdrawalsForMembers,
+  getWithdrawalDetail,
+  getWithdrawalOwner,
+} from "./services/withdrawals/queries";
+export type { PendingSlotWithdrawal, PendingMemberWithdrawal, WithdrawalDetail } from "./services/withdrawals/queries";
 
 export {
   PLANNED_STATUSES,
