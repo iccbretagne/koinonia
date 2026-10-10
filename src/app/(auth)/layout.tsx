@@ -324,6 +324,16 @@ async function hasCareAccess(session: Session, churchId: string, userPermissions
   return access.ownProfileIds.length > 0;
 }
 
+/**
+ * « Trame des annonces » (#676) : même règle que la page et l'API — `planning:view` puis
+ * `canReadAnnouncementSheet` (déposants, ministres/responsables à périmètre non vide, modération).
+ */
+async function hasAnnouncementSheetAccess(session: Session, churchId: string | null | undefined, userPermissions: Set<string>) {
+  if (!churchId || !registry.has("planning") || !userPermissions.has("planning:view")) return false;
+  const { canReadAnnouncementSheet } = await import("@/modules/planning");
+  return canReadAnnouncementSheet(session, churchId);
+}
+
 async function signOutAction() {
   "use server";
   await signOut({ redirectTo: "/" });
@@ -452,6 +462,7 @@ export default async function AuthLayout({
   // Entrée "Événements" hebdomadaire (STAR) — mutuellement exclusive avec la
   // section Événements existante (Liste/Calendrier), réservée à events:view.
   const showStarEvents = hasStarPlanning && !hasEventsAccess;
+  const hasAnnouncementSheet = await hasAnnouncementSheetAccess(session, currentChurchId, userPermissions);
 
   // "Mon planning" — visible pour tout utilisateur lié à un STAR dans l'église courante
   const memberLink = currentChurchId
@@ -509,6 +520,7 @@ export default async function AuthLayout({
       hasReports={hasReports}
       hasMyPlanning={hasMyPlanning}
       showStarEvents={showStarEvents}
+      hasAnnouncementSheet={hasAnnouncementSheet}
       hasAbsences={hasAbsences}
       hasAvailability={hasAvailability}
       hasRooms={hasRooms}

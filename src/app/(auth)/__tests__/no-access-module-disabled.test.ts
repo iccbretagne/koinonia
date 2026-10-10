@@ -17,6 +17,15 @@ vi.mock("@/lib/auth", () => ({
   getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+// Règle de lecture de la trame (#676) : on ne vérifie ici que son câblage dans le layout ; la
+// règle elle-même est testée dans le module planning. Lecteurs : tout rôle sauf STAR/Reporter.
+const mockCanReadAnnouncementSheet = vi.fn(async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) =>
+  session.user.isSuperAdmin || session.user.churchRoles.some((r) => !["STAR", "REPORTER"].includes(r.role))
+);
+vi.mock("@/modules/planning", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/planning")>()),
+  canReadAnnouncementSheet: (...args: Parameters<typeof mockCanReadAnnouncementSheet>) => mockCanReadAnnouncementSheet(...args),
+}));
 vi.mock("next/headers", () => ({
   cookies: () => Promise.resolve({ get: () => undefined, set: () => {} }),
 }));

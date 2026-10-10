@@ -29,6 +29,7 @@ const star: NavigationInput = {
   famillesUrl: FAMILLES,
   hasMyPlanning: true,
   showStarEvents: true,
+  hasAnnouncementSheet: true,
   hasAvailability: true,
   hasJobs: true,
   homeHref: "/planning",
@@ -48,6 +49,7 @@ const deptHead: NavigationInput = {
   hasMembersAccess: true,
   hasDiscipleship: true,
   hasEventsAccess: true,
+  hasAnnouncementSheet: true,
   hasAbsences: true,
   hasAccounting: true,
   hasRooms: true,
@@ -120,6 +122,13 @@ describe("buildSpaces", () => {
     expect(links.some((h) => h.startsWith("/dashboard"))).toBe(false);
     expect(links).not.toContain("/events");
     expect(links).not.toContain("/admin/members");
+  });
+
+  it("#676 : « Trame des annonces » suit le droit de lecture, pas events:view ni planning:view", () => {
+    expect(hrefs({ ...star, hasAnnouncementSheet: false })).not.toContain("/events/announcement-sheets");
+    const reporter: NavigationInput = { ...star, showStarEvents: false, hasEventsAccess: true, hasAnnouncementSheet: false };
+    expect(hrefs(reporter)).not.toContain("/events/announcement-sheets");
+    expect(hrefs(reporter)).toContain("/events");
   });
 
   it("conserve chaque lien calculé par le layout (aucune section perdue)", () => {
