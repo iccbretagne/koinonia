@@ -1501,6 +1501,43 @@ Lors d'un changement de statut, `reviewedById` et `reviewedAt` sont automatiquem
 
 **Annulation en cascade** : si `status` = `"ANNULE"` et que la demande est de type `DIFFUSION_INTERNE` ou `RESEAUX_SOCIAUX`, la demande `VISUEL` enfant (liée via `parentRequestId`) est automatiquement annulée dans la même transaction.
 
+### `PATCH /api/requests/[id]` — traitement depuis les files (spec 063)
+
+Les écrans de traitement (Secrétariat, Réseaux sociaux, Demandes de visuels) appellent
+`PATCH /api/requests/[id]`, avec trois règles en plus :
+
+- **`expectedStatus`** (optionnel) : statut que l'interface affichait. S'il ne correspond plus au
+  statut en base, la mise à jour est refusée en `409` (« Cette demande a été modifiée
+  entre-temps ») ; l'écran se recharge. Les écrans de traitement l'envoient toujours.
+- **Motif obligatoire** : `REFUSEE` exige un `reviewNotes` non vide, et `ANNULE` aussi lorsque
+  l'annulation n'est pas faite par le demandeur lui-même (`400` sinon).
+- **Notification d'annulation** : une annulation par l'équipe notifie le demandeur
+  (`REQUEST_CANCELLED`, domaine `requests`), avec le motif.
+
+Retour arrière : les écrans proposent « Annuler » dans le toast après un changement sans effet
+(mise en cours, prise en charge, diffusée, publiée, livrée) en renvoyant le statut précédent par
+ce même `PATCH`. Approuver, refuser et annuler restent définitifs.
+
+### `GET /api/requests/queue`
+
+Page suivante des demandes **traitées** d'une file (« Voir plus » et recherche dans l'historique de
+l'onglet « Traitées »). Les demandes ouvertes et les 30 dernières traitées sur 30 jours sont
+chargées par la page elle-même.
+
+**Autorisation** : `planning:view` dans l'église, puis accès à la file : gestion des événements
+(`events:manage`), Super Admin, ou membre d'un département portant la fonction de la file
+(`403` sinon). Fonction non configurée dans l'église : liste vide.
+
+**Query params** :
+- `churchId` (requis)
+- `fn` (requis) — `SECRETARIAT`, `COMMUNICATION` ou `PRODUCTION_MEDIA`
+- `cursor` (optionnel) — curseur renvoyé par la page précédente
+- `q` (optionnel, 100 caractères max) — recherche dans tout l'historique : titre de la demande ou
+  de l'annonce, demandeur, département, ministère
+
+**Réponse** : `{ "items": [...], "nextCursor": "2026-09-01T08:00:00.000Z_clx..." | null }`,
+30 demandes par page, des plus récemment mises à jour aux plus anciennes.
+
 ---
 
 ## Discipolat

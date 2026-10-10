@@ -74,9 +74,8 @@ const ALLOWLIST: Record<string, string> = {
   "src/app/api/welcome-duty/available-families/route.ts": EVENTS_MANAGE_LEGIT,
 
   "src/app/(auth)/layout.tsx": EVENTS_MANAGE_FRAGILE,
-  "src/app/(auth)/communication/requests/page.tsx": EVENTS_MANAGE_FRAGILE,
-  "src/app/(auth)/media/(visuels)/requests/page.tsx": EVENTS_MANAGE_FRAGILE,
-  "src/app/(auth)/secretariat/requests/page.tsx": EVENTS_MANAGE_FRAGILE,
+  // Pages Secrétariat, Communication et Visuels › Demandes (spec 063) : contrôle factorisé ici.
+  "src/modules/planning/services/request-queue/access.ts": EVENTS_MANAGE_FRAGILE,
   "src/lib/media-space.ts": EVENTS_MANAGE_FRAGILE,
   "src/app/api/requests/route.ts": EVENTS_MANAGE_FRAGILE,
   "src/app/api/requests/[id]/route.ts": EVENTS_MANAGE_FRAGILE,

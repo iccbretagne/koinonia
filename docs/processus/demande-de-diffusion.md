@@ -50,7 +50,7 @@ Le statut du visuel associé remonte sur la fiche de l'annonce : pas besoin d'al
 
 **Côté Communication**, pour les réseaux sociaux :
 
-> En attente → Publication confirmée (ou Refus, avec une note explicative)
+> En attente → Prise en charge → Publiée, avec le lien du post (ou Annulée, avec un motif)
 
 **Côté Production Média**, pour chaque visuel :
 
@@ -69,7 +69,7 @@ Le statut du visuel associé remonte sur la fiche de l'annonce : pas besoin d'al
 
 - **Deux à trois dimanches** de diffusion : au-delà, l'annonce s'use et le public décroche.
 - La **deadline** du visuel suit la date de l'événement. Sans événement, elle est à préciser.
-- La case **Urgent** remonte la demande en tête de file — à réserver aux vrais cas, sous peine de perdre son effet.
+- Les guichets traitent leur file **par échéance** : le prochain culte visé, ou la deadline du visuel. La case **Urgent** ajoute un marqueur bien visible sur la demande — à réserver aux vrais cas, sous peine de perdre son effet.
 - Une demande déposée trop près du dimanche visé laisse à la Production Média un délai qu'elle ne pourra pas tenir. Le délai n'est pas bloqué par l'application : c'est une discipline, pas une contrainte technique.
 
 ## Les cas particuliers
@@ -78,7 +78,9 @@ Le statut du visuel associé remonte sur la fiche de l'annonce : pas besoin d'al
 
 **Un refus.** Le guichet motive son refus, et le motif est visible par le demandeur. Une annonce refusée n'est pas effacée : elle reste consultable.
 
-**Une annulation.** Le guichet peut annuler une demande prise en charge. Elle bascule en *Annulé* et reste tracée.
+**Une annulation.** Le guichet peut annuler une demande, avec un motif obligatoire. Le demandeur est prévenu, motif compris. La demande bascule en *Annulé* et reste tracée.
+
+**Une erreur de manipulation.** Juste après une mise en cours, une prise en charge ou un « diffusée / publiée / livrée », le guichet peut revenir en arrière avec « Annuler » dans le message de confirmation. Une approbation, un refus ou une annulation sont définitifs.
 
 **Un des deux canaux avance, l'autre non.** C'est normal : les deux visuels sont indépendants. L'annonce n'est complète que lorsque tous ses canaux ont abouti.
 

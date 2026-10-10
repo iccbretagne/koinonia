@@ -29,6 +29,10 @@ const patchSchema = z.object({
   format: z.string().nullable().optional(),
   brief: z.string().nullable().optional(),
   deadline: z.string().nullable().optional(),
+  // Statut attendu par l'interface (spec 063) : refus si la demande a changé entre-temps.
+  expectedStatus: z
+    .enum(["EN_ATTENTE", "EN_COURS", "APPROUVEE", "EXECUTEE", "LIVRE", "REFUSEE", "ANNULE", "ERREUR"])
+    .optional(),
 });
 
 export async function GET(
@@ -164,8 +168,13 @@ function assertPatchAllowed(data: PatchData, actor: PatchActor, isPending: boole
     throw new ApiError(403, "Seuls les membres du département assigné peuvent modifier le statut");
   }
   // Refusal requires a note
-  if (data.status === "REFUSEE" && !data.reviewNotes) {
+  if (data.status === "REFUSEE" && !data.reviewNotes?.trim()) {
     throw new ApiError(400, "Une note est obligatoire pour refuser une demande");
+  }
+  // Annulation par l'équipe qui traite : motif obligatoire, transmis au demandeur (spec 063).
+  // Le demandeur annulant sa propre demande en attente en reste dispensé.
+  if (data.status === "ANNULE" && !actor.isOwner && !data.reviewNotes?.trim()) {
+    throw new ApiError(400, "Un motif est obligatoire pour annuler une demande");
   }
 }
 
@@ -287,7 +296,7 @@ async function propagateStatusChange(
   );
 }
 
-/** Prévient le demandeur de l'approbation ou du refus (pas s'il s'agit de lui-même). */
+/** Prévient le demandeur de l'approbation, du refus ou de l'annulation (pas s'il s'agit de lui-même). */
 function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStatus: string, userId: string) {
   if (!existing.submittedById || existing.submittedById === userId) return;
   if (data.status === "APPROUVEE" || updatedStatus === "EXECUTEE") {
@@ -297,6 +306,15 @@ function notifySubmitter(existing: ExistingRequest, data: PatchData, updatedStat
       type: "REQUEST_APPROVED",
       title: "Demande approuvée",
       message: `Votre demande « ${existing.title} » a été approuvée.`,
+      link: `/requests`,
+    }).catch(() => {});
+  } else if (data.status === "ANNULE") {
+    createNotification({
+      userId: existing.submittedById,
+      domain: "requests",
+      type: "REQUEST_CANCELLED",
+      title: "Demande annulée",
+      message: `Votre demande « ${existing.title} » a été annulée.${data.reviewNotes ? ` Motif : ${data.reviewNotes}` : ""}`,
       link: `/requests`,
     }).catch(() => {});
   } else if (data.status === "REFUSEE") {
@@ -360,6 +378,12 @@ export async function PATCH(
     // Notifications de changement d'événement (spec 059), envoyées après le commit.
     let eventNotices: EventChangeNotices | undefined;
     const updated = await prisma.$transaction(async (tx) => {
+      if (data.expectedStatus !== undefined) {
+        const current = await tx.request.findUnique({ where: { id }, select: { status: true } });
+        if (current?.status !== data.expectedStatus) {
+          throw new ApiError(409, "Cette demande a été modifiée entre-temps");
+        }
+      }
       // For executable types approved → run auto-execution, using the effective payload
       // (merged updates take precedence over stored payload).
       if (data.status === "APPROUVEE" && EXECUTABLE_TYPES.has(existing.type)) {

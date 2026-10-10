@@ -1,10 +1,11 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
-import { prisma } from "@/lib/prisma";
-import { DEPT_FN } from "@/lib/department-functions";
-import { getFunctionDepartmentIds } from "@/lib/function-departments";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import CommunicationDashboard from "./CommunicationDashboard";
+import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
+import { loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
+import PageHeader from "@/components/ui/PageHeader";
+import Alert from "@/components/ui/Alert";
+import StatusChip from "@/components/ui/StatusChip";
+import { CommunicationQueue } from "@/components/requests/TeamQueues";
 
 export default async function CommunicationRequestsPage() {
   const session = await requireAuth();
@@ -12,62 +13,34 @@ export default async function CommunicationRequestsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
 
-  const commDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.COMMUNICATION);
+  const access = await resolveRequestQueueAccess(session, churchId, "COMMUNICATION");
 
-  if (commDeptIds.length > 0) {
-    // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
-    // responsable de l'église A obtient events:manage dans l'église B (issue #490).
-    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-    const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
-    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
-    const userDeptIds = churchRoles.flatMap((r) => r.departments.map((d) => d.department.id));
-    if (!canManage && !userDeptIds.some((id) => commDeptIds.includes(id))) return notFound();
-  }
-
-  if (commDeptIds.length === 0) {
+  if (!access.configured) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-4">Demandes réseaux sociaux</h1>
-        <div className="p-4 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
-          Aucun département n&apos;est configuré comme <strong>Communication</strong>.{" "}
-          <a href="/admin/departments/functions" className="underline">
-            Configurer maintenant
-          </a>
-        </div>
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Demandes réseaux sociaux" />
+        <Alert tone="warning" action={<Link href="/admin/departments/functions" className="font-semibold underline">Configurer maintenant</Link>}>
+          Aucun département n&apos;est configuré comme <strong>Communication</strong>.
+        </Alert>
       </div>
     );
   }
+  if (!access.allowed) return notFound();
 
-  const requests = await prisma.request.findMany({
-    where: { type: "RESEAUX_SOCIAUX", churchId },
-    include: {
-      submittedBy: { select: { name: true, displayName: true } },
-      department: { select: { name: true } },
-      ministry: { select: { name: true } },
-      announcement: {
-        select: { id: true, title: true, content: true, eventDate: true, isSaveTheDate: true },
-      },
-      childRequests: {
-        where: { type: "VISUEL" },
-        select: { id: true, type: true, status: true, payload: true },
-      },
-    },
-    orderBy: { submittedAt: "desc" },
-  });
-
-  const pending = requests.filter((r) => r.status === "EN_ATTENTE").length;
+  const queue = await loadRequestQueue(churchId, "COMMUNICATION");
+  const todo = queue.open.filter((r) => r.status === "EN_ATTENTE").length;
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Demandes réseaux sociaux</h1>
-        {pending > 0 && (
-          <span className="bg-brand text-on-brand text-sm font-bold px-2.5 py-1 rounded-full">
-            {pending}
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-center gap-3">
+            Demandes réseaux sociaux
+            {todo > 0 && <StatusChip tone="brand">{todo} à traiter</StatusChip>}
           </span>
-        )}
-      </div>
-      <CommunicationDashboard requests={requests} />
+        }
+      />
+      <CommunicationQueue data={{ churchId, open: queue.open, done: queue.done, doneCount: queue.doneCount }} />
     </div>
   );
 }

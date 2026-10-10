@@ -144,7 +144,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Traitement des demandes (Secrétariat)",
-    description: "Vue centralisée de toutes les demandes de diffusion interne depuis /secretariat/requests. Marquez les annonces en cours, diffusées ou annulées. Visible pour les membres du département Secrétariat.",
+    description: "Traitez les annonces et les demandes (événements, planning, accès) depuis /secretariat/requests : trois onglets À traiter, En cours, Traitées, une file triée par échéance (En retard, Cette semaine, Plus tard), recherche et filtres par type. Ouvrez une demande pour voir le détail et agir : approuver, refuser avec motif, marquer une annonce diffusée. Un refus ou une annulation demande un motif, transmis au demandeur ; « Annuler » dans le message de confirmation revient sur une mise en cours ou une diffusion. Visible pour les membres du département Secrétariat.",
     category: "Demandes",
     screenshotTitle: "Traitement des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
@@ -152,7 +152,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Demandes visuels (Prod. Média)",
-    description: "Traitez les demandes de création de visuels depuis l'onglet « Demandes visuels » du menu « Communication & Production ». Mettez à jour le statut et partagez le lien de livraison. Visible pour les membres du département Production Média.",
+    description: "Traitez les demandes de création de visuels depuis l'onglet « Demandes » de l'espace Visuels (menu « Communication & Production »), sur le même modèle que le Secrétariat : file par échéance, onglets À traiter, En cours, Traitées. Prenez en charge en rattachant un projet média existant ou nouveau, puis marquez le visuel livré, avec un lien de livraison si besoin. Une annulation demande un motif. Visible pour les membres du département Production Média.",
     category: "Demandes",
     screenshotTitle: "Dashboard Production Média",
     screenshotFile: "guide-media-dashboard.png",
@@ -160,7 +160,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Demandes réseaux sociaux (Communication)",
-    description: "Traitez les demandes de publication réseaux sociaux depuis l'onglet « Demandes réseaux sociaux » du menu « Communication & Production ». Confirmez la publication ou signalez un refus avec note. Visible pour les membres du département Communication.",
+    description: "Traitez les demandes de publication réseaux sociaux depuis la carte « Réseaux sociaux » du menu « Communication & Production », sur le même modèle que le Secrétariat : file par échéance, onglets À traiter, En cours, Traitées. Prenez en charge, puis marquez publiée avec le lien du post si vous l'avez ; une annulation demande un motif, transmis au demandeur. Visible pour les membres du département Communication.",
     category: "Demandes",
     screenshotTitle: "Dashboard Communication",
     screenshotFile: "guide-communication-dashboard.png",
