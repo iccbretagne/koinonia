@@ -1,7 +1,7 @@
 # Tâches — « Je ne peux plus » et remplacements
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Terminé (raccourci période reporté : #673)
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -9,13 +9,13 @@
 ## Prérequis
 
 - [x] Branche créée : `feat/je-ne-peux-plus` (depuis `main` à jour, Next 16.4.0)
-- [ ] Migration Prisma générée (T2)
+- [x] Migration Prisma générée (T2)
 
 ## Tâches
 
 ### 1. Données & migration
 
-- [ ] **T1** — Ajouter l'enum `ServiceWithdrawalStatus` (`PENDING`, `REPLACED`, `CANCELLED`,
+- [x] **T1** — Ajouter l'enum `ServiceWithdrawalStatus` (`PENDING`, `REPLACED`, `CANCELLED`,
   `CLOSED`) et le modèle `ServiceWithdrawal` décrits dans le plan :
   - champs `churchId`, `eventId`, `departmentId`, `memberId`, `originalStatus ServiceStatus`,
     `message String? @db.VarChar(500)`, `status`, `createdById`, `replacementMemberId`,
@@ -25,64 +25,64 @@
     relations inverses sur `Church`, `Event`, `Department`, `Member` ;
   - index `[eventId, departmentId, status]`, `[memberId, status]`, `[churchId, status]`.
   - *(fichier : `prisma/schema.prisma`)*
-- [ ] **T2** — Générer la migration `service_withdrawals` (`prisma migrate dev`), relire le SQL,
+- [x] **T2** — Générer la migration `service_withdrawals` (`prisma migrate dev`), relire le SQL,
   ajouter `serviceWithdrawal` au mock Prisma *(fichiers : `prisma/migrations/…`,
   `src/__mocks__/prisma.ts`)*
-- [ ] **T3** — Ajouter le type `"serviceWithdrawal"` à `ChurchResourceType` et au registre
+- [x] **T3** — Ajouter le type `"serviceWithdrawal"` à `ChurchResourceType` et au registre
   `CHURCH_RESOLVERS` (lecture de `churchId`, message « Désistement introuvable ») *(fichier :
   `src/lib/auth.ts`)*
-- [ ] **T4** [P] — Documenter la table et l'enum *(fichier : `docs/database.md`)*
+- [x] **T4** [P] — Documenter la table et l'enum *(fichier : `docs/database.md`)*
 
 ### 2. Logique métier (services)
 
 Dossier `src/modules/planning/services/withdrawals/`.
 
-- [ ] **T5** — `withdrawable(event, now)`, pure : vrai si `now` est avant
+- [x] **T5** — `withdrawable(event, now)`, pure : vrai si `now` est avant
   `event.planningDeadline`, ou avant `event.date` si l'événement n'a pas d'échéance
   *(fichier : `withdrawals/rules.ts`)*
-- [ ] **T6** — `resolveWithdrawalRecipients(churchId, departmentId, withdrawnMemberId, db)` :
+- [x] **T6** — `resolveWithdrawalRecipients(churchId, departmentId, withdrawnMemberId, db)` :
   comptes `DEPARTMENT_HEAD` rattachés au département par `user_departments` (principal et
   adjoints), moins le compte lié au STAR désisté ; à défaut, les `MINISTER` du ministère du
   département *(fichier : `withdrawals/recipients.ts`)*
-- [ ] **T7** — `listReplacementCandidates(withdrawal, db, now)` : membres du département, hors
+- [x] **T7** — `listReplacementCandidates(withdrawal, db, now)` : membres du département, hors
   STAR désisté et hors déjà planifiés sur ce service ; `getPlanningAvailability` ; garder
   `AVAILABLE`/`IF_NEEDED` sans `busyElsewhere` ; tri Disponible → Si besoin → nom
   *(fichier : `withdrawals/candidates.ts`)*
-- [ ] **T8** — `notifyWithdrawal`, `notifyWithdrawalCancelled`, `notifyWithdrawalReplaced`,
+- [x] **T8** — `notifyWithdrawal`, `notifyWithdrawalCancelled`, `notifyWithdrawalReplaced`,
   `notifyWithdrawalClosed`, `notifyWithdrawalRelance` : `notifyUsers`, domaine `planning`, types
   `SERVICE_WITHDRAWAL*`, liens `/planning/remplacements/[id]` (responsables) et `/planning`
   (STAR), messages de la spec (nombre de candidats, message du STAR) *(fichier :
   `withdrawals/notify.ts`)*
-- [ ] **T9** — `createWithdrawal(input, tx)` : contrôle du statut planifié (`PLANNED_STATUSES`),
+- [x] **T9** — `createWithdrawal(input, tx)` : contrôle du statut planifié (`PLANNED_STATUSES`),
   de `withdrawable` et de l'absence de `PENDING` ; création ; `planning.status = null` ; upsert
   `AvailabilityResponse` `UNAVAILABLE` ; suppression de la `PlanningChangeNotice` en attente de
   ce STAR sur ce service. Puis `withdrawService(...)` : transaction, `logAudit`, notification
   après validation *(fichier : `withdrawals/withdraw.ts`)*
-- [ ] **T10** — `replaceWithdrawal({ withdrawalId, memberId, actorId })` : refus après le début de
+- [x] **T10** — `replaceWithdrawal({ withdrawalId, memberId, actorId })` : refus après le début de
   l'événement ; mise à jour conditionnelle `PENDING → REPLACED` (409 avec le nom du remplaçant
   si déjà pourvu) ; revalidation du candidat (422) ; unicité de `EN_SERVICE_DEBRIEF` (422) ;
   upsert `Planning` avec `originalStatus` ; `recordPlanningChanges` pour le remplaçant ;
   `logAudit` ; confirmation au STAR désisté *(fichier : `withdrawals/replace.ts`)*
-- [ ] **T11** — `cancelWithdrawal` (`PENDING → CANCELLED`, statut d'origine restauré, réponse
+- [x] **T11** — `cancelWithdrawal` (`PENDING → CANCELLED`, statut d'origine restauré, réponse
   `AVAILABLE`, responsables prévenus) et `closeWithdrawal` (`PENDING → CLOSED`, STAR informé),
   avec `logAudit` *(fichier : `withdrawals/resolve.ts`)*
-- [ ] **T12** — `reconcileWithdrawalsAfterGridEdit(tx, { eventId, departmentId, before, after,
+- [x] **T12** — `reconcileWithdrawalsAfterGridEdit(tx, { eventId, departmentId, before, after,
   actorId })` : STAR désisté replacé → `CANCELLED` ; membre nouvellement planifié → le plus
   ancien `PENDING` passe `REPLACED` avec ce membre (un par membre ajouté) ; idempotent ;
   renvoie les confirmations à envoyer *(fichier : `withdrawals/reconcile.ts`)*
-- [ ] **T13** — `runWithdrawalRelances(now)` : `PENDING`, `relanceSentAt` nul, événement dans les
+- [x] **T13** — `runWithdrawalRelances(now)` : `PENDING`, `relanceSentAt` nul, événement dans les
   48 h et à venir, désistement antérieur à `event.date − 48 h` ; relance avec le nombre de
   candidats recalculé ; `relanceSentAt = now` *(fichier : `withdrawals/relances.ts`)*
-- [ ] **T14** — `listPendingWithdrawals` : par service (pour la grille) et par membre (pour
+- [x] **T14** — `listPendingWithdrawals` : par service (pour la grille) et par membre (pour
   « Mon planning ») ; `getWithdrawalDetail(id, viewer)` (désistement, événement, membre,
   candidats, `canReplace`) *(fichier : `withdrawals/queries.ts`)*
-- [ ] **T15** — `saveResponses` (spec 058) : pour un STAR planifié qui passe « Pas disponible »,
+- [x] **T15** — `saveResponses` (spec 058) : pour un STAR planifié qui passe « Pas disponible »,
   appeler `createWithdrawal` dans la même transaction si `withdrawable`, sinon garder la
   notification simple ; notifier après validation *(fichier :
   `src/modules/planning/services/availability/responses.ts`)*
-- [ ] **T16** — `listMemberAvailability` : ajouter `plannedIn: { departmentId, departmentName,
+- [x] **T16** — `listMemberAvailability` : ajouter `plannedIn: { departmentId, departmentName,
   withdrawable }[]` par événement *(fichier : `availability/responses.ts`)*
-- [ ] **T17** — Exporter les services publics depuis l'index du module *(fichier :
+- [x] **T17** — Exporter les services publics depuis l'index du module *(fichier :
   `src/modules/planning/index.ts`)*
 
 ### 3. API (route handlers)
@@ -90,106 +90,106 @@ Dossier `src/modules/planning/services/withdrawals/`.
 Toutes : `resolveChurchId` sur l'objet, puis `requireChurchPermission`, Zod sur les mutations,
 `successResponse`/`errorResponse`, `await params`.
 
-- [ ] **T18** — `POST /api/planning/withdrawals` : `planning:view` dans l'église de l'événement,
+- [x] **T18** — `POST /api/planning/withdrawals` : `planning:view` dans l'église de l'événement,
   fiche liée au compte (`isMemberLinkedToUser`), Zod `{ eventId, departmentId, message? ≤ 500 }`
   → `withdrawService` *(fichier : `src/app/api/planning/withdrawals/route.ts`)*
-- [ ] **T19** — `GET /api/planning/withdrawals/[id]` (`planning:department` +
+- [x] **T19** — `GET /api/planning/withdrawals/[id]` (`planning:department` +
   `requireDepartmentAccess`) et `DELETE` (annulation : `planning:view`, fiche liée)
   *(fichier : `src/app/api/planning/withdrawals/[id]/route.ts`)*
-- [ ] **T20** [P] — `POST /api/planning/withdrawals/[id]/replace` : `planning:edit` +
+- [x] **T20** [P] — `POST /api/planning/withdrawals/[id]/replace` : `planning:edit` +
   `requireDepartmentAccess`, Zod `{ memberId }` *(fichier :
   `src/app/api/planning/withdrawals/[id]/replace/route.ts`)*
-- [ ] **T21** [P] — `POST /api/planning/withdrawals/[id]/close` : `planning:edit` +
+- [x] **T21** [P] — `POST /api/planning/withdrawals/[id]/close` : `planning:edit` +
   `requireDepartmentAccess` *(fichier : `src/app/api/planning/withdrawals/[id]/close/route.ts`)*
-- [ ] **T22** — Grille, `GET` : ajouter `withdrawals` (`PENDING` du service) et
+- [x] **T22** — Grille, `GET` : ajouter `withdrawals` (`PENDING` du service) et
   `counts.toReplace` ; `PUT` : appeler `reconcileWithdrawalsAfterGridEdit` dans le traitement
   existant, puis les confirmations *(fichier :
   `src/app/api/events/[eventId]/departments/[deptId]/planning/route.ts`)*
-- [ ] **T23** — Planificateur : déclarer `{ key: "service-withdrawal-relances", schedule:
+- [x] **T23** — Planificateur : déclarer `{ key: "service-withdrawal-relances", schedule:
   { kind: "interval", minutes: 60 }, run: runWithdrawalRelances }` et l'ajouter au résumé de
   réponse *(fichier : `src/app/api/cron/route.ts`)*
 
 ### 4. UI
 
-- [ ] **T24** — `loadMyPlanning` : inclure le statut `REMPLACANT` ; charger les désistements
+- [x] **T24** — `loadMyPlanning` : inclure le statut `REMPLACANT` ; charger les désistements
   `PENDING` du membre et `withdrawable` par service ; noms des responsables pour le message
   après échéance *(fichier : `src/app/(auth)/planning/my-planning-data.ts`)*
-- [ ] **T25** — « Mon planning » : bouton « Je ne peux plus » (carte « Prochain service » et
+- [x] **T25** — « Mon planning » : bouton « Je ne peux plus » (carte « Prochain service » et
   chaque service à venir) avec `ConfirmModal` + `Textarea` facultatif ; `Alert` « contacte ton
   responsable » après l'échéance ; `StatusChip` « Désisté — en attente de remplacement » et
   bouton « Annuler mon désistement » ; libellé du statut « remplaçant » ; `useToast` ; mobile
   *(fichier : `src/app/(auth)/planning/MyPlanningView.tsx`)*
-- [ ] **T26** — Page serveur du service à remplacer : garde `planning:department` +
+- [x] **T26** — Page serveur du service à remplacer : garde `planning:department` +
   `requireDepartmentAccess`, chargement par `getWithdrawalDetail` *(fichier :
   `src/app/(auth)/planning/remplacements/[id]/page.tsx`)*
-- [ ] **T27** — Client de remplacement : événement, STAR désisté et message, candidats en cartes
+- [x] **T27** — Client de remplacement : événement, STAR désisté et message, candidats en cartes
   avec pastille de disponibilité, « Choisir », « Ne pas remplacer » (`ConfirmModal`),
   `EmptyState` sans candidat, état terminal (pourvu/annulé/clos), lecture seule si
   `!canReplace`, gestion des erreurs 409/422 (message + liste rafraîchie) ; mobile d'abord
   *(fichier : `src/app/(auth)/planning/remplacements/[id]/ReplacementClient.tsx`)*
-- [ ] **T28** [P] — Grille : bandeau `Alert` « N service(s) à remplacer » avec liens, ligne du
+- [x] **T28** [P] — Grille : bandeau `Alert` « N service(s) à remplacer » avec liens, ligne du
   STAR désisté marquée « à remplacer » (avec message), compteur `toReplace` *(fichier :
   `src/components/PlanningGrid.tsx`)*
-- [ ] **T29** [P] — Écran de disponibilités : `ConfirmModal` d'avertissement avant d'enregistrer
-  un « Pas disponible » (réponse ou raccourci période) qui touche un service `withdrawable`
+- [x] **T29** [P] — Écran de disponibilités : `ConfirmModal` d'avertissement avant d'enregistrer
+  un « Pas disponible » (réponse ; raccourci période reporté à #673) qui touche un service `withdrawable`
   *(fichier : `src/app/(auth)/disponibilites/AvailabilityClient.tsx`)*
-- [ ] **T30** [P] — Fil d'Ariane : rattacher `/planning/remplacements/[id]` à l'espace Planning
+- [x] **T30** [P] — Fil d'Ariane : rattacher `/planning/remplacements/[id]` à l'espace Planning
   (« Remplacement ») *(fichier : `src/lib/navigation.ts`)*
 
 ### 5. Tests
 
 Dossier `src/modules/planning/services/withdrawals/__tests__/` sauf mention.
 
-- [ ] **T31** [P] — `rules.test.ts` : avant/après échéance, sans échéance, événement commencé
-- [ ] **T32** [P] — `recipients.test.ts` : responsables et adjoints ; STAR désisté responsable
+- [x] **T31** [P] — `rules.test.ts` : avant/après échéance, sans échéance, événement commencé
+- [x] **T32** [P] — `recipients.test.ts` : responsables et adjoints ; STAR désisté responsable
   exclu ; Ministre seulement à défaut ; pas de Ministre en copie sinon
-- [ ] **T33** [P] — `candidates.test.ts` : disponibilité, « déjà de service ailleurs », déjà
+- [x] **T33** [P] — `candidates.test.ts` : disponibilité, « déjà de service ailleurs », déjà
   planifiés, STAR désisté exclu, tri
-- [ ] **T34** — `withdraw.test.ts` : retrait du planning, statut d'origine, réponse
+- [x] **T34** — `withdraw.test.ts` : retrait du planning, statut d'origine, réponse
   `UNAVAILABLE`, notice 060 supprimée, notification après transaction ; refus non planifié,
   `PENDING` existant, échéance passée
-- [ ] **T35** — `replace.test.ts` : succès (statut d'origine, `recordPlanningChanges`,
+- [x] **T35** — `replace.test.ts` : succès (statut d'origine, `recordPlanningChanges`,
   confirmation) ; 409 concurrent ; 422 candidat devenu indisponible ; 422 débrief en double ;
   refus après le début ; accepté après l'échéance
-- [ ] **T36** [P] — `resolve.test.ts` : annulation (statut et réponse restaurés, responsables
+- [x] **T36** [P] — `resolve.test.ts` : annulation (statut et réponse restaurés, responsables
   prévenus, refus si non `PENDING`) ; clôture (STAR informé, fin de la relance)
-- [ ] **T37** [P] — `reconcile.test.ts` : STAR désisté replacé → annulation ; ajout → remplacement
+- [x] **T37** [P] — `reconcile.test.ts` : STAR désisté replacé → annulation ; ajout → remplacement
   du plus ancien ; plusieurs ajouts ; idempotence
-- [ ] **T38** [P] — `relances.test.ts` : fenêtre 48 h, relance unique, pas de relance pour un
+- [x] **T38** [P] — `relances.test.ts` : fenêtre 48 h, relance unique, pas de relance pour un
   désistement tardif, ni pour un événement passé
-- [ ] **T39** — `saveResponses` : « Pas disponible » d'un STAR planifié → désistement avant
-  l'échéance, notification simple après ; période touchant plusieurs services *(fichier :
+- [x] **T39** — `saveResponses` : « Pas disponible » d'un STAR planifié → désistement avant
+  l'échéance, notification simple après ; plusieurs services touchés par une même saisie *(fichier :
   `availability/__tests__/responses.test.ts`)*
-- [ ] **T40** — Routes `withdrawals` : 403 fiche non liée, 403 hors périmètre, 403 Secrétaire sur
+- [x] **T40** — Routes `withdrawals` : 403 fiche non liée, 403 hors périmètre, 403 Secrétaire sur
   `replace`/`close`, 400 Zod, isolation multi-église, codes 201/409/422 *(fichier :
   `src/app/api/planning/withdrawals/__tests__/routes.test.ts`)*
-- [ ] **T41** — Grille : `GET` renvoie `withdrawals`/`toReplace` ; `PUT` déclenche la
+- [x] **T41** — Grille : `GET` renvoie `withdrawals`/`toReplace` ; `PUT` déclenche la
   réconciliation *(fichier : tests existants de la route planning)*
-- [ ] **T42** [P] — Planificateur : la tâche `service-withdrawal-relances` est déclarée et
+- [x] **T42** [P] — Planificateur : la tâche `service-withdrawal-relances` est déclarée et
   exécutée *(fichier : `src/app/api/cron/__tests__/cron-modules.test.ts`)*
-- [ ] **T43** [P] — `loadMyPlanning` : statut `REMPLACANT` inclus, désistements en attente
+- [x] **T43** [P] — `loadMyPlanning` : statut `REMPLACANT` inclus, désistements en attente
   renvoyés *(fichier : test des données « Mon planning »)*
 
 ### 6. Documentation
 
-- [ ] **T44** [P] — Réaligner la date limite de planification (bloquante pour les responsables,
+- [x] **T44** [P] — Réaligner la date limite de planification (bloquante pour les responsables,
   sauf pour pourvoir un désistement) et décrire le désistement *(fichier :
   `docs/processus/planning-de-service.md`)*
-- [ ] **T45** [P] — Documenter les nouvelles routes *(fichier : `docs/api.md`)*
-- [ ] **T46** [P] — Guide utilisateur : STAR (« Je ne peux plus », annulation) et responsable
+- [x] **T45** [P] — Documenter les nouvelles routes *(fichier : `docs/api.md`)*
+- [x] **T46** [P] — Guide utilisateur : STAR (« Je ne peux plus », annulation) et responsable
   (remplacer, ne pas remplacer) *(fichier : contenu du guide, `src/components/GuideContent.tsx`)*
-- [ ] **T47** — CHANGELOG (« Non publié ») ; statut de la spec et du plan à « Implémentée »
+- [x] **T47** — CHANGELOG (« Non publié ») ; statut de la spec et du plan à « Implémentée »
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run test` (dont `route-exhaustiveness.test.ts` pour la page et les routes nouvelles)
-- [ ] `npm run build` (frontière client/serveur)
-- [ ] Parcours vérifié sur mobile : désistement → notification → choix d'un remplaçant
-- [ ] Tous les critères d'acceptation de `spec.md` satisfaits (tableau ci-dessous)
-- [ ] PR ouverte vers `main`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run lint:boundaries`
+- [x] `npm run test` (dont `route-exhaustiveness.test.ts` pour la page et les routes nouvelles)
+- [x] `npm run build` (frontière client/serveur)
+- [x] Parcours vérifié sur mobile : désistement → notification → choix d'un remplaçant
+- [x] Tous les critères d'acceptation de `spec.md` satisfaits (tableau ci-dessous)
+- [x] PR ouverte vers `main`
 
 ## Couverture des critères d'acceptation
 

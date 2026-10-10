@@ -61,6 +61,8 @@ const myPlanning = {
     { id: "t-old", title: "Passée", startsAt: at(2, 19), endsAt: at(2, 21), location: null, department: { name: "Son" } },
   ],
   tasksByEvent: { "ev-p1_d1": [{ id: "task" }] },
+  withdrawals: [],
+  contactsByDepartment: {},
 };
 
 function request(id: string, status: string, announcement: string | null = null) {

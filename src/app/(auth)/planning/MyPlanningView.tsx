@@ -2,16 +2,19 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { CalendarCheck, CalendarX2, CircleDashed, MapPin, Users } from "lucide-react";
+import { CalendarCheck, CalendarX2, CircleDashed, MapPin, UserMinus, Users } from "lucide-react";
 import DateTile from "@/components/DateTile";
 import PeriodNav from "@/components/PeriodNav";
 import EmptyState from "@/components/ui/EmptyState";
 import StatusChip from "@/components/ui/StatusChip";
 import { serviceStatusDescriptor } from "@/components/ui/status";
+import { CancelWithdrawalButton, DeadlinePassedNotice, WithdrawButton, type LeaderContact } from "./WithdrawalActions";
 
 type PlanningEntry = {
   id: string;
   status: string | null;
+  /** Le STAR peut encore se désister lui-même (avant la date limite de planification, spec 061). */
+  withdrawable?: boolean;
   eventDepartment: {
     event: {
       id: string;
@@ -35,10 +38,49 @@ type TeamEventEntry = {
   department: { id: string; name: string };
 };
 
+/** Service quitté par un désistement, en attente de remplacement (spec 061). */
+type WithdrawalEntry = {
+  id: string;
+  event: { id: string; title: string; date: Date | string };
+  department: { id: string; name: string };
+};
+
 interface Props {
   readonly plannings: PlanningEntry[];
   readonly tasksByEvent?: Record<string, string[]>;
   readonly teamEvents?: TeamEventEntry[];
+  readonly withdrawals?: WithdrawalEntry[];
+  /** Responsables à joindre, par département, une fois la date limite passée. */
+  readonly contactsByDepartment?: Record<string, LeaderContact[]>;
+}
+
+const OPENING_CLOSING_DEPARTMENT = "opening-closing";
+
+/** Action « Je ne peux plus » d'un service à venir, ou le message après la date limite. */
+function ServiceWithdrawalAction({
+  planning,
+  contacts,
+  onBrand = false,
+}: {
+  readonly planning: PlanningEntry;
+  readonly contacts: LeaderContact[];
+  readonly onBrand?: boolean;
+}) {
+  const { event, department } = planning.eventDepartment;
+  if (department.id === OPENING_CLOSING_DEPARTMENT) return null;
+  if (planning.withdrawable) {
+    return (
+      <WithdrawButton
+        eventId={event.id}
+        departmentId={department.id}
+        eventTitle={event.title}
+        eventDate={event.date}
+        departmentName={department.name}
+        onBrand={onBrand}
+      />
+    );
+  }
+  return <DeadlinePassedNotice contacts={contacts} />;
 }
 
 function formatTimeRange(start: Date | string, end: Date | string) {
@@ -85,16 +127,23 @@ function currentMonthKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvents = [] }: Props) {
+export default function MyPlanningView({
+  plannings,
+  tasksByEvent = {},
+  teamEvents = [],
+  withdrawals = [],
+  contactsByDepartment = {},
+}: Props) {
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
 
-  const hasAny = plannings.length > 0 || teamEvents.length > 0;
+  const hasAny = plannings.length > 0 || teamEvents.length > 0 || withdrawals.length > 0;
 
   const { minKey, maxKey } = useMemo(() => {
     if (!hasAny) return { minKey: currentMonthKey(), maxKey: currentMonthKey() };
     const keys = [
       ...plannings.map((p) => monthKeyOf(p.eventDepartment.event.date)),
       ...teamEvents.map((t) => monthKeyOf(t.startsAt)),
+      ...withdrawals.map((w) => monthKeyOf(w.event.date)),
     ].sort((a, b) => a.localeCompare(b));
     // Extend range to include current month
     const cur = currentMonthKey();
@@ -103,7 +152,7 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
       minKey: keys[0] < cur ? keys[0] : cur,
       maxKey: lastKey > cur ? lastKey : cur,
     };
-  }, [plannings, teamEvents, hasAny]);
+  }, [plannings, teamEvents, withdrawals, hasAny]);
 
   const entries = useMemo(
     () => plannings.filter((p) => monthKeyOf(p.eventDepartment.event.date) === selectedMonth)
@@ -135,8 +184,11 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
       [
         ...monthTeamEvents.map((t) => ({ kind: "team" as const, date: new Date(t.startsAt), team: t })),
         ...entries.map((p) => ({ kind: "service" as const, date: new Date(p.eventDepartment.event.date), planning: p })),
+        ...withdrawals
+          .filter((w) => monthKeyOf(w.event.date) === selectedMonth)
+          .map((w) => ({ kind: "withdrawn" as const, date: new Date(w.event.date), withdrawal: w })),
       ].sort((a, b) => a.date.getTime() - b.date.getTime()),
-    [monthTeamEvents, entries]
+    [monthTeamEvents, entries, withdrawals, selectedMonth]
   );
 
   if (!hasAny) {
@@ -154,7 +206,11 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
   return (
     <div className="flex flex-col gap-6">
       {nextService && (
-        <NextServiceCard planning={nextService} tasks={tasksByEvent[`${nextService.eventDepartment.event.id}_${nextService.eventDepartment.department.id}`] ?? []} />
+        <NextServiceCard
+          planning={nextService}
+          tasks={tasksByEvent[`${nextService.eventDepartment.event.id}_${nextService.eventDepartment.department.id}`] ?? []}
+          contacts={contactsByDepartment[nextService.eventDepartment.department.id] ?? []}
+        />
       )}
 
       <section aria-label="Mes services du mois" className="flex flex-col gap-4">
@@ -203,39 +259,72 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
                   </li>
                 );
               }
+              if (row.kind === "withdrawn") {
+                const w = row.withdrawal;
+                return (
+                  <li key={`withdrawal-${w.id}`} className="flex flex-col gap-2 border-t border-line px-4 py-3 first:border-t-0">
+                    <div className="flex items-center gap-3">
+                      <DateTile date={w.event.date} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-semibold leading-[22px] text-ink-subtle line-through">{w.event.title}</p>
+                        <p className="text-[13px] leading-[18px] text-ink-muted">
+                          {formatTime(w.event.date)} · {w.department.name}
+                        </p>
+                      </div>
+                      <StatusChip tone="warning" icon={UserMinus} className="shrink-0">
+                        <span className="hidden sm:inline">Désisté — en attente de remplacement</span>
+                        <span className="sm:hidden">Désisté</span>
+                      </StatusChip>
+                    </div>
+                    {!isPast && (
+                      <div className="flex justify-end">
+                        <CancelWithdrawalButton withdrawalId={w.id} eventDate={w.event.date} />
+                      </div>
+                    )}
+                  </li>
+                );
+              }
               const p = row.planning;
               const event = p.eventDepartment.event;
               const dept = p.eventDepartment.department;
               const tasks = tasksByEvent[`${event.id}_${dept.id}`] ?? [];
               const descriptor = serviceStatusDescriptor(p.status);
+              const isNext = nextService?.id === p.id;
               return (
-                <li key={p.id} className="flex items-center gap-3 border-t border-line px-4 py-3 first:border-t-0">
-                  <DateTile date={event.date} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`truncate text-[15px] font-semibold leading-[22px] ${isPast ? "text-ink-subtle" : "text-ink"}`}>{event.title}</p>
-                    <p className="text-[13px] leading-[18px] text-ink-muted">
-                      {formatTime(event.date)} · {dept.name}
-                      {isPast && <span className="text-ink-subtle"> · Passé</span>}
-                    </p>
-                    {tasks.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {tasks.map((task) => (
-                          <span key={task} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold leading-4 text-brand-text">
-                            {task}
-                          </span>
-                        ))}
-                      </div>
+                <li key={p.id} className="flex flex-col gap-2 border-t border-line px-4 py-3 first:border-t-0">
+                  <div className="flex items-center gap-3">
+                    <DateTile date={event.date} />
+                    <div className="min-w-0 flex-1">
+                      <p className={`truncate text-[15px] font-semibold leading-[22px] ${isPast ? "text-ink-subtle" : "text-ink"}`}>{event.title}</p>
+                      <p className="text-[13px] leading-[18px] text-ink-muted">
+                        {formatTime(event.date)} · {dept.name}
+                        {isPast && <span className="text-ink-subtle"> · Passé</span>}
+                      </p>
+                      {tasks.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {tasks.map((task) => (
+                            <span key={task} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold leading-4 text-brand-text">
+                              {task}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {descriptor ? (
+                      <StatusChip tone={descriptor.tone} icon={descriptor.icon} className="shrink-0">
+                        <span className="hidden sm:inline">{descriptor.label}</span>
+                        <span className="sm:hidden">{descriptor.tone === "brand" ? "Debrief" : descriptor.label}</span>
+                      </StatusChip>
+                    ) : (
+                      <StatusChip tone="neutral" icon={CircleDashed} className="shrink-0">
+                        Pas en service
+                      </StatusChip>
                     )}
                   </div>
-                  {descriptor ? (
-                    <StatusChip tone={descriptor.tone} icon={descriptor.icon} className="shrink-0">
-                      <span className="hidden sm:inline">{descriptor.label}</span>
-                      <span className="sm:hidden">{descriptor.tone === "brand" ? "Debrief" : descriptor.label}</span>
-                    </StatusChip>
-                  ) : (
-                    <StatusChip tone="neutral" icon={CircleDashed} className="shrink-0">
-                      Pas en service
-                    </StatusChip>
+                  {!isPast && !isNext && (
+                    <div className={p.withdrawable ? "flex justify-end empty:hidden" : "empty:hidden"}>
+                      <ServiceWithdrawalAction planning={p} contacts={contactsByDepartment[dept.id] ?? []} />
+                    </div>
                   )}
                 </li>
               );
@@ -248,7 +337,15 @@ export default function MyPlanningView({ plannings, tasksByEvent = {}, teamEvent
 }
 
 /** Carte « prochain service » (maquette mobile) : aplat `brand`, texte `on-brand`. */
-export function NextServiceCard({ planning, tasks }: { readonly planning: PlanningEntry; readonly tasks: string[] }) {
+export function NextServiceCard({
+  planning,
+  tasks,
+  contacts = [],
+}: {
+  readonly planning: PlanningEntry;
+  readonly tasks: string[];
+  readonly contacts?: LeaderContact[];
+}) {
   const event = planning.eventDepartment.event;
   const dept = planning.eventDepartment.department;
   const descriptor = serviceStatusDescriptor(planning.status);
@@ -281,13 +378,9 @@ export function NextServiceCard({ planning, tasks }: { readonly planning: Planni
         >
           Voir l&apos;équipe
         </Link>
-        <Link
-          href={`/disponibilites?event=${event.id}`}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-control border border-on-brand/50 px-4 font-display text-sm font-semibold text-on-brand transition-colors hover:bg-on-brand/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-brand sm:flex-none"
-        >
-          Je ne peux pas
-        </Link>
+        {planning.withdrawable && <ServiceWithdrawalAction planning={planning} contacts={contacts} onBrand />}
       </div>
+      {!planning.withdrawable && <ServiceWithdrawalAction planning={planning} contacts={contacts} />}
     </section>
   );
 }

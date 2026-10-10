@@ -2,6 +2,9 @@ import type { AvailabilityAnswer } from "@/generated/prisma/client";
 import { ApiError } from "@/lib/api-utils";
 import { absenceCovers } from "../absence-targeting";
 import { resolveResponsibleUserIds } from "../absence.service";
+import { PLANNED_STATUSES } from "../staffing-gaps";
+import { createWithdrawal, sendWithdrawalNotice } from "../withdrawals/withdraw";
+import { withdrawable } from "../withdrawals/rules";
 import { defaultDb } from "./db";
 import { monthStart, nextMonthStart, resolveAvailability, type AvailabilityState } from "./state";
 
@@ -27,6 +30,11 @@ export interface MemberAvailabilityEvent {
   date: Date;
   dueAt: Date | null;
   departments: MemberAvailabilityDept[];
+  /**
+   * Services où le STAR est planifié : répondre « Pas disponible » vaut désistement tant que
+   * `withdrawable` (spec 061), d'où l'avertissement de l'écran.
+   */
+  plannedIn: { departmentId: string; departmentName: string; withdrawable: boolean }[];
 }
 
 export interface MemberAvailabilityMonth {
@@ -84,6 +92,7 @@ export async function listMemberAvailability(
       id: true,
       title: true,
       date: true,
+      planningDeadline: true,
       eventDepts: {
         where: { departmentId: { in: deptIds } },
         select: { departmentId: true, department: { select: { name: true } } },
@@ -93,7 +102,7 @@ export async function listMemberAvailability(
   });
   const eventIds = events.map((e) => e.id);
 
-  const [responses, asks, collection, periods] = await Promise.all([
+  const [responses, asks, collection, periods, plannings] = await Promise.all([
     db.availabilityResponse.findMany({
       where: { memberId, eventId: { in: eventIds } },
       select: { eventId: true, departmentId: true, answer: true, enteredById: true },
@@ -116,11 +125,16 @@ export async function listMemberAvailability(
         targetDepartments: { select: { departmentId: true } },
       },
     }),
+    db.planning.findMany({
+      where: { memberId, status: { in: [...PLANNED_STATUSES] }, eventDepartment: { eventId: { in: eventIds } } },
+      select: { eventDepartment: { select: { eventId: true, departmentId: true } } },
+    }),
   ]);
 
   const responseKey = (e: string, d: string) => `${e}:${d}`;
   const responseByKey = new Map(responses.map((r) => [responseKey(r.eventId, r.departmentId), r]));
   const askByKey = new Map(asks.map((a) => [responseKey(a.eventId, a.departmentId), a]));
+  const plannedKeys = new Set(plannings.map((p) => responseKey(p.eventDepartment.eventId, p.eventDepartment.departmentId)));
 
   return {
     months,
@@ -150,7 +164,11 @@ export async function listMemberAvailability(
           enteredByThirdParty: !!response?.enteredById && response.enteredById !== link?.userId,
         };
       });
-      return { id: e.id, title: e.title, date: e.date, dueAt, departments };
+      const canWithdraw = withdrawable(e, now);
+      const plannedIn = e.eventDepts
+        .filter((ed) => plannedKeys.has(responseKey(e.id, ed.departmentId)))
+        .map((ed) => ({ departmentId: ed.departmentId, departmentName: ed.department.name, withdrawable: canWithdraw }));
+      return { id: e.id, title: e.title, date: e.date, dueAt, departments, plannedIn };
     }),
   };
 }
@@ -172,9 +190,13 @@ export interface AnswerInput {
   departmentIds?: string[];
 }
 
-const PLANNED_STATUSES = ["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT"] as const;
-
-type AnswerEvent = { id: string; title: string; date: Date; eventDepts: { departmentId: string }[] };
+type AnswerEvent = {
+  id: string;
+  title: string;
+  date: Date;
+  planningDeadline: Date | null;
+  eventDepts: { departmentId: string }[];
+};
 
 /**
  * Départements concernés par une réponse : ceux demandés (par défaut, tous ceux du STAR qui
@@ -203,7 +225,9 @@ function answerTargets(
 /**
  * Enregistre les réponses d'un STAR. « Tous mes départements » est déplié ici sur les
  * départements du STAR qui servent l'événement. Quand un STAR déjà planifié passe « Pas
- * disponible », le responsable de son département est prévenu (après validation).
+ * disponible », c'est un désistement (spec 061) tant que la date limite de planification n'est pas
+ * passée ; au-delà, son responsable reçoit seulement une notification simple. Les notifications
+ * partent après validation.
  */
 export async function saveResponses({
   memberId,
@@ -217,11 +241,12 @@ export async function saveResponses({
   answers: AnswerInput[];
   actorId: string;
   now?: Date;
-}): Promise<{ updated: number; alerts: number }> {
+}): Promise<{ updated: number; alerts: number; withdrawals: number }> {
   const db = await defaultDb();
   const { prisma } = await import("@/lib/prisma");
 
   const planned: { eventId: string; eventTitle: string; departmentId: string }[] = [];
+  const withdrawalIds: string[] = [];
   let updated = 0;
 
   await prisma.$transaction(async (tx) => {
@@ -230,7 +255,7 @@ export async function saveResponses({
 
     const events = await tx.event.findMany({
       where: { id: { in: answers.map((a) => a.eventId) }, churchId },
-      select: { id: true, title: true, date: true, eventDepts: { select: { departmentId: true } } },
+      select: { id: true, title: true, date: true, planningDeadline: true, eventDepts: { select: { departmentId: true } } },
     });
     const eventById = new Map(events.map((e) => [e.id, e]));
 
@@ -256,16 +281,35 @@ export async function saveResponses({
           select: { eventDepartment: { select: { departmentId: true } } },
         });
         for (const r of rows) {
-          planned.push({ eventId: event.id, eventTitle: event.title, departmentId: r.eventDepartment.departmentId });
+          const departmentId = r.eventDepartment.departmentId;
+          if (withdrawable(event, now)) {
+            withdrawalIds.push(
+              await createWithdrawal({ churchId, eventId: event.id, departmentId, memberId, actorId }, tx, now)
+            );
+          } else {
+            planned.push({ eventId: event.id, eventTitle: event.title, departmentId });
+          }
         }
       }
     }
   });
 
+  if (withdrawalIds.length > 0) {
+    const { logAudit } = await import("@/lib/audit");
+    for (const id of withdrawalIds) {
+      await logAudit({ userId: actorId, churchId, action: "CREATE", entityType: "ServiceWithdrawal", entityId: id, details: { memberId, source: "availability" } });
+      try {
+        await sendWithdrawalNotice(id, db, now);
+      } catch (error) {
+        console.error("[planning] notification du désistement impossible", error);
+      }
+    }
+  }
   if (planned.length > 0) await notifyPlannedUnavailable(db, memberId, churchId, planned);
-  return { updated, alerts: planned.length };
+  return { updated, alerts: planned.length, withdrawals: withdrawalIds.length };
 }
 
+/** Après la date limite de planification : notification simple, le STAR reste planifié (spec 058). */
 async function notifyPlannedUnavailable(
   db: Awaited<ReturnType<typeof defaultDb>>,
   memberId: string,

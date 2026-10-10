@@ -542,7 +542,8 @@ export async function requireChurchAccess(churchId: string) {
 
 type ChurchResourceType =
   | "event" | "department" | "member" | "request" | "memberLinkRequest" | "announcement" | "ministry"
-  | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent";
+  | "mediaEvent" | "mediaProject" | "appointmentRequest" | "agendaEntry" | "pastoralProfile" | "teamEvent"
+  | "serviceWithdrawal";
 
 const byId = (id: string) => ({ where: { id }, select: { churchId: true } }) as const;
 
@@ -581,6 +582,10 @@ const CHURCH_RESOLVERS: Record<
     load: async (id) => (await prisma.pastoralProfile.findUnique(byId(id)))?.churchId,
   },
   teamEvent: { notFound: "Événement d'équipe introuvable", load: async (id) => (await prisma.teamEvent.findUnique(byId(id)))?.churchId },
+  serviceWithdrawal: {
+    notFound: "Désistement introuvable",
+    load: async (id) => (await prisma.serviceWithdrawal.findUnique(byId(id)))?.churchId,
+  },
 };
 
 /**

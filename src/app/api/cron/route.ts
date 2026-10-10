@@ -58,6 +58,12 @@ async function runPlanningChangeNotices() {
   return flushPlanningChangeNotices();
 }
 
+/** Relance unique des services encore à remplacer 48 h avant l'événement (spec 061). */
+async function runWithdrawalRelances() {
+  const { runWithdrawalRelances: run } = await import("@/modules/planning");
+  return run();
+}
+
 function authorizeCron(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
@@ -360,6 +366,8 @@ function cronTasks(appUrl: string): CronTask[] {
     { key: "planning-change-notices", schedule: { kind: "every-run" }, run: runPlanningChangeNotices },
     // Idempotente (horodatages) : un rythme plus serré ne fait qu'améliorer la réactivité.
     { key: "availability", schedule: { kind: "interval", minutes: 15 }, run: runAvailabilityTasks },
+    // Relance unique 48 h avant l'événement : une précision horaire suffit.
+    { key: "service-withdrawal-relances", schedule: { kind: "interval", minutes: 60 }, run: runWithdrawalRelances },
   ];
   return tasks.filter((t) => !t.module || registry.has(t.module));
 }
@@ -389,6 +397,7 @@ export async function POST(request: Request) {
       jobOffersLifecycle: resultOf(outcomes["jobs-lifecycle"]),
       availability: resultOf(outcomes["availability"]),
       planningChangeNotices: resultOf(outcomes["planning-change-notices"]),
+      serviceWithdrawalRelances: resultOf(outcomes["service-withdrawal-relances"]),
     });
   } catch (error) {
     return errorResponse(error);

@@ -519,6 +519,7 @@ retard après l'échéance : compte comme indisponible) > « Non demandée ».
 | `availability_asks` | Demande ciblée (`EVENT_ADDED`, `EVENT_MOVED`, `LEADER`) : `dueAt`, `notifiedAt`, `relanceSentAt`, `manualRelanceAt` | unique `[eventId, departmentId]` |
 | `availability_reminder_logs` | Garde-fou : une seule relance par STAR, événement et jour | unique `[memberId, eventId, sentOn]` |
 | `planning_change_notices` | Changement de planning en attente de notification regroupée (spec 060) : `previousStatus` (statut d'avant la première modification de la fenêtre, `null` = absent) et `lastChangedAt` (alignée sur toutes les lignes du STAR). Supprimée à l'envoi. **Sans relations** : survit au retrait d'un département, ne bloque aucune suppression de structure ; une ligne orpheline est écartée à l'envoi | unique `[memberId, eventId, departmentId]` |
+| `service_withdrawals` | Désistement d'un STAR sur un service (spec 061) : le STAR est retiré du planning à la création, `originalStatus` garde le statut repris par le remplaçant (ou restauré à l'annulation) ; `status` `PENDING` (à remplacer) / `REPLACED` / `CANCELLED` / `CLOSED`, `message`, `replacementMemberId`, `relanceSentAt` (relance unique 48 h avant). Cascade sur l'événement, le département et le membre désisté | index `[eventId, departmentId, status]`, `[memberId, status]`, `[churchId, status]` |
 
 **Reprise (migration `add_availability_collection`)** : les absences `EVENTS` actives deviennent
 des réponses `UNAVAILABLE` (puis sont supprimées) et les plannings `INDISPONIBLE` deviennent des

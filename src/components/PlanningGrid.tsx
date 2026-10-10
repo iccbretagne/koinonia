@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Check, CircleCheck, CircleDashed, CloudAlert, Lock, MessageSquare, Repeat, TriangleAlert, X, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { Check, CircleCheck, CircleDashed, CloudAlert, Lock, MessageSquare, Repeat, TriangleAlert, UserMinus, X, type LucideIcon } from "lucide-react";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -38,6 +39,16 @@ interface AvailabilityCounts {
   ifNeeded: number;
   noResponse: number;
   unavailable: number;
+  /** Services rendus vacants par un désistement (spec 061). */
+  toReplace?: number;
+}
+
+/** Désistement en attente sur ce service (spec 061) : le STAR n'est plus planifié. */
+interface GridWithdrawal {
+  id: string;
+  memberId: string;
+  memberName: string;
+  message: string | null;
 }
 
 /** Ordre de la liste : disponibles, si besoin, sans réponse, puis pas disponibles. */
@@ -187,10 +198,12 @@ const COUNT_LABELS: Record<ServiceStatus, [string, string]> = {
 /** Ligne d'un STAR : disponibilité, autres services, alerte d'indisponibilité et statut. */
 function MemberRow({
   member,
+  withdrawal,
   isReadOnly,
   onStatusChange,
 }: {
   readonly member: MemberPlanning;
+  readonly withdrawal?: GridWithdrawal;
   readonly isReadOnly: boolean;
   readonly onStatusChange: (memberId: string, status: string | null) => void;
 }) {
@@ -204,6 +217,14 @@ function MemberRow({
     >
       <div className="flex min-w-0 flex-col items-start gap-1">
         <span className="max-w-full truncate text-[15px] font-semibold leading-[22px] text-ink">{name}</span>
+        {withdrawal && (
+          <Link href={`/planning/remplacements/${withdrawal.id}`} className="rounded-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+            <StatusChip tone="warning" icon={UserMinus}>À remplacer</StatusChip>
+          </Link>
+        )}
+        {withdrawal?.message && (
+          <span className="text-[13px] leading-[18px] text-ink-muted">« {withdrawal.message} »</span>
+        )}
         <AvailabilityChip availability={member.availability} />
         {busy.length > 0 && (
           <span className="text-[13px] leading-[18px] text-ink-muted">De service en {busy.join(", ")}</span>
@@ -268,8 +289,13 @@ export default function PlanningGrid({
   const [canAskTeam, setCanAskTeam] = useState(false);
   const [relanceAvailable, setRelanceAvailable] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"ask" | "relance" | null>(null);
+  const [withdrawals, setWithdrawals] = useState<GridWithdrawal[]>([]);
   const [acting, setActing] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hasWithdrawalsRef = useRef(false);
+  useEffect(() => {
+    hasWithdrawalsRef.current = withdrawals.length > 0;
+  }, [withdrawals]);
 
   const isReadOnly = readOnly || (deadlinePassed && !canBypassDeadline);
 
@@ -289,6 +315,7 @@ export default function PlanningGrid({
       setAvailCounts(data.counts ?? null);
       setCanAskTeam(data.canAskTeam ?? false);
       setRelanceAvailable(data.manualRelanceAvailable ?? false);
+      setWithdrawals(data.withdrawals ?? []);
       setDirty(false);
     } catch {
       setFetchError(true);
@@ -322,6 +349,15 @@ export default function PlanningGrid({
         if (!res.ok) throw new Error("Failed to save planning");
         setDirty(false);
         setSaveError(false);
+        // Placer quelqu'un pourvoit un désistement en attente (spec 061) : rafraîchir le bandeau.
+        if (hasWithdrawalsRef.current) {
+          const refreshed = await fetch(`/api/events/${eventId}/departments/${departmentId}/planning`);
+          if (refreshed.ok) {
+            const data = await refreshed.json();
+            setWithdrawals(data.withdrawals ?? []);
+            setAvailCounts(data.counts ?? null);
+          }
+        }
       } catch {
         setSaveError(true);
         toast.error("Planning non enregistré. Vérifiez votre connexion, puis modifiez un statut pour réessayer.");
@@ -467,6 +503,20 @@ export default function PlanningGrid({
         </ul>
       )}
 
+      {withdrawals.length > 0 && (
+        <Alert tone="warning" icon={UserMinus} title={plural(withdrawals.length, "service à remplacer.", "services à remplacer.")}>
+          <ul className="mt-1 flex flex-col gap-1">
+            {withdrawals.map((w) => (
+              <li key={w.id}>
+                <Link href={`/planning/remplacements/${w.id}`} className="font-semibold text-brand-text underline">
+                  Remplacer {w.memberName}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+
       {canAskTeam && !isReadOnly && availCounts && (
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={() => setConfirmAction("ask")}>
@@ -516,7 +566,13 @@ export default function PlanningGrid({
 
         <ul className="divide-y divide-line">
           {sortedMembers.map((member) => (
-            <MemberRow key={member.id} member={member} isReadOnly={isReadOnly} onStatusChange={handleStatusChange} />
+            <MemberRow
+              key={member.id}
+              member={member}
+              withdrawal={withdrawals.find((w) => w.memberId === member.id)}
+              isReadOnly={isReadOnly}
+              onStatusChange={handleStatusChange}
+            />
           ))}
         </ul>
 
@@ -533,6 +589,11 @@ export default function PlanningGrid({
           {unset > 0 && (
             <StatusChip tone="neutral" icon={CircleDashed}>
               {plural(unset, "non renseigné", "non renseignés")}
+            </StatusChip>
+          )}
+          {withdrawals.length > 0 && (
+            <StatusChip tone="warning" icon={UserMinus}>
+              {plural(withdrawals.length, "à remplacer", "à remplacer")}
             </StatusChip>
           )}
         </div>

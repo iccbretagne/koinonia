@@ -53,6 +53,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     mockRequirePermission.mockResolvedValue(createAdminSession());
     prismaMock.department.findUnique.mockResolvedValue(mockDeptChurchCheck as never);
     prismaMock.absence.findMany.mockResolvedValue([]);
+    prismaMock.serviceWithdrawal.findMany.mockResolvedValue([]);
     mockGetPlanningAvailability.mockResolvedValue({
       members: new Map(),
       counts: { available: 0, ifNeeded: 0, noResponse: 0, unavailable: 0 },
@@ -143,7 +144,7 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     const body = await res.json();
     expect(body.members[0].availability).toMatchObject({ state: "UNAVAILABLE", source: "period" });
     expect(body.members[0].activeAbsence).toBeUndefined();
-    expect(body.counts).toEqual({ available: 0, ifNeeded: 0, noResponse: 2, unavailable: 1 });
+    expect(body.counts).toEqual({ available: 0, ifNeeded: 0, noResponse: 2, unavailable: 1, toReplace: 0 });
     expect(body.canAskTeam).toBe(true);
     expect(body.manualRelanceAvailable).toBe(true);
   });
@@ -170,6 +171,35 @@ describe("GET /api/events/[eventId]/departments/[deptId]/planning", () => {
     const body = await res.json();
     expect(body.members[0].availability).toMatchObject({ state: "UNAVAILABLE" });
     expect(body.counts.unavailable).toBe(1);
+  });
+
+  it("expose les désistements en attente et le compteur « à remplacer » (spec 061)", async () => {
+    prismaMock.eventDepartment.findUnique.mockResolvedValue({
+      id: "ed-1",
+      eventId: "evt-1",
+      departmentId: "dept-1",
+      event: { date: new Date("2026-08-01"), planningDeadline: null },
+      plannings: [{ id: "p-1", memberId: "m-1", status: null }],
+      department: { memberDepts: [{ member: { id: "m-1", firstName: "Paul", lastName: "Martin" } }] },
+    });
+    prismaMock.serviceWithdrawal.findMany.mockResolvedValue([
+      {
+        id: "w-1",
+        memberId: "m-1",
+        message: "fièvre",
+        originalStatus: "EN_SERVICE",
+        createdAt: new Date("2026-07-28"),
+        member: { firstName: "Paul", lastName: "Martin" },
+      },
+    ] as never);
+
+    const res = await GET(new Request("http://localhost"), { params: makeParams("evt-1", "dept-1") });
+
+    const body = await res.json();
+    expect(body.counts.toReplace).toBe(1);
+    expect(body.withdrawals).toEqual([
+      expect.objectContaining({ id: "w-1", memberId: "m-1", memberName: "Paul Martin", message: "fièvre" }),
+    ]);
   });
 
   it("detects deadline passed", async () => {
@@ -205,6 +235,7 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
     // Mock notification-related queries (no-op by default)
     prismaMock.planning.findMany.mockResolvedValue([]);
     prismaMock.memberUserLink.findMany.mockResolvedValue([]);
+    prismaMock.serviceWithdrawal.findMany.mockResolvedValue([]);
   });
 
   it("upserts planning statuses", async () => {
@@ -321,6 +352,26 @@ describe("PUT /api/events/[eventId]/departments/[deptId]/planning", () => {
     expect(res.status).toBe(403);
   });
 
+  it("placer un nouveau STAR pourvoit le plus ancien désistement en attente (spec 061)", async () => {
+    prismaMock.event.findUnique.mockResolvedValue({ id: "evt-1", planningDeadline: null });
+    prismaMock.eventDepartment.findUnique.mockResolvedValue({ id: "ed-1", eventId: "evt-1", departmentId: "dept-1" });
+    prismaMock.planning.upsert.mockResolvedValue({ id: "p-2", memberId: "m-2", status: "EN_SERVICE" });
+    prismaMock.serviceWithdrawal.findMany.mockResolvedValue([{ id: "w-1", memberId: "m-1" }] as never);
+    prismaMock.serviceWithdrawal.updateMany.mockResolvedValue({ count: 1 });
+
+    const request = new Request("http://localhost", {
+      method: "PUT",
+      body: JSON.stringify({ plannings: [{ memberId: "m-2", status: "EN_SERVICE" }] }),
+    });
+    const res = await PUT(request, { params: makeParams("evt-1", "dept-1") });
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.serviceWithdrawal.updateMany).toHaveBeenCalledWith({
+      where: { id: "w-1", status: "PENDING" },
+      data: expect.objectContaining({ status: "REPLACED", replacementMemberId: "m-2" }),
+    });
+  });
+
   it("allows ADMIN after deadline", async () => {
     const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
     mockRequirePermission.mockResolvedValue(createAdminSession());
@@ -357,6 +408,7 @@ describe("P0-2 : Department scope — DEPARTMENT_HEAD ne peut pas accéder à un
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.absence.findMany.mockResolvedValue([]);
+    prismaMock.serviceWithdrawal.findMany.mockResolvedValue([]);
   });
 
   it("GET : retourne 403 si DEPARTMENT_HEAD scoped à dept-A tente d'accéder à dept-B", async () => {

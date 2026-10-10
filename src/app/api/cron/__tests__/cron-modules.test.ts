@@ -11,6 +11,10 @@ vi.mock("@/modules/planning/services/planning-change-notices", async (importOrig
   ...(await importOriginal<typeof import("@/modules/planning/services/planning-change-notices")>()),
   flushPlanningChangeNotices: (...args: unknown[]) => mockFlushPlanningNotices(...args),
 }));
+const mockWithdrawalRelances = vi.fn().mockResolvedValue({ relanced: 0 });
+vi.mock("@/modules/planning/services/withdrawals/relances", () => ({
+  runWithdrawalRelances: (...args: unknown[]) => mockWithdrawalRelances(...args),
+}));
 vi.mock("@/lib/email", () => ({
   sendEmail: vi.fn(),
   buildReminderEmail: vi.fn(),
@@ -127,5 +131,21 @@ describe("POST /api/cron — conditionnement par module (spec 038)", () => {
     expect(body.tasks["planning-change-notices"]).toBe("ran");
     expect(body.planningChangeNotices).toEqual({ notified: 3, members: 3 });
     expect(mockFlushPlanningNotices).toHaveBeenCalledOnce();
+  });
+
+  it("la relance des services à remplacer (spec 061) est déclarée, horaire, et son résultat exposé", async () => {
+    delete process.env.ENABLED_MODULES;
+    mockWithdrawalRelances.mockResolvedValueOnce({ relanced: 2 });
+
+    const body = await (await postCron()).json();
+    expect(body.tasks["service-withdrawal-relances"]).toBe("ran");
+    expect(body.serviceWithdrawalRelances).toEqual({ relanced: 2 });
+
+    // Passée il y a 10 minutes : pas encore due (rythme horaire).
+    prismaMock.cronTaskRun.findMany.mockResolvedValue([
+      { key: "service-withdrawal-relances", lastStartedAt: new Date(Date.now() - 10 * 60_000) },
+    ]);
+    const again = await (await postCron()).json();
+    expect(again.tasks["service-withdrawal-relances"]).not.toBe("ran");
   });
 });

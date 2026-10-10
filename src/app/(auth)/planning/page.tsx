@@ -43,7 +43,13 @@ export default async function MyPlanningPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Mon planning" description={memberName} />
-      <MyPlanningView plannings={data.plannings} tasksByEvent={data.tasksByEvent} teamEvents={data.teamEvents} />
+      <MyPlanningView
+        plannings={data.plannings}
+        tasksByEvent={data.tasksByEvent}
+        teamEvents={data.teamEvents}
+        withdrawals={data.withdrawals}
+        contactsByDepartment={data.contactsByDepartment}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import AvailabilityTabs from "@/components/AvailabilityTabs";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Alert from "@/components/ui/Alert";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import StatusChip from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
 import UnavailabilityPeriodForm, { type BackupOption, type MemberRef } from "@/components/UnavailabilityPeriodForm";
@@ -29,6 +30,18 @@ interface EventRow {
   date: string;
   dueAt: string | null;
   departments: DeptState[];
+  /** Services où le STAR est planifié ; « Pas disponible » avant l'échéance vaut désistement (spec 061). */
+  plannedIn?: { departmentId: string; departmentName: string; withdrawable: boolean }[];
+}
+
+type AnswerInput = { answer: Answer; departmentIds?: string[] };
+
+/** Services planifiés qu'une réponse « Pas disponible » ferait quitter (désistement). */
+function withdrawnBy(event: EventRow, answers: AnswerInput[]) {
+  const planned = (event.plannedIn ?? []).filter((p) => p.withdrawable);
+  return planned.filter((p) =>
+    answers.some((a) => a.answer === "UNAVAILABLE" && (!a.departmentIds || a.departmentIds.includes(p.departmentId)))
+  );
 }
 
 interface MonthRow {
@@ -238,6 +251,7 @@ export default function AvailabilityClient({
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [pendingSave, setPendingSave] = useState<{ event: EventRow; answers: AnswerInput[] } | null>(null);
   const focusedRef = useRef(false);
 
   const isSelf = !memberId || selfMembers.some((m) => m.id === memberId);
@@ -281,7 +295,13 @@ export default function AvailabilityClient({
     if (data.events.some((e) => e.id === focusEventId)) focusedRef.current = true;
   }, [focusEventId, data]);
 
-  async function save(event: EventRow, answers: { answer: Answer; departmentIds?: string[] }[]) {
+  /** Avertit avant un « Pas disponible » qui désisterait le STAR d'un service planifié (spec 061). */
+  function requestSave(event: EventRow, answers: AnswerInput[]) {
+    if (withdrawnBy(event, answers).length > 0) setPendingSave({ event, answers });
+    else void save(event, answers);
+  }
+
+  async function save(event: EventRow, answers: AnswerInput[]) {
     setSavingId(event.id);
     try {
       const res = await fetch("/api/availability", {
@@ -296,7 +316,8 @@ export default function AvailabilityClient({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Erreur lors de l'enregistrement");
       toast.success("Disponibilité enregistrée");
-      if (json.alerts > 0) toast.info("Votre responsable a été prévenu : vous étiez planifié(e) sur cet événement.");
+      if (json.withdrawals > 0) toast.info("Désistement enregistré : votre responsable est prévenu pour vous remplacer.");
+      if (json.alerts > 0) toast.info("La date limite de planification est passée : contactez directement votre responsable.");
       await load(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur lors de l'enregistrement");
@@ -336,7 +357,7 @@ export default function AvailabilityClient({
             event={e}
             highlighted={focusEventId === e.id}
             saving={savingId === e.id}
-            onSave={save}
+            onSave={requestSave}
           />
         ))}
       </div>
@@ -406,6 +427,26 @@ export default function AvailabilityClient({
       </div>
 
       {eventsContent}
+
+      <ConfirmModal
+        open={pendingSave !== null}
+        title="Ton responsable va devoir te remplacer"
+        message={
+          pendingSave
+            ? `Tu es planifié(e) le ${shortFmt.format(new Date(pendingSave.event.date))} (${withdrawnBy(pendingSave.event, pendingSave.answers)
+                .map((p) => p.departmentName)
+                .join(", ")}) : répondre « Pas disponible » te retire de ce service, et ton responsable est prévenu tout de suite.`
+            : ""
+        }
+        confirmLabel="Me désister"
+        confirming={pendingSave !== null && savingId === pendingSave.event.id}
+        onConfirm={async () => {
+          if (!pendingSave) return;
+          await save(pendingSave.event, pendingSave.answers);
+          setPendingSave(null);
+        }}
+        onCancel={() => setPendingSave(null)}
+      />
 
       <UnavailabilityPeriodForm
         open={periodOpen}

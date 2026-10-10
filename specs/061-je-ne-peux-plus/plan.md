@@ -1,7 +1,7 @@
 # Plan technique — « Je ne peux plus » et remplacements
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Validé
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-10-10
 - **S'appuie sur** : spec 058 (disponibilités, ADR-0020), spec 060 (récapitulatif regroupé,
   `PlanningChangeNotice`), planificateur `/api/cron` (ADR-0021)
@@ -275,6 +275,13 @@ Nouvelle tâche dans `src/app/api/cron/route.ts` :
   service » et « en service + débrief » (`loadMyPlanning`), pas « remplaçant ». Un STAR planifié
   « remplaçant » ne verrait donc pas l'action. Le plan **ajoute** le statut « remplaçant » à
   « Mon planning » (affiché comme tel), puisque la spec le compte comme un service. Spec amendée.
+- **Raccourci « Pas disponible du … au … » (constaté à l'implémentation, 2026-10-10)** : le plan
+  supposait qu'il passait par `saveResponses` ; il passe en réalité par `/api/absences`
+  (`declareAbsence`, partagé avec `/absences`, avec remplaçants déclarés et alerte
+  `ABSENCE_CONFLICT`). Le brancher sur les désistements ferait coexister deux mécanismes de
+  remplacement : **reporté à un lot suivant (#673)**, sur décision de l'utilisateur. Le raccourci
+  garde l'alerte de conflit actuelle ; la réponse « Pas disponible » à un événement crée bien le
+  désistement.
 
 ## Risques & points d'attention
 
