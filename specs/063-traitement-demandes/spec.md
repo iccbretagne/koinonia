@@ -1,4 +1,4 @@
-# Spec — Refonte des écrans « Traitement des demandes » et « Réseaux sociaux »
+# Spec — Refonte des écrans de traitement des demandes (secrétariat, réseaux sociaux, visuels)
 
 - **Numéro** : 063
 - **Statut** : Validée
@@ -47,8 +47,13 @@ La communication traite les publications sur les réseaux sociaux demandées ave
 - emoji ;
 - annulation sans motif.
 
-Il suit donc le même modèle, dans le même lot, pour que les deux équipes retrouvent la même façon
-de travailler.
+La production média traite, dans l'onglet « Demandes » de l'activité Visuels, les visuels
+demandés avec une annonce ou de façon autonome. Elle a les mêmes défauts. En plus, le formulaire
+« Prendre en charge » (rattacher la demande à un projet média existant ou nouveau) s'ouvre au
+milieu de la carte. L'urgence n'est signalée que par un badge « Urgent » à moins de 48 h.
+
+Les deux écrans suivent donc le même modèle, dans le même lot, pour que les trois équipes
+retrouvent la même façon de travailler.
 
 ## Utilisateurs concernés
 
@@ -73,6 +78,18 @@ L'accès ne change pas. Il est ouvert aux personnes qui gèrent les événements
 Admin, Admin, Secrétaire) et aux membres d'un département portant la fonction « Communication ».
 Ils prennent en charge, marquent publiée (avec le lien du post s'ils l'ont) ou annulent une
 demande de publication. Le demandeur reçoit le motif d'une annulation dans sa notification.
+
+### Visuels (production média)
+
+L'accès ne change pas. Il est ouvert aux personnes qui gèrent les événements de l'église (Super
+Admin, Admin, Secrétaire) et aux membres d'un département portant la fonction « Production
+Média ».
+- Ils prennent en charge une demande en la rattachant à un projet média, existant ou créé à
+  l'occasion.
+- Ils la marquent livrée, avec le projet ou un lien de livraison.
+- Ils peuvent aussi l'annuler.
+
+Le demandeur reçoit le motif d'une annulation dans sa notification.
 
 ## Comportement attendu
 
@@ -124,9 +141,39 @@ demande de publication. Le demandeur reçoit le motif d'une annulation dans sa n
 8. La recherche porte sur le titre, le demandeur et l'origine. Il n'y a pas de pastilles de type,
    puisqu'un seul type arrive sur cet écran.
 
+### Scénario — demandes de visuels (production média)
+
+1. Un membre de l'équipe Production Média ouvre l'onglet « Demandes » de Visuels. Il y retrouve
+   le même modèle : trois onglets avec compteurs, file triée par échéance et regroupée, liste
+   compacte, panneau de détail, recherche.
+2. L'échéance d'un visuel est la date limite indiquée par le demandeur. À défaut, c'est le premier
+   culte ciblé encore à venir par l'annonce associée, sinon sa date d'événement. Le badge
+   automatique « Urgent » à moins de 48 h disparaît : le groupe « En retard » et le délai relatif
+   (« dans 1 j ») le remplacent.
+3. La ligne indique le format demandé. Elle signale aussi « Sans annonce » pour une demande de
+   visuel autonome.
+4. Le panneau montre :
+   - le brief complet ;
+   - le format ;
+   - la date limite ;
+   - l'annonce associée, avec le canal pour lequel le visuel est demandé (diffusion interne ou
+     réseaux sociaux) ;
+   - une fois la demande prise en charge, le projet média rattaché, avec un lien pour l'ouvrir et,
+     s'il existe, un lien de téléchargement.
+5. Dans « À traiter », l'action principale est « Prendre en charge ». Elle déplie dans le panneau
+   le choix du projet : un projet existant, ou un nouveau projet à nommer. Le nom est obligatoire
+   et le bouton de confirmation reste inactif tant qu'il manque.
+6. Dans « En cours », l'action principale est « Marquer livré ». Si aucun projet n'est rattaché,
+   le panneau propose un champ facultatif pour le lien de livraison (Canva, Drive…).
+7. « Annuler la demande » exige un motif.
+8. La recherche porte sur le titre, le demandeur et l'origine. Il n'y a pas de pastilles de type,
+   puisqu'un seul type arrive sur cet écran.
+9. Les onglets internes de Visuels (« Projets » et « Demandes ») restent en place. Seul le
+   contenu de l'onglet « Demandes » change.
+
 ### Scénarios alternatifs / cas limites
 
-Sauf mention contraire, ces cas valent pour les deux écrans.
+Sauf mention contraire, ces cas valent pour les trois écrans.
 
 - **Refus ou annulation avec motif obligatoire.** « Refuser » une demande ou « Annuler l'annonce »
   ne s'exécute pas tout de suite. Une zone de motif apparaît dans le panneau, et le bouton de
@@ -136,7 +183,8 @@ Sauf mention contraire, ces cas valent pour les deux écrans.
   (visuel, réseaux sociaux), comme aujourd'hui. La confirmation l'indique explicitement avant de
   valider, par exemple « Le visuel et la publication réseaux sociaux demandés seront aussi
   annulés ».
-- **Revenir sur une décision.** Après « Mettre en cours » ou « Marquer diffusée », le message de
+- **Revenir sur une décision.** Après « Mettre en cours », « Prendre en charge » ou un marquage
+  « diffusée », « publiée » ou « livré », le message de
   confirmation propose « Annuler » pendant quelques secondes. Ces gestes ne déclenchent rien
   d'autre qu'un changement d'état. « Annuler » ramène la demande à son état précédent et dans son
   onglet d'origine. Une approbation, un refus ou une annulation d'annonce produisent leurs effets
@@ -144,6 +192,10 @@ Sauf mention contraire, ces cas valent pour les deux écrans.
   obligatoire, et l'approbation par un bouton explicite dans le panneau. Le message ne propose
   « Annuler » que si personne n'a modifié la demande entre-temps. Si quelqu'un l'a fait, le retour
   arrière est refusé avec un message explicite.
+  Sur Visuels, « Annuler » est proposé après une prise en charge rattachée à un projet existant :
+  la demande revient « À traiter » et perd son rattachement. Il n'est pas proposé quand la prise
+  en charge a créé un nouveau projet, car ce projet a été créé dans la bibliothèque et n'est pas
+  supprimé automatiquement.
 - **Échéance selon le type.** Une demande sans date applicable va dans « Sans échéance ».
   - Annonce : le premier culte ciblé encore à venir, sinon sa date d'événement.
   - Ajout, modification ou annulation d'événement : la date de l'événement concerné.
@@ -174,7 +226,7 @@ Sauf mention contraire, ces cas valent pour les deux écrans.
 - **Mobile.** Les onglets, les pastilles, les lignes et les actions offrent une cible d'au moins
   44 px. La feuille du bas se ferme par glissement ou par un bouton « Fermer ». Le motif et la note
   restent visibles au-dessus du clavier.
-- **Le compteur du titre** (les deux écrans). Le badge à côté du titre de la page compte les demandes « À traiter »,
+- **Le compteur du titre** (les trois écrans). Le badge à côté du titre de la page compte les demandes « À traiter »,
   qu'elles soient en attente ou non encore prises en charge. Il ne compte plus seulement les
   demandes en attente.
 
@@ -210,22 +262,29 @@ Sauf mention contraire, ces cas valent pour les deux écrans.
       system, sans emoji ni couleur codée en dur.
 - [ ] Sur un écran de 360 px de large, il n'y a pas de défilement horizontal, et chaque cible
       interactive mesure au moins 44 px.
-- [ ] Après « Mettre en cours », « Prendre en charge », « Marquer diffusée » ou « Marquer
-      publiée », le message de confirmation propose « Annuler », qui ramène la demande à son état
+- [ ] Après « Mettre en cours », « Prendre en charge », « Marquer diffusée », « Marquer
+      publiée » ou « Marquer livré », le message de confirmation propose « Annuler », qui ramène la demande à son état
       précédent. Il ne le propose jamais après une approbation, un refus ou une annulation.
 - [ ] L'écran « Réseaux sociaux » suit le même modèle : onglets et compteurs, file par échéance
       regroupée, liste compacte, panneau, recherche, motif d'annulation obligatoire, plus aucune
       fenêtre du navigateur, cibles de 44 px. Il n'a pas de pastilles de type.
 - [ ] Sur « Réseaux sociaux », le lien facultatif du post se saisit dans le panneau au moment de
       « Marquer publiée » et reste consultable ensuite.
+- [ ] L'onglet « Demandes » de Visuels suit le même modèle. L'échéance est la date limite du
+      brief, sinon celle de l'annonce. La prise en charge choisit un projet existant ou nomme un
+      nouveau projet dans le panneau. « Marquer livré » accepte un lien de livraison facultatif
+      quand aucun projet n'est rattaché, et l'annulation exige un motif. Il n'y a pas de pastilles
+      de type.
+- [ ] Sur Visuels, « Annuler » après une prise en charge n'est proposé que si elle a rattaché un
+      projet existant.
 - [ ] Les règles d'accès, les transitions d'état permises et les effets d'une approbation sont
-      inchangés, à deux exceptions près : le motif est désormais obligatoire pour annuler une annonce
-      ou une publication, et un changement d'état sans effet peut être annulé pour revenir à l'état précédent.
+      inchangés, à deux exceptions près : le motif est désormais obligatoire pour annuler une annonce,
+      une publication ou un visuel, et un changement d'état sans effet peut être annulé pour revenir à l'état précédent.
 
 ## Hors périmètre
 
-- L'écran « Visuels » de la production média, qui a son propre déroulé (projets, livrables) :
-  issue de suivi si le modèle convainc.
+- L'onglet « Projets » de Visuels (bibliothèque des projets média) et l'écran de détail d'un
+  projet.
 - L'écran « Mes demandes » côté demandeur, ainsi que le formulaire de soumission.
 - Toute nouvelle règle d'accès, tout nouvel état de demande et toute nouvelle notification. Le
   motif d'annulation passe par la notification de décision existante.
@@ -236,6 +295,7 @@ Sauf mention contraire, ces cas valent pour les deux écrans.
 ## Questions tranchées
 
 - **Q1 — Revenir sur une décision** : « Annuler » est proposé seulement pour les changements
-  d'état sans effet (mise en cours, prise en charge, marquage diffusée ou publiée). Approuver,
+  d'état sans effet (mise en cours, prise en charge, marquage diffusée, publiée ou livrée). Approuver,
   refuser et annuler restent définitifs ; refuser et annuler exigent un motif.
-- **Q2 — Écran « Réseaux sociaux »** : il est traité dans le même lot.
+- **Q2 — Écrans « Réseaux sociaux » et « Visuels »** : ils sont traités dans le même lot, à la
+  demande de l'utilisateur. Pour Visuels, seul l'onglet « Demandes » est concerné.
