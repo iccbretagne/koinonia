@@ -116,6 +116,7 @@ export {
   listPendingWithdrawalsForSlot,
   listPendingWithdrawalsForMembers,
   getWithdrawalDetail,
+  getWithdrawalOwner,
 } from "./services/withdrawals/queries";
 export type { PendingSlotWithdrawal, PendingMemberWithdrawal, WithdrawalDetail } from "./services/withdrawals/queries";
 

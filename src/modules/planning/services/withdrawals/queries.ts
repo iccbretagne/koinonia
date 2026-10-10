@@ -14,6 +14,15 @@ export interface PendingSlotWithdrawal {
   createdAt: Date;
 }
 
+/** Département et fiche d'un désistement, pour les gardes de périmètre des routes. `null` s'il n'existe pas. */
+export async function getWithdrawalOwner(
+  id: string,
+  db?: DbClient
+): Promise<{ departmentId: string; memberId: string } | null> {
+  db ??= await defaultDb();
+  return db.serviceWithdrawal.findUnique({ where: { id }, select: { departmentId: true, memberId: true } });
+}
+
 /** Désistements en attente d'un service (événement × département), du plus ancien au plus récent. */
 export async function listPendingWithdrawalsForSlot(
   eventId: string,

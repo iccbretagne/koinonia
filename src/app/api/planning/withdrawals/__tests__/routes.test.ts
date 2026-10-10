@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Session } from "next-auth";
-import { prismaMock } from "@/__mocks__/prisma";
 import {
   createAdminSession,
   createAuthScopeMocks,
@@ -27,7 +26,6 @@ vi.mock("@/lib/auth", () => ({
     if (sc.scoped && !sc.departmentIds.includes(departmentId)) throw new Error("FORBIDDEN");
   },
 }));
-vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 const withdrawService = vi.fn();
 const resolveOwnMemberForDepartment = vi.fn();
@@ -36,6 +34,7 @@ const cancelWithdrawal = vi.fn();
 const isMemberLinkedToUser = vi.fn();
 const replaceWithdrawal = vi.fn();
 const closeWithdrawal = vi.fn();
+const getWithdrawalOwner = vi.fn();
 vi.mock("@/modules/planning", () => ({
   withdrawService: (...a: unknown[]) => withdrawService(...a),
   resolveOwnMemberForDepartment: (...a: unknown[]) => resolveOwnMemberForDepartment(...a),
@@ -44,6 +43,7 @@ vi.mock("@/modules/planning", () => ({
   isMemberLinkedToUser: (...a: unknown[]) => isMemberLinkedToUser(...a),
   replaceWithdrawal: (...a: unknown[]) => replaceWithdrawal(...a),
   closeWithdrawal: (...a: unknown[]) => closeWithdrawal(...a),
+  getWithdrawalOwner: (...a: unknown[]) => getWithdrawalOwner(...a),
 }));
 
 const collection = await import("../route");
@@ -57,7 +57,7 @@ const json = (body: unknown, method = "POST") => new Request("http://localhost",
 beforeEach(() => {
   vi.clearAllMocks();
   mockResolveChurchId.mockResolvedValue("church-1");
-  prismaMock.serviceWithdrawal.findUnique.mockResolvedValue({ departmentId: "dept-1", memberId: "paul" } as never);
+  getWithdrawalOwner.mockResolvedValue({ departmentId: "dept-1", memberId: "paul" });
 });
 
 describe("POST /api/planning/withdrawals", () => {

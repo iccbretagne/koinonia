@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import {
   hasChurchPermission,
   requireChurchPermission,
@@ -6,7 +5,7 @@ import {
   resolveChurchId,
 } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { cancelWithdrawal, getWithdrawalDetail, isMemberLinkedToUser } from "@/modules/planning";
+import { cancelWithdrawal, getWithdrawalDetail, getWithdrawalOwner, isMemberLinkedToUser } from "@/modules/planning";
 
 /**
  * Service à remplacer (spec 061). `GET` : écran du responsable, candidats recalculés à chaque
@@ -19,7 +18,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const churchId = await resolveChurchId("serviceWithdrawal", id);
     const session = await requireChurchPermission("planning:department", churchId);
 
-    const owner = await prisma.serviceWithdrawal.findUnique({ where: { id }, select: { departmentId: true } });
+    const owner = await getWithdrawalOwner(id);
     if (!owner) throw new ApiError(404, "Désistement introuvable");
     requireDepartmentAccess(session, churchId, owner.departmentId);
 
@@ -38,7 +37,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     const churchId = await resolveChurchId("serviceWithdrawal", id);
     const session = await requireChurchPermission("planning:view", churchId);
 
-    const owner = await prisma.serviceWithdrawal.findUnique({ where: { id }, select: { memberId: true } });
+    const owner = await getWithdrawalOwner(id);
     if (!owner) throw new ApiError(404, "Désistement introuvable");
     if (!(await isMemberLinkedToUser(owner.memberId, session.user.id, churchId))) {
       throw new ApiError(403, "Ce désistement n'est pas le vôtre");

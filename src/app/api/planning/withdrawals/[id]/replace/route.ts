@@ -1,7 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, requireDepartmentAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { replaceWithdrawal } from "@/modules/planning";
+import { getWithdrawalOwner, replaceWithdrawal } from "@/modules/planning";
 import { z } from "zod";
 
 /** Choix d'un remplaçant (spec 061) : `planning:edit` dans le périmètre du département. */
@@ -13,7 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const churchId = await resolveChurchId("serviceWithdrawal", id);
     const session = await requireChurchPermission("planning:edit", churchId);
 
-    const owner = await prisma.serviceWithdrawal.findUnique({ where: { id }, select: { departmentId: true } });
+    const owner = await getWithdrawalOwner(id);
     if (!owner) throw new ApiError(404, "Désistement introuvable");
     requireDepartmentAccess(session, churchId, owner.departmentId);
 
