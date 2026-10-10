@@ -120,7 +120,8 @@ CI enforce les règles suivantes via `npm run lint:boundaries` :
 | `no-integration-imports-other-modules` | `integration` n'importe pas d'un autre module |
 | `no-modules-static-import-registry` | Un module ne peut pas importer statiquement `src/lib/registry.ts` (cycle avec la racine de composition — issue #446) ; un import dynamique reste autorisé |
 | `core-no-modules-import` | `src/core/` n'importe pas de `src/modules/` |
-| `app-only-module-public-api` | `src/app/` importe uniquement depuis `src/modules/X/index.ts` ou `src/modules/X/auth.ts` |
+| `app-only-module-public-api` | `src/app/` importe uniquement depuis `src/modules/X/index.ts`, `src/modules/X/auth.ts` ou `src/modules/X/schemas.ts` (schémas Zod purs) |
+| `api-contract-pure` | Un `src/app/api/**/contract.ts` n'importe que zod, `src/lib/openapi/contract.ts`, `src/generated/prisma/enums.ts`, `src/modules/*/schemas.ts` et d'autres contrats (ADR-0023) |
 
 ---
 
@@ -259,7 +260,7 @@ koinonia/
 │   │   │       ├── jobs/          # Moderation des offres d'emploi (archivage)
 │   │   │       ├── backups/       # Sauvegardes BDD (S3), restauration
 │   │   │       └── audit-logs/    # Historique des modifications
-│   │   └── api/                   # Route handlers (API REST)
+│   │   └── api/                   # Route handlers (API REST) + contract.ts voisin (ADR-0023)
 │   │       ├── auth/
 │   │       │   ├── [...nextauth]/ # NextAuth (Google OAuth)
 │   │       │   ├── dev-login/     # Connexion sans Google OAuth (dev uniquement, AUTH_DEV_LOGIN)
@@ -480,12 +481,26 @@ const canEdit = userPermissions.has("planning:edit");
 
 `hasPermission()` de `src/lib/permissions.ts` a été supprimé — utiliser `rolePermissions`.
 
-### Validation
+### Validation et contrat d'API
+
+Les schémas Zod des corps sont déclarés dans le `contract.ts` voisin de la route, qui les
+importe ; le même fichier décrit la route pour la spécification OpenAPI (ADR-0023) :
 
 ```typescript
-const schema = z.object({ ... });
-const data = schema.parse(await request.json());
+// contract.ts — pur : zod, @/lib/openapi/contract, enums Prisma, @/modules/*/schemas
+export const createSchema = z.object({ ... });
+export const contract = defineContract({
+  POST: { summary: "Création d'un …", access: "members:manage", body: createSchema, status: 201, response: "… créé" },
+});
+
+// route.ts
+import { createSchema } from "./contract";
+const data = createSchema.parse(await request.json());
 ```
+
+`npm run openapi` régénère `docs/openapi.json` (affiché par Swagger UI sur `/admin/api`, Super
+Admin) ; `src/lib/openapi/__tests__/openapi.test.ts` bloque une route sans contrat ou une
+spécification pas à jour. Conventions communes de l'API : [api.md](api.md).
 
 ### Prisma
 

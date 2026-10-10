@@ -2,13 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const schema = z.object({
-  eventId: z.string(),
-  // liste des memberId présents (les autres = absents)
-  presentMemberIds: z.array(z.string()),
-});
+import { schema } from "./contract";
 
 // Enregistre la liste des présents pour un événement
 export async function PUT(request: Request) {

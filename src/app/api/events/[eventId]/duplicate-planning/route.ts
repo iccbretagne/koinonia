@@ -2,11 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { recordPlanningChanges, type PlanningChange } from "@/modules/planning";
-import { z } from "zod";
-
-const schema = z.object({
-  targetEventId: z.string().min(1, "L'événement cible est requis"),
-});
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

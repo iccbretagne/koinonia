@@ -9,14 +9,9 @@ import { validateMediaShareToken, getS3ObjectStream, collectionPhotoWhere } from
 import type { CollectionConfig } from "@/modules/media";
 import archiver from "archiver";
 import { PassThrough } from "node:stream";
-import { z } from "zod";
+import { bodySchema } from "./contract";
 
 export const runtime = "nodejs";
-
-const bodySchema = z.object({
-  photoIds: z.array(z.string()).optional(),
-  fileIds:  z.array(z.string()).optional(),
-});
 
 type ZipEntry = { filename: string; originalKey: string; folder: string };
 

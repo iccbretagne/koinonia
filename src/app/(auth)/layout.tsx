@@ -26,6 +26,7 @@ const configLinksDef = [
   // Système
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
+  { href: "/admin/api",                   label: "API",               permissions: [], superAdminOnly: true },
 ];
 
 type NavLink = { href: string; label: string };

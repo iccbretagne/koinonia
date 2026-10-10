@@ -1,13 +1,9 @@
-import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rolePermissions } from "@/lib/registry";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-
-const updateProfileSchema = z.object({
-  displayName: z.string().min(1).max(100),
-});
+import { updateProfileSchema } from "./contract";
 
 export async function PATCH(
   request: Request,

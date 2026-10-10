@@ -2,25 +2,15 @@
  * GET  /api/audio/services — file d'attente des cultes audio de l'église, filtrable par statut.
  * POST /api/audio/services — crée un culte audio en DRAFT.
  */
-import { z } from "zod";
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createAudioService } from "@/modules/audio";
 import type { AudioServiceStatus } from "@/generated/prisma/client";
+import { createSchema } from "./contract";
 
 const STATUSES = new Set<string>(["DRAFT", "PENDING_REVIEW", "READY", "PUBLISHED", "UNPUBLISHED"] satisfies AudioServiceStatus[]);
-
-const createSchema = z.object({
-  planningEventId: z.string().optional(),
-  serviceDate: z.string().datetime().optional(),
-  title: z.string().optional(),
-  speaker: z.string().optional(),
-  series: z.string().min(1).optional(),
-  // Même contrainte que Event.type : EVENT_TYPES est une contrainte d'interface, pas serveur.
-  type: z.string().min(1).optional(),
-});
 
 export async function GET(request: Request) {
   try {

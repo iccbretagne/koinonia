@@ -4,13 +4,11 @@
  * de la journée lui est proposée »). Signale ceux ayant déjà un culte audio pour éviter un
  * doublon avant même de tenter la création.
  */
-import { z } from "zod";
 import { getCurrentChurchId, requireAuth } from "@/lib/auth";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-
-const querySchema = z.object({ date: z.string().min(1) });
+import { querySchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

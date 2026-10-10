@@ -6,15 +6,8 @@ import { logAudit } from "@/lib/audit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
 import { admitToChurch } from "@/lib/admission";
 import { createNotification } from "@/lib/notifications";
-import { z } from "zod";
 import type { Session } from "next-auth";
-
-const schema = z.object({
-  action: z.enum(["approve", "reject", "reconsider"]),
-  rejectReason: z.string().optional(),
-  departmentId: z.string().optional(), // override admin si besoin
-  confirmDuplicate: z.boolean().optional(),
-});
+import { schema } from "./contract";
 
 type LinkRequest = {
   id: string;

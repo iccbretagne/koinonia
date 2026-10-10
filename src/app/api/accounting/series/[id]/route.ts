@@ -1,11 +1,7 @@
 import { requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  status: z.enum(["ACTIVE", "PAUSED", "CANCELLED"]),
-});
+import { patchSchema } from "./contract";
 
 export async function PATCH(
   request: Request,

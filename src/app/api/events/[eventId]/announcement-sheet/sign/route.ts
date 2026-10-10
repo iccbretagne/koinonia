@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
@@ -8,12 +7,7 @@ import {
   ALLOWED_SHEET_MIME_TYPES,
 } from "@/modules/planning";
 import { getSignedPutUrl } from "@/modules/storage";
-
-const signSchema = z.object({
-  filename: z.string().min(1).max(255),
-  mimeType: z.string(),
-  size: z.number().int().positive(),
-});
+import { signSchema } from "./contract";
 
 export async function POST(
   request: Request,

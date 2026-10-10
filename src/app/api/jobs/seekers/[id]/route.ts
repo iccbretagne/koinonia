@@ -1,24 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
 import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
-
-const patchSeekerSchema = z
-  .object({
-    title:          z.string().min(1).max(200).optional(),
-    wantEmploi:     z.boolean().optional(),
-    wantStage:      z.boolean().optional(),
-    wantAlternance: z.boolean().optional(),
-    sector:         z.string().max(150).nullable().optional(),
-    location:       z.string().max(150).nullable().optional(),
-    remote:         z.boolean().optional(),
-    availableFrom:  z.string().datetime().nullable().optional(),
-    description:    z.string().min(1).optional(),
-    contactEmail:   z.string().email().max(150).nullable().optional(),
-    contactUrl:     z.string().url().max(500).nullable().optional(),
-    status:         z.enum(["ACTIVE", "FOUND", "ARCHIVED"]).optional(),
-  });
+import { patchSeekerSchema } from "./contract";
 
 export async function GET(
   _request: Request,

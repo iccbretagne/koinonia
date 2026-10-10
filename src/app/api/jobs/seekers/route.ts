@@ -2,25 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { createNotification } from "@/lib/notifications";
-import { z } from "zod";
-
-const createSeekerSchema = z
-  .object({
-    title:          z.string().min(1).max(200),
-    wantEmploi:     z.boolean().default(false),
-    wantStage:      z.boolean().default(false),
-    wantAlternance: z.boolean().default(false),
-    sector:         z.string().max(150).optional().nullable(),
-    location:       z.string().max(150).optional().nullable(),
-    remote:         z.boolean().default(false),
-    availableFrom:  z.string().datetime().optional().nullable(),
-    description:    z.string().min(1),
-    contactEmail:   z.string().email().max(150).optional().nullable(),
-    contactUrl:     z.string().url().max(500).optional().nullable(),
-  })
-  .refine((d) => d.wantEmploi || d.wantStage || d.wantAlternance, {
-    message: "Au moins un type de contrat doit être sélectionné",
-  });
+import { createSeekerSchema } from "./contract";
 
 function contractTypeFilter(type: "EMPLOI" | "STAGE" | "ALTERNANCE" | null) {
   if (type === "EMPLOI") return { wantEmploi: true };

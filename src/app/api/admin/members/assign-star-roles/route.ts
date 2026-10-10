@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { resolveMemberDepartmentScope, isMemberInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse } from "@/lib/api-utils";
-import { z } from "zod";
-
-const schema = z.object({ churchId: z.string().min(1) });
+import { schema } from "./contract";
 
 export async function POST(request: Request) {
   try {

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireMediaUploadAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
@@ -14,13 +13,7 @@ import {
   getPhotoThumbnailKey,
   deleteMediaFile,
 } from "@/modules/media";
-
-const confirmSchema = z.object({
-  quarantineId: z.string().uuid(),
-  filename: z.string().min(1),
-  mimeType: z.string(),
-  size: z.number().int().positive(),
-});
+import { confirmSchema } from "./contract";
 
 /** POST — confirme l'upload S3, traite l'image (sharp) et crée l'entrée DB. */
 export async function POST(

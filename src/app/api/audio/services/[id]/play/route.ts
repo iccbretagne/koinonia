@@ -3,12 +3,10 @@
  * (spec 021). Incrémente `AudioSegment.playCount`, jamais `AudioService.openCount` (qui mesure
  * la diffusion d'un lien de partage, une sémantique distincte).
  */
-import { z } from "zod";
 import { requireAudioListenAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-
-const schema = z.object({ segmentId: z.string() });
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

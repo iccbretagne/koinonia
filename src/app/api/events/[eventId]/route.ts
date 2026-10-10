@@ -9,7 +9,8 @@ import {
   sendEventChangeNotices,
   type EventChange,
 } from "@/modules/planning";
-import { z } from "zod";
+import type { z } from "zod";
+import { updateSchema, patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,
@@ -42,15 +43,6 @@ export async function GET(
     return errorResponse(error);
   }
 }
-
-const updateSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  type: z.string().min(1, "Le type est requis"),
-  date: z.string().min(1, "La date est requise"),
-  planningDeadline: z.string().nullable().optional(),
-  applyToSeries: z.boolean().optional(),
-  removeFromSeries: z.boolean().optional(),
-});
 
 /**
  * Modification de toute la série : même titre et même type, nouvelle heure appliquée au jour
@@ -217,15 +209,6 @@ export async function PUT(
     return errorResponse(error);
   }
 }
-
-const patchSchema = z.object({
-  allowAnnouncements: z.boolean().optional(),
-  trackedForDiscipleship: z.boolean().optional(),
-  reportEnabled: z.boolean().optional(),
-  statsEnabled: z.boolean().optional(),
-  welcomeDutyEnabled: z.boolean().optional(),
-  applyToSeries: z.boolean().optional(),
-});
 
 export async function PATCH(
   request: Request,

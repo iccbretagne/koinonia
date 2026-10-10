@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireIntegrationAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -30,14 +30,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const createSchema = z.object({
-  churchId: z.string().min(1),
-  userId: z.string().min(1),
-  familyId: z.number().int().positive(),
-  familyName: z.string().min(1).max(100),
-  role: z.enum(["BERGER", "CO_BERGER"]),
-});
 
 export async function POST(request: Request) {
   try {

@@ -1,36 +1,8 @@
-import { z } from "zod";
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { createTeamEvent, listDepartmentTeamEvents } from "@/modules/planning";
-
-function isValidDate(val: string) {
-  return !Number.isNaN(new Date(val).getTime());
-}
-
-const writeFields = {
-  title: z.string().trim().min(1, "Le titre est requis").max(200),
-  startsAt: z.string().min(1, "La date de début est requise").refine(isValidDate, "Date de début invalide"),
-  endsAt: z.string().min(1, "La date de fin est requise").refine(isValidDate, "Date de fin invalide"),
-  location: z.string().trim().max(200).nullable().optional(),
-  description: z.string().max(2000).nullable().optional(),
-};
-
-const createSchema = z
-  .object({
-    ...writeFields,
-    recurrence: z
-      .object({
-        rule: z.enum(["weekly", "biweekly", "monthly"]),
-        until: z.string().min(1, "La date de fin de récurrence est requise").refine(isValidDate, "Date de fin de récurrence invalide"),
-      })
-      .nullable()
-      .optional(),
-  })
-  .refine((d) => new Date(d.endsAt) > new Date(d.startsAt), {
-    message: "L'heure de fin doit être postérieure à l'heure de début",
-    path: ["endsAt"],
-  });
+import { createSchema } from "./contract";
 
 export async function GET(
   request: Request,

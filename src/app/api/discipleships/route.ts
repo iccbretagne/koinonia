@@ -3,25 +3,7 @@ import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { z } from "zod";
-
-const createSchema = z.union([
-  z.object({
-    discipleId: z.string(),
-    discipleMakerId: z.string(),
-    churchId: z.string(),
-    firstMakerId: z.string().optional(),
-  }),
-  z.object({
-    newMember: z.object({
-      firstName: z.string().min(1, "Le prénom est requis"),
-      lastName: z.string().min(1, "Le nom est requis"),
-    }),
-    discipleMakerId: z.string(),
-    churchId: z.string(),
-    firstMakerId: z.string().optional(),
-  }),
-]);
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

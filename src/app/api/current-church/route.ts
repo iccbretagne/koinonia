@@ -1,11 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { cookies } from "next/headers";
-import { z } from "zod";
-
-const schema = z.object({
-  churchId: z.string().min(1, "L'ID de l'église est requis"),
-});
+import { schema } from "./contract";
 
 export async function POST(request: Request) {
   try {

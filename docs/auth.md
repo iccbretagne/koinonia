@@ -100,8 +100,7 @@ Cela permet d'assigner le rôle STAR sans aucune entrée `user_departments` : le
   ainsi désignée (`requireCurrentChurchPermission`), jamais s'y fier seule.
 
 
-`audio:listen` (bibliothèque d'écoute, spec 021) est accordée à **tous les rôles** — voir
-[api.md](api.md#audio-des-cultes).
+`audio:listen` (bibliothèque d'écoute, spec 021) est accordée à **tous les rôles** — le détail des routes audio est dans la référence OpenAPI (`docs/openapi.json`, tag `audio`).
 
 ### Accès transverses entre églises
 

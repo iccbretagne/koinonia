@@ -3,27 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createReservation, isRoomAuthorizedForChurch } from "@/modules/rooms";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const createSchema = z
-  .object({
-    churchId: z.string().min(1),
-    roomId: z.string().min(1),
-    eventId: z.string().min(1).optional(),
-    title: z.string().min(1).max(200),
-    startAt: z.string().datetime(),
-    endAt: z.string().datetime(),
-    recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).optional(),
-    recurrenceEnd: z.string().datetime().optional(),
-  })
-  .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
-    message: "endAt doit être postérieure à startAt",
-    path: ["endAt"],
-  })
-  .refine((d) => !d.recurrenceRule || d.recurrenceEnd, {
-    message: "recurrenceEnd requis avec recurrenceRule",
-    path: ["recurrenceEnd"],
-  });
+import { createSchema } from "./contract";
 
 /**
  * GET /api/room-reservations?churchId=...&roomId?=&from?=&to?=

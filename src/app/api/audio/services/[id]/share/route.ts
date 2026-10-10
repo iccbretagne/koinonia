@@ -3,13 +3,11 @@
  * d'écoute (spec 021). Sans `segmentId` : lien vers le culte entier. Réutilise un token existant
  * non révoqué avant d'en créer un — repartager la même séquence ne multiplie pas les liens.
  */
-import { z } from "zod";
 import { requireChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getOrCreatePrimaryShareToken, getOrCreateSegmentShareToken, buildPublicAudioUrl } from "@/modules/audio";
-
-const schema = z.object({ segmentId: z.string().optional() });
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

@@ -5,7 +5,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { admitToChurch } from "@/lib/admission";
-import { z } from "zod";
+import { createSchema, deleteSchema } from "./contract";
 
 // Rattachement direct par un administrateur, cible désignée par `userId` (compte déjà connu de
 // l'appelant, ex. sélectionné via /api/users/search) ou par `email` exact (spec 037 — le compte
@@ -14,32 +14,6 @@ import { z } from "zod";
 //
 // Côté STAR : `memberId` (fiche existante) ou `newMember` (nouvelle fiche créée dans le même
 // geste, spec 047 — pré-provisionnement d'un utilisateur avant sa première connexion). Exclusifs.
-const createSchema = z
-  .object({
-    memberId: z.string().optional(),
-    newMember: z
-      .object({
-        firstName: z.string().min(1),
-        lastName: z.string().min(1),
-        phone: z.string().optional(),
-        departmentId: z.string(),
-      })
-      .optional(),
-    churchId: z.string(),
-    userId: z.string().optional(),
-    email: z.string().trim().email().optional(),
-    // Double confirmation exigée avant de créer un compte dormant pour une adresse inconnue —
-    // une erreur de frappe ne doit pas rattacher silencieusement un STAR à une adresse fantôme.
-    confirmCreate: z.boolean().optional(),
-  })
-  .refine((d) => d.userId ?? d.email, { message: "userId ou email requis" })
-  .refine((d) => !(d.memberId && d.newMember), { message: "memberId et newMember sont exclusifs" })
-  .refine((d) => d.memberId ?? d.newMember, { message: "memberId ou newMember requis" });
-
-const deleteSchema = z.object({
-  memberId: z.string(),
-  churchId: z.string(),
-});
 
 type MemberScope = Awaited<ReturnType<typeof resolveMemberDepartmentScope>>;
 

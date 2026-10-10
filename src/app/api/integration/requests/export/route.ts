@@ -8,12 +8,7 @@ import {
   EXPORT_COLUMNS,
 } from "@/modules/integration";
 import ExcelJS from "exceljs";
-import { z } from "zod";
-
-const exportSchema = z.object({
-  churchId: z.string().min(1),
-  requestIds: z.array(z.string().min(1)).min(1).max(2000),
-});
+import { exportSchema } from "./contract";
 
 /**
  * POST /api/integration/requests/export — génère un classeur Excel à partir d'une liste

@@ -7,7 +7,7 @@ import {
   listMsdpFollowUps,
   startMsdpFollowUpFromIntegrationRequest,
 } from "@/modules/care";
-import { z } from "zod";
+import { startSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -29,11 +29,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const startSchema = z.object({
-  churchId: z.string().min(1),
-  integrationRequestId: z.string().min(1),
-});
 
 export async function POST(request: Request) {
   try {

@@ -14,7 +14,7 @@ import {
   sendReplacedConfirmation,
 } from "@/modules/planning";
 import { rolePermissions } from "@/lib/registry";
-import { z } from "zod";
+import { planningSchema } from "./contract";
 
 type PlanningAvailability = Awaited<ReturnType<typeof getPlanningAvailability>>;
 
@@ -192,17 +192,6 @@ export async function GET(
     return errorResponse(error);
   }
 }
-
-const planningSchema = z.object({
-  plannings: z.array(
-    z.object({
-      memberId: z.string(),
-      status: z
-        .enum(["EN_SERVICE", "EN_SERVICE_DEBRIEF", "REMPLACANT"])
-        .nullable(),
-    })
-  ),
-});
 
 export async function PUT(
   request: Request,

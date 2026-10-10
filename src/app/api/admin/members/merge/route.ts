@@ -3,21 +3,8 @@ import { requireChurchPermission } from "@/lib/auth";
 import { resolveMemberDepartmentScope, isMemberFullyInScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
-
-const schema = z.object({
-  sourceId: z.string().min(1),
-  targetId: z.string().min(1),
-  resolution: z.object({
-    firstName: z.string().min(1),
-    lastName: z.string().min(1),
-    email: z.string().nullable().optional(),
-    phone: z.string().nullable().optional(),
-    // userId du compte à conserver si les deux ont un lien ; null = garder celui du target
-    keepUserId: z.string().nullable().optional(),
-  }),
-});
+import { schema } from "./contract";
 
 async function getMemberChurchId(memberId: string): Promise<string | null> {
   const m = await prisma.member.findUnique({

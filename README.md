@@ -93,7 +93,7 @@ registry, aux frontières vérifiées en CI. Voir le [DAT](docs/dat.md) pour la 
 | [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, point d'entrée |
 | [Architecture](docs/architecture.md) | Structure du projet, patterns, conventions |
 | [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
-| [API](docs/api.md) | Endpoints, requêtes, réponses |
+| [API](docs/api.md) | Conventions de l'API ; endpoints dans `docs/openapi.json` (Swagger UI : `/admin/api`) |
 | [Authentification & rôles](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
 | [Environnement de développement](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
 | [Déploiement production](docs/production.md) | Debian, Traefik, systemd |

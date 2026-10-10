@@ -15,16 +15,9 @@ import { getVersionOriginalKey, getSignedOriginalUrl } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Media, MEDIA_BUCKET } from "@/lib/s3";
-import { z } from "zod";
+import { postSchema } from "./contract";
 
 const PRESIGNED_EXPIRY = 3600;
-
-const postSchema = z.object({
-  filename: z.string().min(1),
-  contentType: z.string().min(1),
-  size: z.number().int().positive(),
-  notes: z.string().optional(),
-});
 
 async function resolveFileChurchId(fileId: string): Promise<{ churchId: string; domain: MediaDomain; file: { type: string } }> {
   const file = await prisma.mediaFile.findUnique({

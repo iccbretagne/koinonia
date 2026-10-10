@@ -6,32 +6,15 @@ import { rolePermissions } from "@/lib/registry";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { DEPT_FN, functionForRequestType } from "@/lib/department-functions";
 import { getFunctionDepartmentIds, getFunctionDepartmentsMap } from "@/lib/function-departments";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Prisma, RequestType } from "@/generated/prisma/client";
-
-const createSchema = z
-  .object({
-    churchId: z.string().min(1, "L'église est requise"),
-    title: z.string().min(1, "Le titre est requis"),
-    content: z.string().min(1, "Le contenu est requis"),
-    eventDate: z.string().nullable().optional(),
-    channelInterne: z.boolean().default(false),
-    channelExterne: z.boolean().default(false),
-    isUrgent: z.boolean().default(false),
-    departmentId: z.string().nullable().optional(),
-    ministryId: z.string().nullable().optional(),
-    targetEventIds: z.array(z.string()).default([]),
-  })
-  .refine((d) => d.channelInterne || d.channelExterne, {
-    message: "Au moins un canal de diffusion est requis",
-  });
+import { createSchema } from "./contract";
 
 function computeIsSaveTheDate(eventDate: Date): boolean {
   const threeWeeksFromNow = new Date();
   threeWeeksFromNow.setDate(threeWeeksFromNow.getDate() + 21);
   return eventDate > threeWeeksFromNow;
 }
-
 
 export async function GET(request: Request) {
   try {

@@ -3,15 +3,10 @@
  * de noms de séquences). Le département de captation audio se configure désormais via les
  * fonctions de département (`Department.function = "CAPTATION_AUDIO"`, spec 021).
  */
-import { z } from "zod";
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse } from "@/lib/api-utils";
-
-const schema = z.object({
-  defaultCoverKey: z.string().nullable().optional(),
-  sequenceTemplate: z.array(z.string().min(1)).optional(),
-});
+import { schema } from "./contract";
 
 export async function GET() {
   try {

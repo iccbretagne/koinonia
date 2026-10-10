@@ -1,12 +1,7 @@
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
-
-const createSchema = z.object({
-  familyId:   z.number().int().positive(),
-  familyName: z.string().min(1).max(100),
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

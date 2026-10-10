@@ -2,16 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess, isMediaTeamMember, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { createMediaShareToken, getTokenUrlPath } from "@/modules/media";
-import { z } from "zod";
+import type { z } from "zod";
+import { shareCreateSchema as createSchema } from "./contract";
 
 const SENSITIVE_TOKEN_TYPES: ReadonlySet<string> = new Set(["VALIDATOR", "PREVALIDATOR"]);
 
-const createSchema = z.object({
-  type: z.enum(["VALIDATOR", "MEDIA", "MEDIA_ALL", "PREVALIDATOR", "GALLERY"]),
-  label: z.string().optional(),
-  expiresInDays: z.number().int().positive().optional(),
-  onlyApproved: z.boolean().optional(),
-});
 
 type ShareTokenType = z.infer<typeof createSchema>["type"];
 type RouteContext = { params: Promise<{ id: string }> };

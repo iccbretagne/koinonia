@@ -3,7 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { z } from "zod";
+import { bulkSchema, createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -24,15 +24,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const bulkSchema = z.object({
-  ids: z.array(z.string()).min(1, "Au moins un ID requis"),
-  action: z.enum(["delete", "update"]),
-  data: z.object({
-    name: z.string().min(1).optional(),
-    churchId: z.string().min(1).optional(),
-  }).optional(),
-});
 
 export async function PATCH(request: Request) {
   try {
@@ -118,11 +109,6 @@ export async function PATCH(request: Request) {
     return errorResponse(error);
   }
 }
-
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  churchId: z.string().min(1, "L'église est requise"),
-});
 
 export async function POST(request: Request) {
   try {

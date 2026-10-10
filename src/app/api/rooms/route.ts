@@ -2,14 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const createSchema = z.object({
-  churchId: z.string().min(1),
-  name: z.string().min(1).max(200),
-  capacity: z.number().int().positive().optional(),
-  location: z.string().max(200).optional(),
-});
+import { createSchema } from "./contract";
 
 /** GET /api/rooms?churchId=... — salles possédées + partagées avec cette église. */
 export async function GET(request: Request) {

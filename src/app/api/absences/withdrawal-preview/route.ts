@@ -1,19 +1,7 @@
-import { z } from "zod";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { findWithdrawableServicesForAbsence } from "@/modules/planning";
 import { requireAbsenceSubjectAccess } from "../_shared/subject-access";
-
-const querySchema = z
-  .object({
-    startDate: z.string().datetime(),
-    endDate: z.string().datetime(),
-    allDepartments: z.enum(["true", "false"]).default("true"),
-    departmentIds: z.string().optional(),
-  })
-  .refine((q) => new Date(q.endDate) >= new Date(q.startDate), {
-    message: "endDate doit être postérieure ou égale à startDate",
-    path: ["endDate"],
-  });
+import { querySchema } from "./contract";
 
 /**
  * GET /api/absences/withdrawal-preview?churchId=&memberId=&startDate=&endDate=&allDepartments=&departmentIds=

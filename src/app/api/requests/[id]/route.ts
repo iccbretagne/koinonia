@@ -7,8 +7,9 @@ import { executeRequest, planningBus, sendEventChangeNotices, type EventChangeNo
 import { createNotification } from "@/lib/notifications";
 import { functionForRequestType } from "@/lib/department-functions";
 import { isMemberOfFunction, getFunctionDepartmentsMap } from "@/lib/function-departments";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
+import { patchSchema } from "./contract";
 
 const EXECUTABLE_TYPES = new Set([
   "AJOUT_EVENEMENT",
@@ -17,23 +18,6 @@ const EXECUTABLE_TYPES = new Set([
   "MODIFICATION_PLANNING",
   "DEMANDE_ACCES",
 ]);
-
-const patchSchema = z.object({
-  status: z.enum(["EN_ATTENTE", "EN_COURS", "LIVRE", "ANNULE", "APPROUVEE", "REFUSEE"]).optional(),
-  reviewNotes: z.string().nullable().optional(),
-  // Owner-editable fields (when request is EN_ATTENTE)
-  title: z.string().min(1).optional(),
-  payload: z.record(z.unknown()).optional(),
-  // Payload fields update (for announcement-type requests)
-  deliveryLink: z.string().nullable().optional(),
-  format: z.string().nullable().optional(),
-  brief: z.string().nullable().optional(),
-  deadline: z.string().nullable().optional(),
-  // Statut attendu par l'interface (spec 063) : refus si la demande a changé entre-temps.
-  expectedStatus: z
-    .enum(["EN_ATTENTE", "EN_COURS", "APPROUVEE", "EXECUTEE", "LIVRE", "REFUSEE", "ANNULE", "ERREUR"])
-    .optional(),
-});
 
 export async function GET(
   _request: Request,

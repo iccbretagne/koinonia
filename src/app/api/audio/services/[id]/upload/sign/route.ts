@@ -3,19 +3,12 @@
  * Crée une AudioSource(kind: SEQUENCE) et signe toutes les URLs de parts d'un upload
  * multipart S3. P1 : uniquement kind SEQUENCE — kind MIX (P1.5, mix à découper) rejeté.
  */
-import { z } from "zod";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { signSequenceUpload } from "@/modules/audio";
-
-const schema = z.object({
-  kind: z.enum(["SEQUENCE", "MIX"]),
-  filename: z.string().min(1),
-  contentType: z.string().min(1),
-  size: z.number().int().positive(),
-});
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

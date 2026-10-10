@@ -4,13 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { rolePermissions } from "@/lib/registry";
 import { buildAccountingPaymentEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
-import { z } from "zod";
-
-const releaseSchema = z.object({
-  releasedAt:     z.string().datetime(),
-  releasedAmount: z.number().positive(),
-  note:           z.string().max(500).optional(),
-});
+import { releaseSchema } from "./contract";
 
 export async function PATCH(
   request: Request,

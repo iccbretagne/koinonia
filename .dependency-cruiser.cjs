@@ -224,7 +224,28 @@ module.exports = {
       from: { path: "^src/app/" },
       to: {
         path: "^src/modules/[^/]+/",
-        pathNot: "^src/modules/[^/]+/(index|auth)\\.ts$",
+        pathNot: "^src/modules/[^/]+/(index|auth|schemas)\\.ts$",
+      },
+    },
+
+    /**
+     * Règle 3 bis — les contrats d'API restent purs (ADR-0023) : le générateur OpenAPI et son
+     * test les chargent sans Prisma, NextAuth ni S3. Seuls zod, les types de contrat, les enums
+     * Prisma générés, les `schemas.ts` purs des modules et d'autres contrats sont permis.
+     */
+    {
+      name: "api-contract-pure",
+      severity: "error",
+      comment: "Un contract.ts n'importe que zod, @/lib/openapi/contract, les enums Prisma, un schemas.ts de module ou un autre contract.ts.",
+      from: { path: "^src/app/api/.+/contract\\.ts$" },
+      to: {
+        pathNot: [
+          "^node_modules/zod/",
+          "^src/lib/openapi/contract\\.ts$",
+          "^src/generated/prisma/enums\\.ts$",
+          "^src/modules/[^/]+/schemas\\.ts$",
+          "^src/app/api/.+/contract\\.ts$",
+        ],
       },
     },
 

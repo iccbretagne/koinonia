@@ -6,13 +6,7 @@ import {
   findActiveAbsenceForMember,
   notifyAssignment,
 } from "@/modules/planning";
-import { z } from "zod";
-
-const createSchema = z.object({
-  slot: z.enum(["OPENING", "CLOSING"]),
-  memberId: z.string().min(1),
-  note: z.string().max(500).optional(),
-});
+import { createSchema } from "./contract";
 
 const SLOT_LABELS: Record<string, string> = {
   OPENING: "Ouverture",

@@ -3,8 +3,8 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
-import { z } from "zod";
 import type { Session } from "next-auth";
+import { bulkSchema, createSchema } from "./contract";
 
 function getMinisterMinistryIds(session: Session, churchId: string): string[] | null {
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
@@ -42,15 +42,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const bulkSchema = z.object({
-  ids: z.array(z.string()).min(1, "Au moins un ID requis"),
-  action: z.enum(["delete", "update"]),
-  data: z.object({
-    name: z.string().min(1).optional(),
-    ministryId: z.string().min(1).optional(),
-  }).optional(),
-});
 
 /** Un Ministre ne modifie que les départements de ses ministères, et ne les déplace que vers eux. */
 async function assertWithinMinistries(ids: string[], allowedMinistries: string[], targetMinistryId?: string) {
@@ -142,11 +133,6 @@ export async function PATCH(request: Request) {
     return errorResponse(error);
   }
 }
-
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  ministryId: z.string().min(1, "Le ministère est requis"),
-});
 
 export async function POST(request: Request) {
   try {

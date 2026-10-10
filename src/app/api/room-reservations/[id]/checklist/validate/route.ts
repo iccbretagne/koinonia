@@ -7,25 +7,7 @@ import {
   closeWithoutDeclaration,
   isControlTeamMember,
 } from "@/modules/rooms";
-import { z } from "zod";
-
-const bodySchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("validate"),
-    validatedClosedProperly: z.boolean(),
-    validatedCleaned: z.boolean(),
-    validatedEquipmentOk: z.boolean(),
-    incidentNotes: z.string().max(1000).optional(),
-  }),
-  z.object({
-    action: z.literal("report-issue"),
-    incidentNotes: z.string().min(1).max(1000),
-  }),
-  z.object({
-    action: z.literal("close-manually"),
-    notes: z.string().max(1000).optional(),
-  }),
-]);
+import { bodySchema } from "./contract";
 
 /**
  * PATCH /api/room-reservations/[id]/checklist/validate — contrôle une main courante (fermeture

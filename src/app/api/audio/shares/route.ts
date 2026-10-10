@@ -7,13 +7,13 @@
  * séparé : une seule surface d'énumération identifiant → nom, gardée par `audio:manage` et
  * limitée en débit (plan.md).
  */
-import { z } from "zod";
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { listOutgoingShares, grantLibraryShare } from "@/modules/audio";
+import { postSchema } from "./contract";
 
 export async function GET() {
   try {
@@ -37,11 +37,6 @@ export async function GET() {
     return errorResponse(error);
   }
 }
-
-const postSchema = z.object({
-  slug: z.string().trim().min(1, "Identifiant requis"),
-  confirm: z.boolean(),
-});
 
 export async function POST(request: Request) {
   try {

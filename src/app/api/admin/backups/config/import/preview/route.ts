@@ -1,35 +1,7 @@
-import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { previewImport } from "@/lib/config-import";
-
-const configMetaSchema = z.object({
-  schemaVersion: z.number(),
-  appVersion: z.string(),
-  exportedAt: z.string(),
-  categories: z.array(z.string()),
-  scope: z.union([z.literal("all"), z.array(z.string())]),
-  exportedBy: z.string(),
-});
-
-const previewSchema = z.object({
-  _meta: configMetaSchema,
-  churches: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    slug: z.string(),
-    secretariatEmails: z.string().nullable().optional(),
-    accountingEmails: z.string().nullable().optional(),
-    // Champs legacy (sauvegardes prises avant le passage aux emails multiples, spec 033)
-    secretariatEmail: z.string().nullable().optional(),
-    accountingEmail: z.string().nullable().optional(),
-    primaryColor: z.string().optional(),
-    ministries: z.array(z.any()).optional(),
-    members: z.array(z.any()).optional(),
-    userLinks: z.array(z.any()).optional(),
-    userRoles: z.array(z.any()).optional(),
-  })),
-});
+import { previewSchema } from "./contract";
 
 export async function POST(request: Request) {
   try {

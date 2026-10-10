@@ -11,12 +11,7 @@ import {
   getSignedThumbnailUrl,
   deleteMediaFile,
 } from "@/modules/media";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  photoIds: z.array(z.string()).min(1),
-  status: z.enum(["APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED"]),
-});
+import { patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,

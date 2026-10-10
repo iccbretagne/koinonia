@@ -5,22 +5,8 @@ import { logAudit } from "@/lib/audit";
 import { rolePermissions } from "@/lib/registry";
 import { functionForRequestType } from "@/lib/department-functions";
 import { getFunctionDepartmentsMap } from "@/lib/function-departments";
-import { z } from "zod";
 import type { RequestType } from "@/generated/prisma/client";
-
-const patchSchema = z.object({
-  status: z
-    .enum(["EN_ATTENTE", "EN_COURS", "TRAITEE", "ANNULEE"])
-    .optional(),
-  title: z.string().min(1).optional(),
-  content: z.string().min(1).optional(),
-  isUrgent: z.boolean().optional(),
-  isSaveTheDate: z.boolean().optional(),
-  eventDate: z.string().nullable().optional(),
-  channelInterne: z.boolean().optional(),
-  channelExterne: z.boolean().optional(),
-  targetEventIds: z.array(z.string()).optional(),
-});
+import { patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,

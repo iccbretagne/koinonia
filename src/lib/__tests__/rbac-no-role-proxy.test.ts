@@ -18,6 +18,9 @@ import { join, relative, sep } from "node:path";
 const SRC_DIR = join(__dirname, "../../../src");
 const ROOT_DIR = join(__dirname, "../../..");
 const IGNORED_DIR_NAMES = new Set(["__tests__"]);
+// Contrats d'API (ADR-0023) : documentation de l'accès, sans effet ; la garde réelle reste dans
+// `route.ts`, qui est, lui, contrôlé.
+const IGNORED_FILE_NAMES = new Set(["contract.ts"]);
 const SCANNED_EXTENSIONS = new Set([".ts", ".tsx"]);
 const PATTERN = /"members:manage"|"events:manage"/;
 
@@ -28,6 +31,8 @@ function walk(dir: string, acc: string[] = []): string[] {
     const stat = statSync(full);
     if (stat.isDirectory()) {
       walk(full, acc);
+    } else if (IGNORED_FILE_NAMES.has(entry)) {
+      continue;
     } else if (SCANNED_EXTENSIONS.has(entry.slice(entry.lastIndexOf(".")))) {
       acc.push(full);
     }

@@ -3,22 +3,13 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
-import { z } from "zod";
+import { onboardSchema } from "./contract";
 
 async function requireSuperAdmin() {
   const session = await requireAuth();
   if (!session.user.isSuperAdmin) throw new ApiError(403, "Réservé aux super-administrateurs");
   return session;
 }
-
-const onboardSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  slug: z
-    .string()
-    .min(1, "L'identifiant est requis")
-    .regex(/^[a-z0-9-]+$/, "L'identifiant ne peut contenir que des lettres minuscules, chiffres et tirets"),
-  adminEmail: z.string().email("Email invalide").optional().or(z.literal("")),
-});
 
 export async function POST(request: Request) {
   try {

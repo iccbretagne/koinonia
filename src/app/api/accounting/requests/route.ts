@@ -4,17 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { sendEmail, buildAccountingNewRequestEmail, parseEmailList } from "@/lib/email";
 import { notifyUsers } from "@/lib/notifications";
 import { assertAttachmentsAssignable, getAccountingDepartmentScope, accountingScopeWhere } from "@/modules/accounting";
-import { z } from "zod";
-
-const createSchema = z.object({
-  type:          z.enum(["EXPENSE_REPORT", "BUDGET_ADVANCE"]),
-  label:         z.string().min(1).max(200),
-  description:   z.string().optional(),
-  amount:        z.number().positive(),
-  departmentId:  z.string().min(1).optional(), // null/omis = note de frais personnelle
-  attachmentIds: z.array(z.string()).optional(),
-  correctionOfId: z.string().min(1).optional(), // demande rejetée que celle-ci corrige
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

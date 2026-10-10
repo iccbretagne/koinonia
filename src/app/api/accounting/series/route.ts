@@ -2,17 +2,7 @@ import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getAccountingDepartmentScope, accountingScopeWhere } from "@/modules/accounting";
-import { z } from "zod";
-
-const createSchema = z.object({
-  departmentId:      z.string().min(1),
-  label:             z.string().min(1).max(200),
-  description:       z.string().optional(),
-  amount:            z.number().positive(),
-  recurrenceEvery:   z.number().int().min(1).max(99),
-  recurrenceUnit:    z.enum(["WEEK", "MONTH"]),
-  firstOccurrenceDate: z.string().datetime(),
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

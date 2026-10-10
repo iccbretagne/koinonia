@@ -2,12 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, getDiscipleshipScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const updateSchema = z.object({
-  discipleMakerId: z.string(),
-  firstMakerId: z.string().optional(),
-});
+import { updateSchema } from "./contract";
 
 export async function PATCH(
   request: Request,

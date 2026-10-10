@@ -5,14 +5,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireMediaAccess, type MediaDomain } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
-
-const postSchema = z.object({
-  content: z.string().min(1),
-  type: z.enum(["GENERAL", "TIMECODE"]).default("GENERAL"),
-  timecode: z.number().int().nonnegative().optional(),
-  parentId: z.string().optional(),
-});
+import { postSchema } from "./contract";
 
 async function resolveFileChurchId(fileId: string): Promise<{ churchId: string; domain: MediaDomain }> {
   const file = await prisma.mediaFile.findUnique({

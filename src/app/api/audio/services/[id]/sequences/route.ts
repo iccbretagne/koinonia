@@ -2,21 +2,11 @@
  * PUT /api/audio/services/[id]/sequences
  * Applique le nommage/ordre des séquences déjà déposées (chemin P1 — dépôt de séquences).
  */
-import { z } from "zod";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { applySequences } from "@/modules/audio";
-
-const schema = z.object({
-  sequences: z.array(
-    z.object({
-      sourceId: z.string().min(1),
-      order: z.number().int().nonnegative(),
-      title: z.string().min(1),
-    })
-  ),
-});
+import { schema } from "./contract";
 
 export async function PUT(
   request: Request,

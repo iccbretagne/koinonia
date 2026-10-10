@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { requireMediaUploadAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import {
@@ -7,12 +6,7 @@ import {
   getQuarantineKey,
   getSignedPutUrl,
 } from "@/modules/media";
-
-const signSchema = z.object({
-  filename: z.string().min(1),
-  mimeType: z.string(),
-  size: z.number().int().positive(),
-});
+import { signSchema } from "./contract";
 
 /** POST — génère une presigned PUT URL pour upload direct navigateur → S3. */
 export async function POST(
