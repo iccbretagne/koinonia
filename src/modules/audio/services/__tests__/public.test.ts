@@ -78,3 +78,27 @@ describe("resolvePublicAudioService — parité avec la bibliothèque membre", (
     }
   });
 });
+
+describe("couverture : la clé doit appartenir à l'église", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("isChurchCoverKey n'accepte que les couvertures de l'église elle-même", async () => {
+    const { isChurchCoverKey } = await import("../settings");
+    expect(isChurchCoverKey("church-1", "audio-settings/church-1/cover-abc.jpg")).toBe(true);
+    expect(isChurchCoverKey("church-1", "audio-settings/church-2/cover-abc.jpg")).toBe(false);
+    expect(isChurchCoverKey("church-1", "accounting/church-1/facture.pdf")).toBe(false);
+    expect(isChurchCoverKey("church-1", "audio-settings/church-1/cover-../../church-2/x.jpg")).toBe(false);
+    expect(isChurchCoverKey("church-1", "audio-settings/church-1/cover-a/b.jpg")).toBe(false);
+  });
+
+  it("ne signe pas une clé étrangère enregistrée sur un culte", async () => {
+    const { resolveEffectiveCoverUrl } = await import("../public");
+
+    await expect(
+      resolveEffectiveCoverUrl("accounting/church-2/facture.pdf", "church-1", prismaMock as never)
+    ).resolves.toBeNull();
+    await expect(
+      resolveEffectiveCoverUrl("audio-settings/church-1/cover-x.jpg", "church-1", prismaMock as never)
+    ).resolves.toBe("https://signed/audio-settings/church-1/cover-x.jpg");
+  });
+});

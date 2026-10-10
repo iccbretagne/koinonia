@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
-import { resolveMemberDepartmentScope } from "@/lib/member-scope";
+import { resolveMemberDepartmentScope, assertCanAffiliateToSecretariat } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
@@ -177,6 +177,9 @@ export async function PATCH(request: Request) {
     if (scope.scoped) {
       await assertBulkInScope(ids, action, data, new Set(scope.departmentIds));
     }
+    if (action === "update" && data?.primaryDepartmentId) {
+      await assertCanAffiliateToSecretariat(session, firstMemberChurchId, [data.primaryDepartmentId]);
+    }
 
     if (action === "delete") {
       await bulkDelete(ids);
@@ -217,12 +220,13 @@ export async function POST(request: Request) {
     const scope = await resolveMemberDepartmentScope(session, deptChurchId);
     const scopedDeptIds = scope.scoped ? scope.departmentIds : null;
 
-    if (scopedDeptIds && !scopedDeptIds.includes(departmentId)) {
+    // Tous les départements, principal comme supplémentaires, doivent être dans le périmètre
+    const allDeptIds = [departmentId, ...additionalDepartmentIds.filter((id) => id !== departmentId)];
+    if (scopedDeptIds && allDeptIds.some((id) => !scopedDeptIds.includes(id))) {
       throw new ApiError(403, "Vous ne pouvez pas créer un STAR dans ce département");
     }
 
     // Valider que tous les départements supplémentaires appartiennent à la même église
-    const allDeptIds = [departmentId, ...additionalDepartmentIds.filter((id) => id !== departmentId)];
     if (additionalDepartmentIds.length > 0) {
       const depts = await prisma.department.findMany({
         where: { id: { in: allDeptIds } },
@@ -233,6 +237,7 @@ export async function POST(request: Request) {
         throw new ApiError(400, "Tous les départements doivent appartenir à la même église");
       }
     }
+    await assertCanAffiliateToSecretariat(session, deptChurchId, allDeptIds);
 
     if (!confirmDuplicate) {
       const duplicates = await findDuplicateCandidates(deptChurchId, {

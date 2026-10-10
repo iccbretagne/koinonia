@@ -133,6 +133,32 @@ describe("listActiveShares", () => {
   });
 });
 
+describe("liens de validation (VALIDATOR/PREVALIDATOR)", () => {
+  const COMMUNICATION_SCOPE = { photos: true, visuels: true, managePhotos: false, manageVisuels: false };
+  const MANAGER_SCOPE = { photos: true, visuels: true, managePhotos: true, manageVisuels: true };
+
+  it("sont masqués à la Communication, qui voit les partages sans droit de revue", async () => {
+    prismaMock.mediaShareToken.findMany.mockResolvedValue([
+      projectShare({ id: "v", type: "VALIDATOR" }),
+      eventShare({ id: "p", type: "PREVALIDATOR" }),
+      projectShare({ id: "m", type: "MEDIA" }),
+    ] as never);
+
+    const result = await listActiveShares("church-1", COMMUNICATION_SCOPE);
+    expect(result.map((s) => s.id)).toEqual(["m"]);
+    await expect(countActiveShares("church-1", COMMUNICATION_SCOPE)).resolves.toBe(1);
+  });
+
+  it("restent visibles à qui gère l'activité couverte", async () => {
+    prismaMock.mediaShareToken.findMany.mockResolvedValue([projectShare({ id: "v", type: "VALIDATOR" })] as never);
+
+    await expect(listActiveShares("church-1", MANAGER_SCOPE)).resolves.toHaveLength(1);
+    await expect(
+      listActiveShares("church-1", { ...MANAGER_SCOPE, manageVisuels: false })
+    ).resolves.toEqual([]);
+  });
+});
+
 describe("countActiveShares", () => {
   it("compte uniquement les liens actifs et dans le périmètre", async () => {
     prismaMock.mediaShareToken.findMany.mockResolvedValue([

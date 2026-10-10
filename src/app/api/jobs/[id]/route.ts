@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { JOBS_AUTHOR_INCLUDE, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
+import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
 import { patchSchema } from "./contract";
 
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth();
+    const session = await requireAuth();
     const { id } = await params;
 
     const job = await prisma.jobOffer.findUnique({
@@ -18,6 +18,12 @@ export async function GET(
     });
 
     if (!job) throw new ApiError(404, "Offre introuvable");
+
+    // Une offre retirée ne reste visible que de son auteur et de la modération
+    const { isAuthor, canManage } = await jobsAccess(session, job.authorId);
+    if (job.status !== "PUBLISHED" && !isAuthor && !canManage) {
+      throw new ApiError(404, "Offre introuvable");
+    }
 
     return successResponse(job);
   } catch (error) {

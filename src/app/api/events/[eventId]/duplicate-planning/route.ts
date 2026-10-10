@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { recordPlanningChanges, type PlanningChange } from "@/modules/planning";
 import { schema } from "./contract";
@@ -25,21 +25,40 @@ export async function POST(
       throw new ApiError(403, "L'événement cible n'appartient pas à la même église");
     }
 
+    // Après la date limite de l'événement cible, seuls Admin, Secrétaire et Super Admin
+    // modifient encore son planning (même règle que la saisie de la grille).
+    const target = await prisma.event.findUnique({
+      where: { id: targetEventId },
+      select: { planningDeadline: true },
+    });
+    if (target?.planningDeadline && new Date() > target.planningDeadline) {
+      const canBypass =
+        session.user.isSuperAdmin ||
+        session.user.churchRoles.some(
+          (r) => r.churchId === churchId && (r.role === "SUPER_ADMIN" || r.role === "ADMIN" || r.role === "SECRETARY")
+        );
+      if (!canBypass) throw new ApiError(403, "La date limite de planification est dépassée");
+    }
+
+    // Un responsable ne recopie que les départements de son périmètre
+    const scope = getUserDepartmentScope(session, churchId);
+    const scopeFilter = scope.scoped ? { departmentId: { in: scope.departmentIds } } : {};
+
     // Get source event-departments with plannings
     const sourceEDs = await prisma.eventDepartment.findMany({
-      where: { eventId: sourceEventId },
+      where: { eventId: sourceEventId, ...scopeFilter },
       include: {
         plannings: true,
       },
     });
 
     if (sourceEDs.length === 0) {
-      throw new ApiError(404, "Aucun département en service pour l'événement source");
+      throw new ApiError(404, "Aucun département de votre périmètre en service pour l'événement source");
     }
 
     // Get target event-departments
     const targetEDs = await prisma.eventDepartment.findMany({
-      where: { eventId: targetEventId },
+      where: { eventId: targetEventId, ...scopeFilter },
     });
 
     const targetByDept = new Map(targetEDs.map((ed) => [ed.departmentId, ed]));

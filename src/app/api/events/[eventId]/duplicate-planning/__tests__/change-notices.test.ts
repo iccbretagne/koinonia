@@ -5,6 +5,7 @@ import { createAdminSession } from "@/__mocks__/auth";
 vi.mock("@/lib/auth", () => ({
   requireChurchPermission: vi.fn(async () => createAdminSession()),
   resolveChurchId: vi.fn(async () => "church-1"),
+  getUserDepartmentScope: vi.fn(() => ({ scoped: false })),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 const mockRecord = vi.fn();

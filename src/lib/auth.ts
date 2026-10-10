@@ -762,22 +762,30 @@ export async function requireMediaCollectionAccess(churchId: string) {
 export async function getMediaShareScope(
   session: Session,
   churchId: string
-): Promise<{ photos: boolean; visuels: boolean }> {
-  if (session.user.isSuperAdmin) return { photos: true, visuels: true };
+): Promise<{ photos: boolean; visuels: boolean; managePhotos: boolean; manageVisuels: boolean }> {
+  if (session.user.isSuperAdmin) return { photos: true, visuels: true, managePhotos: true, manageVisuels: true };
 
   const roles = session.user.churchRoles.filter((r) => r.churchId === churchId);
   const { rolePermissions } = await import("./registry");
   const userPerms = new Set(roles.flatMap((r) => rolePermissions[r.role] ?? []));
 
-  if (userPerms.has("media:manage") || (await isCommunicationMember(session, churchId))) {
-    return { photos: true, visuels: true };
+  if (userPerms.has("media:manage")) {
+    return { photos: true, visuels: true, managePhotos: true, manageVisuels: true };
   }
 
-  const [photos, visuels] = await Promise.all([
+  // Gestion d'une activité = son équipe ; la Communication voit les partages des deux sans
+  // gérer ni l'une ni l'autre (pas de droit de revue : les liens de validation lui sont masqués).
+  const [managePhotos, manageVisuels, communication] = await Promise.all([
     isMediaTeamMember(session, churchId, "PHOTOS"),
     isMediaTeamMember(session, churchId, "VISUELS"),
+    isCommunicationMember(session, churchId),
   ]);
-  return { photos, visuels };
+  return {
+    photos: communication || managePhotos,
+    visuels: communication || manageVisuels,
+    managePhotos,
+    manageVisuels,
+  };
 }
 
 // Contexte d'AFFICHAGE, jamais une autorisation : la valeur peut provenir d'un cookie

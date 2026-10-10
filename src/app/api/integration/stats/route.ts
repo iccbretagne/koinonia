@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     // ── Par famille affectée ──────────────────────────────────────────────────
     const byFamilyRaw = await prisma.familyIntegrationRequest.groupBy({
       by: ["assignedFamilyId", "assignedFamilyName"],
-      where: { ...baseWhere, assignedFamilyId: { not: null } },
+      where: { AND: [baseWhere, { assignedFamilyId: { not: null } }] },
       _count: true,
       orderBy: { _count: { assignedFamilyId: "desc" } },
       take: 10,

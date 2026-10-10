@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createStarSession } from "@/__mocks__/auth";
 
 const mockRequireAuth       = vi.fn();
 const mockRequirePlatformPermission = vi.fn();
@@ -41,6 +41,28 @@ describe("GET /api/jobs", () => {
     mockRequireAuth.mockRejectedValue(new Error("UNAUTHORIZED"));
     const res = await getJobs(new Request("http://localhost/api/jobs"));
     expect(res.status).toBe(401);
+  });
+
+  it("offres retirées : un lecteur sans modération ne liste que les siennes", async () => {
+    const star = createStarSession();
+    mockRequireAuth.mockResolvedValue(star);
+    prismaMock.jobOffer.findMany.mockResolvedValue([] as never);
+
+    await getJobs(new Request("http://localhost/api/jobs?status=ARCHIVED"));
+
+    expect(prismaMock.jobOffer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ status: "ARCHIVED", authorId: star.user.id }) })
+    );
+  });
+
+  it("offres retirées : la modération les liste toutes", async () => {
+    prismaMock.jobOffer.findMany.mockResolvedValue([] as never);
+
+    await getJobs(new Request("http://localhost/api/jobs?status=ARCHIVED"));
+
+    const where = prismaMock.jobOffer.findMany.mock.calls[0][0]?.where;
+    expect(where).toMatchObject({ status: "ARCHIVED" });
+    expect(where).not.toHaveProperty("authorId");
   });
 });
 
@@ -115,6 +137,18 @@ describe("GET /api/jobs/[id]", () => {
     prismaMock.jobOffer.findUnique.mockResolvedValue(null);
     const res = await getJob(new Request("http://localhost/api/jobs/nope"), { params: Promise.resolve({ id: "nope" }) });
     expect(res.status).toBe(404);
+  });
+
+  it.each([
+    ["un autre lecteur", "someone-else", 404],
+    ["son auteur", "user-1", 200],
+  ])("offre retirée lue par %s : %i", async (_label, authorId, expected) => {
+    mockRequireAuth.mockResolvedValue(createStarSession());
+    prismaMock.jobOffer.findUnique.mockResolvedValue({ id: "j1", status: "ARCHIVED", authorId } as never);
+
+    const res = await getJob(new Request("http://localhost/api/jobs/j1"), { params: Promise.resolve({ id: "j1" }) });
+
+    expect(res.status).toBe(expected);
   });
 });
 

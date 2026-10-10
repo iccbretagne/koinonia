@@ -5,7 +5,8 @@
  */
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { successResponse, errorResponse } from "@/lib/api-utils";
+import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { isChurchCoverKey } from "@/modules/audio";
 import { schema } from "./contract";
 
 export async function GET() {
@@ -24,6 +25,9 @@ export async function PUT(request: Request) {
     const { churchId } = await requireCurrentChurchPermission("audio:manage");
 
     const body = schema.parse(await request.json());
+    if (body.defaultCoverKey && !isChurchCoverKey(churchId, body.defaultCoverKey)) {
+      throw new ApiError(400, "Couverture invalide");
+    }
 
     const settings = await prisma.audioSettings.upsert({
       where: { churchId },
