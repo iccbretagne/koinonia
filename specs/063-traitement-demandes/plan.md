@@ -1,7 +1,7 @@
 # Plan technique — Refonte des écrans de traitement des demandes
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-10
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.
@@ -211,13 +211,13 @@ d'utilisateur, ce qu'on vérifiera avec `grep`.
   et se recalcule sans requête.
 - **Choix** : « Voir plus » charge les 30 demandes traitées suivantes, plutôt qu'une fenêtre de
   30 jours. — *Pourquoi* : une fenêtre calendaire peut être vide et obligerait à cliquer plusieurs
-  fois. Le premier affichage reste borné aux 30 derniers jours, comme le demande la spec. **Écart
-  mineur** par rapport au libellé « charge la période précédente » de la spec.
+  fois. Le premier affichage reste borné aux 30 derniers jours, comme le demande la spec. Validé
+  par l'utilisateur, et la spec a été mise à jour.
 - **Choix** : notification `REQUEST_CANCELLED` dans le domaine `requests` existant. —
   *Pourquoi* : la spec veut que le demandeur reçoive le motif. Or aujourd'hui, aucune notification
   n'est envoyée sur annulation par l'équipe (`notifySubmitter` ne couvre que l'approbation et le
   refus). Ajouter ce cas au domaine existant reste dans l'esprit de « pas de nouvelle
-  notification » : pas de domaine ni de préférence nouveaux. **Écart à valider** (voir Risques).
+  notification » : pas de domaine ni de préférence nouveaux. Validé par l'utilisateur, et la spec a été mise à jour.
 - **Écarté** : élargir `GET /api/requests`. — *Raison* : cette route filtre sur `canManage` ou le
   demandeur, et un membre d'équipe sans `events:manage` n'y verrait que ses propres demandes. La
   changer touche « Mes demandes ».
@@ -229,9 +229,6 @@ d'utilisateur, ce qu'on vérifiera avec `grep`.
 
 ## Risques & points d'attention
 
-- **Notification d'annulation** : c'est un léger dépassement de la spec, qui exclut « toute
-  nouvelle notification ». Il est nécessaire pour que le motif atteigne le demandeur. À confirmer
-  avec l'utilisateur avant l'implémentation.
 - **Motif obligatoire côté serveur** : un autre client qui annulerait sans motif (s'il en existe)
   recevrait `400`. Les seuls appelants actuels sont les trois écrans refaits et « Mes demandes »,
   où le demandeur reste exempté.

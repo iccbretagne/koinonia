@@ -69,8 +69,10 @@ L'accès à l'écran ne change pas. Il est ouvert aux personnes qui gèrent les 
 - **Super Admin, Admin, Secrétaire** : ils gardent en plus la suppression définitive d'une demande
   déjà traitée.
 - **Demandeurs** (tout rôle qui soumet une annonce ou une demande) : l'écran ne change rien pour
-  eux. Ils reçoivent comme aujourd'hui la notification de décision, qui contient désormais le
-  motif d'une annulation d'annonce.
+  eux. Ils reçoivent comme aujourd'hui la notification d'approbation ou de refus. Ils reçoivent en
+  plus une notification « Demande annulée », avec le motif, quand l'équipe qui traite annule leur
+  annonce, leur publication ou leur visuel. Aujourd'hui, aucune notification n'est envoyée dans ce
+  cas.
 
 ### Réseaux sociaux (communication)
 
@@ -207,7 +209,7 @@ Sauf mention contraire, ces cas valent pour les trois écrans.
   « Traitées ». Elle y porte un état « Erreur » bien visible, et son panneau montre le message
   d'erreur.
 - **Onglet « Traitées ».** Il affiche par défaut les 30 derniers jours, les plus récentes en
-  premier. Un bouton « Voir plus » charge la période précédente. Le compteur de l'onglet compte
+  premier. Un bouton « Voir plus » charge les 30 demandes traitées suivantes, plus anciennes. Le compteur de l'onglet compte
   les demandes de ces 30 jours.
 - **Recherche.** Un champ cherche dans le titre, le nom du demandeur et le département ou le
   ministère d'origine. Il agit sur l'onglet affiché. Dans « Traitées », il cherche aussi au-delà
@@ -256,8 +258,10 @@ Sauf mention contraire, ces cas valent pour les trois écrans.
 - [ ] La recherche filtre l'onglet affiché sur le titre, le demandeur et l'origine. Dans
       « Traitées », elle trouve aussi une demande de plus de 30 jours.
 - [ ] Les pastilles de type filtrent l'onglet affiché et se combinent avec la recherche.
-- [ ] « Traitées » n'affiche par défaut que les 30 derniers jours, et « Voir plus » charge la
-      suite.
+- [ ] « Traitées » n'affiche par défaut que les 30 derniers jours, et « Voir plus » charge les
+      30 demandes traitées suivantes.
+- [ ] Quand l'équipe qui traite annule une demande, le demandeur reçoit une notification
+      « Demande annulée » avec le motif.
 - [ ] L'écran utilise les icônes, étiquettes d'état, onglets, états vides et couleurs du design
       system, sans emoji ni couleur codée en dur.
 - [ ] Sur un écran de 360 px de large, il n'y a pas de défilement horizontal, et chaque cible
@@ -286,8 +290,9 @@ Sauf mention contraire, ces cas valent pour les trois écrans.
 - L'onglet « Projets » de Visuels (bibliothèque des projets média) et l'écran de détail d'un
   projet.
 - L'écran « Mes demandes » côté demandeur, ainsi que le formulaire de soumission.
-- Toute nouvelle règle d'accès, tout nouvel état de demande et toute nouvelle notification. Le
-  motif d'annulation passe par la notification de décision existante.
+- Toute nouvelle règle d'accès, tout nouvel état de demande, et toute notification autre que
+  « Demande annulée ». Celle-ci reste dans la catégorie « Demandes » existante, sans nouvelle
+  préférence.
 - L'attribution d'une demande à une personne précise du secrétariat (« pris en charge par »).
 - Le traitement groupé de plusieurs demandes à la fois.
 - La refonte de l'écran « Offres » (#678).
@@ -299,3 +304,7 @@ Sauf mention contraire, ces cas valent pour les trois écrans.
   refuser et annuler restent définitifs ; refuser et annuler exigent un motif.
 - **Q2 — Écrans « Réseaux sociaux » et « Visuels »** : ils sont traités dans le même lot, à la
   demande de l'utilisateur. Pour Visuels, seul l'onglet « Demandes » est concerné.
+- **Q3 — Notification d'annulation** : ajoutée (« Demande annulée », avec le motif), validée par
+  l'utilisateur.
+- **Q4 — « Voir plus »** : charge les 30 demandes traitées suivantes, plutôt qu'une période de
+  30 jours, validé par l'utilisateur.
