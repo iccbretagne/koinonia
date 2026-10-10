@@ -219,7 +219,7 @@ export async function GET(
   dans une église (Super Admin uniquement)
 - `requirePlatformPermission(permission)` — permissions volontairement transverses aux églises
   (module emploi), liste blanche testée dans `auth-global-scopes.test.ts`
-- `getUserDepartmentScope(session)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
+- `getUserDepartmentScope(session, churchId)` — retourne `{ scoped: false }` (admin) ou `{ scoped: true, departmentIds }` (roles limites)
 - `requireDepartmentAccess(session, churchId, departmentId)` — jette `FORBIDDEN` si le
   département visé n'est pas dans le périmètre de l'appelant (`getUserDepartmentScope`). Un
   périmètre restreint **vide** (STAR) refuse tout, sans code spécifique à ce rôle — voir
