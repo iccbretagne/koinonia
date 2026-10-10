@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.31.0] - 2026-10-11
+
 ### Ajouté
 
 - Espace Offres refondu : un seul nom (« Offres », comme dans le menu) et deux onglets, « Opportunités » (emplois, stages, alternances, missions freelance) et « Profils disponibles » (personnes en recherche, freelances), au lieu de trois onglets dont l'un mêlait missions et personnes. Le type devient un filtre en pastilles ; recherche sans accents sur le métier, l'entreprise, la ville et la description ; « Mes publications » montre ses annonces quel que soit leur état ; la modération filtre par état (Actives, Retirées, Toutes). Un bouton « Publier » unique propose les quatre sortes d'annonces (feuille du bas sur mobile). Cartes compactes sans bouton imbriqué : échéance relative (signalée sous 7 jours), budget ou tarif freelance, point « Nouveau » pour les opportunités parues depuis la dernière visite. Le détail et les actions (postuler, modifier, pourvue / a trouvé / indisponible, retirer, republier, supprimer) s'ouvrent dans un panneau, à droite sur grand écran, en feuille du bas sur mobile ; les liens directs partagés sur WhatsApp mènent toujours à la page de la publication, et une publication disparue affiche « Cette publication n'est plus disponible » au lieu d'une erreur. Un filtre sans résultat affiche « Aucun résultat pour ces filtres » avec « Effacer les filtres ». « Copier pour WhatsApp » inclut les missions et suit pastilles et recherche. La pastille du menu « Offres » compte désormais aussi les nouvelles missions freelance. Plus aucune fenêtre d'alerte du navigateur (spec 064, #678).
@@ -30,6 +32,25 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   téléchargement s'ouvrent à tous les Ministres, en plus des responsables de département et de
   la Modération ; la Coordination générale perd son accès dédié (spec 040, révision du
   2026-10-10).
+
+### Sécurité
+
+- Next.js 16.3.8 : correctifs des avis de sécurité publiés sur la version précédente.
+
+### Modifié
+
+- Guide utilisateur : les accès affichés pour chaque fonctionnalité correspondent de nouveau aux permissions réelles des rôles, et les écrans manquants y sont décrits.
+
+### Technique
+
+- Analyse SonarCloud intégrée à la CI (couverture, Quality Gate progressif), avec des workflows pour exporter l'analyse et accepter en lot les faux positifs relus ; corrections des alertes du premier scan (promesses non gérées, accès clavier, libellés de formulaire, complexité cognitive, duplication), sans changement de comportement attendu (#539).
+- Formulaires de l'espace Offres réécrits sur les composants du design system.
+- Workflow « Release » : tag et GitHub Release à la demande depuis `main`, notes reprises du CHANGELOG.
+- CI : paquets ffmpeg mis en cache.
+
+### Documentation
+
+- Schéma de base de données, authentification et permissions, fiches de processus, environnement de développement et procédure des captures du guide alignés sur le code.
 
 ## [v1.30.0] - 2026-10-04
 
