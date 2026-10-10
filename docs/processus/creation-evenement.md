@@ -8,7 +8,7 @@ Remplace le calendrier qui n'existait que dans la tête du secrétariat.
 
 ## Le déclencheur
 
-Une date est arrêtée. Le secrétariat ou un administrateur ouvre **Événements → Gérer les événements → Nouvel événement**, et renseigne :
+Une date est arrêtée. Le secrétariat ou un administrateur ouvre **Agenda → Gérer les événements → Nouvel événement**, et renseigne :
 
 - le **titre** et le **type** de l'événement ;
 - la **date et l'heure** ;
@@ -42,15 +42,17 @@ Vient ensuite le choix des **départements associés** : ce sont eux, et eux seu
 
 | Pour… | Aller à… |
 |---|---|
-| Créer, dupliquer, modifier, supprimer | Événements → Gérer les événements |
+| Créer, modifier, supprimer | Agenda → **Gérer les événements** |
 | Configurer et associer les départements | Le bouton **Config** de l'événement |
 | Ouvrir la grille de service | Le bouton **Planning** de l'événement |
-| Voir le calendrier d'ensemble | Événements → Agenda de l'église |
+| Copier les affectations d'un événement vers un autre | Le bouton **Dupliquer le planning** de l'événement |
+| Voir le calendrier d'ensemble | Agenda → **Agenda de l'église** |
 
 ## Les règles à connaître
 
 - **La date limite de planification n'est pas cosmétique** : c'est elle qui déclenche les relances et qui fait apparaître le bandeau d'échéance dépassée sur la grille des responsables.
-- **Dupliquer plutôt que recréer.** Un événement semblable au précédent se duplique avec sa configuration et ses départements, ce qui évite l'oubli d'un interrupteur.
+- **Dupliquer le planning, pas l'événement.** « Dupliquer le planning » recopie les affectations d'un événement vers un autre déjà créé ; les STAR ajoutés ainsi sont prévenus comme s'ils avaient été placés à la main. La configuration et les départements associés, eux, se règlent sur chaque événement.
+- **Déplacer ou supprimer un événement prévient l'équipe.** Un changement de date ou d'heure, ou une suppression, notifie les STAR planifiés, leurs responsables et les Ministres concernés (un seul message récapitulatif pour une série). Un changement de titre ou de réglages ne notifie personne, pas plus qu'un événement passé ou sans personne planifiée.
 - **Une série se modifie avec précaution** : la modification peut porter sur l'occurrence seule ou sur toute la suite.
 
 ## Les cas particuliers
@@ -59,7 +61,9 @@ Vient ensuite le choix des **départements associés** : ce sont eux, et eux seu
 
 **Un événement hors culte.** Formation, réunion, prière : la mécanique est identique, mais tous les interrupteurs ne se justifient pas. Un événement interne n'a pas besoin d'accepter des annonces.
 
-**Une annulation.** Supprimer un événement fait disparaître le planning associé. Mieux vaut vérifier ce qui y est accroché avant de le faire.
+**Une annulation.** Supprimer un événement fait disparaître le planning associé, et les personnes planifiées en sont prévenues. Mieux vaut vérifier ce qui y est accroché avant de le faire.
+
+**Une répétition ou une réunion d'équipe.** Ce n'est pas un événement de l'église : le responsable la crée lui-même comme **événement d'équipe**, depuis son département (onglet *Équipe*). Elle apparaît dans « Mon planning » des membres du département.
 
 ## Ce qui sort à la fin
 

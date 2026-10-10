@@ -8,7 +8,7 @@ Remplace le message WhatsApp au secrétariat, la relance séparée à la Product
 
 ## Le déclencheur
 
-Un responsable a une information à faire passer. Il ouvre **Opérations → Mes demandes → Nouvelle demande**, puis choisit la tuile **Diffuser une annonce**.
+Un responsable a une information à faire passer. Il ouvre **Demandes → Mes demandes → Nouvelle demande**, puis choisit la tuile **Diffuser une annonce**.
 
 Ce qu'il renseigne :
 
@@ -60,10 +60,10 @@ Le statut du visuel associé remonte sur la fiche de l'annonce : pas besoin d'al
 
 | Pour… | Aller à… |
 |---|---|
-| Déposer une demande et la suivre | Opérations → Mes demandes |
-| Traiter la diffusion interne | Opérations → Traitement des demandes |
-| Traiter les visuels et les réseaux | Opérations → Communication & Production |
-| Voir ce qui a été diffusé au culte | Événements → Trame des annonces |
+| Déposer une demande et la suivre | Demandes → Mes demandes |
+| Traiter la diffusion interne | Demandes → Traitement des demandes |
+| Traiter les visuels et les réseaux | Médias → Communication & Production |
+| Voir ce qui a été diffusé au culte | Agenda → Trame des annonces |
 
 ## Les règles à connaître
 

@@ -8,7 +8,7 @@ Remplace l'ajout au groupe WhatsApp, qui tenait lieu à la fois de nomination, d
 
 ## Le déclencheur
 
-Quelqu'un commence à servir dans un département. Le responsable ouvre **Communauté → STAR → Nouveau STAR**, et renseigne :
+Quelqu'un commence à servir dans un département. Le responsable ouvre **Personnes → STAR → Nouveau STAR**, et renseigne :
 
 - le **prénom** et le **nom** ;
 - l'**email** — fortement recommandé, car c'est lui qui fiabilise le rattachement du compte ;
@@ -16,6 +16,8 @@ Quelqu'un commence à servir dans un département. Le responsable ouvre **Commun
 - les **départements supplémentaires**, pour ceux qui servent à plusieurs endroits.
 
 La fiche STAR existe indépendamment du compte : on peut être STAR sans jamais s'être connecté, ce qui permet de planifier quelqu'un dès son arrivée.
+
+Si la personne a déjà une fiche dans un autre département, **Ajouter un STAR existant** la rattache au vôtre au lieu d'en créer une seconde.
 
 ## Qui intervient
 
@@ -37,7 +39,7 @@ La fiche STAR existe indépendamment du compte : on peut être STAR sans jamais 
 
 Les **rôles hiérarchiques** suivent l'organisation : un ministre par ministère, un ou plusieurs responsables par département, avec la possibilité de désigner des adjoints. C'est ce qui donne la main sur un planning.
 
-Les **rôles transverses** donnent des accès fonctionnels indépendants de cette hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Référent soins pastoraux, Comptable, Reporter. Admin et Secrétaire sont réservés aux super-administrateurs.
+Les **rôles transverses** donnent des accès fonctionnels indépendants de cette hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Référent soins pastoraux, Comptable, Reporter. Nommer un Admin ou une Secrétaire est réservé à un Admin de l'église ou au Super Admin ; un Ministre n'attribue que des rôles de son ministère (Ministre, responsable, STAR).
 
 Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffit pour être planifié, déclarer ses absences et déposer des demandes.
 
@@ -45,8 +47,8 @@ Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffi
 
 | Pour… | Aller à… |
 |---|---|
-| Créer et gérer les STAR | Communauté → **STAR** |
-| Valider les demandes d'accès | Configuration → Accès & rôles, onglet **Demandes** |
+| Créer et gérer les STAR | Personnes → **STAR** |
+| Valider les demandes d'accès | Administration → Accès & rôles, onglet **Demandes** |
 | Chercher une personne et voir tous ses accès (rôles + hérités) | Onglet **Personnes**, puis sa fiche |
 | Nommer ministres, responsables et adjoints | Onglet **Par rôle**, ou depuis la fiche de la personne |
 | Attribuer un rôle fonctionnel (Comptable, Reporter, Référent…) | Onglet **Par rôle**, ou depuis la fiche de la personne |
@@ -63,6 +65,8 @@ Un STAR ordinaire n'a besoin d'aucun rôle : appartenir à un département suffi
 ## Les cas particuliers
 
 **Une demande d'accès sans fiche STAR.** La personne s'est connectée avant d'avoir été déclarée. Créer la fiche, puis valider.
+
+**Un accès préparé à l'avance.** Connaissant l'adresse Google de la personne, un Admin peut créer son compte avant sa première connexion (Administration → Utilisateurs → **Créer un utilisateur**), lié à sa fiche STAR, qu'il crée au besoin dans le même geste. La personne arrive directement dans son espace, sans demande d'accès ; le compte reste marqué « jamais connecté » jusque-là. Elle doit se connecter avec exactement cette adresse.
 
 **Un STAR qui sert dans plusieurs départements.** Les départements supplémentaires existent pour cela : la personne apparaît dans chaque planning concerné, ce qui rend visibles les conflits de service.
 

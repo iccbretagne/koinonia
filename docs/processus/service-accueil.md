@@ -12,7 +12,7 @@ L'événement a été configuré avec l'option **Familles de service attendues**
 
 ## Qui intervient
 
-L'administration ou le secrétariat gèrent le pool et les affectations. Les familles d'impact assurent le service.
+L'administration ou le secrétariat (Super Admin, Admin, Secrétaire) gèrent le pool et les affectations. Les familles d'impact assurent le service.
 
 ## Les étapes
 
@@ -26,7 +26,7 @@ L'**affectation** se fait événement par événement, sur le planning d'accueil
 
 | Pour… | Aller à… |
 |---|---|
-| Affecter les familles au mois | Événements → Service d'accueil, onglet **Planning** |
+| Affecter les familles au mois | Agenda → **Service d'accueil**, onglet **Planning** |
 | Gérer les familles en rotation | Onglet **Pool de familles** |
 | Affecter depuis l'événement | Le bouton **Gérer les affectations** sur la configuration de l'événement |
 

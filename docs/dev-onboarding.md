@@ -68,16 +68,40 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app npm run 
 Ce jeu de données est **entièrement fictif** (généré avec [Faker](https://fakerjs.dev/),
 structure inspirée de manière non identifiable d'un usage réel — voir
 `specs/015-environnement-dev-contributeurs/plan.md`) et **déterministe** : relancer cette
-commande produit toujours exactement le même résultat. Il couvre plusieurs églises,
-ministères, départements, membres (STAR), événements passés et à venir, plannings,
-absences, demandes et comptes rendus.
+commande produit toujours exactement le même résultat. Il couvre trois églises (ICC
+Kervignac, ICC Guingamp, ICC Landerneau), leurs ministères et départements, des membres
+(STAR), des événements passés et à venir, plannings, absences, tâches, demandes, comptes
+rendus, discipolat, salles et mains courantes, demandes financières, rendez-vous pastoraux et
+suivis MSDP, demandes d'intégration et bergers, cultes audio, offres et profils de l'espace
+Offres.
+
+> **Date de référence fixe.** Pour rester déterministe, le jeu de données est construit autour
+> d'un « aujourd'hui » figé (`TODAY` dans `prisma/seed-dev.ts`) : les cultes « à venir » le
+> sont par rapport à cette date, pas à la date réelle. Passé cette date, « Mon planning »,
+> l'accueil ou les grilles peuvent sembler vides : naviguer vers les semaines concernées, ou
+> modifier temporairement `TODAY` (sans le commiter) avant de relancer le seed — c'est ce que
+> fait la procédure des captures du guide ([guide-screenshots.md](guide-screenshots.md)).
 
 ## 5. Se connecter
 
 Ouvrir **http://localhost:3000**. Sous le bouton « Se connecter avec Google », un second
-bloc **« Développement uniquement »** propose une liste de comptes de test — un par rôle
-métier de l'application. Choisir un compte et cliquer sur « Se connecter avec ce compte » :
-aucun mot de passe, aucun compte Google requis.
+bloc **« Développement uniquement »** propose une liste de comptes de test. Choisir un compte
+et cliquer sur « Se connecter avec ce compte » : aucun mot de passe, aucun compte Google
+requis.
+
+| Compte | Rôle |
+|---|---|
+| `super-admin` | Super Admin |
+| `admin` | Admin de l'église |
+| `secretaire` | Secrétaire |
+| `ministre` | Ministre |
+| `resp-accueil`, `resp-secretariat` | Responsable de département |
+| `faiseur-disciples` | Faiseur de Disciples |
+| `reporter` | Reporter |
+| `star` | STAR (compte lié à une fiche membre) |
+
+Les rôles Référent soins pastoraux et Comptable n'ont pas de compte dédié : les attribuer à un
+compte de test depuis **Administration → Accès** (connecté en `super-admin` ou `admin`).
 
 La liste complète des comptes de test (rôle, périmètre) est documentée dans
 [`prisma/fixtures/dev-users.ts`](../prisma/fixtures/dev-users.ts). Pour tester le
@@ -125,6 +149,36 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
 *(Raccourci : `npm run dev:down`.)* Les données de la base sont conservées (volume
 Docker persistant) tant que l'option `-v` n'est pas utilisée.
+
+## Ce qui ne fonctionne pas sans configuration
+
+L'environnement conteneurisé ne branche aucun service externe. Concrètement :
+
+- **Fichiers** : sans variables S3 (`MEDIA_S3_*`/`BACKUP_S3_*`, voir `.env.example`), le dépôt
+  de photos, de visuels et de fichiers audio échoue. Seules les pièces jointes de la
+  comptabilité ont un repli sur le disque local quand `ACCOUNTING_S3_*` est absent.
+- **Traitement audio** : le worker (analyse, découpage, rendu des cultes) ne tourne pas dans
+  le conteneur. Le lancer à part avec `npm run worker`, ce qui demande `ffmpeg`/`ffprobe` et un
+  stockage S3 configuré.
+- **Emails** : sans `SMTP_*`, l'envoi échoue et l'erreur est journalisée ; les notifications
+  dans l'application, elles, fonctionnent.
+- **Formulaires publics** (`/agenda-public`, `/rejoindre`) : utilisables grâce aux clés de test
+  Cloudflare Turnstile de `docker-compose.dev.yml`, dont le défi réussit toujours.
+
+## Environnement de formation (structure réelle)
+
+Pour une session de formation, le seed peut reprendre la structure réelle d'une église (églises,
+ministères, départements, comptes et rôles) tout en fabriquant le contenu (membres, plannings…) :
+
+```bash
+# Export depuis Administration → Sauvegardes → « Exporter la configuration »
+npm run fixture:training -- export.json prisma/fixtures/training-real.json
+npm run db:seed:training
+```
+
+Le fichier produit contient de vrais emails : il n'est **jamais commité**. Les fiches membres,
+les liaisons compte ↔ fiche et les adresses de notification de l'export sont volontairement
+ignorées (détail dans `prisma/scripts/build-training-fixture.ts` et `prisma/fixtures/active.ts`).
 
 ## Dépannage
 

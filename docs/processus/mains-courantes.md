@@ -15,7 +15,7 @@ Il n'y a rien à déclencher : **toute réservation de salle crée sa main coura
 | Acteur | Rôle dans le circuit |
 |---|---|
 | Le responsable du créneau | Déclare l'ouverture, puis la fermeture |
-| L'équipe de contrôle | Vérifie après coup et statue |
+| L'équipe de contrôle | Vérifie après coup et statue : les responsables des départements de fonction **Sécurité** ou **Entretien**, ainsi qu'Admin et Super Admin |
 
 Le principe est que celui qui utilise la salle n'est pas celui qui valide. La séparation des deux rôles est ce qui donne sa valeur au contrôle.
 
@@ -25,11 +25,11 @@ Le principe est que celui qui utilise la salle n'est pas celui qui valide. La s�
 
 **Non ouverte.** L'activité n'a pas encore commencé, ou le responsable a oublié de déclarer son arrivée.
 
-**Ouverte.** Le responsable a pris possession du local et constaté son état initial.
+**Ouverte.** Le responsable a pris possession du local, en indiquant de qui il a reçu les clés.
 
-**Fermeture déclarée.** Le responsable a rendu la salle et signalé dans quel état il la laisse. La main courante entre alors dans la file de contrôle.
+**Fermeture déclarée.** Le responsable a rendu la salle : il coche si elle est bien fermée, rangée et le matériel en état, et indique à qui il a remis les clés. La main courante entre alors dans la file de contrôle.
 
-**Contrôlée.** L'équipe de contrôle a vérifié. Soit tout est conforme, soit un **écart** est signalé — matériel manquant, dégradation, salle non rangée.
+**Contrôlée.** L'équipe de contrôle refait les trois mêmes constats. S'ils concordent avec la déclaration, la main courante est **conforme** ; s'ils diffèrent, ou si le contrôleur ajoute une remarque, un **écart** est signalé et le responsable du créneau en est prévenu.
 
 ## Où ça se passe
 
@@ -50,7 +50,7 @@ L'écran de contrôle se filtre par salle, par statut, par responsable et par p�
 
 **Un créneau jamais ouvert.** L'activité a été annulée sans que la réservation le soit, ou le responsable n'a rien déclaré. Dans les deux cas, l'information est utile : elle signale une réservation à libérer ou une consigne à rappeler.
 
-**Une fermeture jamais déclarée.** La main courante reste en attente et apparaît dans les filtres. C'est ce qui permet de relancer la bonne personne, plutôt que de découvrir le problème au créneau suivant.
+**Une fermeture jamais déclarée.** La main courante reste en attente et apparaît dans les filtres, ce qui permet de relancer la bonne personne. Une fois le créneau passé, l'équipe de contrôle peut aussi la **clôturer sans déclaration**, ou y **signaler un écart** directement (le responsable est alors prévenu).
 
 **Un écart signalé.** Il ouvre une conversation entre l'équipe de contrôle et le responsable du créneau, et le cas échéant une demande comptable si du matériel doit être remplacé.
 

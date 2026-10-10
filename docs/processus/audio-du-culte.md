@@ -8,11 +8,11 @@ Remplace le fichier audio envoyé en pièce jointe, qui expirait au bout de quel
 
 ## Le déclencheur
 
-Le culte est terminé et l'enregistrement est disponible. Le département de captation ouvre **Opérations → Audio → Production → Déposer un enregistrement**.
+Le culte est terminé et l'enregistrement est disponible. Le département de captation ouvre **Médias → Audio**, onglet **Production**, puis dépose l'enregistrement.
 
 ## Qui intervient
 
-Le département de captation dépose et produit. L'ensemble de l'église consulte la bibliothèque. La dépublication reste réservée aux administrateurs et aux responsables de la captation.
+Le département de captation (tout département de fonction **Captation audio**) dépose et produit, comme Admin, Secrétaire et Super Admin. L'ensemble de l'église, STAR compris, consulte la bibliothèque. La dépublication reste réservée à Admin, Super Admin et aux responsables d'un département de captation.
 
 ## Les étapes et leurs statuts
 
@@ -32,7 +32,7 @@ Le département de captation dépose et produit. L'ensemble de l'église consult
 
 | Pour… | Aller à… |
 |---|---|
-| Déposer et produire | Opérations → Audio, onglet **Production** |
+| Déposer et produire | Médias → **Audio**, onglet **Production** |
 | Écouter et chercher | Onglet **(re)Écouter** |
 | Régler les paramètres de production | Onglet **Paramètres** |
 

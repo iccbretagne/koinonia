@@ -10,7 +10,7 @@ Remplace la transmission orale qui se perd dès qu'un ancien s'absente.
 
 Un responsable constate qu'une même consigne se répète à chaque événement, ou qu'un nouveau venu ne sait pas par où commencer.
 
-Il ouvre son département, onglet **Tâches**, puis **Nouvelle tâche**, et lui donne un intitulé et une description.
+Il ouvre son département (Planning → le département), onglet **Tâches**, puis **Nouvelle tâche**, et lui donne un intitulé et une description.
 
 ## Qui intervient
 
