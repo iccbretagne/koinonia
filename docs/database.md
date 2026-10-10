@@ -172,8 +172,9 @@ Membres d'un département (les personnes planifiées). Appelés **STAR** (Servit
 | `lastName` | String | Nom |
 | `email` | String? | Adresse email (optionnel) |
 | `phone` | String? | Numéro de téléphone (optionnel) |
-| `departmentId` | String | Ref vers `departments` |
 | `createdAt` | DateTime | Date de création |
+
+Départements d'appartenance : `member_departments` (un ou plusieurs, dont un principal).
 
 #### `member_user_links`
 
@@ -182,7 +183,7 @@ Liaison entre un membre (STAR) et un compte utilisateur. Permet au membre de se 
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `memberId` | String (unique) | Ref vers `members` (un membre ne peut avoir qu'un seul lien) |
+| `memberId` | String (unique) | Ref vers `members` (un membre ne peut avoir qu'un seul lien, cascade delete) |
 | `userId` | String | Ref vers `users` |
 | `churchId` | String | Ref vers `churches` |
 | `validatedAt` | DateTime? | Date de validation de la liaison (null = en attente) |
@@ -445,7 +446,7 @@ spec 050 — aucune migration de données n'a été nécessaire.
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `memberId` | String | Ref vers `members` (STAR concerné) |
+| `memberId` | String | Ref vers `members` (STAR concerné, cascade delete) |
 | `churchId` | String | Ref vers `churches` |
 | `kind` | `AbsenceKind` | `PERIOD` (période) ou `EVENTS` (liste d'événements précis) |
 | `startDate` / `endDate` | DateTime? | Renseignés ssi `kind = PERIOD`, nuls ssi `kind = EVENTS` |
@@ -525,6 +526,98 @@ retard après l'échéance : compte comme indisponible) > « Non demandée ».
 des réponses `UNAVAILABLE` (puis sont supprimées) et les plannings `INDISPONIBLE` deviennent des
 réponses `UNAVAILABLE` sans auteur (puis sont supprimés). `ServiceStatus.INDISPONIBLE` et
 `AbsenceKind.EVENTS` restent dans les enums pour l'historique, mais ne sont plus écrits ni créés.
+
+#### `member_departments`
+
+Rattachement d'une fiche STAR à un département (appartenance). Un membre peut appartenir à plusieurs départements, dont un seul est marqué principal. Cette chaîne d'appartenance est distincte du périmètre de responsabilité (`user_departments`, voir ADR-0009 et ADR-0013).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `memberId` | String | Ref vers `members` (cascade delete) |
+| `departmentId` | String | Ref vers `departments` |
+| `isPrimary` | Boolean | Département principal du membre (défaut `false`) |
+
+Unicité : `[memberId, departmentId]`
+
+#### `department_notices`
+
+Consigne rédigée par un département pour un événement donné (texte libre). Une seule consigne par couple département × événement.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `departmentId` | String | Ref vers `departments` (cascade delete) |
+| `eventId` | String | Ref vers `events` (cascade delete) |
+| `content` | String (Text) | Contenu de la consigne |
+| `authorId` | String | Ref vers `users` (auteur) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[eventId]` ; unicité : `[departmentId, eventId]`
+
+#### `welcome_duty_families`
+
+Famille inscrite dans le pool de rotation du service d'accueil (module service d'accueil). `familyId` est l'identifiant de la famille dans l'application externe `familles.iccrennes.fr`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `familyId` | Int | Identifiant de la famille dans `familles.iccrennes.fr` |
+| `familyName` | String (VarChar 100) | Nom de la famille |
+| `active` | Boolean | Famille active dans la rotation (défaut `true`) |
+| `createdAt` | DateTime | Date de création |
+
+Index : `[churchId]` ; unicité : `[churchId, familyId]`
+
+#### `welcome_duty_assignments`
+
+Affectation d'une famille du pool au service d'accueil d'un événement. Une famille ne peut être affectée qu'une fois à un même événement.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `eventId` | String | Ref vers `events` (cascade delete) |
+| `welcomeDutyFamilyId` | String | Ref vers `welcome_duty_families` (cascade delete) |
+| `note` | String? (VarChar 500) | Note libre |
+| `createdAt` | DateTime | Date de création |
+
+Index : `[churchId]` ; unicité : `[eventId, welcomeDutyFamilyId]`
+
+#### `opening_closing_assignments`
+
+Affectation d'un membre au service d'ouverture ou de fermeture de l'église pour un événement (spec 041).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `eventId` | String | Ref vers `events` (cascade delete) |
+| `slot` | `DutySlot` | `OPENING` \| `CLOSING` |
+| `memberId` | String | Ref vers `members` (cascade delete) |
+| `note` | String? (VarChar 500) | Note libre |
+| `createdById` | String | Ref vers `users` (auteur de l'affectation) |
+| `createdAt` | DateTime | Date de création |
+
+Index : `[churchId]`, `[memberId]` ; unicité : `[eventId, slot, memberId]`
+
+#### `announcement_sheets`
+
+Feuille d'annonces d'un culte (spec 040) : une seule par événement, remplacée à chaque dépôt (le fichier S3 précédent est supprimé, pas d'historique versionné). Types acceptés : PDF ou docx, 20 Mo maximum.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `eventId` | String | Ref vers `events` (cascade delete), unique |
+| `key` | String | Clé de l'objet dans le stockage S3 |
+| `filename` | String | Nom du fichier d'origine |
+| `mimeType` | String | Type MIME |
+| `uploadedById` | String | Ref vers `users` |
+| `uploadedAt` | DateTime | Date de dépôt |
+
+Index : `[churchId]` ; unicité : `[eventId]`
 
 ### Enums
 
@@ -613,6 +706,53 @@ PERIOD  # Absence sur une plage de dates (defaut, retro-compatible)
 EVENTS  # Historique : plus créé (spec 058), repris en réponses de disponibilité
 ```
 
+#### `AbsenceBackupType`
+
+Type de remplaçant/relais désigné sur une absence (`absence_backups.type`).
+
+| Valeur | Description |
+|---|---|
+| `STAR` | Le relais est un STAR (`memberId` renseigné) |
+| `RESPONSIBLE` | Le relais est un responsable (`userChurchRoleId` renseigné) |
+
+#### `AvailabilityAnswer`
+
+Réponse de disponibilité d'un membre pour un événement et un département (`availability_responses.answer`, spec 058, ADR-0020).
+
+| Valeur | Description |
+|---|---|
+| `AVAILABLE` | Disponible |
+| `IF_NEEDED` | Disponible en cas de besoin |
+| `UNAVAILABLE` | Indisponible |
+
+#### `AvailabilityAskReason`
+
+Motif d'une demande de disponibilité ciblée (`availability_asks.reason`, spec 058).
+
+| Valeur | Description |
+|---|---|
+| `EVENT_ADDED` | Un événement a été ajouté |
+| `EVENT_MOVED` | Un événement a été déplacé |
+| `LEADER` | Demande émise à l'initiative d'un responsable |
+
+#### `ServiceWithdrawalStatus`
+
+État d'un désistement d'un STAR sur un service (`service_withdrawals.status`, spec 061).
+
+| Valeur | Description |
+|---|---|
+| `PENDING` | Désistement ouvert, en attente de remplacement (valeur par défaut) |
+| `REPLACED` | Un remplaçant a repris le service |
+| `CANCELLED` | Désistement annulé (statut d'origine restauré) |
+| `CLOSED` | « Ne pas remplacer » : le service n'est plus à remplacer, le STAR désisté en est informé |
+
+#### `DutySlot`
+
+| Valeur | Description |
+|---|---|
+| `OPENING` | Service d'ouverture de l'église |
+| `CLOSING` | Service de fermeture de l'église |
+
 ### Module Média
 
 #### `media_events`
@@ -687,7 +827,7 @@ Versions successives d'un fichier de production.
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `mediaFileId` | String | Ref vers `media_files` (cascade delete) |
 | `versionNumber` | Int | Numéro de version (auto-incrémenté par fichier) |
 | `originalKey` | String | Clé S3 du fichier |
 | `thumbnailKey` | String | Clé S3 du thumbnail / première frame |
@@ -702,11 +842,11 @@ Commentaires de révision sur un fichier, avec support des timecodes vidéo.
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `fileId` | String | Ref vers `media_files` (cascade delete) |
+| `mediaFileId` | String | Ref vers `media_files` (cascade delete) |
 | `type` | MediaCommentType | `GENERAL` ou `TIMECODE` |
 | `content` | String (Text) | Contenu du commentaire |
 | `timecode` | Int? | Position en secondes (si `TIMECODE`) |
-| `parentId` | String? | Ref vers `media_comments` (réponses imbriquées) |
+| `parentId` | String? | Ref vers `media_comments` (réponses imbriquées, cascade delete) |
 | `authorId` | String? | Ref vers `users` (null si commentaire externe) |
 | `authorName` | String? | Nom affiché (commentaires externes) |
 | `authorImage` | String? | Avatar (commentaires externes) |
@@ -722,11 +862,13 @@ Tokens de partage sans authentification. Donne accès à un événement ou un pr
 | `token` | String (unique) | Token aléatoire (URL-safe) |
 | `type` | MediaTokenType | `GALLERY`, `MEDIA`, `VALIDATOR`, `PREVALIDATOR` |
 | `label` | String? | Étiquette (ex : "Familles") |
-| `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`) |
-| `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`) |
+| `churchId` | String? | Ref vers `churches` (cascade delete) : église propriétaire, pour lister les partages actifs (spec 049) |
+| `mediaEventId` | String? | Ref vers `media_events` (exclusif avec `mediaProjectId`, cascade delete) |
+| `mediaProjectId` | String? | Ref vers `media_projects` (exclusif avec `mediaEventId`, cascade delete) |
 | `expiresAt` | DateTime? | Expiration (null = illimité) |
+| `config` | Json? | Paramètres du partage (sélection, sources d'une collection) |
+| `lastUsedAt` | DateTime? | Dernière utilisation |
 | `usageCount` | Int | Nombre d'utilisations (default: 0) |
-| `createdById` | String | Ref vers `users` |
 | `createdAt` | DateTime | Date de création |
 
 #### `media_zip_jobs`
@@ -738,7 +880,7 @@ Jobs asynchrones de génération de ZIP pour le téléchargement groupé.
 | `id` | String (cuid) | Identifiant unique |
 | `mediaEventId` | String | Ref vers `media_events` |
 | `status` | MediaJobStatus | `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED` |
-| `zipKey` | String? | Clé S3 du ZIP généré |
+| `downloadKey` | String? | Clé S3 du ZIP généré |
 | `error` | String? (Text) | Message d'erreur si échec |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
@@ -943,8 +1085,8 @@ Geste unilatéral et volontaire — pas de hiérarchie entre églises, pas de r�
 | Champ | Type | Description |
 |---|---|---|
 | `id` | String (cuid) | Identifiant unique |
-| `ownerChurchId` | String | Ref vers `churches` — église qui ouvre sa bibliothèque |
-| `guestChurchId` | String | Ref vers `churches` — église qui reçoit l'accès en lecture |
+| `ownerChurchId` | String | Ref vers `churches` (cascade delete) — église qui ouvre sa bibliothèque |
+| `guestChurchId` | String | Ref vers `churches` (cascade delete) — église qui reçoit l'accès en lecture |
 | `createdAt` | DateTime | Date d'octroi |
 
 Contraintes : `[ownerChurchId, guestChurchId]` unique (pas de doublon pour un même couple) ;
@@ -1006,7 +1148,7 @@ DONE    # Termine
 FAILED  # Echec apres 3 tentatives
 ```
 
-### Module Suivi pastoral (`care`)
+### Module Suivi pastoral et agenda pastoral (`care`, `agenda`)
 
 #### `care_companions`
 
@@ -1024,6 +1166,177 @@ accompagnant possible. Voir `src/modules/care/services/companions.ts`.
 | `createdById` | String? | Ref vers `users`, qui a déclaré l'exception (`SetNull`) |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
+#### `pastoral_profiles`
+
+Profil pastoral d'une église (pasteur, assistant, berger), éventuellement lié à un compte utilisateur. Destinataire des entrées d'agenda et accompagnant possible d'une demande de rendez-vous ou d'un suivi de nouveau converti ; peut aussi être le responsable pastoral ou le superviseur d'une église (`churches.responsibleProfileId` / `supervisorProfileId`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `name` | String | Nom affiché |
+| `email` | String? | Email du profil |
+| `role` | `PastoralRole` | `PASTEUR` \| `ASSISTANT_PASTEUR` \| `BERGER` |
+| `userId` | String? | Ref vers `users` (compte lié, optionnel) |
+| `createdAt` | DateTime | Horodatage de création |
+
+Relations : `agenda_entries`, `appointment_requests`, `msdp_follow_ups` (accompagnant), églises dont il est responsable ou superviseur.
+
+#### `appointment_requests`
+
+Demande de rendez-vous pastoral (module `care`, spec 052). Cycle : qualification par le référent, affectation à un accompagnant (profil pastoral **ou** membre du département MSDP, exclusif — vérifié par le service), planification, puis clôture avec une issue consignée. Peut naître d'une demande d'accueil (soin pastoral coché) et être rapprochée d'autres demandes de la même personne via `person_journeys`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `userId` | String? | Ref vers `users` (demandeur connecté, optionnel) |
+| `firstName` / `lastName` | String | Identité du demandeur |
+| `email` / `phone` | String? | Coordonnées |
+| `subject` | String | Objet de la demande |
+| `message` | String (Text) | Message du demandeur |
+| `preferredDays` | String? | Jours souhaités |
+| `status` | `AppointmentRequestStatus` | `PENDING` \| `VALIDATED` \| `SCHEDULED` \| `CLOSED` \| `REJECTED` (défaut `PENDING`) |
+| `assignedToId` | String? | Ref vers `pastoral_profiles` (accompagnant profil pastoral) |
+| `assignedMemberId` | String? | Ref vers `users` (accompagnant membre MSDP, `SetNull`) |
+| `assignedById` | String? | Ref vers `users`, qui a affecté (`SetNull`) |
+| `assignedAt` | DateTime? | Date d'affectation, base de la relance « confiée non planifiée » |
+| `qualifiedById` | String? | Ref vers `users`, qui a qualifié |
+| `qualifiedAt` | DateTime? | Date de qualification |
+| `qualificationNote` | String? | Note de qualification |
+| `rejectReason` | String? | Commentaire libre de rejet |
+| `rejectReasonCode` | `AppointmentRejectReason`? | Motif qualifié du rejet (liste fixe) |
+| `scheduledById` | String? | Ref vers `users`, qui a planifié |
+| `scheduledAt` | DateTime? | Date de planification |
+| `scheduledFor` | DateTime? | Date du rendez-vous, quel que soit l'accompagnant |
+| `outcome` | `AppointmentOutcome`? | Issue du rendez-vous |
+| `outcomeAt` | DateTime? | Date de consignation de l'issue |
+| `sourceIntegrationRequestId` | String? | Demande d'accueil source (unique ; reprend en sens inverse l'ancienne colonne de `family_integration_requests`) |
+| `personJourneyId` | String? | Ref vers `person_journeys` (`SetNull`) — rapprochement des demandes d'une même personne |
+| `updatedById` | String? | Ref vers `users`, dernier modificateur |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[churchId, status, createdAt]`, `[assignedMemberId]`, `[personJourneyId]` ; unicité : `[sourceIntegrationRequestId]`
+
+Relations : `agenda_entries` (0..1), `msdp_follow_ups` (suivi issu d'une orientation, 0..1).
+
+#### `agenda_entries`
+
+Entrée de l'agenda pastoral d'un profil pastoral : activité ou rendez-vous. Un rendez-vous planifié par le protocole est rattaché à sa demande (`requestId`, unique).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `recipientId` | String | Ref vers `pastoral_profiles` (profil concerné) |
+| `type` | `AgendaEntryType` | `ACTIVITY` \| `APPOINTMENT` |
+| `title` | String | Titre |
+| `description` | String? (Text) | Description |
+| `startsAt` | DateTime | Début |
+| `endsAt` | DateTime? | Fin |
+| `location` | String? | Lieu |
+| `requestId` | String? | Ref vers `appointment_requests` (unique) |
+| `createdById` | String | Ref vers `users` |
+| `updatedById` | String? | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[churchId, recipientId, startsAt]`, `[churchId, startsAt]` ; unicité : `[requestId]`
+
+#### `msdp_follow_ups`
+
+Suivi d'un nouveau converti par le MSDP (module `care`, spec 052). Né d'une demande d'accueil avec appel au salut ou d'un rendez-vous orienté vers un suivi ; l'identité est recopiée de la source ou portée directement. Les liens vers les sources sont en `SetNull` : archiver ou supprimer la demande d'origine n'emporte pas le suivi.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `requestId` | String? | Ref vers `family_integration_requests` (unique, `SetNull`) |
+| `sourceAppointmentId` | String? | Ref vers `appointment_requests` (unique, `SetNull`) — rendez-vous à l'origine |
+| `firstName` / `lastName` | String (100) | Identité |
+| `phone` | String? (30) | Téléphone |
+| `email` | String? (255) | Email |
+| `status` | `MsdpStatus` | `SUBMITTED` \| `ASSIGNED` \| `CONTACTED` \| `IN_FORMATION` \| `COMPLETED` \| `ABANDONED` (défaut `SUBMITTED`) |
+| `assignedConseillerMsdpId` | String? | Ref vers `users` (conseiller MSDP, `SetNull`) |
+| `assignedProfileId` | String? | Ref vers `pastoral_profiles` (`SetNull`) — exclusif avec le conseiller MSDP, vérifié par le service |
+| `assignedById` | String? | Ref vers `users`, qui a affecté (`SetNull`) |
+| `personJourneyId` | String? | Ref vers `person_journeys` (`SetNull`) |
+| `assignedAt` / `contactedAt` / `inFormationAt` / `completedAt` / `abandonedAt` | DateTime? | Horodatages d'étape, pour les indicateurs de délais |
+| `notes` | String? (Text) | Notes |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[churchId, status]`, `[assignedConseillerMsdpId]`, `[assignedProfileId]`, `[personJourneyId]` ; unicité : `[requestId]`, `[sourceAppointmentId]`
+
+#### `care_settings`
+
+Délais de relance du module `care` (`/care/parametres`), une ligne par église.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` (unique) |
+| `unassignedDelayDays` | Int | Délai avant alerte aux référents pour une demande reçue non confiée (défaut 7) |
+| `unscheduledDelayDays` | Int | Délai avant alerte à l'accompagnant pour une demande confiée non planifiée (défaut 14) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Unicité : `[churchId]`
+
+### Enums suivi pastoral et agenda
+
+#### `PastoralRole`
+
+| Valeur | Description |
+|---|---|
+| `PASTEUR` | Pasteur |
+| `ASSISTANT_PASTEUR` | Assistant pasteur |
+| `BERGER` | Berger |
+
+#### `AppointmentRequestStatus`
+
+| Valeur | Description |
+|---|---|
+| `PENDING` | Demande reçue, en attente de qualification |
+| `VALIDATED` | Demande validée (qualifiée) |
+| `SCHEDULED` | Rendez-vous planifié |
+| `CLOSED` | Terminée, issue consignée (spec 052) |
+| `REJECTED` | Rejetée |
+
+#### `AppointmentOutcome`
+
+| Valeur | Description |
+|---|---|
+| `HELD` | Le rendez-vous a eu lieu, clôturé |
+| `REFERRED_TO_FOLLOWUP` | A eu lieu, orienté vers un suivi de nouveau converti |
+| `NO_SHOW` | La personne n'est pas venue, clôturé sans suite |
+
+#### `AppointmentRejectReason`
+
+| Valeur | Description |
+|---|---|
+| `OUT_OF_SCOPE` | Hors du champ pastoral |
+| `DUPLICATE` | Doublon |
+| `WITHDRAWN` | Demande retirée par la personne |
+| `UNREACHABLE` | Personne injoignable |
+| `REDIRECTED` | Orientée vers un autre service |
+| `OTHER` | Autre motif |
+
+#### `AgendaEntryType`
+
+| Valeur | Description |
+|---|---|
+| `ACTIVITY` | Activité de l'agenda |
+| `APPOINTMENT` | Rendez-vous |
+
+#### `MsdpStatus`
+
+| Valeur | Description |
+|---|---|
+| `SUBMITTED` | Appel reçu, en attente d'assignation |
+| `ASSIGNED` | Conseiller MSDP assigné |
+| `CONTACTED` | Premier contact établi |
+| `IN_FORMATION` | Intégré à la formation nouveaux convertis (PCNC) |
+| `COMPLETED` | Suivi terminé |
+| `ABANDONED` | Suivi abandonné |
+
 ### Notifications
 
 #### `notifications` — rattachement à un objet (spec 057)
@@ -1037,6 +1350,19 @@ antérieures et celles sans objet précis. Index `[entityType, entityId]`.
 |---|---|---|
 | `entityType` | String? (50) | `AppointmentRequest`, `MsdpFollowUp` ou `FamilyIntegrationRequest` (mêmes valeurs que `audit_logs.entityType`) |
 | `entityId` | String? | Identifiant de l'objet |
+
+#### `notification_email_preferences`
+
+Préférence d'envoi d'email d'un utilisateur, par domaine de notification (spec 053, ADR-0016). Clé primaire composite.
+
+| Champ | Type | Description |
+|---|---|---|
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `domain` | String | Clé de domaine déclarée par un manifeste de module (`planning`, `care`…), ou `*` pour l'interrupteur général ; validée par le registre à l'écriture (Zod), pas par un enum |
+| `enabled` | Boolean | Emails activés pour ce domaine |
+| `updatedAt` | DateTime | Dernière modification |
+
+Clé primaire : `[userId, domain]`
 
 ### Plateforme
 
@@ -1053,6 +1379,579 @@ plateforme, **sans `churchId`** : les tâches parcourent elles-mêmes les églis
 | `lastDurationMs` | Int? | Durée du dernier passage |
 | `lastError` | Text? | Message de la dernière erreur, `null` après un passage réussi |
 | `lockedUntil` | DateTime? | Verrou : aucun autre appel ne relance la tâche avant cette date |
+
+### Module Intégration
+
+#### `family_integration_requests`
+
+Demande d'intégration dans une famille d'impact, issue du formulaire public d'accueil. Une suggestion de famille est calculée depuis l'adresse (point dans un polygone, référentiel externe `familles.iccrennes.fr`), puis une famille et un berger sont affectés. La spec 051 ajoute le motif qualifié d'abandon, le consentement au contact et la mémoire de l'état d'attente pour les relances (`waitingFrom` ne vaut que `SUBMITTED` ou `CONTACTED`). La demande de rendez-vous pastoral vit désormais dans le module `care`. Archivage doux à 12 mois (`archivedAt`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `firstName` / `lastName` | String (100) | Identité |
+| `email` | String? (255) | Email |
+| `phone` | String? (30) | Téléphone |
+| `address` | String? (500) | Adresse |
+| `city` | String? (100) | Ville |
+| `lat` / `lng` | Float? | Coordonnées géographiques |
+| `ageRange` | `FamilyAgeRange` | `YOUTH` \| `YOUNG_ADULT` \| `ADULT` \| `SENIOR` |
+| `churchStatus` | `FamilyChurchStatus` | `VISITOR` \| `REGULAR` \| `ENGAGED` (défaut `VISITOR`) |
+| `memberId` | String? | Ref vers `members` (`SetNull`) — membre existant lié |
+| `salvationCall` | Boolean | Appel au salut coché sur le formulaire (défaut `false`) |
+| `eventId` | String? | Ref vers `events` (`SetNull`) — culte lié, pour corrélation avec les comptes rendus |
+| `pastoralCareRequested` | Boolean | Soin pastoral demandé (défaut `false`) |
+| `suggestedFamilyId` / `suggestedFamilyName` | Int? / String? (100) | Famille suggérée automatiquement |
+| `assignedFamilyId` / `assignedFamilyName` | Int? / String? (100) | Famille confirmée |
+| `assignedBergerId` | String? | Ref vers `users` (`SetNull`) — berger assigné, notifié à l'affectation |
+| `status` | `FamilyIntegrationStatus` | Statut du workflow (défaut `SUBMITTED`) |
+| `submittedAt` | DateTime | Date de soumission (défaut maintenant) |
+| `assignedAt` / `contactedAt` / `whatsappAddedAt` / `integratedAt` / `abandonedAt` | DateTime? | Horodatages d'étape |
+| `abandonReason` | String? (500) | Commentaire libre d'abandon |
+| `abandonReasonCode` | `IntegrationAbandonReason`? | Motif qualifié (obligatoire à l'abandon depuis la spec 051 ; `null` pour les abandons antérieurs) |
+| `contactConsent` | `IntegrationContactConsent` | `NOW` \| `LATER` (défaut `NOW`) |
+| `waitingFrom` | `FamilyIntegrationStatus`? | Statut d'origine de l'état d'attente |
+| `waitingSince` | DateTime? | Début de l'attente, fonde l'échéance de relance |
+| `lastRelanceAt` | DateTime? | Dernière relance |
+| `notes` | String? (Text) | Notes internes de l'équipe intégration |
+| `archivedAt` | DateTime? | Archivage doux |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[churchId, status]`, `[churchId, assignedFamilyId]`, `[churchId, submittedAt]`, `[assignedBergerId]`, `[memberId]`, `[eventId]`
+
+Relations : `msdp_follow_ups` (0..1), `person_journeys` (0..1, dossier de parcours créé à la soumission ou manuellement).
+
+#### `family_leader_assignments`
+
+Rattachement d'un utilisateur comme berger ou co-berger d'une famille d'impact (identifiée par son ID dans le référentiel externe `familles.iccrennes.fr`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `userId` | String | Ref vers `users` (cascade delete) |
+| `familyId` | Int | ID de la famille dans le référentiel externe |
+| `familyName` | String (100) | Nom de la famille |
+| `role` | `FamilyLeaderRole` | `BERGER` \| `CO_BERGER` |
+| `createdAt` | DateTime | Horodatage de création |
+
+Index : `[churchId, familyId]` ; unicité : `[churchId, userId, familyId]`
+
+#### `integration_settings`
+
+Délais de relance du module intégration (spec 051, `/integration/parametres`), une ligne par église.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` (unique) |
+| `recontactDelayDays` | Int | Attente de recontact, en jours (défaut 60) |
+| `missionDelayDays` | Int | Attente de décision du département mission, en jours (défaut 30) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Unicité : `[churchId]`
+
+#### `person_journeys`
+
+Dossier de parcours d'une personne, en quatre jalons : intégration dans une famille d'impact, suivi PCNC (Parcours de Croissance de la Nouvelle Création), serviteur actif (STAR), suivi de discipolat. Créé automatiquement à la soumission d'une demande d'accueil ou manuellement (`createdById` nul si automatique). Sert aussi, depuis la spec 052, à rapprocher les demandes de rendez-vous et les suivis MSDP d'une même personne.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `firstName` / `lastName` | String (100) | Identité |
+| `phone` | String? (30) | Téléphone |
+| `email` | String? (255) | Email |
+| `sourceRequestId` | String? | Ref vers `family_integration_requests` (unique, `SetNull`) |
+| `integratedInFamily` | Boolean | Jalon 1 : intégré dans une famille d'impact (défaut `false`) |
+| `familyIntegratedAt` | DateTime? | Date du jalon 1 |
+| `followsPcnc` | Boolean | Jalon 2 : suit le PCNC (défaut `false`) |
+| `pcncStartedAt` | DateTime? | Date du jalon 2 |
+| `isStar` | Boolean | Jalon 3 : serviteur actif (défaut `false`) |
+| `starSince` | DateTime? | Date du jalon 3 |
+| `inDiscipleship` | Boolean | Jalon 4 : suivi de discipolat (défaut `false`) |
+| `discipleshipSince` | DateTime? | Date du jalon 4 |
+| `notes` | String? (Text) | Notes |
+| `createdById` | String? | Ref vers `users` (`SetNull`) — auteur, nul si création automatique |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[churchId, createdAt]`, `[churchId, integratedInFamily]`, `[churchId, followsPcnc]`, `[churchId, isStar]`, `[churchId, inDiscipleship]` ; unicité : `[sourceRequestId]`
+
+Relations : `appointment_requests`, `msdp_follow_ups`.
+
+### Enums intégration
+
+#### `FamilyIntegrationStatus`
+
+| Valeur | Description |
+|---|---|
+| `SUBMITTED` | Demande soumise |
+| `WAITING_RECONTACT` | En attente : la personne souhaite être recontactée plus tard (spec 051) |
+| `WAITING_MISSION` | En attente : adresse hors zone, décision du département mission (spec 051) |
+| `ASSIGNED` | Famille affectée (automatiquement ou manuellement) |
+| `CONTACTED` | Le berger a pris contact |
+| `WHATSAPP_ADDED` | Ajouté au groupe WhatsApp |
+| `INTEGRATED` | Intégration terminée (clôturé) |
+| `ABANDONED` | Abandonné |
+
+#### `IntegrationAbandonReason`
+
+| Valeur | Description |
+|---|---|
+| `UNKNOWN_NUMBER` | Numéro inconnu ou erroné |
+| `UNREACHABLE` | Injoignable après relances |
+| `NO_LONGER_INTERESTED` | Ne souhaite plus être contacté·e |
+| `OTHER_CHURCH` | A rejoint une autre église |
+| `MOVED` | A déménagé |
+| `DUPLICATE` | Doublon |
+| `OTHER` | Autre (précisé en commentaire) |
+
+#### `IntegrationContactConsent`
+
+| Valeur | Description |
+|---|---|
+| `NOW` | La personne accepte d'être contactée maintenant |
+| `LATER` | La personne souhaite être recontactée plus tard |
+
+#### `FamilyAgeRange`
+
+| Valeur | Description |
+|---|---|
+| `YOUTH` | Moins de 18 ans (famille d'impact jeunes) |
+| `YOUNG_ADULT` | 18 à 30 ans |
+| `ADULT` | 30 à 60 ans |
+| `SENIOR` | 60 ans et plus |
+
+#### `FamilyChurchStatus`
+
+| Valeur | Description |
+|---|---|
+| `VISITOR` | Visiteur |
+| `REGULAR` | Membre régulier |
+| `ENGAGED` | Membre engagé |
+
+#### `FamilyLeaderRole`
+
+| Valeur | Description |
+|---|---|
+| `BERGER` | Berger de la famille |
+| `CO_BERGER` | Co-berger de la famille |
+
+### Module Comptabilité
+
+#### `financial_series`
+
+Série de demandes financières récurrentes (toutes les N semaines ou N mois) : à chaque échéance, une demande `financial_requests` est générée à partir de la série. Une série peut être active, en pause ou annulée.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `departmentId` | String | Ref vers `departments` |
+| `submittedById` | String | Ref vers `users` (demandeur) |
+| `type` | `FinancialRequestType` | `EXPENSE_REPORT` \| `BUDGET_ADVANCE` |
+| `label` | String (VarChar 200) | Libellé |
+| `description` | String? (Text) | Description (optionnel) |
+| `amount` | Decimal(10,2) | Montant de chaque occurrence |
+| `recurrenceEvery` | Int | Intervalle de récurrence (en `recurrenceUnit`) |
+| `recurrenceUnit` | `RecurrenceUnit` | `WEEK` \| `MONTH` |
+| `status` | `SeriesStatus` | `ACTIVE` (défaut) \| `PAUSED` \| `CANCELLED` |
+| `nextOccurrenceDate` | DateTime | Date de la prochaine occurrence à générer |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Relations : `requests` (demandes générées)
+
+Index : `[churchId, status]`, `[nextOccurrenceDate, status]`
+
+#### `financial_requests`
+
+Demande financière : note de frais (dépense déjà effectuée) ou avance de budget (dépense à venir), soumise par un demandeur et traitée par la comptabilité. Une demande sans département est une note de frais personnelle ; elle peut appartenir à une série (`seriesId`) ou corriger une demande rejetée (`correctionOfId`).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String | Ref vers `churches` |
+| `departmentId` | String? | Ref vers `departments` ; null = note de frais personnelle (sans département) |
+| `submittedById` | String | Ref vers `users` (demandeur) |
+| `seriesId` | String? | Ref vers `financial_series` ; null si demande one-shot |
+| `occurrenceNumber` | Int? | Rang dans la série |
+| `correctionOfId` | String? | Ref vers `financial_requests` : demande rejetée que celle-ci corrige |
+| `type` | `FinancialRequestType` | `EXPENSE_REPORT` \| `BUDGET_ADVANCE` |
+| `label` | String (VarChar 200) | Libellé |
+| `description` | String? (Text) | Description (optionnel) |
+| `amount` | Decimal(10,2) | Montant demandé |
+| `status` | `FinancialRequestStatus` | `SUBMITTED` (défaut) \| `PROCESSING` \| `APPROVED` \| `REJECTED` \| `CANCELLED` |
+| `priority` | `FinancialPriority?` | `URGENT` \| `NORMAL` (renseignée par la comptabilité) |
+| `priorityNote` | String? (VarChar 500) | Précision sur la priorité |
+| `rejectionReason` | String? (Text) | Motif de rejet (obligatoire en cas de rejet) |
+| `processedById` | String? | Ref vers `users` (comptable ayant traité) |
+| `processedAt` | DateTime? | Date de traitement |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Relations : `corrections`, `attachments`, `payments`
+
+Index : `[churchId, status]`, `[churchId, departmentId, status]`, `[submittedById]`, `[seriesId]`
+
+#### `financial_attachments`
+
+Pièce jointe (justificatif) stockée sur S3, déposée par un utilisateur, éventuellement avant son rattachement à une demande. L'église de dépôt (`churchId`) fait autorité pour toute décision d'accès : elle ne dépend jamais du rattachement à une demande, que l'appelant peut lui-même provoquer (spec 025).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `requestId` | String? | Ref vers `financial_requests` (cascade delete) ; null tant que non rattachée |
+| `uploadedById` | String? | Ref vers `users` |
+| `churchId` | String | Ref vers `churches` (église de dépôt) |
+| `s3Key` | String (VarChar 512) | Clé de l'objet S3 |
+| `filename` | String (VarChar 255) | Nom du fichier |
+| `mimeType` | String (VarChar 100) | Type MIME |
+| `size` | Int | Taille en octets |
+| `uploadedAt` | DateTime | Date de dépôt |
+
+Index : `[requestId]`, `[churchId]`
+
+#### `financial_payments`
+
+Échéance du plan de paiement d'une demande validée : montant et date prévus, puis remise effective confirmée par le comptable (le montant remis peut être inférieur au montant prévu).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `requestId` | String | Ref vers `financial_requests` (cascade delete) |
+| `amount` | Decimal(10,2) | Montant prévu |
+| `scheduledDate` | DateTime | Date prévue |
+| `releasedAt` | DateTime? | Date de remise ; null = pas encore versé |
+| `releasedAmount` | Decimal(10,2)? | Montant effectivement remis (peut être inférieur à `amount`) |
+| `releasedById` | String? | Ref vers `users` (comptable ayant confirmé la remise) |
+| `note` | String? (VarChar 500) | Note |
+| `createdAt` | DateTime | Date de création |
+
+Index : `[requestId]`
+
+### Enums comptabilité
+
+#### `FinancialRequestType`
+
+| Valeur | Description |
+|---|---|
+| `EXPENSE_REPORT` | Note de frais : dépense déjà effectuée |
+| `BUDGET_ADVANCE` | Avance de budget : dépense à venir |
+
+#### `FinancialRequestStatus`
+
+| Valeur | Description |
+|---|---|
+| `SUBMITTED` | Soumise, en attente de traitement (défaut) |
+| `PROCESSING` | En cours de traitement par la comptabilité |
+| `APPROVED` | Validée, plan de paiement défini |
+| `REJECTED` | Rejetée (motif obligatoire) |
+| `CANCELLED` | Annulée par le demandeur (seulement si `SUBMITTED`) |
+
+#### `FinancialPriority`
+
+| Valeur | Description |
+|---|---|
+| `URGENT` | Délai de traitement engagé par la comptabilité |
+| `NORMAL` | Traitée dans les meilleurs délais |
+
+#### `RecurrenceUnit`
+
+| Valeur | Description |
+|---|---|
+| `WEEK` | Récurrence en semaines |
+| `MONTH` | Récurrence en mois |
+
+#### `SeriesStatus`
+
+| Valeur | Description |
+|---|---|
+| `ACTIVE` | Série active (défaut) |
+| `PAUSED` | Série en pause |
+| `CANCELLED` | Série annulée |
+
+### Module Salles
+
+#### `rooms`
+
+Salle d'une église, réservable. Elle peut être partagée avec d'autres églises via `room_accesses`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `name` | String | Nom de la salle |
+| `churchId` | String | Ref vers `churches` (église propriétaire) |
+| `capacity` | Int? | Capacité d'accueil (optionnel) |
+| `location` | String? | Emplacement (optionnel) |
+| `isActive` | Boolean | Salle active (défaut `true`) |
+| `createdAt` | DateTime | Date de création |
+
+Relations : `sharedWith` (`room_accesses`), `reservations`
+
+Index : `[churchId]`
+
+#### `room_accesses`
+
+Partage d'une salle avec une autre église que sa propriétaire, autorisée à la réserver.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `roomId` | String | Ref vers `rooms` (cascade delete) |
+| `churchId` | String | Ref vers `churches` : église autorisée (autre que la propriétaire) |
+
+Unicité : `[roomId, churchId]`
+
+#### `room_reservations`
+
+Réservation d'une salle sur un créneau, par une église, éventuellement liée à un événement. Peut être récurrente (`recurrenceRule`, utilisée seulement si la réservation n'est pas liée à un événement lui-même récurrent) ; les occurrences d'une série partagent un `seriesId`.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `roomId` | String | Ref vers `rooms` |
+| `churchId` | String | Ref vers `churches` (église qui réserve) |
+| `eventId` | String? | Ref vers `events` (optionnel) |
+| `title` | String | Titre |
+| `startAt` | DateTime | Début |
+| `endAt` | DateTime | Fin |
+| `status` | `RoomReservationStatus` | `CONFIRMED` (défaut) \| `CANCELLED` |
+| `recurrenceRule` | String? | `"weekly"` \| `"biweekly"` \| `"monthly"` |
+| `seriesId` | String? | Identifiant de la série de récurrence |
+| `isRecurrenceParent` | Boolean | Première occurrence de la série (défaut `false`) |
+| `createdById` | String | Ref vers `users` |
+| `createdAt` | DateTime | Date de création |
+| `cancelledAt` | DateTime? | Date d'annulation |
+| `cancelledById` | String? | Ref vers `users` (auteur de l'annulation) |
+
+Relations : `checklist` (une seule, optionnelle)
+
+Index : `[roomId, startAt, endAt]`, `[churchId, startAt]`, `[seriesId]`
+
+#### `room_checklists`
+
+Fiche d'ouverture et de fermeture d'une réservation (une par réservation) : remise des clés, état de la salle à l'ouverture, déclaration de fermeture par l'utilisateur, puis validation (ou signalement d'incident) par un responsable.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `reservationId` | String | Ref vers `room_reservations` (cascade delete), unique |
+| `status` | `RoomChecklistStatus` | `PENDING` (défaut) \| `OPENED` \| `CLOSED_DECLARED` \| `VALIDATED` \| `ISSUE_REPORTED` |
+| `openedById` | String? | Ref vers `users` (ouverture) |
+| `openedAt` | DateTime? | Date d'ouverture |
+| `keyReceivedFromId` | String? | Ref vers `users` : personne ayant remis la clé |
+| `keyReceivedFromName` | String? | Nom de la personne ayant remis la clé (texte libre) |
+| `openingNotes` | String? (Text) | Notes d'ouverture |
+| `closedById` | String? | Ref vers `users` (fermeture) |
+| `closedAt` | DateTime? | Date de fermeture |
+| `closedProperly` | Boolean? | Fermeture correcte (déclarée) |
+| `cleaned` | Boolean? | Salle nettoyée (déclaré) |
+| `equipmentOk` | Boolean? | Équipement en bon état (déclaré) |
+| `equipmentNotes` | String? (Text) | Notes sur l'équipement |
+| `keyReturnedToId` | String? | Ref vers `users` : personne à qui la clé est rendue |
+| `keyReturnedToName` | String? | Nom de la personne à qui la clé est rendue (texte libre) |
+| `closingNotes` | String? (Text) | Notes de fermeture |
+| `validatedById` | String? | Ref vers `users` (validation) |
+| `validatedAt` | DateTime? | Date de validation |
+| `validatedClosedProperly` | Boolean? | Fermeture correcte (constat du validateur) |
+| `validatedCleaned` | Boolean? | Salle nettoyée (constat du validateur) |
+| `validatedEquipmentOk` | Boolean? | Équipement en bon état (constat du validateur) |
+| `incidentNotes` | String? (Text) | Notes d'incident |
+| `closedWithoutDeclaration` | Boolean | Fermée sans déclaration de l'utilisateur (défaut `false`) |
+
+Unicité : `[reservationId]`
+
+### Enums salles
+
+#### `RoomReservationStatus`
+
+| Valeur | Description |
+|---|---|
+| `CONFIRMED` | Réservation confirmée (défaut) |
+| `CANCELLED` | Réservation annulée |
+
+#### `RoomChecklistStatus`
+
+| Valeur | Description |
+|---|---|
+| `PENDING` | Fiche créée, salle pas encore ouverte (défaut) |
+| `OPENED` | Salle ouverte |
+| `CLOSED_DECLARED` | Fermeture déclarée par l'utilisateur, en attente de validation |
+| `VALIDATED` | Fermeture validée |
+| `ISSUE_REPORTED` | Incident signalé |
+
+### Module Emploi
+
+#### `job_offers`
+
+Offre d'emploi, de stage ou d'alternance publiée par un membre. Une relance « toujours d'actualité ? » peut être envoyée à l'auteur (spec 034).
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `title` | String (VarChar 200) | Titre |
+| `type` | `JobOfferType` | `EMPLOI` \| `STAGE` \| `ALTERNANCE` |
+| `company` | String (VarChar 150) | Entreprise |
+| `location` | String? (VarChar 150) | Lieu |
+| `description` | String (Text) | Description |
+| `duration` | String? (VarChar 100) | Durée |
+| `deadline` | DateTime? | Date limite de candidature |
+| `contactEmail` | String? (VarChar 150) | Email de contact |
+| `contactUrl` | String? (VarChar 500) | Lien de contact |
+| `status` | `JobOfferStatus` | `PUBLISHED` (défaut) \| `ARCHIVED` |
+| `authorId` | String | Ref vers `users` |
+| `renewalRequestedAt` | DateTime? | Date d'envoi de la relance « toujours d'actualité ? » restée sans réponse ; NULL = aucune relance en cours, remis à NULL par toute modification de l'offre, qui vaut confirmation (spec 034) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[status, type]`, `[authorId]`, `[status, renewalRequestedAt]`
+
+#### `job_notification_subscriptions`
+
+Préférences d'alerte d'un utilisateur sur le module Emploi (une ligne par utilisateur) : canaux (in-app, email) et catégories suivies. Indépendant du domaine de notification `jobs`, les deux réglages s'appliquant en cumul.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `userId` | String | Ref vers `users` (cascade delete), unique |
+| `inApp` | Boolean | Alerte in-app (défaut `true`) |
+| `email` | Boolean | Alerte par email (défaut `false`) |
+| `wantEmploi` | Boolean | Suivre les offres d'emploi (défaut `true`) |
+| `wantStage` | Boolean | Suivre les offres de stage (défaut `true`) |
+| `wantAlternance` | Boolean | Suivre les offres d'alternance (défaut `true`) |
+| `wantSeekers` | Boolean | Suivre les profils de chercheurs d'emploi (défaut `false`) |
+| `wantFreelanceMissions` | Boolean | Suivre les missions freelance (défaut `false`) |
+| `wantFreelanceProfiles` | Boolean | Suivre les profils freelance (défaut `false`) |
+
+Unicité : `[userId]`
+
+#### `job_seekers`
+
+Annonce d'un membre à la recherche d'un emploi, d'un stage ou d'une alternance.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `title` | String (VarChar 200) | Titre |
+| `wantEmploi` | Boolean | Recherche un emploi (défaut `false`) |
+| `wantStage` | Boolean | Recherche un stage (défaut `false`) |
+| `wantAlternance` | Boolean | Recherche une alternance (défaut `false`) |
+| `sector` | String? (VarChar 150) | Secteur |
+| `location` | String? (VarChar 150) | Lieu |
+| `remote` | Boolean | Télétravail accepté (défaut `false`) |
+| `availableFrom` | DateTime? | Disponible à partir du |
+| `description` | String (Text) | Description |
+| `contactEmail` | String? (VarChar 150) | Email de contact |
+| `contactUrl` | String? (VarChar 500) | Lien de contact |
+| `status` | `JobSeekerStatus` | `ACTIVE` (défaut) \| `FOUND` \| `ARCHIVED` |
+| `authorId` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[status]`, `[authorId]`
+
+#### `job_last_seen`
+
+Dernière consultation du module Emploi par un utilisateur (une ligne par utilisateur), pour repérer les nouveautés depuis sa dernière visite.
+
+| Champ | Type | Description |
+|---|---|---|
+| `userId` | String (clé primaire) | Ref vers `users` (cascade delete) |
+| `seenAt` | DateTime | Date de dernière consultation (défaut maintenant) |
+
+#### `freelance_missions`
+
+Mission freelance proposée par un membre.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `title` | String (VarChar 200) | Titre |
+| `domain` | String (VarChar 150) | Domaine |
+| `duration` | String? (VarChar 100) | Durée |
+| `dailyRate` | String? (VarChar 100) | Taux journalier (texte libre) |
+| `hourlyRate` | String? (VarChar 100) | Taux horaire (texte libre) |
+| `modality` | `FreelanceModality` | `REMOTE` (défaut) \| `ONSITE` \| `HYBRID` |
+| `location` | String? (VarChar 150) | Lieu |
+| `description` | String (Text) | Description |
+| `contactEmail` | String? (VarChar 150) | Email de contact |
+| `contactUrl` | String? (VarChar 500) | Lien de contact |
+| `status` | `FreelanceMissionStatus` | `ACTIVE` (défaut) \| `FILLED` \| `ARCHIVED` |
+| `authorId` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[status]`, `[authorId]`
+
+#### `freelance_profiles`
+
+Profil de freelance proposant ses services.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `title` | String (VarChar 200) | Titre |
+| `domain` | String (VarChar 150) | Domaine |
+| `dailyRate` | String? (VarChar 100) | Taux journalier (texte libre) |
+| `hourlyRate` | String? (VarChar 100) | Taux horaire (texte libre) |
+| `modality` | `FreelanceModality` | `REMOTE` (défaut) \| `ONSITE` \| `HYBRID` |
+| `location` | String? (VarChar 150) | Lieu |
+| `availableFrom` | DateTime? | Disponible à partir du |
+| `description` | String (Text) | Description |
+| `contactEmail` | String? (VarChar 150) | Email de contact |
+| `contactUrl` | String? (VarChar 500) | Lien de contact |
+| `status` | `FreelanceProfileStatus` | `ACTIVE` (défaut) \| `UNAVAILABLE` \| `ARCHIVED` |
+| `authorId` | String | Ref vers `users` |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Index : `[status]`, `[authorId]`
+
+### Enums emploi
+
+#### `JobOfferType`
+
+| Valeur | Description |
+|---|---|
+| `EMPLOI` | Offre d'emploi |
+| `STAGE` | Offre de stage |
+| `ALTERNANCE` | Offre d'alternance |
+
+#### `JobOfferStatus`
+
+| Valeur | Description |
+|---|---|
+| `PUBLISHED` | Offre publiée (défaut) |
+| `ARCHIVED` | Offre archivée |
+
+#### `JobSeekerStatus`
+
+| Valeur | Description |
+|---|---|
+| `ACTIVE` | Recherche en cours (défaut) |
+| `FOUND` | Le chercheur a trouvé |
+| `ARCHIVED` | Annonce archivée |
+
+#### `FreelanceModality`
+
+| Valeur | Description |
+|---|---|
+| `REMOTE` | À distance (défaut) |
+| `ONSITE` | Sur site |
+| `HYBRID` | Hybride |
+
+#### `FreelanceMissionStatus`
+
+| Valeur | Description |
+|---|---|
+| `ACTIVE` | Mission ouverte (défaut) |
+| `FILLED` | Mission pourvue |
+| `ARCHIVED` | Mission archivée |
+
+#### `FreelanceProfileStatus`
+
+| Valeur | Description |
+|---|---|
+| `ACTIVE` | Profil actif (défaut) |
+| `UNAVAILABLE` | Freelance indisponible |
+| `ARCHIVED` | Profil archivé |
+
 
 ## Seed (données initiales)
 
