@@ -33,24 +33,33 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   la Modération ; la Coordination générale perd son accès dédié (spec 040, révision du
   2026-10-10).
 
+### Amélioré
+
+- Accessibilité : chaque champ de formulaire est relié à son libellé et les groupes de cases ou de choix ont un intitulé, lu par les lecteurs d'écran ; Échap ferme désormais les fenêtres et visionneuses qui ne se fermaient qu'à la souris (confirmations, visionneuses publiques, feuille de refus du validateur, zoom du guide) ; zones de dépôt, cartes de fichier et de photo utilisables au clavier, avec un anneau de focus ; une ligne du constructeur de collection se coche d'un clic n'importe où.
+- Erreurs auparavant silencieuses désormais signalées : retrait d'un rôle de responsable, liste des sauvegardes, copie dans le presse-papiers, rafraîchissements média, statistiques comptables, accueil, salles. Un zip de partage interrompu est fermé proprement.
+- Formulaires de l'espace Offres alignés sur le reste de l'application (libellés, contrôles de 44 px, texte en 16 px : plus de zoom au focus sur iOS).
+- Vue planning hebdomadaire : un message s'affiche si le navigateur bloque la fenêtre de copie, comme sur la vue mensuelle. Statistiques du suivi pastoral : « Aucune donnée » au lieu de barres à zéro.
+- Guide utilisateur : les accès affichés pour chaque fonctionnalité correspondent de nouveau aux permissions réelles des rôles, et les écrans manquants y sont décrits.
+
 ### Sécurité
 
-- Next.js 16.3.8 : correctifs des avis de sécurité publiés sur la version précédente.
+- Next.js 16.4.0, qui inclut les correctifs des avis de sécurité visant Next.js 16.0.0 à 16.3.7 (passage par 16.3.8).
+- `source-map-js` 1.2.2 (GHSA-68fv-2mgg-jv7q).
+- Pièces jointes comptables : la partie aléatoire de leur clé de stockage vient d'un générateur cryptographique. Cache local des rendus média nommé par SHA-256 au lieu de SHA-1 (il se reconstitue au premier accès).
 
-### Modifié
+### Dépendances
 
-- Guide utilisateur : les accès affichés pour chaque fonctionnalité correspondent de nouveau aux permissions réelles des rôles, et les écrans manquants y sont décrits.
+- AWS SDK S3 3.1147, lucide-react 1.52, pino 10.4, html2canvas-pro 2.5.2, eslint-config-next 16.4 (nouvelles règles react-hooks appliquées).
 
 ### Technique
 
-- Analyse SonarCloud intégrée à la CI (couverture, Quality Gate progressif), avec des workflows pour exporter l'analyse et accepter en lot les faux positifs relus ; corrections des alertes du premier scan (promesses non gérées, accès clavier, libellés de formulaire, complexité cognitive, duplication), sans changement de comportement attendu (#539).
-- Formulaires de l'espace Offres réécrits sur les composants du design system.
+- Analyse SonarCloud intégrée à la CI (couverture, Quality Gate progressif), avec des workflows pour exporter l'analyse et accepter en lot les faux positifs relus ; correction des alertes du premier scan (fiabilité, maintenabilité, complexité cognitive, duplication), par lots (#539).
 - Workflow « Release » : tag et GitHub Release à la demande depuis `main`, notes reprises du CHANGELOG.
 - CI : paquets ffmpeg mis en cache.
 
 ### Documentation
 
-- Schéma de base de données, authentification et permissions, fiches de processus, environnement de développement et procédure des captures du guide alignés sur le code.
+- Schéma de base de données (30 tables et 31 enums ajoutés), authentification et permissions, fiches de processus, environnement de développement et procédure des captures du guide alignés sur le code.
 
 ## [v1.30.0] - 2026-10-04
 
