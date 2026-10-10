@@ -20,7 +20,8 @@ raisons.
 accordent des droits d'**écriture** sur la seule appartenance :
 
 - `canDepositAnnouncementSheet` — n'importe quel membre d'un département de fonction
-  `SECRETARIAT` (ou du ministère Coordination générale) **dépose et retire** la trame des annonces ;
+  `SECRETARIAT` (et, jusqu'au 2026-10-10, du ministère Coordination générale) **dépose et
+  retire** la trame des annonces ;
 - `canManageOpeningClosing` — n'importe quel membre d'un département de fonction `SECRETARIAT`
   **désigne et retire** les responsables d'ouverture/fermeture.
 
@@ -58,8 +59,7 @@ On **amende ADR-0013** : sa règle 1 devient la règle **par défaut**, et non p
    nommé**, au plus près de la construction de la session, de sorte que l'ensemble des gardes
    existantes l'applique sans être modifié.
 5. **Fonctions concernées à ce jour** : `SECRETARIAT` (trame des annonces, ouverture/fermeture,
-   et à partir de la spec 045 l'ensemble des droits du Secrétariat), le ministère
-   `Coordination générale` (trame), `PRODUCTION_MEDIA` et `COMMUNICATION` (médias),
+   et à partir de la spec 045 l'ensemble des droits du Secrétariat), `PRODUCTION_MEDIA` et `COMMUNICATION` (médias),
    `CAPTATION_AUDIO` (audio), `PROTOCOLE` (agenda pastoral), `INTEGRATION` et `MSDP` (dossiers
    d'accueil et parcours d'intégration, `requireIntegrationAccess`), `PHOTOS` (espace
    Communication & Production). Ces trois dernières manquaient à cette liste avant la spec 054 —
