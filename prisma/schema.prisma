@@ -1434,7 +1434,7 @@ model FamilyIntegrationRequest {
   abandonReasonCode IntegrationAbandonReason?
 
   // Consentement au contact et mémoire de l'état d'attente (spec 051).
-  // `waitingFrom` ne vaut que SUBMITTED ou CONTACTED (seuls points d'entrée autorisés) ;
+  // `waitingFrom` ne vaut que SUBMITTED, ASSIGNED ou CONTACTED (seuls points d'entrée autorisés) ;
   // `waitingSince`/`lastRelanceAt` fondent l'échéance de relance (pas `updatedAt`, qui bouge
   // à chaque note).
   contactConsent IntegrationContactConsent @default(NOW)
