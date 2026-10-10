@@ -1,7 +1,7 @@
 # Tâches — Refonte des écrans de traitement des demandes
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : À faire
+- **Statut** : Terminé
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : services → API → UI → tests. Aucune migration n'est prévue. Les tâches `[P]` sont
@@ -16,7 +16,7 @@
 
 ### 1. Logique métier (services)
 
-- [ ] **T1** [P] — `requestDeadline(item, ctx)`, fonction pure, renvoie `{ date, kind }` selon le
+- [x] **T1** [P] — `requestDeadline(item, ctx)`, fonction pure, renvoie `{ date, kind }` selon le
   type :
   - annonce et publication : premier culte ciblé encore à venir, sinon date d'événement ;
   - ajout d'événement : `payload.eventDate` ;
@@ -26,14 +26,14 @@
   - demande d'accès : `none`.
 
   *(fichier : `src/modules/planning/services/request-queue/deadline.ts`)*
-- [ ] **T2** [P] — `eventChangeSummary(changes, event)`, fonction pure, renvoie
+- [x] **T2** [P] — `eventChangeSummary(changes, event)`, fonction pure, renvoie
   `{ label, before, after }[]` pour `title`, `type`, `date` et `planningDeadline`. *(fichier :
   `request-queue/event-change-summary.ts`)*
-- [ ] **T3** [P] — `resolveRequestQueueAccess(session, churchId, fn)` renvoie
+- [x] **T3** [P] — `resolveRequestQueueAccess(session, churchId, fn)` renvoie
   `{ configured, allowed, canManage }`. Les permissions sont calculées sur l'église courante :
   `events:manage` ou appartenance à un département de la fonction. Si aucun département n'est
   configuré, `configured: false`. *(fichier : `request-queue/access.ts`)*
-- [ ] **T4** — Type `QueueItem` sérialisable et fonctions de chargement :
+- [x] **T4** — Type `QueueItem` sérialisable et fonctions de chargement :
   - `loadRequestQueue(churchId, fn)` renvoie `{ open, done: { items, nextCursor } }`. Les demandes
     ouvertes sont celles en attente et en cours. La première page de « Traitées » couvre 30 jours,
     au plus 30 éléments ;
@@ -47,12 +47,12 @@
     `mediaProject` (visuels : nom et jeton de partage), `executionError`.
 
   *(fichier : `request-queue/queue.ts`)*
-- [ ] **T5** — Exporter `loadRequestQueue`, `listDoneRequests`, `resolveRequestQueueAccess` et les
+- [x] **T5** — Exporter `loadRequestQueue`, `listDoneRequests`, `resolveRequestQueueAccess` et les
   types `QueueItem`/`QueueFunction` depuis l'index. *(fichier : `src/modules/planning/index.ts`)*
 
 ### 2. API (route handlers)
 
-- [ ] **T6** — Nouvelle route `GET /api/requests/queue` :
+- [x] **T6** — Nouvelle route `GET /api/requests/queue` :
   - validation Zod de `churchId`, `fn`, `cursor?` et `q?` (100 caractères au plus) ;
   - `requireChurchPermission("planning:view", churchId)`, puis `resolveRequestQueueAccess`, qui
     renvoie 403 si l'appelant n'est pas dans l'équipe et une liste vide si la fonction n'est pas
@@ -60,7 +60,7 @@
   - aucun import de Prisma.
 
   *(fichier : `src/app/api/requests/queue/route.ts`)*
-- [ ] **T7** — `PATCH /api/requests/[id]` :
+- [x] **T7** — `PATCH /api/requests/[id]` :
   - `expectedStatus?` dans `patchSchema`, vérifié dans la transaction, avec un 409 « Cette demande
     a été modifiée entre-temps » ;
   - une annulation (`ANNULE`) par quelqu'un d'autre que le demandeur sans `reviewNotes` renvoie
@@ -72,7 +72,7 @@
 
 ### 3. UI
 
-- [ ] **T8** [P] — Utilitaires côté client :
+- [x] **T8** [P] — Utilitaires côté client :
   - `groupByDeadline(items, now)` répartit en groupes `overdue`/`week`/`later`/`none`, sans groupe
     vide, triés par échéance puis ancienneté ;
   - `relativeDeadline(date, now)`, calculé au jour près en fuseau `Europe/Paris` ;
@@ -80,10 +80,10 @@
   - libellés et icônes lucide par type.
 
   *(fichier : `src/lib/request-queue.ts`)*
-- [ ] **T9** — `ReasonForm` : motif obligatoire, bouton de confirmation inactif tant que le motif
+- [x] **T9** — `ReasonForm` : motif obligatoire, bouton de confirmation inactif tant que le motif
   est vide, avertissement facultatif sur les suites annulées en cascade. *(fichier :
   `src/components/requests/ReasonForm.tsx`)*
-- [ ] **T10** — `RequestQueue`, composant générique :
+- [x] **T10** — `RequestQueue`, composant générique :
   - **onglets** `Tabs` sur `?tab=todo|doing|done`, avec compteurs mis à jour localement après
     chaque action ;
   - **recherche** locale sur « À traiter » et « En cours », et via la route (300 ms d'attente) sur
@@ -96,7 +96,7 @@
   - **états vides** `EmptyState` et bouton « Voir plus ».
 
   *(fichier : `src/components/requests/RequestQueue.tsx`)*
-- [ ] **T11** — `SecretariatDetail` : texte complet, cultes ciblés, résumé des données (tableau
+- [x] **T11** — `SecretariatDetail` : texte complet, cultes ciblés, résumé des données (tableau
   avant → après pour une modification d'événement), suites demandées, note, erreur d'exécution.
   Actions :
   - annonce : « Marquer diffusée » en principal, « Mettre en cours » (avec « Annuler » dans le
@@ -105,14 +105,14 @@
   - demande traitée : « Supprimer » (`canManage`, `ConfirmModal` qui nomme la demande).
 
   *(fichier : `src/components/requests/SecretariatDetail.tsx`)*
-- [ ] **T12** [P] — `CommunicationDetail` :
+- [x] **T12** [P] — `CommunicationDetail` :
   - « Prendre en charge », avec « Annuler » dans le toast ;
   - « Marquer publiée », avec un lien facultatif et « Annuler » dans le toast ;
   - « Annuler la publication », avec motif ;
   - état et lien du visuel associé, lien « Voir le post publié ».
 
   *(fichier : `src/components/requests/CommunicationDetail.tsx`)*
-- [ ] **T13** [P] — `VisuelDetail` :
+- [x] **T13** [P] — `VisuelDetail` :
   - brief, format, date limite, annonce et canal ;
   - prise en charge dans le panneau : projet existant ou nouveau, le nom étant obligatoire.
     « Annuler » n'apparaît dans le toast que pour un projet existant, et il remet `mediaProjectId`
@@ -122,38 +122,38 @@
   - « Annuler la demande », avec motif.
 
   *(fichier : `src/components/requests/VisuelDetail.tsx`)*
-- [ ] **T14** — Page secrétariat : `resolveRequestQueueAccess` puis `loadRequestQueue`,
+- [x] **T14** — Page secrétariat : `resolveRequestQueueAccess` puis `loadRequestQueue`,
   `PageHeader` avec le badge « À traiter », bannière de configuration via `Alert`, `RequestQueue`
   avec pastilles de type et `SecretariatDetail`. Supprimer `RequestsDashboard.tsx`. *(fichiers :
   `src/app/(auth)/secretariat/requests/page.tsx`, `RequestsDashboard.tsx`)*
-- [ ] **T15** [P] — Page communication, sur le même modèle avec `CommunicationDetail`, sans
+- [x] **T15** [P] — Page communication, sur le même modèle avec `CommunicationDetail`, sans
   pastilles. Supprimer `CommunicationDashboard.tsx`. *(fichiers :
   `src/app/(auth)/communication/requests/page.tsx`, `CommunicationDashboard.tsx`)*
-- [ ] **T16** [P] — Page Visuels › Demandes, sur le même modèle avec `VisuelDetail`, sans
+- [x] **T16** [P] — Page Visuels › Demandes, sur le même modèle avec `VisuelDetail`, sans
   pastilles, et la liste des projets toujours chargée par la page. Supprimer `MediaDashboard.tsx`.
   *(fichiers : `src/app/(auth)/media/(visuels)/requests/page.tsx`, `MediaDashboard.tsx`)*
-- [ ] **T17** — Supprimer `RequestStatusSections.tsx`, ainsi que `ExpandableText.tsx` si `grep` ne
+- [x] **T17** — Supprimer `RequestStatusSections.tsx`, ainsi que `ExpandableText.tsx` si `grep` ne
   lui trouve plus aucun utilisateur. Vérifier les `loading.tsx` des trois pages (squelette
   cohérent). *(fichiers : `src/components/`)*
 
 ### 4. Tests
 
-- [ ] **T18** [P] — `deadline.test.ts` et `event-change-summary.test.ts` : chaque type, culte passé
+- [x] **T18** [P] — `deadline.test.ts` et `event-change-summary.test.ts` : chaque type, culte passé
   ignoré, visuel qui retombe sur l'annonce, `MODIFICATION_PLANNING` sans date limite, changements
   partiels. *(fichiers : `src/modules/planning/services/request-queue/__tests__/`)*
-- [ ] **T19** [P] — `src/lib/__tests__/request-queue.test.ts` : groupes et ordre, départage par
+- [x] **T19** [P] — `src/lib/__tests__/request-queue.test.ts` : groupes et ordre, départage par
   ancienneté, groupes vides absents, délai relatif autour de minuit (Europe/Paris), recherche
   locale.
-- [ ] **T20** — `queue.test.ts` et `access.test.ts` avec `prismaMock` :
+- [x] **T20** — `queue.test.ts` et `access.test.ts` avec `prismaMock` :
   - périmètre par fonction (racines pour le secrétariat), fenêtre de 30 jours, curseur, `q` sur
     toutes les dates, lecture groupée des événements ;
   - accès : `events:manage`, membre de la fonction, tiers refusé, non configuré, rôle d'une autre
     église ignoré.
 
   *(fichiers : `request-queue/__tests__/`)*
-- [ ] **T21** — `queue/route.test.ts` : 400 Zod, 403 hors équipe, liste vide si non configuré,
+- [x] **T21** — `queue/route.test.ts` : 400 Zod, 403 hors équipe, liste vide si non configuré,
   curseur et `q` transmis au service. *(fichier : `src/app/api/requests/queue/__tests__/`)*
-- [ ] **T22** — Tests du `PATCH` :
+- [x] **T22** — Tests du `PATCH` :
   - `expectedStatus` différent de l'état courant donne 409 ;
   - annulation par l'équipe sans motif donne 400 ; avec motif, elle passe et envoie la
     notification `REQUEST_CANCELLED` ;
@@ -165,22 +165,22 @@
 
 ### 5. Documentation
 
-- [ ] **T23** [P] — API : `GET /api/requests/queue`, `expectedStatus`, motif d'annulation et
+- [x] **T23** [P] — API : `GET /api/requests/queue`, `expectedStatus`, motif d'annulation et
   notification `REQUEST_CANCELLED`. *(fichier : `docs/api.md`)*
-- [ ] **T24** [P] — Guide (secrétariat, communication, production média) et fiche processus des
+- [x] **T24** [P] — Guide (secrétariat, communication, production média) et fiche processus des
   demandes si elle existe. *(fichiers : `src/components/GuideContent.tsx`, `docs/processus/`)*
-- [ ] **T25** — CHANGELOG « Non publié », statut de la spec à « Implémentée », du plan à
+- [x] **T25** — CHANGELOG « Non publié », statut de la spec à « Implémentée », du plan à
   « Implémenté » et de ces tâches à « Terminé ». *(fichiers : `CHANGELOG.md`, `specs/063-…/`)*
 
 ## Vérification finale
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint` (aucune couleur en dur ni emoji d'interface)
-- [ ] `npm run lint:boundaries`
-- [ ] `npm run lint:prisma-boundary` (seuil inchangé à 143)
-- [ ] `npm run test`, y compris `route-exhaustiveness.test.ts`
-- [ ] `npm run build` (frontière client/serveur)
-- [ ] Contrôle à l'écran à 360 px : pas de défilement horizontal, cibles de 44 px, motif visible
+- [x] `npm run typecheck`
+- [x] `npm run lint` (aucune couleur en dur ni emoji d'interface)
+- [x] `npm run lint:boundaries`
+- [x] `npm run lint:prisma-boundary` (seuil inchangé à 143)
+- [x] `npm run test`, y compris `route-exhaustiveness.test.ts`
+- [x] `npm run build` (frontière client/serveur)
+- [x] Contrôle à l'écran à 360 px : pas de défilement horizontal, cibles de 44 px, motif visible
   au-dessus du clavier.
-- [ ] Tous les critères d'acceptation de `spec.md` sont satisfaits.
+- [x] Tous les critères d'acceptation de `spec.md` sont satisfaits.
 - [ ] PR ouverte vers `main` (ferme #677).

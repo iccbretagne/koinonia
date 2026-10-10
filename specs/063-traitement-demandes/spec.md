@@ -1,7 +1,7 @@
 # Spec — Refonte des écrans de traitement des demandes (secrétariat, réseaux sociaux, visuels)
 
 - **Numéro** : 063
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-10
 - **Branche suggérée** : `feat/traitement-demandes`
 - **Issue** : #677 — démo : https://claude.ai/artifact/RWSfBZKma23devUyAaqm7t (onglet « Traitement des demandes »)
@@ -234,54 +234,54 @@ Sauf mention contraire, ces cas valent pour les trois écrans.
 
 ## Critères d'acceptation
 
-- [ ] Une annonce mise « En cours » apparaît dans l'onglet « En cours » et plus dans « À
+- [x] Une annonce mise « En cours » apparaît dans l'onglet « En cours » et plus dans « À
       traiter » ni « Traitées ».
-- [ ] Les trois onglets affichent chacun leur compteur, et les compteurs se mettent à jour après
+- [x] Les trois onglets affichent chacun leur compteur, et les compteurs se mettent à jour après
       chaque action sans recharger la page.
-- [ ] La file « À traiter » est triée par échéance croissante, puis par ancienneté. Elle est
+- [x] La file « À traiter » est triée par échéance croissante, puis par ancienneté. Elle est
       regroupée en « En retard », « Cette semaine », « Plus tard » et « Sans échéance », et les
       groupes vides sont masqués.
-- [ ] L'échéance et son délai relatif s'affichent sur chaque ligne qui en a une, avec la règle par
+- [x] L'échéance et son délai relatif s'affichent sur chaque ligne qui en a une, avec la règle par
       type décrite plus haut.
-- [ ] Les lignes de la liste ne contiennent ni champ de saisie ni bouton d'action. Les actions ne
+- [x] Les lignes de la liste ne contiennent ni champ de saisie ni bouton d'action. Les actions ne
       sont accessibles que dans le panneau de détail.
-- [ ] Le panneau s'affiche à côté de la liste sur grand écran et en feuille du bas sur mobile.
-- [ ] Le panneau montre le texte complet, le résumé des données, les suites demandées avec leur
+- [x] Le panneau s'affiche à côté de la liste sur grand écran et en feuille du bas sur mobile.
+- [x] Le panneau montre le texte complet, le résumé des données, les suites demandées avec leur
       état, la note ou le motif déjà saisis et, le cas échéant, l'erreur d'exécution.
-- [ ] Une demande de modification d'événement affiche un résumé de ce qui change.
-- [ ] Chaque type a une seule action principale (« Marquer diffusée » ou « Approuver ») ; les
+- [x] Une demande de modification d'événement affiche un résumé de ce qui change.
+- [x] Chaque type a une seule action principale (« Marquer diffusée » ou « Approuver ») ; les
       autres actions sont secondaires.
-- [ ] Refuser une demande ou annuler une annonce exige un motif saisi dans l'interface, et ce
+- [x] Refuser une demande ou annuler une annonce exige un motif saisi dans l'interface, et ce
       motif figure dans la notification du demandeur.
-- [ ] L'écran n'utilise plus aucune fenêtre du navigateur (alerte ou confirmation système) : les
+- [x] L'écran n'utilise plus aucune fenêtre du navigateur (alerte ou confirmation système) : les
       retours passent par des messages de l'application.
-- [ ] La recherche filtre l'onglet affiché sur le titre, le demandeur et l'origine. Dans
+- [x] La recherche filtre l'onglet affiché sur le titre, le demandeur et l'origine. Dans
       « Traitées », elle trouve aussi une demande de plus de 30 jours.
-- [ ] Les pastilles de type filtrent l'onglet affiché et se combinent avec la recherche.
-- [ ] « Traitées » n'affiche par défaut que les 30 derniers jours, et « Voir plus » charge les
+- [x] Les pastilles de type filtrent l'onglet affiché et se combinent avec la recherche.
+- [x] « Traitées » n'affiche par défaut que les 30 derniers jours, et « Voir plus » charge les
       30 demandes traitées suivantes.
-- [ ] Quand l'équipe qui traite annule une demande, le demandeur reçoit une notification
+- [x] Quand l'équipe qui traite annule une demande, le demandeur reçoit une notification
       « Demande annulée » avec le motif.
-- [ ] L'écran utilise les icônes, étiquettes d'état, onglets, états vides et couleurs du design
+- [x] L'écran utilise les icônes, étiquettes d'état, onglets, états vides et couleurs du design
       system, sans emoji ni couleur codée en dur.
-- [ ] Sur un écran de 360 px de large, il n'y a pas de défilement horizontal, et chaque cible
+- [x] Sur un écran de 360 px de large, il n'y a pas de défilement horizontal, et chaque cible
       interactive mesure au moins 44 px.
-- [ ] Après « Mettre en cours », « Prendre en charge », « Marquer diffusée », « Marquer
+- [x] Après « Mettre en cours », « Prendre en charge », « Marquer diffusée », « Marquer
       publiée » ou « Marquer livré », le message de confirmation propose « Annuler », qui ramène la demande à son état
       précédent. Il ne le propose jamais après une approbation, un refus ou une annulation.
-- [ ] L'écran « Réseaux sociaux » suit le même modèle : onglets et compteurs, file par échéance
+- [x] L'écran « Réseaux sociaux » suit le même modèle : onglets et compteurs, file par échéance
       regroupée, liste compacte, panneau, recherche, motif d'annulation obligatoire, plus aucune
       fenêtre du navigateur, cibles de 44 px. Il n'a pas de pastilles de type.
-- [ ] Sur « Réseaux sociaux », le lien facultatif du post se saisit dans le panneau au moment de
+- [x] Sur « Réseaux sociaux », le lien facultatif du post se saisit dans le panneau au moment de
       « Marquer publiée » et reste consultable ensuite.
-- [ ] L'onglet « Demandes » de Visuels suit le même modèle. L'échéance est la date limite du
+- [x] L'onglet « Demandes » de Visuels suit le même modèle. L'échéance est la date limite du
       brief, sinon celle de l'annonce. La prise en charge choisit un projet existant ou nomme un
       nouveau projet dans le panneau. « Marquer livré » accepte un lien de livraison facultatif
       quand aucun projet n'est rattaché, et l'annulation exige un motif. Il n'y a pas de pastilles
       de type.
-- [ ] Sur Visuels, « Annuler » après une prise en charge n'est proposé que si elle a rattaché un
+- [x] Sur Visuels, « Annuler » après une prise en charge n'est proposé que si elle a rattaché un
       projet existant.
-- [ ] Les règles d'accès, les transitions d'état permises et les effets d'une approbation sont
+- [x] Les règles d'accès, les transitions d'état permises et les effets d'une approbation sont
       inchangés, à deux exceptions près : le motif est désormais obligatoire pour annuler une annonce,
       une publication ou un visuel, et un changement d'état sans effet peut être annulé pour revenir à l'état précédent.
 

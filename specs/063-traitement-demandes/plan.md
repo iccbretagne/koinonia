@@ -1,7 +1,7 @@
 # Plan technique — Refonte des écrans de traitement des demandes
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Validé
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-10-10
 
 > Ce plan traduit la spec en **approche technique** conforme à `../constitution.md`.

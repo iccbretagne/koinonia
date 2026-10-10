@@ -1,10 +1,12 @@
-import { requireChurchPermission, getCurrentChurchId, requireAuth } from "@/lib/auth";
-import { rolePermissions } from "@/lib/registry";
-import { prisma } from "@/lib/prisma";
-import { DEPT_FN } from "@/lib/department-functions";
-import { getFunctionDepartmentIds } from "@/lib/function-departments";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import MediaDashboard from "./MediaDashboard";
+import { prisma } from "@/lib/prisma";
+import { requireAuth, getCurrentChurchId, requireChurchPermission } from "@/lib/auth";
+import { loadRequestQueue, resolveRequestQueueAccess } from "@/modules/planning";
+import PageHeader from "@/components/ui/PageHeader";
+import Alert from "@/components/ui/Alert";
+import StatusChip from "@/components/ui/StatusChip";
+import { VisuelQueue } from "@/components/requests/TeamQueues";
 
 export default async function MediaRequestsPage() {
   const session = await requireAuth();
@@ -12,74 +14,51 @@ export default async function MediaRequestsPage() {
   if (!churchId) return <p>Aucune église sélectionnée.</p>;
   await requireChurchPermission("planning:view", churchId);
 
-  const mediaDeptIds = await getFunctionDepartmentIds(churchId, DEPT_FN.PRODUCTION_MEDIA);
+  const access = await resolveRequestQueueAccess(session, churchId, "PRODUCTION_MEDIA");
 
-  if (mediaDeptIds.length > 0) {
-    // Permissions calculées sur l'église courante uniquement (spec 024) — sinon un
-    // responsable de l'église A obtient events:manage dans l'église B (issue #490).
-    const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
-    const userPermissions = new Set(churchRoles.flatMap((r) => rolePermissions[r.role] ?? []));
-    const canManage = session.user.isSuperAdmin || userPermissions.has("events:manage");
-    const userDeptIds = churchRoles.flatMap((r) => r.departments.map((d) => d.department.id));
-    if (!canManage && !userDeptIds.some((id) => mediaDeptIds.includes(id))) return notFound();
-  }
-
-  if (mediaDeptIds.length === 0) {
+  if (!access.configured) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold text-ink mb-4">Demandes visuels</h1>
-        <div className="p-4 bg-warning-soft border border-warning/30 rounded-lg text-sm text-warning">
-          Aucun département n&apos;est configuré comme <strong>Production Média</strong>.{" "}
-          <a href="/admin/departments/functions" className="underline">
-            Configurer maintenant
-          </a>
-        </div>
+      <div className="flex flex-col gap-6">
+        <PageHeader title="Demandes visuels" />
+        <Alert tone="warning" action={<Link href="/admin/departments/functions" className="font-semibold underline">Configurer maintenant</Link>}>
+          Aucun département n&apos;est configuré comme <strong>Production Média</strong>.
+        </Alert>
       </div>
     );
   }
+  if (!access.allowed) return notFound();
 
-  const [requests, mediaProjects] = await Promise.all([
-    prisma.request.findMany({
-      where: { type: "VISUEL", churchId },
-      include: {
-        submittedBy: { select: { name: true, displayName: true } },
-        department: { select: { name: true } },
-        ministry: { select: { name: true } },
-        announcement: {
-          select: { id: true, title: true, eventDate: true, isSaveTheDate: true },
+  const [queue, projects] = await Promise.all([
+    loadRequestQueue(churchId, "PRODUCTION_MEDIA"),
+    prisma.mediaProject
+      .findMany({
+        where: { churchId },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          shareTokens: {
+            select: { token: true, type: true },
+            where: { type: { in: ["GALLERY", "MEDIA", "MEDIA_ALL"] } },
+            take: 1,
+          },
         },
-        parentRequest: { select: { id: true, type: true, status: true } },
-      },
-      orderBy: { submittedAt: "desc" },
-    }),
-    prisma.mediaProject.findMany({
-      where: { churchId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        shareTokens: {
-          select: { token: true, type: true },
-          where: { type: { in: ["GALLERY", "MEDIA", "MEDIA_ALL"] } },
-          take: 1,
-        },
-      },
-    }).catch(() => []),
+      })
+      .catch(() => []),
   ]);
-
-  const pending = requests.filter((r) => r.status === "EN_ATTENTE").length;
+  const todo = queue.open.filter((r) => r.status === "EN_ATTENTE").length;
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-ink">Demandes visuels</h1>
-        {pending > 0 && (
-          <span className="bg-brand text-on-brand text-sm font-bold px-2.5 py-1 rounded-full">
-            {pending}
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={
+          <span className="inline-flex flex-wrap items-center gap-3">
+            Demandes visuels
+            {todo > 0 && <StatusChip tone="brand">{todo} à traiter</StatusChip>}
           </span>
-        )}
-      </div>
-      <MediaDashboard requests={requests} churchId={churchId} mediaProjects={mediaProjects} />
+        }
+      />
+      <VisuelQueue data={{ churchId, open: queue.open, done: queue.done, doneCount: queue.doneCount }} projects={projects} />
     </div>
   );
 }
