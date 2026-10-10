@@ -6,6 +6,16 @@ export type IntegrationScope =
   | { scoped: false }
   | { scoped: true; familyIds: number[] };
 
+/**
+ * Une demande est-elle dans le périmètre de l'appelant ? Un périmètre restreint (berger /
+ * co-berger) ne couvre que les demandes **affectées** à l'une de ses familles : une demande
+ * encore sans famille relève de l'équipe intégration, comme dans la liste (`assignedFamilyId in
+ * familyIds`, qui exclut `null`).
+ */
+export function isInIntegrationScope(scope: IntegrationScope, assignedFamilyId: number | null): boolean {
+  return !scope.scoped || (assignedFamilyId !== null && scope.familyIds.includes(assignedFamilyId));
+}
+
 export async function isIntegrationMember(session: Session, churchId: string): Promise<boolean> {
   const userDeptIds = session.user.churchRoles
     .filter((r) => r.churchId === churchId)

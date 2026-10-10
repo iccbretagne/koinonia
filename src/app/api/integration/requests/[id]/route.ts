@@ -4,6 +4,7 @@ import { logAudit } from "@/lib/audit";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { countCareItemsFromIntegrationRequest } from "@/modules/care";
 import {
+  isInIntegrationScope,
   requireIntegrationAccess,
   notifyBergerAssigned,
   notifyBergerUnassigned,
@@ -37,7 +38,7 @@ export async function GET(
 
     const { scope } = await requireIntegrationAccess(req.churchId);
 
-    if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
+    if (!isInIntegrationScope(scope, req.assignedFamilyId))
       throw new ApiError(403, "Accès refusé");
 
     return successResponse(req);
@@ -90,7 +91,7 @@ export async function PATCH(
 
     const { session, scope } = await requireIntegrationAccess(req.churchId);
 
-    if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
+    if (!isInIntegrationScope(scope, req.assignedFamilyId))
       throw new ApiError(403, "Accès refusé");
 
     const actor = {

@@ -19,7 +19,7 @@ export async function GET(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const { isAuthor, canManage } = jobsAccess(session, mission.authorId);
+    const { isAuthor, canManage } = await jobsAccess(session, mission.authorId);
 
     if (mission.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Mission introuvable");
@@ -46,7 +46,7 @@ export async function PATCH(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const { canManage } = requireJobsAuthorOrModerator(session, mission.authorId);
+    const { canManage } = await requireJobsAuthorOrModerator(session, mission.authorId);
 
     const data = patchMissionSchema.parse(await request.json());
 
@@ -86,7 +86,7 @@ export async function DELETE(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    requireJobsAuthorOrModerator(session, mission.authorId);
+    await requireJobsAuthorOrModerator(session, mission.authorId);
 
     await prisma.freelanceMission.delete({ where: { id } });
 

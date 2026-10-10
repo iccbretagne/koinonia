@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 import { createSchema } from "./contract";
 
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    await requireIntegrationAccess(churchId);
+    await requireIntegrationFullAccess(churchId);
 
     const familyId = searchParams.get("familyId");
 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = createSchema.parse(await request.json());
-    const { session } = await requireIntegrationAccess(body.churchId);
+    const { session } = await requireIntegrationFullAccess(body.churchId);
 
     // Vérifier que l'utilisateur appartient à cette église
     const user = await prisma.user.findFirst({

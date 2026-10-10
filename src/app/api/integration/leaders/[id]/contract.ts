@@ -5,7 +5,7 @@ export const contract = defineContract({
     summary: "Retrait d'un berger d'une famille",
     description: "Journalisé.",
     access: "integration:manage",
-    accessNote: "ou équipe Intégration/MSDP, ou berger/co-berger (la garde n'exige pas l'accès complet)",
+    accessNote: "ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé",
     response: "`{ deleted: true }`",
   },
 });

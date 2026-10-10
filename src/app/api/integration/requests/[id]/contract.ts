@@ -5,7 +5,7 @@ export const contract = defineContract({
   GET: {
     summary: "Détail d'une demande d'intégration",
     access: "integration:manage",
-    accessNote: "dans l'église de la demande ; ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes de ses familles (403 sinon)",
+    accessNote: "dans l'église de la demande ; ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes affectées à l'une de ses familles, jamais à une demande encore sans famille (403 sinon)",
     response: "Demande avec berger affecté et fiche membre liée",
   },
   PATCH: {
@@ -15,7 +15,7 @@ export const contract = defineContract({
       "`wait` (attente de recontact ou de mission), `resume`, `handback` (renvoi à l'équipe par le berger, raison obligatoire), `relance`, `edit` (coordonnées et profil). " +
       "Les transitions invalides sont refusées. Chaque changement est inscrit à l'historique ; le berger est notifié à l'affectation et au retrait, l'équipe Intégration au renvoi.",
     access: "integration:manage",
-    accessNote: "ou équipe Intégration/MSDP ; un berger/co-berger n'agit que sur les demandes de ses familles, avec les seules transitions qui lui sont ouvertes",
+    accessNote: "ou équipe Intégration/MSDP ; un berger/co-berger n'agit que sur les demandes affectées à l'une de ses familles, avec les seules transitions qui lui sont ouvertes",
     body: familyPatchSchema,
     response: "Demande mise à jour, avec berger affecté",
   },

@@ -27,14 +27,14 @@ export const contract = defineContract({
     summary: "Modification d'une mission freelance",
     description: "Seul un modérateur peut archiver une mission ou remettre en ligne une mission archivée par la modération (spec 064) ; l'auteur peut la passer à pourvue.",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     body: patchMissionSchema,
     response: "Mission mise à jour, avec son auteur",
   },
   DELETE: {
     summary: "Suppression d'une mission freelance",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     response: "`{ success: true }`",
   },
 });

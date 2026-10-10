@@ -9981,7 +9981,7 @@
           "integration"
         ],
         "summary": "Liste des bergers et co-bergers",
-        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP, ou berger/co-berger.",
+        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé.",
         "security": [
           {
             "session": []
@@ -10032,7 +10032,7 @@
           "integration"
         ],
         "summary": "Affectation d'un berger à une famille",
-        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP, ou berger/co-berger (la garde n'exige pas l'accès complet).\n\nL'utilisateur doit avoir un rôle dans l'église (400 sinon). Journalisé.",
+        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé.\n\nL'utilisateur doit avoir un rôle dans l'église (400 sinon). Journalisé.",
         "security": [
           {
             "session": []
@@ -10109,7 +10109,7 @@
           "integration"
         ],
         "summary": "Retrait d'un berger d'une famille",
-        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP, ou berger/co-berger (la garde n'exige pas l'accès complet).\n\nJournalisé.",
+        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé.\n\nJournalisé.",
         "security": [
           {
             "session": []
@@ -10692,7 +10692,7 @@
           "integration"
         ],
         "summary": "Détail d'une demande d'intégration",
-        "description": "**Accès** : permission `integration:manage` — dans l'église de la demande ; ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes de ses familles (403 sinon).",
+        "description": "**Accès** : permission `integration:manage` — dans l'église de la demande ; ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes affectées à l'une de ses familles, jamais à une demande encore sans famille (403 sinon).",
         "security": [
           {
             "session": []
@@ -10731,7 +10731,7 @@
           "integration"
         ],
         "summary": "Action sur une demande d'intégration",
-        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP ; un berger/co-berger n'agit que sur les demandes de ses familles, avec les seules transitions qui lui sont ouvertes.\n\nCycle de vie de la demande, selon `action` : `assign` (famille et berger), `contact`, `whatsapp`, `integrate`, `abandon` (avec motif), `note`, `reopen` (`resume` ou `restart`), `wait` (attente de recontact ou de mission), `resume`, `handback` (renvoi à l'équipe par le berger, raison obligatoire), `relance`, `edit` (coordonnées et profil). Les transitions invalides sont refusées. Chaque changement est inscrit à l'historique ; le berger est notifié à l'affectation et au retrait, l'équipe Intégration au renvoi.",
+        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP ; un berger/co-berger n'agit que sur les demandes affectées à l'une de ses familles, avec les seules transitions qui lui sont ouvertes.\n\nCycle de vie de la demande, selon `action` : `assign` (famille et berger), `contact`, `whatsapp`, `integrate`, `abandon` (avec motif), `note`, `reopen` (`resume` ou `restart`), `wait` (attente de recontact ou de mission), `resume`, `handback` (renvoi à l'équipe par le berger, raison obligatoire), `relance`, `edit` (coordonnées et profil). Les transitions invalides sont refusées. Chaque changement est inscrit à l'historique ; le berger est notifié à l'affectation et au retrait, l'équipe Intégration au renvoi.",
         "security": [
           {
             "session": []
@@ -11118,7 +11118,7 @@
           "integration"
         ],
         "summary": "Historique d'une demande d'intégration",
-        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes de ses familles (403 sinon).\n\nChangements d'état affichés sur la fiche (spec 051).",
+        "description": "**Accès** : permission `integration:manage` — ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes affectées à l'une de ses familles, jamais à une demande encore sans famille (403 sinon).\n\nChangements d'état affichés sur la fiche (spec 051).",
         "security": [
           {
             "session": []
@@ -11568,7 +11568,7 @@
           "jobs"
         ],
         "summary": "Modification d'une offre d'emploi",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).\n\nToute modification remet à zéro la demande « Toujours d'actualité » (spec 034) ; `renew: true` sert de simple confirmation sans changer l'offre. `status` permet d'archiver ou de republier.",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).\n\nToute modification remet à zéro la demande « Toujours d'actualité » (spec 034) ; `renew: true` sert de simple confirmation sans changer l'offre. `status` permet d'archiver ou de republier.",
         "security": [
           {
             "session": []
@@ -11683,7 +11683,7 @@
           "jobs"
         ],
         "summary": "Suppression d'une offre d'emploi",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).",
         "security": [
           {
             "session": []
@@ -11897,7 +11897,7 @@
           "jobs"
         ],
         "summary": "Modification d'une mission freelance",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).\n\nSeul un modérateur peut archiver une mission ou remettre en ligne une mission archivée par la modération (spec 064) ; l'auteur peut la passer à pourvue.",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).\n\nSeul un modérateur peut archiver une mission ou remettre en ligne une mission archivée par la modération (spec 064) ; l'auteur peut la passer à pourvue.",
         "security": [
           {
             "session": []
@@ -12012,7 +12012,7 @@
           "jobs"
         ],
         "summary": "Suppression d'une mission freelance",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).",
         "security": [
           {
             "session": []
@@ -12226,7 +12226,7 @@
           "jobs"
         ],
         "summary": "Modification d'un profil freelance",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).\n\nSeul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064).",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).\n\nSeul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064).",
         "security": [
           {
             "session": []
@@ -12341,7 +12341,7 @@
           "jobs"
         ],
         "summary": "Suppression d'un profil freelance",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).",
         "security": [
           {
             "session": []
@@ -12568,7 +12568,7 @@
           "jobs"
         ],
         "summary": "Modification d'un profil de chercheur d'emploi",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).\n\nSeul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064) ; passer à `FOUND` est réservé à l'auteur ou à un modérateur.",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).\n\nSeul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064) ; passer à `FOUND` est réservé à l'auteur ou à un modérateur.",
         "security": [
           {
             "session": []
@@ -12677,7 +12677,7 @@
           "jobs"
         ],
         "summary": "Suppression d'un profil de chercheur d'emploi",
-        "description": "**Accès** : toute personne connectée — auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`).",
+        "description": "**Accès** : toute personne connectée — auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse).",
         "security": [
           {
             "session": []
@@ -19538,12 +19538,20 @@
           }
         ],
         "requestBody": {
-          "description": "Champs facultatifs : `active` (booléen) et `familyName` (texte).",
           "content": {
             "application/json": {
               "schema": {
-                "type": "string",
-                "format": "binary"
+                "type": "object",
+                "properties": {
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "familyName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                }
               }
             }
           }
@@ -19556,6 +19564,9 @@
                 "schema": {}
               }
             }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"

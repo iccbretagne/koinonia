@@ -1,5 +1,6 @@
 import { requireAuth, getCurrentChurchId } from "@/lib/auth";
 import {
+  isInIntegrationScope,
   requireIntegrationAccess,
   getIntegrationSettings,
   isRelanceDue,
@@ -56,7 +57,7 @@ export default async function IntegrationRequestDetailPage({
 
   const { scope } = await requireIntegrationAccess(churchId);
 
-  if (scope.scoped && req.assignedFamilyId && !scope.familyIds.includes(req.assignedFamilyId))
+  if (!isInIntegrationScope(scope, req.assignedFamilyId))
     return notFound();
 
   const relanceDue = isRelanceDue(req, await getIntegrationSettings(churchId), new Date());

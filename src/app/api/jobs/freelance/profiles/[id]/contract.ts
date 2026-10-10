@@ -27,14 +27,14 @@ export const contract = defineContract({
     summary: "Modification d'un profil freelance",
     description: "Seul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064).",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     body: patchProfileSchema,
     response: "Profil mis à jour, avec son auteur",
   },
   DELETE: {
     summary: "Suppression d'un profil freelance",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     response: "`{ success: true }`",
   },
 });

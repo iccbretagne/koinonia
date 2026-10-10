@@ -5,7 +5,7 @@ export const contract = defineContract({
     summary: "Historique d'une demande d'intégration",
     description: "Changements d'état affichés sur la fiche (spec 051).",
     access: "integration:manage",
-    accessNote: "ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes de ses familles (403 sinon)",
+    accessNote: "ou équipe Intégration/MSDP ; un berger/co-berger n'accède qu'aux demandes affectées à l'une de ses familles, jamais à une demande encore sans famille (403 sinon)",
     response: "`{ entries }` : historique des changements d'état",
   },
 });

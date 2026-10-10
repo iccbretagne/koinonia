@@ -19,7 +19,7 @@ export async function GET(
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    const { isAuthor, canManage } = jobsAccess(session, profile.authorId);
+    const { isAuthor, canManage } = await jobsAccess(session, profile.authorId);
 
     if (profile.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Profil freelance introuvable");
@@ -46,7 +46,7 @@ export async function PATCH(
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    const { canManage } = requireJobsAuthorOrModerator(session, profile.authorId);
+    const { canManage } = await requireJobsAuthorOrModerator(session, profile.authorId);
 
     const data = patchProfileSchema.parse(await request.json());
 
@@ -89,7 +89,7 @@ export async function DELETE(
 
     if (!profile) throw new ApiError(404, "Profil freelance introuvable");
 
-    requireJobsAuthorOrModerator(session, profile.authorId);
+    await requireJobsAuthorOrModerator(session, profile.authorId);
 
     await prisma.freelanceProfile.delete({ where: { id } });
 

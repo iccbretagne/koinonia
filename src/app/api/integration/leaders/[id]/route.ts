@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
 
 export async function DELETE(
@@ -16,7 +16,7 @@ export async function DELETE(
     });
     if (!assignment) throw new ApiError(404, "Affectation introuvable");
 
-    const { session } = await requireIntegrationAccess(assignment.churchId);
+    const { session } = await requireIntegrationFullAccess(assignment.churchId);
 
     await prisma.familyLeaderAssignment.delete({ where: { id } });
 

@@ -28,14 +28,14 @@ export const contract = defineContract({
     summary: "Modification d'une offre d'emploi",
     description: "Toute modification remet à zéro la demande « Toujours d'actualité » (spec 034) ; `renew: true` sert de simple confirmation sans changer l'offre. `status` permet d'archiver ou de republier.",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     body: patchSchema,
     response: "Offre mise à jour, avec son auteur",
   },
   DELETE: {
     summary: "Suppression d'une offre d'emploi",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     response: "`{ success: true }`",
   },
 });

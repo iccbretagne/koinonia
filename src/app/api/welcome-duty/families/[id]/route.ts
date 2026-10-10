@@ -1,6 +1,7 @@
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
+import { patchSchema } from "./contract";
 
 export async function PATCH(
   request: Request,
@@ -13,14 +14,8 @@ export async function PATCH(
     const family = await prisma.welcomeDutyFamily.findFirst({ where: { id, churchId } });
     if (!family) throw new ApiError(404, "Famille introuvable");
 
-    const body = await request.json();
-    const updated = await prisma.welcomeDutyFamily.update({
-      where: { id },
-      data: {
-        ...(typeof body.active === "boolean" ? { active: body.active } : {}),
-        ...(body.familyName ? { familyName: body.familyName } : {}),
-      },
-    });
+    const data = patchSchema.parse(await request.json());
+    const updated = await prisma.welcomeDutyFamily.update({ where: { id }, data });
 
     return successResponse(updated);
   } catch (error) {

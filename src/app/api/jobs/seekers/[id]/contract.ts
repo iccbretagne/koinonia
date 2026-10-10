@@ -29,14 +29,14 @@ export const contract = defineContract({
     summary: "Modification d'un profil de chercheur d'emploi",
     description: "Seul un modérateur peut archiver un profil ou remettre en ligne un profil archivé par la modération (spec 064) ; passer à `FOUND` est réservé à l'auteur ou à un modérateur.",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     body: patchSeekerSchema,
     response: "Profil mis à jour, avec son auteur",
   },
   DELETE: {
     summary: "Suppression d'un profil de chercheur d'emploi",
     access: "session",
-    accessNote: "auteur ou modérateur (Super Admin, Admin ou Secrétaire d'une église ; `jobs:manage`)",
+    accessNote: "auteur, ou modérateur : `jobs:manage` dans l'une de ses églises (permission transverse)",
     response: "`{ success: true }`",
   },
 });

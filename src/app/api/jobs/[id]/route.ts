@@ -36,7 +36,7 @@ export async function PATCH(
     const job = await prisma.jobOffer.findUnique({ where: { id }, select: { id: true, authorId: true } });
     if (!job) throw new ApiError(404, "Offre introuvable");
 
-    requireJobsAuthorOrModerator(session, job.authorId);
+    await requireJobsAuthorOrModerator(session, job.authorId);
 
     const body = await request.json();
     const { renew: _renew, ...data } = patchSchema.parse(body);
@@ -71,7 +71,7 @@ export async function DELETE(
     const job = await prisma.jobOffer.findUnique({ where: { id }, select: { id: true, authorId: true } });
     if (!job) throw new ApiError(404, "Offre introuvable");
 
-    requireJobsAuthorOrModerator(session, job.authorId);
+    await requireJobsAuthorOrModerator(session, job.authorId);
 
     await prisma.jobOffer.delete({ where: { id } });
 

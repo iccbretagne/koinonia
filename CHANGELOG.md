@@ -20,6 +20,9 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- Intégration : un berger ou co-berger, limité à ses familles, ne voit plus et ne peut plus traiter une demande d'accueil encore sans famille (elle relève de l'équipe intégration, comme dans la liste), ni son historique. Il ne peut plus non plus affecter ou retirer des bergers, ni lister ceux de l'église : il pouvait jusqu'ici s'affecter lui-même à d'autres familles et élargir ainsi son propre accès. La gestion des bergers est réservée à l'accès complet (Admin, Secrétaire, équipes Intégration et MSDP).
+- Offres : la modération suit la permission `jobs:manage` de la matrice des rôles au lieu d'une liste de rôles écrite en dur (même résultat aujourd'hui : Super Admin, Admin, Secrétaire).
+- Accueil (familles de service) : la modification d'une famille valide désormais son contenu ; une valeur invalide est refusée au lieu de provoquer une erreur serveur.
 - Offres : l'auteur d'une recherche d'emploi, d'une mission ou d'un profil freelance retiré par la modération ne peut plus le remettre en ligne lui-même ; seule la modération le peut (spec 064).
 - Navigation : l'entrée « Trame des annonces » n'apparaît plus pour les personnes qui ne peuvent pas la lire (STAR hors département de modération, Reporter) ; elle menait à une erreur d'accès. Le menu applique désormais la même règle que la page (#676).
 - Trame des annonces : le dépôt et le retrait sont réservés à l'administration et au

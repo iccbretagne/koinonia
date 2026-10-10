@@ -13,7 +13,7 @@ export const contract = defineContract({
   GET: {
     summary: "Liste des bergers et co-bergers",
     access: "integration:manage",
-    accessNote: "ou équipe Intégration/MSDP, ou berger/co-berger",
+    accessNote: "ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé",
     query: z.object({
       churchId: z.string().describe("Église visée"),
       familyId: z.string().optional().describe("Restreint à une famille"),
@@ -24,7 +24,7 @@ export const contract = defineContract({
     summary: "Affectation d'un berger à une famille",
     description: "L'utilisateur doit avoir un rôle dans l'église (400 sinon). Journalisé.",
     access: "integration:manage",
-    accessNote: "ou équipe Intégration/MSDP, ou berger/co-berger (la garde n'exige pas l'accès complet)",
+    accessNote: "ou équipe Intégration/MSDP (accès complet) ; un berger/co-berger au périmètre restreint est refusé",
     body: createSchema,
     status: 201,
     response: "Affectation créée, avec l'utilisateur",

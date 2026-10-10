@@ -19,7 +19,7 @@ export async function GET(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const { isAuthor, canManage } = jobsAccess(session, seeker.authorId);
+    const { isAuthor, canManage } = await jobsAccess(session, seeker.authorId);
 
     if (seeker.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Profil introuvable");
@@ -46,7 +46,7 @@ export async function PATCH(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const { isAuthor, canManage } = requireJobsAuthorOrModerator(session, seeker.authorId);
+    const { isAuthor, canManage } = await requireJobsAuthorOrModerator(session, seeker.authorId);
 
     const data = patchSeekerSchema.parse(await request.json());
 
@@ -94,7 +94,7 @@ export async function DELETE(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    requireJobsAuthorOrModerator(session, seeker.authorId);
+    await requireJobsAuthorOrModerator(session, seeker.authorId);
 
     await prisma.jobSeeker.delete({ where: { id } });
 

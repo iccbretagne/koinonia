@@ -9,6 +9,7 @@ export {
   isMsdpMember,
   requireIntegrationDelete,
   canDeleteIntegrationRequest,
+  isInIntegrationScope,
 } from "./auth";
 export { deleteIntegrationRequest } from "./services/deletion";
 export type { IntegrationScope } from "./auth";
