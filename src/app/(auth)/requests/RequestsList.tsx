@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createElement, useState } from "react";
 import Link from "next/link";
 import { Inbox, Pencil, Plus, SearchX } from "lucide-react";
 import Alert from "@/components/ui/Alert";
@@ -68,7 +68,6 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
   const source = req.department?.name ?? req.ministry?.name ?? null;
   const isPending = req.status === "EN_ATTENTE";
   const status = requestStatus(req.status);
-  const TypeIcon = requestTypeIcon(req.type);
 
   async function handleCancel() {
     setCancelling(true);
@@ -96,7 +95,7 @@ function RequestCard({ req, onUpdated }: { readonly req: RequestItem; readonly o
     <li className="flex flex-col gap-2 border-t border-line px-4 py-3 first:border-t-0">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-brand-soft text-brand-text">
-          <TypeIcon aria-hidden="true" className="size-5" strokeWidth={1.75} />
+          {createElement(requestTypeIcon(req.type), { "aria-hidden": true, className: "size-5", strokeWidth: 1.75 })}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-[11px] font-bold uppercase leading-4 tracking-[0.06em] text-ink-subtle">

@@ -265,6 +265,7 @@ export default function RequestForm({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [now] = useState(Date.now);
   const [category, setCategory] = useState<RequestCategory>(init?.category ?? null);
   const [demandType, setDemandType] = useState<DemandType | null>(init?.demandType ?? null);
 
@@ -735,7 +736,7 @@ export default function RequestForm({
             value={visualDeadline}
             onChange={(e) => setVisualDeadline(e.target.value)}
           />
-          {visualDeadline && new Date(visualDeadline + "T23:59:59").getTime() < Date.now() + 48 * 60 * 60 * 1000 && (
+          {visualDeadline && new Date(visualDeadline + "T23:59:59").getTime() < now + 48 * 60 * 60 * 1000 && (
             <Alert tone="warning" title="Délai inférieur à 48 h.">
               Le traitement de cette demande n&apos;est pas garanti et reste à la discrétion de la Production Média.
             </Alert>

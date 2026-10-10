@@ -231,6 +231,7 @@ export default function AvailabilityClient({
 }: Props) {
   const toast = useToast();
   const [memberId, setMemberId] = useState(initialMemberId ?? selfMembers[0]?.id ?? "");
+  const [now] = useState(Date.now);
   const [month, setMonth] = useState<string | null>(initialMonth);
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -267,6 +268,7 @@ export default function AvailabilityClient({
 
   useEffect(() => {
     if (selfMembers.length === 0 && manageableMembers.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
       setLoading(false);
       return;
     }
@@ -389,7 +391,7 @@ export default function AvailabilityClient({
 
       {current?.closesAt && (
         <p className="text-sm text-ink-muted">
-          {new Date(current.closesAt).getTime() > Date.now()
+          {new Date(current.closesAt).getTime() > now
             ? `Réponses attendues avant le ${shortFmt.format(new Date(current.closesAt))}.`
             : "La date de réponse est passée : répondez au plus vite."}
         </p>

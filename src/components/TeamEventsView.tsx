@@ -153,6 +153,7 @@ export default function TeamEventsView({ departmentId, departmentName, canEdit }
   }, [departmentId, period]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
     setLoading(true);
     void fetchEvents();
   }, [fetchEvents]);

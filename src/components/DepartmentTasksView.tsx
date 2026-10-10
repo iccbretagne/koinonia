@@ -53,6 +53,7 @@ export default function DepartmentTasksView({
   }, [departmentId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
     setLoading(true);
     void fetchTasks();
   }, [fetchTasks]);

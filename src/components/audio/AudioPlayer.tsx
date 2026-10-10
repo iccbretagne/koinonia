@@ -63,6 +63,7 @@ export default function AudioPlayer({ service, streamUrl, onPlay, onShare, backH
   // Nouvelle séquence sélectionnée : proposer la reprise si une position notable existe,
   // sans jamais l'appliquer automatiquement (spec 021 : « proposée, jamais imposée »).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setLoadError(false);
     if (!current) return;
     setResumeOffer(getResumePosition(current.id));

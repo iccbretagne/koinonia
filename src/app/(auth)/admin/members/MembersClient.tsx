@@ -116,6 +116,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   const manageableIds = new Set(departments.map((d) => d.id));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     if (!addOpen || lookupQuery.trim().length < 2) { setLookupResults([]); return; }
     if (lookupTimer.current) clearTimeout(lookupTimer.current);
     lookupTimer.current = setTimeout(async () => {
@@ -241,6 +242,7 @@ export default function MembersClient({ initialMembers, departments, readOnly = 
   useEffect(() => { localStorage.setItem(LS_FILTER_SEARCH, search); }, [search]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     if (!linkModal || userQuery.length < 2) { setUserResults([]); return; }
     if (userSearchTimer.current) clearTimeout(userSearchTimer.current);
     userSearchTimer.current = setTimeout(async () => {

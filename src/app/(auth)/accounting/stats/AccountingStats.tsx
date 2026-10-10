@@ -129,6 +129,7 @@ export default function AccountingStats({
   const [data, setData] = useState<StatsData>(initialData);
   const [period, setPeriod] = useState<Period>(initialData.period);
   const [loading, setLoading] = useState(false);
+  const [now] = useState(Date.now);
 
   const fetchStats = useCallback(
     async (p: Period) => {
@@ -348,7 +349,7 @@ export default function AccountingStats({
           <div className="space-y-2">
             {overduePayments.map((p) => {
               const daysLate = Math.floor(
-                (Date.now() - new Date(p.scheduledDate).getTime()) / 86_400_000
+                (now - new Date(p.scheduledDate).getTime()) / 86_400_000
               );
               return (
                 <div

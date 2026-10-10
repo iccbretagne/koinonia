@@ -125,6 +125,7 @@ export default function UnavailabilityPeriodForm({
   // Réinitialisation à chaque ouverture.
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setError(null);
     if (editing) {
       setMemberId(editing.memberId);
@@ -148,6 +149,7 @@ export default function UnavailabilityPeriodForm({
   // Départements ciblables de la fiche choisie.
   useEffect(() => {
     if (!open || !memberId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
       setDepartments([]);
       return;
     }
@@ -168,6 +170,7 @@ export default function UnavailabilityPeriodForm({
   // Remplaçants possibles quand un responsable déclare pour un tiers.
   useEffect(() => {
     if (!open || mode !== "manage" || !memberId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
       setManageBackupEligible(false);
       setManageBackupOptions([]);
       return;

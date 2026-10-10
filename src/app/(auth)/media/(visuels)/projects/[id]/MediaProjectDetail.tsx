@@ -247,6 +247,7 @@ function ShareTokenSection({ projectId, tokens, onRefresh }: {
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [pendingDeleteToken, setPendingDeleteToken] = useState<string | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (window, absent au rendu serveur)
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function createToken() {
@@ -737,6 +738,7 @@ function FileDetailPanel({ file, allFiles, fileIndex, onNavigate, canUpload, can
     }
   }, [file.id]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
   useEffect(() => { void loadVersions(); void loadComments(); }, [loadVersions, loadComments]);
 
   useEffect(() => {

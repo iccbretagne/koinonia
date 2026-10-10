@@ -170,11 +170,13 @@ export default function EventReportClient({ eventId, eventTitle, eventDate, even
   const sectionsRef = useRef(sections);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  speakerRef.current = speaker;
-  messageTitleRef.current = messageTitle;
-  notesRef.current = notes;
-  decisionsRef.current = decisions;
-  sectionsRef.current = sections;
+  useEffect(() => {
+    speakerRef.current = speaker;
+    messageTitleRef.current = messageTitle;
+    notesRef.current = notes;
+    decisionsRef.current = decisions;
+    sectionsRef.current = sections;
+  });
 
   // ── Avertissement navigation si modifications non sauvegardées ─────────────
   useEffect(() => {

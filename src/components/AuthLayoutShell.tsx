@@ -119,6 +119,7 @@ export default function AuthLayoutShell({
 
   useEffect(() => {
     if (!hasJobs || pathname !== "/jobs" || jobsUnseenCount === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (route courante)
     setJobsUnseenCount(0);
     fetch("/api/jobs/unseen-count", { method: "POST" }).catch(() => {
       // Silencieux : au pire le compteur se recale au prochain sondage.
@@ -127,11 +128,12 @@ export default function AuthLayoutShell({
   }, [pathname, hasJobs]);
 
   // ── Navigation (une seule définition) ───────────────────────────────────
+  // navInput est recréé à chaque rendu mais ses valeurs viennent du layout serveur.
+  const navInputKey = JSON.stringify(navInput);
   const spaces = useMemo(
     () => buildSpaces({ ...navInput, isPastoral, jobsUnseenCount }),
-    // navInput est recréé à chaque rendu mais ses valeurs viennent du layout serveur.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(navInput), isPastoral, jobsUnseenCount]
+    [navInputKey, isPastoral, jobsUnseenCount]
   );
   const active = resolveActive(spaces, pathname, searchParams.get("dept"));
   const destinations = useMemo(() => bottomDestinations(spaces, { role: userRole, isPastoral }), [spaces, userRole, isPastoral]);

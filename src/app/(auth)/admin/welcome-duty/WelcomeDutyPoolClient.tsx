@@ -37,6 +37,7 @@ export default function WelcomeDutyPoolClient() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
   useEffect(() => { fetchPool().catch(() => undefined); }, [fetchPool]);
 
   async function openPicker() {

@@ -65,6 +65,7 @@ function NewServiceModal({ open, onClose }: { readonly open: boolean; readonly o
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setEventId("");
     fetch(`/api/audio/services/events?date=${date}`)
       .then((res) => (res.ok ? res.json() : []))
