@@ -105,6 +105,8 @@ export interface NavigationInput {
   readonly hasReports?: boolean;
   readonly hasMyPlanning?: boolean;
   readonly showStarEvents?: boolean;
+  /** « Trame des annonces » : droit de lecture réel (`canReadAnnouncementSheet`, #676). */
+  readonly hasAnnouncementSheet?: boolean;
   readonly hasAbsences?: boolean;
   /** « Disponibilités » : tout compte lié à une fiche STAR (spec 058). */
   readonly hasAvailability?: boolean;
@@ -273,18 +275,19 @@ function agendaPagesFor(input: NavigationInput, agendaPages: NavPage[]): NavPage
   const agenda: NavPage[] = [];
   // Pages de l'église : bloc « Église » de la sidebar desktop, face à « Agenda pastoral ».
   const church = "Église";
-  // STAR sans events:view : vue hebdomadaire + trame des annonces (spec 043).
+  // STAR sans events:view : vue hebdomadaire (spec 043).
   if (input.showStarEvents) {
-    agenda.push(
-      { href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church },
-      { href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church },
-    );
+    agenda.push({ href: "/planning/events", label: "Agenda de l'église", sidebarBlock: church });
   }
   if (input.hasEventsAccess) {
-    agenda.push(
-      { href: "/events", label: "Agenda de l'église", sidebarBlock: church },
-      { href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church },
-    );
+    agenda.push({ href: "/events", label: "Agenda de l'église", sidebarBlock: church });
+  }
+  // Trame des annonces : seulement avec le droit de lecture effectif (#676) — ni events:view
+  // (Reporter) ni planning:view seul (STAR hors modération) ne suffisent.
+  if (input.hasAnnouncementSheet) {
+    agenda.push({ href: "/events/announcement-sheets", label: "Trame des annonces", sidebarBlock: church });
+  }
+  if (input.hasEventsAccess) {
     if (input.hasEventsManage) {
       agenda.push(
         { href: "/admin/events", label: "Gérer les événements", sidebarBlock: church },

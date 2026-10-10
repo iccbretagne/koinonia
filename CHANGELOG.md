@@ -15,6 +15,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- Navigation : l'entrée « Trame des annonces » n'apparaît plus pour les personnes qui ne peuvent pas la lire (STAR hors département de modération, Reporter) ; elle menait à une erreur d'accès. Le menu applique désormais la même règle que la page (#676).
 - Trame des annonces : le dépôt et le retrait sont réservés à l'administration et au
   Secrétariat (rôle Secrétaire et membres du département Secrétariat). La lecture et le
   téléchargement s'ouvrent à tous les Ministres, en plus des responsables de département et de

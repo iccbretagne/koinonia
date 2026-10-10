@@ -4,7 +4,7 @@
 // Sans ce test, une régression future sur la dissociation faite en T17 (hasPlanningAccess
 // vs. hasMyPlanning/showStarEvents) ne serait détectée par aucun autre test.
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createStarSession, createAdminSession, createDepartmentHeadSession } from "@/__mocks__/auth";
+import { createSession, createStarSession, createAdminSession, createDepartmentHeadSession } from "@/__mocks__/auth";
 import { prismaMock } from "@/__mocks__/prisma";
 
 const mockAuth = vi.fn();
@@ -15,6 +15,15 @@ vi.mock("@/lib/auth", () => ({
   getCurrentChurchId: (...args: unknown[]) => mockGetCurrentChurchId(...args),
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+// Règle de lecture de la trame (#676) : on ne vérifie ici que son câblage dans le layout ; la
+// règle elle-même est testée dans le module planning. Lecteurs : tout rôle sauf STAR/Reporter.
+const mockCanReadAnnouncementSheet = vi.fn(async (session: { user: { isSuperAdmin: boolean; churchRoles: { role: string }[] } }) =>
+  session.user.isSuperAdmin || session.user.churchRoles.some((r) => !["STAR", "REPORTER"].includes(r.role))
+);
+vi.mock("@/modules/planning", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/planning")>()),
+  canReadAnnouncementSheet: (...args: Parameters<typeof mockCanReadAnnouncementSheet>) => mockCanReadAnnouncementSheet(...args),
+}));
 vi.mock("next/headers", () => ({
   cookies: () => Promise.resolve({ get: () => undefined, set: () => {} }),
 }));
@@ -66,6 +75,27 @@ describe("Navigation STAR après spec 031/#462 (T29)", () => {
     const element = await AuthLayout({ children: null as never });
     expect(shellProps(element).hasAvailability).toBe(true);
     expect(shellProps(element).hasAbsences).toBe(false);
+  });
+
+  it("#676 : un STAR sans droit de lecture n'a pas « Trame des annonces »", async () => {
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+    const element = await AuthLayout({ children: null as never });
+    expect(shellProps(element).hasAnnouncementSheet).toBe(false);
+  });
+
+  it("#676 : un STAR de la modération (lecteur) a « Trame des annonces »", async () => {
+    mockAuth.mockResolvedValue(createStarSession("church-1"));
+    mockCanReadAnnouncementSheet.mockResolvedValueOnce(true);
+    const element = await AuthLayout({ children: null as never });
+    expect(shellProps(element).hasAnnouncementSheet).toBe(true);
+  });
+
+  it("#676 : un Reporter (events:view sans planning:view) n'a pas « Trame des annonces », règle non évaluée", async () => {
+    mockAuth.mockResolvedValue(createSession({ churchRoles: [{ ...createStarSession("church-1").user.churchRoles[0], role: "REPORTER" }] }));
+    mockCanReadAnnouncementSheet.mockResolvedValue(true);
+    const element = await AuthLayout({ children: null as never });
+    expect(shellProps(element).hasAnnouncementSheet).toBe(false);
+    expect(mockCanReadAnnouncementSheet).not.toHaveBeenCalled();
   });
 
   it("un Admin conserve hasPlanningAccess (planning:department accordé)", async () => {
