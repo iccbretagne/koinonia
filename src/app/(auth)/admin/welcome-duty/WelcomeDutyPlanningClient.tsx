@@ -83,6 +83,7 @@ export default function WelcomeDutyPlanningClient({ churchId }: Props) {
     }
   }, [year, month, churchId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
   useEffect(() => { fetchMonth().catch(() => undefined); }, [fetchMonth]);
 
   function prevMonth() {

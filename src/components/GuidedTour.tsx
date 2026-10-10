@@ -99,7 +99,6 @@ function TourOverlay({
   // Position tooltip
   useEffect(() => {
     if (isCentered || !targetRect || !tooltipRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTooltipPos(null);
       return;
     }

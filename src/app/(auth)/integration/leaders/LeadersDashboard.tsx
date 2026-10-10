@@ -67,6 +67,7 @@ export default function LeadersDashboard({ churchId, initialAssignments, users }
 
   useEffect(() => {
     if (!showForm || families.length > 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
     setFamiliesLoading(true);
     fetch(`/api/integration/families?churchId=${encodeURIComponent(churchId)}`)
       .then((r) => r.json())

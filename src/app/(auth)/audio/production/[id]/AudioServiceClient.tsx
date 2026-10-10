@@ -241,6 +241,7 @@ export default function AudioServiceClient({
   useEffect(() => {
     const pending = readPending(service.id);
     const incomplete = service.sources.filter((s) => s.uploadStatus === "PENDING" && pending[s.id]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (localStorage)
     setInterrupted(incomplete.map((s) => ({ sourceId: s.id, filename: pending[s.id].filename })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -119,6 +119,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
   const [debounced, setDebounced] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [recent] = useState(readRecent);
+  const [now] = useState(Date.now);
   const [members, setMembers] = useState<Remote<MemberRow>>({ status: canSearchMembers && churchId ? "idle" : "unavailable" });
   const [events, setEvents] = useState<Remote<EventRow>>({ status: canSearchEvents && churchId ? "idle" : "unavailable" });
   const listRef = useRef<HTMLUListElement>(null);
@@ -202,7 +203,6 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
         }
       }
       if (events.status === "ready") {
-        const now = Date.now();
         const hits = filterByQuery(events.rows, debounced, (e) => e.title, (e) => e.title)
           // Les plus proches d'aujourd'hui d'abord (la route renvoie du plus récent au plus ancien).
           .sort((a, b) => Math.abs(new Date(a.date).getTime() - now) - Math.abs(new Date(b.date).getTime() - now))
@@ -223,7 +223,7 @@ function PaletteBody({ onClose, pages, churchId, canSearchMembers, canSearchEven
       }
     }
     return out;
-  }, [query, debounced, pages, recent, members, events]);
+  }, [query, debounced, pages, recent, members, events, now]);
 
   const flat = groups.flatMap((g) => g.results);
   const current = Math.min(activeIndex, Math.max(0, flat.length - 1));

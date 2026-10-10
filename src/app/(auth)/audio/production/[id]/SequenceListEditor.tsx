@@ -100,6 +100,7 @@ export default function SequenceListEditor({
   // par le job PROBE) sans toucher au titre/à l'ordre déjà saisis par l'utilisateur.
   const sourcesKey = sources.map((s) => `${s.id}:${s.durationMs ?? ""}:${s.uploadStatus}`).join(",");
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fusion des nouvelles props serveur dans l'état édité
     setRows((prev) => {
       const sourceIds = new Set(sources.map((s) => s.id));
       const bySource = new Map(segments.map((seg) => [seg.sourceId, seg]));

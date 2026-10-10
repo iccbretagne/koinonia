@@ -356,6 +356,7 @@ function RelationsTab({ churchId, members, allAssignedDiscipleIds, canManage, ca
     }
   }, [churchId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
   useEffect(() => { void fetchRows(); }, [fetchRows]);
 
   // Membres déjà pris comme disciple (liste complète de l'église + nouvelles relations ajoutées en session)
@@ -864,6 +865,7 @@ function AppelTab({ churchId, canManage, filterMine, linkedMemberId }: { readonl
   // Fetch disciples + existing attendance when event changes
   useEffect(() => {
     if (!selectedEventId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
     setLoadingAttendance(true);
     setError(null);
     setSaved(false);
@@ -1042,6 +1044,7 @@ function StatsTab({ churchId, canExport, filterMine, linkedMemberId }: { readonl
     }
   }, [churchId, from, to]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
   useEffect(() => { void fetchStats(); }, [fetchStats]);
 
   async function handleExport() {

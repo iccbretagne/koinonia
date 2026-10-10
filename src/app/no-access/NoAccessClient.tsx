@@ -150,6 +150,7 @@ export default function NoAccessClient({
   useEffect(() => {
     const q = `${firstName} ${lastName}`.trim();
     // Toute nouvelle recherche réinitialise le cran de vérification anti-doublon
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setNoMatchStage("hidden");
     if (q.length < 2) { setResults([]); return; }
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -169,6 +170,7 @@ export default function NoAccessClient({
 
   // Ré-initialise le ministère quand on change d'église
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setSelectedMinistryId("");
     setSelectedDeptId("");
   }, [churchId]);

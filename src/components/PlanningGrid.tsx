@@ -298,6 +298,7 @@ export default function PlanningGrid({
   }, [eventId, departmentId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement des données au montage et au changement de dépendance
     void fetchPlanning();
   }, [fetchPlanning]);
 

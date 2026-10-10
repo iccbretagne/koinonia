@@ -80,6 +80,7 @@ function HdLightbox({
   const isPending = photo.status === "PENDING";
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setHdUrl(null);
     setHdLoading(true);
     fetch(`/api/media/validate/${token}/photo/${photo.id}`)

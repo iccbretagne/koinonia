@@ -250,6 +250,7 @@ function ShareTokenSection({ eventId, tokens, onRefresh }: {
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [pendingDeleteTokenId, setPendingDeleteTokenId] = useState<string | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec une source externe (window, absent au rendu serveur)
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
   async function createToken() {
@@ -493,6 +494,7 @@ function PhotoLightbox({ photos, initialIndex, thumbnailUrls, canUpload, onClose
   // Advance to next photo or close when the current one is removed
   useEffect(() => {
     if (!photos.includes(photo)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- navigation quand la photo affichée est supprimée
       if (hasNext) go(1);
       else onClose();
     }
