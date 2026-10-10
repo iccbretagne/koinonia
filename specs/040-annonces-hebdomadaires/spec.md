@@ -24,13 +24,12 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 
 - **Déposent** (et peuvent retirer) :
   - le Secrétariat : rôle Secrétaire et membres du département ayant la fonction Secrétariat ;
-  - la Coordination : le Ministre, les responsables de département et les membres des
-    départements du ministère « Coordination générale » (élargi aux membres le 2026-09-12 :
-    ce sont les deux équipes qui préparent la trame, pas seulement leurs responsables) ;
   - Admin et Super Admin.
+  (La Coordination générale déposait aussi jusqu'au 2026-10-10 — voir la révision ci-dessous.)
 - **Récupèrent** (téléchargement) :
   - les membres STAR du département **Modération** (le modérateur de service en fait partie) ;
   - les responsables (et adjoints) de n'importe quel département ;
+  - les Ministres de n'importe quel ministère ;
   - les déposants eux-mêmes.
 - Les autres rôles et membres ne voient pas la feuille d'annonces (retiré depuis le
   2026-09-11 : les membres des départements Communication, Régie et Production média n'ont plus
@@ -64,12 +63,12 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
 
 ## Critères d'acceptation
 
-- [x] Le Secrétariat, la Coordination, Admin et Super Admin peuvent déposer une feuille
+- [x] Seuls le Secrétariat, Admin et Super Admin peuvent déposer ou retirer une feuille
       d'annonces (docx ou PDF) sur un événement.
 - [x] Une seule feuille est visible par événement ; un nouveau dépôt la remplace et affiche sa
       date de mise à jour.
-- [x] Les membres STAR de la Modération et les responsables de département (tous départements)
-      peuvent la télécharger.
+- [x] Les membres STAR de la Modération, les responsables de département (tous départements)
+      et les Ministres (tous ministères) peuvent la télécharger.
 - [x] Aucun autre utilisateur n'y a accès, y compris par lien direct.
 - [x] Les lecteurs sont notifiés dans l'application à chaque dépôt.
 - [x] L'absence de feuille pour un culte à venir est signalée explicitement.
@@ -99,3 +98,13 @@ feature donne un endroit unique où ce document est déposé et récupéré, **r
   plus seulement Coordination). Les départements Communication, Régie (captation) et Production
   média perdent leur accès dédié — un responsable de ces départements accède désormais via son
   rôle de responsable, pas via la fonction de son département.
+
+## Décisions (révision du 2026-10-10)
+
+- Dépôt et retrait réservés à l'administration (Admin, Super Admin) et au Secrétariat (rôle
+  Secrétaire et membres du département de fonction Secrétariat). La Coordination générale
+  perd le dépôt/retrait.
+- Lecture ouverte à tous les Ministres (plus seulement celui de la Coordination générale), en
+  plus des responsables de département et de la Modération. Les simples membres des
+  départements de la Coordination n'ont plus d'accès dédié : ils lisent s'ils sont responsables,
+  Ministres ou membres de la Modération.

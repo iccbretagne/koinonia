@@ -46,7 +46,6 @@ export type {
   ActivePlanningAbsence,
 } from "./services/absence-targeting";
 export {
-  findCoordinationMinistryId,
   canDepositAnnouncementSheet,
   canReadAnnouncementSheet,
   notifyReaders,

@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Corrigé
+
+- Trame des annonces : le dépôt et le retrait sont réservés à l'administration et au
+  Secrétariat (rôle Secrétaire et membres du département Secrétariat). La lecture et le
+  téléchargement s'ouvrent à tous les Ministres, en plus des responsables de département et de
+  la Modération ; la Coordination générale perd son accès dédié (spec 040, révision du
+  2026-10-10).
+
 ## [v1.30.0] - 2026-10-04
 
 ### Ajouté

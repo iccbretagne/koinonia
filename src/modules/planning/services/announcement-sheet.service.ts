@@ -13,8 +13,6 @@ async function defaultDb(): Promise<DbClient> {
 // `@/lib/notifications`, qui chargent respectivement `next-auth` et `@/lib/prisma` au niveau
 // module — casserait tout test important `@/modules/planning` sans les mocker.
 
-const COORDINATION_MINISTRY_NAME = "Coordination générale";
-
 export const ALLOWED_SHEET_MIME_TYPES: Record<string, string> = {
   "application/pdf": "pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
@@ -34,84 +32,40 @@ export function getAnnouncementSheetKey(churchId: string, eventId: string, sheet
   return `announcement-sheets/${churchId}/${eventId}/${sheetId}.${ext}`;
 }
 
-/** Id du ministère « Coordination générale » de l'église, `null` s'il n'existe pas encore. */
-export async function findCoordinationMinistryId(
-  churchId: string,
-  db?: DbClient
-): Promise<string | null> {
-  db ??= await defaultDb();
-  const ministry = await db.ministry.findFirst({
-    where: { churchId, name: COORDINATION_MINISTRY_NAME },
-    select: { id: true },
-  });
-  return ministry?.id ?? null;
-}
-
 /**
- * Droit de déposer/remplacer/retirer la feuille d'annonces d'un événement (spec 040). Composite,
- * ne peut pas s'exprimer comme une entrée `rolePermissions` classique :
- *   1. `events:manage` (Super Admin / Admin / Secrétaire) — géré en amont par l'appelant.
+ * Droit de déposer/remplacer/retirer la feuille d'annonces d'un événement (spec 040, révision du
+ * 2026-10-10 : réservé à l'administration et au Secrétariat) :
+ *   1. Super Admin / Admin / Secrétaire (`getUserMinistryScope` non restreint — rôle réel ou
+ *      entrée synthétique de l'équipe Secrétariat, spec 045).
  *   2. N'importe quel membre du département de fonction SECRETARIAT, peu importe son rôle.
- *   3. N'importe quel membre d'un département du ministère Coordination générale, peu importe
- *      son rôle — symétrique de 2.
- *   4. Ministre du ministère Coordination générale (`getUserMinistryScope`).
- *   5. Responsable ou adjoint d'un département du ministère Coordination générale
- *      (`getUserDepartmentScope`).
+ * La Coordination générale n'a plus que la lecture, comme tout Ministre (`canReadAnnouncementSheet`).
  */
 export async function canDepositAnnouncementSheet(
   session: Session,
   churchId: string,
   db?: DbClient
 ): Promise<boolean> {
+  const { getUserMinistryScope } = await import("@/lib/auth");
+  if (!getUserMinistryScope(session, churchId).scoped) return true;
+
   db ??= await defaultDb();
-
-  const { getUserDepartmentScope, getUserMinistryScope } = await import("@/lib/auth");
-
   const link = await db.memberUserLink.findUnique({
     where: { userId_churchId: { userId: session.user.id, churchId } },
     select: { memberId: true },
   });
-  if (link) {
-    const secretariatMembership = await db.memberDepartment.count({
-      where: { memberId: link.memberId, department: { function: DEPT_FN.SECRETARIAT } },
-    });
-    if (secretariatMembership > 0) return true;
-  }
+  if (!link) return false;
 
-  const ministryScope = getUserMinistryScope(session, churchId);
-  if (!ministryScope.scoped) return true; // events:manage — unscoped pour SUPER_ADMIN/ADMIN/SECRETARY (rôle réel ou entrée synthétique de l'équipe Secrétariat, spec 045)
-
-  const coordinationMinistryId = await findCoordinationMinistryId(churchId, db);
-  if (!coordinationMinistryId) return false;
-
-  // Appartenance à un département de la Coordination générale, quel que soit le rôle — pendant
-  // exact de l'appartenance au Secrétariat ci-dessus : ce sont ces deux équipes qui préparent la
-  // trame, pas seulement leurs responsables.
-  if (link) {
-    const coordinationMembership = await db.memberDepartment.count({
-      where: { memberId: link.memberId, department: { ministryId: coordinationMinistryId } },
-    });
-    if (coordinationMembership > 0) return true;
-  }
-
-  if (ministryScope.ministryIds.includes(coordinationMinistryId)) return true;
-
-  const deptScope = getUserDepartmentScope(session, churchId);
-  if (deptScope.scoped && deptScope.departmentIds.length > 0) {
-    const coordinationDeptCount = await db.department.count({
-      where: { id: { in: deptScope.departmentIds }, ministryId: coordinationMinistryId },
-    });
-    if (coordinationDeptCount > 0) return true;
-  }
-
-  return false;
+  const secretariatMembership = await db.memberDepartment.count({
+    where: { memberId: link.memberId, department: { function: DEPT_FN.SECRETARIAT } },
+  });
+  return secretariatMembership > 0;
 }
 
 /**
  * Droit de télécharger la feuille d'annonces (spec 040, restreint) : sur-ensemble de
- * `canDepositAnnouncementSheet` (« les déposants eux-mêmes »), plus n'importe quel responsable
- * (ou adjoint) de département — tous départements confondus, pas seulement Coordination générale
- * — et n'importe quel membre STAR d'un département de fonction Modération.
+ * `canDepositAnnouncementSheet` (« les déposants eux-mêmes »), plus n'importe quel Ministre et
+ * n'importe quel responsable (ou adjoint) de département — tous ministères et départements
+ * confondus — et n'importe quel membre STAR d'un département de fonction Modération.
  */
 export async function canReadAnnouncementSheet(
   session: Session,
@@ -122,7 +76,10 @@ export async function canReadAnnouncementSheet(
 
   if (await canDepositAnnouncementSheet(session, churchId, db)) return true;
 
-  const { getUserDepartmentScope } = await import("@/lib/auth");
+  const { getUserDepartmentScope, getUserMinistryScope } = await import("@/lib/auth");
+  const ministryScope = getUserMinistryScope(session, churchId);
+  if (ministryScope.scoped && ministryScope.ministryIds.length > 0) return true;
+
   const deptScope = getUserDepartmentScope(session, churchId);
   if (deptScope.scoped && deptScope.departmentIds.length > 0) return true;
 
@@ -153,13 +110,10 @@ async function resolveReaderUserIds(churchId: string, db: DbClient): Promise<str
     select: { userId: true },
   });
 
-  const coordinationMinistryId = await findCoordinationMinistryId(churchId, db);
-  const coordinationMinisters = coordinationMinistryId
-    ? await db.userChurchRole.findMany({
-        where: { churchId, role: "MINISTER", ministryId: coordinationMinistryId },
-        select: { userId: true },
-      })
-    : [];
+  const ministers = await db.userChurchRole.findMany({
+    where: { churchId, role: "MINISTER", ministryId: { not: null } },
+    select: { userId: true },
+  });
 
   const departmentHeads = await db.userChurchRole.findMany({
     where: { churchId, departments: { some: {} } },
@@ -176,7 +130,7 @@ async function resolveReaderUserIds(churchId: string, db: DbClient): Promise<str
 
   return Array.from(
     new Set(
-      [...managers, ...secretariatMembers, ...coordinationMinisters, ...departmentHeads, ...moderationMembers].map(
+      [...managers, ...secretariatMembers, ...ministers, ...departmentHeads, ...moderationMembers].map(
         (r) => r.userId
       )
     )
