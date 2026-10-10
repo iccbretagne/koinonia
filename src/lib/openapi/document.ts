@@ -31,13 +31,26 @@ function accessLabel(access: Access): string {
   return access in ACCESS_LABEL ? ACCESS_LABEL[access as keyof typeof ACCESS_LABEL] : `permission \`${access}\``;
 }
 
+/** Nom du paramètre d'un segment dynamique (`[id]` → `id`, `[...nextauth]` → `nextauth`), sinon `null`. */
+function paramName(segment: string): string | null {
+  if (!segment.startsWith("[") || !segment.endsWith("]")) return null;
+  const inner = segment.slice(1, -1);
+  return inner.startsWith("...") ? inner.slice(3) : inner;
+}
+
 /** `/api/members/[id]` → `/api/members/{id}` ; `[...nextauth]` → `{nextauth}`. */
 export function toOpenApiPath(path: string): string {
-  return path.replace(/\[(?:\.\.\.)?([^\]]+)\]/g, "{$1}");
+  return path
+    .split("/")
+    .map((segment) => {
+      const name = paramName(segment);
+      return name === null ? segment : `{${name}}`;
+    })
+    .join("/");
 }
 
 function pathParams(path: string) {
-  const names = [...path.matchAll(/\[(?:\.\.\.)?([^\]]+)\]/g)].map((m) => m[1]);
+  const names = path.split("/").map(paramName).filter((name): name is string => name !== null);
   if (names.length === 0) return undefined;
   return z.object(Object.fromEntries(names.map((n) => [n, z.string()])));
 }
@@ -49,9 +62,56 @@ function security(access: Access) {
 }
 
 function description(op: Operation): string {
-  const lines = [`**Accès** : ${accessLabel(op.access)}${op.accessNote ? ` — ${op.accessNote}` : ""}.`];
+  const note = op.accessNote ? ` — ${op.accessNote}` : "";
+  const lines = [`**Accès** : ${accessLabel(op.access)}${note}.`];
   if (op.description) lines.push("", op.description);
   return lines.join("\n");
+}
+
+function requestBody(op: Operation) {
+  if (!op.body) return undefined;
+  if (isRawBody(op.body)) {
+    return {
+      description: op.body.description,
+      content: { [op.body.contentType]: { schema: { type: "string" as const, format: "binary" } } },
+    };
+  }
+  return { content: { "application/json": { schema: op.body } } };
+}
+
+const NO_CONTENT_STATUSES = new Set([204, 302, 307]);
+
+function responses(op: Operation) {
+  const status = op.status ?? 200;
+  const success = NO_CONTENT_STATUSES.has(status)
+    ? { description: op.response }
+    : { description: op.response, content: { [op.responseType ?? "application/json"]: { schema: {} } } };
+  const needsSession = op.access !== "public" && op.access !== "token";
+  return {
+    [status]: success,
+    ...(needsSession ? { 401: { description: "Session absente" }, 403: { description: "Accès refusé" } } : {}),
+    ...(op.body && !isRawBody(op.body) ? { 400: { description: "Corps invalide (détail Zod dans `details`)" } } : {}),
+  };
+}
+
+function registerOperation(registry: OpenAPIRegistry, path: string, owner: string, method: HttpMethod, op: Operation) {
+  const params = pathParams(path);
+  const body = requestBody(op);
+  registry.registerPath({
+    method: method.toLowerCase() as Lowercase<HttpMethod>,
+    path: toOpenApiPath(path),
+    tags: [owner],
+    summary: op.summary,
+    description: description(op),
+    security: security(op.access),
+    request: {
+      ...(params ? { params } : {}),
+      ...(op.query ? { query: op.query } : {}),
+      ...(body ? { body } : {}),
+    },
+    responses: responses(op),
+    "x-access": op.access,
+  });
 }
 
 export function buildOpenApiDocument(entries: readonly ContractEntry[], version: string) {
@@ -69,38 +129,7 @@ export function buildOpenApiDocument(entries: readonly ContractEntry[], version:
     const owner = fullRouteTable.resolve(path).owner ?? "noyau";
     for (const method of METHODS) {
       const op = contract[method];
-      if (!op) continue;
-      const params = pathParams(path);
-      const body = op.body
-        ? isRawBody(op.body)
-          ? { description: op.body.description, content: { [op.body.contentType]: { schema: { type: "string" as const, format: "binary" } } } }
-          : { content: { "application/json": { schema: op.body } } }
-        : undefined;
-      const status = op.status ?? 200;
-      registry.registerPath({
-        method: method.toLowerCase() as Lowercase<HttpMethod>,
-        path: toOpenApiPath(path),
-        tags: [owner],
-        summary: op.summary,
-        description: description(op),
-        security: security(op.access),
-        request: {
-          ...(params ? { params } : {}),
-          ...(op.query ? { query: op.query } : {}),
-          ...(body ? { body } : {}),
-        },
-        responses: {
-          [status]: {
-            description: op.response,
-            ...(status === 204 || status === 302 || status === 307
-              ? {}
-              : { content: { [op.responseType ?? "application/json"]: { schema: {} } } }),
-          },
-          ...(op.access === "public" || op.access === "token" ? {} : { 401: { description: "Session absente" }, 403: { description: "Accès refusé" } }),
-          ...(op.body && !isRawBody(op.body) ? { 400: { description: "Corps invalide (détail Zod dans `details`)" } } : {}),
-        },
-        "x-access": op.access,
-      });
+      if (op) registerOperation(registry, path, owner, method, op);
     }
   }
 

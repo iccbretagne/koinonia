@@ -17,18 +17,31 @@ export interface RouteFile {
   readonly hasContract: boolean;
 }
 
-const EXPORT_RE = /export\s+(?:async\s+function|const|function)\s+(GET|POST|PUT|PATCH|DELETE)\b|export\s+const\s+\{([^}]+)\}/g;
+const METHOD_ORDER: readonly HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
+function asMethod(name: string | undefined): HttpMethod | undefined {
+  return METHOD_ORDER.find((m) => m === name);
+}
+
+/**
+ * Méthodes exportées par un `route.ts`, ligne par ligne : `export async function GET(`,
+ * `export const GET =`, ou déstructuration `export const { GET, POST: post } = handlers`.
+ */
 export function routeMethods(source: string): HttpMethod[] {
   const methods = new Set<HttpMethod>();
-  for (const m of source.matchAll(EXPORT_RE)) {
-    if (m[1]) methods.add(m[1] as HttpMethod);
-    for (const name of m[2]?.split(",") ?? []) {
-      const n = name.trim().split(/\s*:\s*/).pop();
-      if (n && /^(GET|POST|PUT|PATCH|DELETE)$/.test(n)) methods.add(n as HttpMethod);
+  for (const raw of source.split("\n")) {
+    const line = raw.trim();
+    if (!line.startsWith("export ")) continue;
+    const destructured = /^export const \{([^}]*)\}/.exec(line);
+    const names = destructured
+      ? destructured[1].split(",").map((part) => part.split(":")[0].trim())
+      : line.split(/[\s(=<:]/).slice(1, 4);
+    for (const name of names) {
+      const method = asMethod(name);
+      if (method) methods.add(method);
     }
   }
-  return [...methods].sort();
+  return METHOD_ORDER.filter((m) => methods.has(m));
 }
 
 export function listRouteFiles(dir = API_DIR, acc: RouteFile[] = []): RouteFile[] {
@@ -51,12 +64,13 @@ export function listRouteFiles(dir = API_DIR, acc: RouteFile[] = []): RouteFile[
 }
 
 export async function loadContracts(routes: readonly RouteFile[]): Promise<ContractEntry[]> {
-  const entries: ContractEntry[] = [];
-  for (const route of routes) {
-    if (!route.hasContract) continue;
-    const mod = (await import(pathToFileURL(join(route.dir, "contract.ts")).href)) as { contract?: Contract };
-    if (!mod.contract) throw new Error(`${route.path}/contract.ts n'exporte pas \`contract\``);
-    entries.push({ path: route.path, contract: mod.contract });
-  }
-  return entries;
+  return Promise.all(
+    routes
+      .filter((route) => route.hasContract)
+      .map(async (route) => {
+        const mod = (await import(pathToFileURL(join(route.dir, "contract.ts")).href)) as { contract?: Contract };
+        if (!mod.contract) throw new Error(`${route.path}/contract.ts n'exporte pas \`contract\``);
+        return { path: route.path, contract: mod.contract };
+      })
+  );
 }

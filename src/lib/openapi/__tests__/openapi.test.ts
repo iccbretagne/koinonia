@@ -26,7 +26,7 @@ describe("contrats OpenAPI des routes", () => {
   it.each(routes)("$path a un contrat pour chacune de ses méthodes", async (route) => {
     expect(route.hasContract, `${route.path} : créer contract.ts (ADR-0023)`).toBe(true);
     const [entry] = await loadContracts([route]);
-    expect(Object.keys(entry.contract).sort()).toEqual(route.methods);
+    expect(new Set(Object.keys(entry.contract))).toEqual(new Set(route.methods));
   });
 
   it.each(routes)("$path : accès public conforme au manifeste", async (route) => {
