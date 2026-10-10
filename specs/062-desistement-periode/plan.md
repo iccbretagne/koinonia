@@ -195,6 +195,12 @@ Aucune décision structurante au sens des ADR : extension locale du module plann
   lui-même affiché dans une modale ou un panneau ; empiler une seconde modale est pénible sur
   mobile. L'avertissement (liste des services, « Modifier » / « Confirmer et enregistrer »)
   s'affiche à la place des boutons d'enregistrement.
+- **Section « Mes périodes d'indisponibilité » ajoutée à l'écran Disponibilités** : le STAR, sans
+  `absences:view`, n'avait aucun écran pour annuler ou modifier sa période (manque hérité de la
+  spec 058), ce qui rendait le scénario « Paul annule sa période » impossible par lui-même. La
+  section liste ses périodes actives à venir (`GET /api/absences?scope=self`, déjà ouvert sans
+  permission) avec « Modifier » (formulaire existant en mode édition) et « Annuler » ; aucune
+  nouvelle route.
 - **Routes `POST`/`PATCH` sans changement de code** (T16) : les services renvoient l'absence
   augmentée des compteurs, relayée telle quelle.
 
