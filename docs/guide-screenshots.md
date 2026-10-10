@@ -1,207 +1,246 @@
 # Guide utilisateur — Captures d'écran
 
-Ce document décrit la procédure pour produire et publier les captures d'écran du guide utilisateur.
+Ce document décrit la procédure pour produire et publier les captures d'écran du guide utilisateur
+(`src/components/GuideContent.tsx`, page `/guide`).
 
 ## Principe
 
-Les captures sont hébergées dans une release GitHub dédiée `guide-assets` (tag stable, non versionné).  
+Les captures sont hébergées dans une release GitHub dédiée `guide-assets` (tag stable, non versionné).
 L'URL de base dans le composant est :
 
 ```
 https://github.com/iccbretagne/koinonia/releases/download/guide-assets/<fichier.png>
 ```
 
-Pour mettre à jour une capture, il suffit de ré-uploader le fichier dans cette release avec le même nom.
+Pour mettre à jour une capture, il suffit de ré-uploader le fichier dans cette release avec le même
+nom : le guide l'affiche aussitôt, sans déploiement. Chaque fonction du guide référence un fichier
+(`screenshotFile`) : ajouter une fonction au guide, c'est aussi ajouter sa capture ci-dessous.
 
 ---
 
-## Prérequis
+## Données
 
-- Application en cours d'exécution en local (`npm run dev`) avec des données de test réalistes (seed ICC Rennes)
-- Navigateur Chrome ou Firefox — fenêtre **1280 × 800 px minimum**
-- Outil de capture : outil natif OS, ou extension navigateur (ex. GoFullPage, Awesome Screenshot)
-- Format : **PNG**, résolution suffisante pour le zoom (retina si possible)
-- Recadrage : capturer la zone de contenu principale, **sans** la barre du navigateur ni l'OS
+Les captures se font sur l'environnement de développement local
+([dev-onboarding.md](dev-onboarding.md)) avec le jeu de données fictif :
 
----
+1. **Caler le jeu de données sur la date du jour** : `prisma/seed-dev.ts` place ses cultes et
+   événements autour d'une date fixe (`TODAY`). La remplacer temporairement par la date du jour
+   (sans la commiter), sinon « Mon planning », l'accueil et les grilles sont vides.
+2. `npm run db:seed:dev` (efface et régénère la base), puis `npm run dev` avec
+   `AUTH_DEV_LOGIN=true` dans `.env`.
+3. **Compléter dans l'application** ce que le jeu de données ne contient pas, avant les captures
+   concernées :
+   - Service d'accueil activé sur les cultes, quelques familles et affectations ;
+   - une collecte de disponibilités ouverte, avec des réponses de STAR du département ;
+   - un désistement d'un STAR sur un culte à venir (page de remplacement) — à faire **après**
+     les captures « Mon planning » et « Je ne peux plus servir », qui le montrent encore planifié ;
+   - deux ou trois événements d'équipe sur le département ;
+   - une annonce avec visuel et diffusion réseaux sociaux (files Secrétariat, Visuels, Réseaux
+     sociaux) ;
+   - un département de fonction `MSDP` (accompagnants du suivi pastoral) ;
+   - une offre d'emploi en attente de confirmation (bandeau « Toujours d'actualité »).
 
-## Compte de test recommandé par rôle
-
-Se connecter avec un compte ayant le rôle approprié pour chaque série de captures.  
-Utiliser l'église ICC Rennes (seed).
-
-| Rôle | Accès attendu |
-|---|---|
-| Super Admin | Tout |
-| Admin | Tout sauf paramètres église et users |
-| Secrétaire | Planning lecture, événements, discipolat, comptes rendus, secretariat/requests |
-| Ministre | Planning + membres de son ministère |
-| Resp. Département | Planning + membres de ses départements + discipolat lecture |
-| Faiseur de Disciples | Discipolat uniquement (ses disciples) |
-| Reporter | Événements lecture + comptes rendus |
-| Référent soins pastoraux | Qualification des demandes de RDV pastoral et suivi MSDP |
-| Comptable | Traitement des demandes financières + statistiques |
-
-Pour les captures Salles / Intégration nécessitant un accès par appartenance de
-département (contrôle des mains courantes, MSDP, bergers de famille), utiliser
-un compte Super Admin ou Admin plutôt qu'un compte dédié.
+Les comptes sont ceux de la connexion de développement (`devUserKey`) : `super-admin`, `admin`,
+`secretaire`, `ministre`, `resp-accueil`, `resp-secretariat`, `faiseur-disciples`, `reporter`,
+`star`. Les pages de département utilisent le département **Accueil** (`[dept]`).
 
 ---
 
-## Liste des 43 captures
+## Prise de vue (Playwright)
 
-### Planning (3)
+Réglages communs, identiques pour toutes les captures :
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 1 | `guide-planning-view.png` | `/dashboard?dept=[id]` | Grille avec statuts colorés visibles, plusieurs STAR |
-| 2 | `guide-planning-edit.png` | `/dashboard?dept=[id]` | Grille avec un statut de STAR modifié à l'instant (boutons de statut, pas de dropdown) |
-| 3 | `guide-planning-stats.png` | `/dashboard/stats` | Graphiques de taux de présence par département |
+- fenêtre **1280 × 800**, `locale: "fr-FR"`, `timezoneId: "Europe/Paris"`, thème clair
+  (`localStorage` `koinonia-theme = light`, `colorScheme: "light"`) ;
+- capture de la fenêtre (pas de la page entière), barre latérale visible ;
+- indicateur de développement Next masqué (`nextjs-portal { display: none !important }`) ;
+- un contexte de navigateur par compte : `POST /api/auth/dev-login` (champ `devUserKey`), puis
+  `PATCH /api/user/tour-seen` pour que la visite guidée ne recouvre pas l'écran.
 
-### Événements (3)
+```js
+const ctx = await browser.newContext({
+  viewport: { width: 1280, height: 800 }, locale: "fr-FR", colorScheme: "light",
+  timezoneId: "Europe/Paris", permissions: ["clipboard-read", "clipboard-write"],
+});
+await ctx.addInitScript(() => {
+  localStorage.setItem("koinonia-theme", "light");
+  const s = document.createElement("style");
+  s.textContent = "nextjs-portal{display:none!important}";
+  document.documentElement.appendChild(s);
+});
+const page = await ctx.newPage();
+await page.goto(BASE + "/");
+await page.request.post(BASE + "/api/auth/dev-login", { form: { devUserKey: "admin" } });
+await page.request.patch(BASE + "/api/user/tour-seen");
+await page.goto(BASE + "/admin/events", { waitUntil: "networkidle" });
+// … actions de la colonne « Avant la capture »
+await page.screenshot({ path: "guide-events-manage.png" });
+```
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 4 | `guide-events-list.png` | `/events` | Liste d'événements avec types et dates |
-| 5 | `guide-events-calendar.png` | `/events/calendar` | Vue calendrier mensuel avec événements |
-| 6 | `guide-events-manage.png` | `/admin/events` | Liste admin avec boutons Créer/Modifier |
+Relire chaque capture avant publication : données présentes, panneau attendu ouvert, aucune
+fenêtre parasite.
 
-### Comptes rendus (1)
+---
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 7 | `guide-reports.png` | `/admin/reports` | Formulaire compte rendu partiellement rempli |
+## Liste des 65 captures
+
+### Planning (5)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 1 | `guide-today.png` | Accueil « Aujourd'hui » | `resp-accueil` | `/accueil` | — |
+| 2 | `guide-my-planning.png` | Mon planning | `star` | `/planning` | — |
+| 3 | `guide-planning-view.png` | Voir le planning | `admin` | `/dashboard?dept=[dept]` | — |
+| 4 | `guide-planning-edit.png` | Modifier le planning | `resp-accueil` | `/dashboard?dept=[dept]&view=week` | — |
+| 5 | `guide-planning-stats.png` | Statistiques du planning | `admin` | `/dashboard/stats` | — |
+
+### Événements (6)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 6 | `guide-events-list.png` | Voir les événements | `admin` | `/events` | — |
+| 7 | `guide-events-manage.png` | Gérer les événements | `admin` | `/admin/events` | — |
+| 8 | `guide-team-events.png` | Événements d'équipe | `resp-accueil` | `/dashboard?dept=[dept]&view=team` | — |
+| 9 | `guide-welcome-duty.png` | Service d'accueil | `admin` | `/admin/welcome-duty` | — |
+| 10 | `guide-announcement-sheet.png` | Trame des annonces | `secretaire` | `/events/announcement-sheets` | — |
+| 11 | `guide-reports.png` | Comptes rendus | `reporter` | `/admin/reports` | — |
 
 ### Membres (2)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 8 | `guide-members-list.png` | `/admin/members` | Liste des STAR avec filtres |
-| 9 | `guide-members-manage.png` | `/admin/members` | Modal/formulaire d'ajout ou d'édition ouvert |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 12 | `guide-members-list.png` | Voir les membres (STAR) | `admin` | `/admin/members` | — |
+| 13 | `guide-members-manage.png` | Gérer les membres (STAR) | `resp-accueil` | `/admin/members` | clic « Modifier » |
 
 ### Discipolat (3)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 10 | `guide-discipleship-relations.png` | `/admin/discipleship` → onglet **Relations** | Tableau des relations FD ↔ disciple |
-| 11 | `guide-discipleship-appel.png` | `/admin/discipleship` → onglet **Appel** | Grille d'appel avec cases à cocher |
-| 12 | `guide-discipleship-stats.png` | `/admin/discipleship` → onglet **Statistiques** | Tableau de stats et bouton Export |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 14 | `guide-discipleship-relations.png` | Relations de discipolat | `admin` | `/admin/discipleship` | — |
+| 15 | `guide-discipleship-appel.png` | Appel de présence | `faiseur-disciples` | `/admin/discipleship` | — |
+| 16 | `guide-discipleship-stats.png` | Statistiques & Export | `secretaire` | `/admin/discipleship` | — |
 
-### Demandes (5)
+### Demandes (6)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 13 | `guide-requests-new.png` | `/requests/new` | Formulaire de nouvelle demande avec champs remplis |
-| 14 | `guide-requests-list.png` | `/requests` | Liste des demandes avec badges de statut |
-| 15 | `guide-secretariat-dashboard.png` | `/secretariat/requests` | Dashboard avec annonces en attente, actions visibles |
-| 16 | `guide-media-dashboard.png` | `/media/requests` | Dashboard visuels avec demandes en cours |
-| 17 | `guide-communication-dashboard.png` | `/communication/requests` | Dashboard com avec demandes à traiter |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 17 | `guide-requests-new.png` | Nouvelle demande | `resp-accueil` | `/requests/new` | — |
+| 18 | `guide-requests-list.png` | Mes demandes | `resp-accueil` | `/requests` | — |
+| 19 | `guide-secretariat-dashboard.png` | Traitement des demandes (Secrétariat) | `secretaire` | `/secretariat/requests` | clic « Journée portes ouvertes » |
+| 20 | `guide-media-dashboard.png` | Demandes visuels (Prod. Média) | `admin` | `/media/requests` | clic « Journée portes ouvertes » |
+| 21 | `guide-communication-dashboard.png` | Demandes réseaux sociaux (Communication) | `admin` | `/communication/requests` | clic « Journée portes ouvertes » |
+| 22 | `guide-media.png` | Photos et visuels (Communication & Production) | `admin` | `/media` | — |
 
-### Administration (6)
+### Absences (6)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 18 | `guide-access-roles.png` | `/admin/access` | Onglet Rôles avec liste utilisateurs et badges |
-| 19 | `guide-admin-departments.png` | `/admin/ministries` ou `/admin/departments` | Vue arborescente ministères → départements |
-| 20 | `guide-admin-church.png` | `/admin/churches/[id]` | Formulaire paramètres église |
-| 21 | `guide-admin-users.png` | `/admin/users` | Liste des utilisateurs avec rôles |
-| 22 | `guide-admin-audit-logs.png` | `/admin/audit-logs` | Journal avec entrées horodatées |
-| 23 | `guide-admin-dept-functions.png` | `/admin/departments/functions` | Vue fonctions système + custom |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 23 | `guide-disponibilites.png` | Indiquer mes disponibilités | `star` | `/disponibilites` | — |
+| 24 | `guide-disponibilites-grille.png` | Lire les disponibilités dans la grille | `resp-accueil` | `/dashboard?dept=[dept]` | — |
+| 25 | `guide-je-ne-peux-plus.png` | Je ne peux plus servir | `star` | `/planning` | — |
+| 26 | `guide-remplacement.png` | Remplacer un STAR désisté | `resp-accueil` | `/planning/remplacements/[id]` | — |
+| 27 | `guide-disponibilites-parametres.png` | Régler la collecte | `admin` | `/disponibilites/collectes` | — |
+| 28 | `guide-absences-vue-ensemble.png` | Indisponibilités de mon périmètre | `resp-accueil` | `/absences` | — |
 
-### Salles (2)
+### Tâches (1)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 24 | `guide-salles-reservation.png` | `/rooms` | Planning des salles avec un créneau réservé |
-| 25 | `guide-salles-mains-courantes.png` | `/rooms/checklists` | Liste de réservations avec état des mains courantes |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 29 | `guide-taches.png` | Tâches de département | `resp-accueil` | `/dashboard?dept=[dept]&view=tasks` | — |
 
-### Suivi pastoral (7)
+### Administration (7)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 26 | `guide-care-demande.png` | `/requests/new` | Tuile « Rendez-vous pastoral » et formulaire de demande rempli |
-| 27 | `guide-care-qualification.png` | `/care` | Demande en attente avec le sélecteur de référent (deux groupes) ouvert |
-| 28 | `guide-care-suivi-accompagnant.png` | `/care/requests/[id]` | Fiche d'une demande confiée à un membre du MSDP, action « Fixer la date » ou « Compte rendu du rendez-vous » ouverte |
-| 29 | `guide-care-msdp.png` | `/care` | Onglet « Nouveaux convertis » avec un suivi en cours et son référent |
-| 30 | `guide-agenda-planification.png` | `/agenda/schedule` | Demandes confiées à un profil pastoral, à planifier |
-| 31 | `guide-care-parametres.png` | `/care/parametres` | Réglage des deux délais de relance (non confiée / confiée sans date) |
-| 32 | `guide-care-stats.png` | `/care/stats` | Statistiques des rendez-vous pastoraux et du suivi MSDP |
-
-### Comptabilité (3)
-
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 33 | `guide-comptabilite-demande.png` | `/accounting/requests/new` | Formulaire de note de frais partiellement rempli |
-| 34 | `guide-comptabilite-gestion.png` | `/accounting/requests` | Liste des demandes financières avec statuts |
-| 35 | `guide-comptabilite-stats.png` | `/accounting/stats` | Statistiques par statut et département |
-
-### Emplois (2)
-
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 36 | `guide-emplois-liste.png` | `/jobs` | Onglet Offres avec plusieurs annonces |
-| 37 | `guide-emplois-moderation.png` | `/admin/jobs` | Liste des annonces avec actions de modération |
-
-### Intégration (5)
-
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 38 | `guide-integration-demandes.png` | `/integration/requests` | Liste des demandes d'intégration avec statuts |
-| 39 | `guide-integration-bergers.png` | `/integration/leaders` | Liste des bergers de famille et affectations |
-| 40 | `guide-integration-stats.png` | `/integration/stats` | Statistiques d'intégration (délais, taux) |
-| 41 | `guide-integration-attente.png` | `/integration/requests/[id]` | Fiche d'une demande en attente de recontact : bandeau d'attente, boutons « J'ai relancé » / « Reprendre le suivi », historique des statuts, résumé du suivi MSDP avec lien vers `/care/followups/[id]` |
-| 42 | `guide-integration-parametres.png` | `/integration/parametres` | Réglage des deux délais de relance |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 30 | `guide-access-roles.png` | Accès & rôles | `admin` | `/admin/access` | — |
+| 31 | `guide-admin-departments.png` | Ministères & départements | `admin` | `/admin/departments` | — |
+| 32 | `guide-admin-church.png` | Paramètres de l'église | `admin` | `/admin/access` | premier lien `/admin/churches/…` |
+| 33 | `guide-admin-users.png` | Gestion des utilisateurs | `admin` | `/admin/users` | — |
+| 34 | `guide-admin-audit-logs.png` | Journaux d'audit | `admin` | `/admin/audit-logs` | — |
+| 35 | `guide-api.png` | Référence de l'API | `super-admin` | `/admin/api` | clic « planning » |
+| 36 | `guide-admin-backups.png` | Sauvegardes et export de configuration | `super-admin` | `/admin/backups` | défiler |
 
 ### Profil (1)
 
-| # | Fichier | URL | État à capturer |
-|---|---|---|---|
-| 43 | `guide-profile.png` | `/profile` | Profil avec section liaison STAR visible |
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 37 | `guide-profile.png` | Profil & liaison STAR | `star` | `/profile` | — |
 
+### Salles (2)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 38 | `guide-salles-reservation.png` | Réserver une salle | `ministre` | `/rooms` | — |
+| 39 | `guide-salles-mains-courantes.png` | Contrôle des mains courantes | `admin` | `/rooms/checklists` | — |
+
+### Suivi pastoral (9)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 40 | `guide-care-demande.png` | Demande de RDV pastoral | `star` | `/care/request` | clic « Nouvelle demande » |
+| 41 | `guide-care-qualification.png` | Qualification et affectation des demandes | `admin` | `/care` | — |
+| 42 | `guide-care-suivi-accompagnant.png` | Suivi par le référent : date et compte rendu | `admin` | `/care` | premier lien `/care/requests/…` |
+| 43 | `guide-care-msdp.png` | Suivi des nouveaux convertis (MSDP) | `admin` | `/care` | clic « Nouveaux convertis » |
+| 44 | `guide-agenda-planification.png` | Vue et planification agenda | `admin` | `/agenda/schedule` | — |
+| 45 | `guide-care-parametres.png` | Paramètres du suivi pastoral (délais de relance) | `admin` | `/care/parametres` | — |
+| 46 | `guide-care-accompagnants.png` | Accompagnants du suivi pastoral | `admin` | `/care/parametres` | défiler |
+| 47 | `guide-care-suppression.png` | Supprimer une demande | `admin` | `/care` | premier lien `/care/requests/…`, défiler |
+| 48 | `guide-care-stats.png` | Statistiques du suivi pastoral | `admin` | `/care/stats` | — |
+
+### Comptabilité (3)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 49 | `guide-comptabilite-demande.png` | Soumettre une demande financière | `resp-accueil` | `/accounting/requests/new` | — |
+| 50 | `guide-comptabilite-gestion.png` | Traiter les demandes financières | `admin` | `/accounting/requests` | — |
+| 51 | `guide-comptabilite-stats.png` | Statistiques comptables | `admin` | `/accounting/stats` | — |
+
+### Emplois (4)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 52 | `guide-emplois-liste.png` | Offres, recherches d'emploi & freelance | `star` | `/jobs` | clic « Création d'un site vitrine » |
+| 53 | `guide-emplois-moderation.png` | Modération des annonces | `admin` | `/jobs` | clic « Toutes », clic « Alternance assistant comptable » |
+| 54 | `guide-emplois-relance.png` | Cycle de vie des offres | `admin` | `/jobs` | clic « Développeur web (H/F) » |
+| 55 | `guide-emplois-whatsapp.png` | Récapitulatif WhatsApp | `star` | `/jobs` | clic « Copier pour WhatsApp » |
+
+### Intégration (6)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 56 | `guide-integration-demandes.png` | Demandes d'intégration (familles) | `admin` | `/integration/requests` | — |
+| 57 | `guide-integration-attente.png` | Attente, relances et renvoi d'une demande | `admin` | `/integration/requests` | premier lien `/integration/requests/…` |
+| 58 | `guide-integration-parametres.png` | Paramètres intégration (délais de relance) | `admin` | `/integration/parametres` | — |
+| 59 | `guide-integration-bergers.png` | Bergers de famille | `admin` | `/integration/leaders` | — |
+| 60 | `guide-integration-stats.png` | Parcours & statistiques d'intégration | `admin` | `/integration/stats` | — |
+| 61 | `guide-integration-export.png` | Export Excel des demandes | `admin` | `/integration/requests` | clic « Yann Cadoret » |
+
+### Audio (4)
+
+| # | Fichier | Fonction | Compte | URL | Avant la capture |
+|---|---|---|---|---|---|
+| 62 | `guide-audio-library.png` | (re)Écouter les cultes | `star` | `/audio/ecouter` | — |
+| 63 | `guide-audio-production.png` | Production audio (dépôt, découpage, publication) | `admin` | `/audio/production` | — |
+| 64 | `guide-audio-parametres.png` | Paramètres audio | `admin` | `/audio/parametres` | — |
+| 65 | `guide-audio-depublier.png` | Dépublier un culte | `admin` | `/audio/production` | clic « Ouvrir » |
 ---
 
-## Procédure de publication
-
-### Première fois (création de la release)
+## Publication
 
 ```bash
-gh release create guide-assets \
-  --title "Guide Assets" \
-  --notes "Captures d'écran du guide utilisateur. Ne pas supprimer." \
-  --prerelease \
-  guide-planning-view.png \
-  guide-planning-edit.png \
-  # ... tous les fichiers
+# Une ou plusieurs captures
+gh release upload guide-assets guide-planning-view.png guide-taches.png --clobber
+
+# Toutes, depuis le dossier des captures
+gh release upload guide-assets guide-*.png --clobber
 ```
 
-### Mise à jour d'une ou plusieurs captures
+`--clobber` remplace l'asset du même nom. Les assets que le guide ne référence plus peuvent être
+retirés avec `gh release delete-asset guide-assets <fichier.png>`.
+
+Si la release n'existe pas (nouveau dépôt) :
 
 ```bash
-# Supprimer l'ancien asset et uploader le nouveau
-gh release upload guide-assets guide-planning-view.png --clobber
-
-# Plusieurs fichiers en une commande
-gh release upload guide-assets \
-  guide-planning-view.png \
-  guide-discipleship-relations.png \
-  --clobber
+gh release create guide-assets --title "Guide Assets" --prerelease \
+  --notes "Captures d'écran du guide utilisateur. Ne pas supprimer." guide-*.png
 ```
-
-### Upload en masse (toutes les captures d'un coup)
-
-Depuis le dossier contenant les PNG :
-
-```bash
-gh release upload guide-assets *.png --clobber
-```
-
----
-
-## Conseils de mise en scène
-
-- **Données** : utiliser le seed ICC Rennes (`npm run db:seed`) — les données doivent être réalistes (vrais prénoms/noms, vrais départements)
-- **Anonymisation** : pas nécessaire pour un guide interne, mais éviter les adresses email réelles
-- **Langue** : interface en français, navigateur en français
-- **Fenêtre** : masquer les barres d'outils du navigateur (mode plein écran F11 ou vue épurée)
-- **Sidebar** : doit être visible et la bonne section active (accordéon ouvert)
-- **Cohérence** : même compte / même église pour toute une série
