@@ -5,7 +5,7 @@ import { successResponse, errorResponse } from "@/lib/api-utils";
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
- * Nombre d'offres d'emploi publiées depuis la dernière visite de l'utilisateur sur `/jobs`
+ * Nombre d'opportunités (offres d'emploi et missions freelance) publiées depuis la dernière visite de l'utilisateur sur `/jobs`
  * (pastille "nouvelles offres" du menu, spec 042). Module emploi transversal, sans `churchId` —
  * voir `src/modules/jobs/manifest.ts`.
  */
@@ -20,13 +20,16 @@ export async function GET() {
     });
     const since = lastSeen?.seenAt ?? new Date(Date.now() - THIRTY_DAYS_MS);
 
-    const count = await prisma.jobOffer.count({
-      where: {
-        status: "PUBLISHED",
-        authorId: { not: userId },
-        createdAt: { gt: since },
-      },
-    });
+    // Opportunités d'autrui : offres d'emploi et missions freelance (spec 064).
+    const [offers, missions] = await Promise.all([
+      prisma.jobOffer.count({
+        where: { status: "PUBLISHED", authorId: { not: userId }, createdAt: { gt: since } },
+      }),
+      prisma.freelanceMission.count({
+        where: { status: "ACTIVE", authorId: { not: userId }, createdAt: { gt: since } },
+      }),
+    ]);
+    const count = offers + missions;
 
     return successResponse({ count });
   } catch (error) {

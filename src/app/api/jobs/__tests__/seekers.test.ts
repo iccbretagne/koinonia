@@ -169,6 +169,32 @@ describe("PATCH /api/jobs/seekers/[id]", () => {
     const res = await patchSeeker(req, { params: Promise.resolve({ id: "s1" }) });
     expect(res.status).toBe(200);
   });
+
+  it("returns 403 when author tries to bring back a retired profile (spec 064)", async () => {
+    mockRequireAuth.mockResolvedValue({ user: { id: "author-1", isSuperAdmin: false, churchRoles: [{ role: "STAR" }] } });
+    prismaMock.jobSeeker.findUnique.mockResolvedValue({ id: "s1", authorId: "author-1", status: "ARCHIVED" } as never);
+
+    const req = new Request("http://localhost/api/jobs/seekers/s1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+    const res = await patchSeeker(req, { params: Promise.resolve({ id: "s1" }) });
+    expect(res.status).toBe(403);
+    expect(prismaMock.jobSeeker.update).not.toHaveBeenCalled();
+  });
+
+  it("allows admin to bring back a retired profile", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.jobSeeker.findUnique.mockResolvedValue({ id: "s1", authorId: "author-1", status: "ARCHIVED" } as never);
+    prismaMock.jobSeeker.update.mockResolvedValue({ ...baseSeeker, status: "ACTIVE", author: {} } as never);
+
+    const req = new Request("http://localhost/api/jobs/seekers/s1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+    const res = await patchSeeker(req, { params: Promise.resolve({ id: "s1" }) });
+    expect(res.status).toBe(200);
+  });
 });
 
 describe("DELETE /api/jobs/seekers/[id]", () => {

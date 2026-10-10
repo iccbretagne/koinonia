@@ -2359,6 +2359,36 @@ que la bibliothèque interne.
 
 ---
 
+## Offres (module emploi)
+
+Module transverse aux églises (pas de `churchId`) : offres d'emploi (`/api/jobs`), profils en
+recherche (`/api/jobs/seekers`), missions et profils freelance (`/api/jobs/freelance/missions`,
+`/api/jobs/freelance/profiles`). Lecture et publication par toute personne connectée
+(`jobs:view`/`post`/`seek`/`freelance`) ; modification réservée à l'auteur ou à la modération
+(`jobs:manage`).
+
+### `GET /api/jobs/unseen-count`
+
+Nombre d'opportunités publiées par d'autres depuis la dernière visite de l'espace Offres (à
+défaut, sur 30 jours) : offres `PUBLISHED` **et** missions freelance `ACTIVE` depuis la spec 064.
+Alimente la pastille du menu « Offres ».
+
+**Réponse** : `{ "count": 5 }`.
+
+### `POST /api/jobs/unseen-count`
+
+Enregistre la visite de l'espace (remet le compteur à zéro). **Réponse** : `{ "ok": true }`.
+
+### `PATCH /api/jobs/seekers/[id]`, `/api/jobs/freelance/missions/[id]`, `/api/jobs/freelance/profiles/[id]`
+
+L'auteur modifie sa publication et bascule son statut entre `ACTIVE` et la clôture propre au type
+(`FOUND`, `FILLED`, `UNAVAILABLE`). Seule la modération passe une publication en `ARCHIVED` —
+et, depuis la spec 064, seule elle peut l'en faire sortir : un auteur qui tente de changer le
+statut d'une publication retirée reçoit `403`. Les offres d'emploi (`PATCH /api/jobs/[id]`) ne
+sont pas concernées : leur auteur les retire et les republie lui-même.
+
+---
+
 ## Notifications
 
 ### `GET /api/notifications`

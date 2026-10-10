@@ -70,6 +70,11 @@ export async function PATCH(
     if (data.status === "ARCHIVED" && !canManage) {
       throw new ApiError(403, "Seul un modérateur peut archiver un profil");
     }
+    // Une publication archivée l'a été par la modération : seul un modérateur la remet en ligne
+    // (spec 064), sans quoi l'auteur annulerait la décision.
+    if (seeker.status === "ARCHIVED" && data.status !== undefined && data.status !== "ARCHIVED" && !canManage) {
+      throw new ApiError(403, "Seul un modérateur peut remettre en ligne un profil retiré");
+    }
     // Seul l'auteur peut passer à FOUND (ou admin)
     if (data.status === "FOUND" && !isAuthor && !canManage) {
       throw new ApiError(403, "Accès refusé");

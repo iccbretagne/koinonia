@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Inbox, Search, SearchX, X } from "lucide-react";
+import { Inbox, SearchX } from "lucide-react";
 import Tabs from "@/components/ui/Tabs";
 import StatusChip from "@/components/ui/StatusChip";
 import EmptyState from "@/components/ui/EmptyState";
-import BottomSheet from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
-import IconButton from "@/components/ui/IconButton";
+import FilterChip from "@/components/ui/FilterChip";
+import SearchInput from "@/components/ui/SearchInput";
+import ListDetailLayout from "@/components/ListDetailLayout";
 import { useToast } from "@/components/ui/Toast";
-import { useViewport } from "@/components/shell-state";
 import {
   REQUEST_TYPE_LABEL,
   formatDeadline,
@@ -109,7 +109,6 @@ export default function RequestQueue({
   const toast = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const viewport = useViewport();
   const tab = parseTab(searchParams.get("tab"));
 
   const [open, setOpen] = useState<QueueItem[]>(initialOpen);
@@ -300,7 +299,6 @@ export default function RequestQueue({
 
   const filtering = query.trim() !== "" || typeFilter !== "all";
   const showMore = tab === "done" && (search && query.trim() ? search.cursor : doneCursor);
-  const isDesktop = viewport === "desktop";
 
   function clearFilters() {
     setQuery("");
@@ -402,78 +400,46 @@ export default function RequestQueue({
       <Tabs tabs={tabs} ariaLabel="États des demandes" />
 
       <div className="flex flex-col gap-3">
-        <div className="relative">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-subtle" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              if (!e.target.value.trim()) setSearch(null);
-            }}
-            placeholder="Rechercher un titre, un demandeur, un département…"
-            aria-label="Rechercher une demande"
-            className="block min-h-11 w-full rounded-control border border-control-line bg-surface py-2 pl-9 pr-3 text-[15px] text-ink placeholder:text-ink-subtle focus:border-brand focus:outline-none"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!e.target.value.trim()) setSearch(null);
+          }}
+          placeholder="Rechercher un titre, un demandeur, un département…"
+          aria-label="Rechercher une demande"
+        />
         {typeFilters && (
           <div role="group" aria-label="Filtrer par type" className="flex flex-wrap gap-2">
             {[{ key: "all", label: "Tout", types: [] as readonly string[] }, ...typeFilters].map((f) => {
               const pressed = typeFilter === f.key;
               return (
-                <button
-                  key={f.key}
-                  type="button"
-                  aria-pressed={pressed}
-                  onClick={() => setTypeFilter(f.key)}
-                  className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold transition-colors duration-120
-                    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-                      pressed ? "border-brand bg-brand-soft text-brand-text" : "border-control-line bg-surface text-ink-muted hover:bg-surface-sunken"
-                    }`}
-                >
+                <FilterChip key={f.key} pressed={pressed} onClick={() => setTypeFilter(f.key)}>
                   {f.label}
-                </button>
+                </FilterChip>
               );
             })}
           </div>
         )}
       </div>
 
-      <div className={isDesktop ? "grid grid-cols-[minmax(0,1fr)_420px] items-start gap-6" : ""}>
-        <div className="flex min-w-0 flex-col gap-4">
-          {renderList()}
-          {showMore && (
-            <Button variant="secondary" onClick={loadMore} disabled={loadingMore} className="self-center">
-              {loadingMore ? "Chargement…" : "Voir plus"}
-            </Button>
-          )}
-        </div>
-
-        {isDesktop && (
-          <aside
-            aria-label="Détail de la demande"
-            className="sticky top-4 max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-card border border-line bg-surface"
-          >
-            {selected ? (
-              <div className="flex flex-col gap-4 p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="min-w-0 break-words font-display text-[17px] font-semibold leading-6 text-ink">{detailTitle}</h2>
-                  <IconButton icon={X} aria-label="Fermer" onClick={() => setSelectedId(null)} />
-                </div>
-                {detail}
-              </div>
-            ) : (
-              <EmptyState size="sm" title="Aucune demande sélectionnée" description="Choisissez une demande dans la liste pour la traiter." />
+      <ListDetailLayout
+        list={
+          <>
+            {renderList()}
+            {showMore && (
+              <Button variant="secondary" onClick={loadMore} disabled={loadingMore} className="self-center">
+                {loadingMore ? "Chargement…" : "Voir plus"}
+              </Button>
             )}
-          </aside>
-        )}
-      </div>
-
-      {!isDesktop && (
-        <BottomSheet open={selected !== null} onClose={() => setSelectedId(null)} title={detailTitle}>
-          <div className="flex flex-col gap-4 px-4 pb-6 pt-2">{detail}</div>
-        </BottomSheet>
-      )}
+          </>
+        }
+        detail={detail}
+        detailTitle={detailTitle}
+        onClose={() => setSelectedId(null)}
+        asideLabel="Détail de la demande"
+        placeholder={{ title: "Aucune demande sélectionnée", description: "Choisissez une demande dans la liste pour la traiter." }}
+      />
     </div>
   );
 }

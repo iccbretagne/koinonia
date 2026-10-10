@@ -1,7 +1,7 @@
 # Spec — Refonte de l'écran Offres
 
 - **Numéro** : 064
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-10
 - **Branche suggérée** : `feat/offres`
 - **Issue** : #678
