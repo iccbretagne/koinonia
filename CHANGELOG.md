@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.31.0] - 2026-10-11
+
 ### Ajouté
 
 - Espace Offres refondu : un seul nom (« Offres », comme dans le menu) et deux onglets, « Opportunités » (emplois, stages, alternances, missions freelance) et « Profils disponibles » (personnes en recherche, freelances), au lieu de trois onglets dont l'un mêlait missions et personnes. Le type devient un filtre en pastilles ; recherche sans accents sur le métier, l'entreprise, la ville et la description ; « Mes publications » montre ses annonces quel que soit leur état ; la modération filtre par état (Actives, Retirées, Toutes). Un bouton « Publier » unique propose les quatre sortes d'annonces (feuille du bas sur mobile). Cartes compactes sans bouton imbriqué : échéance relative (signalée sous 7 jours), budget ou tarif freelance, point « Nouveau » pour les opportunités parues depuis la dernière visite. Le détail et les actions (postuler, modifier, pourvue / a trouvé / indisponible, retirer, republier, supprimer) s'ouvrent dans un panneau, à droite sur grand écran, en feuille du bas sur mobile ; les liens directs partagés sur WhatsApp mènent toujours à la page de la publication, et une publication disparue affiche « Cette publication n'est plus disponible » au lieu d'une erreur. Un filtre sans résultat affiche « Aucun résultat pour ces filtres » avec « Effacer les filtres ». « Copier pour WhatsApp » inclut les missions et suit pastilles et recherche. La pastille du menu « Offres » compte désormais aussi les nouvelles missions freelance. Plus aucune fenêtre d'alerte du navigateur (spec 064, #678).
@@ -30,6 +32,34 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
   téléchargement s'ouvrent à tous les Ministres, en plus des responsables de département et de
   la Modération ; la Coordination générale perd son accès dédié (spec 040, révision du
   2026-10-10).
+
+### Amélioré
+
+- Accessibilité : chaque champ de formulaire est relié à son libellé et les groupes de cases ou de choix ont un intitulé, lu par les lecteurs d'écran ; Échap ferme désormais les fenêtres et visionneuses qui ne se fermaient qu'à la souris (confirmations, visionneuses publiques, feuille de refus du validateur, zoom du guide) ; zones de dépôt, cartes de fichier et de photo utilisables au clavier, avec un anneau de focus ; une ligne du constructeur de collection se coche d'un clic n'importe où.
+- Erreurs auparavant silencieuses désormais signalées : retrait d'un rôle de responsable, liste des sauvegardes, copie dans le presse-papiers, rafraîchissements média, statistiques comptables, accueil, salles. Un zip de partage interrompu est fermé proprement.
+- Formulaires de l'espace Offres alignés sur le reste de l'application (libellés, contrôles de 44 px, texte en 16 px : plus de zoom au focus sur iOS).
+- Vue planning hebdomadaire : un message s'affiche si le navigateur bloque la fenêtre de copie, comme sur la vue mensuelle. Statistiques du suivi pastoral : « Aucune donnée » au lieu de barres à zéro.
+- Guide utilisateur : les accès affichés pour chaque fonctionnalité correspondent de nouveau aux permissions réelles des rôles, et les écrans manquants y sont décrits.
+
+### Sécurité
+
+- Next.js 16.4.0, qui inclut les correctifs des avis de sécurité visant Next.js 16.0.0 à 16.3.7 (passage par 16.3.8).
+- `source-map-js` 1.2.2 (GHSA-68fv-2mgg-jv7q).
+- Pièces jointes comptables : la partie aléatoire de leur clé de stockage vient d'un générateur cryptographique. Cache local des rendus média nommé par SHA-256 au lieu de SHA-1 (il se reconstitue au premier accès).
+
+### Dépendances
+
+- AWS SDK S3 3.1147, lucide-react 1.52, pino 10.4, html2canvas-pro 2.5.2, eslint-config-next 16.4 (nouvelles règles react-hooks appliquées).
+
+### Technique
+
+- Analyse SonarCloud intégrée à la CI (couverture, Quality Gate progressif), avec des workflows pour exporter l'analyse et accepter en lot les faux positifs relus ; correction des alertes du premier scan (fiabilité, maintenabilité, complexité cognitive, duplication), par lots (#539).
+- Workflow « Release » : tag et GitHub Release à la demande depuis `main`, notes reprises du CHANGELOG.
+- CI : paquets ffmpeg mis en cache.
+
+### Documentation
+
+- Schéma de base de données (30 tables et 31 enums ajoutés), authentification et permissions, fiches de processus, environnement de développement et procédure des captures du guide alignés sur le code.
 
 ## [v1.30.0] - 2026-10-04
 
