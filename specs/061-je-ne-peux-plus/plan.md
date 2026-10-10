@@ -1,7 +1,7 @@
 # Plan technique — « Je ne peux plus » et remplacements
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Validé
 - **Mis à jour le** : 2026-10-10
 - **S'appuie sur** : spec 058 (disponibilités, ADR-0020), spec 060 (récapitulatif regroupé,
   `PlanningChangeNotice`), planificateur `/api/cron` (ADR-0021)
@@ -265,17 +265,16 @@ Nouvelle tâche dans `src/app/api/cron/route.ts` :
 - **Choix** : pas d'ADR — la décision reste propre à cette feature (nouvelle table du module
   planning, aucun pattern transverse ni choix de stack).
 
-## Écart avec la spec à valider
+## Écarts avec la spec initiale (validés le 2026-10-10, spec amendée)
 
 - **« Service retiré par le responsable avant tout choix »** : le STAR étant déjà sorti du
   planning à son désistement, le responsable ne peut plus « le retirer de la grille ». Le plan
   propose une action **« Ne pas remplacer »** sur l'écran du désistement, qui clôt le
-  remplacement et confirme au STAR que son désistement est pris en compte. → Amender ce cas
-  limite de la spec dans la même PR.
+  remplacement et confirme au STAR que son désistement est pris en compte. Spec amendée.
 - **Services « remplaçant »** : « Mon planning » n'affiche aujourd'hui que les statuts « en
   service » et « en service + débrief » (`loadMyPlanning`), pas « remplaçant ». Un STAR planifié
   « remplaçant » ne verrait donc pas l'action. Le plan **ajoute** le statut « remplaçant » à
-  « Mon planning » (affiché comme tel), puisque la spec le compte comme un service. À confirmer.
+  « Mon planning » (affiché comme tel), puisque la spec le compte comme un service. Spec amendée.
 
 ## Risques & points d'attention
 

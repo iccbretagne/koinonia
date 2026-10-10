@@ -109,6 +109,8 @@ possibles** parmi lesquels choisir.
 - **Deux responsables en même temps** : Marie et son adjoint choisissent chacun un remplaçant au
   même moment. Le premier choix l'emporte ; le second est informé que le service a déjà été
   pourvu, et par qui.
+- **Service « remplaçant »** : un STAR planifié avec le statut « remplaçant » voit ce service
+  dans « Mon planning », affiché comme tel, et peut s'en désister comme de tout service.
 - **Statut conservé** : le remplaçant reprend le statut du service (en service, en service +
   débrief, remplaçant). Le responsable peut le modifier ensuite dans la grille, comme
   aujourd'hui.
@@ -129,9 +131,10 @@ possibles** parmi lesquels choisir.
 - **Le responsable se désiste lui-même** : s'il est planifié dans son propre département, son
   désistement prévient les **autres** responsables du département ; à défaut, le Ministre.
 - **Département sans responsable** : le Ministre du ministère est prévenu.
-- **Service retiré par le responsable avant tout choix** : si Marie retire simplement Paul de la
-  grille sans le remplacer, le service n'est plus « à remplacer » ; Paul est prévenu de son
-  retrait par le récapitulatif habituel (spec 060).
+- **Ne pas remplacer** : le STAR désisté ne figure plus dans le planning dès son désistement. Si
+  Marie décide de faire sans remplaçant, elle choisit **« Ne pas remplacer »** sur l'écran du
+  service à remplacer : le service n'est plus à remplacer (plus de signalement, plus de relance),
+  et Paul reçoit « Ton désistement du dimanche 12 est pris en compte ».
 - **Événement supprimé ou déplacé** : déjà couvert par la spec 059 ; un désistement en cours sur
   cet événement disparaît avec lui (événement supprimé) ou est conservé tel quel (événement
   déplacé) — le STAR désisté n'est pas remis au planning.
@@ -194,6 +197,9 @@ simple prévue par la spec 058 pour ce cas.
       confirmation nommant son remplaçant.
 - [ ] Un choix devenu invalide (remplaçant plus libre, service déjà pourvu) est refusé avec un
       message clair.
+- [ ] Un responsable peut clore un service à remplacer sans remplaçant (« Ne pas remplacer ») ;
+      le signalement et la relance cessent, et le STAR désisté en est informé.
+- [ ] « Mon planning » affiche aussi les services au statut « remplaçant ».
 - [ ] Le STAR peut annuler son désistement tant qu'aucun remplaçant n'est choisi ; le responsable
       prévenu en est informé.
 - [ ] Seuls ceux qui peuvent modifier le planning du département (responsable et adjoint,
@@ -232,6 +238,9 @@ simple prévue par la spec 058 pour ce cas.
 - Fin du désistement : la **date limite de planification** de l'événement, à défaut son début.
 - Destinataires : responsables et adjoints du département ; le **Ministre seulement à défaut**.
 - **Relance unique** 48 h avant l'événement si le service est encore à remplacer.
+- Le STAR quitte le planning dès son désistement ; « Ne pas remplacer » remplace le retrait
+  manuel de la grille (validé lors du plan).
+- « Mon planning » affiche les services « remplaçant » (validé lors du plan).
 - Une réponse « Pas disponible » donnée depuis l'écran de disponibilités par un STAR déjà
   planifié a **le même effet** que « Je ne peux plus ».
 
