@@ -28,8 +28,8 @@ Il complète le guide des fonctionnalités, qui répond à une autre question �
 |---|---|---|---|
 | [Demande de diffusion](demande-de-diffusion.md) | Un membre, depuis *Mes demandes* : titre, brief, canaux | Secrétariat, Communication, Production Média — un guichet par canal | Annonce diffusée, publication confirmée, visuels livrés |
 | [Demande financière](demande-financiere.md) | Un responsable : note de frais ou avance | Le comptable | Dernière tranche du plan de paiement remise |
-| [Rendez-vous pastoral](rendez-vous-pastoral.md) | Formulaire, depuis l'app ou par lien public | Qualificateur, puis titulaire du profil pastoral | Créneau posé dans l'agenda |
-| [Réservation de salle](reservation-de-salle.md) | Un responsable, sur la grille des salles | L'équipe de contrôle, si la salle l'exige | Créneau confirmé, main courante ouverte |
+| [Rendez-vous pastoral](rendez-vous-pastoral.md) | Formulaire, depuis l'app, par lien public ou depuis l'accueil | Référent soins pastoraux, puis l'accompagnant qu'il désigne | Rendez-vous tenu, issue consignée |
+| [Réservation de salle](reservation-de-salle.md) | Un responsable, sur la grille des salles | Personne : la réservation est confirmée aussitôt si le créneau est libre | Créneau confirmé, main courante ouverte |
 | [Mains courantes](mains-courantes.md) | La réservation elle-même | Responsable du créneau, puis équipe de contrôle | État des lieux contrôlé, conforme ou avec écart |
 
 ## Le cycle de l'événement
@@ -49,7 +49,7 @@ Il complète le guide des fonctionnalités, qui répond à une autre question �
 
 | Processus | Point de départ | Qui traite | Où ça se termine |
 |---|---|---|---|
-| [Accueil d'un nouveau](accueil-nouveau.md) | Le formulaire public *rejoindre* | Intégration : un berger de famille, et un conseiller en cas d'appel au salut | Entrée dans une famille de disciples |
+| [Accueil d'un nouveau](accueil-nouveau.md) | Le formulaire public *rejoindre* | Intégration : un berger de famille ; en cas d'appel au salut, un accompagnant dans le Suivi pastoral | Entrée dans une famille de disciples |
 | [Discipolat](discipolat.md) | La fin du parcours d'intégration | Le faiseur de disciples | Relation suivie, présences enregistrées |
 | [Arrivée d'un STAR](arrivee-star.md) | Le responsable déclare le nouveau membre | Responsable, puis administration | Compte rattaché, rôles attribués |
 
@@ -63,9 +63,9 @@ Il complète le guide des fonctionnalités, qui répond à une autre question �
 
 ## Deux choses à retenir
 
-**Les demandes ne partagent pas toutes le même modèle.** Une demande de diffusion se répartit entre trois guichets ; une demande financière suit un plan de paiement ; un rendez-vous pastoral passe par une qualification. Le geste de dépôt est commun, la suite ne l'est pas.
+**Les demandes ne partagent pas toutes le même modèle.** Une demande de diffusion se répartit entre trois guichets ; une demande financière suit un plan de paiement ; un rendez-vous pastoral passe par un référent qui le confie à un accompagnant. Le geste de dépôt est commun, la suite ne l'est pas.
 
-**La configuration d'un événement commande quatre processus.** Annonces, discipolat, compte rendu, service d'accueil : chacun ne s'ouvre que si l'interrupteur correspondant a été activé à la création. Un circuit qui « ne marche pas » vient très souvent de là.
+**La configuration d'un événement commande quatre processus.** Annonces, discipolat, compte rendu, service d'accueil : chacun ne s'ouvre que si l'interrupteur correspondant est activé dans la configuration de l'événement. Un circuit qui « ne marche pas » vient très souvent de là.
 
 ---
 
@@ -81,13 +81,15 @@ Il complète le guide des fonctionnalités, qui répond à une autre question �
 
 **Responsable et adjoint** — Ceux qui ont la main sur le planning d'un département.
 
-**Rôles transverses** — Des fonctions indépendantes de la hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Qualificateur Agenda, Comptable, Reporter.
+**Rôles transverses** — Des fonctions indépendantes de la hiérarchie : Admin, Secrétaire, Faiseur de Disciples, Référent soins pastoraux, Comptable, Reporter.
 
 **Berger de famille** — Le responsable d'une famille, qui accompagne les nouveaux jusqu'à leur intégration. Une famille peut avoir plusieurs bergers et co-bergers.
 
 **Faiseur de disciples** — Celui qui accompagne un disciple dans la durée, et fait l'appel à chaque événement de discipolat.
 
-**MSDP** — Le parcours d'accompagnement de ceux qui ont fait l'appel au salut, mené par un conseiller.
+**MSDP** — Le département qui accompagne ceux qui ont fait l'appel au salut. Le suivi de chaque nouveau converti se gère dans le Suivi pastoral, confié par le référent soins pastoraux à un accompagnant.
+
+**Référent soins pastoraux** — Celui qui reçoit les demandes de rendez-vous pastoral et les suivis de nouveaux convertis, et les confie à un accompagnant.
 
 **PCNC** — Parcours de croissance de la nouvelle créature, l'un des quatre jalons du parcours d'intégration avec la famille, le service et le discipolat.
 

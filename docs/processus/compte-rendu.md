@@ -12,7 +12,7 @@ L'événement est passé, et sa configuration a activé le compte rendu. Le repo
 
 ## Qui intervient
 
-Le reporter désigné, les responsables de département pour les observations les concernant, et les ministres et pilotes qui exploitent les chiffres.
+Le reporter désigné (rôle Reporter), ou la Secrétaire, Admin et Super Admin : ce sont eux qui saisissent. Les observations de chaque département leur sont remontées par les responsables, et les chiffres servent à ceux qui pilotent.
 
 ## Les étapes
 
@@ -40,7 +40,7 @@ Des sections libres peuvent être ajoutées lorsque l'événement sort du cadre 
 
 | Pour… | Aller à… |
 |---|---|
-| Saisir ou consulter un compte rendu | Événements → **Comptes rendus**, puis *Saisir* sur l'événement |
+| Saisir ou consulter un compte rendu | Agenda → **Comptes rendus**, puis *Saisir* sur l'événement |
 | Accéder depuis l'événement | Le bouton **Saisir / voir le compte rendu** de sa configuration |
 | Voir les chiffres agrégés | L'onglet **Statistiques** |
 | Diffuser | Les exports **PDF** et **WhatsApp** |

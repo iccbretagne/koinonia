@@ -8,7 +8,7 @@ Remplace l'avance de poche qu'on finit par oublier de réclamer, et le tableur d
 
 ## Le déclencheur
 
-Une dépense est nécessaire, ou vient d'être faite. Le responsable ouvre **Opérations → Mes demandes → Nouvelle demande → Demande comptable**, ou directement **Opérations → Comptabilité → Nouvelle demande**.
+Une dépense est nécessaire, ou vient d'être faite. Le responsable ouvre **Demandes → Mes demandes → Nouvelle demande → Demande comptable**, ou directement **Demandes → Comptabilité → Nouvelle demande**. Le dépôt est ouvert aux Ministres, aux responsables de département, à Admin et Super Admin.
 
 Il choisit d'abord le **type**, qui détermine tout le reste :
 
@@ -18,11 +18,11 @@ Il choisit d'abord le **type**, qui détermine tout le reste :
 | Avance one-shot | Une dépense à venir, ponctuelle |
 | Avance récurrente | Un virement régulier, planifié à l'avance |
 
-Puis il renseigne le **département** concerné — facultatif pour une note de frais personnelle —, un **intitulé**, le **montant TTC**, une description si nécessaire, et les **pièces jointes** : reçu, facture ou devis, au format JPEG, PNG ou PDF, jusqu'à 5 Mo.
+Puis il renseigne le **département** concerné — facultatif pour une note de frais personnelle, obligatoire pour une avance récurrente —, un **intitulé**, le **montant TTC**, une description si nécessaire, et les **pièces jointes** : reçu, facture ou devis, au format JPEG, PNG ou PDF, jusqu'à 5 Mo.
 
 ## Qui intervient
 
-Le demandeur, et le comptable. C'est le circuit le plus court de l'application : un seul guichet, une seule décision.
+Le demandeur, et le comptable (rôle Comptable, ou Admin et Super Admin). C'est le circuit le plus court de l'application : un seul guichet, une seule décision. Ministres et responsables de département consultent les demandes de leur périmètre ; la Secrétaire voit les statistiques, sans traiter.
 
 ## Les étapes et leurs statuts
 
@@ -40,9 +40,10 @@ Une demande n'est donc réellement terminée qu'une fois la dernière tranche re
 
 | Pour… | Aller à… |
 |---|---|
-| Déposer une demande | Opérations → Mes demandes, ou Comptabilité → Nouvelle demande |
-| Suivre ses propres demandes | Mes demandes → Mes demandes comptables |
-| Traiter, valider et payer | Opérations → Comptabilité |
+| Déposer une demande | Demandes → Mes demandes → Nouvelle demande, ou Demandes → Comptabilité |
+| Suivre ses propres demandes | Demandes → **Comptabilité** (ou le bouton *Demandes comptables* de « Mes demandes ») |
+| Traiter, valider et payer | Demandes → **Comptabilité** |
+| Mesurer | Comptabilité, onglet **Statistiques** |
 
 L'écran de traitement affiche les compteurs en tête — en attente, en traitement, validées, rejetées, paiements dus — puis la file à traiter, et enfin la liste complète filtrable par statut et par type, avec le total engagé.
 
@@ -56,9 +57,9 @@ L'écran de traitement affiche les compteurs en tête — en attente, en traitem
 
 ## Les cas particuliers
 
-**Un rejet.** Le comptable motive sa décision. La demande reste consultable avec son motif.
+**Un rejet.** Le comptable motive sa décision, le motif est obligatoire. La demande reste consultable avec son motif, et son auteur peut la **corriger et la resoumettre** : une nouvelle demande naît, reliée à la première.
 
-**Une annulation.** Une demande peut être annulée avant son terme — par exemple si la dépense n'a finalement pas lieu.
+**Une annulation.** Le demandeur peut annuler sa demande tant qu'elle n'a pas été prise en charge — par exemple si la dépense n'a finalement pas lieu. Ensuite, c'est au comptable de la rejeter.
 
 **Un plan de paiement qui traîne.** Une demande validée dont les tranches ne sont pas confirmées reste visible dans les paiements dus. C'est volontaire : rien ne disparaît tant que l'argent n'est pas sorti.
 

@@ -6,13 +6,13 @@ Mettre à disposition, culte par culte, le document que le secrétariat compose 
 
 ## Le déclencheur
 
-Un culte approche. Le secrétariat rédige la trame, à sa main et selon ses propres usages, puis la met à disposition dans Koinonia.
+Un culte approche. Le secrétariat rédige la trame, à sa main et selon ses propres usages, puis la **dépose** (un fichier) sur la page de l'événement.
 
 C'est un **document libre** : Koinonia ne le fabrique pas et n'en impose pas la forme. L'application sert à le ranger au bon endroit et à le rendre consultable, pas à le générer.
 
 ## Qui intervient
 
-Le secrétariat compose et publie. Les orateurs, les responsables et ceux qui montent à l'estrade consultent.
+Le secrétariat compose et dépose : Admin, Secrétaire, Super Admin, et tout membre d'un département de fonction **Secrétariat**. La consultent en plus les Ministres, les responsables de département et les membres d'un département de fonction **Modération**.
 
 ## Les étapes
 
@@ -24,8 +24,9 @@ La trame est **rattachée à un culte** : on la retrouve en choisissant la date,
 
 | Pour… | Aller à… |
 |---|---|
-| Consulter la trame d'un culte | Événements → **Trame des annonces** |
-| Retrouver les annonces demandées | Opérations → Traitement des demandes |
+| Consulter la trame d'un culte | Agenda → **Trame des annonces** (« Déposée » ou « En attente » pour chaque culte du mois) |
+| Déposer ou remplacer la trame | La page de l'événement, ouverte depuis cette liste |
+| Retrouver les annonces demandées | Demandes → Traitement des demandes |
 
 ## Les règles à connaître
 
