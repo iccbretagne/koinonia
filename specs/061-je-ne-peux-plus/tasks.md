@@ -1,7 +1,7 @@
 # Tâches — « Je ne peux plus » et remplacements
 
 - **Spec** : `./spec.md` · **Plan** : `./plan.md`
-- **Statut** : Terminé (raccourci période reporté : #673)
+- **Statut** : Terminé (raccourci période : spec 062, #673)
 
 > Tâches **ordonnées** et **vérifiables**. Chacune est atomique et suit les dépendances
 > naturelles : migration → services → API → UI → tests. Les tâches `[P]` sont parallélisables.
@@ -131,7 +131,7 @@ Toutes : `resolveChurchId` sur l'objet, puis `requireChurchPermission`, Zod sur 
   STAR désisté marquée « à remplacer » (avec message), compteur `toReplace` *(fichier :
   `src/components/PlanningGrid.tsx`)*
 - [x] **T29** [P] — Écran de disponibilités : `ConfirmModal` d'avertissement avant d'enregistrer
-  un « Pas disponible » (réponse ; raccourci période reporté à #673) qui touche un service `withdrawable`
+  un « Pas disponible » (réponse ; raccourci période : spec 062) qui touche un service `withdrawable`
   *(fichier : `src/app/(auth)/disponibilites/AvailabilityClient.tsx`)*
 - [x] **T30** [P] — Fil d'Ariane : rattacher `/planning/remplacements/[id]` à l'espace Planning
   (« Remplacement ») *(fichier : `src/lib/navigation.ts`)*

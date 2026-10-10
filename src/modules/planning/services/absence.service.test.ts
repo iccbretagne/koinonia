@@ -18,6 +18,11 @@ const { planningBus } = await import("@/modules/planning");
 // Depuis la migration vers `notifyUsers` (spec 053, lot 2), l'écriture in-app passe par
 // `notification.createMany` (un seul appel, plusieurs destinataires) plutôt que par un
 // `notification.create` par destinataire.
+// Spec 062 : par défaut, aucune absence n'a de désistement de service.
+beforeEach(() => {
+  prismaMock.serviceWithdrawal.findMany.mockResolvedValue([]);
+});
+
 function notifiedUserIds() {
   return prismaMock.notification.createMany.mock.calls.flatMap(
     (c) => (c[0] as { data: { userId: string }[] }).data.map((d) => d.userId)
@@ -219,7 +224,7 @@ describe("declareAbsence", () => {
 
     const result = await declareAbsence(baseParams);
 
-    expect(result).toEqual(createdAbsence);
+    expect(result).toEqual({ ...createdAbsence, withdrawalCount: 0, cancelledWithdrawalCount: 0 });
   });
 
   it("notifie tous les responsables de tous les départements sans doublon (sans conflit)", async () => {
@@ -810,6 +815,7 @@ describe("updateAbsence", () => {
   it("notifie ABSENCE_CONFLICT si un nouveau conflit apparaît suite à la modification", async () => {
     prismaMock.planning.findMany
       .mockResolvedValueOnce([]) // conflits avant (période actuelle)
+      .mockResolvedValueOnce([]) // services désistables (spec 062) : aucun
       .mockResolvedValueOnce([
         { eventDepartment: { departmentId: "dept-1", event: { id: "evt-1", title: "Culte", date: new Date("2026-09-05") } } },
       ] as never); // conflits après (nouvelle période)

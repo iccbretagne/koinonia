@@ -281,7 +281,7 @@ Nouvelle tâche dans `src/app/api/cron/route.ts` :
   `ABSENCE_CONFLICT`). Le brancher sur les désistements ferait coexister deux mécanismes de
   remplacement : **reporté à un lot suivant (#673)**, sur décision de l'utilisateur. Le raccourci
   garde l'alerte de conflit actuelle ; la réponse « Pas disponible » à un événement crée bien le
-  désistement.
+  désistement. *Résolu par la spec 062 (#673).*
 
 ## Risques & points d'attention
 

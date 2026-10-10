@@ -9,7 +9,13 @@ import Alert from "@/components/ui/Alert";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import StatusChip from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
-import UnavailabilityPeriodForm, { type BackupOption, type MemberRef } from "@/components/UnavailabilityPeriodForm";
+import UnavailabilityPeriodForm, {
+  type BackupOption,
+  type EditablePeriod,
+  type MemberRef,
+  withdrawalSummary,
+} from "@/components/UnavailabilityPeriodForm";
+import MyPeriods from "./MyPeriods";
 
 type Answer = "AVAILABLE" | "IF_NEEDED" | "UNAVAILABLE";
 type State = Answer | "NO_RESPONSE" | "NOT_ASKED";
@@ -251,6 +257,8 @@ export default function AvailabilityClient({
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [editingPeriod, setEditingPeriod] = useState<EditablePeriod | null>(null);
+  const [periodsKey, setPeriodsKey] = useState(0);
   const [pendingSave, setPendingSave] = useState<{ event: EventRow; answers: AnswerInput[] } | null>(null);
   const focusedRef = useRef(false);
 
@@ -426,6 +434,19 @@ export default function AvailabilityClient({
         </Button>
       </div>
 
+      {isSelf && memberId && (
+        <MyPeriods
+          churchId={churchId}
+          memberId={memberId}
+          refreshKey={periodsKey}
+          onEdit={(period) => {
+            setEditingPeriod(period);
+            setPeriodOpen(true);
+          }}
+          onChanged={() => void load(true)}
+        />
+      )}
+
       {eventsContent}
 
       <ConfirmModal
@@ -450,11 +471,17 @@ export default function AvailabilityClient({
 
       <UnavailabilityPeriodForm
         open={periodOpen}
-        onClose={() => setPeriodOpen(false)}
-        onSaved={() => {
-          toast.success("Indisponibilité enregistrée");
+        onClose={() => {
+          setPeriodOpen(false);
+          setEditingPeriod(null);
+        }}
+        onSaved={(result) => {
+          const summary = withdrawalSummary(result);
+          toast.success(summary ? `Indisponibilité enregistrée · ${summary}` : "Indisponibilité enregistrée");
+          setPeriodsKey((k) => k + 1);
           void load(true);
         }}
+        editing={editingPeriod}
         churchId={churchId}
         mode={isSelf ? "self" : "manage"}
         selfMembers={selfMembers}

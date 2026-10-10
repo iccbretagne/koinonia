@@ -6,11 +6,41 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import CheckboxGroup from "@/components/ui/CheckboxGroup";
+import Alert from "@/components/ui/Alert";
 
 /**
  * Formulaire « Pas disponible du … au … » (spec 058) : période, départements, motif et — pour un
  * responsable — remplaçants. Partagé entre « Mes disponibilités » et « Indisponibilités ».
+ * Avant d'enregistrer, avertit si la période désistera des services planifiés (spec 062).
  */
+
+/** Bilan renvoyé par l'enregistrement : désistements créés / annulés (spec 062). */
+export interface PeriodSaveResult {
+  withdrawalCount?: number;
+  cancelledWithdrawalCount?: number;
+}
+
+/** Complément du toast d'enregistrement : « 2 services à remplacer, responsables prévenus ». */
+export function withdrawalSummary({ withdrawalCount = 0, cancelledWithdrawalCount = 0 }: PeriodSaveResult): string | null {
+  const parts: string[] = [];
+  if (withdrawalCount > 0) {
+    parts.push(`${withdrawalCount} service${withdrawalCount > 1 ? "s" : ""} à remplacer, responsables prévenus`);
+  }
+  if (cancelledWithdrawalCount > 0) {
+    parts.push(`${cancelledWithdrawalCount} désistement${cancelledWithdrawalCount > 1 ? "s" : ""} annulé${cancelledWithdrawalCount > 1 ? "s" : ""}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+interface PreviewService {
+  eventId: string;
+  title: string;
+  date: string;
+  departmentId: string;
+  departmentName: string;
+}
+
+const previewDay = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
 export interface MemberRef {
   id: string;
@@ -39,7 +69,7 @@ export interface EditablePeriod {
 interface Props {
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly onSaved: () => void;
+  readonly onSaved: (result: PeriodSaveResult) => void;
   readonly churchId: string;
   readonly mode: "self" | "manage";
   readonly editing?: EditablePeriod | null;
@@ -121,12 +151,14 @@ export default function UnavailabilityPeriodForm({
   const [manageBackupEligible, setManageBackupEligible] = useState(false);
   const [manageBackupOptions, setManageBackupOptions] = useState<BackupOption[]>([]);
   const [loadingBackups, setLoadingBackups] = useState(false);
+  const [warning, setWarning] = useState<PreviewService[] | null>(null);
 
   // Réinitialisation à chaque ouverture.
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation de l'état local au changement de dépendance
     setError(null);
+    setWarning(null);
     if (editing) {
       setMemberId(editing.memberId);
       setStartDate(editing.startDate ? editing.startDate.slice(0, 10) : "");
@@ -206,7 +238,38 @@ export default function UnavailabilityPeriodForm({
     if (!endDate || endDate < value) setEndDate(value);
   }
 
-  async function submit() {
+  function buildTargeting() {
+    return {
+      kind: "PERIOD" as const,
+      startDate: new Date(startDate).toISOString(),
+      endDate: new Date(endDate).toISOString(),
+      allDepartments,
+      ...(allDepartments ? {} : { departmentIds }),
+    };
+  }
+
+  /** Services planifiés que la période désisterait ; `[]` si l'aperçu échoue (l'enregistrement fait foi). */
+  async function previewWithdrawals(): Promise<PreviewService[]> {
+    const t = buildTargeting();
+    const params = new URLSearchParams({
+      churchId,
+      memberId: editing?.memberId ?? memberId,
+      startDate: t.startDate,
+      endDate: t.endDate,
+      allDepartments: String(allDepartments),
+      ...(allDepartments ? {} : { departmentIds: departmentIds.join(",") }),
+    });
+    try {
+      const res = await fetch(`/api/absences/withdrawal-preview?${params}`);
+      if (!res.ok) return [];
+      const data = (await res.json()) as { services: PreviewService[] };
+      return data.services;
+    } catch {
+      return [];
+    }
+  }
+
+  async function submit(confirmed = false) {
     if (!editing && !memberId) return setError("Choisir une fiche STAR.");
     if (!startDate || !endDate) return setError("Date de début et date de fin sont requises.");
     if (!allDepartments && departmentIds.length === 0) return setError("Sélectionner au moins un département.");
@@ -214,13 +277,14 @@ export default function UnavailabilityPeriodForm({
     setSubmitting(true);
     setError(null);
     try {
-      const targeting = {
-        kind: "PERIOD" as const,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
-        allDepartments,
-        ...(allDepartments ? {} : { departmentIds }),
-      };
+      if (!confirmed) {
+        const services = await previewWithdrawals();
+        if (services.length > 0) {
+          setWarning(services);
+          return;
+        }
+      }
+      const targeting = buildTargeting();
       const backupPayload = showBackups ? { backups: parseBackupSelection(backups) } : {};
 
       const res = editing
@@ -235,11 +299,10 @@ export default function UnavailabilityPeriodForm({
             body: JSON.stringify({ churchId, memberId, ...targeting, reason: reason || null, ...backupPayload }),
           });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? "Erreur lors de l'enregistrement");
-      }
-      onSaved();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Erreur lors de l'enregistrement");
+      setWarning(null);
+      onSaved({ withdrawalCount: data.withdrawalCount, cancelledWithdrawalCount: data.cancelledWithdrawalCount });
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur lors de l'enregistrement");
@@ -247,6 +310,16 @@ export default function UnavailabilityPeriodForm({
       setSubmitting(false);
     }
   }
+
+  const forSelf = editing ? editing.isSelf : mode === "self";
+  const warningTitle = (n: number) =>
+    forSelf
+      ? `Tu es planifié(e) sur ${n > 1 ? `${n} services` : "un service"} de cette période`
+      : `Ce STAR est planifié sur ${n > 1 ? `${n} services` : "un service"} de cette période`;
+  const warningIntro = forSelf ? "Tu seras retiré(e) de :" : "Il sera retiré de :";
+  const warningOutro = forSelf
+    ? "Tes responsables seront prévenus pour te remplacer."
+    : "Ces services deviendront « à remplacer » et ses responsables seront prévenus.";
 
   let modalTitle = "Déclarer pour un STAR";
   if (editing) modalTitle = "Modifier l'indisponibilité";
@@ -315,12 +388,36 @@ export default function UnavailabilityPeriodForm({
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>Annuler</Button>
-          <Button onClick={submit} disabled={submitting}>
-            {submitting ? "Envoi..." : "Enregistrer"}
-          </Button>
-        </div>
+        {warning ? (
+          <>
+            <Alert tone="warning" title={warningTitle(warning.length)}>
+              {warningIntro}
+              <ul className="mt-1 list-disc pl-5">
+                {warning.map((w) => (
+                  <li key={`${w.eventId}_${w.departmentId}`}>
+                    <span className="first-letter:uppercase">{previewDay.format(new Date(w.date))}</span> ({w.departmentName})
+                  </li>
+                ))}
+              </ul>
+              {warningOutro}
+            </Alert>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setWarning(null)} disabled={submitting}>
+                Modifier
+              </Button>
+              <Button onClick={() => submit(true)} disabled={submitting}>
+                {submitting ? "Envoi..." : "Confirmer et enregistrer"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={onClose}>Annuler</Button>
+            <Button onClick={() => submit()} disabled={submitting}>
+              {submitting ? "Envoi..." : "Enregistrer"}
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

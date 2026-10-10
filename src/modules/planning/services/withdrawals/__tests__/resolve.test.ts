@@ -8,7 +8,7 @@ vi.mock("@/lib/notifications", () => ({ notifyUsers: (...a: unknown[]) => notify
 const resolveWithdrawalRecipients = vi.fn().mockResolvedValue(["marie"]);
 vi.mock("../recipients", () => ({ resolveWithdrawalRecipients: (...a: unknown[]) => resolveWithdrawalRecipients(...a) }));
 
-const { cancelWithdrawal, closeWithdrawal } = await import("../resolve");
+const { cancelWithdrawal, closeWithdrawal, cancelPendingWithdrawal } = await import("../resolve");
 
 const eventDate = new Date("2026-11-08T10:00:00Z");
 const now = new Date("2026-11-04T10:00:00Z");
@@ -85,5 +85,22 @@ describe("closeWithdrawal", () => {
       statusCode: 409,
       message: "Ce service a déjà été pourvu par Léa Bernard",
     });
+  });
+});
+
+describe("cancelPendingWithdrawal", () => {
+  beforeEach(() => vi.clearAllMocks());
+  const w = { id: "w-1", churchId: "church-1", eventId: "evt-1", departmentId: "dept-1", memberId: "paul", originalStatus: "REMPLACANT" as const };
+
+  it("sans restoreResponse (annulation par la période, spec 062) : statut restauré, aucune réponse fabriquée", async () => {
+    setup();
+    await cancelPendingWithdrawal(prismaMock as never, w, "u-paul", { restoreResponse: false }, now);
+    expect(prismaMock.planning.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { status: "REMPLACANT" } }));
+    expect(prismaMock.availabilityResponse.upsert).not.toHaveBeenCalled();
+  });
+
+  it("409 si le désistement n'est plus en attente", async () => {
+    setup(0);
+    await expect(cancelPendingWithdrawal(prismaMock as never, w, "u-paul", { restoreResponse: false }, now)).rejects.toMatchObject({ statusCode: 409 });
   });
 });

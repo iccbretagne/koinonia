@@ -4,11 +4,18 @@ import { isAbsencePast } from "@/lib/absence-lock";
 import { ROLE_SHORT_LABELS } from "@/lib/roles";
 import { planningBus } from "../bus";
 import {
+  absenceCovers,
   validateTargeting,
   lastEffectiveDate,
   type DeclarerScope,
   type TargetEventSnapshot,
 } from "./absence-targeting";
+import {
+  cancelAbsenceWithdrawals,
+  sendAbsenceWithdrawalNotices,
+  withdrawForAbsence,
+} from "./withdrawals/absence";
+import type { AbsenceServiceLine } from "./withdrawals/notify";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -37,6 +44,24 @@ export interface AbsenceTargeting {
   eventIds?: string[];
   allDepartments: boolean;
   departmentIds?: string[];
+}
+
+/** Absence renvoyée par les services, avec le bilan des désistements de service (spec 062). */
+export type AbsenceWithWithdrawals = Absence & { withdrawalCount: number; cancelledWithdrawalCount: number };
+
+/** Le ciblage `after` couvre-t-il encore ce service ? (modification d'une absence, spec 062) */
+function stillCovered(after: AbsenceTargeting, w: { eventId: string; eventDate: Date; departmentId: string }): boolean {
+  return absenceCovers(
+    {
+      kind: after.kind,
+      startDate: after.startDate ?? null,
+      endDate: after.endDate ?? null,
+      allDepartments: after.allDepartments,
+      targetDepartments: (after.departmentIds ?? []).map((departmentId) => ({ departmentId })),
+      targetEvents: (after.eventIds ?? []).map((eventId) => ({ eventId })),
+    },
+    { eventId: w.eventId, eventDate: w.eventDate, departmentId: w.departmentId }
+  );
 }
 
 function formatPeriod(startDate: Date, endDate: Date): string {
@@ -488,7 +513,7 @@ function assertPeriodOnly(kind: AbsenceKind | undefined): void {
  * L'autorisation (auto-déclaration ou périmètre resp./ministre) est vérifiée par
  * la route appelante avant d'invoquer ce service.
  */
-export async function declareAbsence(params: DeclareAbsenceParams): Promise<Absence> {
+export async function declareAbsence(params: DeclareAbsenceParams): Promise<AbsenceWithWithdrawals> {
   const {
     churchId,
     memberId,
@@ -512,7 +537,8 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
   });
   if (!member) throw new ApiError(404, "Fiche STAR introuvable");
 
-  return prisma.$transaction(async (tx) => {
+  const now = new Date();
+  const { absence, created } = await prisma.$transaction(async (tx) => {
     const { events } = await validateTargeting(tx, {
       churchId,
       memberId,
@@ -564,6 +590,14 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
       allDepartments,
       departmentIds,
     };
+
+    // Spec 062 : désister d'abord — les conflits restants ne sont plus que les services dont la
+    // date limite est passée, seuls à recevoir encore l'alerte de conflit.
+    const created = await withdrawForAbsence(
+      tx,
+      { absenceId: absence.id, churchId, memberId, actorId: createdById, targeting },
+      now
+    );
 
     const conflicts = await findAbsenceConflicts(memberId, churchId, targeting, tx);
     const hasConflict = conflicts.length > 0;
@@ -646,8 +680,12 @@ export async function declareAbsence(params: DeclareAbsenceParams): Promise<Abse
       }
     );
 
-    return absence;
+    return { absence, created };
   });
+
+  const thirdParty = !(await isMemberLinkedToUser(memberId, createdById, churchId));
+  await sendAbsenceWithdrawalNotices({ absenceId: absence.id, churchId, memberId, actorId: createdById, created, thirdParty }, undefined, now);
+  return { ...absence, withdrawalCount: created.length, cancelledWithdrawalCount: 0 };
 }
 
 interface CancelAbsenceParams {
@@ -663,11 +701,12 @@ interface CancelAbsenceParams {
  * L'autorisation (créateur, membre lui-même, resp./ministre scopé, ou manager
  * global) est vérifiée par la route appelante avant d'invoquer ce service.
  */
-export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absence> {
+export async function cancelAbsence(params: CancelAbsenceParams): Promise<AbsenceWithWithdrawals> {
   const { absenceId, churchId, cancelledById } = params;
   const { prisma } = await import("@/lib/prisma");
+  const now = new Date();
 
-  return prisma.$transaction(async (tx) => {
+  const { updated, cancelled, kept } = await prisma.$transaction(async (tx) => {
     const absence = await tx.absence.findUnique({
       where: { id: absenceId },
       include: {
@@ -702,8 +741,10 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
 
     const updated = await tx.absence.update({
       where: { id: absenceId },
-      data: { status: "CANCELLED", cancelledAt: new Date(), cancelledById },
+      data: { status: "CANCELLED", cancelledAt: now, cancelledById },
     });
+    // Spec 062 : les désistements encore en attente nés de cette absence sont annulés.
+    const { cancelled, kept } = await cancelAbsenceWithdrawals(tx, { absenceId, actorId: cancelledById }, now);
 
     const responsibleUserIds = await resolveResponsibleUserIds(
       absence.memberId,
@@ -748,8 +789,15 @@ export async function cancelAbsence(params: CancelAbsenceParams): Promise<Absenc
       { absenceId, churchId, memberId: absence.memberId, cancelledById, hadConflict }
     );
 
-    return updated;
+    return { updated, cancelled, kept };
   });
+
+  await sendAbsenceWithdrawalNotices(
+    { absenceId, churchId, memberId: updated.memberId, actorId: cancelledById, created: [], cancelled, kept, thirdParty: false },
+    undefined,
+    now
+  );
+  return { ...updated, withdrawalCount: 0, cancelledWithdrawalCount: cancelled.length };
 }
 
 interface UpdateAbsenceParams {
@@ -844,7 +892,7 @@ async function replaceAbsenceBackups(tx: DbClient, absenceId: string, churchId: 
  * L'autorisation (créateur, membre lui-même, resp./ministre scopé, ou manager global) est
  * vérifiée par la route appelante avant d'invoquer ce service.
  */
-export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absence> {
+export async function updateAbsence(params: UpdateAbsenceParams): Promise<AbsenceWithWithdrawals> {
   const {
     absenceId,
     churchId,
@@ -862,7 +910,7 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
   assertPeriodOnly(kind);
   const { prisma } = await import("@/lib/prisma");
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const absence = await tx.absence.findUnique({
       where: { id: absenceId },
       include: {
@@ -954,6 +1002,25 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
       allDepartments: newAllDepartments,
       departmentIds: newDepartmentIds,
     };
+    // Spec 062 : si le ciblage change, annuler les désistements en attente qui ne sont plus
+    // couverts, puis désister les services nouvellement couverts — avant de recalculer les conflits.
+    let withdrawals: { created: string[]; cancelled: string[]; kept: AbsenceServiceLine[] } = { created: [], cancelled: [], kept: [] };
+    if (targetingChanged) {
+      const { cancelled, kept } = await cancelAbsenceWithdrawals(
+        tx,
+        // Ne touche que ce que la modification découvre : un service déjà hors de l'ancien ciblage
+        // (déjà signalé, ou événement déplacé) n'est ni annulé ni re-signalé.
+        { absenceId, actorId: updatedById, keep: (w) => stillCovered(targetingAfter, w) || !stillCovered(targetingBefore, w) },
+        now
+      );
+      const created = await withdrawForAbsence(
+        tx,
+        { absenceId, churchId, memberId: absence.memberId, actorId: updatedById, targeting: targetingAfter },
+        now
+      );
+      withdrawals = { created, cancelled, kept };
+    }
+
     const conflictsAfter = await findAbsenceConflicts(absence.memberId, churchId, targetingAfter, tx);
     const hasConflictAfter = conflictsAfter.length > 0;
 
@@ -1042,6 +1109,17 @@ export async function updateAbsence(params: UpdateAbsenceParams): Promise<Absenc
       }
     );
 
-    return updated;
+    return { updated, withdrawals };
   });
+
+  const { updated, withdrawals } = result;
+  if (withdrawals.created.length + withdrawals.cancelled.length + withdrawals.kept.length > 0) {
+    const thirdParty = !(await isMemberLinkedToUser(updated.memberId, updatedById, churchId));
+    await sendAbsenceWithdrawalNotices(
+      { absenceId, churchId, memberId: updated.memberId, actorId: updatedById, ...withdrawals, thirdParty },
+      undefined,
+      new Date()
+    );
+  }
+  return { ...updated, withdrawalCount: withdrawals.created.length, cancelledWithdrawalCount: withdrawals.cancelled.length };
 }

@@ -170,7 +170,7 @@ const FEATURES: Feature[] = [
   // ── Absences ─────────────────────────────────────────────────────────────
   {
     name: "Indiquer mes disponibilités",
-    description: "Depuis « Disponibilités », répondez pour chaque événement du mois : Disponible, Si besoin ou Pas disponible. Chaque mois, la collecte s'ouvre pour tous les STAR avec une date limite visible ; sans réponse après cette date, vous êtes considéré comme indisponible. Si vous servez dans plusieurs départements, « Préciser par département » permet de répondre différemment. Pour une absence de plusieurs jours, utilisez « Pas disponible du … au … », avec un remplaçant facultatif. Un responsable peut répondre à votre place (« Répondre pour… ») : la réponse porte alors la mention « Saisi par ».",
+    description: "Depuis « Disponibilités », répondez pour chaque événement du mois : Disponible, Si besoin ou Pas disponible. Chaque mois, la collecte s'ouvre pour tous les STAR avec une date limite visible ; sans réponse après cette date, vous êtes considéré comme indisponible. Si vous servez dans plusieurs départements, « Préciser par département » permet de répondre différemment. Pour une absence de plusieurs jours, utilisez « Pas disponible du … au … », avec un remplaçant facultatif ; si vous êtes déjà planifié sur des services de la période, l'écran vous les liste avant d'enregistrer, et vous en serez retiré pour que vos responsables vous remplacent. Vos périodes à venir s'affichent sous « Mes périodes d'indisponibilité », où vous pouvez les modifier ou les annuler. Un responsable peut répondre à votre place (« Répondre pour… ») : la réponse porte alors la mention « Saisi par ».",
     category: "Absences",
     screenshotTitle: "Mes disponibilités",
     screenshotFile: "guide-disponibilites.png",
@@ -186,7 +186,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Je ne peux plus servir",
-    description: "Depuis « Mon planning », « Je ne peux plus » vous retire d'un service avant la date limite de planification, avec un message facultatif : votre responsable est prévenu tout de suite et choisit un remplaçant. Vous déclarer « Pas disponible » sur un service où vous êtes planifié a le même effet, après confirmation. Tant que personne n'a été choisi, « Annuler mon désistement » vous rend votre place. Passé la date limite, contactez directement votre responsable : ses coordonnées s'affichent sur le service.",
+    description: "Depuis « Mon planning », « Je ne peux plus » vous retire d'un service avant la date limite de planification, avec un message facultatif : votre responsable est prévenu tout de suite et choisit un remplaçant. Vous déclarer « Pas disponible » sur un service où vous êtes planifié, ou déclarer une période qui le couvre, a le même effet, après confirmation. Annuler ou raccourcir la période vous rend les services qui n'ont pas encore été pourvus. Tant que personne n'a été choisi, « Annuler mon désistement » vous rend votre place. Passé la date limite, contactez directement votre responsable : ses coordonnées s'affichent sur le service.",
     category: "Absences",
     screenshotTitle: "Je ne peux plus",
     screenshotFile: "guide-je-ne-peux-plus.png",
@@ -210,7 +210,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Indisponibilités de mon périmètre",
-    description: "L'onglet « Indisponibilités de l'équipe » (menu « Disponibilités ») liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
+    description: "L'onglet « Indisponibilités de l'équipe » (menu « Disponibilités ») liste les périodes d'absence et les réponses « Pas disponible » à venir de votre périmètre, en tableau ou en frise, avec filtres par période, département et statut. Déclarer une période pour un STAR planifié le retire, après avertissement, des services couverts avant leur date limite : vous recevez pour chacun les remplaçants possibles. Une période à venir peut être modifiée (dates, départements, motif, remplaçants) ou annulée ; les services encore à remplacer qu'elle ne couvre plus sont rendus au STAR, et les conflits de planning sont réévalués. Export Excel respectant les filtres actifs.",
     category: "Absences",
     screenshotTitle: "Indisponibilités",
     screenshotFile: "guide-absences-vue-ensemble.png",
