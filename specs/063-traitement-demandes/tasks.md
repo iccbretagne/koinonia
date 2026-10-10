@@ -183,4 +183,4 @@
 - [x] Contrôle à l'écran à 360 px : pas de défilement horizontal, cibles de 44 px, motif visible
   au-dessus du clavier.
 - [x] Tous les critères d'acceptation de `spec.md` sont satisfaits.
-- [ ] PR ouverte vers `main` (ferme #677).
+- [x] PR ouverte vers `main` (ferme #677, PR #680).
