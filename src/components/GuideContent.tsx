@@ -31,6 +31,22 @@ interface Feature {
 const FEATURES: Feature[] = [
   // ── Planning ─────────────────────────────────────────────────────────────
   {
+    name: "Accueil « Aujourd'hui »",
+    description: "La page d'accueil rassemble vos prochains services, les événements à venir, les demandes en attente et des raccourcis vers vos espaces. La recherche (⌘K ou Ctrl K) retrouve une page, un STAR ou un événement.",
+    category: "Planning",
+    screenshotTitle: "Page d'accueil",
+    screenshotFile: "guide-today.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
+  },
+  {
+    name: "Mon planning",
+    description: "Depuis « Mon planning », retrouvez vos services à venir dans tous vos départements, les événements d'équipe (répétitions, réunions) et l'agenda de l'église. Nécessite un compte lié à votre fiche STAR.",
+    category: "Planning",
+    screenshotTitle: "Mon planning",
+    screenshotFile: "guide-my-planning.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Voir le planning",
     description: "Grille de planning par département avec les STAR et leurs statuts de service (En service, Indisponible, Remplaçant…) pour chaque événement. Filtrable par département ou ministère.",
     category: "Planning",
@@ -62,7 +78,7 @@ const FEATURES: Feature[] = [
     category: "Événements",
     screenshotTitle: "Liste et calendrier des événements",
     screenshotFile: "guide-events-list.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "read", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "read", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gérer les événements",
@@ -71,6 +87,30 @@ const FEATURES: Feature[] = [
     screenshotTitle: "Gestion des événements",
     screenshotFile: "guide-events-manage.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Événements d'équipe",
+    description: "Planifiez les rendez-vous internes d'un département (répétition, réunion, formation) depuis le planning du département. Les membres du département les voient en lecture seule dans « Mon planning ».",
+    category: "Événements",
+    screenshotTitle: "Événements d'équipe",
+    screenshotFile: "guide-team-events.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "read", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Service d'accueil",
+    description: "Depuis « Service d'accueil », tenez le pool des familles qui assurent l'accueil (ajout, désactivation) et affectez une famille à chaque événement avec service d'accueil, en rotation selon leur dernier service.",
+    category: "Événements",
+    screenshotTitle: "Service d'accueil",
+    screenshotFile: "guide-welcome-duty.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
+    name: "Trame des annonces",
+    description: "Déposez la feuille d'annonces d'un culte (PDF ou Word) depuis « Trame des annonces » ; chaque dépôt remplace le précédent. Dépôt réservé à l'administration et au Secrétariat ; lecture ouverte aux Ministres, aux responsables de département et à l'équipe Modération.",
+    category: "Événements",
+    screenshotTitle: "Trame des annonces",
+    screenshotFile: "guide-announcement-sheet.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Comptes rendus",
@@ -92,7 +132,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Gérer les membres (STAR)",
-    description: "Ajoutez, modifiez ou supprimez des STAR. Gérez leurs affectations à des départements (principal ou secondaire).",
+    description: "Ajoutez, modifiez ou supprimez des STAR. Gérez leurs affectations à des départements (principal ou secondaire), repérez et fusionnez les doublons. Un responsable de département ne fusionne que deux fiches entièrement dans son périmètre.",
     category: "Membres",
     screenshotTitle: "Gestion des STAR",
     screenshotFile: "guide-members-manage.png",
@@ -106,7 +146,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Relations de discipolat",
     screenshotFile: "guide-discipleship-relations.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "edit", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Appel de présence",
@@ -122,7 +162,7 @@ const FEATURES: Feature[] = [
     category: "Discipolat",
     screenshotTitle: "Statistiques discipolat",
     screenshotFile: "guide-discipleship-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "read", DEPARTMENT_HEAD: "read", DISCIPLE_MAKER: "read", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Annonces ─────────────────────────────────────────────────────────────
@@ -148,7 +188,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Traitement des demandes — Secrétariat",
     screenshotFile: "guide-secretariat-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Demandes visuels (Prod. Média)",
@@ -156,7 +196,7 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Production Média",
     screenshotFile: "guide-media-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Demandes réseaux sociaux (Communication)",
@@ -164,10 +204,18 @@ const FEATURES: Feature[] = [
     category: "Demandes",
     screenshotTitle: "Dashboard Communication",
     screenshotFile: "guide-communication-dashboard.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Absences ─────────────────────────────────────────────────────────────
+  {
+    name: "Photos et visuels (Communication & Production)",
+    description: "L'espace « Communication & Production » regroupe les photos d'événements, les projets de visuels et leurs demandes, et les demandes réseaux sociaux, selon votre équipe. « Partager une sélection » crée un lien de partage ; le bouton « Partages » liste les liens actifs et permet de les révoquer.",
+    category: "Demandes",
+    screenshotTitle: "Communication & Production",
+    screenshotFile: "guide-media.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
   {
     name: "Indiquer mes disponibilités",
     description: "Depuis « Disponibilités », répondez pour chaque événement du mois : Disponible, Si besoin ou Pas disponible. Chaque mois, la collecte s'ouvre pour tous les STAR avec une date limite visible ; sans réponse après cette date, vous êtes considéré comme indisponible. Si vous servez dans plusieurs départements, « Préciser par département » permet de répondre différemment. Pour une absence de plusieurs jours, utilisez « Pas disponible du … au … », avec un remplaçant facultatif ; si vous êtes déjà planifié sur des services de la période, l'écran vous les liste avant d'enregistrer, et vous en serez retiré pour que vos responsables vous remplacent. Vos périodes à venir s'affichent sous « Mes périodes d'indisponibilité », où vous pouvez les modifier ou les annuler. Un responsable peut répondre à votre place (« Répondre pour… ») : la réponse porte alors la mention « Saisi par ».",
@@ -230,27 +278,27 @@ const FEATURES: Feature[] = [
   // ── Administration ────────────────────────────────────────────────────────
   {
     name: "Accès & rôles",
-    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter). Validez ou rejetez les demandes d'onboarding, et liez ou déliez un compte à une fiche STAR — la Secrétaire le peut également (spec 054). Un responsable de département peut être désigné adjoint (isDeputy).",
+    description: "Attribuez les rôles (Ministre, Resp. Département, Secrétaire, FD, Reporter…). Validez ou rejetez les demandes d'onboarding, et liez ou déliez un compte à une fiche STAR. Un Ministre n'attribue que les rôles rattachables (Ministre, Resp. département, STAR) dans son ministère ; nommer un Admin ou un Secrétaire est réservé à l'Admin et au Super Admin. Un responsable de département peut être désigné adjoint.",
     category: "Administration",
     screenshotTitle: "Accès & rôles",
     screenshotFile: "guide-access-roles.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Ministères & départements",
-    description: "Créez et organisez les ministères et leurs départements. Configurez les fonctions système (Secrétariat, Communication, Production Média) et les fonctions personnalisées — une fonction peut être partagée par plusieurs départements.",
+    description: "Créez et organisez les ministères et leurs départements (le Ministre, dans son ministère). Configurez les fonctions de département (Secrétariat, Communication, Production Média, Photos, Captation audio, Intégration, MSDP…) — une fonction peut être partagée par plusieurs départements. Les ministères et départements « système » restent réservés au Super Admin.",
     category: "Administration",
     screenshotTitle: "Gestion des ministères et départements",
     screenshotFile: "guide-admin-departments.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "edit", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Paramètres de l'église",
-    description: "Configurez le nom, l'email secrétariat (digest planning) et les paramètres généraux. Gestion multi-tenant pour les Super Admins.",
+    description: "Depuis « Paramètres de l'église », l'Admin règle les emails du secrétariat et de la comptabilité, la couleur de l'église et le responsable pastoral, et gère les profils pastoraux. Créer ou supprimer une église, en changer le nom, l'adresse publique ou le superviseur reste réservé au Super Admin.",
     category: "Administration",
     screenshotTitle: "Paramètres de l'église",
     screenshotFile: "guide-admin-church.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Gestion des utilisateurs",
@@ -272,11 +320,11 @@ const FEATURES: Feature[] = [
   // ── Profil ────────────────────────────────────────────────────────────────
   {
     name: "Profil & liaison STAR",
-    description: "Complétez votre profil et liez votre compte Google à votre fiche STAR. La liaison débloque les fonctionnalités avancées : filtre \"Mes disciples\", notifications personnalisées.",
+    description: "Complétez votre profil et liez votre compte à votre fiche STAR : la liaison débloque « Mon planning », les disponibilités et le filtre « Mes disciples ». Choisissez aussi le thème (Clair, Sombre, Système) et, dans « Notifications », les emails que vous souhaitez recevoir, domaine par domaine.",
     category: "Profil",
     screenshotTitle: "Profil et liaison STAR",
     screenshotFile: "guide-profile.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "edit", REPORTER: "edit", STAR: "edit", PASTORAL_CARE_REFERENT: "edit", ACCOUNTANT: "edit" },
   },
 
   // ── Salles ───────────────────────────────────────────────────────────────
@@ -286,7 +334,7 @@ const FEATURES: Feature[] = [
     category: "Salles",
     screenshotTitle: "Réservation de salles",
     screenshotFile: "guide-salles-reservation.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "edit", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "edit", DEPARTMENT_HEAD: "edit", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Contrôle des mains courantes",
@@ -422,7 +470,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Demandes d'intégration",
     screenshotFile: "guide-integration-demandes.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Attente, relances et renvoi d'une demande",
@@ -442,11 +490,11 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Bergers de famille",
-    description: "Gérez la liste des bergers de famille et leurs affectations depuis /integration/leaders.",
+    description: "Gérez la liste des bergers de famille et leurs affectations depuis /integration/leaders. Réservé à l'accès complet (Admin, Secrétaire, équipe Intégration) : un berger voit les demandes de ses familles, mais ne gère pas les affectations.",
     category: "Intégration",
     screenshotTitle: "Bergers de famille",
     screenshotFile: "guide-integration-bergers.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
     name: "Parcours & statistiques d'intégration",
@@ -454,7 +502,7 @@ const FEATURES: Feature[] = [
     category: "Intégration",
     screenshotTitle: "Parcours et statistiques d'intégration",
     screenshotFile: "guide-integration-stats.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 
   // ── Audio ────────────────────────────────────────────────────────────────
@@ -515,12 +563,20 @@ const FEATURES: Feature[] = [
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
   {
+    name: "Référence de l'API",
+    description: "Depuis Administration → Plateforme → API, consultez la référence de toutes les routes de l'API (accès requis, paramètres, corps, réponses), générée depuis le code. Lecture seule.",
+    category: "Administration",
+    screenshotTitle: "Référence de l'API",
+    screenshotFile: "guide-api.png",
+    access: { SUPER_ADMIN: "read", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+  },
+  {
     name: "Sauvegardes et export de configuration",
     description: "Depuis /admin/backups, déclenchez une sauvegarde de la base et exportez la configuration de l'église (structure des ministères et départements, comptes et rôles) au format JSON. Sert aussi à monter un environnement de test ou de formation.",
     category: "Administration",
     screenshotTitle: "Sauvegardes et export de configuration",
     screenshotFile: "guide-admin-backups.png",
-    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
+    access: { SUPER_ADMIN: "edit", ADMIN: "none", SECRETARY: "none", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "none" },
   },
 ];
 
