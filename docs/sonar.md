@@ -59,6 +59,13 @@ composants existent, retirer ces deux motifs des exclusions et de `vitest.config
 Les fichiers générés, déclarations de types, mocks et helpers de tests ne sont
 pas des objectifs de couverture. Les tests et helpers sont classés comme tests.
 
+## Duplication
+
+Seul le catalogue du guide (`src/components/GuideContent.tsx`) est exclu de la
+détection de duplication (`sonar.cpd.exclusions`) : ses 65 fiches de même forme
+(texte + accès des dix rôles) seraient comptées comme du copier-coller à chaque
+modification du guide. N'y ajouter que des données déclaratives, jamais du code.
+
 ## GitHub Actions
 
 Le workflow `.github/workflows/ci.yml` réutilise le rapport des tests et lance le
