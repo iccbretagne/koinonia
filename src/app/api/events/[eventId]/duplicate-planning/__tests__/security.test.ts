@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "@/__mocks__/prisma";
-import { createAdminSession } from "@/__mocks__/auth";
+import { createAdminSession, createDepartmentHeadSession } from "@/__mocks__/auth";
 
 const mockRequirePermission = vi.fn();
 const mockResolveChurchId = vi.fn();
-vi.mock("@/lib/auth", () => ({
+vi.mock("next-auth", () => ({
+  default: () => ({ auth: vi.fn(), handlers: {}, signIn: vi.fn(), signOut: vi.fn() }),
+}));
+// `getUserDepartmentScope` reste le vrai : c'est lui qui borne la recopie au périmètre.
+vi.mock("@/lib/auth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/auth")>()),
   requireChurchPermission: (...args: unknown[]) => mockRequirePermission(...args),
   resolveChurchId: (...args: unknown[]) => mockResolveChurchId(...args),
 }));
@@ -71,5 +76,42 @@ describe("POST /api/events/[eventId]/duplicate-planning — cross-tenant", () =>
     const res = await POST(request, makeParams("evt-1"));
 
     expect(res.status).toBe(400);
+  });
+
+  it("un responsable ne recopie que les départements de son périmètre", async () => {
+    mockRequirePermission.mockResolvedValue(createDepartmentHeadSession([{ id: "dept-a", name: "A" }]));
+    mockResolveChurchId.mockResolvedValue("church-1");
+    prismaMock.event.findUnique.mockResolvedValue({ planningDeadline: null } as never);
+    prismaMock.eventDepartment.findMany
+      .mockResolvedValueOnce([{ departmentId: "dept-a", plannings: [{ memberId: "m-1", status: "EN_SERVICE" }] }] as never)
+      .mockResolvedValueOnce([{ id: "ed-target", departmentId: "dept-a" }] as never);
+    prismaMock.planning.findMany.mockResolvedValue([]);
+    prismaMock.planning.upsert.mockResolvedValue({ id: "p-new" } as never);
+
+    const request = new Request("http://localhost/api/events/evt-1/duplicate-planning", {
+      method: "POST",
+      body: JSON.stringify({ targetEventId: "evt-2" }),
+    });
+    const res = await POST(request, makeParams("evt-1"));
+
+    expect(res.status).toBe(200);
+    for (const [args] of prismaMock.eventDepartment.findMany.mock.calls) {
+      expect(args?.where).toMatchObject({ departmentId: { in: ["dept-a"] } });
+    }
+  });
+
+  it("refuse une cible dont la date limite est passée à un responsable, sans écriture", async () => {
+    mockRequirePermission.mockResolvedValue(createDepartmentHeadSession([{ id: "dept-a", name: "A" }]));
+    mockResolveChurchId.mockResolvedValue("church-1");
+    prismaMock.event.findUnique.mockResolvedValue({ planningDeadline: new Date(Date.now() - 86_400_000) } as never);
+
+    const request = new Request("http://localhost/api/events/evt-1/duplicate-planning", {
+      method: "POST",
+      body: JSON.stringify({ targetEventId: "evt-2" }),
+    });
+    const res = await POST(request, makeParams("evt-1"));
+
+    expect(res.status).toBe(403);
+    expect(prismaMock.planning.upsert).not.toHaveBeenCalled();
   });
 });

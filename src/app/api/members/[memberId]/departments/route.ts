@@ -1,5 +1,5 @@
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
-import { resolveMemberDepartmentScope } from "@/lib/member-scope";
+import { resolveMemberDepartmentScope, assertCanAffiliateToSecretariat } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { attachMemberToDepartment, detachMemberFromDepartment } from "@/modules/planning";
@@ -26,6 +26,7 @@ export async function POST(
     if (scope.scoped && !scope.departmentIds.includes(departmentId)) {
       throw new ApiError(403, "Ce département n'est pas dans votre périmètre");
     }
+    await assertCanAffiliateToSecretariat(session, churchId, [departmentId]);
 
     const updated = await attachMemberToDepartment(memberId, departmentId, churchId);
 

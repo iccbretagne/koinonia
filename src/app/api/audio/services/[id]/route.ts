@@ -12,6 +12,7 @@ import {
   toJsonSafeAudioSource,
   getOrCreatePrimaryShareToken,
   buildPublicAudioUrl,
+  isChurchCoverKey,
 } from "@/modules/audio";
 import { updateSchema } from "./contract";
 
@@ -62,6 +63,9 @@ export async function PATCH(
     await requireAudioAccess("audio:review", service.churchId);
 
     const body = updateSchema.parse(await request.json());
+    if (body.coverKey && !isChurchCoverKey(service.churchId, body.coverKey)) {
+      throw new ApiError(400, "Couverture invalide");
+    }
     const updated = await updateAudioService(id, service.churchId, {
       ...body,
       serviceDate: body.serviceDate ? new Date(body.serviceDate) : undefined,

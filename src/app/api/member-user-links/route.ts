@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
-import { resolveMemberDepartmentScope, isMemberInScope } from "@/lib/member-scope";
+import { resolveMemberDepartmentScope, isMemberInScope, assertCanLinkAccountToMember } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     const memberScope = await resolveMemberDepartmentScope(session, churchId);
 
     await assertTargetInScope(memberId, newMember, churchId, memberScope);
+    await assertCanLinkAccountToMember(session, churchId, { memberId, departmentId: newMember?.departmentId });
 
     // Résoudre le compte cible. Aucune exigence de rattachement préalable à cette église : c'est
     // précisément la condition que ce rattachement crée (spec 037).

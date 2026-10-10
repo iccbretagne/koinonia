@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId, getUserMinistryScope } from "@/lib/auth";
-import { resolveMemberDepartmentScope, isLinkRequestInScope } from "@/lib/member-scope";
+import { resolveMemberDepartmentScope, isLinkRequestInScope, assertCanLinkAccountToMember } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
@@ -141,6 +141,13 @@ export async function PATCH(
       if (duplicates.length > 0) {
         return successResponse({ duplicates }, 409);
       }
+    }
+
+    if (!isNoStarRole) {
+      await assertCanLinkAccountToMember(session, churchId, {
+        memberId: linkRequest.memberId,
+        departmentId: isNewStar ? effectiveDeptId : null,
+      });
     }
 
     await prisma.$transaction(async (tx) => {

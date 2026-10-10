@@ -11,7 +11,17 @@ async function defaultDb() {
 export interface ShareScope {
   photos: boolean;
   visuels: boolean;
+  /**
+   * Droit de gestion par activité (`media:manage` ou équipe de l'activité). Les liens de
+   * validation (VALIDATOR/PREVALIDATOR) permettent d'approuver sans session : ils ne sont listés
+   * qu'à qui gère toutes les activités qu'ils couvrent — pas à la Communication, qui voit les
+   * partages des deux activités sans droit de revue. Absent = aucun lien de validation visible.
+   */
+  managePhotos?: boolean;
+  manageVisuels?: boolean;
 }
+
+const SENSITIVE_SHARE_TYPES: ReadonlySet<string> = new Set(["VALIDATOR", "PREVALIDATOR"]);
 
 export interface ShareSource {
   type: "event" | "project";
@@ -47,13 +57,25 @@ interface CollectionConfigShape {
  * périmètre demandé — une collection mixte (photos + visuels) reste masquée à une équipe qui
  * n'a que l'un des deux (spec 049 : "le partage est limité au périmètre de la personne").
  */
-function isWithinScope(share: ShareWithRelations, scope: ShareScope): boolean {
-  if (share.mediaEventId) return scope.photos;
-  if (share.mediaProjectId) return scope.visuels;
+function coveredDomains(share: Pick<ShareWithRelations, "mediaEventId" | "mediaProjectId" | "config">) {
   const config = share.config as CollectionConfigShape | null;
-  const hasEvents = (config?.eventIds?.length ?? 0) > 0;
-  const hasProjects = (config?.projectIds?.length ?? 0) > 0;
-  return (!hasEvents || scope.photos) && (!hasProjects || scope.visuels);
+  return {
+    hasEvents: Boolean(share.mediaEventId) || (config?.eventIds?.length ?? 0) > 0,
+    hasProjects: Boolean(share.mediaProjectId) || (config?.projectIds?.length ?? 0) > 0,
+  };
+}
+
+function isWithinScope(share: ShareWithRelations, scope: ShareScope): boolean {
+  if (share.mediaEventId) return scope.photos && canSeeToken(share, scope);
+  if (share.mediaProjectId) return scope.visuels && canSeeToken(share, scope);
+  const { hasEvents, hasProjects } = coveredDomains(share);
+  return (!hasEvents || scope.photos) && (!hasProjects || scope.visuels) && canSeeToken(share, scope);
+}
+
+function canSeeToken(share: ShareWithRelations, scope: ShareScope): boolean {
+  if (!SENSITIVE_SHARE_TYPES.has(share.type)) return true;
+  const { hasEvents, hasProjects } = coveredDomains(share);
+  return (!hasEvents || scope.managePhotos === true) && (!hasProjects || scope.manageVisuels === true);
 }
 
 function isActive(share: Pick<MediaShareToken, "expiresAt">, now: Date): boolean {
@@ -121,7 +143,7 @@ export async function countActiveShares(churchId: string, scope: ShareScope): Pr
   const now = new Date();
   const shares = await db.mediaShareToken.findMany({
     where: { churchId },
-    select: { expiresAt: true, mediaEventId: true, mediaProjectId: true, config: true },
+    select: { type: true, expiresAt: true, mediaEventId: true, mediaProjectId: true, config: true },
   });
   return shares.filter(
     (s) =>

@@ -24,3 +24,13 @@ export function getCoverExtensionFromMimeType(mimeType: string): string {
 export function getDefaultCoverKey(churchId: string, coverId: string, ext: string): string {
   return `audio-settings/${churchId}/cover-${coverId}.${ext}`;
 }
+
+/**
+ * Vrai si la clé désigne une couverture déposée pour cette église (seul format produit par
+ * `getDefaultCoverKey`). Une couverture est signée en lecture à chaque affichage : accepter une
+ * clé libre permettrait de faire signer n'importe quel objet du bucket.
+ */
+export function isChurchCoverKey(churchId: string, key: string): boolean {
+  const prefix = `audio-settings/${churchId}/cover-`;
+  return key.startsWith(prefix) && !key.includes("..") && !key.slice(prefix.length).includes("/");
+}

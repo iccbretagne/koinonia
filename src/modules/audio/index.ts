@@ -55,6 +55,7 @@ export {
   validateCoverFile,
   getCoverExtensionFromMimeType,
   getDefaultCoverKey,
+  isChurchCoverKey,
 } from "./services/settings";
 
 export { listPublishedServices, listSpeakers, listSeries, getPublishedServiceForMember } from "./services/library";
