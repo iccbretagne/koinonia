@@ -1,10 +1,9 @@
 import { requireChurchPermission, requireDepartmentAccess, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getWithdrawalOwner, replaceWithdrawal } from "@/modules/planning";
-import { z } from "zod";
+import { replaceSchema } from "./contract";
 
 /** Choix d'un remplaçant (spec 061) : `planning:edit` dans le périmètre du département. */
-const replaceSchema = z.object({ memberId: z.string().min(1) });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

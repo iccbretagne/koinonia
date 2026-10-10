@@ -2,15 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireMediaAccess, requireMediaUploadAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  date: z.string().min(1, "La date est requise"),
-  churchId: z.string().min(1, "L'église est requise"),
-  description: z.string().nullable().optional(),
-  planningEventId: z.string().nullable().optional(),
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

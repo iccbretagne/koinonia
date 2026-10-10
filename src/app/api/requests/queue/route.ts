@@ -1,14 +1,7 @@
-import { z } from "zod";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { listDoneRequests, resolveRequestQueueAccess } from "@/modules/planning";
-
-const querySchema = z.object({
-  churchId: z.string().min(1),
-  fn: z.enum(["SECRETARIAT", "COMMUNICATION", "PRODUCTION_MEDIA"]),
-  cursor: z.string().max(200).optional(),
-  q: z.string().max(100).optional(),
-});
+import { querySchema } from "./contract";
 
 /**
  * Demandes traitées d'une file d'équipe (spec 063) : « Voir plus » et recherche dans tout

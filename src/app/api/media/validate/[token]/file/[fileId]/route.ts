@@ -5,12 +5,7 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { validateMediaShareToken, getSignedOriginalUrl } from "@/modules/media";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  status: z.enum(["APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED", "REVISION_REQUESTED"]),
-  comment: z.string().max(2000).optional(),
-});
+import { patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,

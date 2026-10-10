@@ -9,32 +9,8 @@ import {
   type DeclarerScope,
 } from "@/modules/planning";
 import { logAudit } from "@/lib/audit";
-import { assertBackupsAllowed, backupSchema } from "../route";
-import { z } from "zod";
-
-const patchSchema = z
-  .discriminatedUnion("action", [
-    z.object({ action: z.literal("cancel") }),
-    z.object({
-      action: z.literal("update"),
-      kind: z.enum(["PERIOD"]).optional(),
-      startDate: z.string().datetime().optional(),
-      endDate: z.string().datetime().optional(),
-      eventIds: z.array(z.string().min(1)).max(52).optional(),
-      allDepartments: z.boolean().optional(),
-      departmentIds: z.array(z.string().min(1)).optional(),
-      reason: z.string().max(500).nullable().optional(),
-      backups: z.array(backupSchema).max(10).optional(),
-    }),
-  ])
-  .refine(
-    (d) => d.action !== "update" || !d.startDate || !d.endDate || new Date(d.endDate) >= new Date(d.startDate),
-    { message: "endDate doit être postérieure ou égale à startDate", path: ["endDate"] }
-  )
-  .refine(
-    (d) => d.action !== "update" || d.allDepartments === undefined || d.allDepartments || (d.departmentIds?.length ?? 0) > 0,
-    { message: "Au moins un département doit être ciblé", path: ["departmentIds"] }
-  );
+import { assertBackupsAllowed } from "../route";
+import { patchSchema } from "./contract";
 
 /**
  * PATCH /api/absences/[id] — `cancel` (annulation) ou `update` (modification tant que non passée).

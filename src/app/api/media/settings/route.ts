@@ -6,15 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
-
-const putSchema = z.object({
-  retentionDays: z.number().int().min(1).max(365).optional(),
-  logoKey: z.string().nullable().optional(),
-  faviconKey: z.string().nullable().optional(),
-  logoFilename: z.string().nullable().optional(),
-  faviconFilename: z.string().nullable().optional(),
-});
+import { putSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

@@ -1,7 +1,7 @@
 import { requireAuth, requireChurchPermission, getUserDepartmentScope } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getMemberScope, listLinkedMemberIds, listMemberAvailability, saveResponses } from "@/modules/planning";
-import { z } from "zod";
+import { monthSchema, putSchema } from "./contract";
 
 /**
  * Disponibilités d'un STAR (spec 058). Sans `memberId`, la fiche liée au compte appelant
@@ -28,8 +28,6 @@ async function resolveTarget(churchId: string, memberId: string | null) {
   return { session, memberId, isSelf: false, allowedDepartmentIds: allowed };
 }
 
-const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -47,21 +45,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const putSchema = z.object({
-  churchId: z.string().min(1),
-  memberId: z.string().min(1).optional(),
-  answers: z
-    .array(
-      z.object({
-        eventId: z.string().min(1),
-        answer: z.enum(["AVAILABLE", "IF_NEEDED", "UNAVAILABLE"]),
-        departmentIds: z.array(z.string().min(1)).min(1).optional(),
-      })
-    )
-    .min(1)
-    .max(200),
-});
 
 export async function PUT(request: Request) {
   try {

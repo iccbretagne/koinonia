@@ -3,7 +3,6 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
   requireIntegrationAccess,
   buildConfirmationEmail,
-  contactConsentSchema,
   initialRequestStatusData,
   integrationBus,
   notifyIntegrationTeamNewRequest,
@@ -12,8 +11,8 @@ import { sendEmail } from "@/lib/email";
 import { geocodeAddress, findFamilyByCoords } from "@/lib/family-geo";
 import { requireRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { z } from "zod";
 import type { FamilyAgeRange, FamilyChurchStatus, FamilyIntegrationStatus, Prisma } from "@/generated/prisma/client";
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -57,30 +56,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const createSchema = z.object({
-  // Identité
-  firstName:    z.string().min(1).max(100),
-  lastName:     z.string().min(1).max(100),
-  email:        z.string().email().optional().or(z.literal("")),
-  phone:        z.string().min(1, "Le téléphone est obligatoire").max(30),
-  // Adresse
-  address:      z.string().max(500).optional().or(z.literal("")),
-  // Profil
-  ageRange:     z.enum(["YOUTH", "YOUNG_ADULT", "ADULT", "SENIOR"]),
-  churchStatus: z.enum(["VISITOR", "REGULAR", "ENGAGED"]).default("VISITOR"),
-  // Options
-  pastoralCareRequested: z.boolean().default(false),
-  pastoralMessage:       z.string().max(2000).optional().or(z.literal("")),
-  // Appel au salut
-  salvationCall: z.boolean().default(false),
-  // Consentement au contact : maintenant ou plus tard (spec 051)
-  contactConsent: contactConsentSchema,
-  // Lien membre optionnel (si connecté)
-  memberId:    z.string().optional(),
-  churchId:    z.string().min(1),
-  turnstileToken: z.string().min(1, "Vérification anti-robots manquante"),
-});
 
 export async function POST(request: Request) {
   try {

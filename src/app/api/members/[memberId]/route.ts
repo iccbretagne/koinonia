@@ -3,7 +3,7 @@ import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { updateSchema } from "./contract";
 
 // Helper : inclure les départements d'un membre (principal en premier)
 const memberDepartmentsInclude = {
@@ -16,15 +16,6 @@ const memberDepartmentsInclude = {
     orderBy: { isPrimary: "desc" as const },
   },
 };
-
-const updateSchema = z.object({
-  firstName: z.string().min(1, "Le prénom est requis"),
-  lastName: z.string().min(1, "Le nom est requis"),
-  departmentId: z.string().min(1, "Le département principal est requis"),
-  additionalDepartmentIds: z.array(z.string()).optional(),
-  email: z.string().email("Email invalide").nullable().optional(),
-  phone: z.string().nullable().optional(),
-});
 
 export async function PUT(
   request: Request,

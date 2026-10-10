@@ -3,41 +3,8 @@ import { auth, requireChurchPermission, getUserMinistryScope } from "@/lib/auth"
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { notifyUsers } from "@/lib/notifications";
-import { z } from "zod";
-
-const roleSchema = z
-  .enum(["DEPARTMENT_HEAD", "DEPUTY", "MINISTER", "DISCIPLE_MAKER", "REPORTER"])
-  .nullable()
-  .optional();
-
-const createSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("existing"),
-    memberId: z.string().min(1),
-    churchId: z.string().min(1),
-    departmentId: z.string().optional(),
-    ministryId: z.string().optional(),
-    requestedRole: roleSchema,
-    notes: z.string().max(1000).optional(),
-  }),
-  z.object({
-    type: z.literal("new"),
-    firstName: z.string().min(1, "Le prénom est requis"),
-    lastName: z.string().min(1, "Le nom est requis"),
-    phone: z.string().optional(),
-    churchId: z.string().min(1, "L'église est requise"),
-    departmentId: z.string().optional(),
-    ministryId: z.string().optional(),
-    requestedRole: roleSchema,
-    notes: z.string().max(1000).optional(),
-  }),
-  z.object({
-    type: z.literal("no_star"),
-    churchId: z.string().min(1, "L'église est requise"),
-    requestedRole: z.enum(["DISCIPLE_MAKER", "REPORTER"]),
-    notes: z.string().max(1000).optional(),
-  }),
-]);
+import type { z } from "zod";
+import { createSchema } from "./contract";
 
 type CreateInput = z.infer<typeof createSchema>;
 

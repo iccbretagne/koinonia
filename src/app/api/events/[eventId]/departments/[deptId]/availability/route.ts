@@ -1,9 +1,7 @@
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { askTeam, assertEventDepartment, manualRelance } from "@/modules/planning";
-import { z } from "zod";
-
-const schema = z.object({ action: z.enum(["ask", "relance"]) });
+import { schema } from "./contract";
 
 /** « Interroger l'équipe » / « Relancer les sans-réponse » depuis la grille (spec 058). */
 export async function POST(

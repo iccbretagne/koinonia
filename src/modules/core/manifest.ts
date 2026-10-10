@@ -27,6 +27,7 @@ export const coreModule = defineModule({
       { path: "/admin/access" },
       { path: "/admin/audit-logs" },
       { path: "/admin/backups" },
+      { path: "/admin/api" },
       { path: "/admin/pastoral-profiles" },
       { path: "/pastoral" },
     ],

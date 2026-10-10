@@ -3,7 +3,6 @@
  * PATCH  /api/audio/services/[id] — titre, orateur, date, rattachement événement, couverture.
  * DELETE /api/audio/services/[id] — supprime le culte (tant qu'il n'est pas publié).
  */
-import { z } from "zod";
 import { requireAudioAccess, requireAudioUnpublishAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
@@ -14,18 +13,7 @@ import {
   getOrCreatePrimaryShareToken,
   buildPublicAudioUrl,
 } from "@/modules/audio";
-
-const updateSchema = z.object({
-  title: z.string().nullable().optional(),
-  speaker: z.string().optional(),
-  serviceDate: z.string().datetime().optional(),
-  planningEventId: z.string().nullable().optional(),
-  coverKey: z.string().nullable().optional(),
-  series: z.string().min(1).nullable().optional(),
-  // Même contrainte que Event.type (src/app/api/events/route.ts) : EVENT_TYPES est une
-  // contrainte d'interface (le Select), pas une contrainte serveur.
-  type: z.string().min(1).optional(),
-});
+import { updateSchema } from "./contract";
 
 export async function GET(
   _request: Request,

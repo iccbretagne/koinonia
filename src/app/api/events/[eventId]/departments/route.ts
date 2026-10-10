@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { planningBus, recordRemovedPlannings } from "@/modules/planning";
-import { z } from "zod";
+import { schema } from "./contract";
 
 async function verifyDepartmentChurch(departmentId: string, expectedChurchId: string) {
   const dept = await prisma.department.findUnique({
@@ -14,11 +14,6 @@ async function verifyDepartmentChurch(departmentId: string, expectedChurchId: st
     throw new ApiError(403, "Ce département n'appartient pas à l'église de cet événement");
   }
 }
-
-const schema = z.object({
-  departmentId: z.string().min(1, "Le département est requis"),
-  applyToSeries: z.boolean().optional(),
-});
 
 async function getSeriesEventIds(eventId: string): Promise<string[]> {
   const event = await prisma.event.findUnique({

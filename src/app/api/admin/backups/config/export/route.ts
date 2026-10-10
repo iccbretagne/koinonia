@@ -1,13 +1,8 @@
-import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { exportConfig } from "@/lib/config-export";
-
-const exportSchema = z.object({
-  scope: z.union([z.literal("all"), z.array(z.string())]),
-  categories: z.array(z.enum(["structure", "members", "links"])).min(1),
-});
+import { exportSchema } from "./contract";
 
 export async function POST(request: Request) {
   try {

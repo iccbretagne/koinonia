@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { requireIntegrationAccess } from "@/modules/integration";
+import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const churchId = searchParams.get("churchId");
     if (!churchId) throw new ApiError(400, "churchId requis");
 
-    await requireIntegrationAccess(churchId);
+    await requireIntegrationFullAccess(churchId);
 
     const familyId = searchParams.get("familyId");
 
@@ -31,18 +31,10 @@ export async function GET(request: Request) {
   }
 }
 
-const createSchema = z.object({
-  churchId: z.string().min(1),
-  userId: z.string().min(1),
-  familyId: z.number().int().positive(),
-  familyName: z.string().min(1).max(100),
-  role: z.enum(["BERGER", "CO_BERGER"]),
-});
-
 export async function POST(request: Request) {
   try {
     const body = createSchema.parse(await request.json());
-    const { session } = await requireIntegrationAccess(body.churchId);
+    const { session } = await requireIntegrationFullAccess(body.churchId);
 
     // Vérifier que l'utilisateur appartient à cette église
     const user = await prisma.user.findFirst({

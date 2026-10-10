@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
-import { z } from "zod";
+import { markReadSchema } from "./contract";
 
 export async function GET() {
   try {
@@ -22,11 +22,6 @@ export async function GET() {
     return errorResponse(error);
   }
 }
-
-const markReadSchema = z.object({
-  ids: z.array(z.string()).optional(),
-  all: z.boolean().optional(),
-});
 
 export async function PATCH(request: Request) {
   try {

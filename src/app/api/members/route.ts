@@ -5,7 +5,8 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { findDuplicateCandidates } from "@/lib/onboarding";
-import { z } from "zod";
+import type { z } from "zod";
+import { bulkSchema, createSchema } from "./contract";
 
 // Helper : inclure les départements d'un membre (principal en premier)
 const memberDepartmentsInclude = {
@@ -61,15 +62,6 @@ export async function GET(request: Request) {
   }
 }
 
-const bulkSchema = z.object({
-  ids: z.array(z.string()).min(1, "Au moins un ID requis"),
-  action: z.enum(["delete", "update"]),
-  data: z.object({
-    firstName: z.string().min(1).optional(),
-    lastName: z.string().min(1).optional(),
-    primaryDepartmentId: z.string().min(1).optional(),
-  }).optional(),
-});
 
 type BulkInput = z.infer<typeof bulkSchema>;
 
@@ -209,14 +201,6 @@ export async function PATCH(request: Request) {
   }
 }
 
-const createSchema = z.object({
-  firstName: z.string().min(1, "Le prénom est requis"),
-  lastName: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").optional(),
-  departmentId: z.string().min(1, "Le département principal est requis"),
-  additionalDepartmentIds: z.array(z.string()).optional(),
-  confirmDuplicate: z.boolean().optional(),
-});
 
 export async function POST(request: Request) {
   try {

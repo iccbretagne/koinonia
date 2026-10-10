@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { createSchema, deleteSchema } from "./contract";
 
 export async function GET(
   _request: Request,
@@ -32,11 +32,6 @@ export async function GET(
     return errorResponse(error);
   }
 }
-
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  description: z.string().optional(),
-});
 
 export async function POST(
   request: Request,
@@ -92,7 +87,7 @@ export async function DELETE(
     const delSession = await requireChurchPermission("planning:edit", delChurchId);
     requireDepartmentAccess(delSession, delChurchId, departmentId);
     const body = await request.json();
-    const { taskId } = z.object({ taskId: z.string() }).parse(body);
+    const { taskId } = deleteSchema.parse(body);
 
     const task = await prisma.task.findUnique({
       where: { id: taskId },

@@ -3,24 +3,7 @@ import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { Prisma } from "@/generated/prisma/client";
-import { z } from "zod";
-
-const sectionSchema = z.object({
-  id: z.string().optional(),
-  departmentId: z.string().nullable().optional(),
-  label: z.string().min(1),
-  position: z.number().int().default(0),
-  stats: z.record(z.string(), z.number().int().nullable()).nullable().optional(),
-  notes: z.string().nullable().optional(),
-});
-
-const upsertSchema = z.object({
-  speaker: z.string().nullable().optional(),
-  messageTitle: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
-  decisions: z.string().nullable().optional(),
-  sections: z.array(sectionSchema),
-});
+import { upsertSchema } from "./contract";
 
 // GET /api/events/[eventId]/report
 export async function GET(

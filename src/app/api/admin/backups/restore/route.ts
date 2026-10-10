@@ -1,17 +1,10 @@
-import { z } from "zod";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireAuth } from "@/lib/auth";
 import { isS3Configured } from "@/lib/s3";
 import { listBackups } from "@/lib/backup";
 import { restoreBackup } from "@/lib/restore";
 import { logAudit } from "@/lib/audit";
-
-const restoreSchema = z.object({
-  key: z
-    .string()
-    .startsWith("backups/")
-    .endsWith(".sql.gz"),
-});
+import { restoreSchema } from "./contract";
 
 export async function POST(request: Request) {
   try {

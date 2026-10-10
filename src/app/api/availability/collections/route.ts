@@ -2,7 +2,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { listCollectionMonths, openCollectionNow } from "@/modules/planning";
-import { z } from "zod";
+import { schema } from "./contract";
 
 /** Collectes des mois à venir et ouverture anticipée (spec 058) — `availability:settings`. */
 export async function GET(request: Request) {
@@ -15,11 +15,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const schema = z.object({
-  churchId: z.string().min(1),
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
-});
 
 export async function POST(request: Request) {
   try {

@@ -5,30 +5,8 @@ import { rolePermissions } from "@/lib/registry";
 import { buildAccountingStatusEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 import { getAccountingDepartmentScope } from "@/modules/accounting";
-import { z } from "zod";
-
-const patchSchema = z.discriminatedUnion("action", [
-  z.object({
-    action:       z.literal("process"),
-    priority:     z.enum(["URGENT", "NORMAL"]),
-    priorityNote: z.string().max(500).optional(),
-  }),
-  z.object({
-    action:          z.literal("approve"),
-    payments: z.array(z.object({
-      amount:        z.number().positive(),
-      scheduledDate: z.string().datetime(),
-      note:          z.string().max(500).optional(),
-    })).min(1),
-  }),
-  z.object({
-    action:          z.literal("reject"),
-    rejectionReason: z.string().min(1),
-  }),
-  z.object({
-    action: z.literal("cancel"),
-  }),
-]);
+import type { z } from "zod";
+import { patchSchema } from "./contract";
 
 function hasPermission(permissions: string[], perm: string) {
   return permissions.includes(perm);

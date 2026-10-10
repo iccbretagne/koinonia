@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { bulkSchema, createSchema } from "./contract";
 
 async function requireSuperAdmin() {
   const session = await requireAuth();
@@ -28,15 +28,6 @@ export async function GET() {
     return errorResponse(error);
   }
 }
-
-const bulkSchema = z.object({
-  ids: z.array(z.string()).min(1, "Au moins un ID requis"),
-  action: z.enum(["delete", "update"]),
-  data: z.object({
-    name: z.string().min(1).optional(),
-    slug: z.string().min(1).optional(),
-  }).optional(),
-});
 
 export async function PATCH(request: Request) {
   try {
@@ -121,11 +112,6 @@ function generateSlug(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-
-const createSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  slug: z.string().min(1).optional(),
-});
 
 export async function POST(request: Request) {
   try {

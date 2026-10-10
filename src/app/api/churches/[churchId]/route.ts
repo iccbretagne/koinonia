@@ -3,19 +3,7 @@ import { requireChurchPermission, hasChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { parseEmailList, formatEmailList } from "@/lib/email";
-import { z } from "zod";
-
-const emailListSchema = z.array(z.string().email("Email invalide")).optional().default([]);
-
-const updateSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  slug: z.string().min(1, "Le slug est requis"),
-  secretariatEmails:    emailListSchema,
-  accountingEmails:     emailListSchema,
-  primaryColor:         z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide").optional(),
-  responsibleProfileId: z.string().nullish(),
-  supervisorProfileId:  z.string().nullish(),
-});
+import { updateSchema } from "./contract";
 
 export async function PUT(
   request: Request,

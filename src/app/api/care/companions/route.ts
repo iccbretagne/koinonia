@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
   requireCareQualify,
@@ -6,6 +5,7 @@ import {
   listEligibleCompanions,
   setCompanionState,
 } from "@/modules/care";
+import { putSchema } from "./contract";
 
 /**
  * Vivier d'accompagnants assignables (spec 052, T48 ; spec 056) : deux groupes — profils
@@ -30,12 +30,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const putSchema = z.object({
-  churchId: z.string().min(1),
-  userId: z.string().min(1),
-  state: z.enum(["ADDED", "EXCLUDED", "DEFAULT"]),
-});
 
 /**
  * Déclare une exception au vivier calculé (spec 056) : ajoute un STAR hors MSDP, exclut un

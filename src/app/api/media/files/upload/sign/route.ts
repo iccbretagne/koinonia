@@ -11,7 +11,7 @@ import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Media, MEDIA_BUCKET } from "@/lib/s3";
-import { z } from "zod";
+import { schema } from "./contract";
 
 const PRESIGNED_EXPIRY = 3600; // 1h
 
@@ -21,17 +21,6 @@ const ALLOWED_MIME_TYPES = new Set([
   // Vidéos
   "video/mp4", "video/quicktime", "video/webm",
 ]);
-
-const schema = z.object({
-  filename: z.string().min(1),
-  contentType: z.string().min(1),
-  size: z.number().int().positive(),
-  type: z.enum(["VISUAL", "VIDEO"]),
-  mediaEventId: z.string().optional(),
-  mediaProjectId: z.string().optional(),
-}).refine((d) => (!!d.mediaEventId) !== (!!d.mediaProjectId), {
-  message: "Fournir exactement l'un de mediaEventId ou mediaProjectId, pas les deux"
-});
 
 export async function POST(request: Request) {
   try {

@@ -214,6 +214,7 @@ const CONFIG_BLOCKS: Record<string, string> = {
   "/admin/pastoral-profiles": "Accès",
   "/admin/audit-logs": "Plateforme",
   "/admin/backups": "Plateforme",
+  "/admin/api": "Plateforme",
 };
 
 function configPages(input: NavigationInput): NavPage[] {

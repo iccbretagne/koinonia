@@ -2,21 +2,13 @@
  * GET/PUT /api/integration/settings — délais avant relance des demandes en attente
  * (spec 051), réglables par l'Admin/Secrétaire et le responsable de l'équipe intégration.
  */
-import { z } from "zod";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import {
   requireIntegrationSettingsAccess,
   getIntegrationSettings,
   updateIntegrationSettings,
 } from "@/modules/integration";
-
-const delay = z.number().int().min(1).max(365);
-
-const schema = z.object({
-  churchId: z.string().min(1),
-  recontactDelayDays: delay,
-  missionDelayDays: delay,
-});
+import { schema } from "./contract";
 
 export async function GET(request: Request) {
   try {

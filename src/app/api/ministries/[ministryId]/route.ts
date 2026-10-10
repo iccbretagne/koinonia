@@ -2,11 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const updateSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-});
+import { updateSchema } from "./contract";
 
 export async function PUT(
   request: Request,

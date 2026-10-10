@@ -2,17 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const createSchema = z.object({
-  churchId: z.string().min(1),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  phone: z.string().max(30).optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  sourceRequestId: z.string().optional(),
-  notes: z.string().max(10000).optional(),
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

@@ -5,23 +5,29 @@ export const JOBS_AUTHOR_INCLUDE = {
   author: { select: { id: true, name: true, displayName: true, image: true } },
 } as const;
 
-const JOBS_MODERATOR_ROLES = new Set(["SUPER_ADMIN", "ADMIN", "SECRETARY"]);
-
 type JobsSession = { user: { id: string; isSuperAdmin: boolean; churchRoles?: { role: string }[] } };
 
-/** Modérateur du module emploi : Super Admin, ou Admin/Secrétaire d'une église. */
-export function canManageJobs(session: JobsSession): boolean {
-  return session.user.isSuperAdmin || (session.user.churchRoles?.some((r) => JOBS_MODERATOR_ROLES.has(r.role)) ?? false);
+/**
+ * Modérateur du module emploi : Super Admin, ou permission transverse `jobs:manage` dans l'une
+ * de ses églises (matrice des manifestes, `rolePermissions`), comme les autres permissions
+ * `jobs:*` (`requirePlatformPermission`).
+ */
+export async function canManageJobs(session: JobsSession): Promise<boolean> {
+  if (session.user.isSuperAdmin) return true;
+  // Import dynamique : registry.ts importe tous les modules (dont jobs), un import statique
+  // ici créerait un cycle (cf. issue #446).
+  const { rolePermissions } = await import("@/lib/registry");
+  return session.user.churchRoles?.some((r) => rolePermissions[r.role]?.includes("jobs:manage")) ?? false;
 }
 
 /** Droits de l'appelant sur une annonce : son auteur ou un modérateur. */
-export function jobsAccess(session: JobsSession, authorId: string) {
-  return { isAuthor: authorId === session.user.id, canManage: canManageJobs(session) };
+export async function jobsAccess(session: JobsSession, authorId: string) {
+  return { isAuthor: authorId === session.user.id, canManage: await canManageJobs(session) };
 }
 
 /** Comme `jobsAccess`, mais refuse (403) un appelant qui n'est ni l'auteur ni un modérateur. */
-export function requireJobsAuthorOrModerator(session: JobsSession, authorId: string) {
-  const access = jobsAccess(session, authorId);
+export async function requireJobsAuthorOrModerator(session: JobsSession, authorId: string) {
+  const access = await jobsAccess(session, authorId);
   if (!access.isAuthor && !access.canManage) throw new ApiError(403, "Accès refusé");
   return access;
 }

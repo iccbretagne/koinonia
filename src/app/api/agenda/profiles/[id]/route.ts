@@ -2,14 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveChurchId, requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const updateSchema = z.object({
-  name: z.string().min(1).optional(),
-  email: z.string().email().nullable().optional(),
-  role: z.enum(["PASTEUR", "ASSISTANT_PASTEUR", "BERGER"]).optional(),
-  userId: z.string().nullable().optional(),
-});
+import { updateSchema } from "./contract";
 
 export async function PATCH(
   request: Request,

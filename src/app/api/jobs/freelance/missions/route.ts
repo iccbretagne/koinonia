@@ -2,22 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { createNotification } from "@/lib/notifications";
-import { z } from "zod";
-
-const modalityEnum = z.enum(["REMOTE", "ONSITE", "HYBRID"]);
-
-const createMissionSchema = z.object({
-  title:        z.string().min(1).max(200),
-  domain:       z.string().min(1).max(150),
-  duration:     z.string().max(100).optional().nullable(),
-  dailyRate:    z.string().max(100).optional().nullable(),
-  hourlyRate:   z.string().max(100).optional().nullable(),
-  modality:     modalityEnum.default("REMOTE"),
-  location:     z.string().max(150).optional().nullable(),
-  description:  z.string().min(1),
-  contactEmail: z.string().email().max(150).optional().nullable(),
-  contactUrl:   z.string().url().max(500).optional().nullable(),
-});
+import { createMissionSchema } from "./contract";
 
 export async function GET() {
   try {

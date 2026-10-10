@@ -2,9 +2,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteNeverConnectedUser } from "@/modules/core";
-import { z } from "zod";
-
-const deleteSchema = z.object({ churchId: z.string() });
+import { deleteSchema } from "./contract";
 
 // Suppression réservée aux comptes pré-provisionnés jamais activés (spec 047) : un compte qui a
 // déjà terminé une connexion Google, ou qui porte un rôle dans une autre église, ne peut pas être

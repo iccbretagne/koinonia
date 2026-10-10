@@ -2,14 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  capacity: z.number().int().positive().nullable().optional(),
-  location: z.string().max(200).nullable().optional(),
-  isActive: z.boolean().optional(),
-});
+import { patchSchema } from "./contract";
 
 /** PATCH /api/rooms/[id] — modifie une salle (réservé à l'église propriétaire). */
 export async function PATCH(

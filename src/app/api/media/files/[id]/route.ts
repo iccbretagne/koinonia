@@ -8,20 +8,8 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { deleteMediaFiles, getMediaObjectSize } from "@/lib/s3";
 import { getFileOriginalKey, MAX_FILE_SIZE } from "@/modules/media";
 import { createNotification } from "@/lib/notifications";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  status: z.enum([
-    "PENDING", "APPROVED", "REJECTED", "PREVALIDATED", "PREREJECTED",
-    "DRAFT", "IN_REVIEW", "REVISION_REQUESTED", "FINAL_APPROVED",
-  ]).optional(),
-  filename: z.string().min(1).optional(),
-  // Confirm upload: signal that presigned upload completed (key is derived server-side)
-  confirmUpload: z.boolean().optional(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  duration: z.number().int().positive().optional(),
-});
+import type { z } from "zod";
+import { patchSchema } from "./contract";
 
 type MediaFileWithContainers = {
   id: string;

@@ -4,12 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteMediaFiles } from "@/lib/s3";
 import { getSignedThumbnailUrl } from "@/modules/media";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().nullable().optional(),
-});
+import { patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,

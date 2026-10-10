@@ -3,12 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { cancelReservation } from "@/modules/rooms";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  action: z.literal("cancel"),
-  scope: z.enum(["occurrence", "series"]),
-});
+import { patchSchema } from "./contract";
 
 /** PATCH /api/room-reservations/[id] — annule une occurrence ou une série. Créateur ou `rooms:manage`. */
 export async function PATCH(

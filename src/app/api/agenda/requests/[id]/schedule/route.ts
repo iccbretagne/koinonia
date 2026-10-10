@@ -6,18 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
 import { sendEmail, buildAppointmentScheduledEmail } from "@/lib/email";
 import { markAppointmentScheduled, NEUTRAL_REQUEST_LABEL } from "@/modules/care";
-import { z } from "zod";
-
-const scheduleSchema = z.object({
-  startsAt: z.string().datetime("Date de début invalide"),
-  endsAt: z.string().datetime().nullable().optional(),
-  location: z.string().nullable().optional(),
-  title: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-}).refine(
-  (d) => !d.endsAt || new Date(d.endsAt) > new Date(d.startsAt),
-  { message: "L'heure de fin doit être après l'heure de début", path: ["endsAt"] }
-);
+import { scheduleSchema } from "./contract";
 
 /**
  * Orchestrateur (spec 052, ADR-0015) : le Protocole planifie toujours dans l'agenda, mais la

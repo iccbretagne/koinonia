@@ -2,16 +2,11 @@
  * POST /api/audio/services/[id]/upload/complete
  * Finalise un upload multipart S3 d'une AudioSource(kind: SEQUENCE) et programme son job PROBE.
  */
-import { z } from "zod";
 import { requireAudioAccess } from "@/modules/audio/auth";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { completeSequenceUpload } from "@/modules/audio";
-
-const schema = z.object({
-  sourceId: z.string().min(1),
-  parts: z.array(z.object({ partNumber: z.number().int().positive(), etag: z.string().min(1) })).min(1),
-});
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

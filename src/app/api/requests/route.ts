@@ -6,8 +6,8 @@ import { rolePermissions } from "@/lib/registry";
 import { DEPT_FN, functionForRequestType, type DeptFunction } from "@/lib/department-functions";
 import { getFunctionDepartmentsMap } from "@/lib/function-departments";
 import { notifyDeptMembers } from "@/lib/notifications";
-import { z } from "zod";
 import type { RequestType } from "@/generated/prisma/client";
+import { DEMAND_TYPES, createVisuelSchema, createDemandSchema } from "./contract";
 
 /**
  * Attache le destinataire d'une demande (spec 046) : la fonction déduite de son type, et les
@@ -35,34 +35,6 @@ async function attachAssignedDepts<
     ...(r.childRequests ? { childRequests: r.childRequests.map(decorate) } : {}),
   })) as never;
 }
-
-const DEMAND_TYPES = [
-  "AJOUT_EVENEMENT",
-  "MODIFICATION_EVENEMENT",
-  "ANNULATION_EVENEMENT",
-  "MODIFICATION_PLANNING",
-  "DEMANDE_ACCES",
-] as const;
-
-const createVisuelSchema = z.object({
-  churchId: z.string().min(1, "L'église est requise"),
-  type: z.literal("VISUEL"),
-  title: z.string().min(1, "Le titre est requis"),
-  brief: z.string().nullable().optional(),
-  format: z.string().nullable().optional(),
-  deadline: z.string().nullable().optional(),
-  departmentId: z.string().nullable().optional(),
-  ministryId: z.string().nullable().optional(),
-});
-
-const createDemandSchema = z.object({
-  churchId: z.string().min(1, "L'église est requise"),
-  type: z.enum(DEMAND_TYPES),
-  title: z.string().min(1, "Le titre est requis"),
-  payload: z.record(z.unknown()),
-  departmentId: z.string().nullable().optional(),
-  ministryId: z.string().nullable().optional(),
-});
 
 export async function GET(request: Request) {
   try {

@@ -135,6 +135,19 @@ describe("PATCH /api/welcome-duty/families/[id]", () => {
     const res = await patchFamily(req, { params: Promise.resolve({ id: "nope" }) });
     expect(res.status).toBe(404);
   });
+
+  it("rejects an invalid body with 400 without writing", async () => {
+    prismaMock.welcomeDutyFamily.findFirst.mockResolvedValue({
+      id: "f1", churchId: "church-1", familyId: 1, familyName: "Famille A", active: true, createdAt: new Date(),
+    });
+    const req = new Request("http://localhost/api/welcome-duty/families/f1", {
+      method: "PATCH",
+      body: JSON.stringify({ active: "non", familyName: { x: 1 } }),
+    });
+    const res = await patchFamily(req, { params: Promise.resolve({ id: "f1" }) });
+    expect(res.status).toBe(400);
+    expect(prismaMock.welcomeDutyFamily.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("DELETE /api/welcome-duty/families/[id]", () => {

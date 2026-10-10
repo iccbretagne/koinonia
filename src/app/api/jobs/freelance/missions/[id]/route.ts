@@ -1,22 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
 import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator } from "@/modules/jobs";
-
-const patchMissionSchema = z.object({
-  title:        z.string().min(1).max(200).optional(),
-  domain:       z.string().min(1).max(150).optional(),
-  duration:     z.string().max(100).nullable().optional(),
-  dailyRate:    z.string().max(100).nullable().optional(),
-  hourlyRate:   z.string().max(100).nullable().optional(),
-  modality:     z.enum(["REMOTE", "ONSITE", "HYBRID"]).optional(),
-  location:     z.string().max(150).nullable().optional(),
-  description:  z.string().min(1).optional(),
-  contactEmail: z.string().email().max(150).nullable().optional(),
-  contactUrl:   z.string().url().max(500).nullable().optional(),
-  status:       z.enum(["ACTIVE", "FILLED", "ARCHIVED"]).optional(),
-});
+import { patchMissionSchema } from "./contract";
 
 export async function GET(
   _request: Request,
@@ -33,7 +19,7 @@ export async function GET(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const { isAuthor, canManage } = jobsAccess(session, mission.authorId);
+    const { isAuthor, canManage } = await jobsAccess(session, mission.authorId);
 
     if (mission.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Mission introuvable");
@@ -60,7 +46,7 @@ export async function PATCH(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    const { canManage } = requireJobsAuthorOrModerator(session, mission.authorId);
+    const { canManage } = await requireJobsAuthorOrModerator(session, mission.authorId);
 
     const data = patchMissionSchema.parse(await request.json());
 
@@ -100,7 +86,7 @@ export async function DELETE(
 
     if (!mission) throw new ApiError(404, "Mission introuvable");
 
-    requireJobsAuthorOrModerator(session, mission.authorId);
+    await requireJobsAuthorOrModerator(session, mission.authorId);
 
     await prisma.freelanceMission.delete({ where: { id } });
 

@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
 import type { Session } from "next-auth";
+import { updateSchema, patchFunctionSchema } from "./contract";
 
 function getMinisterMinistryIds(session: Session, churchId: string): string[] | null {
   const churchRoles = session.user.churchRoles.filter((r) => r.churchId === churchId);
@@ -27,11 +27,6 @@ async function checkDepartmentScope(session: Session, departmentId: string, chur
     throw new ApiError(403, "Vous ne pouvez modifier que les départements de votre ministère");
   }
 }
-
-const updateSchema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
-  ministryId: z.string().min(1, "Le ministère est requis"),
-});
 
 export async function PUT(
   request: Request,
@@ -81,10 +76,6 @@ export async function PUT(
     return errorResponse(error);
   }
 }
-
-const patchFunctionSchema = z.object({
-  function: z.string().nullable(),
-});
 
 export async function PATCH(
   request: Request,

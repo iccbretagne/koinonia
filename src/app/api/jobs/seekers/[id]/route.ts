@@ -1,24 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-import { z } from "zod";
 import { JOBS_AUTHOR_INCLUDE, jobsAccess, requireJobsAuthorOrModerator, patchDate } from "@/modules/jobs";
-
-const patchSeekerSchema = z
-  .object({
-    title:          z.string().min(1).max(200).optional(),
-    wantEmploi:     z.boolean().optional(),
-    wantStage:      z.boolean().optional(),
-    wantAlternance: z.boolean().optional(),
-    sector:         z.string().max(150).nullable().optional(),
-    location:       z.string().max(150).nullable().optional(),
-    remote:         z.boolean().optional(),
-    availableFrom:  z.string().datetime().nullable().optional(),
-    description:    z.string().min(1).optional(),
-    contactEmail:   z.string().email().max(150).nullable().optional(),
-    contactUrl:     z.string().url().max(500).nullable().optional(),
-    status:         z.enum(["ACTIVE", "FOUND", "ARCHIVED"]).optional(),
-  });
+import { patchSeekerSchema } from "./contract";
 
 export async function GET(
   _request: Request,
@@ -35,7 +19,7 @@ export async function GET(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const { isAuthor, canManage } = jobsAccess(session, seeker.authorId);
+    const { isAuthor, canManage } = await jobsAccess(session, seeker.authorId);
 
     if (seeker.status !== "ACTIVE" && !isAuthor && !canManage) {
       throw new ApiError(404, "Profil introuvable");
@@ -62,7 +46,7 @@ export async function PATCH(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    const { isAuthor, canManage } = requireJobsAuthorOrModerator(session, seeker.authorId);
+    const { isAuthor, canManage } = await requireJobsAuthorOrModerator(session, seeker.authorId);
 
     const data = patchSeekerSchema.parse(await request.json());
 
@@ -110,7 +94,7 @@ export async function DELETE(
 
     if (!seeker) throw new ApiError(404, "Profil introuvable");
 
-    requireJobsAuthorOrModerator(session, seeker.authorId);
+    await requireJobsAuthorOrModerator(session, seeker.authorId);
 
     await prisma.jobSeeker.delete({ where: { id } });
 

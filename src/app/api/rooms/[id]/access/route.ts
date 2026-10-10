@@ -2,9 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const bodySchema = z.object({ churchId: z.string().min(1) });
+import { bodySchema } from "./contract";
 
 async function requireRoomOwnerManage(roomId: string) {
   const room = await prisma.room.findUnique({ where: { id: roomId }, select: { id: true, churchId: true } });

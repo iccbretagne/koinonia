@@ -10,8 +10,8 @@ import {
   sendEventChangeNotices,
   emptyEventChangeNotices,
 } from "@/modules/planning";
-import { z } from "zod";
 import { generateRecurrenceDates, MAX_RECURRENCE_OCCURRENCES } from "@/lib/recurrence";
+import { bulkSchema, createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
@@ -44,16 +44,6 @@ export async function GET(request: Request) {
     return errorResponse(error);
   }
 }
-
-const bulkSchema = z.object({
-  ids: z.array(z.string()).min(1, "Au moins un ID requis"),
-  action: z.enum(["delete", "update"]),
-  data: z.object({
-    title: z.string().min(1).optional(),
-    type: z.string().min(1).optional(),
-    date: z.string().min(1).optional(),
-  }).optional(),
-});
 
 export async function PATCH(request: Request) {
   try {
@@ -132,27 +122,6 @@ export async function PATCH(request: Request) {
     return errorResponse(error);
   }
 }
-
-function isValidDate(val: string) {
-  return !Number.isNaN(new Date(val).getTime());
-}
-
-const createSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  type: z.string().min(1, "Le type est requis"),
-  date: z.string().min(1, "La date est requise").refine(isValidDate, "Date invalide"),
-  churchId: z.string().min(1, "L'église est requise"),
-  planningDeadline: z.string().nullable().optional().refine(
-    (v) => v == null || isValidDate(v),
-    "Date limite invalide"
-  ),
-  deadlineOffset: z.string().nullable().optional(),
-  recurrenceRule: z.enum(["weekly", "biweekly", "monthly"]).nullable().optional(),
-  recurrenceEnd: z.string().nullable().optional().refine(
-    (v) => v == null || isValidDate(v),
-    "Date de fin de récurrence invalide"
-  ),
-});
 
 function computeDeadlineFromOffset(eventDate: Date, offset: string): Date {
   const result = new Date(eventDate);

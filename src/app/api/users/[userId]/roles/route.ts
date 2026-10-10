@@ -6,40 +6,9 @@ import { createNotification } from "@/lib/notifications";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { ASSIGNABLE_BY_MINISTER, canGrantRole } from "@/lib/roles";
 import type { Prisma, Role } from "@/generated/prisma/client";
-import { z } from "zod";
+import { roleSchema, patchSchema } from "./contract";
 
 // { id, isDeputy? } — format enrichi pour gérer principal vs adjoint
-const deptAssignmentSchema = z.object({
-  id: z.string().min(1),
-  isDeputy: z.boolean().optional().default(false),
-});
-
-const roleSchema = z.object({
-  churchId: z.string().min(1),
-  role: z.enum([
-    "SUPER_ADMIN",
-    "ADMIN",
-    "SECRETARY",
-    "MINISTER",
-    "DEPARTMENT_HEAD",
-    "DISCIPLE_MAKER",
-    "REPORTER",
-    "STAR",
-    "PASTORAL_CARE_REFERENT",
-    "ACCOUNTANT",
-  ]),
-  ministryId: z.string().optional(),
-  // Supporte les deux formats : string[] (legacy) ou { id, isDeputy }[]
-  departmentIds: z.array(z.string()).optional(),
-  departments: z.array(deptAssignmentSchema).optional(),
-});
-
-const patchSchema = z.object({
-  roleId: z.string().min(1),
-  ministryId: z.string().nullable().optional(),
-  departmentIds: z.array(z.string()).optional(),
-  departments: z.array(deptAssignmentSchema).optional(),
-});
 
 const roleInclude = {
   church: { select: { id: true, name: true } },

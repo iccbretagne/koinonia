@@ -17,7 +17,7 @@ le document détaillé qui fait foi, et ce DAT qui doit être corrigé. Cette r�
 un DAT qui recopie le détail devient faux en quelques semaines.
 
 Ne sont pas couverts ici : les procédures d'installation pas à pas (voir `production.md`,
-`staging.md`, `dev-onboarding.md`), le détail des endpoints (voir `api.md`), le détail du modèle
+`staging.md`, `dev-onboarding.md`), le détail des endpoints (spécification OpenAPI générée `openapi.json`, conventions dans `api.md`), le détail du modèle
 de données (voir `database.md`).
 
 ## 2. Présentation générale
@@ -321,7 +321,7 @@ Chaque document ci-dessous fait **autorité sur son domaine** ; ce DAT n'en est 
 |---|---|
 | [architecture.md](architecture.md) | Structure du code, patterns, conventions |
 | [database.md](database.md) | Schéma Prisma, modèles, relations |
-| [api.md](api.md) | Endpoints, requêtes, réponses |
+| [api.md](api.md) | Conventions de l'API ; référence des endpoints générée dans [openapi.json](openapi.json) (ADR-0023) |
 | [auth.md](auth.md) | Authentification, rôles, permissions |
 | [production.md](production.md) | Déploiement, infrastructure, exploitation |
 | [staging.md](staging.md) | Environnement de recette |

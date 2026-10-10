@@ -3,9 +3,7 @@ import { resolveMemberDepartmentScope } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { attachMemberToDepartment, detachMemberFromDepartment } from "@/modules/planning";
-import { z } from "zod";
-
-const addSchema = z.object({ departmentId: z.string().min(1, "Le département est requis") });
+import { addSchema } from "./contract";
 
 /**
  * Rattache un STAR existant à un département.

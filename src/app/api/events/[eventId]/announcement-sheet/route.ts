@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
@@ -8,12 +7,7 @@ import {
   notifyReaders,
 } from "@/modules/planning";
 import { fileExists, getSignedDownloadUrl, deleteMediaFile } from "@/modules/storage";
-
-const confirmSchema = z.object({
-  key: z.string().min(1),
-  filename: z.string().min(1).max(255),
-  mimeType: z.string(),
-});
+import { confirmSchema } from "./contract";
 
 export async function POST(
   request: Request,

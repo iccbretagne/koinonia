@@ -1,17 +1,12 @@
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { resolveOwnMemberForDepartment, withdrawService } from "@/modules/planning";
-import { z } from "zod";
+import { withdrawSchema } from "./contract";
 
 /**
  * « Je ne peux plus » (spec 061) : un STAR se désiste d'un service où il est planifié. L'église
  * qui fait autorité est celle de l'événement ; la fiche doit être liée au compte appelant.
  */
-const withdrawSchema = z.object({
-  eventId: z.string().min(1),
-  departmentId: z.string().min(1),
-  message: z.string().trim().max(500).optional(),
-});
 
 export async function POST(request: Request) {
   try {

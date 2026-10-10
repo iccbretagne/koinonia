@@ -3,12 +3,10 @@
  * Incrémente le compteur de lecture d'un segment publié — pas d'authentification, rate-limité
  * par IP pour éviter le gonflage artificiel du compteur (spec §6).
  */
-import { z } from "zod";
 import { requireRateLimit, getClientIp, RATE_LIMIT_MUTATION } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
-
-const schema = z.object({ segmentId: z.string().min(1) });
+import { schema } from "./contract";
 
 export async function POST(
   request: Request,

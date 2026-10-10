@@ -1,12 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { getPreferencesView, getVisibleDomainKeys, updatePreferences } from "@/lib/notification-preferences";
-import { z } from "zod";
-
-const putSchema = z.object({
-  emailEnabled: z.boolean().optional(),
-  domains: z.record(z.string(), z.boolean()).optional(),
-});
+import { putSchema } from "./contract";
 
 export async function GET() {
   try {

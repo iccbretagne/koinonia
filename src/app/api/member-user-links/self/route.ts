@@ -4,12 +4,7 @@ import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { requireRateLimit, RATE_LIMIT_SENSITIVE } from "@/lib/rate-limit";
 import { assertSelfLinkAllowed } from "@/lib/onboarding";
-import { z } from "zod";
-
-const schema = z.object({
-  memberId: z.string(),
-  churchId: z.string(),
-});
+import { schema } from "./contract";
 
 /**
  * POST /api/member-user-links/self — auto-liaison self-service par email (P2).

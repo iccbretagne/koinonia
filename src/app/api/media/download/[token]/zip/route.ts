@@ -8,13 +8,9 @@ import { errorResponse, ApiError } from "@/lib/api-utils";
 import { validateMediaShareToken, getS3ObjectStream } from "@/modules/media";
 import archiver from "archiver";
 import { PassThrough } from "node:stream";
-import { z } from "zod";
+import { bodySchema } from "./contract";
 
 export const runtime = "nodejs";
-
-const bodySchema = z.object({
-  photoIds: z.array(z.string()).optional(),
-});
 
 export async function POST(
   request: Request,

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId, requireDepartmentAccess } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
+import { putSchema } from "./contract";
 
 export async function GET(
   request: Request,
@@ -40,11 +40,6 @@ export async function GET(
     return errorResponse(error);
   }
 }
-
-const putSchema = z.object({
-  eventId: z.string().min(1),
-  content: z.string().max(2000),
-});
 
 export async function PUT(
   request: Request,

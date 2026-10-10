@@ -2,19 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { requireIntegrationFullAccess } from "@/modules/integration";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  integratedInFamily: z.boolean().optional(),
-  familyIntegratedAt: z.string().datetime().optional().nullable(),
-  followsPcnc: z.boolean().optional(),
-  pcncStartedAt: z.string().datetime().optional().nullable(),
-  isStar: z.boolean().optional(),
-  starSince: z.string().datetime().optional().nullable(),
-  inDiscipleship: z.boolean().optional(),
-  discipleshipSince: z.string().datetime().optional().nullable(),
-  notes: z.string().max(10000).optional().nullable(),
-});
+import type { z } from "zod";
+import { patchSchema } from "./contract";
 
 type JourneyPatch = z.infer<typeof patchSchema>;
 

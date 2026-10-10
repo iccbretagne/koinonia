@@ -2,17 +2,11 @@
  * POST /api/audio/settings/cover/sign — presigned PUT URL pour uploader directement
  * navigateur → S3 la couverture par défaut du module audio.
  */
-import { z } from "zod";
 import { requireCurrentChurchPermission } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { validateCoverFile, getCoverExtensionFromMimeType, getDefaultCoverKey } from "@/modules/audio";
 import { getSignedPutUrl, getSignedStreamUrl } from "@/modules/storage";
-
-const signSchema = z.object({
-  filename: z.string().min(1),
-  mimeType: z.string(),
-  size: z.number().int().positive(),
-});
+import { signSchema } from "./contract";
 
 export async function POST(request: Request) {
   try {

@@ -3,15 +3,7 @@ import { requireChurchPermission } from "@/lib/auth";
 import { requireAgendaView } from "@/modules/agenda/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { z } from "zod";
-
-const createSchema = z.object({
-  churchId: z.string().min(1, "L'église est requise"),
-  name: z.string().min(1, "Le nom est requis"),
-  email: z.string().email("Email invalide").nullable().optional(),
-  role: z.enum(["PASTEUR", "ASSISTANT_PASTEUR", "BERGER"]),
-  userId: z.string().nullable().optional(),
-});
+import { createSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {

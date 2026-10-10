@@ -3,15 +3,7 @@ import { requireMediaAccess, requireMediaUploadAccess, requireMediaManageAccess,
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { deleteMediaFiles } from "@/lib/s3";
-import { z } from "zod";
-
-const patchSchema = z.object({
-  name: z.string().min(1).optional(),
-  date: z.string().optional(),
-  description: z.string().nullable().optional(),
-  status: z.enum(["DRAFT", "PENDING_REVIEW", "REVIEWED", "ARCHIVED"]).optional(),
-  planningEventId: z.string().nullable().optional(),
-});
+import { patchSchema } from "./contract";
 
 export async function GET(
   _request: Request,

@@ -115,7 +115,7 @@ koinonia/
 │   │   │       ├── reports/     # Dashboard comptes rendus et statistiques
 │   │   │       ├── discipleship/ # Dashboard discipolat (relations, appel, stats)
 │   │   │       └── audit-logs/  # Historique des modifications
-│   │   └── api/                 # Route handlers (API REST)
+│   │   └── api/                 # Route handlers (API REST), chacun avec son contract.ts (ADR-0023)
 │   │       ├── auth/[...nextauth]/
 │   │       ├── announcements/   # GET/POST + [id] GET/PATCH/DELETE
 │   │       ├── requests/        # GET/POST + [id] GET/PATCH/DELETE (unifie)
@@ -158,6 +158,7 @@ koinonia/
 │   │   ├── api-utils.ts         # ApiError, successResponse, errorResponse
 │   │   ├── audit.ts             # logAudit() — journal des actions
 │   │   ├── rate-limit.ts        # Limiteur de debit par utilisateur
+│   │   ├── openapi/             # Contrats de routes -> spec OpenAPI (contract.ts, document.ts, collect.ts)
 │   └── proxy.ts                 # Middleware Next.js 16 (protection routes, runtime Node.js)
 ├── docs/                        # Documentation detaillee
 │   └── adr/                     # Architecture Decision Records (decisions structurantes)
@@ -179,6 +180,7 @@ npm run lint:boundaries  # Verification des frontieres modules (dependency-cruis
 npm run test             # Tests unitaires (Vitest)
 npm run test:watch       # Tests en mode watch
 npm run test:coverage    # Tests avec rapport de couverture
+npm run openapi          # Regenere docs/openapi.json depuis les contract.ts (ADR-0023)
 npm run db:push          # Appliquer le schema Prisma
 npm run db:seed          # Charger les donnees ICC Rennes
 npm run db:migrate         # Creer une migration (dev)
@@ -243,11 +245,12 @@ Les gardes propres à un module vivent **dans le module**, pas ici : `@/modules/
 
 ### Validation Zod
 
-Les mutations (POST, PUT, PATCH) valident le body avec Zod :
+Les mutations (POST, PUT, PATCH) valident le body avec Zod. Le schéma est déclaré dans le
+`contract.ts` voisin (ADR-0023, voir règle 15) et importé par la route :
 
 ```typescript
-const schema = z.object({ ... });
-const data = schema.parse(await request.json());
+import { createSchema } from "./contract";
+const data = createSchema.parse(await request.json());
 ```
 
 ### Server vs Client components
@@ -603,7 +606,7 @@ Chaque église (`Church`) est un tenant isolé. Les données sont rattachées à
 | [DAT](docs/dat.md) | Dossier d'architecture technique — vue d'ensemble, synthèse des autres documents |
 | [Architecture](docs/architecture.md) | Structure, patterns, conventions |
 | [Base de données](docs/database.md) | Schéma Prisma, modèles, relations |
-| [API](docs/api.md) | Endpoints, requêtes, réponses |
+| [API](docs/api.md) | Conventions de l'API ; référence des endpoints générée dans `docs/openapi.json` (Swagger UI `/admin/api`, ADR-0023) |
 | [Authentification](docs/auth.md) | NextAuth, OAuth, RBAC, permissions |
 | [Production](docs/production.md) | Déploiement Debian, Traefik, systemd |
 | [Environnement de dev](docs/dev-onboarding.md) | Setup conteneurisé, jeu de données fictif, connexion sans Google OAuth |
@@ -727,7 +730,7 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
     droits d'un rôle se fait dans le manifeste du module (`src/modules/*/manifest.ts`) ; la
     matrice figée de `src/core/__tests__/permissions.test.ts` et le tableau ci-dessus doivent
     être mis à jour dans le même commit
-11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`) — pas de chemins internes
+11. **Imports modules** : `src/app/` ne peut importer depuis un module que via son index (`@/modules/X`), ses gardes (`@/modules/X/auth`) ou ses schémas purs (`@/modules/X/schemas`) — pas d'autres chemins internes
 12. **Frontières modules** : vérifier `npm run lint:boundaries` après tout ajout de dépendance entre modules
 13. **ADR** : toute décision architecturale/structurante (cross-module, difficile à revenir en arrière, choix de stack ou de pattern durable) est documentée dans `docs/adr/` — voir `docs/adr/README.md` pour la distinguer d'une décision de `plan.md` (portée à une seule feature)
 14. **Surface HTTP des modules** (ADR-0012) : toute nouvelle page ou route API doit être déclarée
@@ -736,6 +739,12 @@ Créer une branche `feat/X` comme base. Les sous-features ouvrent des PRs vers `
     `src/lib/module-routes.ts` si elle ne relève d'aucun module. Sans déclaration, le proxy la
     traite comme absente de l'instance (404) ; `route-exhaustiveness.test.ts` échoue si un
     `route.ts`/`page.tsx` réel n'est couvert par aucun préfixe ou par plusieurs à la fois
+15. **Contrat d'API** (ADR-0023) : toute route API a un `contract.ts` voisin, pur (zod,
+    `@/lib/openapi/contract`, `@/generated/prisma/enums`, `@/modules/*/schemas`, autres
+    contrats). Les schémas Zod des corps y sont déclarés et importés par `route.ts` ; `contract =
+    defineContract({...})` décrit chaque méthode (accès, paramètres, corps, réponse, règles
+    métier). Après tout ajout ou changement de route ou de contrat : `npm run openapi` et commiter
+    `docs/openapi.json` — `openapi.test.ts` échoue sinon. `docs/api.md` ne liste plus les endpoints
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -4,14 +4,7 @@ import { errorResponse } from "@/lib/api-utils";
 import { findAbsenceConflicts, absenceVisibilityWhere } from "@/modules/planning";
 import { sanitizeRow } from "@/lib/excel";
 import ExcelJS from "exceljs";
-import { z } from "zod";
-
-const exportSchema = z.object({
-  churchId: z.string().min(1),
-  absenceIds: z.array(z.string().min(1)).max(1000),
-  /** Réponses « Pas disponible » affichées (spec 058) — second onglet du classeur. */
-  responseIds: z.array(z.string().min(1)).max(1000).default([]),
-});
+import { exportSchema } from "./contract";
 
 const COLUMNS = [
   "STAR",

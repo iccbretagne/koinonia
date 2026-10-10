@@ -161,7 +161,7 @@ const AUTHOR = { author: { select: { id: true, name: true, displayName: true } }
 
 export async function loadJobsBoard(session: BoardSession, { now = new Date() }: { now?: Date } = {}): Promise<JobsBoard> {
   const userId = session.user.id;
-  const canManage = canManageJobs(session);
+  const canManage = await canManageJobs(session);
   const where = visibility(canManage, userId, now);
   const orderBy = { createdAt: "desc" as const };
 
@@ -205,7 +205,7 @@ export async function loadPublication(
   else row = await prisma.freelanceProfile.findUnique(args);
   if (!row) return null;
 
-  const canManage = canManageJobs(session);
+  const canManage = await canManageJobs(session);
   const publication = toPublication(kind, row as Row, { userId: session.user.id, now, lastSeenAt: null });
   if (publication.state !== "active" && !publication.isOwn && !canManage) return null;
   return { publication, canManage };
