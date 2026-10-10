@@ -11,17 +11,29 @@ L'authentification utilise [NextAuth v5](https://authjs.dev/) (Auth.js) avec le 
 2. Redirection vers Google OAuth (`/api/auth/signin`)
 3. Callback vers `/api/auth/callback/google`
 4. NextAuth crée ou retrouve l'utilisateur en base (via PrismaAdapter)
-5. Session créée, redirection vers `/dashboard`
+5. Session créée, retour sur `/`, qui redirige vers l'accueil `/accueil` — ou vers `/profile`
+   si l'utilisateur n'a aucun rôle dans l'église courante (`src/app/page.tsx`)
 
 **Première connexion** :
 - L'utilisateur est créé automatiquement dans la table `users`
-- Si son email est dans `SUPER_ADMIN_EMAILS`, il reçoit automatiquement le rôle `SUPER_ADMIN` sur toutes les églises existantes
-- Sinon, il n'a aucun rôle (accès au dashboard mais pas de départements visibles)
+- Si son email est dans `SUPER_ADMIN_EMAILS`, il est marqué `isSuperAdmin` et reçoit le rôle
+  `SUPER_ADMIN` sur toutes les églises existantes (callback `signIn`). La variable ne sert qu'à
+  cet amorçage : les contrôles d'accès lisent `session.user.isSuperAdmin`, tenu en base
+- Sinon, il n'a aucun rôle : il arrive sur son profil, d'où il demande un accès ou la liaison à
+  sa fiche STAR
+
+**Connexion de développement** : avec `AUTH_DEV_LOGIN=true`, `POST /api/auth/dev-login` (champ
+`devUserKey`) ouvre une session sur un compte du jeu de données fictif, sans Google
+([dev-onboarding.md](dev-onboarding.md)). Toujours refusée quand `NODE_ENV=production`
+(`isDevLoginEnabled`).
 
 ### Session
 
 La session NextAuth est enrichie dans le callback `session` avec :
 - `user.id` — ID de l'utilisateur
+- `user.isSuperAdmin`, `user.hasSeenTour` (visite guidée), `user.displayName`
+- `user.pastoralProfileId`, `user.pastoralChurchIds` — profil pastoral lié (voir « Accès
+  transverses entre églises »)
 - `user.churchRoles[]` — tous les rôles de l'utilisateur avec les infos église et départements
 
 ```typescript
@@ -63,11 +75,18 @@ Cela permet d'assigner le rôle STAR sans aucune entrée `user_departments` : le
 
 ### Protection des routes
 
-**Middleware** (`src/proxy.ts`, ex `src/middleware.ts`) :
-- Protège `/dashboard/*` et `/api/*` (sauf `/api/auth/*`)
-- Vérifie l'existence d'une session NextAuth valide
-- Redirige vers `/` si non authentifié
-- Exporte `proxy` (pas `middleware`), runtime Node.js (pas Edge)
+**Proxy** (`src/proxy.ts`, ex `src/middleware.ts`) — intercepte toutes les adresses hors
+fichiers statiques, export `proxy` (pas `middleware`), runtime Node.js (pas Edge) :
+1. **Contrôle de module** (ADR-0012), avant toute notion d'identité : une adresse qu'aucun
+   module actif ne déclare répond 404 (`/module-absent` pour une page, JSON pour l'API)
+2. **Présence d'un cookie de session** : sans session, une route API répond `401` et une page
+   redirige vers `/` — sauf les adresses ouvertes : `/`, `/api/auth/*`, `/api/cron/*` (jeton
+   porteur vérifié par la route), le rapport CSP et les adresses publiques des manifestes
+   (`routes.public`)
+3. Pose la politique de sécurité du contenu sur les pages (ADR-0022)
+
+Le proxy ne vérifie que la présence du cookie : la validité de la session et les permissions
+sont contrôlées par chaque page et chaque route, avec les helpers ci-dessous.
 
 **Helpers** (`src/lib/auth.ts`) :
 - `requireAuth()` — vérifie la session et throw `UNAUTHORIZED` si absente
@@ -82,7 +101,11 @@ Cela permet d'assigner le rôle STAR sans aucune entrée `user_departments` : le
 - `requirePlatformPermission(permission)` — permissions volontairement transverses aux églises
   (module emploi uniquement) ; la liste blanche est dans `src/lib/auth.ts` et testée par
   `src/lib/__tests__/auth-global-scopes.test.ts`
-- `getUserDepartmentScope(session)` — retourne le périmètre départements selon le rôle
+- `hasChurchPermission(session, permission, churchId)` — même règle que
+  `requireChurchPermission`, renvoie un booléen (affichage conditionnel)
+- `requireChurchAccess(churchId)` — exige un rôle quelconque dans l'église (garde du layout
+  `/admin`)
+- `getUserDepartmentScope(session, churchId)` — retourne le périmètre départements selon le rôle
 - `requireDepartmentAccess(session, churchId, departmentId)` — jette `FORBIDDEN` si le
   département visé n'est pas dans le périmètre de l'appelant. Un périmètre restreint **vide**
   (STAR) refuse tout, sans code spécifique à ce rôle (ADR-0009). À appeler juste après
@@ -98,6 +121,13 @@ Cela permet d'assigner le rôle STAR sans aucune entrée `user_departments` : le
   Contexte d'**affichage**, jamais une autorisation à lui seul : la valeur peut venir d'un cookie
   posé par le client. Toute décision d'autorisation doit vérifier la permission **dans** l'église
   ainsi désignée (`requireCurrentChurchPermission`), jamais s'y fier seule.
+- Gardes de l'espace Communication & Production : `isMediaTeamMember(session, churchId, domain)`
+  (équipe Photos ou Production Média, avec repli sur Production Média quand aucun département ne
+  porte la fonction `PHOTOS`), `requireMediaAccess`/`requireMediaUploadAccess`/
+  `requireMediaManageAccess`/`requireMediaReviewAccess(churchId, domain)`, `getMediaShareScope`
+
+Les gardes propres à un module vivent dans le module : `@/modules/audio/auth` (ci-dessous),
+`@/modules/agenda/auth`, `@/modules/integration/auth`, `@/modules/care/auth`.
 
 
 `audio:listen` (bibliothèque d'écoute, spec 021) est accordée à **tous les rôles** — le détail des routes audio est dans la référence OpenAPI (`docs/openapi.json`, tag `audio`).
@@ -409,6 +439,14 @@ réservée à Admin/Secrétaire :
 | `jobs:freelance` | x | x | x | x | x | x | x | x | x | x |
 | `jobs:manage` | x | x | x | | | | | | | |
 
+Ces permissions sont **transverses aux églises** : `requirePlatformPermission` les accorde si
+l'un des rôles de l'utilisateur, dans n'importe quelle église, les porte (liste blanche testée par
+`auth-global-scopes.test.ts`). Un modérateur (`canManageJobs`, `src/modules/jobs/services/access.ts` :
+Super Admin ou `jobs:manage` via `rolePermissions`) voit les publications retirées et peut retirer,
+republier ou supprimer toute publication. L'auteur modifie, clôture (pourvue, a trouvé,
+indisponible) et supprime la sienne ; il retire et republie lui-même une offre d'emploi, mais ne
+remet jamais en ligne une mission ou un profil retiré par la modération (spec 064).
+
 #### Module `integration`
 
 | Permission | SA | Ad | Sec | Min | RD | FD | Rep | STAR | RSP | Compt |
@@ -430,6 +468,11 @@ département fonction `INTEGRATION`/`MSDP`, et un accès restreint (à ses famil
 accès non restreints (pas de berger/conseiller au périmètre limité) — un berger n'a donc jamais
 accès aux dossiers « parcours », contrairement aux dossiers d'accueil qu'il peut consulter pour
 ses familles.
+
+Le périmètre restreint du berger (`isInIntegrationScope`) est le même dans la liste et sur chaque
+demande (détail, actions, historique) : une demande encore **sans famille** n'en fait pas partie.
+La gestion des bergers (lister, affecter, retirer — `/api/integration/leaders*`) exige l'accès
+complet : sinon un berger pourrait s'affecter à d'autres familles et élargir son propre périmètre.
 
 Depuis la spec 054 (issue #583), `integration:manage` **remplace** l'ancienne approximation par
 `members:manage`/`events:manage` dans ces deux gardes, et dans les routes `/api/integration/parcours*`
@@ -529,11 +572,13 @@ renommé spec 052) :
 
 ```typescript
 // Dans un route handler (protection + permission)
-import { requireChurchPermission } from "@/lib/auth";
+import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    // L'église de l'objet fait autorité, jamais le contexte d'église affiché
+    const churchId = await resolveChurchId("member", id);
     const session = await requireChurchPermission("members:manage", churchId);
     // ... logique
   } catch (error) {
