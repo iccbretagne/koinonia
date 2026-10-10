@@ -6,11 +6,10 @@ La CI cible le projet SonarCloud `iccbretagne_koinonia`, dans l'organisation
 
 ## Réglages du serveur
 
-Le Quality Gate « Koinonia progressif » a été appliqué au SonarQube local.
-Le script crée les mêmes conditions dans SonarCloud et associe le gate au projet.
-Cette association nécessite un plan autorisant les gates personnalisés (OSS ou
-Team/Enterprise) : le plan Free la refuse avec HTTP 403, même si la création du
-gate a réussi. Les réglages locaux ne sont pas transférés par le scan.
+Le Quality Gate « Koinonia progressif » est créé dans SonarCloud par un script,
+qui l'associe au projet. Cette association nécessite un plan autorisant les gates
+personnalisés (OSS ou Team/Enterprise) : le plan Free la refuse avec HTTP 403,
+même si la création du gate a réussi.
 Conserver les profils TypeScript/CSS
 « Sonar way » et définir le nouveau code par la version précédente sur `main`.
 Les PR sont comparées à leur branche cible.
@@ -116,13 +115,6 @@ acceptée sans relecture. Le jeton `SONAR_TOKEN` doit avoir le droit **Administe
 python3 scripts/sonar-accept.py           # simulation
 python3 scripts/sonar-accept.py --apply   # acceptation
 ```
-
-## Scan local
-
-La configuration locale utilise `docker-compose.sonar.yml` et `.env.sonar`.
-Ce fichier d'environnement est ignoré par Git. Pour un scan local du projet
-historique, remplacer la clé Cloud avec `-Dsonar.projectKey=koinonia` et fournir
-l'URL et le jeton du serveur local. Ne pas versionner les jetons.
 
 Références : [couverture TypeScript](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/javascript-typescript-test-coverage),
 [analyses CI et automatique](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/ci-based-analysis/overview-of-integrated-cis).
