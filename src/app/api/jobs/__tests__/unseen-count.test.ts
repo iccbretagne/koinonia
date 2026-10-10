@@ -15,6 +15,7 @@ describe("GET /api/jobs/unseen-count", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.freelanceMission.count.mockResolvedValue(0);
   });
 
   it("uses a 30-day window on first visit (no JobLastSeen row)", async () => {
@@ -66,6 +67,22 @@ describe("GET /api/jobs/unseen-count", () => {
     expect(where.status).toBe("PUBLISHED");
   });
 
+  it("adds the active missions of others to the offers (spec 064)", async () => {
+    const seenAt = new Date("2026-09-01T00:00:00.000Z");
+    prismaMock.jobLastSeen.findUnique.mockResolvedValue({ seenAt } as never);
+    prismaMock.jobOffer.count.mockResolvedValue(2);
+    prismaMock.freelanceMission.count.mockResolvedValue(3);
+
+    const res = await GET();
+    const body = await res.json();
+    expect(body.count).toBe(5);
+
+    const where = prismaMock.freelanceMission.count.mock.calls[0][0].where;
+    expect(where.status).toBe("ACTIVE");
+    expect(where.authorId).toEqual({ not: "user-1" });
+    expect(where.createdAt.gt).toBe(seenAt);
+  });
+
   it("returns 401 when unauthenticated", async () => {
     mockRequireAuth.mockRejectedValue(new Error("UNAUTHORIZED"));
     const res = await GET();
@@ -98,6 +115,7 @@ describe("POST /api/jobs/unseen-count", () => {
 
     prismaMock.jobLastSeen.findUnique.mockResolvedValue({ seenAt: now } as never);
     prismaMock.jobOffer.count.mockResolvedValue(0);
+    prismaMock.freelanceMission.count.mockResolvedValue(0);
 
     const res = await GET();
     const body = await res.json();

@@ -1,13 +1,10 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Suspense } from "react";
-import { rolePermissions } from "@/lib/registry";
-import JobsListClient from "./JobsListClient";
-import SeekersListClient from "./SeekersListClient";
-import JobsTabBar from "./JobsTabBar";
-import FreelanceTabContent from "./freelance/FreelanceTabContent";
+import PageHeader from "@/components/ui/PageHeader";
+import { loadJobsBoard } from "@/modules/jobs";
+import JobsBoard from "./JobsBoard";
+import PublishChooser from "./PublishChooser";
+import { resolveInitialView } from "./board";
 
 export default async function JobsPage({
   searchParams,
@@ -18,158 +15,26 @@ export default async function JobsPage({
   if (!session?.user) redirect("/");
 
   const { tab } = await searchParams;
-  let activeTab: "offers" | "seekers" | "freelance" = "offers";
-  if (tab === "seekers") activeTab = "seekers";
-  else if (tab === "freelance") activeTab = "freelance";
-
+  const view = resolveInitialView(tab);
   const now = new Date();
-
-  const userRoles   = session.user.churchRoles.map((r) => r.role);
-  const permissions = new Set(userRoles.flatMap((r) => rolePermissions[r] ?? []));
-  const canManage   = session.user.isSuperAdmin || permissions.has("jobs:manage");
-
-  // Une personne habilitée à modérer voit tous les statuts (spec 048, fusion de /admin/jobs) ;
-  // les autres rôles ne voient que le contenu actif, comme aujourd'hui.
-  const [jobs, seekers, freelanceMissions, freelanceProfiles] = await Promise.all([
-    prisma.jobOffer.findMany({
-      where: canManage
-        ? {}
-        : { status: "PUBLISHED", OR: [{ deadline: null }, { deadline: { gte: now } }] },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.jobSeeker.findMany({
-      where: canManage ? {} : { status: "ACTIVE" },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.freelanceMission.findMany({
-      where: canManage ? {} : { status: "ACTIVE" },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.freelanceProfile.findMany({
-      where: canManage ? {} : { status: "ACTIVE" },
-      include: {
-        author: { select: { id: true, name: true, displayName: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-
-  const serializedJobs = jobs.map((j) => ({
-    ...j,
-    deadline:  j.deadline  ? j.deadline.toISOString()  : null,
-    createdAt: j.createdAt.toISOString(),
-    updatedAt: j.updatedAt.toISOString(),
-  }));
-
-  const serializedSeekers = seekers.map((s) => ({
-    ...s,
-    availableFrom: s.availableFrom ? s.availableFrom.toISOString() : null,
-    createdAt:     s.createdAt.toISOString(),
-    updatedAt:     s.updatedAt.toISOString(),
-  }));
-
-  const serializedMissions = freelanceMissions.map((m) => ({
-    ...m,
-    createdAt: m.createdAt.toISOString(),
-    updatedAt: m.updatedAt.toISOString(),
-  }));
-
-  const serializedFreelanceProfiles = freelanceProfiles.map((p) => ({
-    ...p,
-    availableFrom: p.availableFrom ? p.availableFrom.toISOString() : null,
-    createdAt:     p.createdAt.toISOString(),
-    updatedAt:     p.updatedAt.toISOString(),
-  }));
-
-  const SUBTITLES = {
-    offers: "Offres d'emploi, stages et alternances de la communauté",
-    seekers: "Membres de la communauté en recherche d'emploi",
-    freelance: "Missions à confier et freelances disponibles dans la communauté",
-  } as const;
-  const subtitle = SUBTITLES[activeTab];
+  const board = await loadJobsBoard(session, { now });
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">Emploi</h1>
-          <p className="text-sm text-ink-muted mt-1">{subtitle}</p>
-        </div>
-        {activeTab === "offers" && (
-          <Link
-            href="/jobs/new"
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
-          >
-            Publier une offre
-          </Link>
-        )}
-        {activeTab === "seekers" && (
-          <Link
-            href="/jobs/seekers/new"
-            className="px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
-          >
-            Publier mon profil
-          </Link>
-        )}
-        {activeTab === "freelance" && (
-          <div className="flex gap-2">
-            <Link
-              href="/jobs/freelance/missions/new"
-              className="px-4 py-2 bg-brand text-on-brand text-sm font-semibold rounded-lg hover:bg-brand-hover transition-colors"
-            >
-              Proposer une mission
-            </Link>
-            <Link
-              href="/jobs/freelance/profiles/new"
-              className="px-4 py-2 border border-brand text-brand-text text-sm font-semibold rounded-lg hover:bg-brand-soft transition-colors"
-            >
-              Proposer mes services
-            </Link>
-          </div>
-        )}
-      </div>
-
-      <Suspense>
-        <JobsTabBar
-          offersCount={serializedJobs.length}
-          seekersCount={serializedSeekers.length}
-          freelanceMissionsCount={serializedMissions.length}
-          freelanceProfilesCount={serializedFreelanceProfiles.length}
-        />
-      </Suspense>
-
-      {activeTab === "offers" && (
-        <JobsListClient
-          jobs={serializedJobs}
-          currentUserId={session.user.id!}
-          nowMs={now.getTime()}
-          canManage={canManage}
-        />
-      )}
-      {activeTab === "seekers" && (
-        <SeekersListClient
-          seekers={serializedSeekers}
-          currentUserId={session.user.id!}
-          canManage={canManage}
-        />
-      )}
-      {activeTab === "freelance" && (
-        <FreelanceTabContent
-          missions={serializedMissions}
-          profiles={serializedFreelanceProfiles}
-          currentUserId={session.user.id!}
-          canManage={canManage}
-        />
-      )}
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Offres"
+        description="Emplois, stages, alternances, missions et profils de la communauté"
+        actions={<PublishChooser />}
+      />
+      <JobsBoard
+        key={view.tab}
+        publications={board.publications}
+        canManage={board.canManage}
+        lastSeenAt={board.lastSeenAt}
+        nowMs={now.getTime()}
+        tab={view.tab}
+        initialChips={view.chips}
+      />
     </div>
   );
 }

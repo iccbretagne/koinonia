@@ -4,44 +4,9 @@
  * Les comparaisons se font au jour près, dans le fuseau de l'église (Europe/Paris).
  */
 
-const TIME_ZONE = "Europe/Paris";
-const DAY_MS = 24 * 60 * 60 * 1000;
+import { dayKey, daysUntil, keyToUtc, normalizeText } from "./paris-days";
 
-const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
-  timeZone: TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-// Une date saisie « en jour » (2026-10-12) ou en heure locale sans fuseau (2026-10-12T10:00) se
-// lit telle quelle : la convertir décalerait d'un jour selon le fuseau du serveur.
-const LOCAL_DATE = /^(\d{4}-\d{2}-\d{2})(T[\d:.]+)?$/;
-
-/** Jour calendaire (`AAAA-MM-JJ`) d'une date, à Paris ; `null` si la valeur est invalide. */
-export function dayKey(value: string | Date | null | undefined): string | null {
-  if (!value) return null;
-  if (typeof value === "string") {
-    const local = LOCAL_DATE.exec(value);
-    if (local) return local[1];
-  }
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return dayKeyFmt.format(date);
-}
-
-function keyToUtc(key: string): number {
-  const [y, m, d] = key.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
-}
-
-/** Nombre de jours entre aujourd'hui et `deadline` (négatif si passée). */
-export function daysUntil(deadline: string, now: Date): number | null {
-  const target = dayKey(deadline);
-  const today = dayKey(now);
-  if (!target || !today) return null;
-  return Math.round((keyToUtc(target) - keyToUtc(today)) / DAY_MS);
-}
+export { dayKey, daysUntil };
 
 export type DeadlineGroupKey = "overdue" | "week" | "later" | "none";
 
@@ -123,17 +88,13 @@ export interface Searchable {
   readonly announcement?: { readonly title: string } | null;
 }
 
-function normalize(text: string): string {
-  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
-
 /** Recherche locale : titre (ou titre de l'annonce), demandeur, département ou ministère. */
 export function matchesQuery(item: Searchable, query: string): boolean {
-  const q = normalize(query.trim());
+  const q = normalizeText(query.trim());
   if (!q) return true;
   return [item.title, item.announcement?.title, item.author, item.source]
     .filter((value): value is string => !!value)
-    .some((value) => normalize(value).includes(q));
+    .some((value) => normalizeText(value).includes(q));
 }
 
 export const REQUEST_TYPE_LABEL: Record<string, string> = {

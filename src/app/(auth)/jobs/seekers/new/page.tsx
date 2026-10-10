@@ -10,7 +10,7 @@ export default async function NewSeekerPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-2 mb-4">
-        <Link href="/jobs?tab=seekers" className="text-sm text-ink-subtle hover:text-ink-muted">
+        <Link href="/jobs?tab=profils" className="text-sm text-ink-subtle hover:text-ink-muted">
           ← Retour
         </Link>
       </div>

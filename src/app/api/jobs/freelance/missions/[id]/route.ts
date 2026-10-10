@@ -67,6 +67,11 @@ export async function PATCH(
     if (data.status === "ARCHIVED" && !canManage) {
       throw new ApiError(403, "Seul un modérateur peut archiver une mission");
     }
+    // Une publication archivée l'a été par la modération : seul un modérateur la remet en ligne
+    // (spec 064), sans quoi l'auteur annulerait la décision.
+    if (mission.status === "ARCHIVED" && data.status !== undefined && data.status !== "ARCHIVED" && !canManage) {
+      throw new ApiError(403, "Seul un modérateur peut remettre en ligne une mission retirée");
+    }
 
     const updated = await prisma.freelanceMission.update({
       where: { id },

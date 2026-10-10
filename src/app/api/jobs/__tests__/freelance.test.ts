@@ -182,6 +182,34 @@ describe("PATCH /api/jobs/freelance/missions/[id]", () => {
     const res = await patchMission(req, { params });
     expect(res.status).toBe(403);
   });
+
+  it("author cannot bring back a retired mission — 403 (spec 064)", async () => {
+    mockRequireAuth.mockResolvedValue(userSession);
+    prismaMock.freelanceMission.findUnique.mockResolvedValue({ id: "m1", authorId: "user-regular", status: "ARCHIVED" } as never);
+
+    const req = new Request("http://localhost/api/jobs/freelance/missions/m1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+
+    const res = await patchMission(req, { params });
+    expect(res.status).toBe(403);
+    expect(prismaMock.freelanceMission.update).not.toHaveBeenCalled();
+  });
+
+  it("moderator can bring back a retired mission", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.freelanceMission.findUnique.mockResolvedValue({ id: "m1", authorId: "user-regular", status: "ARCHIVED" } as never);
+    prismaMock.freelanceMission.update.mockResolvedValue({ ...baseMission, status: "ACTIVE" } as never);
+
+    const req = new Request("http://localhost/api/jobs/freelance/missions/m1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+
+    const res = await patchMission(req, { params });
+    expect(res.status).toBe(200);
+  });
 });
 
 // ─── Missions — DELETE ───────────────────────────────────────────────────────
@@ -297,6 +325,34 @@ describe("PATCH /api/jobs/freelance/profiles/[id]", () => {
 
     const res = await patchProfile(req, { params });
     expect(res.status).toBe(403);
+  });
+
+  it("author cannot bring back a retired freelance profile — 403 (spec 064)", async () => {
+    mockRequireAuth.mockResolvedValue(userSession);
+    prismaMock.freelanceProfile.findUnique.mockResolvedValue({ id: "p1", authorId: "user-regular", status: "ARCHIVED" } as never);
+
+    const req = new Request("http://localhost/api/jobs/freelance/profiles/p1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+
+    const res = await patchProfile(req, { params });
+    expect(res.status).toBe(403);
+    expect(prismaMock.freelanceProfile.update).not.toHaveBeenCalled();
+  });
+
+  it("moderator can bring back a retired freelance profile", async () => {
+    mockRequireAuth.mockResolvedValue(createAdminSession());
+    prismaMock.freelanceProfile.findUnique.mockResolvedValue({ id: "p1", authorId: "user-regular", status: "ARCHIVED" } as never);
+    prismaMock.freelanceProfile.update.mockResolvedValue({ ...baseProfile, status: "ACTIVE" } as never);
+
+    const req = new Request("http://localhost/api/jobs/freelance/profiles/p1", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "ACTIVE" }),
+    });
+
+    const res = await patchProfile(req, { params });
+    expect(res.status).toBe(200);
   });
 });
 

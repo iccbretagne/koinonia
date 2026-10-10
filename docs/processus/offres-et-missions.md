@@ -6,7 +6,7 @@ Faire circuler dans la communauté les offres d'emploi, les recherches de poste 
 
 ## Le déclencheur
 
-Quatre gestes possibles, selon le côté où l'on se trouve :
+Un seul bouton **Publier** propose quatre gestes, selon le côté où l'on se trouve :
 
 - **Publier une offre** : un poste, un stage ou une alternance à pourvoir.
 - **Déposer un profil de recherche** : dire qu'on cherche, et quoi.
@@ -28,6 +28,7 @@ Chaque type d'objet a son propre cycle, ce qui est logique puisqu'ils ne se term
 | Offre d'emploi | Publiée → Archivée |
 | Profil de recherche | En recherche → A trouvé → Archivé |
 | Mission freelance | Active → Pourvue → Archivée |
+| Profil freelance | Disponible → Indisponible → Archivé |
 
 **Ce que l'application fait toute seule.** C'est la particularité de cet espace : il se nettoie sans intervention.
 
@@ -42,9 +43,9 @@ Chaque type d'objet a son propre cycle, ce qui est logique puisqu'ils ne se term
 |---|---|
 | Consulter et publier | Ressources → **Offres** |
 | Diffuser une offre à l'extérieur | Le bouton **Copier pour WhatsApp** |
-| Modérer | Ressources → **Modération offres** |
+| Modérer | Ressources → **Offres**, filtre d'état « Retirées » ou « Toutes » |
 
-L'espace de consultation se filtre par type : emploi, stage, alternance.
+L'espace se partage en deux onglets : **Opportunités** (offres d'emploi, de stage, d'alternance et missions freelance) et **Profils disponibles** (personnes en recherche et freelances). Des pastilles filtrent par type, une recherche porte sur le métier, l'entreprise, la ville et la description, et « Mes publications » rassemble ses propres annonces, quel que soit leur état. Une publication s'ouvre dans un panneau de détail ; son lien direct reste partageable. Le point **Nouveau** signale les opportunités parues depuis la dernière visite, et la pastille du menu les compte.
 
 ## Les règles à connaître
 
@@ -59,7 +60,7 @@ L'espace de consultation se filtre par type : emploi, stage, alternance.
 
 **Un profil de recherche abouti.** Le passer en « a trouvé » : c'est une bonne nouvelle, et cela libère l'attention des autres.
 
-**Une publication à retirer.** La modération peut archiver ou supprimer. Archiver conserve la trace, supprimer efface.
+**Une publication à retirer.** La modération peut retirer (archiver) ou supprimer. Retirer conserve la trace, supprimer efface. Une recherche, une mission ou un profil freelance retiré par la modération ne peut être remis en ligne que par elle ; l'auteur d'une offre, lui, peut retirer et republier la sienne.
 
 ## Ce qui sort à la fin
 

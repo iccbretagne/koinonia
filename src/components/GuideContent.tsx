@@ -400,7 +400,7 @@ const FEATURES: Feature[] = [
   // ── Emplois ──────────────────────────────────────────────────────────────
   {
     name: "Offres, recherches d'emploi & freelance",
-    description: "Publiez ou consultez des offres d'emploi, des profils en recherche, et des missions freelance depuis /jobs (trois onglets). Fonctionnalité ouverte à tous les comptes de l'église.",
+    description: "L'espace Offres (/jobs) a deux onglets : « Opportunités » (emplois, stages, alternances et missions freelance) et « Profils disponibles » (personnes en recherche et freelances). Filtrez par type avec les pastilles, cherchez par métier, entreprise ou ville, et retrouvez vos annonces avec « Mes publications ». Touchez une publication pour l'ouvrir dans le panneau de détail : postuler, modifier, marquer comme pourvue ou retirer. Un seul bouton « Publier » propose les quatre sortes d'annonces. Le point « Nouveau » signale les opportunités parues depuis votre dernière visite. Fonctionnalité ouverte à tous les comptes de l'église.",
     category: "Emplois",
     screenshotTitle: "Offres et recherches d'emploi",
     screenshotFile: "guide-emplois-liste.png",
@@ -408,7 +408,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Modération des annonces",
-    description: "Modérez et supprimez si besoin toute offre, recherche ou mission publiée par un autre compte, depuis /admin/jobs.",
+    description: "Dans l'espace Offres, la modération dispose d'un filtre d'état (Actives, Retirées, Toutes) qui fait apparaître les annonces retirées, expirées ou pourvues. Depuis le panneau de détail, elle retire, republie ou supprime toute offre, recherche ou mission publiée par un autre compte. Une annonce retirée par la modération ne peut pas être remise en ligne par son auteur.",
     category: "Emplois",
     screenshotTitle: "Modération des annonces",
     screenshotFile: "guide-emplois-moderation.png",
@@ -492,7 +492,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Cycle de vie des offres",
-    description: "Une offre publiée ne reste plus en ligne indéfiniment. Après 60 jours sans modification, son auteur est relancé par email et par notification pour confirmer qu'elle est toujours d'actualité — un bandeau et un bouton « Toujours d'actualité » apparaissent alors sur la page de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation.",
+    description: "Une offre publiée ne reste plus en ligne indéfiniment. Après 60 jours sans modification, son auteur est relancé par email et par notification pour confirmer qu'elle est toujours d'actualité — un bandeau et un bouton « Toujours d'actualité » apparaissent alors dans le détail de l'offre. Sans réponse sous 14 jours, l'offre est archivée automatiquement. Toute modification de l'offre vaut confirmation.",
     category: "Emplois",
     screenshotTitle: "Relance d'une offre d'emploi",
     screenshotFile: "guide-emplois-relance.png",
@@ -500,7 +500,7 @@ const FEATURES: Feature[] = [
   },
   {
     name: "Récapitulatif WhatsApp",
-    description: "Le bouton « Copier pour WhatsApp » compose un message texte résumant les offres affichées — le filtre de type actif est respecté — et le place dans le presse-papier, prêt à coller dans un groupe. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
+    description: "Dans l'onglet « Opportunités », le bouton « Copier pour WhatsApp » compose un message texte résumant les offres et missions affichées (pastilles de type et recherche respectées) et le place dans le presse-papier, prêt à coller dans un groupe. Les coordonnées de contact déposées par l'auteur n'y figurent pas : le message renvoie vers l'application.",
     category: "Emplois",
     screenshotTitle: "Récapitulatif WhatsApp des offres",
     screenshotFile: "guide-emplois-whatsapp.png",
