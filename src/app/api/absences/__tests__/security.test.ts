@@ -207,6 +207,16 @@ describe("POST /api/absences — authorization", () => {
     expect(mockDeclareAbsence).toHaveBeenCalled();
   });
 
+  it("relays the withdrawal counts returned by the service (spec 062)", async () => {
+    mockIsMemberLinkedToUser.mockResolvedValue(true);
+    mockDeclareAbsence.mockResolvedValue({ id: "abs-1", withdrawalCount: 2, cancelledWithdrawalCount: 0 });
+
+    const res = await POST(new Request("http://localhost/api/absences", { method: "POST", body: JSON.stringify(validBody) }));
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ id: "abs-1", withdrawalCount: 2, cancelledWithdrawalCount: 0 });
+  });
+
   it("returns 403 for a STAR declaring on behalf of another STAR (no absences:manage)", async () => {
     mockIsMemberLinkedToUser.mockResolvedValue(false);
     mockRequireChurchPermission.mockRejectedValue(new Error("FORBIDDEN"));
@@ -352,6 +362,19 @@ describe("PATCH /api/absences/[id] — authorization", () => {
     expect(mockRequireChurchPermission).not.toHaveBeenCalled();
   });
 
+  it("relays the cancelled withdrawal count (spec 062)", async () => {
+    mockRequireAuth.mockResolvedValue({ ...createAdminSession(), user: { ...createAdminSession().user, id: "user-owner" } });
+    mockIsMemberLinkedToUser.mockResolvedValue(false);
+    mockCancelAbsence.mockResolvedValue({ ...existingAbsence, status: "CANCELLED", cancelledWithdrawalCount: 1 });
+
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", { method: "PATCH", body: JSON.stringify({ action: "cancel" }) }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(await res.json()).toMatchObject({ status: "CANCELLED", cancelledWithdrawalCount: 1 });
+  });
+
   it("allows the linked STAR themselves to cancel", async () => {
     mockRequireAuth.mockResolvedValue({ ...createAdminSession(), user: { ...createAdminSession().user, id: "user-star" } });
     mockIsMemberLinkedToUser.mockResolvedValue(true);
@@ -432,6 +455,17 @@ describe("PATCH /api/absences/[id] — action update", () => {
 
     expect(res.status).toBe(200);
     expect(mockUpdateAbsence).toHaveBeenCalled();
+  });
+
+  it("relays the withdrawal counts of an update (spec 062)", async () => {
+    mockUpdateAbsence.mockResolvedValue({ ...existingAbsence, withdrawalCount: 1, cancelledWithdrawalCount: 2 });
+
+    const res = await PATCH(
+      new Request("http://localhost/api/absences/abs-1", { method: "PATCH", body: JSON.stringify(updateBody) }),
+      { params: Promise.resolve({ id: "abs-1" }) }
+    );
+
+    expect(await res.json()).toMatchObject({ withdrawalCount: 1, cancelledWithdrawalCount: 2 });
   });
 
   it("returns 403 for an unrelated user without absences:manage", async () => {

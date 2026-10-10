@@ -14,6 +14,8 @@ export const WITHDRAWAL_TYPES = {
   relance: "SERVICE_WITHDRAWAL_RELANCE",
   replaced: "SERVICE_WITHDRAWAL_REPLACED",
   closed: "SERVICE_WITHDRAWAL_CLOSED",
+  byAbsence: "SERVICE_WITHDRAWAL_BY_ABSENCE",
+  kept: "SERVICE_WITHDRAWAL_KEPT",
 } as const;
 
 const STAR_LINK = "/planning";
@@ -114,5 +116,48 @@ export function notifyWithdrawalClosed(starUserIds: string[], n: WithdrawalNotic
     "Désistement pris en compte",
     `Ton désistement du ${formatServiceDate(n.eventDate)} (${n.departmentName}) est pris en compte.`,
     STAR_LINK
+  );
+}
+
+/** Service touché par une période d'absence (spec 062), pour les messages regroupés au STAR. */
+export interface AbsenceServiceLine {
+  eventDate: Date;
+  departmentName: string;
+  /** Pour un service conservé : nom du remplaçant, ou `null` si le responsable n'a pas remplacé. */
+  replacementName?: string | null;
+}
+
+const serviceList = (lines: AbsenceServiceLine[]) =>
+  lines.map((l) => `le ${formatServiceDate(l.eventDate)} (${l.departmentName})`).join(", ");
+
+async function sendToStar(userIds: string[], absenceId: string, type: string, title: string, message: string) {
+  if (userIds.length === 0) return;
+  const { notifyUsers } = await import("@/lib/notifications");
+  await notifyUsers(userIds, { domain: "planning", type, title, message, link: STAR_LINK, entityType: "Absence", entityId: absenceId });
+}
+
+/** Au STAR, quand un tiers déclare sa période : la liste des services dont il est retiré. */
+export function notifyWithdrawnByAbsence(starUserIds: string[], absenceId: string, lines: AbsenceServiceLine[]): Promise<void> {
+  const plural = lines.length > 1;
+  return sendToStar(
+    starUserIds,
+    absenceId,
+    WITHDRAWAL_TYPES.byAbsence,
+    plural ? "Tu es retiré(e) de services" : "Tu es retiré(e) d'un service",
+    `Ton indisponibilité a été enregistrée : tu es retiré(e) ${plural ? "des services" : "du service"} ${serviceList(lines)}. Tes responsables vont te remplacer.`
+  );
+}
+
+/** Au STAR, à l'annulation ou au raccourcissement de sa période : services déjà pourvus ou clos. */
+export function notifyWithdrawalsKept(starUserIds: string[], absenceId: string, lines: AbsenceServiceLine[]): Promise<void> {
+  const detail = lines
+    .map((l) => `le ${formatServiceDate(l.eventDate)} (${l.departmentName}) : ${l.replacementName ? `${l.replacementName} te remplace` : "pas de remplacement"}`)
+    .join(" ; ");
+  return sendToStar(
+    starUserIds,
+    absenceId,
+    WITHDRAWAL_TYPES.kept,
+    "Services non replacés",
+    `Ton indisponibilité a changé, mais tu n'es pas replacé(e) sur ${lines.length > 1 ? "ces services, déjà traités" : "ce service, déjà traité"} — ${detail}.`
   );
 }

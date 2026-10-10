@@ -870,7 +870,8 @@ Le premier qui pourvoit l'emporte.
 
 L'enregistrement des réponses de disponibilité (`/api/availability`, écran *Mes disponibilités*) crée aussi un désistement
 lorsqu'un STAR planifié se déclare indisponible avant l'échéance ; sa réponse porte alors
-`withdrawals` (après l'échéance, le responsable est seulement alerté comme auparavant).
+`withdrawals` (après l'échéance, le responsable est seulement alerté comme auparavant). Une
+période d'indisponibilité (`/api/absences`) a le même effet depuis la spec 062.
 
 ## Absences
 
@@ -910,6 +911,12 @@ pour soi-même (`memberId` doit correspondre à une fiche liée au compte de l'a
 **Erreurs** : `400` (ciblage invalide, événement passé/hors périmètre), `403` (département ou
 événement hors du périmètre du déclarant), `404` (fiche STAR introuvable).
 
+**Désistements (spec 062)** : la déclaration crée un désistement (voir
+`POST /api/planning/withdrawals`) pour chaque service planifié couvert dont la date limite n'est
+pas passée et qui n'a pas déjà un désistement en attente ; l'alerte de conflit ne concerne plus
+que les services couverts après leur date limite. La réponse (`201`) est l'absence, augmentée de
+`withdrawalCount` (désistements créés) et `cancelledWithdrawalCount` (toujours `0` ici).
+
 ### `GET /api/absences?churchId=&scope=self|all&ministryId=&departmentId=&role=`
 
 `scope=all` (permission `absences:view`) renvoie les absences visibles par l'appelant : un
@@ -928,6 +935,24 @@ supprimé depuis, l'instantané `title`/`date` restant affiché dans l'historiqu
 (`kind`, `startDate`, `endDate`, `eventIds`, `allDepartments`, `departmentIds`) ; modifier le
 ciblage recalcule les responsables notifiés (union des responsables avant/après modification).
 `{ "action": "cancel" }` inchangé.
+
+Depuis la spec 062, modifier le ciblage annule les désistements en attente issus de la période qui
+ne sont plus couverts et crée ceux des nouveaux services couverts ; annuler la période annule tous
+ses désistements encore en attente (ceux déjà pourvus ou clos restent, le STAR en est informé).
+Les deux actions renvoient l'absence avec `withdrawalCount` et `cancelledWithdrawalCount`. Un
+changement du seul motif ou des remplaçants ne touche à aucun désistement.
+
+### `GET /api/absences/withdrawal-preview?churchId=&memberId=&startDate=&endDate=&allDepartments=&departmentIds=`
+
+Aperçu, pour l'avertissement du formulaire, des services que la période désisterait si elle était
+enregistrée : planifiés, couverts, avant leur date limite, sans désistement déjà en attente.
+Indicatif : l'enregistrement recalcule. Mêmes gardes que `target-options` (soi-même, ou
+`absences:manage` + périmètre). `allDepartments` vaut `true` par défaut ; `departmentIds` est une
+liste séparée par des virgules.
+
+**Réponse** : `{ "services": [{ "eventId", "title", "date", "departmentId", "departmentName" }] }`
+
+**Erreurs** : `400` (dates manquantes ou fin antérieure au début), `403`, `404`.
 
 ### `GET /api/absences/target-options?churchId=&memberId=`
 

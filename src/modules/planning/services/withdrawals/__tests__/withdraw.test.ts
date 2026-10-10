@@ -47,6 +47,16 @@ describe("createWithdrawal", () => {
     });
   });
 
+  it("né d'une période (spec 062) : porte l'absence et n'écrit aucune réponse", async () => {
+    setup();
+    await createWithdrawal(input, prismaMock as never, now, { absenceId: "abs-1", recordResponse: false });
+    expect(prismaMock.serviceWithdrawal.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ absenceId: "abs-1" }) })
+    );
+    expect(prismaMock.planning.update).toHaveBeenCalledWith({ where: { id: "p-1" }, data: { status: null } });
+    expect(prismaMock.availabilityResponse.upsert).not.toHaveBeenCalled();
+  });
+
   it("un service « remplaçant » se quitte comme les autres", async () => {
     setup({ status: "REMPLACANT" });
     await createWithdrawal(input, prismaMock as never, now);

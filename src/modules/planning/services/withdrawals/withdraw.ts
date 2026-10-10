@@ -20,13 +20,28 @@ export interface WithdrawalInput {
   message?: string | null;
 }
 
+export interface CreateWithdrawalOptions {
+  /** Période d'absence à l'origine du désistement (spec 062). */
+  absenceId?: string;
+  /**
+   * Écrire la réponse « Pas disponible » (défaut). Faux pour un désistement né d'une période :
+   * la période fait foi et la spec 058 supprime les réponses qu'elle couvre.
+   */
+  recordResponse?: boolean;
+}
+
 /**
  * À appeler dans une transaction. Refuse un service non planifié, une échéance passée ou un
  * désistement déjà en attente. Retire le STAR du planning en gardant son statut d'origine, passe
  * sa réponse à « Pas disponible » et supprime un éventuel récapitulatif 060 en attente pour ce
  * service (il contredirait la confirmation à venir). Renvoie l'identifiant du désistement.
  */
-export async function createWithdrawal(input: WithdrawalInput, tx: DbClient, now: Date = new Date()): Promise<string> {
+export async function createWithdrawal(
+  input: WithdrawalInput,
+  tx: DbClient,
+  now: Date = new Date(),
+  { absenceId, recordResponse = true }: CreateWithdrawalOptions = {}
+): Promise<string> {
   const { churchId, eventId, departmentId, memberId, actorId } = input;
 
   const event = await tx.event.findFirst({
@@ -61,15 +76,18 @@ export async function createWithdrawal(input: WithdrawalInput, tx: DbClient, now
       originalStatus: planning.status,
       message: input.message?.trim() || null,
       createdById: actorId,
+      absenceId: absenceId ?? null,
     },
     select: { id: true },
   });
   await tx.planning.update({ where: { id: planning.id }, data: { status: null } });
-  await tx.availabilityResponse.upsert({
-    where: { memberId_eventId_departmentId: { memberId, eventId, departmentId } },
-    create: { churchId, memberId, eventId, departmentId, answer: "UNAVAILABLE", enteredById: actorId },
-    update: { answer: "UNAVAILABLE", enteredById: actorId },
-  });
+  if (recordResponse) {
+    await tx.availabilityResponse.upsert({
+      where: { memberId_eventId_departmentId: { memberId, eventId, departmentId } },
+      create: { churchId, memberId, eventId, departmentId, answer: "UNAVAILABLE", enteredById: actorId },
+      update: { answer: "UNAVAILABLE", enteredById: actorId },
+    });
+  }
   await tx.planningChangeNotice.deleteMany({ where: { memberId, eventId, departmentId } });
   return withdrawal.id;
 }

@@ -61,9 +61,9 @@ Deux compteurs en tête de grille disent où l'on en est : le nombre de personne
 
 ## Les cas particuliers
 
-**Une absence déclarée après coup.** Elle remonte dans la grille sous forme de conflit, et le responsable recompose. Voir la fiche *Absences*.
+**Une période d'indisponibilité déclarée après coup.** Pour chaque service couvert dont la date limite n'est pas passée, elle produit un désistement, exactement comme « Je ne peux plus » (voir ci-dessous) : le STAR est retiré, le service apparaît « À remplacer » et le responsable reçoit les remplaçants possibles. Seuls les services dont la date limite est passée remontent encore comme conflit, que le responsable recompose. Annuler ou raccourcir la période annule les désistements encore en attente qu'elle ne couvre plus ; la prolonger désiste les nouveaux services couverts. Voir la fiche *Disponibilités et indisponibilités*.
 
-**« Je ne peux plus » : un STAR se désiste.** Depuis *Mon planning* (ou en se déclarant indisponible sur l'écran *Mes disponibilités*), un STAR planifié peut signaler qu'il ne peut plus servir, avec un message facultatif, tant que la date limite n'est pas passée. Il est retiré du service et le responsable du département — à défaut, le ministre — est prévenu tout de suite, avec le nombre de remplaçants possibles : les membres du département disponibles ou « si besoin » pour cet événement et libres ce jour-là. Depuis la notification, le responsable :
+**« Je ne peux plus » : un STAR se désiste.** Depuis *Mon planning* (ou en se déclarant indisponible sur l'écran *Mes disponibilités*, pour un événement ou pour une période), un STAR planifié peut signaler qu'il ne peut plus servir, avec un message facultatif, tant que la date limite n'est pas passée. Il est retiré du service et le responsable du département — à défaut, le ministre — est prévenu tout de suite, avec le nombre de remplaçants possibles : les membres du département disponibles ou « si besoin » pour cet événement et libres ce jour-là. Depuis la notification, le responsable :
 
 - **choisit un remplaçant** dans la liste (« Disponible » d'abord, puis « Si besoin ») : il est placé avec le statut d'origine, et le STAR désisté reçoit la confirmation ;
 - ou place quelqu'un **depuis la grille**, où le service apparaît « À remplacer » : le désistement est alors considéré comme pourvu ;

@@ -25,7 +25,7 @@ export {
   resolveSubjectUserId,
   listBackupOptions,
 } from "./services/absence.service";
-export type { AbsenceConflict, AbsenceTargeting, BackupInput, BackupOption } from "./services/absence.service";
+export type { AbsenceConflict, AbsenceTargeting, AbsenceWithWithdrawals, BackupInput, BackupOption } from "./services/absence.service";
 export {
   absenceCovers,
   absenceCoverageWhere,
@@ -128,3 +128,5 @@ export {
 } from "./services/staffing-gaps";
 export type { StaffingGapViewer } from "./services/staffing-gaps";
 export { planningModule } from "./manifest";
+export { findWithdrawableServicesForAbsence } from "./services/withdrawals/absence";
+export type { WithdrawableService, AbsenceWithdrawalTargeting } from "./services/withdrawals/absence";

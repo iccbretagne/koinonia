@@ -1,7 +1,7 @@
 # Plan technique — Désistement depuis une période d'indisponibilité
 
 - **Spec associée** : `./spec.md`
-- **Statut** : Brouillon
+- **Statut** : Implémenté
 - **Mis à jour le** : 2026-10-10
 - **S'appuie sur** : spec 061 (`ServiceWithdrawal`, services `withdrawals/`), spec 050/058
   (absences par période, `absence.service.ts`), spec 013 (backups d'absence)
@@ -185,6 +185,18 @@ Modifications de l'existant :
 - **Écarté** : rejouer les absences existantes à la mise en service — hors périmètre de la spec.
 
 Aucune décision structurante au sens des ADR : extension locale du module planning.
+
+### Écarts constatés à l'implémentation (2026-10-10)
+
+- **`excludeAbsenceId` et paramètre `absenceId` de l'aperçu retirés** : inutiles. Un service déjà
+  désisté par la période est soit en attente (exclu comme tout désistement `PENDING`), soit n'est
+  plus planifié ; l'aperçu en modification donne donc le bon résultat sans identifier l'absence.
+- **Avertissement en `Alert` dans le formulaire plutôt qu'en `ConfirmModal`** : le formulaire est
+  lui-même affiché dans une modale ou un panneau ; empiler une seconde modale est pénible sur
+  mobile. L'avertissement (liste des services, « Modifier » / « Confirmer et enregistrer »)
+  s'affiche à la place des boutons d'enregistrement.
+- **Routes `POST`/`PATCH` sans changement de code** (T16) : les services renvoient l'absence
+  augmentée des compteurs, relayée telle quelle.
 
 ## Risques & points d'attention
 

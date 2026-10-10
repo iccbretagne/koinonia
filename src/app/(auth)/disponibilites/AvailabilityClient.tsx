@@ -9,7 +9,7 @@ import Alert from "@/components/ui/Alert";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import StatusChip from "@/components/ui/StatusChip";
 import { useToast } from "@/components/ui/Toast";
-import UnavailabilityPeriodForm, { type BackupOption, type MemberRef } from "@/components/UnavailabilityPeriodForm";
+import UnavailabilityPeriodForm, { type BackupOption, type MemberRef, withdrawalSummary } from "@/components/UnavailabilityPeriodForm";
 
 type Answer = "AVAILABLE" | "IF_NEEDED" | "UNAVAILABLE";
 type State = Answer | "NO_RESPONSE" | "NOT_ASKED";
@@ -451,8 +451,9 @@ export default function AvailabilityClient({
       <UnavailabilityPeriodForm
         open={periodOpen}
         onClose={() => setPeriodOpen(false)}
-        onSaved={() => {
-          toast.success("Indisponibilité enregistrée");
+        onSaved={(result) => {
+          const summary = withdrawalSummary(result);
+          toast.success(summary ? `Indisponibilité enregistrée · ${summary}` : "Indisponibilité enregistrée");
           void load(true);
         }}
         churchId={churchId}

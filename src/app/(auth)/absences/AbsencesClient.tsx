@@ -7,12 +7,14 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import DataTable from "@/components/ui/DataTable";
+import { useToast } from "@/components/ui/Toast";
 import { isAbsencePast } from "@/lib/absence-lock";
 import { ROLE_SHORT_LABELS } from "@/lib/roles";
 import UnavailabilityPeriodForm, {
   type BackupOption,
   type EditablePeriod,
   type MemberRef,
+  withdrawalSummary,
 } from "@/components/UnavailabilityPeriodForm";
 import AbsencesTimeline from "./AbsencesTimeline";
 
@@ -194,6 +196,7 @@ export default function AbsencesClient({
   const highlightId = searchParams.get("highlightId") ?? timelineHighlightId;
 
   const [formOpen, setFormOpen] = useState(false);
+  const toast = useToast();
   const [editing, setEditing] = useState<EditablePeriod | null>(null);
 
   const fetchAll = useCallback(async () => {
@@ -299,6 +302,8 @@ export default function AbsencesClient({
         body: JSON.stringify({ action: "cancel" }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const summary = withdrawalSummary(await res.json());
+      toast.success(summary ? `Indisponibilité annulée · ${summary}` : "Indisponibilité annulée");
       await fetchAll();
     } catch {
       setError("Erreur lors de l'annulation.");
@@ -535,7 +540,11 @@ export default function AbsencesClient({
       <UnavailabilityPeriodForm
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        onSaved={fetchAll}
+        onSaved={(result) => {
+          const summary = withdrawalSummary(result);
+          toast.success(summary ? `Indisponibilité enregistrée · ${summary}` : "Indisponibilité enregistrée");
+          void fetchAll();
+        }}
         churchId={churchId}
         mode="manage"
         editing={editing}

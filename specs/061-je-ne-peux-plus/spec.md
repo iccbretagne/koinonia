@@ -1,7 +1,7 @@
 # Spec — « Je ne peux plus » et remplacements
 
 - **Numéro** : 061
-- **Statut** : Implémentée (hors raccourci période, reporté : #673)
+- **Statut** : Implémentée (raccourci période livré par la spec 062, #673)
 - **Créée le** : 2026-10-10
 - **Branche suggérée** : `feat/je-ne-peux-plus`
 - **Origine** : issue #612, lot 3 (lot 1 : spec 058 ; lot 2 : spec 060)
@@ -169,10 +169,8 @@ simple prévue par la spec 058 pour ce cas.
 - Avant de valider, l'écran l'avertit : « Tu es planifié le 12 (Choristes) : ton responsable va
   devoir te remplacer. »
 - Avec le raccourci période, chaque service planifié dans la période donne lieu à un
-  désistement distinct, chacun prévenant le responsable de son département. **Reporté
-  (2026-10-10, #673)** : ce raccourci passe par la déclaration d'absence, qui a ses propres
-  remplaçants ; l'articulation des deux mécanismes est à trancher dans un lot suivant. D'ici là,
-  il conserve l'alerte de conflit d'absence actuelle.
+  désistement distinct, chacun prévenant le responsable de son département. Ce raccourci passant
+  par la déclaration d'absence, il a été livré à part par la spec 062 (#673).
 - Après la date limite de planification d'un événement, la réponse « Pas disponible » reste
   enregistrée (spec 058) mais ne crée pas de service à remplacer : le STAR est invité à joindre
   son responsable, qui reçoit la notification simple de la spec 058.
@@ -217,7 +215,7 @@ simple prévue par la spec 058 pour ce cas.
 - [ ] Un service encore à remplacer 48 h avant l'événement donne lieu à une relance unique des
       destinataires du désistement, sauf si le désistement date de moins de 48 h avant
       l'événement.
-- [ ] Répondre « Pas disponible » depuis l'écran de disponibilités (événement ; période reportée à #673) pour un
+- [ ] Répondre « Pas disponible » depuis l'écran de disponibilités (événement ; période : spec 062) pour un
       service planifié, avant la date limite, produit un désistement identique à « Je ne peux
       plus », après un avertissement explicite.
 - [ ] Les notifications respectent les préférences de notification (in-app toujours, email selon

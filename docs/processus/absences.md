@@ -41,7 +41,7 @@ La disponibilité n'est jamais écrite dans le planning : elle se **calcule** �
 - **Répondre tôt vaut mieux que répondre précisément.**
 - **Le remplaçant est une proposition, pas une décision.** Le responsable arbitre.
 - **Le motif reste facultatif.**
-- **Une réponse « Pas disponible » d'un STAR déjà planifié prévient son responsable** ; elle ne modifie pas le planning à elle seule.
+- **Être indisponible là où l'on est planifié vaut désistement.** Avant la date limite de planification, une réponse « Pas disponible » ou une période qui couvre un service planifié retire le STAR du service, après un avertissement : le service devient « à remplacer » et le responsable reçoit les remplaçants possibles. Après la date limite, le STAR reste au planning et son responsable est seulement alerté.
 - **Une période couvre les événements correspondants** : répondre « Disponible » à un événement d'une période remplace la période pour cet événement.
 
 ## Les cas particuliers
@@ -50,7 +50,9 @@ La disponibilité n'est jamais écrite dans le planning : elle se **calcule** �
 
 **L'absence d'un responsable.** Elle laisse un périmètre sans décideur : désigner un remplaçant permet de remplir la grille à sa place.
 
-**Une indisponibilité qui n'a plus lieu d'être.** Une période se modifie ou s'annule tant qu'elle n'est pas passée.
+**Une période déclarée pour un STAR.** Elle a les mêmes effets que s'il l'avait déclarée lui-même ; il est informé des services dont il est retiré.
+
+**Une indisponibilité qui n'a plus lieu d'être.** Une période se modifie ou s'annule tant qu'elle n'est pas passée. Les désistements encore en attente qu'elle ne couvre plus sont annulés : le STAR reprend sa place et son responsable est prévenu. Un service déjà pourvu, ou que le responsable a décidé de ne pas remplacer, reste en l'état ; le STAR en est informé. Un désistement fait indépendamment (« Je ne peux plus ») n'est jamais annulé par la période.
 
 ## Ce qui sort à la fin
 

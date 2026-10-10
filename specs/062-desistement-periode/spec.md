@@ -1,7 +1,7 @@
 # Spec — Désistement depuis une période d'indisponibilité
 
 - **Numéro** : 062
-- **Statut** : Brouillon
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-10
 - **Branche suggérée** : `feat/desistement-periode`
 - **Origine** : issue #673, suite de la spec 061 (« Je ne peux plus » et remplacements, #612 lot 3)
@@ -128,33 +128,33 @@ interaction.
 
 ## Critères d'acceptation
 
-- [ ] Une période d'indisponibilité, déclarée depuis l'écran de disponibilités ou depuis l'écran
+- [x] Une période d'indisponibilité, déclarée depuis l'écran de disponibilités ou depuis l'écran
       des indisponibilités, par le STAR ou par un tiers autorisé, crée un désistement distinct
       pour chaque service planifié couvert (en service, en service + débrief, remplaçant) dont la
       date limite de planification n'est pas passée.
-- [ ] Chacun de ces désistements a les mêmes effets qu'un « Je ne peux plus » : retrait du
+- [x] Chacun de ces désistements a les mêmes effets qu'un « Je ne peux plus » : retrait du
       planning, service « à remplacer » dans la grille, notification du responsable (à défaut du
       ministre) avec les remplaçants possibles, relance 48 h avant, annulation par le STAR tant
       qu'aucun remplaçant n'a été choisi.
-- [ ] Avant validation, le déclarant est averti des services qui deviendront « à remplacer » ;
+- [x] Avant validation, le déclarant est averti des services qui deviendront « à remplacer » ;
       sans service couvert, aucun avertissement.
-- [ ] L'alerte « Conflit planning / absence » n'est plus envoyée pour les services transformés en
+- [x] L'alerte « Conflit planning / absence » n'est plus envoyée pour les services transformés en
       désistement ; elle l'est toujours pour les services couverts après leur date limite.
-- [ ] La notification « Absence déclarée » est envoyée comme aujourd'hui.
-- [ ] Une période déclarée par un tiers informe le STAR de ses services retirés.
-- [ ] Annuler une période annule ses désistements encore en attente (STAR replacé avec son statut
+- [x] La notification « Absence déclarée » est envoyée comme aujourd'hui.
+- [x] Une période déclarée par un tiers informe le STAR de ses services retirés.
+- [x] Annuler une période annule ses désistements encore en attente (STAR replacé avec son statut
       d'origine, responsable prévenu) ; ceux déjà pourvus ou clos restent inchangés et le STAR en
       est informé.
-- [ ] Raccourcir une période (dates ou départements) annule les désistements en attente des
+- [x] Raccourcir une période (dates ou départements) annule les désistements en attente des
       services qui ne sont plus couverts ; la prolonger crée ceux des nouveaux services couverts.
-- [ ] Une période ne crée jamais de second désistement pour un service déjà désisté, et son
+- [x] Une période ne crée jamais de second désistement pour un service déjà désisté, et son
       annulation n'annule pas un désistement fait indépendamment par « Je ne peux plus » ou une
       réponse « Pas disponible ».
-- [ ] Les relais de responsabilité désignés pour l'absence d'un responsable fonctionnent comme
+- [x] Les relais de responsabilité désignés pour l'absence d'un responsable fonctionnent comme
       aujourd'hui, sans interaction avec les désistements.
-- [ ] Les notifications respectent les préférences de notification (in-app toujours, email selon
+- [x] Les notifications respectent les préférences de notification (in-app toujours, email selon
       « Planning et service »).
-- [ ] L'avertissement est utilisable sur mobile.
+- [x] L'avertissement est utilisable sur mobile.
 
 ## Hors périmètre
 

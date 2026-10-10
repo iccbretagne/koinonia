@@ -606,6 +606,7 @@ model Absence {
   backups           AbsenceBackup[]
   targetDepartments AbsenceDepartment[]
   targetEvents      AbsenceEvent[]
+  withdrawals       ServiceWithdrawal[]
 
   @@index([churchId, startDate, endDate])
   @@index([memberId, status])
@@ -2589,6 +2590,9 @@ model ServiceWithdrawal {
   resolvedById        String?
   resolvedAt          DateTime?
   relanceSentAt       DateTime?
+  /// Période d'absence à l'origine du désistement (spec 062) ; null pour « Je ne peux plus » ou
+  /// une réponse « Pas disponible ».
+  absenceId           String?
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   church              Church                  @relation(fields: [churchId], references: [id])
@@ -2596,8 +2600,10 @@ model ServiceWithdrawal {
   department          Department              @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   member              Member                  @relation("WithdrawnMember", fields: [memberId], references: [id], onDelete: Cascade)
   replacementMember   Member?                 @relation("ReplacementMember", fields: [replacementMemberId], references: [id], onDelete: SetNull)
+  absence             Absence?                @relation(fields: [absenceId], references: [id], onDelete: SetNull)
 
   @@index([eventId, departmentId, status])
+  @@index([absenceId, status])
   @@index([memberId, status])
   @@index([churchId, status])
   @@map("service_withdrawals")
