@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireChurchPermission, resolveChurchId } from "@/lib/auth";
-import { resolveMemberDepartmentScope } from "@/lib/member-scope";
+import { resolveMemberDepartmentScope, assertCanAffiliateToSecretariat } from "@/lib/member-scope";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { updateSchema } from "./contract";
@@ -69,6 +69,14 @@ export async function PUT(
     const finalIds = Array.from(
       new Set([...preserved.map((d) => d.departmentId), ...submittedManageable])
     );
+
+    // Un ajout au Secrétariat, ou un changement d'email sur une fiche qui y est déjà (le compte
+    // de cet email s'y lierait), revient à attribuer les droits de Secrétaire.
+    const existingIds = new Set(existing.departments.map((d) => d.departmentId));
+    await assertCanAffiliateToSecretariat(session, churchId, finalIds.filter((id) => !existingIds.has(id)));
+    if (memberData.email !== undefined && memberData.email !== existing.email) {
+      await assertCanAffiliateToSecretariat(session, churchId, [...existingIds]);
+    }
 
     // Déterminer le département principal
     let primaryId: string;

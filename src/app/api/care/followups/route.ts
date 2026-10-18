@@ -2,8 +2,8 @@ import { requireAuth } from "@/lib/auth";
 import { successResponse, errorResponse, ApiError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import {
-  hasFollowupManagementAccess,
   canStartFollowUp,
+  getCareAccess,
   listMsdpFollowUps,
   startMsdpFollowUpFromIntegrationRequest,
 } from "@/modules/care";
@@ -16,11 +16,17 @@ export async function GET(request: Request) {
     if (!churchId) throw new ApiError(400, "churchId requis");
 
     const session = await requireAuth();
-    const hasFullAccess = await hasFollowupManagementAccess(session, churchId);
+    // Même règle que le détail et que la page /care : vue d'ensemble (`care:view`/`care:qualify`),
+    // sinon les seuls suivis dont on est l'accompagnant en charge.
+    const access = await getCareAccess(session, churchId);
 
     let followUps = await listMsdpFollowUps(churchId);
-    if (!hasFullAccess) {
-      followUps = followUps.filter((f) => f.assignedConseillerMsdpId === session.user.id);
+    if (!access.canOverview) {
+      followUps = followUps.filter(
+        (f) =>
+          f.assignedConseillerMsdpId === session.user.id ||
+          (f.assignedProfile && access.ownProfileIds.includes(f.assignedProfile.id))
+      );
       if (followUps.length === 0) throw new Error("FORBIDDEN");
     }
 

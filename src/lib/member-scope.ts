@@ -1,5 +1,8 @@
 import type { Session } from "next-auth";
-import { getUserDepartmentScope, getUserMinistryScope } from "@/lib/auth";
+import type { Prisma } from "@/generated/prisma/client";
+import { getUserDepartmentScope, getUserMinistryScope, hasChurchPermission } from "@/lib/auth";
+import { ApiError } from "@/lib/api-utils";
+import { DEPT_FN } from "@/lib/department-functions";
 import { prisma } from "@/lib/prisma";
 
 export type MemberScope = { scoped: false } | { scoped: true; departmentIds: string[] };
@@ -35,6 +38,54 @@ export async function resolveMemberDepartmentScope(
       new Set([...deptScope.departmentIds, ...ministryDepts.map((d) => d.id)])
     ),
   };
+}
+
+/**
+ * Rattacher une fiche à un département de fonction Secrétariat donne au compte qui y est lié le
+ * rôle virtuel Secrétaire (cf. `loadStarDepartments` dans `@/lib/auth`). Ce geste est donc une
+ * attribution d'accès, pas une simple affiliation : il exige `access:admins`, comme l'attribution
+ * du rôle Secrétaire elle-même (`canGrantRole`). Sans département Secrétariat dans la liste, rien
+ * n'est exigé.
+ */
+export async function assertCanAffiliateToSecretariat(
+  session: Session,
+  churchId: string,
+  departmentIds: string[]
+): Promise<void> {
+  if (departmentIds.length === 0) return;
+  await assertSecretariatGrant(session, churchId, { id: { in: departmentIds } });
+}
+
+async function assertSecretariatGrant(
+  session: Session,
+  churchId: string,
+  target: Prisma.DepartmentWhereInput
+): Promise<void> {
+  const secretariat = await prisma.department.count({
+    where: { AND: [target, { function: DEPT_FN.SECRETARIAT }] },
+  });
+  if (!secretariat) return;
+  if (await hasChurchPermission(session, "access:admins", churchId)) return;
+  throw new ApiError(
+    403,
+    "Rattacher un STAR au Secrétariat lui donne les droits de Secrétaire : ce geste est réservé à l'administration de l'église"
+  );
+}
+
+/**
+ * Lier un compte à une fiche du Secrétariat (existante ou créée dans le même geste) donne à ce
+ * compte les droits de Secrétaire : même exigence que `assertCanAffiliateToSecretariat`.
+ */
+export async function assertCanLinkAccountToMember(
+  session: Session,
+  churchId: string,
+  target: { memberId?: string | null; departmentId?: string | null }
+): Promise<void> {
+  const or: Prisma.DepartmentWhereInput[] = [];
+  if (target.departmentId) or.push({ id: target.departmentId });
+  if (target.memberId) or.push({ memberDepts: { some: { memberId: target.memberId } } });
+  if (or.length === 0) return;
+  await assertSecretariatGrant(session, churchId, { OR: or });
 }
 
 /**

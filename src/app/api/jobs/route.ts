@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requirePlatformPermission } from "@/lib/auth";
+import { canManageJobs } from "@/modules/jobs";
 import { successResponse, errorResponse } from "@/lib/api-utils";
 import { buildJobOfferEmail } from "@/lib/email";
 import { createNotification, dispatchUserEmails } from "@/lib/notifications";
@@ -7,17 +8,21 @@ import { jobSchema } from "./contract";
 
 export async function GET(request: Request) {
   try {
-    await requireAuth();
+    const session = await requireAuth();
 
     const { searchParams } = new URL(request.url);
     const type   = searchParams.get("type");
     const status = searchParams.get("status") ?? "PUBLISHED";
+    const archived = status === "ARCHIVED";
 
     const now = new Date();
+    // Les offres retirées : toutes pour la modération, sinon seulement les siennes
+    const ownOnly = archived && !(await canManageJobs(session));
 
     const jobs = await prisma.jobOffer.findMany({
       where: {
-        status: status === "ARCHIVED" ? "ARCHIVED" : "PUBLISHED",
+        status: archived ? "ARCHIVED" : "PUBLISHED",
+        ...(ownOnly ? { authorId: session.user.id } : {}),
         ...(type ? { type: type as "EMPLOI" | "STAGE" | "ALTERNANCE" } : {}),
         ...(status !== "ARCHIVED" ? { OR: [{ deadline: null }, { deadline: { gte: now } }] } : {}),
       },

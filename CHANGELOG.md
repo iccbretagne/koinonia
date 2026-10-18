@@ -6,6 +6,14 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Sécurité
+
+- Rattacher un STAR à un département de fonction Secrétariat, ou lier un compte à une fiche qui y appartient, est désormais réservé à l'administration de l'église (Admin, Super Admin), comme la nomination d'un Secrétaire : ce rattachement donne les droits de Secrétaire. Un responsable de département ou un Ministre ne peut plus le faire, ni modifier l'email d'une fiche rattachée au Secrétariat. La création d'une fiche vérifie aussi que ses départements supplémentaires sont dans le périmètre de l'appelant.
+- La duplication d'un planning respecte le périmètre du responsable (seuls ses départements sont copiés) et la date limite de planification de l'événement cible.
+- Les liens de validation de médias ne sont plus listés qu'à ceux qui peuvent valider les médias concernés.
+- La couverture audio (par défaut ou d'un culte) ne peut désigner qu'une image téléversée pour l'église.
+- Périmètres resserrés : la liste des suivis de nouveaux convertis suit la même règle que leur détail, les statistiques d'intégration par famille restent limitées aux familles du berger, et les offres retirées ne sont visibles que de leur auteur et des modérateurs.
+
 ## [v1.31.0] - 2026-10-11
 
 ### Ajouté

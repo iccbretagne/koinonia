@@ -1,6 +1,7 @@
 import type { AudioSegment, AudioRendition, Prisma } from "@/generated/prisma/client";
 import { getSignedStreamUrl } from "@/modules/storage";
 import { renditionVersion } from "./rendition-cache";
+import { isChurchCoverKey } from "./settings";
 
 type DbClient = Prisma.TransactionClient;
 
@@ -71,7 +72,10 @@ export async function resolveEffectiveCoverUrl(
     )?.defaultCoverKey ??
     null;
 
-  return effectiveCoverKey ? await getSignedStreamUrl(effectiveCoverKey) : null;
+  // Une clé enregistrée avant le contrôle d'origine n'est jamais signée si elle sort de l'église
+  return effectiveCoverKey && isChurchCoverKey(churchId, effectiveCoverKey)
+    ? await getSignedStreamUrl(effectiveCoverKey)
+    : null;
 }
 
 /**

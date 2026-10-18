@@ -25,6 +25,7 @@ const requestRoute = await import("../requests/[id]/route");
 const historyRoute = await import("../requests/[id]/history/route");
 const leadersRoute = await import("../leaders/route");
 const leaderRoute = await import("../leaders/[id]/route");
+const statsRoute = await import("../stats/route");
 
 const churchId = "c1";
 const berger = {
@@ -119,5 +120,30 @@ describe("gestion des bergers : accès complet requis", () => {
     const res = await leadersRoute.GET(new Request(`https://k.test/api/integration/leaders?churchId=${churchId}`));
 
     expect(res.status).toBe(403);
+  });
+});
+
+describe("statistiques : périmètre du berger", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    bergerOfFamily(1);
+    prismaMock.familyIntegrationRequest.groupBy.mockResolvedValue([] as never);
+    prismaMock.familyIntegrationRequest.findMany.mockResolvedValue([] as never);
+    prismaMock.familyIntegrationRequest.count.mockResolvedValue(0 as never);
+  });
+
+  it("toutes les agrégations, y compris par famille, restent limitées à ses familles", async () => {
+    const res = await statsRoute.GET(new Request(`https://k.test/api/integration/stats?churchId=${churchId}`));
+
+    expect(res.status).toBe(200);
+    const calls = [
+      ...prismaMock.familyIntegrationRequest.groupBy.mock.calls,
+      ...prismaMock.familyIntegrationRequest.findMany.mock.calls,
+      ...prismaMock.familyIntegrationRequest.count.mock.calls,
+    ];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const [args] of calls) {
+      expect(JSON.stringify((args as { where?: unknown })?.where)).toContain('"assignedFamilyId":{"in":[1]}');
+    }
   });
 });
