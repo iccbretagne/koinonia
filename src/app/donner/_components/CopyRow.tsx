@@ -6,29 +6,10 @@ import { buttonClasses } from "@/components/ui/button-classes";
 
 type CopyState = "idle" | "copied" | "selected";
 
-/** Copie par l'ancienne API, pour les navigateurs sans `navigator.clipboard` (contexte non sécurisé). */
-function legacyCopy(text: string): boolean {
-  const area = document.createElement("textarea");
-  area.value = text;
-  area.setAttribute("readonly", "");
-  area.style.position = "fixed";
-  area.style.opacity = "0";
-  document.body.appendChild(area);
-  area.select();
-  let ok = false;
-  try {
-    ok = document.execCommand("copy");
-  } catch {
-    ok = false;
-  }
-  area.remove();
-  return ok;
-}
-
 /**
  * Ligne copiable de la page de dons (spec 065) : la valeur affichée peut différer de la valeur
- * copiée (l'IBAN s'affiche par groupes de 4 et se copie sans espaces). Repli : ancienne API, puis
- * sélection du texte pour une copie manuelle.
+ * copiée (l'IBAN s'affiche par groupes de 4 et se copie sans espaces). Sans presse-papiers
+ * accessible, le texte est sélectionné pour une copie manuelle.
  */
 export default function CopyRow({
   label,
@@ -58,10 +39,6 @@ export default function CopyRow({
       }
     } catch {
       // repli ci-dessous
-    }
-    if (legacyCopy(value)) {
-      flash("copied");
-      return;
     }
     const node = valueRef.current;
     const selection = globalThis.getSelection?.();

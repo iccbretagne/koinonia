@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ExternalLink, Presentation } from "lucide-react";
 import type { GivingSettings } from "@/modules/giving";
@@ -23,12 +23,12 @@ type TextKey = Exclude<keyof GivingPageContent, BoolKey>;
 type Draft = Record<BoolKey, boolean> & Record<TextKey, string>;
 type Errors = Partial<Record<keyof GivingPageContent, string>>;
 
-const BOOL_KEYS: readonly BoolKey[] = ["enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled"];
+const BOOL_KEYS: ReadonlySet<string> = new Set<BoolKey>(["enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled"]);
 
 function toDraft(content: GivingPageContent): Draft {
   const draft = {} as Record<string, string | boolean>;
   for (const [key, value] of Object.entries(content)) {
-    if (BOOL_KEYS.includes(key as BoolKey)) draft[key] = Boolean(value);
+    if (BOOL_KEYS.has(key)) draft[key] = Boolean(value);
     else if (key === "iban") draft[key] = value ? formatIban(String(value)) : "";
     else draft[key] = (value as string | null) ?? "";
   }
@@ -143,8 +143,7 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
     else set("iban", formatIban(normalizeIban(raw)));
   }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function save() {
     const parsed = givingPageSchema.safeParse({ churchId: settings.churchId, ...draft });
     if (!parsed.success) {
       setErrors(issuesToErrors(parsed.error.issues));
@@ -210,17 +209,23 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
         )}
       </div>
 
-      <div className="flex gap-1 rounded-control bg-surface-sunken p-1 lg:hidden" role="group" aria-label="Affichage">
+      <fieldset className="flex gap-1 rounded-control bg-surface-sunken p-1 lg:hidden">
+        <legend className="sr-only">Affichage</legend>
         <button type="button" aria-pressed={mobileView === "form"} className={tabClass(mobileView === "form")} onClick={() => setMobileView("form")}>
           Paramètres
         </button>
         <button type="button" aria-pressed={mobileView === "preview"} className={tabClass(mobileView === "preview")} onClick={() => setMobileView("preview")}>
           Aperçu
         </button>
-      </div>
+      </fieldset>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start">
-        <form onSubmit={onSubmit} noValidate className={`flex flex-col gap-4 ${mobileView === "form" ? "" : "hidden lg:flex"}`}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+          noValidate className={`flex flex-col gap-4 ${mobileView === "form" ? "" : "hidden lg:flex"}`}>
           <Section
             title="Page active"
             description="Inactive, la page publique affiche « Cette page n'est pas disponible »."

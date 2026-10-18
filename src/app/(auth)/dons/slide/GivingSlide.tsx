@@ -173,8 +173,16 @@ export default function GivingSlide({
         void document.exitFullscreen();
       }
     };
+    const onClick = () => {
+      if (document.fullscreenElement === stageRef.current) void document.exitFullscreen();
+    };
+    const stage = stageRef.current;
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    stage?.addEventListener("click", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      stage?.removeEventListener("click", onClick);
+    };
   }, []);
 
   async function enterFullscreen() {
@@ -188,10 +196,6 @@ export default function GivingSlide({
     } catch {
       toast.error("Plein écran refusé par le navigateur.");
     }
-  }
-
-  function exitOnClick() {
-    if (document.fullscreenElement === stageRef.current) void document.exitFullscreen();
   }
 
   return (
@@ -211,10 +215,9 @@ export default function GivingSlide({
         </p>
       </div>
 
-      {/* Clic en plein écran : sortie (le clavier a Échap et retour arrière). */}
+      {/* En plein écran, un clic sur la scène en sort (écouteur posé dans l'effet ci-dessus). */}
       <div
         ref={stageRef}
-        onClick={exitOnClick}
         className="relative aspect-video w-full overflow-hidden rounded-card border border-line bg-bg [&:fullscreen]:aspect-auto [&:fullscreen]:rounded-none [&:fullscreen]:border-0"
       >
         <div

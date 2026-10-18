@@ -83,11 +83,10 @@ export async function getPublicGivingPage(slug: string): Promise<PublicGivingPag
   return toPublicGivingPage(church.name, pickContent(church.givingPage));
 }
 
-function display(field: keyof GivingPageContent, value: unknown): string {
+function display(field: keyof GivingPageContent, value: string | boolean | null | undefined): string {
   if (typeof value === "boolean") return value ? "oui" : "non";
-  if (value === null || value === undefined || value === "") return "—";
-  if (field === "iban") return formatIban(String(value));
-  return String(value);
+  if (!value) return "—";
+  return field === "iban" ? formatIban(value) : value;
 }
 
 /** Différences entre l'état précédent (absent = rien) et le nouveau contenu. */

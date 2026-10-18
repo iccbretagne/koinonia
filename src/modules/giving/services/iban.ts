@@ -21,7 +21,7 @@ function mod97(iban: string): number {
   const rearranged = iban.slice(4) + iban.slice(0, 4);
   let remainder = 0;
   for (const char of rearranged) {
-    const code = char.charCodeAt(0);
+    const code = char.codePointAt(0) ?? 0;
     const digits = code >= 65 ? String(code - 55) : char;
     for (const digit of digits) remainder = (remainder * 10 + Number(digit)) % 97;
   }

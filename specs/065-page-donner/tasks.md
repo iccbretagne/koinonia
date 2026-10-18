@@ -126,8 +126,8 @@
 
 - [x] **T17** [P] — Ligne copiable :
   - `navigator.clipboard.writeText` ;
-  - repli sur `document.execCommand("copy")`, puis sélection du texte avec l'état
-    « Sélectionné » ;
+  - repli sur la sélection du texte avec l'état « Sélectionné » (`document.execCommand`,
+    déprécié, n'est pas utilisé) ;
   - libellé, valeur affichée et valeur copiée distinctes (l'IBAN se copie sans espaces) ;
   - confirmation « Copié ».
 

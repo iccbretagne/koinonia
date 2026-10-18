@@ -13,7 +13,7 @@ function optionalText(max: number) {
     .trim()
     .max(max, `${max} caractères au maximum.`)
     .nullish()
-    .transform((v) => (v ? v : null));
+    .transform((v) => v || null);
 }
 
 /** Adresse web facultative, en https uniquement (exclut `javascript:` et `http:`). */
@@ -66,22 +66,38 @@ export const givingPageSchema = z
     shortUrl: optionalHttpsUrl(255),
   })
   .superRefine((d, ctx) => {
-    const missing = (path: string, message: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
-
-    if (d.iban) {
-      const error = ibanError(d.iban);
-      if (error) missing("iban", error);
+    for (const [path, message] of [...bankDetailErrors(d), ...missingSectionFields(d)]) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
     }
-    if (d.bic && !isValidBic(d.bic)) missing("bic", "BIC invalide : 8 ou 11 caractères (ex. AGRIFRPP).");
-
-    if (d.onlineEnabled && !d.onlineUrl) missing("onlineUrl", "Le lien est obligatoire quand le don en ligne est affiché.");
-    if (d.transferEnabled) {
-      if (!d.beneficiary) missing("beneficiary", "Le bénéficiaire est obligatoire quand le virement est affiché.");
-      if (!d.iban) missing("iban", "L'IBAN est obligatoire quand le virement est affiché.");
-    }
-    if (d.onsiteEnabled && !d.checkPayee) missing("checkPayee", "L'ordre des chèques est obligatoire quand « Sur place » est affiché.");
-    if (d.taxReceiptEnabled && !d.taxReceiptText) missing("taxReceiptText", "Le texte est obligatoire quand le reçu fiscal est affiché.");
   });
+
+type FieldError = [path: string, message: string];
+
+/** IBAN et BIC renseignés mais invalides. */
+function bankDetailErrors(d: { iban: string | null; bic: string | null }): FieldError[] {
+  const errors: FieldError[] = [];
+  const ibanMessage = d.iban ? ibanError(d.iban) : null;
+  if (ibanMessage) errors.push(["iban", ibanMessage]);
+  if (d.bic && !isValidBic(d.bic)) errors.push(["bic", "BIC invalide : 8 ou 11 caractères (ex. AGRIFRPP)."]);
+  return errors;
+}
+
+/** Champs obligatoires des sections activées, chacun rattaché à son champ. */
+function missingSectionFields(d: {
+  onlineEnabled: boolean; onlineUrl: string | null;
+  transferEnabled: boolean; beneficiary: string | null; iban: string | null;
+  onsiteEnabled: boolean; checkPayee: string | null;
+  taxReceiptEnabled: boolean; taxReceiptText: string | null;
+}): FieldError[] {
+  const rules: [active: boolean, value: string | null, path: string, message: string][] = [
+    [d.onlineEnabled, d.onlineUrl, "onlineUrl", "Le lien est obligatoire quand le don en ligne est affiché."],
+    [d.transferEnabled, d.beneficiary, "beneficiary", "Le bénéficiaire est obligatoire quand le virement est affiché."],
+    [d.transferEnabled, d.iban, "iban", "L'IBAN est obligatoire quand le virement est affiché."],
+    [d.onsiteEnabled, d.checkPayee, "checkPayee", "L'ordre des chèques est obligatoire quand « Sur place » est affiché."],
+    [d.taxReceiptEnabled, d.taxReceiptText, "taxReceiptText", "Le texte est obligatoire quand le reçu fiscal est affiché."],
+  ];
+  return rules.filter(([active, value]) => active && !value).map(([, , path, message]) => [path, message]);
+}
 
 export type GivingPageInput = z.infer<typeof givingPageSchema>;
 
