@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.30.0",
+    "version": "1.31.1",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -9858,6 +9858,202 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/giving": {
+      "get": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Paramètres de la page de dons d'une église",
+        "description": "**Accès** : permission `giving:manage`.\n\nContenu enregistré, ou contenu proposé par défaut (page inactive) si la page n'a jamais été configurée. Voir spec 065.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "giving:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenu de la page, état configuré, présence d'une adresse comptable et adresse publique",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Enregistrement de la page de dons d'une église",
+        "description": "**Accès** : permission `giving:manage`.\n\nIBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement, champs obligatoires par section activée (400 sinon). Toute modification est journalisée ; un changement de coordonnées de paiement ou la désactivation de la page alerte la comptabilité (church.accountingEmails), à défaut les Admins de l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "giving:manage",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "churchId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "intro": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000
+                  },
+                  "onlineEnabled": {
+                    "type": "boolean"
+                  },
+                  "onlineUrl": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500
+                  },
+                  "onlineDescription": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000
+                  },
+                  "onlineNote": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 200
+                  },
+                  "transferEnabled": {
+                    "type": "boolean"
+                  },
+                  "beneficiary": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 140
+                  },
+                  "iban": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 42
+                  },
+                  "bic": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 14
+                  },
+                  "transferReference": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 140
+                  },
+                  "onsiteEnabled": {
+                    "type": "boolean"
+                  },
+                  "checkPayee": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 140
+                  },
+                  "onsiteText": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000
+                  },
+                  "taxReceiptEnabled": {
+                    "type": "boolean"
+                  },
+                  "taxReceiptText": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 2000
+                  },
+                  "verseText": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 500
+                  },
+                  "verseReference": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 80
+                  },
+                  "contactEmail": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 254
+                  },
+                  "address": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 255
+                  },
+                  "socialHandle": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 80
+                  },
+                  "shortUrl": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 255
+                  }
+                },
+                "required": [
+                  "churchId",
+                  "enabled",
+                  "onlineEnabled",
+                  "transferEnabled",
+                  "onsiteEnabled",
+                  "taxReceiptEnabled"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contenu enregistré",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "Corps invalide (détail Zod dans `details`)"
           },
           "401": {
             "description": "Session absente"

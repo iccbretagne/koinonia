@@ -392,6 +392,7 @@ Compt = Comptable.
 | `accounting:view` | x | x | | x | x | | | | | x |
 | `accounting:manage` | x | x | | | | | | | | x |
 | `accounting:stats` | x | x | x | | | | | | | x |
+| `giving:manage` | x | x | x | | | | | | | x |
 | `agenda:view` | x | x | x | | | | | | | |
 | `agenda:manage` | x | x | x | | | | | | | |
 | `care:qualify` | x | x | | | | | | | x | |
@@ -499,6 +500,17 @@ renommé spec 052) :
   `agenda:view`/`agenda:manage` (vue hebdomadaire et planification, réservées au protocole)
 - Conserve `audio:listen` et les permissions transverses du module emploi (`jobs:*`, hors
   `jobs:manage`)
+
+**Spécificités du module dons** (spec 065) :
+- `giving:manage` (Super Admin, Admin, Secrétaire, Comptable) ouvre `/dons` : paramétrage de la
+  page publique `/donner/<slug>` (sections activables, coordonnées bancaires, verset, adresse
+  courte) et slide de projection `/dons/slide` (QR code, PNG, plein écran)
+- La page publique est sans connexion et ne montre que les sections activées ; une page
+  désactivée, absente ou une église inconnue répondent le même « page non disponible »
+- Intégrité : IBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement ; toute
+  modification est journalisée (`GivingPage`), et un changement de coordonnées de paiement ou une
+  désactivation alerte la comptabilité (`church.accountingEmails`), à défaut les Admins (domaine
+  de notification `giving`)
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) avec `accounting:manage` : traite les demandes financières

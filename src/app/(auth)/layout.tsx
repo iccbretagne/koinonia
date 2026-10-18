@@ -23,6 +23,8 @@ const configLinksDef = [
   { href: "/admin/users",                 label: "Utilisateurs",      permissions: ["users:manage"] },
   { href: "/admin/access",                label: "Accès & rôles",     permissions: ["access:manage"] },
   { href: "/admin/pastoral-profiles",     label: "Profils pastoraux", permissions: ["church:settings"] },
+  // Finances (spec 065) : masqué si le module n'est pas actif, même pour un Super Admin
+  ...(registry.has("giving") ? [{ href: "/dons", label: "Page de dons", permissions: ["giving:manage"] }] : []),
   // Système
   { href: "/admin/audit-logs",            label: "Historique",        permissions: ["church:settings"] },
   { href: "/admin/backups",               label: "Sauvegardes",       permissions: [], superAdminOnly: true },
