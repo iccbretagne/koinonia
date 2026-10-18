@@ -1,7 +1,7 @@
 # Spec — Page publique « Donner » et slide de projection
 
 - **Numéro** : 065
-- **Statut** : Validée
+- **Statut** : Implémentée
 - **Créée le** : 2026-10-18
 - **Branche suggérée** : `feat/page-donner`
 - **Maquettes** : page « Donner à ICC Rennes » et slide « Dîmes & Offrandes », conçues hors de

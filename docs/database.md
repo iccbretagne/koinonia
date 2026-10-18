@@ -1953,6 +1953,36 @@ Index : `[status]`, `[authorId]`
 | `ARCHIVED` | Profil archivé |
 
 
+### Module Dons
+
+#### `giving_pages`
+
+Page publique « Donner » d'une église (spec 065) : une ligne au plus par église, créée au premier
+enregistrement (avant, `/dons` propose des textes par défaut, page inactive). Chaque section a son
+interrupteur d'affichage ; la page publique `/donner/<slug>` ne montre que les sections activées
+et complètes.
+
+| Champ | Type | Description |
+|---|---|---|
+| `id` | String (cuid) | Identifiant unique |
+| `churchId` | String (unique) | Ref vers `churches` (suppression en cascade) |
+| `enabled` | Boolean | Page publiée ; inactive, la page publique répond « non disponible » |
+| `intro` | String? (Text) | Introduction |
+| `onlineEnabled` / `onlineUrl` / `onlineDescription` / `onlineNote` | Boolean / String? | Don en ligne : lien https (VarChar 500), explication, note sous le bouton (VarChar 200) |
+| `transferEnabled` / `beneficiary` / `iban` / `bic` / `transferReference` | Boolean / String? | Virement : bénéficiaire (140), IBAN normalisé sans espaces (34, clé mod 97 vérifiée), BIC (11), libellé (140) |
+| `onsiteEnabled` / `checkPayee` / `onsiteText` | Boolean / String? | Sur place : ordre des chèques (140), consigne (enveloppe remise par l'accueil) |
+| `taxReceiptEnabled` / `taxReceiptText` | Boolean / String? | Reçu fiscal (texte propre à chaque église, aucun défaut) |
+| `verseText` / `verseReference` | String? | Verset de bas de page, repris sur la slide (référence VarChar 80) |
+| `contactEmail` / `address` / `socialHandle` | String? | Pied de page |
+| `shortUrl` | String? (VarChar 255) | Adresse courte facultative (https), cible du QR code et seule adresse écrite sur la slide |
+| `updatedById` | String? | Ref vers `users`, auteur de la dernière modification (SetNull) |
+| `createdAt` / `updatedAt` | DateTime | Horodatages |
+
+Toute modification est journalisée (`audit_logs`, `entityType: "GivingPage"`). Un changement
+de bénéficiaire, d'IBAN, de BIC, de lien de don en ligne, de l'affichage du virement ou du don en
+ligne, ou la désactivation de la page, alerte `churches.accountingEmails` (à défaut les Admins,
+domaine de notification `giving`).
+
 ## Seed (données initiales)
 
 Le script `prisma/seed.ts` crée :

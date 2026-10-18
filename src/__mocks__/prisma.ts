@@ -33,6 +33,7 @@ export const prismaMock = {
   eventDepartment: createModelMock(),
   planning: createModelMock(),
   auditLog: createModelMock(),
+  givingPage: createModelMock(),
   notification: createModelMock(),
   notificationEmailPreference: createModelMock(),
   request: createModelMock(),

@@ -6,6 +6,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+### Ajouté
+
+- Page de dons publique et slide de projection, paramétrables par église (spec 065). Chaque église publie une page « Donner » sans connexion (`/donner/<adresse de l'église>`) : don en ligne, virement avec IBAN et libellé copiables en un geste, chèques et espèces dans l'enveloppe remise par l'accueil, reçu fiscal, verset de bas de page (« non à regret ni par contrainte », modifiable). Le paramétrage (« Page de dons », réservé à Admin, Secrétaire et Comptable) montre un aperçu en direct, vérifie l'IBAN et alerte la comptabilité (à défaut les Admins) de tout changement de coordonnées de paiement ou de la désactivation de la page. La slide « Dîmes & Offrandes », aux couleurs sombres de Koinonia, porte un QR code vers la page (ou vers l'adresse courte facultative, alors seule écrite sous le code) ; elle se télécharge en PNG 1920 × 1080 ou s'affiche en plein écran, et tout y est ajusté pour ne jamais déborder.
+
 ## [v1.31.1] - 2026-10-18
 
 ### Sécurité

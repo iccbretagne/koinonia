@@ -13,6 +13,10 @@ export interface SnapshotExportOptions {
   fileName: () => string;
   /** Titre de l'onglet ouvert quand le presse-papiers est refusé. */
   copyWindowTitle: string;
+  /** Thème forcé pendant la capture. Défaut : `light` (image partagée). */
+  theme?: "light" | "dark";
+  /** Échelle de rendu. Défaut : 2 (netteté sur écran dense). */
+  scale?: number;
 }
 
 /**
@@ -39,9 +43,36 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   });
 }
 
+/** Élément capturé, réduit à ce que la préparation touche (testable sans DOM). */
+interface CaptureTarget {
+  style: { width: string; transform: string };
+  dataset: Record<string, string | undefined>;
+}
+
 /**
- * Exports d'un bloc affiché (copie d'image, PNG, PDF A4), capturé en thème clair à une
- * largeur fixe, quelle que soit la taille de l'écran.
+ * Prépare un élément à la capture : largeur forcée, échelle d'affichage retirée (une scène mise
+ * à l'échelle, comme la slide, est capturée à sa taille réelle) et thème forcé — clair par
+ * défaut pour l'image partagée. Renvoie la fonction qui rétablit l'état d'origine.
+ */
+export function prepareForCapture(
+  el: CaptureTarget,
+  options: Pick<SnapshotExportOptions, "captureWidth" | "theme">
+): () => void {
+  const saved = { width: el.style.width, transform: el.style.transform, theme: el.dataset.theme };
+  el.style.width = options.captureWidth;
+  el.style.transform = "none";
+  el.dataset.theme = options.theme ?? "light";
+  return () => {
+    el.style.width = saved.width;
+    el.style.transform = saved.transform;
+    if (saved.theme === undefined) delete el.dataset.theme;
+    else el.dataset.theme = saved.theme;
+  };
+}
+
+/**
+ * Exports d'un bloc affiché (copie d'image, PNG, PDF A4), capturé en thème clair (ou celui
+ * demandé) à une largeur fixe, quelle que soit la taille de l'écran.
  */
 export function useSnapshotExport(printRef: RefObject<HTMLElement | null>, options: SnapshotExportOptions) {
   const toast = useToast();
@@ -51,16 +82,12 @@ export function useSnapshotExport(printRef: RefObject<HTMLElement | null>, optio
     if (!printRef.current) return null;
     const html2canvas = (await import("html2canvas-pro")).default;
     const el = printRef.current;
-    const savedWidth = el.style.width;
-    el.style.width = options.captureWidth;
-    // L'image partagée reste en thème clair, quel que soit le thème affiché.
-    el.dataset.theme = "light";
+    const restore = prepareForCapture(el, options);
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
-      return await html2canvas(el, { scale: 2, useCORS: true, windowWidth: 1440 });
+      return await html2canvas(el, { scale: options.scale ?? 2, useCORS: true, windowWidth: 1440 });
     } finally {
-      el.style.width = savedWidth;
-      delete el.dataset.theme;
+      restore();
     }
   }
 

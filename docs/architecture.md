@@ -54,6 +54,7 @@ Le manifeste vit dans son propre fichier parce que l'index tire les services —
 | `rooms` | Réservation de salles (partage cross-église via liste blanche `RoomAccess`) et main courante (ouverture/fermeture, contrôle). Dépend de `core` |
 | `integration` | Suivi des parcours d'intégration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Dépend de `core` |
 | `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, modération. Module transversal ouvert à tous les rôles authentifiés. Dépend de `core` |
+| `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/dons`, `giving:manage`) et slide de projection avec QR code (`/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Dépend de `core` |
 
 **Exports du module `media` :**
 - `mediaModule` — manifeste
@@ -86,7 +87,8 @@ Singleton process-level : boot avec tous les modules actifs + matrice `rolePermi
 ```typescript
 export const registry = boot({
   modules: [coreModule, planningModule, discipleshipModule, storageModule, mediaModule,
-            audioModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule],
+            audioModule, agendaModule, roomsModule, integrationModule, accountingModule, jobsModule,
+            givingModule],
 });
 export const rolePermissions = buildRolePermissions(registry);
 ```
@@ -183,6 +185,10 @@ koinonia/
 │   │   ├── jobs/
 │   │   │   ├── manifest.ts        # Manifeste : jobs:view/post/seek/freelance/manage
 │   │   │   └── services/          # lifecycle-service (expiration/archivage)
+│   │   ├── giving/
+│   │   │   ├── manifest.ts        # Manifeste : giving:manage (spec 065)
+│   │   │   ├── schemas.ts         # Schéma Zod de la page + projection publique (purs)
+│   │   │   └── services/          # iban, defaults, giving-page (lecture/écriture), alerts
 │   │   └── __tests__/             # Tests unitaires transverses (manifests, planning-bus…)
 │   ├── app/
 │   │   ├── layout.tsx             # Root layout (Montserrat, metadata)

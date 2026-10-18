@@ -120,4 +120,4 @@ export function toPublicGivingPage(churchName: string, c: GivingPageContent): Pu
   };
 }
 
-export { formatIban } from "./services/iban";
+export { formatIban, normalizeIban, ibanError } from "./services/iban";
