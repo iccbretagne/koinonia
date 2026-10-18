@@ -6,6 +6,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Non publié]
 
+## [v1.31.1] - 2026-10-18
+
 ### Sécurité
 
 - Rattacher un STAR à un département de fonction Secrétariat, ou lier un compte à une fiche qui y appartient, est désormais réservé à l'administration de l'église (Admin, Super Admin), comme la nomination d'un Secrétaire : ce rattachement donne les droits de Secrétaire. Un responsable de département ou un Ministre ne peut plus le faire, ni modifier l'email d'une fiche rattachée au Secrétariat. La création d'une fiche vérifie aussi que ses départements supplémentaires sont dans le périmètre de l'appelant.
