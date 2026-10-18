@@ -1,7 +1,7 @@
 # Spec — Page publique « Donner » et slide de projection
 
 - **Numéro** : 065
-- **Statut** : Brouillon
+- **Statut** : Validée
 - **Créée le** : 2026-10-18
 - **Branche suggérée** : `feat/page-donner`
 - **Maquettes** : page « Donner à ICC Rennes » et slide « Dîmes & Offrandes », conçues hors de
@@ -70,7 +70,10 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 5. **Reçu fiscal** : texte rédigé par l'église, par exemple le taux de réduction d'impôt et un
    exemple chiffré. Cette section est désactivée par défaut, car elle dépend du statut juridique
    de chaque église.
-6. **Verset** : citation et référence.
+6. **Verset** : citation et référence, en bas de page, entièrement paramétrables. Par défaut :
+   « Que chacun donne selon ce qu'il a résolu dans son cœur, non à regret ni par contrainte ;
+   car Dieu aime celui qui donne avec joie. » (2 Corinthiens 9:7). La même citation, abrégée
+   si besoin, figure sur la slide.
 7. **Pied de page** : adresse email de contact pour une question sur un don ou un reçu, adresse
    du lieu de culte, compte de réseau social.
 
@@ -110,6 +113,8 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 3. L'IBAN n'apparaît **jamais** sur la slide.
 4. Elle télécharge la slide en image haute définition, prête à intégrer au support de
    projection du culte.
+5. Elle peut aussi l'afficher en plein écran dans le navigateur, pour la projeter directement
+   depuis l'ordinateur de régie. Une touche ou un clic quitte le plein écran.
 
 ### Scénario — l'adresse courte personnalisée (optionnelle)
 
@@ -141,8 +146,9 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
   aucune de ces coordonnées (verset, textes, contact) est tracée dans l'historique, sans
   alerte.
 - **Aucune adresse comptable configurée** : la modification reste possible. Le paramétrage
-  signale que l'alerte ne pourra être envoyée à personne et invite à configurer une adresse.
-  [À CLARIFIER: dans ce cas, prévenir aussi les Admins de l'église par notification ?]
+  signale qu'aucune adresse comptable n'est configurée et invite à en ajouter une. L'alerte est
+  alors adressée aux Admins de l'église, par notification dans l'application (et par email selon
+  leurs préférences).
 - **Désactivation de la page** : tracée dans l'historique et signalée à la comptabilité, comme
   une modification des coordonnées.
 - **Accès au paramétrage sans droit** (Ministre, STAR…) : refusé, comme toute page réservée.
@@ -179,7 +185,12 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 - [ ] Le paramétrage montre un aperçu fidèle de la page publique.
 - [ ] La slide 16:9 affiche le titre, un QR code vers la page, l'adresse lisible, les trois
       moyens de don et le verset, mais jamais l'IBAN.
-- [ ] La slide se télécharge en image haute définition, uniquement si la page est active.
+- [ ] La slide se télécharge en image haute définition et s'affiche en plein écran, uniquement si
+      la page est active.
+- [ ] Sans adresse comptable configurée, l'alerte de modification des coordonnées est adressée
+      aux Admins de l'église par notification, et le paramétrage signale l'absence d'adresse.
+- [ ] Le verset de bas de page (citation et référence) se modifie dans le paramétrage et figure
+      sur la page et sur la slide.
 - [ ] Avec une adresse courte renseignée, la slide l'affiche et son QR code y mène. Sans adresse
       courte, la slide affiche l'adresse de la page dans Koinonia.
 - [ ] La page publique respecte le design system de Koinonia (thèmes clair et sombre) et
@@ -206,13 +217,14 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 
 ## Questions ouvertes
 
-- [À CLARIFIER: si l'église n'a aucune adresse comptable configurée, faut-il aussi prévenir les
-  Admins de l'église par notification, en plus du signalement dans le paramétrage ?]
-- [À CLARIFIER: la slide doit-elle seulement se télécharger en image, ou aussi s'afficher en plein
-  écran pour être projetée directement depuis un navigateur ?]
-- Décidé le 2026-10-18 : édition par Admin, Secrétaire, Comptable (et Super Admin) ; chèques et
-  espèces dans l'enveloppe remise par l'accueil ; design system de Koinonia ; adresse courte
-  optionnelle.
+- Décidé le 2026-10-18 :
+  - édition par Admin, Secrétaire, Comptable (et Super Admin) ;
+  - chèques et espèces dans l'enveloppe remise par l'accueil ;
+  - design system de Koinonia ;
+  - adresse courte optionnelle ;
+  - sans adresse comptable, les Admins de l'église sont notifiés ;
+  - slide téléchargeable en image et affichable en plein écran ;
+  - verset de bas de page (« non à regret ni par contrainte ») paramétrable.
 - Libellés par défaut proposés à une nouvelle église (introduction, note du don en ligne, verset)
   : repris des maquettes, modifiables. Le texte du reçu fiscal n'a pas de valeur par défaut, car
   il dépend du statut de chaque église.
