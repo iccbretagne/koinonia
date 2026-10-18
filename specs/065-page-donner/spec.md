@@ -106,10 +106,15 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 2. La slide affiche :
    - le nom de l'église et le titre « Dîmes & Offrandes » ;
    - un grand QR code menant à la page « Donner » ;
-   - l'adresse de la page en gros caractères, lisible du fond de la salle ;
-   - un rappel par moyen de don : virement (« IBAN et libellé sur <adresse> »), chèque (ordre à
-     indiquer), espèces (enveloppes auprès de l'accueil) ;
-   - le verset.
+   - l'adresse courte en gros caractères, lisible du fond de la salle, **seulement si l'église en
+     a une** (voir ci-dessous) ;
+   - un rappel par moyen de don : virement (« IBAN et libellé sur <adresse courte> », ou « sur la
+     page de dons » sans adresse courte), chèque (ordre à indiquer), espèces (enveloppes auprès
+     de l'accueil) ;
+   - le verset, sur une ligne.
+
+   Tout tient dans le cadre 16:9, sans débordement, quelle que soit la longueur de l'adresse,
+   du verset ou de l'ordre des chèques.
 3. L'IBAN n'apparaît **jamais** sur la slide.
 4. Elle télécharge la slide en image haute définition, prête à intégrer au support de
    projection du culte.
@@ -122,8 +127,10 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
    vers sa page « Donner ».
 2. Une personne habilitée la renseigne dans le paramétrage.
 3. La slide affiche cette adresse et son QR code y mène.
-4. Sans adresse courte, la slide affiche l'adresse de la page dans Koinonia et son QR code y
-   mène.
+4. Sans adresse courte, la slide n'affiche **que le QR code**, qui mène à la page dans Koinonia,
+   avec la consigne « Scanne le code avec ton téléphone ». L'adresse Koinonia, trop longue pour
+   être tapée de mémoire, n'est pas écrite. Le paramétrage indique qu'une adresse courte permet
+   aussi au fond de la salle, hors de portée du QR code, de rejoindre la page.
 
 ### Scénarios alternatifs / cas limites
 
@@ -184,16 +191,17 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
       indique l'ancienne et la nouvelle valeur, l'auteur et la date.
 - [ ] Une modification qui ne touche pas ces coordonnées n'envoie pas d'alerte.
 - [ ] Le paramétrage montre un aperçu fidèle de la page publique.
-- [ ] La slide 16:9 affiche le titre, un QR code vers la page, l'adresse lisible, les trois
-      moyens de don et le verset, mais jamais l'IBAN.
+- [ ] La slide 16:9 affiche le titre, un QR code vers la page, les trois moyens de don et le
+      verset, mais jamais l'IBAN. Rien ne déborde du cadre 16:9.
 - [ ] La slide se télécharge en image haute définition et s'affiche en plein écran, uniquement si
       la page est active.
 - [ ] Sans adresse comptable configurée, l'alerte de modification des coordonnées est adressée
       aux Admins de l'église par notification, et le paramétrage signale l'absence d'adresse.
 - [ ] Le verset de bas de page (citation et référence) se modifie dans le paramétrage et figure
       sur la page et sur la slide.
-- [ ] Avec une adresse courte renseignée, la slide l'affiche et son QR code y mène. Sans adresse
-      courte, la slide affiche l'adresse de la page dans Koinonia.
+- [ ] Avec une adresse courte renseignée, la slide l'affiche sous le QR code, qui y mène. Sans
+      adresse courte, la slide n'affiche aucune adresse et le QR code mène à la page dans
+      Koinonia.
 - [ ] La page publique respecte le design system de Koinonia (thèmes clair et sombre) et
       s'utilise sans défilement horizontal sur un écran de 320 px.
 - [ ] La page et le paramétrage d'une église ne montrent jamais les données d'une autre église.

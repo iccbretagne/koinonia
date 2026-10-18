@@ -332,16 +332,20 @@ existants, et la slide demande `"dark"`.
 - **Lisibilité de la slide en projection.** Le contraste vient des tokens sombres du design
   system, déjà conformes AA. On reprend les tailles mesurées dans la maquette :
   QR code d'environ 470 px dans la scène 1920 et adresse en grandes capitales.
-- **Adresse trop longue pour le cadre du QR code.** Sans adresse courte, c'est l'adresse
-  Koinonia complète, par exemple « koinonia.iccbretagne.fr/donner/rennes » (37 caractères), qui
-  déborde à 60 px. La taille est donc ajustée par mesure réelle du texte, pas estimée au nombre
-  de caractères :
-  1. la police descend de 60 à 44 px tant que l'adresse ne tient pas sur une ligne ;
-  2. si elle ne tient toujours pas, l'adresse passe sur deux lignes, domaine puis chemin, avec
-     un plancher à 34 px ;
-  3. le calcul est refait après le chargement des polices.
+- **Tout tenir dans la scène 1920 × 1080.** La démo a montré deux débordements : l'adresse
+  sous le QR code et le verset en bas de slide. Les tailles sont donc ajustées par mesure réelle
+  du rendu, pas estimées au nombre de caractères. Le calcul est refait après le chargement des
+  polices :
+  1. **Adresse courte**, affichée seulement si elle existe : la police descend de 60 à 44 px
+     tant qu'elle ne tient pas sur une ligne, puis passe sur deux lignes (domaine, puis chemin)
+     avec un plancher à 34 px. Sans adresse courte, rien n'est écrit sous le QR code.
+  2. **Verset**, une seule ligne : la police descend de 34 à 24 px, puis le texte passe sur
+     deux lignes en dernier recours. Sur la slide, seule la première proposition est reprise
+     (jusqu'au premier « ; »).
+  3. **QR code** : si le contenu dépasse encore la hauteur de la scène, il est réduit par pas de
+     10 px, de 470 jusqu'à 300 px au minimum. Ce plancher garde une portée de scan correcte.
 
-  C'est un argument en faveur de l'adresse courte, à signaler dans le paramétrage.
+  Cette logique, fonctions pures autour des mesures du DOM, est testée sur des tailles simulées.
 - **Fiabilité de l'export PNG.** `html2canvas` capture mal certains filtres CSS
   (`backdrop-filter`). La slide n'en utilise aucun : fonds en dégradés simples et SVG inline.
 - **CSP.** La page publique ne charge aucune ressource externe : le lien de don en ligne est un
