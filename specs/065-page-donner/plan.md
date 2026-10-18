@@ -331,8 +331,17 @@ existants, et la slide demande `"dark"`.
   `javascript:`.
 - **Lisibilité de la slide en projection.** Le contraste vient des tokens sombres du design
   system, déjà conformes AA. On reprend les tailles mesurées dans la maquette :
-  QR code d'environ 470 px dans la scène 1920 et adresse en grandes capitales. Si l'adresse
-  courte est longue, sa police est réduite automatiquement pour tenir sur une ligne.
+  QR code d'environ 470 px dans la scène 1920 et adresse en grandes capitales.
+- **Adresse trop longue pour le cadre du QR code.** Sans adresse courte, c'est l'adresse
+  Koinonia complète, par exemple « koinonia.iccbretagne.fr/donner/rennes » (37 caractères), qui
+  déborde à 60 px. La taille est donc ajustée par mesure réelle du texte, pas estimée au nombre
+  de caractères :
+  1. la police descend de 60 à 44 px tant que l'adresse ne tient pas sur une ligne ;
+  2. si elle ne tient toujours pas, l'adresse passe sur deux lignes, domaine puis chemin, avec
+     un plancher à 34 px ;
+  3. le calcul est refait après le chargement des polices.
+
+  C'est un argument en faveur de l'adresse courte, à signaler dans le paramétrage.
 - **Fiabilité de l'export PNG.** `html2canvas` capture mal certains filtres CSS
   (`backdrop-filter`). La slide n'en utilise aucun : fonds en dégradés simples et SVG inline.
 - **CSP.** La page publique ne charge aucune ressource externe : le lien de don en ligne est un
