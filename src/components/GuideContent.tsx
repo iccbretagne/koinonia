@@ -444,6 +444,14 @@ const FEATURES: Feature[] = [
     screenshotFile: "guide-comptabilite-stats.png",
     access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
   },
+  {
+    name: "Page de dons et slide",
+    description: "Depuis « Page de dons » (/dons), paramétrez la page publique où chacun trouve comment donner : don en ligne, virement (IBAN vérifié, copiable en un geste), chèques et espèces dans l'enveloppe de l'accueil, reçu fiscal, verset. L'aperçu se met à jour en direct ; activez la page puis enregistrez. « Slide de projection » affiche le QR code vers la page : téléchargez-la en PNG ou projetez-la en plein écran (Échap pour sortir). Tout changement de coordonnées bancaires est signalé à la comptabilité.",
+    category: "Comptabilité",
+    screenshotTitle: "Page de dons",
+    screenshotFile: "guide-page-dons.png",
+    access: { SUPER_ADMIN: "edit", ADMIN: "edit", SECRETARY: "edit", MINISTER: "none", DEPARTMENT_HEAD: "none", DISCIPLE_MAKER: "none", REPORTER: "none", STAR: "none", PASTORAL_CARE_REFERENT: "none", ACCOUNTANT: "edit" },
+  },
 
   // ── Emplois ──────────────────────────────────────────────────────────────
   {

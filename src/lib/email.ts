@@ -639,3 +639,53 @@ export function buildReminderEmail(params: {
     `,
   };
 }
+
+/**
+ * Alerte d'intégrité de la page de dons (spec 065) : coordonnées de paiement modifiées ou page
+ * désactivée. Envoyée aux adresses comptables de l'église (adresse institutionnelle), ou par
+ * notification aux Admins à défaut. Chaque ligne montre l'ancienne et la nouvelle valeur.
+ */
+export function buildGivingPaymentDetailsEmail(params: {
+  churchName: string;
+  changes: { label: string; before: string; after: string }[];
+  actorName: string;
+  at: Date;
+  link: string;
+}): { subject: string; html: string } {
+  const appUrl = process.env.APP_URL || process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const when = params.at.toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "long", timeStyle: "short" });
+  const rows = params.changes
+    .map(
+      (c) => `<tr>
+        <td style="padding: 8px 12px; font-weight: 600; vertical-align: top;">${escapeHtml(c.label)}</td>
+        <td style="padding: 8px 12px; color: #b91c1c; text-decoration: line-through; font-family: monospace;">${escapeHtml(c.before)}</td>
+        <td style="padding: 8px 12px; color: #047857; font-family: monospace;">${escapeHtml(c.after)}</td>
+      </tr>`
+    )
+    .join("");
+  return {
+    subject: `Page de dons de ${params.churchName} : coordonnées de paiement modifiées`,
+    html: `
+      <div style="font-family: Montserrat, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #5E17EB; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; font-size: 20px;">Koinonia</h1>
+        </div>
+        <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+          <p style="margin: 0 0 12px; font-weight: 600; color: #111827;">
+            ${escapeHtml(params.actorName)} a modifié la page de dons de ${escapeHtml(params.churchName)} le ${escapeHtml(when)}.
+          </p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr style="background: #f9fafb; text-align: left;">
+              <th style="padding: 8px 12px;">Élément</th><th style="padding: 8px 12px;">Avant</th><th style="padding: 8px 12px;">Après</th>
+            </tr>
+            ${rows}
+          </table>
+          <p style="margin: 16px 0 0; color: #374151; font-size: 14px;">
+            Si cette modification n'est pas attendue, vérifiez immédiatement la page de dons.
+          </p>
+          <p style="margin: 20px 0 0;"><a href="${appUrl}${params.link}" style="color: #5E17EB; font-weight: 600;">Ouvrir la page de dons →</a></p>
+        </div>
+      </div>
+    `,
+  };
+}

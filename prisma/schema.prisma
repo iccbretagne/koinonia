@@ -124,6 +124,8 @@ model Church {
   supervisor                PastoralProfile?           @relation("ChurchSupervisorProfile", fields: [supervisorProfileId], references: [id])
 
   serviceWithdrawals        ServiceWithdrawal[]
+  // Page publique « Donner » (spec 065)
+  givingPage                GivingPage?
 
   @@map("churches")
 }
@@ -213,6 +215,8 @@ model User {
   roomChecklistsClosed              RoomChecklist[]              @relation("RoomChecklistClosedBy")
   roomChecklistsKeyReturnedTo       RoomChecklist[]              @relation("RoomChecklistKeyReturnedTo")
   roomChecklistsValidated           RoomChecklist[]              @relation("RoomChecklistValidatedBy")
+  // Page publique « Donner » (spec 065)
+  givingPagesUpdated                GivingPage[]                 @relation("GivingPageUpdatedBy")
   // Feuille d'annonces d'un culte (spec 040)
   announcementSheetsUploaded        AnnouncementSheet[]          @relation("AnnouncementSheetUploadedBy")
   // Service d'ouverture/fermeture de l'église (spec 041)
@@ -2607,4 +2611,47 @@ model ServiceWithdrawal {
   @@index([memberId, status])
   @@index([churchId, status])
   @@map("service_withdrawals")
+}
+
+/// Page publique « Donner » d'une église (spec 065). Une ligne par église, créée au premier
+/// enregistrement : absente = page jamais configurée.
+model GivingPage {
+  id                String   @id @default(cuid())
+  churchId          String   @unique
+  enabled           Boolean  @default(false)
+  intro             String?  @db.Text
+  // Don en ligne
+  onlineEnabled     Boolean  @default(false)
+  onlineUrl         String?  @db.VarChar(500)
+  onlineDescription String?  @db.Text
+  onlineNote        String?  @db.VarChar(200)
+  // Virement
+  transferEnabled   Boolean  @default(false)
+  beneficiary       String?  @db.VarChar(140)
+  /// Normalisé : majuscules, sans espaces.
+  iban              String?  @db.VarChar(34)
+  bic               String?  @db.VarChar(11)
+  transferReference String?  @db.VarChar(140)
+  // Sur place : chèques et espèces dans l'enveloppe remise par l'accueil
+  onsiteEnabled     Boolean  @default(false)
+  checkPayee        String?  @db.VarChar(140)
+  onsiteText        String?  @db.Text
+  // Reçu fiscal — désactivé par défaut, sans texte par défaut
+  taxReceiptEnabled Boolean  @default(false)
+  taxReceiptText    String?  @db.Text
+  // Bas de page
+  verseText         String?  @db.Text
+  verseReference    String?  @db.VarChar(80)
+  contactEmail      String?  @db.VarChar(254)
+  address           String?  @db.VarChar(255)
+  socialHandle      String?  @db.VarChar(80)
+  /// Adresse courte optionnelle (https), affichée sur la slide et ciblée par son QR code.
+  shortUrl          String?  @db.VarChar(255)
+  updatedById       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  church            Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy         User?    @relation("GivingPageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("giving_pages")
 }

@@ -12,9 +12,10 @@ import { integrationModule } from "../integration/manifest";
 import { careModule } from "../care/manifest";
 import { accountingModule } from "../accounting/manifest";
 import { jobsModule } from "../jobs/manifest";
+import { givingModule } from "../giving/manifest";
 
 /**
- * Les 12 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
+ * Les 13 modules composés par `src/lib/registry.ts`, importés par leur manifeste et non par leur
  * index : un index re-exporte les services du module, donc Prisma, NextAuth et le client S3 —
  * indisponibles dans l'environnement de test `node`. C'est la raison pour laquelle ce fichier ne
  * couvrait que 3 modules avant l'extraction des manifestes.
@@ -32,6 +33,7 @@ const ALL_MODULES: ModuleManifest[] = [
   careModule,
   accountingModule,
   jobsModule,
+  givingModule,
 ];
 
 /** Dépendances déclarées, figées : une arête ajoutée ou retirée doit se voir en revue. */
@@ -48,6 +50,7 @@ const EXPECTED_DEPENDENCIES: Record<string, string[]> = {
   care: ["core"],
   accounting: ["core", "planning"],
   jobs: ["core"],
+  giving: ["core"],
 };
 
 /**
@@ -104,6 +107,7 @@ const PERMISSION_OWNER: Record<string, string> = {
   "jobs:post": "jobs",
   "jobs:seek": "jobs",
   "jobs:view": "jobs",
+  "giving:manage": "giving",
 };
 
 function buildRegistry(mods: ModuleManifest[] = ALL_MODULES) {
@@ -113,8 +117,8 @@ function buildRegistry(mods: ModuleManifest[] = ALL_MODULES) {
 }
 
 describe("Manifestes des modules", () => {
-  it("couvre les 12 modules composés par le registry", () => {
-    expect(ALL_MODULES).toHaveLength(12);
+  it("couvre les 13 modules composés par le registry", () => {
+    expect(ALL_MODULES).toHaveLength(13);
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
@@ -122,6 +126,7 @@ describe("Manifestes des modules", () => {
       "care",
       "core",
       "discipleship",
+      "giving",
       "integration",
       "jobs",
       "media",
@@ -165,7 +170,7 @@ describe("Manifestes des modules", () => {
 
   it("l'ordre de chargement est résolvable et place chaque dépendance avant son dépendant", () => {
     const order = buildRegistry().resolveLoadOrder().map((m) => m.name);
-    expect(order).toHaveLength(12);
+    expect(order).toHaveLength(13);
 
     for (const mod of ALL_MODULES) {
       for (const dep of mod.dependsOn ?? []) {
@@ -192,7 +197,7 @@ describe("Manifestes des modules", () => {
     expect([...declared].sort()).toEqual(Object.keys(PERMISSION_OWNER).sort());
   });
 
-  it("la somme des permissions correspond à la matrice RBAC des 12 modules", () => {
+  it("la somme des permissions correspond à la matrice RBAC des 13 modules", () => {
     const permNames = Object.keys(buildRegistry().collectPermissions()).sort();
     expect(permNames).toEqual(Object.keys(PERMISSION_OWNER).sort());
   });

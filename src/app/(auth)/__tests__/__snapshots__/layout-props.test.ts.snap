@@ -61,6 +61,10 @@ exports[`AuthLayout — props de navigation > Admin aussi Admin d'une autre égl
       "label": "Profils pastoraux",
     },
     {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
+    {
       "href": "/admin/audit-logs",
       "label": "Historique",
     },
@@ -213,6 +217,10 @@ exports[`AuthLayout — props de navigation > Admin aussi pasteur, vue admin cho
       "label": "Profils pastoraux",
     },
     {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
+    {
       "href": "/admin/audit-logs",
       "label": "Historique",
     },
@@ -361,6 +369,10 @@ exports[`AuthLayout — props de navigation > Admin, équipe Photos configurée 
       "label": "Profils pastoraux",
     },
     {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
+    {
       "href": "/admin/audit-logs",
       "label": "Historique",
     },
@@ -462,7 +474,12 @@ exports[`AuthLayout — props de navigation > Comptable 1`] = `
       "name": "Rennes",
     },
   ],
-  "configLinks": [],
+  "configLinks": [
+    {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
+  ],
   "currentChurchId": "church-1",
   "departments": [],
   "famillesUrl": "https://familles.iccrennes.fr",
@@ -1002,6 +1019,10 @@ exports[`AuthLayout — props de navigation > Secrétaire avec profil pastoral p
       "href": "/admin/access",
       "label": "Accès & rôles",
     },
+    {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
   ],
   "currentChurchId": "church-1",
   "departments": [
@@ -1147,6 +1168,10 @@ exports[`AuthLayout — props de navigation > Super Admin 1`] = `
       "label": "Profils pastoraux",
     },
     {
+      "href": "/dons",
+      "label": "Page de dons",
+    },
+    {
       "href": "/admin/audit-logs",
       "label": "Historique",
     },
@@ -1288,6 +1313,10 @@ exports[`AuthLayout — props de navigation > sans église courante, ni départe
     {
       "href": "/admin/pastoral-profiles",
       "label": "Profils pastoraux",
+    },
+    {
+      "href": "/dons",
+      "label": "Page de dons",
     },
     {
       "href": "/admin/audit-logs",

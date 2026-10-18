@@ -13,10 +13,11 @@ import { integrationModule } from "@/modules/integration/manifest";
 import { careModule } from "@/modules/care/manifest";
 import { accountingModule } from "@/modules/accounting/manifest";
 import { jobsModule } from "@/modules/jobs/manifest";
+import { givingModule } from "@/modules/giving/manifest";
 import type { Role } from "@/generated/prisma/client";
 
 /**
- * Les 12 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
+ * Les 13 modules du registry (`src/lib/registry.ts`), importés par leur manifeste et non par
  * leur index : un index re-exporte les services du module, donc Prisma, NextAuth et le client
  * S3 — indisponibles dans l'environnement de test `node`. Le manifeste, lui, ne dépend que de
  * `defineModule`.
@@ -34,6 +35,7 @@ const ALL_MODULES = [
   careModule,
   accountingModule,
   jobsModule,
+  givingModule,
 ];
 
 /** Les 10 rôles de l'enum Prisma `Role`. */
@@ -92,6 +94,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "giving:manage",
     "integration:delete",
     "integration:manage",
     "jobs:freelance",
@@ -143,6 +146,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "giving:manage",
     "integration:delete",
     "integration:manage",
     "jobs:freelance",
@@ -184,6 +188,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "discipleship:view",
     "events:manage",
     "events:view",
+    "giving:manage",
     "integration:manage",
     "jobs:freelance",
     "jobs:manage",
@@ -285,6 +290,7 @@ const EXPECTED_MATRIX: Record<Role, string[]> = {
     "accounting:stats",
     "accounting:view",
     "audio:listen",
+    "giving:manage",
     "jobs:freelance",
     "jobs:post",
     "jobs:seek",
@@ -299,7 +305,7 @@ function buildFullRegistry() {
 }
 
 describe("buildRolePermissions", () => {
-  it("couvre les 12 modules du registry", () => {
+  it("couvre les 13 modules du registry", () => {
     expect(ALL_MODULES.map((m) => m.name).sort()).toEqual([
       "accounting",
       "agenda",
@@ -307,6 +313,7 @@ describe("buildRolePermissions", () => {
       "care",
       "core",
       "discipleship",
+      "giving",
       "integration",
       "jobs",
       "media",

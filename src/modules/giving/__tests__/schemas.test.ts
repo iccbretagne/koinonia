@@ -1,0 +1,75 @@
+import { describe, it, expect } from "vitest";
+import { givingPageSchema, toPublicGivingPage, type GivingPageContent } from "../schemas";
+import { defaultGivingContent } from "../services/defaults";
+
+const base = { churchId: "church-1", ...defaultGivingContent("ICC Rennes") };
+
+function errorsOf(input: Record<string, unknown>) {
+  const result = givingPageSchema.safeParse(input);
+  if (result.success) return {};
+  return Object.fromEntries(result.error.issues.map((i) => [String(i.path[0]), i.message]));
+}
+
+describe("givingPageSchema (spec 065)", () => {
+  it("accepte le contenu par défaut, sections désactivées sans exigence", () => {
+    const parsed = givingPageSchema.parse({ ...base, transferEnabled: false, onlineEnabled: false, onsiteEnabled: false });
+    expect(parsed.iban).toBeNull();
+  });
+
+  it("exige les champs de chaque section activée, rattachés au champ", () => {
+    const errors = errorsOf({
+      ...base,
+      onlineEnabled: true,
+      onlineUrl: "",
+      transferEnabled: true,
+      beneficiary: " ",
+      iban: null,
+      onsiteEnabled: true,
+      checkPayee: "",
+      taxReceiptEnabled: true,
+      taxReceiptText: "",
+    });
+    expect(Object.keys(errors).sort()).toEqual(["beneficiary", "checkPayee", "iban", "onlineUrl", "taxReceiptText"]);
+  });
+
+  it("impose https pour le lien de don et l'adresse courte", () => {
+    const errors = errorsOf({ ...base, onlineEnabled: true, onlineUrl: "http://don.fr", shortUrl: "javascript:alert(1)" });
+    expect(errors.onlineUrl).toMatch(/https/);
+    expect(errors.shortUrl).toMatch(/https/);
+  });
+
+  it("normalise l'IBAN et renvoie son erreur", () => {
+    const ok = givingPageSchema.parse({ ...base, transferEnabled: true, iban: "fr76 3000 6000 0112 3456 7890 189" });
+    expect(ok.iban).toBe("FR7630006000011234567890189");
+    expect(errorsOf({ ...base, transferEnabled: true, iban: "FR7630006000011234567890188" }).iban).toMatch(/clé|contrôle/i);
+  });
+
+  it("refuse un email de contact invalide et un BIC invalide", () => {
+    const errors = errorsOf({ ...base, contactEmail: "pas-un-email", bic: "AGRI" });
+    expect(errors.contactEmail).toBeDefined();
+    expect(errors.bic).toBeDefined();
+  });
+});
+
+describe("toPublicGivingPage", () => {
+  const content: GivingPageContent = {
+    ...defaultGivingContent("ICC Rennes"),
+    enabled: true,
+    onlineEnabled: true,
+    onlineUrl: "https://don.example/icc",
+    onsiteEnabled: true,
+    transferEnabled: false,
+    iban: "FR7630006000011234567890189",
+    taxReceiptEnabled: false,
+    taxReceiptText: "Reçu",
+  };
+
+  it("ne projette que les sections activées", () => {
+    const page = toPublicGivingPage("ICC Rennes", content);
+    expect(page.online?.url).toBe("https://don.example/icc");
+    expect(page.transfer).toBeNull();
+    expect(page.taxReceipt).toBeNull();
+    expect(page.onsite?.checkPayee).toBe("ICC Rennes");
+    expect(JSON.stringify(page)).not.toContain("FR7630006000011234567890189");
+  });
+});
