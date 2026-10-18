@@ -22,6 +22,9 @@
   champs obligatoires selon les sections activées.
 - [x] **Migration** Prisma `add_giving_page` (une table, aucune donnée existante touchée).
 - [x] **Enums** : aucun nouvel enum. Les rôles du manifeste sont des chaînes `Role` connues.
+- [x] **Design system** : page publique, paramétrage **et slide** n'utilisent que les tokens
+  sémantiques, sans couleur en dur ni exception ESLint. La slide est rendue dans le thème sombre
+  de Koinonia.
 - [x] **UI** : `Input`, `Textarea`, `Field`, `Checkbox`, `Button`, `Alert`, `PageHeader`,
   `useToast` et `EmptyState` réutilisés. Le hook `useSnapshotExport` (lot 7b) est réutilisé pour
   l'export de la slide. Trois composants sont créés, faute d'équivalent :
@@ -257,13 +260,22 @@ L'IBAN s'affiche groupé par 4 caractères, mais se copie sans espaces.
      - « Plein écran » : `requestFullscreen()` sur la scène. Sortie avec Échap, un clic ou un
        retour arrière.
 
-**Rendu de la slide.** Le fond est toujours sombre et reprend l'identité ICC, quel que soit le
-thème de l'utilisateur. Cela relève des exceptions documentées du design system (« visionneuses
-toujours sombres, exports ») : les quelques couleurs en dur portent
-`// eslint-disable-next-line no-restricted-syntax -- slide de projection, rendu fixe`.
-`useSnapshotExport` force aujourd'hui `data-theme="light"`. On lui ajoute une option
-`theme?: "light" | "dark" | null` : la valeur par défaut reste `"light"`, et `null` laisse le
-rendu tel quel.
+**Rendu de la slide.** La slide suit le design system de Koinonia, comme le reste de l'application :
+
+- uniquement des tokens sémantiques (`bg`, `surface`, `ink`, `brand`, `accent`…) et les
+  composants existants ;
+- aucune couleur en dur, aucune exception ESLint ;
+- les couleurs de la charte ICC ne servent pas à colorer la slide (le design system les réserve
+  au logo et aux illustrations).
+
+Pour la projection, la scène porte `data-theme="dark"`. Les tokens étant redéfinis sous ce
+sélecteur dans `globals.css`, toute la slide prend la **valeur sombre des tokens Koinonia**, quel
+que soit le thème de la personne qui la prépare. Un fond sombre fatigue moins la salle et fait
+ressortir le QR code, posé sur une surface claire pour rester lisible par les téléphones.
+
+`useSnapshotExport` force aujourd'hui `data-theme="light"` pendant la capture. On lui ajoute une
+option `theme?: "light" | "dark"` : la valeur par défaut reste `"light"` pour les exports
+existants, et la slide demande `"dark"`.
 
 **Navigation.**
 
@@ -317,7 +329,8 @@ rendu tel quel.
 - **Contenu injecté dans la page publique.** Tous les textes sont rendus comme du texte React
   échappé, jamais en HTML. Les URL sont limitées au schéma https par Zod, ce qui exclut
   `javascript:`.
-- **Lisibilité de la slide en projection.** On reprend les tailles mesurées dans la maquette :
+- **Lisibilité de la slide en projection.** Le contraste vient des tokens sombres du design
+  system, déjà conformes AA. On reprend les tailles mesurées dans la maquette :
   QR code d'environ 470 px dans la scène 1920 et adresse en grandes capitales. Si l'adresse
   courte est longue, sa police est réduite automatiquement pour tenir sur une ligne.
 - **Fiabilité de l'export PNG.** `html2canvas` capture mal certains filtres CSS

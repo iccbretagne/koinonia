@@ -155,8 +155,9 @@ La page présente, dans cet ordre, uniquement les sections activées par l'égli
 - **Plusieurs églises** : chaque église a sa propre page, son propre paramétrage et sa propre
   slide. Rien n'est partagé entre églises.
 - **Thème** : la page suit le design system de Koinonia, en clair comme en sombre, et reste
-  utilisable sur un petit téléphone (largeur d'environ 320 px). La slide est toujours produite
-  dans un rendu adapté à la projection, quel que soit le thème de la personne qui la télécharge.
+  utilisable sur un petit téléphone (largeur d'environ 320 px). La slide suit aussi le design
+  system de Koinonia, toujours dans son thème sombre (adapté à la projection), quel que soit le
+  thème de la personne qui la prépare.
 
 ## Critères d'acceptation
 
