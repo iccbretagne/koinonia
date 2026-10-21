@@ -18,7 +18,7 @@ export default async function GivingSlidePage() {
     return <p className="p-4 text-ink-muted">Accès non autorisé.</p>;
   }
 
-  const { churchName, content, publicUrl } = await getGivingSettings(churchId);
+  const { churchName, content, publicUrl, publicLogoSrc } = await getGivingSettings(churchId);
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,6 +35,8 @@ export default async function GivingSlidePage() {
       {content.enabled ? (
         <GivingSlide
           churchName={churchName}
+          churchNameSize={content.slideChurchNameShown ? content.slideChurchNameSize : null}
+          logoSrc={content.slideLogoShown ? publicLogoSrc : null}
           target={content.shortUrl ?? publicUrl}
           shortUrl={content.shortUrl}
           qr={qrPath(content.shortUrl ?? publicUrl)}

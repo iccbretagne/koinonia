@@ -15,6 +15,10 @@ export default async function GivingSettingsPage() {
   }
 
   const settings = await getGivingSettings(churchId);
+  const canEditChurch = await requireChurchPermission("church:settings", churchId).then(
+    () => true,
+    () => false
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -23,7 +27,7 @@ export default async function GivingSettingsPage() {
         title="Page de dons"
         description="La page publique où chacun trouve comment donner, et la slide projetée au culte."
       />
-      <GivingSettingsClient settings={settings} />
+      <GivingSettingsClient settings={settings} churchSettingsHref={canEditChurch ? `/admin/churches/${churchId}` : null} />
     </div>
   );
 }

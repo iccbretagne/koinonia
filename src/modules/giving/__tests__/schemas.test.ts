@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { givingPageSchema, toPublicGivingPage, type GivingPageContent } from "../schemas";
+import { givingPageSchema, missingForDisplay, toPublicGivingPage, type GivingPageContent } from "../schemas";
 import { defaultGivingContent } from "../services/defaults";
 
 const base = { churchId: "church-1", ...defaultGivingContent("ICC Rennes") };
@@ -71,5 +71,88 @@ describe("toPublicGivingPage", () => {
     expect(page.taxReceipt).toBeNull();
     expect(page.onsite?.checkPayee).toBe("ICC Rennes");
     expect(JSON.stringify(page)).not.toContain("FR7630006000011234567890189");
+  });
+});
+
+describe("nom et logo de l'église (spec 066)", () => {
+  const legacy = { churchId: "church-1", ...defaultGivingContent("ICC Rennes") } as Record<string, unknown>;
+  for (const key of ["pageChurchNameShown", "pageChurchNameSize", "slideChurchNameShown", "slideChurchNameSize", "pageLogoShown", "slideLogoShown"]) {
+    delete legacy[key];
+  }
+
+  it("applique le rendu d'origine à un corps qui ne connaît pas les réglages", () => {
+    const parsed = givingPageSchema.parse(legacy);
+    expect(parsed).toMatchObject({
+      pageChurchNameShown: true,
+      pageChurchNameSize: "SMALL",
+      slideChurchNameShown: true,
+      slideChurchNameSize: "SMALL",
+      pageLogoShown: true,
+      slideLogoShown: true,
+    });
+  });
+
+  it("refuse une taille inconnue", () => {
+    expect(errorsOf({ ...base, slideChurchNameSize: "HUGE" }).slideChurchNameSize).toBeDefined();
+  });
+
+  it("ignore un logoKey envoyé par le formulaire", () => {
+    const parsed = givingPageSchema.parse({ ...base, logoKey: "giving/other/logo.png" });
+    expect(parsed).not.toHaveProperty("logoKey");
+  });
+
+  it("applique les réglages de la page, jamais ceux de la slide", () => {
+    const content: GivingPageContent = {
+      ...defaultGivingContent("ICC Rennes"),
+      pageChurchNameSize: "LARGE",
+      slideChurchNameShown: false,
+      slideLogoShown: false,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content, "/logo.png");
+    expect(page.churchNameSize).toBe("LARGE");
+    expect(page.logo).toEqual({ src: "/logo.png" });
+  });
+
+  it("masque le nom et le logo selon les réglages de la page", () => {
+    const content: GivingPageContent = {
+      ...defaultGivingContent("ICC Rennes"),
+      pageChurchNameShown: false,
+      pageLogoShown: false,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content, "/logo.png");
+    expect(page.churchNameSize).toBeNull();
+    expect(page.logo).toBeNull();
+    expect(toPublicGivingPage("ICC Rennes", defaultGivingContent("ICC Rennes"), null).logo).toBeNull();
+  });
+});
+
+describe("missingForDisplay", () => {
+  const base = { ...defaultGivingContent("ICC Rennes"), checkPayee: null, beneficiary: null };
+
+  it("liste ce qui manque à une section activée, et rien pour une section éteinte", () => {
+    const missing = missingForDisplay({ ...base, onlineEnabled: true, transferEnabled: true, onsiteEnabled: false });
+    expect(missing.online).toEqual(["le lien de don en ligne"]);
+    expect(missing.transfer).toEqual(["le bénéficiaire", "l'IBAN"]);
+    expect(missing.onsite).toBeUndefined();
+  });
+
+  it("concorde avec toPublicGivingPage : section complète ⇔ section affichée", () => {
+    const content: GivingPageContent = {
+      ...base,
+      onlineEnabled: true,
+      onlineUrl: "https://don.example/icc",
+      transferEnabled: true,
+      beneficiary: "ICC",
+      iban: null,
+      onsiteEnabled: true,
+      checkPayee: "ICC",
+      taxReceiptEnabled: true,
+      taxReceiptText: null,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content);
+    const missing = missingForDisplay(content);
+    for (const section of ["online", "transfer", "onsite", "taxReceipt"] as const) {
+      expect(page[section] === null).toBe(missing[section] !== undefined);
+    }
   });
 });

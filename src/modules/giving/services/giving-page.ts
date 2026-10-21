@@ -6,6 +6,7 @@ import { toPublicGivingPage, type GivingPageContent, type GivingPageInput, type 
 import { defaultGivingContent } from "./defaults";
 import { formatIban } from "./iban";
 import { alertPaymentDetailsChange, type PaymentDetailsChange } from "./alerts";
+import { givingPublicLogoSrc, logoVersionFromKey } from "./logo-keys";
 
 const CONTENT_FIELDS = [
   "enabled", "intro",
@@ -15,6 +16,8 @@ const CONTENT_FIELDS = [
   "taxReceiptEnabled", "taxReceiptText",
   "verseText", "verseReference", "contactEmail", "address", "socialHandle",
   "shortUrl",
+  "pageChurchNameShown", "pageChurchNameSize", "slideChurchNameShown", "slideChurchNameSize",
+  "pageLogoShown", "slideLogoShown",
 ] as const satisfies readonly (keyof GivingPageContent)[];
 
 /**
@@ -51,6 +54,10 @@ export interface GivingSettings {
   configured: boolean;
   hasAccountingEmails: boolean;
   publicUrl: string;
+  /** Version du logo déposé (change à chaque dépôt), `null` sans logo (spec 066). */
+  logoVersion: string | null;
+  /** Logo vu par la slide : adresse publique, servie tant que la page est active. */
+  publicLogoSrc: string | null;
 }
 
 /** Paramètres de la page de dons d'une église, ou contenu proposé si jamais configurée. */
@@ -67,6 +74,8 @@ export async function getGivingSettings(churchId: string): Promise<GivingSetting
     configured: church.givingPage !== null,
     hasAccountingEmails: parseEmailList(church.accountingEmails).length > 0,
     publicUrl: givingPublicUrl(church.slug),
+    logoVersion: logoVersionFromKey(church.givingPage?.logoKey ?? null),
+    publicLogoSrc: givingPublicLogoSrc(church.slug, church.givingPage?.logoKey ?? null),
   };
 }
 
@@ -80,7 +89,11 @@ export async function getPublicGivingPage(slug: string): Promise<PublicGivingPag
     select: { name: true, givingPage: true },
   });
   if (!church?.givingPage?.enabled) return null;
-  return toPublicGivingPage(church.name, pickContent(church.givingPage));
+  return toPublicGivingPage(
+    church.name,
+    pickContent(church.givingPage),
+    givingPublicLogoSrc(slug, church.givingPage.logoKey)
+  );
 }
 
 function display(field: keyof GivingPageContent, value: string | boolean | null | undefined): string {
@@ -112,7 +125,9 @@ export async function updateGivingPage(
   input: GivingPageInput,
   actor: { id: string; name: string }
 ): Promise<GivingPageContent> {
-  const { churchId, ...content } = input;
+  const { churchId } = input;
+  // Seuls les champs du contenu sont écrits : `logoKey` reste réservé au service du logo.
+  const content = pickContent(input);
 
   const { previous, saved, church } = await prisma.$transaction(async (tx) => {
     const church = await tx.church.findUnique({

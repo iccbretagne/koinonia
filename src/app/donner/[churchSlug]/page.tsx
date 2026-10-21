@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicGivingPage } from "@/modules/giving";
 import GivingPageView from "../_components/GivingPageView";
+import GivingPageHeader from "../_components/GivingPageHeader";
 
 type Params = { readonly params: Promise<{ churchSlug: string }> };
 
@@ -24,8 +25,7 @@ export default async function GivingPublicPage({ params }: Params) {
     <div className="flex min-h-screen flex-col bg-surface-sunken">
       <header className="bg-brand px-4 py-6">
         <div className="mx-auto max-w-xl">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-on-brand/70">{page.churchName}</p>
-          <h1 className="font-display text-[28px] font-bold leading-[34px] text-on-brand">Donner</h1>
+          <GivingPageHeader churchName={page.churchName} nameSize={page.churchNameSize} logoSrc={page.logo?.src ?? null} />
         </div>
       </header>
       <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">

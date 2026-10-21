@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { displayUrl, fitQrSize, fitUrlLines, fitVerse, slideVerse } from "../slide-fit";
+import { displayUrl, fitName, fitQrSize, fitUrlLines, fitVerse, slideVerse } from "../slide-fit";
 
 /** Mesure simulée : largeur ≈ caractères × taille × 0,6, dans un cadre de 628 px. */
 const fitsIn = (width: number) => (lines: string[], size: number) =>
@@ -46,5 +46,28 @@ describe("ajustements de la slide (spec 065)", () => {
     expect(fitQrSize(() => false)).toBe(470);
     expect(fitQrSize((size) => size > 420)).toBe(420);
     expect(fitQrSize(() => true)).toBe(300);
+  });
+});
+
+describe("nom de l'église et adresse longue (spec 066)", () => {
+  it("garde la taille choisie si le nom tient", () => {
+    expect(fitName(56, () => true)).toEqual({ size: 56, wrap: false });
+  });
+
+  it("réduit par pas de 2 px jusqu'à ce que le nom tienne", () => {
+    const tried: number[] = [];
+    expect(fitName(56, (size) => (tried.push(size), size <= 40))).toEqual({ size: 40, wrap: false });
+    expect(tried.slice(0, 3)).toEqual([56, 54, 52]);
+  });
+
+  it("passe à la ligne à 26 px en dernier recours", () => {
+    expect(fitName(56, () => false)).toEqual({ size: 26, wrap: true });
+  });
+
+  it("adresse longue : se réduit sur deux lignes quand la hauteur manque, jusqu'à 34 px", () => {
+    // Largeur de la carte, plus une contrainte de hauteur : deux lignes au-delà de 42 px débordent.
+    const fits = (lines: string[], size: number) => fitsIn(628)(lines, size) && (lines.length === 1 || size <= 42);
+    const result = fitUrlLines("koinonia.iccrennes.fr/donner/icc-rennes", fits);
+    expect(result).toEqual({ lines: ["koinonia.iccrennes.fr", "/donner/icc-rennes"], size: 42 });
   });
 });

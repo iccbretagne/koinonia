@@ -54,7 +54,7 @@ Le manifeste vit dans son propre fichier parce que l'index tire les services —
 | `rooms` | Réservation de salles (partage cross-église via liste blanche `RoomAccess`) et main courante (ouverture/fermeture, contrôle). Dépend de `core` |
 | `integration` | Suivi des parcours d'intégration : demandes aux familles, appel au salut (MSDP), affectation bergers/conseillers, KPIs. Dépend de `core` |
 | `jobs` | Offres d'emploi/stage/alternance, profils de recherche d'emploi, abonnements aux notifications, modération. Module transversal ouvert à tous les rôles authentifiés. Dépend de `core` |
-| `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/dons`, `giving:manage`) et slide de projection avec QR code (`/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Dépend de `core` |
+| `giving` | Page publique « Donner » paramétrable par église (`/donner/<slug>`, sans connexion), paramétrage (`/dons`, `giving:manage`) et slide de projection avec QR code (`/dons/slide`). Vérifie l'IBAN, journalise toute modification et alerte la comptabilité (à défaut les Admins) d'un changement de coordonnées de paiement (spec 065). Nom et logo de l'église réglables par support, logo stocké via `storage` (spec 066). Dépend de `core`, `storage` |
 
 **Exports du module `media` :**
 - `mediaModule` — manifeste
@@ -188,7 +188,7 @@ koinonia/
 │   │   ├── giving/
 │   │   │   ├── manifest.ts        # Manifeste : giving:manage (spec 065)
 │   │   │   ├── schemas.ts         # Schéma Zod de la page + projection publique (purs)
-│   │   │   └── services/          # iban, defaults, giving-page (lecture/écriture), alerts
+│   │   │   └── services/          # iban, defaults, giving-page (lecture/écriture), alerts, logo
 │   │   └── __tests__/             # Tests unitaires transverses (manifests, planning-bus…)
 │   ├── app/
 │   │   ├── layout.tsx             # Root layout (Montserrat, metadata)

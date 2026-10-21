@@ -1975,12 +1975,16 @@ et complètes.
 | `verseText` / `verseReference` | String? | Verset de bas de page, repris sur la slide (référence VarChar 80) |
 | `contactEmail` / `address` / `socialHandle` | String? | Pied de page |
 | `shortUrl` | String? (VarChar 255) | Adresse courte facultative (https), cible du QR code et seule adresse écrite sur la slide |
+| `pageChurchNameShown` / `pageChurchNameSize` | Boolean / `GivingNameSize` | Nom de l'église sur la page publique : affiché, taille `SMALL` (défaut), `MEDIUM` ou `LARGE` (spec 066) |
+| `slideChurchNameShown` / `slideChurchNameSize` | Boolean / `GivingNameSize` | Même réglage pour la slide, indépendant |
+| `logoKey` | String? (VarChar 255) | Clé de stockage du logo (`giving/<churchId>/logo-<uuid>.png`, nouvelle clé à chaque dépôt) ; écrite uniquement par le dépôt/retrait du logo |
+| `pageLogoShown` / `slideLogoShown` | Boolean | Affichage du logo sur la page et sur la slide (sans effet sans logo) |
 | `updatedById` | String? | Ref vers `users`, auteur de la dernière modification (SetNull) |
 | `createdAt` / `updatedAt` | DateTime | Horodatages |
 
 Toute modification est journalisée (`audit_logs`, `entityType: "GivingPage"`). Un changement
 de bénéficiaire, d'IBAN, de BIC, de lien de don en ligne, de l'affichage du virement ou du don en
-ligne, ou la désactivation de la page, alerte `churches.accountingEmails` (à défaut les Admins,
+ligne, le dépôt, le remplacement ou le retrait du logo, ou la désactivation de la page, alerte `churches.accountingEmails` (à défaut les Admins,
 domaine de notification `giving`).
 
 ## Seed (données initiales)
