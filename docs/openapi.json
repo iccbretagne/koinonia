@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API Koinonia",
-    "version": "1.31.1",
+    "version": "1.32.0",
     "description": "API interne de Koinonia, appelée par l'application (session NextAuth, même origine). Générée depuis les contrats `contract.ts` des routes — voir `docs/api.md` (conventions) et ADR-0023."
   },
   "components": {
@@ -9893,7 +9893,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Contenu de la page, état configuré, présence d'une adresse comptable et adresse publique",
+            "description": "Contenu de la page, état configuré, présence d'une adresse comptable, adresse publique et version du logo",
             "content": {
               "application/json": {
                 "schema": {}
@@ -9913,7 +9913,7 @@
           "giving"
         ],
         "summary": "Enregistrement de la page de dons d'une église",
-        "description": "**Accès** : permission `giving:manage`.\n\nIBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement, champs obligatoires par section activée (400 sinon). Toute modification est journalisée ; un changement de coordonnées de paiement ou la désactivation de la page alerte la comptabilité (church.accountingEmails), à défaut les Admins de l'église.",
+        "description": "**Accès** : permission `giving:manage`.\n\nIBAN vérifié (longueur par pays, clé mod 97), liens en https uniquement, champs obligatoires par section activée (400 sinon). Toute modification est journalisée ; un changement de coordonnées de paiement ou la désactivation de la page alerte la comptabilité (church.accountingEmails), à défaut les Admins de l'église. Les réglages du nom et de l'affichage du logo (spec 066) sont journalisés sans alerte ; le logo lui-même se dépose par POST /api/giving/logo.",
         "security": [
           {
             "session": []
@@ -10029,6 +10029,40 @@
                     "type": "string",
                     "nullable": true,
                     "maxLength": 255
+                  },
+                  "pageChurchNameShown": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "pageChurchNameSize": {
+                    "type": "string",
+                    "enum": [
+                      "SMALL",
+                      "MEDIUM",
+                      "LARGE"
+                    ],
+                    "default": "SMALL"
+                  },
+                  "slideChurchNameShown": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "slideChurchNameSize": {
+                    "type": "string",
+                    "enum": [
+                      "SMALL",
+                      "MEDIUM",
+                      "LARGE"
+                    ],
+                    "default": "SMALL"
+                  },
+                  "pageLogoShown": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "slideLogoShown": {
+                    "type": "boolean",
+                    "default": true
                   }
                 },
                 "required": [
@@ -10060,6 +10094,173 @@
           },
           "403": {
             "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/giving/logo": {
+      "get": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Logo de la page de dons, pour le paramétrage",
+        "description": "**Accès** : permission `giving:manage`.\n\nServi même si la page est inactive, sans cache. 404 sans logo.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "giving:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Dépôt ou remplacement du logo de la page de dons",
+        "description": "**Accès** : permission `giving:manage` — dans l'église du champ `churchId`.\n\nPNG, JPEG ou WebP, 2 Mo au plus (spec 066). 411 sans Content-Length et 413 au-delà de 2,5 Mo, avant lecture du corps. Le format décodé fait foi (un SVG est refusé, 400) ; l'image est réencodée en PNG, métadonnées retirées, 1200 × 600 au plus, sur une nouvelle clé. Enregistré immédiatement, journalisé, et alerte la comptabilité (church.accountingEmails), à défaut les Admins de l'église.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "giving:manage",
+        "requestBody": {
+          "description": "`churchId`, `file` (image)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version du logo enregistré (`logoVersion`)",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Retrait du logo de la page de dons",
+        "description": "**Accès** : permission `giving:manage`.\n\nJournalisé, et alerte la comptabilité comme un dépôt (spec 066).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "x-access": "giving:manage",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`logoVersion: null`",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Session absente"
+          },
+          "403": {
+            "description": "Accès refusé"
+          }
+        }
+      }
+    },
+    "/api/giving/public/{churchSlug}/logo": {
+      "get": {
+        "tags": [
+          "giving"
+        ],
+        "summary": "Logo public de la page de dons d'une église",
+        "description": "**Accès** : public, sans session.\n\nServi seulement si la page est active et a un logo (404 sinon, même réponse qu'une église inconnue). Cache immuable : le paramètre `v` change à chaque dépôt (spec 066).",
+        "security": [],
+        "x-access": "public",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "churchSlug",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image PNG",
+            "content": {
+              "image/png": {
+                "schema": {}
+              }
+            }
           }
         }
       }

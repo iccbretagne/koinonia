@@ -11,7 +11,7 @@ module.exports = {
      * dépendance aux backreferences.
      *
      * Seule exception, nommée : `storage` est l'infrastructure de stockage partagée
-     * (ADR-0006), pas un domaine métier. `audio` et `media` peuvent l'importer ;
+     * (ADR-0006), pas un domaine métier. `audio`, `media` et `giving` peuvent l'importer ;
      * `storage` n'importe aucun module.
      */
     {
@@ -146,6 +146,19 @@ module.exports = {
       },
       to: {
         path: "^src/modules/(?!media/|storage/)",
+      },
+    },
+    {
+      name: "no-giving-imports-other-modules",
+      severity: "error",
+      comment:
+        "Le module giving ne peut importer aucun autre module, sauf storage (infrastructure partagee, ADR-0006).",
+      from: {
+        path: "^src/modules/giving/",
+        pathNot: "/__tests__/",
+      },
+      to: {
+        path: "^src/modules/(?!giving/|storage/)",
       },
     },
     /**

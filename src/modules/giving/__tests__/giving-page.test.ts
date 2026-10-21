@@ -132,3 +132,51 @@ describe("updateGivingPage", () => {
     expect(alertPaymentDetailsChange.mock.calls[0][1]).toEqual([]);
   });
 });
+
+describe("nom et logo de l'église (spec 066)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const LOGO_KEY = "giving/church-1/logo-0b8e2a52-4d3f-4c7a-9e51-2f8a6c1d9b70.png";
+
+  it("propose le rendu d'origine à une page jamais configurée, sans logo", async () => {
+    prismaMock.church.findUnique.mockResolvedValue(church(null));
+    const settings = await getGivingSettings("church-1");
+    expect(settings.content).toMatchObject({ pageChurchNameShown: true, pageChurchNameSize: "SMALL", slideLogoShown: true });
+    expect(settings.logoVersion).toBeNull();
+    expect(settings.publicLogoSrc).toBeNull();
+  });
+
+  it("expose la version du logo et son adresse publique", async () => {
+    prismaMock.church.findUnique.mockResolvedValue(church(row({ logoKey: LOGO_KEY })));
+    const settings = await getGivingSettings("church-1");
+    expect(settings.logoVersion).toBe("0b8e2a52-4d3f-4c7a-9e51-2f8a6c1d9b70");
+    expect(settings.publicLogoSrc).toBe("/api/giving/public/icc-rennes/logo?v=0b8e2a52-4d3f-4c7a-9e51-2f8a6c1d9b70");
+  });
+
+  it("la page publique reçoit le logo et la taille du nom", async () => {
+    prismaMock.church.findUnique.mockResolvedValue(church(row({ logoKey: LOGO_KEY, pageChurchNameSize: "MEDIUM" })));
+    const page = await getPublicGivingPage("icc-rennes");
+    expect(page?.churchNameSize).toBe("MEDIUM");
+    expect(page?.logo?.src).toMatch(/^\/api\/giving\/public\/icc-rennes\/logo\?v=/);
+    expect(JSON.stringify(page)).not.toContain(LOGO_KEY);
+  });
+
+  it("un réglage du nom est journalisé sans alerte", async () => {
+    prismaMock.church.findUnique.mockResolvedValue(church(row()));
+    prismaMock.givingPage.upsert.mockResolvedValue(row({ slideChurchNameShown: false }));
+    await updateGivingPage(input({ slideChurchNameShown: false }), actor);
+    expect(logAudit).toHaveBeenCalledWith(
+      expect.objectContaining({ details: expect.objectContaining({ changedFields: ["slideChurchNameShown"], alerted: [] }) })
+    );
+    expect(alertPaymentDetailsChange.mock.calls[0][1]).toEqual([]);
+  });
+
+  it("n'écrit jamais logoKey", async () => {
+    prismaMock.church.findUnique.mockResolvedValue(church(row()));
+    prismaMock.givingPage.upsert.mockResolvedValue(row());
+    await updateGivingPage({ ...input(), logoKey: "giving/x/logo.png" } as Parameters<typeof updateGivingPage>[0], actor);
+    const call = prismaMock.givingPage.upsert.mock.calls[0][0];
+    expect(call.update).not.toHaveProperty("logoKey");
+    expect(call.create).not.toHaveProperty("logoKey");
+  });
+});

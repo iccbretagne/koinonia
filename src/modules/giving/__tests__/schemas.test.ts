@@ -73,3 +73,55 @@ describe("toPublicGivingPage", () => {
     expect(JSON.stringify(page)).not.toContain("FR7630006000011234567890189");
   });
 });
+
+describe("nom et logo de l'église (spec 066)", () => {
+  const legacy = { churchId: "church-1", ...defaultGivingContent("ICC Rennes") } as Record<string, unknown>;
+  for (const key of ["pageChurchNameShown", "pageChurchNameSize", "slideChurchNameShown", "slideChurchNameSize", "pageLogoShown", "slideLogoShown"]) {
+    delete legacy[key];
+  }
+
+  it("applique le rendu d'origine à un corps qui ne connaît pas les réglages", () => {
+    const parsed = givingPageSchema.parse(legacy);
+    expect(parsed).toMatchObject({
+      pageChurchNameShown: true,
+      pageChurchNameSize: "SMALL",
+      slideChurchNameShown: true,
+      slideChurchNameSize: "SMALL",
+      pageLogoShown: true,
+      slideLogoShown: true,
+    });
+  });
+
+  it("refuse une taille inconnue", () => {
+    expect(errorsOf({ ...base, slideChurchNameSize: "HUGE" }).slideChurchNameSize).toBeDefined();
+  });
+
+  it("ignore un logoKey envoyé par le formulaire", () => {
+    const parsed = givingPageSchema.parse({ ...base, logoKey: "giving/other/logo.png" });
+    expect(parsed).not.toHaveProperty("logoKey");
+  });
+
+  it("applique les réglages de la page, jamais ceux de la slide", () => {
+    const content: GivingPageContent = {
+      ...defaultGivingContent("ICC Rennes"),
+      pageChurchNameSize: "LARGE",
+      slideChurchNameShown: false,
+      slideLogoShown: false,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content, "/logo.png");
+    expect(page.churchNameSize).toBe("LARGE");
+    expect(page.logo).toEqual({ src: "/logo.png" });
+  });
+
+  it("masque le nom et le logo selon les réglages de la page", () => {
+    const content: GivingPageContent = {
+      ...defaultGivingContent("ICC Rennes"),
+      pageChurchNameShown: false,
+      pageLogoShown: false,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content, "/logo.png");
+    expect(page.churchNameSize).toBeNull();
+    expect(page.logo).toBeNull();
+    expect(toPublicGivingPage("ICC Rennes", defaultGivingContent("ICC Rennes"), null).logo).toBeNull();
+  });
+});

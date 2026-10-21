@@ -15,6 +15,10 @@ import {
 import { Alert, Button, Input, Textarea, useToast } from "@/components/ui";
 import { buttonClasses } from "@/components/ui/button-classes";
 import GivingPageView from "@/app/donner/_components/GivingPageView";
+import GivingPageHeader from "@/app/donner/_components/GivingPageHeader";
+import Switch from "./Switch";
+import ChurchIdentitySection, { settingsLogoSrc, type IdentitySettings } from "./ChurchIdentitySection";
+import type { GivingNameSize } from "@/generated/prisma/enums";
 
 type BoolKey = {
   [K in keyof GivingPageContent]: GivingPageContent[K] extends boolean ? K : never;
@@ -23,7 +27,10 @@ type TextKey = Exclude<keyof GivingPageContent, BoolKey>;
 type Draft = Record<BoolKey, boolean> & Record<TextKey, string>;
 type Errors = Partial<Record<keyof GivingPageContent, string>>;
 
-const BOOL_KEYS: ReadonlySet<string> = new Set<BoolKey>(["enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled"]);
+const BOOL_KEYS: ReadonlySet<string> = new Set<BoolKey>([
+  "enabled", "onlineEnabled", "transferEnabled", "onsiteEnabled", "taxReceiptEnabled",
+  "pageChurchNameShown", "slideChurchNameShown", "pageLogoShown", "slideLogoShown",
+]);
 
 function toDraft(content: GivingPageContent): Draft {
   const draft = {} as Record<string, string | boolean>;
@@ -46,6 +53,23 @@ function toPreviewContent(draft: Draft): GivingPageContent {
   return content as unknown as GivingPageContent;
 }
 
+/** Réglages du nom et du logo d'un support, lus dans le brouillon (spec 066). */
+function identityOf(draft: Draft, support: "page" | "slide"): IdentitySettings {
+  return {
+    logoShown: draft[`${support}LogoShown`],
+    nameShown: draft[`${support}ChurchNameShown`],
+    nameSize: draft[`${support}ChurchNameSize`] as GivingNameSize,
+  };
+}
+
+function withIdentity(draft: Draft, support: "page" | "slide", patch: Partial<IdentitySettings>): Draft {
+  const next = { ...draft };
+  if (patch.logoShown !== undefined) next[`${support}LogoShown`] = patch.logoShown;
+  if (patch.nameShown !== undefined) next[`${support}ChurchNameShown`] = patch.nameShown;
+  if (patch.nameSize !== undefined) next[`${support}ChurchNameSize`] = patch.nameSize;
+  return next;
+}
+
 function issuesToErrors(issues: readonly { path: readonly (string | number)[]; message: string }[]): Errors {
   const errors: Errors = {};
   for (const issue of issues) {
@@ -53,33 +77,6 @@ function issuesToErrors(issues: readonly { path: readonly (string | number)[]; m
     if (field && !errors[field]) errors[field] = issue.message;
   }
   return errors;
-}
-
-function Switch({
-  checked,
-  onChange,
-  label,
-}: {
-  readonly checked: boolean;
-  readonly onChange: (next: boolean) => void;
-  readonly label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
-        checked ? "bg-brand" : "bg-control-line"
-      }`}
-    >
-      <span
-        className={`inline-block size-4 rounded-full bg-surface transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
-      />
-    </button>
-  );
 }
 
 function Section({
@@ -119,8 +116,13 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [mobileView, setMobileView] = useState<"form" | "preview">("form");
+  const [logoVersion, setLogoVersion] = useState(settings.logoVersion);
 
-  const preview = useMemo(() => toPublicGivingPage(settings.churchName, toPreviewContent(draft)), [draft, settings.churchName]);
+  const logoSrc = settingsLogoSrc(settings.churchId, logoVersion);
+  const preview = useMemo(
+    () => toPublicGivingPage(settings.churchName, toPreviewContent(draft), logoSrc),
+    [draft, settings.churchName, logoSrc]
+  );
 
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -268,6 +270,16 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
             <Textarea label="Texte" rows={4} {...text("taxReceiptText")} />
           </Section>
 
+          <ChurchIdentitySection
+            churchId={settings.churchId}
+            logoVersion={logoVersion}
+            onLogoChange={setLogoVersion}
+            page={identityOf(draft, "page")}
+            slide={identityOf(draft, "slide")}
+            onPageChange={(patch) => setDraft((d) => withIdentity(d, "page", patch))}
+            onSlideChange={(patch) => setDraft((d) => withIdentity(d, "slide", patch))}
+          />
+
           <Section title="Verset et pied de page" description="Le verset apparaît aussi en bas de la slide.">
             <Textarea label="Verset" rows={2} {...text("verseText")} />
             <Input label="Référence du verset" {...text("verseReference")} />
@@ -302,8 +314,12 @@ export default function GivingSettingsClient({ settings }: { readonly settings: 
           </p>
           <div className="overflow-hidden rounded-card border border-line bg-surface-sunken">
             <div className="bg-brand px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-on-brand/70">{settings.churchName}</p>
-              <p className="font-display text-[22px] font-bold leading-7 text-on-brand">Donner</p>
+              <GivingPageHeader
+                churchName={preview.churchName}
+                nameSize={preview.churchNameSize}
+                logoSrc={preview.logo?.src ?? null}
+                compact
+              />
             </div>
             <div className="p-4">
               <GivingPageView page={preview} />

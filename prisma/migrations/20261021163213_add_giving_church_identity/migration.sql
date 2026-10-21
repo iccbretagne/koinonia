@@ -1,0 +1,8 @@
+-- AlterTable
+ALTER TABLE `giving_pages` ADD COLUMN `logoKey` VARCHAR(255) NULL,
+    ADD COLUMN `pageChurchNameShown` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `pageChurchNameSize` ENUM('SMALL', 'MEDIUM', 'LARGE') NOT NULL DEFAULT 'SMALL',
+    ADD COLUMN `pageLogoShown` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `slideChurchNameShown` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `slideChurchNameSize` ENUM('SMALL', 'MEDIUM', 'LARGE') NOT NULL DEFAULT 'SMALL',
+    ADD COLUMN `slideLogoShown` BOOLEAN NOT NULL DEFAULT true;

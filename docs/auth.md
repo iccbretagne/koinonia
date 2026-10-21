@@ -576,6 +576,12 @@ renommé spec 052) :
   modification est journalisée (`GivingPage`), et un changement de coordonnées de paiement ou une
   désactivation alerte la comptabilité (`church.accountingEmails`), à défaut les Admins (domaine
   de notification `giving`)
+- Nom et logo de l'église (spec 066) : nom affiché ou masqué et taille (Petit, Moyen, Grand)
+  réglés séparément pour la page et pour la slide ; un logo unique pour fond sombre (PNG/JPEG/WebP
+  ≤ 2 Mo, réencodé en PNG, jamais de SVG) déposé dans `/dons`, enregistré dès son dépôt et
+  affiché par support selon son interrupteur. Déposer, remplacer ou retirer le logo est journalisé
+  et alerte la comptabilité comme un changement d'IBAN ; le logo est servi par Koinonia
+  (`/api/giving/public/<slug>/logo`, page active uniquement)
 
 **Spécificités du Comptable** (`ACCOUNTANT`) :
 - Seul rôle (hors Super Admin/Admin) à avoir `accounting:manage` : traite les demandes

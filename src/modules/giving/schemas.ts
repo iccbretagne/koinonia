@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GivingNameSize } from "@/generated/prisma/enums";
 import { ibanError, isValidBic, normalizeBic, normalizeIban } from "./services/iban";
 
 /**
@@ -64,6 +65,16 @@ export const givingPageSchema = z
     socialHandle: optionalText(80),
 
     shortUrl: optionalHttpsUrl(255),
+
+    // Nom et logo de l'église (spec 066). Valeurs par défaut = rendu d'origine, pour qu'un
+    // formulaire ouvert avant le déploiement reste valide. `logoKey` n'en fait pas partie : seul
+    // le service du logo l'écrit.
+    pageChurchNameShown: z.boolean().default(true),
+    pageChurchNameSize: z.nativeEnum(GivingNameSize).default("SMALL"),
+    slideChurchNameShown: z.boolean().default(true),
+    slideChurchNameSize: z.nativeEnum(GivingNameSize).default("SMALL"),
+    pageLogoShown: z.boolean().default(true),
+    slideLogoShown: z.boolean().default(true),
   })
   .superRefine((d, ctx) => {
     for (const [path, message] of [...bankDetailErrors(d), ...missingSectionFields(d)]) {
@@ -107,6 +118,10 @@ export type GivingPageContent = Omit<GivingPageInput, "churchId">;
 /** Page publique : uniquement les sections activées, sans identifiant interne. */
 export interface PublicGivingPage {
   churchName: string;
+  /** Taille du nom dans l'en-tête ; `null` = nom masqué (spec 066). */
+  churchNameSize: GivingNameSize | null;
+  /** Logo de l'en-tête, si déposé et affiché (spec 066). */
+  logo: { src: string } | null;
   intro: string | null;
   online: { url: string; description: string | null; note: string | null } | null;
   transfer: { beneficiary: string; iban: string; bic: string | null; reference: string | null } | null;
@@ -120,9 +135,15 @@ export interface PublicGivingPage {
  * Projection d'un contenu vers la page publique : seules les sections activées et complètes
  * apparaissent. Pure, pour servir à la fois la page publique et l'aperçu du paramétrage.
  */
-export function toPublicGivingPage(churchName: string, c: GivingPageContent): PublicGivingPage {
+export function toPublicGivingPage(
+  churchName: string,
+  c: GivingPageContent,
+  logoSrc: string | null = null
+): PublicGivingPage {
   return {
     churchName,
+    churchNameSize: c.pageChurchNameShown ? c.pageChurchNameSize : null,
+    logo: c.pageLogoShown && logoSrc ? { src: logoSrc } : null,
     intro: c.intro,
     online: c.onlineEnabled && c.onlineUrl ? { url: c.onlineUrl, description: c.onlineDescription, note: c.onlineNote } : null,
     transfer:
