@@ -12,6 +12,7 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ### Corrigé
 
+- Paramétrage de la page de dons : sur mobile, le bouton « Enregistrer » n'est plus caché par la barre du bas ; une section activée mais incomplète (sans lien, sans IBAN…) dit ce qui lui manque au lieu de disparaître de l'aperçu sans explication ; « Afficher le logo » apparaît éteint tant qu'aucun logo n'est déposé ; la slide indisponible explique pourquoi en clair, et l'alerte d'adresse comptable manquante mène aux paramètres de l'église (ou invite à s'adresser à un Admin).
 - Sur la slide de dons, une adresse longue pouvait être coupée sans que rien ne le signale : elle reste désormais toujours lisible entière, sur deux lignes au besoin, en réduisant sa taille avant celle du QR code.
 
 ## [v1.32.0] - 2026-10-18

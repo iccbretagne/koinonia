@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { givingPageSchema, toPublicGivingPage, type GivingPageContent } from "../schemas";
+import { givingPageSchema, missingForDisplay, toPublicGivingPage, type GivingPageContent } from "../schemas";
 import { defaultGivingContent } from "../services/defaults";
 
 const base = { churchId: "church-1", ...defaultGivingContent("ICC Rennes") };
@@ -123,5 +123,36 @@ describe("nom et logo de l'église (spec 066)", () => {
     expect(page.churchNameSize).toBeNull();
     expect(page.logo).toBeNull();
     expect(toPublicGivingPage("ICC Rennes", defaultGivingContent("ICC Rennes"), null).logo).toBeNull();
+  });
+});
+
+describe("missingForDisplay", () => {
+  const base = { ...defaultGivingContent("ICC Rennes"), checkPayee: null, beneficiary: null };
+
+  it("liste ce qui manque à une section activée, et rien pour une section éteinte", () => {
+    const missing = missingForDisplay({ ...base, onlineEnabled: true, transferEnabled: true, onsiteEnabled: false });
+    expect(missing.online).toEqual(["le lien de don en ligne"]);
+    expect(missing.transfer).toEqual(["le bénéficiaire", "l'IBAN"]);
+    expect(missing.onsite).toBeUndefined();
+  });
+
+  it("concorde avec toPublicGivingPage : section complète ⇔ section affichée", () => {
+    const content: GivingPageContent = {
+      ...base,
+      onlineEnabled: true,
+      onlineUrl: "https://don.example/icc",
+      transferEnabled: true,
+      beneficiary: "ICC",
+      iban: null,
+      onsiteEnabled: true,
+      checkPayee: "ICC",
+      taxReceiptEnabled: true,
+      taxReceiptText: null,
+    };
+    const page = toPublicGivingPage("ICC Rennes", content);
+    const missing = missingForDisplay(content);
+    for (const section of ["online", "transfer", "onsite", "taxReceipt"] as const) {
+      expect(page[section] === null).toBe(missing[section] !== undefined);
+    }
   });
 });

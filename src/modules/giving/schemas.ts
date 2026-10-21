@@ -157,4 +157,24 @@ export function toPublicGivingPage(
   };
 }
 
+/** Sections activables de la page publique. */
+export type GivingSection = "online" | "transfer" | "onsite" | "taxReceipt";
+
+/**
+ * Champs qui manquent à une section **activée** pour qu'elle s'affiche (mêmes règles que
+ * `toPublicGivingPage`) : sert au paramétrage à expliquer une section absente de l'aperçu.
+ */
+export function missingForDisplay(c: GivingPageContent): Partial<Record<GivingSection, string[]>> {
+  const missing: Partial<Record<GivingSection, string[]>> = {};
+  const check = (section: GivingSection, enabled: boolean, fields: [string | null, string][]) => {
+    const labels = fields.filter(([value]) => !value).map(([, label]) => label);
+    if (enabled && labels.length > 0) missing[section] = labels;
+  };
+  check("online", c.onlineEnabled, [[c.onlineUrl, "le lien de don en ligne"]]);
+  check("transfer", c.transferEnabled, [[c.beneficiary, "le bénéficiaire"], [c.iban, "l'IBAN"]]);
+  check("onsite", c.onsiteEnabled, [[c.checkPayee, "l'ordre des chèques"]]);
+  check("taxReceipt", c.taxReceiptEnabled, [[c.taxReceiptText, "le texte"]]);
+  return missing;
+}
+
 export { formatIban, normalizeIban, ibanError } from "./services/iban";

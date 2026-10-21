@@ -96,7 +96,7 @@ function SupportBlock({
       {note && <p className="-mt-1 text-[13px] leading-[18px] text-ink-muted">{note}</p>}
       <Row label="Afficher le logo" hint={hasLogo ? undefined : "Aucun logo déposé."}>
         <Switch
-          checked={value.logoShown}
+          checked={hasLogo && value.logoShown}
           disabled={!hasLogo}
           onChange={(v) => onChange({ logoShown: v })}
           label={`${title} : afficher le logo`}
