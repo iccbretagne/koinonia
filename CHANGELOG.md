@@ -18,6 +18,8 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Sécurité
 
 - Next.js passe de 16.4.0 à 16.4.3, qui corrige trois failles critiques publiées : exécution de code à distance sans authentification via l'optimisation d'images (fichiers SVG) et via les fonctions `use cache`, et déni de service via les Server Actions (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r).
+- DOMPurify passe en 3.4.17 (contournements du nettoyage HTML, GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr, GHSA-c6gr-qvv4-5v3f) et fast-uri en 3.1.9.
+- Zod passe de la version 3 à la version 4 (saturation de la mémoire à la validation de très grandes collections, GHSA-mrhx-c7xc-m3w5), avec zod-to-openapi 9. Les réponses d'erreur de validation gardent leur format ; les règles entre champs s'affichent désormais en même temps que les autres erreurs du formulaire.
 
 ## [v1.32.0] - 2026-10-18
 
