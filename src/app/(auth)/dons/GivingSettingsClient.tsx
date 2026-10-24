@@ -51,7 +51,7 @@ function withIdentity(draft: Draft, support: Support, patch: Partial<IdentitySet
   return next;
 }
 
-function issuesToErrors(issues: readonly { path: readonly (string | number)[]; message: string }[]): Errors {
+function issuesToErrors(issues: readonly { path: readonly PropertyKey[]; message: string }[]): Errors {
   const errors: Errors = {};
   for (const issue of issues) {
     const field = String(issue.path[0] ?? "") as keyof GivingPageContent;

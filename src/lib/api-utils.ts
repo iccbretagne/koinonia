@@ -20,8 +20,8 @@ export function errorResponse(error: unknown) {
   }
 
   if (error instanceof ZodError) {
-    const fieldErrors = error.errors.map((e) => ({
-      field: e.path.join("."),
+    const fieldErrors = error.issues.map((e) => ({
+      field: e.path.map(String).join("."),
       message: e.message,
     }));
     return NextResponse.json(

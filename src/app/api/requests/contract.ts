@@ -24,7 +24,7 @@ export const createDemandSchema = z.object({
   churchId: z.string().min(1, "L'église est requise"),
   type: z.enum(DEMAND_TYPES),
   title: z.string().min(1, "Le titre est requis"),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   departmentId: z.string().nullable().optional(),
   ministryId: z.string().nullable().optional(),
 });
