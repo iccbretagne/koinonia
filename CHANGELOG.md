@@ -15,6 +15,10 @@ Ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - Paramétrage de la page de dons : sur mobile, le bouton « Enregistrer » n'est plus caché par la barre du bas ; une section activée mais incomplète (sans lien, sans IBAN…) dit ce qui lui manque au lieu de disparaître de l'aperçu sans explication ; « Afficher le logo » apparaît éteint tant qu'aucun logo n'est déposé ; la slide indisponible explique pourquoi en clair, et l'alerte d'adresse comptable manquante mène aux paramètres de l'église (ou invite à s'adresser à un Admin).
 - Sur la slide de dons, une adresse longue pouvait être coupée sans que rien ne le signale : elle reste désormais toujours lisible entière, sur deux lignes au besoin, en réduisant sa taille avant celle du QR code.
 
+### Sécurité
+
+- Next.js passe de 16.4.0 à 16.4.3, qui corrige trois failles critiques publiées : exécution de code à distance sans authentification via l'optimisation d'images (fichiers SVG) et via les fonctions `use cache`, et déni de service via les Server Actions (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r).
+
 ## [v1.32.0] - 2026-10-18
 
 ### Ajouté
