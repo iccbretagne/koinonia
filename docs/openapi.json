@@ -8253,7 +8253,8 @@
                     "enum": [
                       "weekly",
                       "biweekly",
-                      "monthly"
+                      "monthly",
+                      null
                     ]
                   },
                   "recurrenceEnd": {
@@ -9123,7 +9124,8 @@
                           "enum": [
                             "EN_SERVICE",
                             "EN_SERVICE_DEBRIEF",
-                            "REMPLACANT"
+                            "REMPLACANT",
+                            null
                           ]
                         }
                       },
@@ -15880,7 +15882,8 @@
                           "DEPUTY",
                           "MINISTER",
                           "DISCIPLE_MAKER",
-                          "REPORTER"
+                          "REPORTER",
+                          null
                         ]
                       },
                       "notes": {
@@ -15932,7 +15935,8 @@
                           "DEPUTY",
                           "MINISTER",
                           "DISCIPLE_MAKER",
-                          "REPORTER"
+                          "REPORTER",
+                          null
                         ]
                       },
                       "notes": {

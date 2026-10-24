@@ -6,7 +6,7 @@ export const patchSchema = z.object({
   reviewNotes: z.string().nullable().optional(),
   // Owner-editable fields (when request is EN_ATTENTE)
   title: z.string().min(1).optional(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
   // Payload fields update (for announcement-type requests)
   deliveryLink: z.string().nullable().optional(),
   format: z.string().nullable().optional(),
