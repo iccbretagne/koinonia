@@ -13,7 +13,7 @@ export const submitSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   gender: z.enum(["Homme", "Femme"], { error: "Veuillez sélectionner votre sexe" }),
   phone: z.string().min(1, "Le téléphone est requis"),
-  email: z.string().email("Email invalide"),
+  email: z.email("Email invalide"),
   ageRange: z.enum(AGE_RANGES, { error: "Veuillez sélectionner votre tranche d'âge" }),
   membershipDuration: z.enum(DURATIONS, { error: "Veuillez sélectionner votre ancienneté à l'église" }),
   isStar: z.enum(["Oui", "Non"], { error: "Veuillez répondre à cette question" }),
